@@ -1,9 +1,16 @@
 'use client';
 
-import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { FileText, ChevronLeft, Calendar, Loader2, AlertTriangle, Users } from 'lucide-react';
+import {
+  FileText,
+  ChevronLeft,
+  Loader2,
+  AlertTriangle,
+  Users,
+  Download,
+  RefreshCw,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // Report Components
 import {
@@ -13,10 +20,21 @@ import {
   TimeOnTaskReport,
   SubjectMasteryReport,
   PDFExport,
+  ProgressChart,
+  SubjectSummaryGrid,
+  TimelineView,
+  ReportFilters,
+  getDateRangeFromPreset,
 } from '@/components/reports';
-
-// Hooks
-import { isDevMode } from '@/lib/api';
+import type { DateRangePreset } from '@/components/reports';
+// Hooks - Sprint 1.7: Using new report hooks
+import {
+  useProgressSummary,
+  useReportActivityTimeline,
+  usePDFExport,
+  useCSVExport,
+} from '@/hooks';
+import { isDevMode } from '@/lib/api/client';
 import {
   useParentProfile,
   useProgressReport,
@@ -93,50 +111,6 @@ function ChildSelector({ childrenList, selected, onChange }: ChildSelectorProps)
   );
 }
 
-// Date range presets
-type DateRangePreset = 'last7' | 'last30' | 'thisMonth' | 'lastMonth' | 'custom';
-
-const dateRangePresets: { key: DateRangePreset; label: string }[] = [
-  { key: 'last7', label: 'Last 7 Days' },
-  { key: 'last30', label: 'Last 30 Days' },
-  { key: 'thisMonth', label: 'This Month' },
-  { key: 'lastMonth', label: 'Last Month' },
-  { key: 'custom', label: 'Custom Range' },
-];
-
-function getDateRangeFromPreset(preset: DateRangePreset): { start: string; end: string } {
-  const today = new Date();
-  switch (preset) {
-    case 'last7':
-      return {
-        start: format(subDays(today, 7), 'yyyy-MM-dd'),
-        end: format(today, 'yyyy-MM-dd'),
-      };
-    case 'last30':
-      return {
-        start: format(subDays(today, 30), 'yyyy-MM-dd'),
-        end: format(today, 'yyyy-MM-dd'),
-      };
-    case 'thisMonth':
-      return {
-        start: format(startOfMonth(today), 'yyyy-MM-dd'),
-        end: format(endOfMonth(today), 'yyyy-MM-dd'),
-      };
-    case 'lastMonth': {
-      const lastMonth = subMonths(today, 1);
-      return {
-        start: format(startOfMonth(lastMonth), 'yyyy-MM-dd'),
-        end: format(endOfMonth(lastMonth), 'yyyy-MM-dd'),
-      };
-    }
-    default:
-      return {
-        start: format(subDays(today, 30), 'yyyy-MM-dd'),
-        end: format(today, 'yyyy-MM-dd'),
-      };
-  }
-}
-
 export default function ReportsPage() {
   const router = useRouter();
   const [selectedChild, setSelectedChild] = useState<{ id: string; name: string } | null>(null);
@@ -144,9 +118,9 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>(
     getDateRangeFromPreset('last30')
   );
-  const [showCustomDates, setShowCustomDates] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'timeline'>('overview');
 
-  // Data hooks
+  // Data hooks - existing
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
   const { data: enhancedChildren } = useChildrenEnhanced();
   const {
@@ -155,8 +129,23 @@ export default function ReportsPage() {
     refetch: refetchReport,
   } = useProgressReport(selectedChild?.id || null, dateRange);
 
-  // PDF export mutation
+  // Sprint 1.7: New report hooks - pass options object with dateRange
+  const reportOptions = { dateRange };
+  const {
+    data: progressSummary,
+    isLoading: summaryLoading,
+    refetch: refetchSummary,
+  } = useProgressSummary(selectedChild?.id || '', reportOptions);
+
+  const {
+    data: timeline,
+    isLoading: timelineLoading,
+  } = useReportActivityTimeline(selectedChild?.id || '', { dateRange });
+
+  // PDF/CSV export mutations
   const generatePDF = useGenerateReportPDF();
+  const pdfExport = usePDFExport();
+  const csvExport = useCSVExport();
 
   // Auto-select first child when profile loads
   useEffect(() => {
@@ -173,27 +162,45 @@ export default function ReportsPage() {
   useEffect(() => {
     if (dateRangePreset !== 'custom') {
       setDateRange(getDateRangeFromPreset(dateRangePreset));
-      setShowCustomDates(false);
-    } else {
-      setShowCustomDates(true);
     }
   }, [dateRangePreset]);
 
   const handleGenerateReport = () => {
-    refetchReport();
+    void refetchReport();
+    void refetchSummary();
   };
 
   const handleExportPDF = async () => {
     if (!selectedChild || !dateRange) return;
-    await generatePDF.mutateAsync({
-      studentId: selectedChild.id,
-      studentName: selectedChild.name,
+    
+    // Try new export first, fallback to legacy
+    try {
+      await pdfExport.exportPDF({
+        learnerId: selectedChild.id,
+        learnerName: selectedChild.name,
+        dateRange,
+        includeCharts: true,
+      });
+    } catch {
+      await generatePDF.mutateAsync({
+        studentId: selectedChild.id,
+        studentName: selectedChild.name,
+        dateRange,
+      });
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!selectedChild || !dateRange) return;
+    await csvExport.exportCSV({
+      learnerId: selectedChild.id,
+      learnerName: selectedChild.name,
       dateRange,
     });
   };
 
   // Merge children data
-  const children =
+  const children = useMemo(() =>
     enhancedChildren?.map((child) => ({
       id: child.id,
       name: child.name,
@@ -212,9 +219,13 @@ export default function ReportsPage() {
       gradeLevel: s.grade,
       avatar: s.avatar,
     })) ||
-    [];
+    [],
+  [enhancedChildren, profile?.students]);
 
   const selectedChildData = children.find((c) => c.id === selectedChild?.id) || null;
+
+  // Compute loading state
+  const isAnyLoading = reportLoading || summaryLoading || timelineLoading;
 
   // Loading state
   if (profileLoading) {
@@ -290,116 +301,67 @@ export default function ReportsPage() {
               onChange={setSelectedChild}
             />
 
-            {reportData && (
-              <PDFExport
-                childId={selectedChild?.id || ''}
-                childName={selectedChild?.name || ''}
-                dateRange={dateRange}
-                onExport={handleExportPDF}
-                isExporting={generatePDF.isPending}
-              />
+            {/* Export Buttons */}
+            {(reportData || progressSummary) && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCSV}
+                  disabled={csvExport.isPending}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {csvExport.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  CSV
+                </button>
+                <PDFExport
+                  childId={selectedChild?.id || ''}
+                  childName={selectedChild?.name || ''}
+                  dateRange={dateRange}
+                  onExport={handleExportPDF}
+                  isExporting={generatePDF.isPending || pdfExport.isPending}
+                />
+              </div>
             )}
           </div>
         </div>
 
-        {/* Date Range Selector */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex flex-wrap items-end gap-4">
-            {/* Preset Buttons */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Report Period</label>
-              <div className="flex flex-wrap gap-2">
-                {dateRangePresets.map((preset) => (
-                  <button
-                    key={preset.key}
-                    onClick={() => {
-                      setDateRangePreset(preset.key);
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateRangePreset === preset.key
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Sprint 1.7: New Report Filters Component */}
+        <ReportFilters
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+          dateRangePreset={dateRangePreset}
+          onDateRangePresetChange={setDateRangePreset}
+          onApplyFilters={handleGenerateReport}
+        />
 
-            {/* Custom Date Inputs */}
-            {showCustomDates && (
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={(e) => {
-                        setDateRange({ ...dateRange, start: e.target.value });
-                      }}
-                      className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                  <input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={(e) => {
-                      setDateRange({ ...dateRange, end: e.target.value });
-                    }}
-                    className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Generate Button */}
-            <button
-              onClick={handleGenerateReport}
-              disabled={!selectedChild || !dateRange.start || !dateRange.end || reportLoading}
-              className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {reportLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Calendar className="w-5 h-5" />
-                  Generate Report
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Selected Range Display */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500">
-              Showing data from{' '}
-              <span className="font-medium text-gray-900">
-                {format(new Date(dateRange.start), 'MMMM d, yyyy')}
-              </span>{' '}
-              to{' '}
-              <span className="font-medium text-gray-900">
-                {format(new Date(dateRange.end), 'MMMM d, yyyy')}
-              </span>
-              {selectedChild && (
-                <>
-                  {' '}
-                  for <span className="font-medium text-indigo-600">{selectedChild.name}</span>
-                </>
-              )}
-            </p>
+        {/* Tab Navigation */}
+        <div className="mt-6 mb-8">
+          <div className="flex items-center gap-2 bg-white rounded-lg p-1 border border-gray-100 w-fit">
+            {[
+              { key: 'overview', label: 'Overview' },
+              { key: 'detailed', label: 'Detailed Report' },
+              { key: 'timeline', label: 'Activity Timeline' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key as typeof activeTab); }}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Report Loading State */}
-        {reportLoading && (
+        {isAnyLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <Loader2 className="w-10 h-10 animate-spin text-indigo-600 mx-auto" />
@@ -408,8 +370,64 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Report Sections */}
-        {reportData && !reportLoading && (
+        {/* Overview Tab - Sprint 1.7: New visualizations */}
+        {activeTab === 'overview' && !isAnyLoading && progressSummary && (
+          <div className="space-y-8">
+            {/* Progress Chart */}
+            {progressSummary.periods && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Progress Over Time
+                </h3>
+                <ProgressChart
+                  periods={progressSummary.periods}
+                  showTimeSpent={true}
+                />
+              </div>
+            )}
+
+            {/* Subject Summary Grid */}
+            {progressSummary.subjectSummaries && progressSummary.subjectSummaries.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Performance by Subject
+                </h3>
+                <SubjectSummaryGrid subjects={progressSummary.subjectSummaries} />
+              </div>
+            )}
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+                <p className="text-3xl font-bold text-indigo-600">
+                  {progressSummary.overallScore || 0}%
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Overall Score</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+                <p className="text-3xl font-bold text-green-600">
+                  {progressSummary.lessonsCompleted || 0}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Lessons Completed</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+                <p className="text-3xl font-bold text-purple-600">
+                  {Math.round((progressSummary.totalLearningTime || 0) / 60)}h
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Time Spent</p>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+                <p className="text-3xl font-bold text-amber-600">
+                  {progressSummary.streak?.current || 0}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Day Streak</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Tab - Original report sections */}
+        {activeTab === 'detailed' && !isAnyLoading && reportData && (
           <div className="space-y-8">
             {/* Detailed Progress */}
             <DetailedProgressReport data={reportData.progress} childName={selectedChild?.name} />
@@ -428,19 +446,25 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Empty State */}
-        {!reportData && !reportLoading && selectedChild && (
+        {/* Timeline Tab - Sprint 1.7: New timeline view */}
+        {activeTab === 'timeline' && !isAnyLoading && timeline && (
+          <TimelineView timeline={timeline} />
+        )}
+
+        {/* Empty State - No data yet */}
+        {!isAnyLoading && !reportData && !progressSummary && selectedChild && (
           <div className="text-center py-20">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-700 mb-2">No Report Generated</h2>
             <p className="text-gray-500 mb-6">
-              Select a date range and click &quot;Generate Report&quot; to see {selectedChild.name}
+              Select a date range and click &quot;Apply Filters&quot; to see {selectedChild.name}
               &apos;s progress.
             </p>
             <button
               onClick={handleGenerateReport}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2 mx-auto"
             >
+              <RefreshCw className="w-5 h-5" />
               Generate First Report
             </button>
           </div>

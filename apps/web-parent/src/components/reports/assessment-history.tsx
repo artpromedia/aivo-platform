@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   FileText,
@@ -13,6 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { useState } from 'react';
+
 import type { AssessmentHistoryData, Assessment } from './types';
 
 interface AssessmentHistoryProps {
@@ -189,7 +190,7 @@ export function AssessmentHistory({ data }: AssessmentHistoryProps) {
         </div>
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value as Assessment['type'] | 'all')}
+          onChange={(e) => { setFilterType(e.target.value as Assessment['type'] | 'all'); }}
           className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">All Types</option>
@@ -200,7 +201,7 @@ export function AssessmentHistory({ data }: AssessmentHistoryProps) {
         </select>
         <select
           value={filterSubject}
-          onChange={(e) => setFilterSubject(e.target.value)}
+          onChange={(e) => { setFilterSubject(e.target.value); }}
           className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">All Subjects</option>
@@ -218,7 +219,7 @@ export function AssessmentHistory({ data }: AssessmentHistoryProps) {
               key={assessment.id}
               assessment={assessment}
               isExpanded={expandedId === assessment.id}
-              onToggle={() => setExpandedId(expandedId === assessment.id ? null : assessment.id)}
+              onToggle={() => { setExpandedId(expandedId === assessment.id ? null : assessment.id); }}
             />
           ))
         ) : (

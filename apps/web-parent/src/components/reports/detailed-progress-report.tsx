@@ -11,6 +11,7 @@ import {
   GraduationCap,
   BarChart3,
 } from 'lucide-react';
+
 import type { DetailedProgress, ProgressPeriod } from './types';
 
 interface DetailedProgressReportProps {

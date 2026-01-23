@@ -11,6 +11,7 @@ import {
   Lightbulb,
   Star,
 } from 'lucide-react';
+
 import type { StrengthWeaknessData, SkillAnalysis, SkillProfile } from './types';
 
 interface StrengthWeaknessAnalysisProps {

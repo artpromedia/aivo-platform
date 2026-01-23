@@ -50,7 +50,7 @@ export {
   useParentalControls,
   useUpdateParentalControls,
 
-  // Reports
+  // Reports (legacy)
   useProgressReport,
   useDownloadReport,
   useShareWeeklyReport,
@@ -59,6 +59,22 @@ export {
   useUpdateDailyGoal,
   useMarkMessagesRead,
 } from './use-parent-data';
+
+// Reports Hooks (Sprint 1.7)
+export {
+  reportQueryKeys,
+  useProgressSummary,
+  useSubjectReport,
+  useActivityTimeline as useReportActivityTimeline,
+  useAssessmentHistory,
+  useTimeOnTaskReport,
+  useStrengthWeaknessAnalysis,
+  useComprehensiveReport,
+  useReportExport,
+  usePDFExport,
+  useCSVExport,
+  usePrefetchProgressSummary,
+} from './use-reports';
 
 // Community Support Hooks
 export * from './use-community-support';

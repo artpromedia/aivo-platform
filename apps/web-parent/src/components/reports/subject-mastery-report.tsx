@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   GraduationCap,
   TrendingUp,
@@ -13,6 +12,8 @@ import {
   Target,
   BookOpen,
 } from 'lucide-react';
+import { useState } from 'react';
+
 import type { SubjectMasteryData, SubjectMastery, StandardMastery } from './types';
 
 interface SubjectMasteryReportProps {
@@ -278,9 +279,9 @@ export function SubjectMasteryReport({ data }: SubjectMasteryReportProps) {
             key={subject.subject}
             subject={subject}
             isExpanded={expandedSubject === subject.subject}
-            onToggle={() => setExpandedSubject(
+            onToggle={() => { setExpandedSubject(
               expandedSubject === subject.subject ? null : subject.subject
-            )}
+            ); }}
           />
         ))}
       </div>

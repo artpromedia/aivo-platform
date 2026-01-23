@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Download,
   FileText,
@@ -10,6 +9,7 @@ import {
   Mail,
   Printer,
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface PDFExportProps {
   childId: string;
@@ -33,7 +33,7 @@ export function PDFExport({
     try {
       await onExport();
       setExportSuccess(true);
-      setTimeout(() => setExportSuccess(false), 3000);
+      setTimeout(() => { setExportSuccess(false); }, 3000);
     } catch (error) {
       console.error('Export failed:', error);
     }
@@ -54,7 +54,7 @@ export function PDFExport({
   return (
     <div className="relative">
       <button
-        onClick={() => setShowOptions(!showOptions)}
+        onClick={() => { setShowOptions(!showOptions); }}
         disabled={isExporting}
         className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
       >
@@ -119,7 +119,7 @@ export function PDFExport({
       {showOptions && (
         <div
           className="fixed inset-0 z-0"
-          onClick={() => setShowOptions(false)}
+          onClick={() => { setShowOptions(false); }}
         />
       )}
     </div>

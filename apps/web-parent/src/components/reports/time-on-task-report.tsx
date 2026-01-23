@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   Clock,
   TrendingUp,
@@ -8,8 +9,8 @@ import {
   Sun,
   Calendar,
   Timer,
-  BarChart3,
 } from 'lucide-react';
+
 import type { TimeOnTaskData, DailyTimeEntry, SubjectTimeEntry, ActivityTimeEntry } from './types';
 
 interface TimeOnTaskReportProps {
@@ -182,7 +183,7 @@ function ActivityBreakdown({ data }: { data: ActivityTimeEntry[] }) {
               );
               acc.offset += percentage;
               return acc;
-            }, { elements: [] as JSX.Element[], offset: 0 }).elements}
+            }, { elements: [] as React.ReactElement[], offset: 0 }).elements}
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">

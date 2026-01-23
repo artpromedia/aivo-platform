@@ -46,6 +46,34 @@ export type {
   ProgressReport,
 } from './parent.api';
 
+// Reports API
+export { reportsApi, downloadBlob, generateReportFilename, generateMockProgressSummary } from './reports.api';
+export type {
+  DateRange,
+  ReportOptions,
+  ProgressSummary,
+  ProgressPeriod,
+  SubjectSummary,
+  SubjectReport,
+  StandardMastery,
+  RecentLesson,
+  SkillAnalysis,
+  ActivityTimeline,
+  TimelineActivity as ReportTimelineActivity,
+  DailySummary,
+  AssessmentHistory,
+  Assessment as ReportAssessment,
+  AssessmentSummary,
+  TimeOnTaskReport,
+  DailyTimeEntry,
+  SubjectTimeEntry,
+  ActivityTimeEntry,
+  StrengthWeaknessAnalysis,
+  SkillProfile,
+  ExportFormat,
+  ExportOptions,
+} from './reports.api';
+
 // Community Support API
 export * from './community-support-api';
 
