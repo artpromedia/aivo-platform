@@ -4,6 +4,7 @@ import { config } from './config.js';
 async function main() {
   const app = createApp();
   try {
+    await app.ready(); // Wait for all plugins/routes to be registered
     await app.listen({ port: config.port, host: '0.0.0.0' });
     app.log.info(`ai-orchestrator running on port ${config.port}`);
   } catch (err) {

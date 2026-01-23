@@ -12,15 +12,20 @@ let observabilityMetrics: {
 } | null = null;
 
 // Type for the observability module
-type ObservabilityModule = {
+interface ObservabilityModule {
   metrics?: typeof observabilityMetrics;
-};
+}
 
 // Attempt to load observability lib
 const loadObservability = async (): Promise<void> => {
   try {
     const obs = (await import('@aivo/ts-observability')) as unknown as ObservabilityModule;
-    if (obs.metrics) {
+    // Verify the metrics object has the expected methods
+    if (
+      obs.metrics &&
+      typeof obs.metrics.increment === 'function' &&
+      typeof obs.metrics.histogram === 'function'
+    ) {
       observabilityMetrics = obs.metrics;
     }
   } catch {
@@ -35,7 +40,7 @@ void loadObservability();
  * Increment a counter metric
  */
 export function incrementCounter(name: string, tags?: Record<string, string>, value = 1): void {
-  if (observabilityMetrics) {
+  if (observabilityMetrics && typeof observabilityMetrics.increment === 'function') {
     observabilityMetrics.increment(name, tags, value);
   } else {
     // Fallback: log to console in development
@@ -49,7 +54,7 @@ export function incrementCounter(name: string, tags?: Record<string, string>, va
  * Record a histogram metric
  */
 export function recordHistogram(name: string, value: number, tags?: Record<string, string>): void {
-  if (observabilityMetrics) {
+  if (observabilityMetrics && typeof observabilityMetrics.histogram === 'function') {
     observabilityMetrics.histogram(name, value, tags);
   } else {
     // Fallback: log to console in development

@@ -53,10 +53,30 @@ const baselineGenerateSchema = z.object({
   learnerId: z.string(),
   agentType: z.literal('BASELINE'),
   payload: z.object({
-    gradeBand: z.enum(['PRE_K', 'K_2', 'K5', 'GRADE_3_5', 'G6_8', 'GRADE_6_8', 'G9_12', 'GRADE_9_12']),
-    domain: z.enum(['ELA', 'MATH', 'SCIENCE', 'SPEECH', 'SEL', 'SPELLING', 'CREATIVE_WRITING', 'LIFE_SKILLS']),
+    gradeBand: z.enum([
+      'PRE_K',
+      'K_2',
+      'K5',
+      'GRADE_3_5',
+      'G6_8',
+      'GRADE_6_8',
+      'G9_12',
+      'GRADE_9_12',
+    ]),
+    domain: z.enum([
+      'ELA',
+      'MATH',
+      'SCIENCE',
+      'SPEECH',
+      'SEL',
+      'SPELLING',
+      'CREATIVE_WRITING',
+      'LIFE_SKILLS',
+    ]),
     skillCodes: z.array(z.string()).min(1).max(10),
-    assessmentType: z.enum(['STANDARD', 'STANDARD_WITH_ACCOMMODATIONS', 'MODIFIED', 'ALTERNATE']).optional(),
+    assessmentType: z
+      .enum(['STANDARD', 'STANDARD_WITH_ACCOMMODATIONS', 'MODIFIED', 'ALTERNATE'])
+      .optional(),
     accommodations: z.array(z.string()).optional(),
     gradeLevel: z.number().optional(),
   }),
@@ -74,11 +94,11 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
 ) => {
   const { registry, store, telemetryStore } = opts;
 
+  // All routes in this plugin are internal - require API key authentication
   app.addHook('preHandler', async (request, reply): Promise<void> => {
-    if (!request.url.startsWith('/internal/')) return;
     const apiKey = request.headers['x-internal-api-key'];
     if (apiKey !== config.internalApiKey) {
-      reply.code(401).send({ error: 'Unauthorized' });
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
   });
 
@@ -268,7 +288,7 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
   /**
    * POST /ai/baseline/generate - Generate unique baseline assessment questions
    * Called by baseline-svc to get AI-generated questions for each learner
-   * 
+   *
    * Supports IDEA/504-aligned assessment types:
    * - STANDARD: Full grade-level assessment
    * - STANDARD_WITH_ACCOMMODATIONS: Standard with support features

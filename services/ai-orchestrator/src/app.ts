@@ -13,7 +13,7 @@ import { config } from './config.js';
 const registerPlugin = (app: any, plugin: unknown, opts?: unknown) => app.register(plugin, opts);
 import { IncidentService } from './incidents/index.js';
 import { createPolicyEnforcer, type PolicyEnforcer } from './policy/index.js';
-import { LLMOrchestrator } from './providers/llm-orchestrator.js';
+import { createLLMOrchestratorFromEnv } from './providers/llm-orchestrator.js';
 import { AgentConfigRegistry, createAgentConfigStore } from './registry/index.js';
 import type { AgentConfigStore } from './registry/store.js';
 import { registerAdminStatsRoutes } from './routes/adminStats.js';
@@ -117,11 +117,9 @@ export function createApp(options: AppOptions = {}) {
   // Emotional state detection and intervention routes (ND-2.3)
   app.register(emotionalStateRoutes, { prefix: '/emotional-state', pool: policyPool });
 
-  // Create LLM Orchestrator for AI services
-  const llmOrchestrator = new LLMOrchestrator({
-    primaryProvider: 'anthropic',
-    fallbackOrder: ['openai'],
-  });
+  // Create LLM Orchestrator for AI services (configured via environment variables)
+  // Primary: Google, Fallbacks: OpenAI, Anthropic, Ollama (local dev only)
+  const llmOrchestrator = createLLMOrchestratorFromEnv();
 
   // AI Content Generation routes
   app.register(generationRoutes, { pool: policyPool, llmOrchestrator });

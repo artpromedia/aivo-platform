@@ -23,10 +23,10 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: Number(process.env.PORT || 4010),
+  port: Number(process.env.PORT || 4011),
   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_baseline'),
-  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
-  aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
+  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4010',
+  aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || 'dev-internal-key',
   learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4015',
   iepSvcUrl: process.env.IEP_SVC_URL || 'http://localhost:4016',
   notifySvcUrl: process.env.NOTIFY_SVC_URL || 'http://localhost:4012',

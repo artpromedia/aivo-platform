@@ -942,10 +942,17 @@ services:
     environment:
       <<: *common-env
       SERVICE_NAME: ai-orchestrator
+      # LLM Provider API Keys
+      GOOGLE_GEMINI_API_KEY: ${GOOGLE_GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      DEFAULT_LLM_PROVIDER: ${DEFAULT_LLM_PROVIDER:-openai}
-      DEFAULT_MODEL: ${DEFAULT_MODEL:-gpt-4-turbo-preview}
+      # LLM Provider Configuration: Google primary, OpenAI/Anthropic fallback
+      LLM_PRIMARY_PROVIDER: google
+      LLM_FALLBACK_ORDER: google,openai,anthropic,ollama
+      # Ollama for local development (connects to ollama container)
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_DEFAULT_MODEL: llama3.2:3b
+      # Service URLs
       CONTENT_SVC_URL: http://content-svc:3000
       PERSONALIZATION_SVC_URL: http://personalization-svc:3000
       PROFILE_SVC_URL: http://profile-svc:3000
