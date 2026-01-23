@@ -7,26 +7,23 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Users,
   UserPlus,
   Mail,
-  Shield,
   Clock,
-  Check,
   X,
   RefreshCw,
-  Trash2,
   ChevronDown,
   ChevronUp,
   AlertCircle,
   Info,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
-import { isDevMode } from '@/lib/mock-data';
+import { isDevMode } from '@/lib/api';
 import {
   useStudentCaregivers,
   useCreateCaregiverInvite,
@@ -52,12 +49,7 @@ export default function CaregiversPage() {
   const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(null);
 
   // Fetch caregivers data
-  const {
-    data: caregiverData,
-    isLoading,
-    error,
-    refetch,
-  } = useStudentCaregivers(MOCK_STUDENT_ID);
+  const { data: caregiverData, isLoading, error, refetch } = useStudentCaregivers(MOCK_STUDENT_ID);
 
   // Mutations
   const createInvite = useCreateCaregiverInvite();
@@ -76,7 +68,9 @@ export default function CaregiversPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/settings')}
+                onClick={() => {
+                  router.push('/settings');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -88,7 +82,9 @@ export default function CaregiversPage() {
             </div>
             {canAddMore && (
               <button
-                onClick={() => setShowInviteForm(true)}
+                onClick={() => {
+                  setShowInviteForm(true);
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
@@ -157,10 +153,7 @@ export default function CaregiversPage() {
               <AlertCircle className="w-5 h-5 text-red-600" />
               <div>
                 <p className="font-medium text-red-900">Failed to load caregivers</p>
-                <button
-                  onClick={() => refetch()}
-                  className="text-sm text-red-700 underline mt-1"
-                >
+                <button onClick={() => refetch()} className="text-sm text-red-700 underline mt-1">
                   Try again
                 </button>
               </div>
@@ -179,24 +172,24 @@ export default function CaregiversPage() {
                   caregiver={caregiver}
                   studentId={MOCK_STUDENT_ID}
                   isExpanded={selectedCaregiverId === caregiver.id}
-                  onToggleExpand={() =>
+                  onToggleExpand={() => {
                     setSelectedCaregiverId(
                       selectedCaregiverId === caregiver.id ? null : caregiver.id
-                    )
-                  }
-                  onUpdatePermissions={(permissions) =>
+                    );
+                  }}
+                  onUpdatePermissions={(permissions) => {
                     updatePermissions.mutate({
                       caregiverId: caregiver.id,
                       studentId: MOCK_STUDENT_ID,
                       ...permissions,
-                    })
-                  }
-                  onRevoke={() =>
+                    });
+                  }}
+                  onRevoke={() => {
                     revokeAccess.mutate({
                       caregiverId: caregiver.id,
                       studentId: MOCK_STUDENT_ID,
-                    })
-                  }
+                    });
+                  }}
                   isUpdating={updatePermissions.isPending}
                   isRevoking={revokeAccess.isPending}
                 />
@@ -214,12 +207,12 @@ export default function CaregiversPage() {
                 <PendingInviteCard
                   key={invite.id}
                   invite={invite}
-                  onResend={() =>
-                    resendInvite.mutate({ inviteId: invite.id, studentId: MOCK_STUDENT_ID })
-                  }
-                  onCancel={() =>
-                    cancelInvite.mutate({ inviteId: invite.id, studentId: MOCK_STUDENT_ID })
-                  }
+                  onResend={() => {
+                    resendInvite.mutate({ inviteId: invite.id, studentId: MOCK_STUDENT_ID });
+                  }}
+                  onCancel={() => {
+                    cancelInvite.mutate({ inviteId: invite.id, studentId: MOCK_STUDENT_ID });
+                  }}
                   isResending={resendInvite.isPending}
                   isCancelling={cancelInvite.isPending}
                 />
@@ -229,31 +222,33 @@ export default function CaregiversPage() {
         )}
 
         {/* Empty State */}
-        {caregiverData &&
-          caregiverData.caregivers.length === 0 &&
-          caregiverData.pendingInvites.length === 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
-              <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No caregivers yet</h3>
-              <p className="text-gray-500 mb-6">
-                Invite trusted family members or caregivers to help monitor your child's learning
-                progress.
-              </p>
-              <button
-                onClick={() => setShowInviteForm(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <UserPlus className="w-4 h-4" />
-                Invite Your First Caregiver
-              </button>
-            </div>
-          )}
+        {caregiverData?.caregivers.length === 0 && caregiverData.pendingInvites.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No caregivers yet</h3>
+            <p className="text-gray-500 mb-6">
+              Invite trusted family members or caregivers to help monitor your child&apos;s learning
+              progress.
+            </p>
+            <button
+              onClick={() => {
+                setShowInviteForm(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite Your First Caregiver
+            </button>
+          </div>
+        )}
 
         {/* Invite Form Modal */}
         {showInviteForm && (
           <InviteFormModal
             studentId={MOCK_STUDENT_ID}
-            onClose={() => setShowInviteForm(false)}
+            onClose={() => {
+              setShowInviteForm(false);
+            }}
             onSubmit={async (data) => {
               await createInvite.mutateAsync(data);
               setShowInviteForm(false);
@@ -345,7 +340,9 @@ function CaregiverCard({
                 label={label}
                 description={description}
                 enabled={caregiver.permissions[key as keyof CaregiverPermissions]}
-                onChange={(enabled) => onUpdatePermissions({ [key]: enabled })}
+                onChange={(enabled) => {
+                  onUpdatePermissions({ [key]: enabled });
+                }}
                 disabled={isUpdating}
               />
             ))}
@@ -354,14 +351,16 @@ function CaregiverCard({
           <div className="mt-6 pt-4 border-t border-gray-100">
             {!showRevokeConfirm ? (
               <button
-                onClick={() => setShowRevokeConfirm(true)}
+                onClick={() => {
+                  setShowRevokeConfirm(true);
+                }}
                 className="text-red-600 hover:text-red-700 text-sm font-medium"
               >
                 Revoke Access
               </button>
             ) : (
               <div className="flex items-center gap-3">
-                <p className="text-sm text-gray-600">Remove this caregiver's access?</p>
+                <p className="text-sm text-gray-600">Remove this caregiver&apos;s access?</p>
                 <button
                   onClick={onRevoke}
                   disabled={isRevoking}
@@ -370,7 +369,9 @@ function CaregiverCard({
                   {isRevoking ? 'Removing...' : 'Yes, Remove'}
                 </button>
                 <button
-                  onClick={() => setShowRevokeConfirm(false)}
+                  onClick={() => {
+                    setShowRevokeConfirm(false);
+                  }}
                   className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
                 >
                   Cancel
@@ -466,7 +467,9 @@ function PermissionToggle({
         <p className="text-xs text-gray-500">{description}</p>
       </div>
       <button
-        onClick={() => onChange(!enabled)}
+        onClick={() => {
+          onChange(!enabled);
+        }}
         disabled={disabled}
         className={`relative w-10 h-6 rounded-full transition-colors disabled:opacity-50 ${
           enabled ? 'bg-indigo-600' : 'bg-gray-300'
@@ -506,7 +509,9 @@ function InviteFormModal({
   const [name, setName] = useState('');
   const [relationship, setRelationship] = useState<CaregiverRelationship>('grandparent');
   const [message, setMessage] = useState('');
-  const [permissions, setPermissions] = useState<CaregiverPermissions>(DEFAULT_CAREGIVER_PERMISSIONS);
+  const [permissions, setPermissions] = useState<CaregiverPermissions>(
+    DEFAULT_CAREGIVER_PERMISSIONS
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -533,7 +538,9 @@ function InviteFormModal({
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">{error.message}</p>
+              <p className="text-sm text-red-700">
+                {error instanceof Error ? error.message : 'An error occurred'}
+              </p>
             </div>
           )}
 
@@ -546,7 +553,9 @@ function InviteFormModal({
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
                 required
                 placeholder="caregiver@example.com"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -561,7 +570,9 @@ function InviteFormModal({
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                }}
                 placeholder="Grandma Mary"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
@@ -572,7 +583,9 @@ function InviteFormModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
               <select
                 value={relationship}
-                onChange={(e) => setRelationship(e.target.value as CaregiverRelationship)}
+                onChange={(e) => {
+                  setRelationship(e.target.value as CaregiverRelationship);
+                }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 {Object.entries(CAREGIVER_RELATIONSHIP_LABELS).map(([value, label]) => (
@@ -590,7 +603,9 @@ function InviteFormModal({
               </label>
               <textarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                }}
                 placeholder="Hi! I'd like to invite you to..."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -606,9 +621,9 @@ function InviteFormModal({
                     <input
                       type="checkbox"
                       checked={permissions[key as keyof CaregiverPermissions]}
-                      onChange={(e) =>
-                        setPermissions({ ...permissions, [key]: e.target.checked })
-                      }
+                      onChange={(e) => {
+                        setPermissions({ ...permissions, [key]: e.target.checked });
+                      }}
                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                     <span className="text-sm text-gray-700">{label}</span>

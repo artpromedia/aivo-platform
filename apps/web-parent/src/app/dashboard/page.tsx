@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Download,
   CheckCircle,
-  AlertTriangle,
   Settings,
   Users,
 } from 'lucide-react';
@@ -30,9 +29,11 @@ import {
   type ChildData,
 } from '@/components/dashboard';
 import { DifficultyRecommendations } from '@/components/difficulty-recommendations';
+import { QueryErrorDisplay } from '@/components/error-boundary';
 import { HomeworkHelperSection } from '@/components/homework-helper-section';
 import { MessagesPreview } from '@/components/messages-preview';
 import { ProgressCard } from '@/components/progress-card';
+import { DashboardSkeleton } from '@/components/skeletons';
 import { StreakWidget } from '@/components/streak-widget';
 import { SubjectProgress } from '@/components/subject-progress';
 import { TeacherNotes } from '@/components/teacher-notes';
@@ -52,8 +53,7 @@ import {
   useWeeklyReport,
   useChildrenEnhanced,
   useDismissInsight,
-} from '@/lib/hooks';
-import { isDevMode } from '@/lib/mock-data';
+} from '@/hooks';
 
 export default function DashboardPage() {
   const { t } = useTranslation('parent');
@@ -119,37 +119,20 @@ export default function DashboardPage() {
 
   // Loading state
   if (profileLoading) {
-    return (
-      <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
-            <p className="mt-4 text-gray-500">Loading your dashboard...</p>
-          </div>
-        </div>
-      </main>
-    );
+    return <DashboardSkeleton />;
   }
 
-  // Error state (in production only)
-  if (profileError && !isDevMode()) {
+  // Error state
+  if (profileError) {
     return (
       <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load dashboard</h2>
-            <p className="text-gray-500 mb-4">Please try refreshing the page or sign in again.</p>
-            <button
-              onClick={() => {
-                window.location.reload();
-              }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
+        <QueryErrorDisplay
+          error={profileError}
+          title="Unable to load dashboard"
+          onRetry={() => {
+            globalThis.location.reload();
+          }}
+        />
       </main>
     );
   }

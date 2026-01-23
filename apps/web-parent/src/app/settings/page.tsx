@@ -6,8 +6,6 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -23,8 +21,10 @@ import {
   Check,
   Eye,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
-import { isDevMode } from '@/lib/mock-data';
+import { isDevMode } from '@/lib/api';
 
 interface NotificationSettings {
   emailDigest: 'daily' | 'weekly' | 'never';
@@ -84,7 +84,9 @@ export default function SettingsPage() {
     },
     onSuccess: () => {
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
     },
   });
 
@@ -140,7 +142,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  router.push('/dashboard');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -185,10 +189,18 @@ export default function SettingsPage() {
                 <SectionButton
                   key={section.id}
                   href={section.href}
-                  onClick={section.href ? undefined : () => setActiveSection(section.id)}
+                  onClick={
+                    section.href
+                      ? undefined
+                      : () => {
+                          setActiveSection(section.id);
+                        }
+                  }
                   className="w-full text-left bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-indigo-200 transition-all flex items-center gap-4"
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${section.color}`}>
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${section.color}`}
+                  >
                     <section.icon className="w-6 h-6" />
                   </div>
                   <div className="flex-1">
@@ -201,25 +213,35 @@ export default function SettingsPage() {
             })}
           </div>
         ) : activeSection === 'notifications' ? (
-          <NotificationSettings
+          <NotificationSettingsPanel
             settings={notifications}
             onChange={setNotifications}
-            onBack={() => setActiveSection(null)}
+            onBack={() => {
+              setActiveSection(null);
+            }}
           />
         ) : activeSection === 'privacy' ? (
           <PrivacySettingsPanel
             settings={privacy}
             onChange={setPrivacy}
-            onBack={() => setActiveSection(null)}
+            onBack={() => {
+              setActiveSection(null);
+            }}
           />
         ) : activeSection === 'screen-time' ? (
-          <ScreenTimeSettings
+          <ScreenTimeSettingsPanel
             settings={screenTime}
             onChange={setScreenTime}
-            onBack={() => setActiveSection(null)}
+            onBack={() => {
+              setActiveSection(null);
+            }}
           />
         ) : activeSection === 'account' ? (
-          <AccountSettings onBack={() => setActiveSection(null)} />
+          <AccountSettings
+            onBack={() => {
+              setActiveSection(null);
+            }}
+          />
         ) : null}
       </main>
 
@@ -234,14 +256,14 @@ export default function SettingsPage() {
 }
 
 // Notification Settings Panel
-function NotificationSettings({
+function NotificationSettingsPanel({
   settings,
   onChange,
   onBack,
 }: {
-  settings: NotificationSettings;
-  onChange: (settings: NotificationSettings) => void;
-  onBack: () => void;
+  readonly settings: NotificationSettings;
+  readonly onChange: (settings: NotificationSettings) => void;
+  readonly onBack: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -267,14 +289,17 @@ function NotificationSettings({
                 <Mail className="w-5 h-5 text-gray-400" />
                 <div>
                   <p className="font-medium text-gray-900">Email Digest</p>
-                  <p className="text-sm text-gray-500">Summary of your child's progress</p>
+                  <p className="text-sm text-gray-500">Summary of your child&apos;s progress</p>
                 </div>
               </div>
               <select
                 value={settings.emailDigest}
-                onChange={(e) =>
-                  onChange({ ...settings, emailDigest: e.target.value as typeof settings.emailDigest })
-                }
+                onChange={(e) => {
+                  onChange({
+                    ...settings,
+                    emailDigest: e.target.value as typeof settings.emailDigest,
+                  });
+                }}
                 className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="daily">Daily</option>
@@ -290,7 +315,9 @@ function NotificationSettings({
             title="Push Notifications"
             description="Receive notifications on your device"
             enabled={settings.pushNotifications}
-            onChange={(enabled) => onChange({ ...settings, pushNotifications: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, pushNotifications: enabled });
+            }}
           />
 
           {/* Progress Alerts */}
@@ -299,7 +326,9 @@ function NotificationSettings({
             title="Progress Alerts"
             description="Get notified about significant progress changes"
             enabled={settings.progressAlerts}
-            onChange={(enabled) => onChange({ ...settings, progressAlerts: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, progressAlerts: enabled });
+            }}
           />
 
           {/* Teacher Messages */}
@@ -308,7 +337,9 @@ function NotificationSettings({
             title="Teacher Messages"
             description="Notifications for new teacher messages"
             enabled={settings.teacherMessages}
-            onChange={(enabled) => onChange({ ...settings, teacherMessages: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, teacherMessages: enabled });
+            }}
           />
 
           {/* Achievement Alerts */}
@@ -317,7 +348,9 @@ function NotificationSettings({
             title="Achievement Alerts"
             description="Celebrate when your child earns achievements"
             enabled={settings.achievementAlerts}
-            onChange={(enabled) => onChange({ ...settings, achievementAlerts: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, achievementAlerts: enabled });
+            }}
           />
 
           {/* Homework Reminders */}
@@ -326,7 +359,9 @@ function NotificationSettings({
             title="Homework Reminders"
             description="Reminders for incomplete assignments"
             enabled={settings.homeworkReminders}
-            onChange={(enabled) => onChange({ ...settings, homeworkReminders: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, homeworkReminders: enabled });
+            }}
           />
         </div>
       </div>
@@ -366,7 +401,9 @@ function PrivacySettingsPanel({
             title="Share Progress with Teachers"
             description="Allow teachers to see detailed progress reports"
             enabled={settings.shareProgress}
-            onChange={(enabled) => onChange({ ...settings, shareProgress: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, shareProgress: enabled });
+            }}
           />
 
           <ToggleSetting
@@ -374,7 +411,9 @@ function PrivacySettingsPanel({
             title="Allow Teacher Contact"
             description="Teachers can initiate conversations with you"
             enabled={settings.allowTeacherContact}
-            onChange={(enabled) => onChange({ ...settings, allowTeacherContact: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, allowTeacherContact: enabled });
+            }}
           />
 
           <ToggleSetting
@@ -382,15 +421,17 @@ function PrivacySettingsPanel({
             title="Usage Analytics"
             description="Help improve AIVO by sharing anonymous usage data"
             enabled={settings.dataCollection}
-            onChange={(enabled) => onChange({ ...settings, dataCollection: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, dataCollection: enabled });
+            }}
           />
         </div>
 
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
           <h4 className="font-medium text-blue-900 mb-2">Your Privacy Matters</h4>
           <p className="text-sm text-blue-700">
-            AIVO is COPPA and FERPA compliant. We never sell personal data and use 
-            industry-standard encryption to protect your family's information.
+            AIVO is COPPA and FERPA compliant. We never sell personal data and use industry-standard
+            encryption to protect your family&apos;s information.
           </p>
         </div>
       </div>
@@ -399,14 +440,14 @@ function PrivacySettingsPanel({
 }
 
 // Screen Time Settings Panel
-function ScreenTimeSettings({
+function ScreenTimeSettingsPanel({
   settings,
   onChange,
   onBack,
 }: {
-  settings: ScreenTimeSettings;
-  onChange: (settings: ScreenTimeSettings) => void;
-  onBack: () => void;
+  readonly settings: ScreenTimeSettings;
+  readonly onChange: (settings: ScreenTimeSettings) => void;
+  readonly onBack: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -442,7 +483,9 @@ function ScreenTimeSettings({
               max={240}
               step={15}
               value={settings.dailyLimit}
-              onChange={(e) => onChange({ ...settings, dailyLimit: parseInt(e.target.value) })}
+              onChange={(e) => {
+                onChange({ ...settings, dailyLimit: parseInt(e.target.value) });
+              }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -468,7 +511,9 @@ function ScreenTimeSettings({
               max={300}
               step={15}
               value={settings.weekendLimit}
-              onChange={(e) => onChange({ ...settings, weekendLimit: parseInt(e.target.value) })}
+              onChange={(e) => {
+                onChange({ ...settings, weekendLimit: parseInt(e.target.value) });
+              }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -483,7 +528,9 @@ function ScreenTimeSettings({
             title="Break Reminders"
             description="Remind your child to take breaks every 25 minutes"
             enabled={settings.breakReminders}
-            onChange={(enabled) => onChange({ ...settings, breakReminders: enabled })}
+            onChange={(enabled) => {
+              onChange({ ...settings, breakReminders: enabled });
+            }}
           />
         </div>
       </div>
@@ -577,7 +624,9 @@ function ToggleSetting({
         </div>
       </div>
       <button
-        onClick={() => onChange(!enabled)}
+        onClick={() => {
+          onChange(!enabled);
+        }}
         className={`relative w-12 h-6 rounded-full transition-colors ${
           enabled ? 'bg-indigo-600' : 'bg-gray-300'
         }`}

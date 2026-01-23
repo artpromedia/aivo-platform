@@ -7,9 +7,6 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
 import {
   ArrowLeft,
@@ -23,9 +20,12 @@ import {
   Star,
   Search,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
-import { api } from '@/lib/api';
-import { isDevMode } from '@/lib/mock-data';
+import { QueryErrorDisplay } from '@/components/error-boundary';
+import { ActivityPageSkeleton } from '@/components/skeletons';
+import { useActivities } from '@/hooks';
 
 interface Activity {
   id: string;
@@ -34,96 +34,7 @@ interface Activity {
   subject: string;
   score?: number;
   completedAt: string;
-  duration?: number; // in minutes
-}
-
-// Mock activities data for development
-function getMockActivities(): Activity[] {
-  const now = new Date();
-  return [
-    {
-      id: '1',
-      type: 'lesson',
-      title: 'Introduction to Fractions',
-      subject: 'Math',
-      completedAt: subDays(now, 0).toISOString(),
-      duration: 25,
-    },
-    {
-      id: '2',
-      type: 'quiz',
-      title: 'Chapter 5 Quiz: Multiplication',
-      subject: 'Math',
-      score: 92,
-      completedAt: subDays(now, 0).toISOString(),
-      duration: 15,
-    },
-    {
-      id: '3',
-      type: 'achievement',
-      title: 'Math Whiz - 10 Perfect Quizzes',
-      subject: 'Achievement',
-      completedAt: subDays(now, 1).toISOString(),
-    },
-    {
-      id: '4',
-      type: 'lesson',
-      title: 'The Water Cycle',
-      subject: 'Science',
-      completedAt: subDays(now, 1).toISOString(),
-      duration: 30,
-    },
-    {
-      id: '5',
-      type: 'assignment',
-      title: 'Essay: My Favorite Book',
-      subject: 'Reading',
-      score: 88,
-      completedAt: subDays(now, 2).toISOString(),
-      duration: 45,
-    },
-    {
-      id: '6',
-      type: 'quiz',
-      title: 'Vocabulary Test Week 12',
-      subject: 'Reading',
-      score: 95,
-      completedAt: subDays(now, 2).toISOString(),
-      duration: 10,
-    },
-    {
-      id: '7',
-      type: 'lesson',
-      title: 'Parts of a Plant',
-      subject: 'Science',
-      completedAt: subDays(now, 3).toISOString(),
-      duration: 20,
-    },
-    {
-      id: '8',
-      type: 'achievement',
-      title: 'Early Bird - 5 Day Streak',
-      subject: 'Achievement',
-      completedAt: subDays(now, 3).toISOString(),
-    },
-    {
-      id: '9',
-      type: 'assignment',
-      title: 'Science Lab Report',
-      subject: 'Science',
-      score: 90,
-      completedAt: subDays(now, 4).toISOString(),
-      duration: 35,
-    },
-    {
-      id: '10',
-      type: 'lesson',
-      title: 'Ancient Egypt: Pyramids',
-      subject: 'Social Studies',
-      completedAt: subDays(now, 5).toISOString(),
-      duration: 28,
-    },
-  ];
+  duration?: number;
 }
 
 const activityIcons = {
@@ -149,25 +60,10 @@ export default function ActivityPage() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [dateRange, setDateRange] = useState<DateRange>('7days');
 
-  // Mock student ID
+  // TODO: Get from auth context or URL params
   const studentId = 'student-1';
 
-  const { data: activities = [], isLoading } = useQuery({
-    queryKey: ['activities', studentId],
-    queryFn: async () => {
-      try {
-        const data = await api.get<Activity[]>(`/parent/students/${studentId}/activities`);
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock activities data');
-          return getMockActivities();
-        }
-        throw error;
-      }
-    },
-    retry: isDevMode() ? 0 : 3,
-  });
+  const { data: activities = [], isLoading, error, refetch } = useActivities(studentId);
 
   // Filter activities
   const filteredActivities = activities.filter((activity) => {
@@ -192,7 +88,7 @@ export default function ActivityPage() {
   });
 
   // Group by date
-  const groupedActivities = filteredActivities.reduce(
+  const groupedActivities = filteredActivities.reduce<Record<string, Activity[]>>(
     (groups, activity) => {
       const date = format(new Date(activity.completedAt), 'yyyy-MM-dd');
       if (!groups[date]) {
@@ -201,7 +97,7 @@ export default function ActivityPage() {
       groups[date].push(activity);
       return groups;
     },
-    {} as Record<string, Activity[]>
+    {}
   );
 
   // Stats
@@ -228,7 +124,9 @@ export default function ActivityPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  router.push('/dashboard');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -287,7 +185,9 @@ export default function ActivityPage() {
                 type="text"
                 placeholder="Search activities..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
@@ -298,7 +198,9 @@ export default function ActivityPage() {
                 (type) => (
                   <button
                     key={type}
-                    onClick={() => setFilterType(type)}
+                    onClick={() => {
+                      setFilterType(type);
+                    }}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       filterType === type
                         ? 'bg-indigo-100 text-indigo-700'
@@ -314,7 +216,9 @@ export default function ActivityPage() {
             {/* Date Range */}
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as DateRange)}
+              onChange={(e) => {
+                setDateRange(e.target.value as DateRange);
+              }}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               <option value="7days">Last 7 days</option>
@@ -326,9 +230,9 @@ export default function ActivityPage() {
 
         {/* Activity List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
-          </div>
+          <ActivityPageSkeleton />
+        ) : error ? (
+          <QueryErrorDisplay error={error} onRetry={() => void refetch()} />
         ) : Object.keys(groupedActivities).length === 0 ? (
           <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
             <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -358,18 +262,11 @@ export default function ActivityPage() {
           </div>
         )}
       </main>
-
-      {/* DEV Mode */}
-      {isDevMode() && (
-        <div className="fixed bottom-4 right-4 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium">
-          DEV MODE - Mock Data
-        </div>
-      )}
     </div>
   );
 }
 
-function ActivityCard({ activity }: { activity: Activity }) {
+function ActivityCard({ activity }: { readonly activity: Activity }) {
   const Icon = activityIcons[activity.type];
   const colors = activityColors[activity.type];
 

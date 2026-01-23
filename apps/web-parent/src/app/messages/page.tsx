@@ -7,8 +7,6 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import {
@@ -27,8 +25,10 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { isDevMode } from '@/lib/mock-data';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { api, isDevMode } from '@/lib/api';
 
 interface Message {
   id: string;
@@ -121,14 +121,14 @@ function getMockConversations(): Conversation[] {
   ];
 }
 
-function getMockMessages(conversationId: string): Message[] {
+function getMockMessages(_conversationId: string): Message[] {
   const baseMessages: Message[] = [
     {
       id: 'msg-1',
       senderId: 'teacher-1',
       senderType: 'teacher',
       senderName: 'Mrs. Anderson',
-      content: 'Hello! I wanted to share some updates about Emma\'s progress in class.',
+      content: "Hello! I wanted to share some updates about Emma's progress in class.",
       sentAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
       readAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
     },
@@ -137,7 +137,8 @@ function getMockMessages(conversationId: string): Message[] {
       senderId: 'teacher-1',
       senderType: 'teacher',
       senderName: 'Mrs. Anderson',
-      content: 'Emma has been showing excellent progress in fractions. She helped other students understand the concept today!',
+      content:
+        'Emma has been showing excellent progress in fractions. She helped other students understand the concept today!',
       sentAt: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -145,7 +146,7 @@ function getMockMessages(conversationId: string): Message[] {
       senderId: 'parent-1',
       senderType: 'parent',
       senderName: 'Sarah Johnson',
-      content: 'Thank you so much for letting me know! We\'ve been practicing at home.',
+      content: "Thank you so much for letting me know! We've been practicing at home.",
       sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       readAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(),
     },
@@ -170,9 +171,7 @@ function getMockChildren(): Child[] {
       id: 'student-2',
       name: 'Noah',
       grade: '2',
-      teachers: [
-        { id: 'teacher-4', name: 'Mrs. Brown', subject: 'General' },
-      ],
+      teachers: [{ id: 'teacher-4', name: 'Mrs. Brown', subject: 'General' }],
     },
   ];
 }
@@ -205,15 +204,19 @@ export default function MessagesPage() {
   };
 
   // Show browser notification
-  const showNotification = useCallback((title: string, body: string) => {
-    if (notificationsEnabled && 'Notification' in window) {
-      new Notification(title, {
-        body: body.substring(0, 100),
-        icon: '/icon.png',
-        badge: '/badge.png',
-      });
-    }
-  }, [notificationsEnabled]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const showNotification = useCallback(
+    (title: string, body: string) => {
+      if (notificationsEnabled && 'Notification' in window) {
+        new Notification(title, {
+          body: body.substring(0, 100),
+          icon: '/icon.png',
+          badge: '/badge.png',
+        });
+      }
+    },
+    [notificationsEnabled]
+  );
 
   // Fetch conversations
   const { data: conversations, isLoading: conversationsLoading } = useQuery({
@@ -342,6 +345,7 @@ export default function MessagesPage() {
     if (selectedConversation) {
       markAsRead.mutate(selectedConversation);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversation]);
 
   // Auto-resize textarea
@@ -366,10 +370,11 @@ export default function MessagesPage() {
     }
   };
 
-  const filteredConversations = conversations?.filter((c) =>
-    c.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.studentName.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredConversations = conversations?.filter(
+    (c) =>
+      c.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.studentName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectedConversationData = messagesData?.conversation;
@@ -383,30 +388,26 @@ export default function MessagesPage() {
   };
 
   // Group messages by date
-  const groupedMessages = messagesData?.messages?.reduce<{ date: string; messages: Message[] }[]>(
-    (groups, message) => {
+  const groupedMessages =
+    messagesData?.messages?.reduce<{ date: string; messages: Message[] }[]>((groups, message) => {
       const date = formatMessageDate(message.sentAt);
       const lastGroup = groups[groups.length - 1];
 
-      if (lastGroup && lastGroup.date === date) {
+      if (lastGroup?.date === date) {
         lastGroup.messages.push(message);
       } else {
         groups.push({ date, messages: [message] });
       }
 
       return groups;
-    },
-    []
-  ) || [];
+    }, []) || [];
 
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('messages.title', 'Messages')}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('messages.title', 'Messages')}</h1>
           {unreadTotal > 0 && (
             <span className="px-2.5 py-1 bg-violet-100 text-violet-700 text-sm font-semibold rounded-full">
               {unreadTotal} unread
@@ -447,7 +448,9 @@ export default function MessagesPage() {
             {/* Search & New Message */}
             <div className="p-4 border-b border-gray-100">
               <button
-                onClick={() => setShowCompose(true)}
+                onClick={() => {
+                  setShowCompose(true);
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors font-medium mb-3"
               >
                 <Plus className="w-4 h-4" />
@@ -460,14 +463,18 @@ export default function MessagesPage() {
                   type="text"
                   placeholder="Search conversations..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
                   className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
 
               <div className="flex items-center gap-2 mt-3">
                 <button
-                  onClick={() => setShowArchived(false)}
+                  onClick={() => {
+                    setShowArchived(false);
+                  }}
                   className={`flex-1 py-1.5 text-sm rounded-lg transition-colors ${
                     !showArchived
                       ? 'bg-violet-100 text-violet-700 font-medium'
@@ -477,7 +484,9 @@ export default function MessagesPage() {
                   Inbox
                 </button>
                 <button
-                  onClick={() => setShowArchived(true)}
+                  onClick={() => {
+                    setShowArchived(true);
+                  }}
                   className={`flex-1 py-1.5 text-sm rounded-lg transition-colors ${
                     showArchived
                       ? 'bg-violet-100 text-violet-700 font-medium'
@@ -509,7 +518,9 @@ export default function MessagesPage() {
                   </p>
                   {!showArchived && !searchQuery && (
                     <button
-                      onClick={() => setShowCompose(true)}
+                      onClick={() => {
+                        setShowCompose(true);
+                      }}
                       className="text-violet-600 hover:text-violet-700 font-medium"
                     >
                       Start a conversation
@@ -521,7 +532,9 @@ export default function MessagesPage() {
                   {filteredConversations?.map((conversation) => (
                     <button
                       key={conversation.id}
-                      onClick={() => setSelectedConversation(conversation.id)}
+                      onClick={() => {
+                        setSelectedConversation(conversation.id);
+                      }}
                       className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
                         selectedConversation === conversation.id
                           ? 'bg-violet-50 border-l-4 border-violet-500'
@@ -556,9 +569,7 @@ export default function MessagesPage() {
                           <div className="flex items-center justify-between mb-1">
                             <p
                               className={`font-medium truncate ${
-                                conversation.unreadCount > 0
-                                  ? 'text-gray-900'
-                                  : 'text-gray-700'
+                                conversation.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'
                               }`}
                             >
                               {conversation.teacherName}
@@ -584,9 +595,7 @@ export default function MessagesPage() {
                           {conversation.lastMessage && (
                             <p
                               className={`text-sm truncate ${
-                                conversation.unreadCount > 0
-                                  ? 'text-gray-800'
-                                  : 'text-gray-500'
+                                conversation.unreadCount > 0 ? 'text-gray-800' : 'text-gray-500'
                               }`}
                             >
                               {conversation.lastMessage}
@@ -617,7 +626,9 @@ export default function MessagesPage() {
                 {/* Header */}
                 <div className="p-4 border-b border-gray-200 bg-white flex items-center gap-3">
                   <button
-                    onClick={() => setSelectedConversation(null)}
+                    onClick={() => {
+                      setSelectedConversation(null);
+                    }}
                     className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg"
                     aria-label="Back to conversations"
                   >
@@ -641,7 +652,8 @@ export default function MessagesPage() {
                       {selectedConversationData.teacherName}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      {selectedConversationData.teacherSubject && `${selectedConversationData.teacherSubject} - `}
+                      {selectedConversationData.teacherSubject &&
+                        `${selectedConversationData.teacherSubject} - `}
                       {selectedConversationData.studentName}
                     </p>
                   </div>
@@ -666,9 +678,7 @@ export default function MessagesPage() {
                           {/* Date Separator */}
                           <div className="flex items-center gap-4 mb-4">
                             <div className="flex-1 border-t border-gray-200" />
-                            <span className="text-xs text-gray-500 font-medium">
-                              {group.date}
-                            </span>
+                            <span className="text-xs text-gray-500 font-medium">{group.date}</span>
                             <div className="flex-1 border-t border-gray-200" />
                           </div>
 
@@ -751,19 +761,20 @@ export default function MessagesPage() {
                                     {/* Timestamp & Read Status */}
                                     <div
                                       className={`flex items-center gap-1 mt-1 ${
-                                        message.senderType === 'parent' ? 'justify-end mr-1' : 'ml-1'
+                                        message.senderType === 'parent'
+                                          ? 'justify-end mr-1'
+                                          : 'ml-1'
                                       }`}
                                     >
                                       <span className="text-xs text-gray-400">
                                         {format(new Date(message.sentAt), 'h:mm a')}
                                       </span>
-                                      {message.senderType === 'parent' && (
-                                        message.readAt ? (
+                                      {message.senderType === 'parent' &&
+                                        (message.readAt ? (
                                           <CheckCheck className="w-3.5 h-3.5 text-violet-500" />
                                         ) : (
                                           <Check className="w-3.5 h-3.5 text-gray-400" />
-                                        )
-                                      )}
+                                        ))}
                                     </div>
                                   </div>
                                 </div>
@@ -778,13 +789,18 @@ export default function MessagesPage() {
                 </div>
 
                 {/* Message Input */}
-                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 bg-white">
+                <form
+                  onSubmit={handleSendMessage}
+                  className="p-4 border-t border-gray-200 bg-white"
+                >
                   <div className="flex items-end gap-3">
                     <div className="flex-1 relative">
                       <textarea
                         ref={textareaRef}
                         value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
+                        onChange={(e) => {
+                          setMessageInput(e.target.value);
+                        }}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
                         rows={1}
@@ -817,7 +833,9 @@ export default function MessagesPage() {
                   Choose a conversation from the list or start a new one
                 </p>
                 <button
-                  onClick={() => setShowCompose(true)}
+                  onClick={() => {
+                    setShowCompose(true);
+                  }}
                   className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -832,8 +850,10 @@ export default function MessagesPage() {
       {/* Compose Modal */}
       {showCompose && (
         <ComposeModal
-          children={children || []}
-          onClose={() => setShowCompose(false)}
+          childrenList={children || []}
+          onClose={() => {
+            setShowCompose(false);
+          }}
           onSend={async (data) => {
             await createConversation.mutateAsync(data);
           }}
@@ -846,12 +866,12 @@ export default function MessagesPage() {
 
 // Compose Modal Component
 function ComposeModal({
-  children,
+  childrenList,
   onClose,
   onSend,
   isLoading,
 }: {
-  children: Child[];
+  childrenList: Child[];
   onClose: () => void;
   onSend: (data: {
     teacherId: string;
@@ -862,7 +882,7 @@ function ComposeModal({
   isLoading?: boolean;
 }) {
   const [selectedChild, setSelectedChild] = useState<Child | null>(
-    children.length === 1 ? children[0] : null
+    childrenList.length === 1 ? childrenList[0] : null
   );
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [subject, setSubject] = useState('');
@@ -876,7 +896,9 @@ function ComposeModal({
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [onClose]);
 
   useEffect(() => {
@@ -886,7 +908,9 @@ function ComposeModal({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [onClose]);
 
   const filteredTeachers =
@@ -951,11 +975,9 @@ function ComposeModal({
 
             {/* Child Selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Child
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Child</label>
               <div className="grid grid-cols-2 gap-2">
-                {children.map((child) => (
+                {childrenList.map((child) => (
                   <button
                     key={child.id}
                     type="button"
@@ -974,9 +996,7 @@ function ComposeModal({
                     </div>
                     <div className="text-left">
                       <p className="text-sm font-medium text-gray-900">{child.name}</p>
-                      {child.grade && (
-                        <p className="text-xs text-gray-500">Grade {child.grade}</p>
-                      )}
+                      {child.grade && <p className="text-xs text-gray-500">Grade {child.grade}</p>}
                     </div>
                   </button>
                 ))}
@@ -994,7 +1014,9 @@ function ComposeModal({
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                    }}
                     placeholder="Search teachers..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm"
                   />
@@ -1005,7 +1027,9 @@ function ComposeModal({
                       <button
                         key={teacher.id}
                         type="button"
-                        onClick={() => setSelectedTeacher(teacher)}
+                        onClick={() => {
+                          setSelectedTeacher(teacher);
+                        }}
                         className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors ${
                           selectedTeacher?.id === teacher.id
                             ? 'border-violet-500 bg-violet-50'
@@ -1013,14 +1037,10 @@ function ComposeModal({
                         }`}
                       >
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {teacher.name.charAt(0)}
-                          </span>
+                          <span className="text-white font-medium">{teacher.name.charAt(0)}</span>
                         </div>
                         <div className="text-left flex-1">
-                          <p className="text-sm font-medium text-gray-900">
-                            {teacher.name}
-                          </p>
+                          <p className="text-sm font-medium text-gray-900">{teacher.name}</p>
                           {teacher.subject && (
                             <p className="text-xs text-gray-500">{teacher.subject}</p>
                           )}
@@ -1041,17 +1061,16 @@ function ComposeModal({
             {/* Subject */}
             {selectedTeacher && (
               <div>
-                <label
-                  htmlFor="subject"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
                   Subject
                 </label>
                 <input
                   id="subject"
                   type="text"
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                  }}
                   placeholder="What's this message about?"
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
@@ -1061,16 +1080,15 @@ function ComposeModal({
             {/* Message Content */}
             {selectedTeacher && (
               <div>
-                <label
-                  htmlFor="content"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
                   Message
                 </label>
                 <textarea
                   id="content"
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                  }}
                   placeholder="Type your message here..."
                   rows={5}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"

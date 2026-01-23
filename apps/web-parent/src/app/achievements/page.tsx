@@ -7,9 +7,6 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -27,8 +24,12 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { isDevMode } from '@/lib/mock-data';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
+
+import { QueryErrorDisplay } from '@/components/error-boundary';
+import { AchievementsPageSkeleton } from '@/components/skeletons';
+import { useAchievements } from '@/hooks';
 
 interface Achievement {
   id: string;
@@ -40,125 +41,6 @@ interface Achievement {
   progress?: number;
   total?: number;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
-}
-
-// Mock achievements for development
-function getMockAchievements(): Achievement[] {
-  return [
-    // Earned
-    {
-      id: '1',
-      title: 'First Steps',
-      description: 'Complete your first lesson',
-      icon: 'star',
-      category: 'learning',
-      earnedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'common',
-    },
-    {
-      id: '2',
-      title: 'Math Whiz',
-      description: 'Score 90%+ on 10 math quizzes',
-      icon: 'brain',
-      category: 'mastery',
-      earnedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'rare',
-    },
-    {
-      id: '3',
-      title: 'Bookworm',
-      description: 'Complete 25 reading lessons',
-      icon: 'book',
-      category: 'learning',
-      earnedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'rare',
-    },
-    {
-      id: '4',
-      title: 'On Fire!',
-      description: 'Maintain a 7-day learning streak',
-      icon: 'flame',
-      category: 'streak',
-      earnedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'common',
-    },
-    {
-      id: '5',
-      title: 'Helping Hand',
-      description: 'Use the Homework Helper 10 times',
-      icon: 'heart',
-      category: 'engagement',
-      earnedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'common',
-    },
-    {
-      id: '6',
-      title: 'Quick Learner',
-      description: 'Complete 5 lessons in one day',
-      icon: 'zap',
-      category: 'engagement',
-      earnedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-      rarity: 'rare',
-    },
-    // In progress
-    {
-      id: '7',
-      title: 'Science Explorer',
-      description: 'Complete all science lessons for the week',
-      icon: 'target',
-      category: 'learning',
-      progress: 3,
-      total: 5,
-      rarity: 'common',
-    },
-    {
-      id: '8',
-      title: 'Unstoppable',
-      description: 'Maintain a 30-day learning streak',
-      icon: 'flame',
-      category: 'streak',
-      progress: 12,
-      total: 30,
-      rarity: 'epic',
-    },
-    {
-      id: '9',
-      title: 'Perfect Score',
-      description: 'Get 100% on any quiz',
-      icon: 'trophy',
-      category: 'mastery',
-      progress: 0,
-      total: 1,
-      rarity: 'rare',
-    },
-    // Locked
-    {
-      id: '10',
-      title: 'Master of All',
-      description: 'Complete every subject with 90%+ mastery',
-      icon: 'crown',
-      category: 'special',
-      rarity: 'legendary',
-    },
-    {
-      id: '11',
-      title: 'Marathon Runner',
-      description: 'Maintain a 100-day learning streak',
-      icon: 'medal',
-      category: 'streak',
-      rarity: 'legendary',
-    },
-    {
-      id: '12',
-      title: 'Knowledge Seeker',
-      description: 'Complete 100 lessons total',
-      icon: 'sparkles',
-      category: 'learning',
-      progress: 42,
-      total: 100,
-      rarity: 'epic',
-    },
-  ];
 }
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -207,26 +89,10 @@ export default function AchievementsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
+  // TODO: Get from auth context or URL params
   const studentId = 'student-1';
 
-  const { data: achievements = [], isLoading } = useQuery({
-    queryKey: ['achievements', studentId],
-    queryFn: async () => {
-      try {
-        const data = await api.get<Achievement[]>(
-          `/parent/students/${studentId}/achievements`
-        );
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock achievements data');
-          return getMockAchievements();
-        }
-        throw error;
-      }
-    },
-    retry: isDevMode() ? 0 : 3,
-  });
+  const { data: achievements = [], isLoading, error, refetch } = useAchievements(studentId);
 
   // Filter achievements
   const filteredAchievements = achievements.filter((a) => {
@@ -252,7 +118,9 @@ export default function AchievementsPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  router.push('/dashboard');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -296,27 +164,38 @@ export default function AchievementsPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Category Filters */}
             <div className="flex gap-2 flex-wrap flex-1">
-              {(['all', 'learning', 'streak', 'mastery', 'engagement', 'special'] as CategoryFilter[]).map(
-                (cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategoryFilter(cat)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      categoryFilter === cat
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </button>
-                )
-              )}
+              {(
+                [
+                  'all',
+                  'learning',
+                  'streak',
+                  'mastery',
+                  'engagement',
+                  'special',
+                ] as CategoryFilter[]
+              ).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setCategoryFilter(cat);
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    categoryFilter === cat
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
             </div>
 
             {/* Status Filter */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as StatusFilter);
+              }}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
@@ -329,9 +208,9 @@ export default function AchievementsPage() {
 
         {/* Achievement Grid */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600" />
-          </div>
+          <AchievementsPageSkeleton />
+        ) : error ? (
+          <QueryErrorDisplay error={error} onRetry={() => void refetch()} />
         ) : filteredAchievements.length === 0 ? (
           <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
             <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -344,7 +223,9 @@ export default function AchievementsPage() {
               <AchievementCard
                 key={achievement.id}
                 achievement={achievement}
-                onClick={() => setSelectedAchievement(achievement)}
+                onClick={() => {
+                  setSelectedAchievement(achievement);
+                }}
               />
             ))}
           </div>
@@ -355,15 +236,10 @@ export default function AchievementsPage() {
       {selectedAchievement && (
         <AchievementModal
           achievement={selectedAchievement}
-          onClose={() => setSelectedAchievement(null)}
+          onClose={() => {
+            setSelectedAchievement(null);
+          }}
         />
-      )}
-
-      {/* DEV Mode */}
-      {isDevMode() && (
-        <div className="fixed bottom-4 right-4 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium">
-          DEV MODE - Mock Data
-        </div>
       )}
     </div>
   );
@@ -385,9 +261,7 @@ function AchievementCard({
       onClick={onClick}
       className={`text-left p-6 rounded-xl border-2 transition-all hover:shadow-md ${
         rarityColors[achievement.rarity]
-      } ${isEarned ? rarityGlow[achievement.rarity] : ''} ${
-        isLocked ? 'opacity-60' : ''
-      }`}
+      } ${isEarned ? rarityGlow[achievement.rarity] : ''} ${isLocked ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start gap-4">
         {/* Icon */}

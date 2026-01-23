@@ -1,6 +1,17 @@
 /**
  * Mock Data for Parent Dashboard
  *
+ * @deprecated This file is deprecated as of Sprint 1.6.
+ * Use the new API layer instead:
+ * - API Client: @/lib/api/client.ts
+ * - Parent API: @/lib/api/parent.api.ts
+ * - React Query Hooks: @/hooks/use-parent-data.ts
+ *
+ * For isDevMode(), use: import { isDevMode } from '@/lib/api';
+ *
+ * This file will be removed in a future sprint once all
+ * pages have been migrated to the new API layer.
+ *
  * PRODUCTION GUARD: This data is ONLY used in development mode.
  * The isDevMode() check ensures mock data never leaks to production.
  */
@@ -8,6 +19,7 @@
 /**
  * Strict development mode check
  * Returns true ONLY if NODE_ENV is exactly 'development'
+ * @deprecated Use isDevMode from '@/lib/api' instead
  */
 export function isDevMode(): boolean {
   return process.env.NODE_ENV === 'development';
@@ -18,7 +30,7 @@ export function isDevMode(): boolean {
  * Use this when accessing mock data to ensure no leakage
  */
 export function assertDevMode(context: string): void {
-  if (!isDevMode()) {
+  if (process.env.NODE_ENV !== 'development') {
     throw new Error(
       `SECURITY: Attempted to access mock data in production. Context: ${context}. ` +
         'This is a critical error that must be fixed.'
@@ -118,7 +130,7 @@ export interface MockDailyUsageEntry {
   sessionsCompleted: number;
 }
 
-export interface MockDailyUsage extends MockDailyUsageEntry {}
+export type MockDailyUsage = MockDailyUsageEntry;
 
 export interface MockWeeklySummary {
   highlights: string[];
@@ -214,7 +226,7 @@ export function getMockStudentSummary(studentId: string): MockStudentSummary {
       : [true, false, true, false, true, false, true],
     lastActiveDate: today.toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     }),
     subjectProgress: [
       { subject: 'Math', average: isEmma ? 92 : 75, timeSpent: 45, trend: 'up' },
@@ -273,7 +285,7 @@ export function getMockStudentSummary(studentId: string): MockStudentSummary {
       },
       {
         id: 'assign-2',
-        title: 'Book Report: Charlotte\'s Web',
+        title: "Book Report: Charlotte's Web",
         subject: 'Reading',
         dueIn: 3,
       },
@@ -290,7 +302,7 @@ export function getMockStudentSummary(studentId: string): MockStudentSummary {
         teacherName: 'Mrs. Anderson',
         content: isEmma
           ? 'Emma has been showing excellent progress in math! She helped other students understand fractions today.'
-          : 'Noah is making steady progress. He\'s been more engaged in reading activities this week.',
+          : "Noah is making steady progress. He's been more engaged in reading activities this week.",
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         type: 'positive',
       },
@@ -351,7 +363,9 @@ export function getMockStudentSummary(studentId: string): MockStudentSummary {
         description: 'Help 5 classmates with questions',
         icon: 'heart',
         category: 'engagement',
-        earnedAt: isEmma ? new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+        earnedAt: isEmma
+          ? new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+          : undefined,
         progress: isEmma ? 5 : 2,
         total: 5,
       },
@@ -496,7 +510,7 @@ export function getMockMessages(): MockMessage[] {
       id: 'msg-1',
       teacherName: 'Mrs. Anderson',
       subject: 'Great progress this week!',
-      preview: 'I wanted to share some positive feedback about Emma\'s work in class...',
+      preview: "I wanted to share some positive feedback about Emma's work in class...",
       unread: true,
       timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
     },
@@ -512,7 +526,7 @@ export function getMockMessages(): MockMessage[] {
       id: 'msg-3',
       teacherName: 'Mrs. Anderson',
       subject: 'Parent-Teacher Conference',
-      preview: 'I\'d like to schedule a brief conference to discuss progress...',
+      preview: "I'd like to schedule a brief conference to discuss progress...",
       unread: false,
       timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     },
@@ -522,7 +536,9 @@ export function getMockMessages(): MockMessage[] {
 /**
  * Get mock difficulty recommendations
  */
-export function getMockDifficultyRecommendations(studentId: string): MockDifficultyRecommendation[] {
+export function getMockDifficultyRecommendations(
+  studentId: string
+): MockDifficultyRecommendation[] {
   assertDevMode('getMockDifficultyRecommendations');
 
   const isEmma = studentId === 'student-mock-001';
@@ -538,7 +554,8 @@ export function getMockDifficultyRecommendations(studentId: string): MockDifficu
       currentLevel: 3,
       recommendedLevel: 4,
       reasonTitle: 'Ready for more challenge',
-      reasonDescription: 'Emma has consistently scored above 90% on fraction problems. Increasing difficulty will help her continue growing.',
+      reasonDescription:
+        'Emma has consistently scored above 90% on fraction problems. Increasing difficulty will help her continue growing.',
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     },
   ];
@@ -563,7 +580,15 @@ export interface MockAIInsight {
 
 export interface MockTimelineActivity {
   id: string;
-  type: 'lesson_started' | 'lesson_completed' | 'quiz_completed' | 'achievement_earned' | 'milestone_reached' | 'game_played' | 'practice_session' | 'assessment_completed';
+  type:
+    | 'lesson_started'
+    | 'lesson_completed'
+    | 'quiz_completed'
+    | 'achievement_earned'
+    | 'milestone_reached'
+    | 'game_played'
+    | 'practice_session'
+    | 'assessment_completed';
   title: string;
   description: string;
   subject?: string;
@@ -576,7 +601,15 @@ export interface MockTimelineActivity {
 
 export interface MockMilestone {
   id: string;
-  type: 'lesson_count' | 'streak' | 'subject_mastery' | 'achievement' | 'level_up' | 'time_goal' | 'perfect_score' | 'completion';
+  type:
+    | 'lesson_count'
+    | 'streak'
+    | 'subject_mastery'
+    | 'achievement'
+    | 'level_up'
+    | 'time_goal'
+    | 'perfect_score'
+    | 'completion';
   title: string;
   description: string;
   progress: number;
@@ -656,7 +689,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
         id: 'insight-1',
         type: 'strength',
         title: 'Math Problem-Solving Excellence',
-        description: 'Emma demonstrates strong analytical thinking in math. She consistently breaks down complex problems into smaller steps and shows above-average performance on multi-step word problems.',
+        description:
+          'Emma demonstrates strong analytical thinking in math. She consistently breaks down complex problems into smaller steps and shows above-average performance on multi-step word problems.',
         actionable: 'Consider introducing more challenging math enrichment activities',
         actionPath: '/curriculum/math/advanced',
         priority: 'medium',
@@ -668,7 +702,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
         id: 'insight-2',
         type: 'celebration',
         title: '12-Day Learning Streak!',
-        description: 'Emma has maintained consistent daily learning for 12 days in a row. This dedication is building strong study habits that will benefit her long-term academic success.',
+        description:
+          'Emma has maintained consistent daily learning for 12 days in a row. This dedication is building strong study habits that will benefit her long-term academic success.',
         priority: 'low',
         confidence: 1.0,
         generatedAt: now,
@@ -677,7 +712,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
         id: 'insight-3',
         type: 'improvement',
         title: 'Social Studies Engagement Opportunity',
-        description: 'Emma\'s engagement with Social Studies content is lower than other subjects. She spends less time on these lessons and occasionally skips optional activities.',
+        description:
+          "Emma's engagement with Social Studies content is lower than other subjects. She spends less time on these lessons and occasionally skips optional activities.",
         actionable: 'Explore interactive history games to boost engagement',
         actionPath: '/games?subject=social-studies',
         priority: 'medium',
@@ -689,7 +725,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
         id: 'insight-4',
         type: 'strength',
         title: 'Reading Comprehension Above Grade Level',
-        description: 'Emma\'s reading comprehension scores indicate she\'s performing 1-2 grade levels above her peers. She excels at inferencing and identifying main ideas.',
+        description:
+          "Emma's reading comprehension scores indicate she's performing 1-2 grade levels above her peers. She excels at inferencing and identifying main ideas.",
         priority: 'low',
         subject: 'Reading',
         confidence: 0.88,
@@ -703,7 +740,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
       id: 'insight-1',
       type: 'improvement',
       title: 'Building Math Confidence',
-      description: 'Noah sometimes hesitates on math problems even when he knows the answer. Building his confidence through positive reinforcement could help him perform better.',
+      description:
+        'Noah sometimes hesitates on math problems even when he knows the answer. Building his confidence through positive reinforcement could help him perform better.',
       actionable: 'Try the confidence-building math games',
       actionPath: '/games?subject=math&type=confidence',
       priority: 'high',
@@ -715,7 +753,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
       id: 'insight-2',
       type: 'strength',
       title: 'Strong Visual Learning',
-      description: 'Noah learns best through visual content. He shows 30% better retention when lessons include diagrams, videos, and interactive visuals.',
+      description:
+        'Noah learns best through visual content. He shows 30% better retention when lessons include diagrams, videos, and interactive visuals.',
       priority: 'medium',
       confidence: 0.91,
       generatedAt: now,
@@ -724,7 +763,8 @@ export function getMockAIInsights(studentId: string): MockAIInsight[] {
       id: 'insight-3',
       type: 'concern',
       title: 'Attention Span During Long Sessions',
-      description: 'Noah\'s performance drops significantly in sessions longer than 15 minutes. Shorter, more frequent learning sessions may be more effective.',
+      description:
+        "Noah's performance drops significantly in sessions longer than 15 minutes. Shorter, more frequent learning sessions may be more effective.",
       actionable: 'Adjust session length in learning settings',
       actionPath: '/settings?tab=learning',
       priority: 'high',
@@ -839,7 +879,9 @@ export function getMockMilestones(studentId: string): MockMilestone[] {
         value: 'Century Scholar',
         points: 500,
       },
-      estimatedCompletion: new Date(Date.now() + (isEmma ? 5 : 20) * 24 * 60 * 60 * 1000).toISOString(),
+      estimatedCompletion: new Date(
+        Date.now() + (isEmma ? 5 : 20) * 24 * 60 * 60 * 1000
+      ).toISOString(),
       isPriority: isEmma,
     },
     {
@@ -941,11 +983,41 @@ export function getMockWeeklyReport(studentId: string): MockWeeklyReportData {
           { type: 'concern', text: 'Missed 3 days of learning this week' },
         ],
     subjectBreakdown: [
-      { subject: 'Math', minutes: isEmma ? 55 : 35, lessons: isEmma ? 8 : 5, averageScore: isEmma ? 92 : 75, trend: 'up' },
-      { subject: 'Reading', minutes: isEmma ? 45 : 30, lessons: isEmma ? 6 : 4, averageScore: isEmma ? 88 : 82, trend: 'up' },
-      { subject: 'Science', minutes: isEmma ? 35 : 25, lessons: isEmma ? 4 : 3, averageScore: isEmma ? 85 : 70, trend: 'stable' },
-      { subject: 'Writing', minutes: isEmma ? 30 : 18, lessons: isEmma ? 4 : 2, averageScore: isEmma ? 90 : 72, trend: 'up' },
-      { subject: 'Social Studies', minutes: isEmma ? 20 : 12, lessons: isEmma ? 2 : 2, averageScore: isEmma ? 78 : 68, trend: 'down' },
+      {
+        subject: 'Math',
+        minutes: isEmma ? 55 : 35,
+        lessons: isEmma ? 8 : 5,
+        averageScore: isEmma ? 92 : 75,
+        trend: 'up',
+      },
+      {
+        subject: 'Reading',
+        minutes: isEmma ? 45 : 30,
+        lessons: isEmma ? 6 : 4,
+        averageScore: isEmma ? 88 : 82,
+        trend: 'up',
+      },
+      {
+        subject: 'Science',
+        minutes: isEmma ? 35 : 25,
+        lessons: isEmma ? 4 : 3,
+        averageScore: isEmma ? 85 : 70,
+        trend: 'stable',
+      },
+      {
+        subject: 'Writing',
+        minutes: isEmma ? 30 : 18,
+        lessons: isEmma ? 4 : 2,
+        averageScore: isEmma ? 90 : 72,
+        trend: 'up',
+      },
+      {
+        subject: 'Social Studies',
+        minutes: isEmma ? 20 : 12,
+        lessons: isEmma ? 2 : 2,
+        averageScore: isEmma ? 78 : 68,
+        trend: 'down',
+      },
     ],
     dailyActivity: [
       { day: 'Sunday', minutes: isEmma ? 15 : 0, lessons: isEmma ? 2 : 0 },
@@ -1173,7 +1245,10 @@ export interface MockSubjectMasteryEntry {
 /**
  * Get mock progress report data
  */
-export function getMockProgressReport(studentId: string, dateRange?: { start: string; end: string }): MockProgressReportData {
+export function getMockProgressReport(
+  studentId: string,
+  _dateRange?: { start: string; end: string }
+): MockProgressReportData {
   assertDevMode('getMockProgressReport');
 
   const isEmma = studentId === 'student-mock-001';
@@ -1189,8 +1264,12 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
     periods.push({
       label: `Week ${4 - i}`,
       score: isEmma ? 80 + Math.floor(Math.random() * 15) : 65 + Math.floor(Math.random() * 20),
-      lessonsCompleted: isEmma ? 5 + Math.floor(Math.random() * 4) : 3 + Math.floor(Math.random() * 4),
-      timeSpent: isEmma ? 120 + Math.floor(Math.random() * 60) : 80 + Math.floor(Math.random() * 40),
+      lessonsCompleted: isEmma
+        ? 5 + Math.floor(Math.random() * 4)
+        : 3 + Math.floor(Math.random() * 4),
+      timeSpent: isEmma
+        ? 120 + Math.floor(Math.random() * 60)
+        : 80 + Math.floor(Math.random() * 40),
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
     });
@@ -1291,8 +1370,15 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
             ? 'Demonstrates excellent analytical thinking and breaks down complex problems effectively'
             : 'Shows good problem-solving skills with visual aids',
           evidence: isEmma
-            ? ['Scored 95% on word problems', 'Consistently completes challenge problems', 'Helps peers with difficult concepts']
-            : ['Completes problems when given visual support', 'Shows improvement in multi-step problems'],
+            ? [
+                'Scored 95% on word problems',
+                'Consistently completes challenge problems',
+                'Helps peers with difficult concepts',
+              ]
+            : [
+                'Completes problems when given visual support',
+                'Shows improvement in multi-step problems',
+              ],
         },
         {
           skill: 'Reading Comprehension',
@@ -1307,45 +1393,59 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
             : ['Improved main idea identification', 'Enjoys reading activities'],
         },
       ],
-      weaknesses: isEmma ? [
-        {
-          skill: 'Social Studies Engagement',
-          subject: 'Social Studies',
-          score: 68,
-          trend: 'stable',
-          description: 'Shows less interest and engagement in social studies content',
-          evidence: ['Lower time spent on lessons', 'Skips optional activities', 'Requests to switch subjects'],
-        },
-      ] : [
-        {
-          skill: 'Sustained Attention',
-          subject: 'General',
-          score: 55,
-          trend: 'down',
-          description: 'Struggles with longer lessons and assessments',
-          evidence: ['Performance drops after 15 minutes', 'Frequently pauses sessions', 'Better scores on shorter quizzes'],
-        },
-        {
-          skill: 'Written Expression',
-          subject: 'Writing',
-          score: 60,
-          trend: 'stable',
-          description: 'Needs support with organizing written responses',
-          evidence: ['Inconsistent paragraph structure', 'Difficulty with transitions', 'Strong ideas but weak organization'],
-        },
-      ],
+      weaknesses: isEmma
+        ? [
+            {
+              skill: 'Social Studies Engagement',
+              subject: 'Social Studies',
+              score: 68,
+              trend: 'stable',
+              description: 'Shows less interest and engagement in social studies content',
+              evidence: [
+                'Lower time spent on lessons',
+                'Skips optional activities',
+                'Requests to switch subjects',
+              ],
+            },
+          ]
+        : [
+            {
+              skill: 'Sustained Attention',
+              subject: 'General',
+              score: 55,
+              trend: 'down',
+              description: 'Struggles with longer lessons and assessments',
+              evidence: [
+                'Performance drops after 15 minutes',
+                'Frequently pauses sessions',
+                'Better scores on shorter quizzes',
+              ],
+            },
+            {
+              skill: 'Written Expression',
+              subject: 'Writing',
+              score: 60,
+              trend: 'stable',
+              description: 'Needs support with organizing written responses',
+              evidence: [
+                'Inconsistent paragraph structure',
+                'Difficulty with transitions',
+                'Strong ideas but weak organization',
+              ],
+            },
+          ],
       recommendations: isEmma
         ? [
-          'Introduce more challenging math enrichment activities',
-          'Explore interactive history games to boost Social Studies engagement',
-          'Consider joining the advanced reading group',
-        ]
+            'Introduce more challenging math enrichment activities',
+            'Explore interactive history games to boost Social Studies engagement',
+            'Consider joining the advanced reading group',
+          ]
         : [
-          'Break lessons into 10-15 minute segments',
-          'Use graphic organizers for writing tasks',
-          'Incorporate more visual and hands-on learning activities',
-          'Celebrate small wins to build confidence',
-        ],
+            'Break lessons into 10-15 minute segments',
+            'Use graphic organizers for writing tasks',
+            'Incorporate more visual and hands-on learning activities',
+            'Celebrate small wins to build confidence',
+          ],
       learningStyle: {
         primary: isEmma ? 'Logical-Mathematical' : 'Visual-Spatial',
         secondary: isEmma ? 'Linguistic' : 'Kinesthetic',
@@ -1397,26 +1497,120 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
         sessionsThisWeek: isEmma ? 12 : 7,
       },
       dailyBreakdown: [
-        { date: '2024-01-14', day: 'Sunday', totalMinutes: isEmma ? 25 : 0, learningMinutes: isEmma ? 15 : 0, practiceMinutes: isEmma ? 8 : 0, assessmentMinutes: isEmma ? 2 : 0 },
-        { date: '2024-01-15', day: 'Monday', totalMinutes: isEmma ? 45 : 35, learningMinutes: isEmma ? 28 : 20, practiceMinutes: isEmma ? 12 : 10, assessmentMinutes: isEmma ? 5 : 5 },
-        { date: '2024-01-16', day: 'Tuesday', totalMinutes: isEmma ? 38 : 28, learningMinutes: isEmma ? 22 : 18, practiceMinutes: isEmma ? 10 : 8, assessmentMinutes: isEmma ? 6 : 2 },
-        { date: '2024-01-17', day: 'Wednesday', totalMinutes: isEmma ? 52 : 0, learningMinutes: isEmma ? 30 : 0, practiceMinutes: isEmma ? 15 : 0, assessmentMinutes: isEmma ? 7 : 0 },
-        { date: '2024-01-18', day: 'Thursday', totalMinutes: isEmma ? 35 : 32, learningMinutes: isEmma ? 20 : 20, practiceMinutes: isEmma ? 10 : 8, assessmentMinutes: isEmma ? 5 : 4 },
-        { date: '2024-01-19', day: 'Friday', totalMinutes: isEmma ? 42 : 25, learningMinutes: isEmma ? 25 : 15, practiceMinutes: isEmma ? 12 : 8, assessmentMinutes: isEmma ? 5 : 2 },
-        { date: '2024-01-20', day: 'Saturday', totalMinutes: isEmma ? 30 : 15, learningMinutes: isEmma ? 18 : 10, practiceMinutes: isEmma ? 8 : 5, assessmentMinutes: isEmma ? 4 : 0 },
+        {
+          date: '2024-01-14',
+          day: 'Sunday',
+          totalMinutes: isEmma ? 25 : 0,
+          learningMinutes: isEmma ? 15 : 0,
+          practiceMinutes: isEmma ? 8 : 0,
+          assessmentMinutes: isEmma ? 2 : 0,
+        },
+        {
+          date: '2024-01-15',
+          day: 'Monday',
+          totalMinutes: isEmma ? 45 : 35,
+          learningMinutes: isEmma ? 28 : 20,
+          practiceMinutes: isEmma ? 12 : 10,
+          assessmentMinutes: isEmma ? 5 : 5,
+        },
+        {
+          date: '2024-01-16',
+          day: 'Tuesday',
+          totalMinutes: isEmma ? 38 : 28,
+          learningMinutes: isEmma ? 22 : 18,
+          practiceMinutes: isEmma ? 10 : 8,
+          assessmentMinutes: isEmma ? 6 : 2,
+        },
+        {
+          date: '2024-01-17',
+          day: 'Wednesday',
+          totalMinutes: isEmma ? 52 : 0,
+          learningMinutes: isEmma ? 30 : 0,
+          practiceMinutes: isEmma ? 15 : 0,
+          assessmentMinutes: isEmma ? 7 : 0,
+        },
+        {
+          date: '2024-01-18',
+          day: 'Thursday',
+          totalMinutes: isEmma ? 35 : 32,
+          learningMinutes: isEmma ? 20 : 20,
+          practiceMinutes: isEmma ? 10 : 8,
+          assessmentMinutes: isEmma ? 5 : 4,
+        },
+        {
+          date: '2024-01-19',
+          day: 'Friday',
+          totalMinutes: isEmma ? 42 : 25,
+          learningMinutes: isEmma ? 25 : 15,
+          practiceMinutes: isEmma ? 12 : 8,
+          assessmentMinutes: isEmma ? 5 : 2,
+        },
+        {
+          date: '2024-01-20',
+          day: 'Saturday',
+          totalMinutes: isEmma ? 30 : 15,
+          learningMinutes: isEmma ? 18 : 10,
+          practiceMinutes: isEmma ? 8 : 5,
+          assessmentMinutes: isEmma ? 4 : 0,
+        },
       ],
       subjectBreakdown: [
-        { subject: 'Math', totalMinutes: isEmma ? 420 : 250, percentage: isEmma ? 34 : 35, trend: 'up' },
-        { subject: 'Reading', totalMinutes: isEmma ? 350 : 200, percentage: isEmma ? 28 : 28, trend: 'up' },
-        { subject: 'Science', totalMinutes: isEmma ? 230 : 150, percentage: isEmma ? 18 : 21, trend: 'stable' },
-        { subject: 'Writing', totalMinutes: isEmma ? 150 : 80, percentage: isEmma ? 12 : 11, trend: 'up' },
-        { subject: 'Social Studies', totalMinutes: isEmma ? 100 : 40, percentage: isEmma ? 8 : 5, trend: 'down' },
+        {
+          subject: 'Math',
+          totalMinutes: isEmma ? 420 : 250,
+          percentage: isEmma ? 34 : 35,
+          trend: 'up',
+        },
+        {
+          subject: 'Reading',
+          totalMinutes: isEmma ? 350 : 200,
+          percentage: isEmma ? 28 : 28,
+          trend: 'up',
+        },
+        {
+          subject: 'Science',
+          totalMinutes: isEmma ? 230 : 150,
+          percentage: isEmma ? 18 : 21,
+          trend: 'stable',
+        },
+        {
+          subject: 'Writing',
+          totalMinutes: isEmma ? 150 : 80,
+          percentage: isEmma ? 12 : 11,
+          trend: 'up',
+        },
+        {
+          subject: 'Social Studies',
+          totalMinutes: isEmma ? 100 : 40,
+          percentage: isEmma ? 8 : 5,
+          trend: 'down',
+        },
       ],
       activityBreakdown: [
-        { activity: 'Lessons', minutes: isEmma ? 625 : 360, percentage: isEmma ? 50 : 50, color: '#6366f1' },
-        { activity: 'Practice', minutes: isEmma ? 375 : 216, percentage: isEmma ? 30 : 30, color: '#a855f7' },
-        { activity: 'Assessments', minutes: isEmma ? 188 : 108, percentage: isEmma ? 15 : 15, color: '#f59e0b' },
-        { activity: 'Games', minutes: isEmma ? 62 : 36, percentage: isEmma ? 5 : 5, color: '#10b981' },
+        {
+          activity: 'Lessons',
+          minutes: isEmma ? 625 : 360,
+          percentage: isEmma ? 50 : 50,
+          color: '#6366f1',
+        },
+        {
+          activity: 'Practice',
+          minutes: isEmma ? 375 : 216,
+          percentage: isEmma ? 30 : 30,
+          color: '#a855f7',
+        },
+        {
+          activity: 'Assessments',
+          minutes: isEmma ? 188 : 108,
+          percentage: isEmma ? 15 : 15,
+          color: '#f59e0b',
+        },
+        {
+          activity: 'Games',
+          minutes: isEmma ? 62 : 36,
+          percentage: isEmma ? 5 : 5,
+          color: '#10b981',
+        },
       ],
     },
     mastery: {
@@ -1427,13 +1621,36 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
           grade: isEmma ? 'A-' : 'C+',
           trend: 'up',
           standards: [
-            { code: 'CCSS.MATH.4.NF.1', name: 'Equivalent Fractions', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 100 : 75 },
-            { code: 'CCSS.MATH.4.NF.2', name: 'Comparing Fractions', mastery: isEmma ? 'mastered' : 'developing', progress: isEmma ? 95 : 55 },
-            { code: 'CCSS.MATH.4.OA.1', name: 'Multi-Step Problems', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 78 : 48 },
+            {
+              code: 'CCSS.MATH.4.NF.1',
+              name: 'Equivalent Fractions',
+              mastery: isEmma ? 'mastered' : 'proficient',
+              progress: isEmma ? 100 : 75,
+            },
+            {
+              code: 'CCSS.MATH.4.NF.2',
+              name: 'Comparing Fractions',
+              mastery: isEmma ? 'mastered' : 'developing',
+              progress: isEmma ? 95 : 55,
+            },
+            {
+              code: 'CCSS.MATH.4.OA.1',
+              name: 'Multi-Step Problems',
+              mastery: isEmma ? 'proficient' : 'developing',
+              progress: isEmma ? 78 : 48,
+            },
           ],
           recentLessons: [
-            { title: 'Adding Fractions', score: isEmma ? 95 : 75, completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-            { title: 'Subtracting Fractions', score: isEmma ? 92 : 70, completedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+            {
+              title: 'Adding Fractions',
+              score: isEmma ? 95 : 75,
+              completedAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            },
+            {
+              title: 'Subtracting Fractions',
+              score: isEmma ? 92 : 70,
+              completedAt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+            },
           ],
           nextMilestone: { name: 'Fraction Master', progress: isEmma ? 8 : 5, target: 10 },
         },
@@ -1443,13 +1660,36 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
           grade: isEmma ? 'A' : 'B-',
           trend: 'up',
           standards: [
-            { code: 'CCSS.ELA.RI.4.1', name: 'Key Details', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 100 : 70 },
-            { code: 'CCSS.ELA.RI.4.2', name: 'Main Idea', mastery: isEmma ? 'mastered' : 'proficient', progress: isEmma ? 98 : 72 },
-            { code: 'CCSS.ELA.RI.4.3', name: 'Text Structure', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 82 : 55 },
+            {
+              code: 'CCSS.ELA.RI.4.1',
+              name: 'Key Details',
+              mastery: isEmma ? 'mastered' : 'proficient',
+              progress: isEmma ? 100 : 70,
+            },
+            {
+              code: 'CCSS.ELA.RI.4.2',
+              name: 'Main Idea',
+              mastery: isEmma ? 'mastered' : 'proficient',
+              progress: isEmma ? 98 : 72,
+            },
+            {
+              code: 'CCSS.ELA.RI.4.3',
+              name: 'Text Structure',
+              mastery: isEmma ? 'proficient' : 'developing',
+              progress: isEmma ? 82 : 55,
+            },
           ],
           recentLessons: [
-            { title: 'Chapter 5 Comprehension', score: isEmma ? 100 : 80, completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
-            { title: 'Vocabulary Review', score: isEmma ? 95 : 78, completedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+            {
+              title: 'Chapter 5 Comprehension',
+              score: isEmma ? 100 : 80,
+              completedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            },
+            {
+              title: 'Vocabulary Review',
+              score: isEmma ? 95 : 78,
+              completedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            },
           ],
           nextMilestone: { name: 'Bookworm Badge', progress: isEmma ? 18 : 10, target: 20 },
         },
@@ -1459,11 +1699,25 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
           grade: isEmma ? 'B+' : 'C',
           trend: 'stable',
           standards: [
-            { code: 'NGSS.4-LS1-1', name: 'Plant Structures', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 80 : 60 },
-            { code: 'NGSS.4-LS1-2', name: 'Animal Behavior', mastery: isEmma ? 'proficient' : 'developing', progress: isEmma ? 75 : 55 },
+            {
+              code: 'NGSS.4-LS1-1',
+              name: 'Plant Structures',
+              mastery: isEmma ? 'proficient' : 'developing',
+              progress: isEmma ? 80 : 60,
+            },
+            {
+              code: 'NGSS.4-LS1-2',
+              name: 'Animal Behavior',
+              mastery: isEmma ? 'proficient' : 'developing',
+              progress: isEmma ? 75 : 55,
+            },
           ],
           recentLessons: [
-            { title: 'Plant Life Cycles', score: isEmma ? 88 : 70, completedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+            {
+              title: 'Plant Life Cycles',
+              score: isEmma ? 88 : 70,
+              completedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            },
           ],
           nextMilestone: { name: 'Science Explorer', progress: isEmma ? 6 : 3, target: 10 },
         },
@@ -1483,7 +1737,6 @@ export function getMockProgressReport(studentId: string, dateRange?: { start: st
 import type {
   Plan,
   Subscription,
-  SubscriptionSeat,
   PaymentMethod,
   Invoice,
   BillingDetails,
@@ -1520,9 +1773,9 @@ export const MOCK_PLANS: Plan[] = [
     name: 'Basic',
     description: 'Essential learning tools for families',
     priceMonthly: 9.99,
-    priceYearly: 95.90, // ~20% discount
+    priceYearly: 95.9, // ~20% discount
     pricePerSeatMonthly: 4.99,
-    pricePerSeatYearly: 47.90,
+    pricePerSeatYearly: 47.9,
     baseSeats: 1,
     maxSeats: 5,
     modules: ['ELA', 'Math', 'Science'],
@@ -1544,9 +1797,9 @@ export const MOCK_PLANS: Plan[] = [
     name: 'Premium',
     description: 'Full access to all learning modules',
     priceMonthly: 19.99,
-    priceYearly: 191.90, // ~20% discount
+    priceYearly: 191.9, // ~20% discount
     pricePerSeatMonthly: 7.99,
-    pricePerSeatYearly: 76.70,
+    pricePerSeatYearly: 76.7,
     baseSeats: 2,
     maxSeats: 10,
     modules: ['ELA', 'Math', 'Science', 'SEL', 'Speech', 'Coding', 'Writing'],
@@ -1573,7 +1826,7 @@ export const MOCK_PLANS: Plan[] = [
     name: 'Family',
     description: 'Best value for larger families',
     priceMonthly: 29.99,
-    priceYearly: 287.90, // ~20% discount
+    priceYearly: 287.9, // ~20% discount
     pricePerSeatMonthly: 0, // Unlimited at this tier
     pricePerSeatYearly: 0,
     baseSeats: 5,
@@ -1621,7 +1874,7 @@ export function getMockSubscription(): Subscription {
     stripeSubscriptionId: 'sub_1234567890',
     stripeCustomerId: 'cus_1234567890',
     planId: 'plan-premium',
-    plan: MOCK_PLANS.find(p => p.id === 'plan-premium'),
+    plan: MOCK_PLANS.find((p) => p.id === 'plan-premium'),
     status: 'active',
     billingPeriod: 'MONTHLY',
     currentPeriodStart: periodStart.toISOString(),
@@ -1718,7 +1971,7 @@ export function getMockInvoices(): Invoice[] {
 
     invoices.push({
       id: `inv-${String(i + 1).padStart(3, '0')}`,
-      stripeInvoiceId: `in_${Math.random().toString(36).substr(2, 14)}`,
+      stripeInvoiceId: `in_${Math.random().toString(36).substring(2, 16)}`,
       date: invoiceDate.toISOString(),
       amount: 27.98,
       amountPaid: i === 0 ? 0 : 27.98,
@@ -1750,7 +2003,7 @@ export function getMockInvoices(): Invoice[] {
         },
       ],
       pdfUrl: `/api/billing/invoices/inv-${String(i + 1).padStart(3, '0')}/pdf`,
-      hostedInvoiceUrl: `https://invoice.stripe.com/i/${Math.random().toString(36).substr(2, 20)}`,
+      hostedInvoiceUrl: `https://invoice.stripe.com/i/${Math.random().toString(36).substring(2, 22)}`,
     });
   }
 
@@ -1765,7 +2018,7 @@ export function getMockBillingDetails(): BillingDetails {
 
   const subscription = getMockSubscription();
   const paymentMethods = getMockPaymentMethods();
-  const defaultPayment = paymentMethods.find(pm => pm.isDefault) || null;
+  const defaultPayment = paymentMethods.find((pm) => pm.isDefault) || null;
 
   const nextMonth = new Date();
   nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -1802,11 +2055,14 @@ export function getMockBillingDetails(): BillingDetails {
 /**
  * Get mock plan change preview
  */
-export function getMockPlanChangePreview(currentPlanId: string, newPlanId: string): PlanChangePreview {
+export function getMockPlanChangePreview(
+  currentPlanId: string,
+  newPlanId: string
+): PlanChangePreview {
   assertDevMode('getMockPlanChangePreview');
 
-  const currentPlan = MOCK_PLANS.find(p => p.id === currentPlanId) || MOCK_PLANS[2];
-  const newPlan = MOCK_PLANS.find(p => p.id === newPlanId) || MOCK_PLANS[3];
+  const currentPlan = MOCK_PLANS.find((p) => p.id === currentPlanId) || MOCK_PLANS[2];
+  const newPlan = MOCK_PLANS.find((p) => p.id === newPlanId) || MOCK_PLANS[3];
 
   const now = new Date();
   const daysLeftInPeriod = 15; // Assume 15 days left
@@ -1875,7 +2131,7 @@ export function getMockCoupon(code: string): Coupon | null {
     },
   };
 
-  return validCoupons[code.toUpperCase()] || null;
+  return validCoupons[code.toUpperCase()] ?? null;
 }
 
 /**

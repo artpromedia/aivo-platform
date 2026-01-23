@@ -1,17 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import {
-  FileText,
-  ChevronLeft,
-  Download,
-  Calendar,
-  Loader2,
-  AlertTriangle,
-  Users,
-} from 'lucide-react';
+import { FileText, ChevronLeft, Calendar, Loader2, AlertTriangle, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 // Report Components
 import {
@@ -24,17 +16,17 @@ import {
 } from '@/components/reports';
 
 // Hooks
+import { isDevMode } from '@/lib/api';
 import {
   useParentProfile,
   useProgressReport,
   useGenerateReportPDF,
   useChildrenEnhanced,
 } from '@/lib/hooks';
-import { isDevMode } from '@/lib/mock-data';
 
 // Child selector component for reports
 interface ChildSelectorProps {
-  children: Array<{
+  childrenList: {
     id: string;
     name: string;
     firstName?: string;
@@ -42,7 +34,7 @@ interface ChildSelectorProps {
     grade?: string;
     gradeLevel?: string;
     avatar?: string;
-  }>;
+  }[];
   selected: {
     id: string;
     name: string;
@@ -54,20 +46,22 @@ interface ChildSelectorProps {
   onChange: (child: { id: string; name: string }) => void;
 }
 
-function ChildSelector({ children, selected, onChange }: ChildSelectorProps) {
-  if (children.length === 0) {
+function ChildSelector({ childrenList, selected, onChange }: ChildSelectorProps) {
+  if (childrenList.length === 0) {
     return null;
   }
 
-  if (children.length === 1) {
+  if (childrenList.length === 1) {
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
         <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
-          {children[0].firstName?.[0] || children[0].name[0]}
+          {childrenList[0].firstName?.[0] || childrenList[0].name[0]}
         </div>
         <div>
-          <p className="font-medium text-gray-900">{children[0].name}</p>
-          <p className="text-xs text-gray-500">Grade {children[0].grade || children[0].gradeLevel}</p>
+          <p className="font-medium text-gray-900">{childrenList[0].name}</p>
+          <p className="text-xs text-gray-500">
+            Grade {childrenList[0].grade || childrenList[0].gradeLevel}
+          </p>
         </div>
       </div>
     );
@@ -78,15 +72,17 @@ function ChildSelector({ children, selected, onChange }: ChildSelectorProps) {
       <select
         value={selected?.id || ''}
         onChange={(e) => {
-          const child = children.find(c => c.id === e.target.value);
+          const child = childrenList.find((c) => c.id === e.target.value);
           if (child) {
             onChange({ id: child.id, name: child.name });
           }
         }}
         className="appearance-none px-4 py-2 pr-10 border-2 border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium text-gray-900 cursor-pointer"
       >
-        <option value="" disabled>Select a child</option>
-        {children.map((child) => (
+        <option value="" disabled>
+          Select a child
+        </option>
+        {childrenList.map((child) => (
           <option key={child.id} value={child.id}>
             {child.name} (Grade {child.grade || child.gradeLevel})
           </option>
@@ -126,12 +122,13 @@ function getDateRangeFromPreset(preset: DateRangePreset): { start: string; end: 
         start: format(startOfMonth(today), 'yyyy-MM-dd'),
         end: format(endOfMonth(today), 'yyyy-MM-dd'),
       };
-    case 'lastMonth':
+    case 'lastMonth': {
       const lastMonth = subMonths(today, 1);
       return {
         start: format(startOfMonth(lastMonth), 'yyyy-MM-dd'),
         end: format(endOfMonth(lastMonth), 'yyyy-MM-dd'),
       };
+    }
     default:
       return {
         start: format(subDays(today, 30), 'yyyy-MM-dd'),
@@ -152,10 +149,11 @@ export default function ReportsPage() {
   // Data hooks
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
   const { data: enhancedChildren } = useChildrenEnhanced();
-  const { data: reportData, isLoading: reportLoading, refetch: refetchReport } = useProgressReport(
-    selectedChild?.id || null,
-    dateRange
-  );
+  const {
+    data: reportData,
+    isLoading: reportLoading,
+    refetch: refetchReport,
+  } = useProgressReport(selectedChild?.id || null, dateRange);
 
   // PDF export mutation
   const generatePDF = useGenerateReportPDF();
@@ -195,25 +193,28 @@ export default function ReportsPage() {
   };
 
   // Merge children data
-  const children = enhancedChildren?.map(child => ({
-    id: child.id,
-    name: child.name,
-    firstName: child.firstName,
-    lastName: child.lastName,
-    grade: child.gradeLevel,
-    gradeLevel: child.gradeLevel,
-    avatar: child.avatar,
-  })) || profile?.students?.map(s => ({
-    id: s.id,
-    name: s.name || `${s.firstName} ${s.lastName}`,
-    firstName: s.firstName,
-    lastName: s.lastName,
-    grade: s.grade,
-    gradeLevel: s.grade,
-    avatar: s.avatar,
-  })) || [];
+  const children =
+    enhancedChildren?.map((child) => ({
+      id: child.id,
+      name: child.name,
+      firstName: child.firstName,
+      lastName: child.lastName,
+      grade: child.gradeLevel,
+      gradeLevel: child.gradeLevel,
+      avatar: child.avatar,
+    })) ||
+    profile?.students?.map((s) => ({
+      id: s.id,
+      name: s.name || `${s.firstName} ${s.lastName}`,
+      firstName: s.firstName,
+      lastName: s.lastName,
+      grade: s.grade,
+      gradeLevel: s.grade,
+      avatar: s.avatar,
+    })) ||
+    [];
 
-  const selectedChildData = children.find(c => c.id === selectedChild?.id) || null;
+  const selectedChildData = children.find((c) => c.id === selectedChild?.id) || null;
 
   // Loading state
   if (profileLoading) {
@@ -242,7 +243,9 @@ export default function ReportsPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to load reports</h2>
               <p className="text-gray-500 mb-4">Please try refreshing the page or sign in again.</p>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  window.location.reload();
+                }}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
               >
                 Refresh Page
@@ -261,7 +264,9 @@ export default function ReportsPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => {
+                router.push('/dashboard');
+              }}
               className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
               aria-label="Back to Dashboard"
             >
@@ -280,7 +285,7 @@ export default function ReportsPage() {
 
           <div className="flex items-center gap-4">
             <ChildSelector
-              children={children}
+              childrenList={children}
               selected={selectedChildData}
               onChange={setSelectedChild}
             />
@@ -302,14 +307,14 @@ export default function ReportsPage() {
           <div className="flex flex-wrap items-end gap-4">
             {/* Preset Buttons */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Report Period
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Report Period</label>
               <div className="flex flex-wrap gap-2">
                 {dateRangePresets.map((preset) => (
                   <button
                     key={preset.key}
-                    onClick={() => setDateRangePreset(preset.key)}
+                    onClick={() => {
+                      setDateRangePreset(preset.key);
+                    }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       dateRangePreset === preset.key
                         ? 'bg-indigo-600 text-white'
@@ -326,26 +331,26 @@ export default function ReportsPage() {
             {showCustomDates && (
               <div className="flex items-center gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                   <div className="relative">
                     <input
                       type="date"
                       value={dateRange.start}
-                      onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                      onChange={(e) => {
+                        setDateRange({ ...dateRange, start: e.target.value });
+                      }}
                       className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                   <input
                     type="date"
                     value={dateRange.end}
-                    onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                    onChange={(e) => {
+                      setDateRange({ ...dateRange, end: e.target.value });
+                    }}
                     className="px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
@@ -385,8 +390,8 @@ export default function ReportsPage() {
               </span>
               {selectedChild && (
                 <>
-                  {' '}for{' '}
-                  <span className="font-medium text-indigo-600">{selectedChild.name}</span>
+                  {' '}
+                  for <span className="font-medium text-indigo-600">{selectedChild.name}</span>
                 </>
               )}
             </p>
@@ -407,10 +412,7 @@ export default function ReportsPage() {
         {reportData && !reportLoading && (
           <div className="space-y-8">
             {/* Detailed Progress */}
-            <DetailedProgressReport
-              data={reportData.progress}
-              childName={selectedChild?.name}
-            />
+            <DetailedProgressReport data={reportData.progress} childName={selectedChild?.name} />
 
             {/* Assessment History */}
             <AssessmentHistory data={reportData.assessments} />
@@ -432,7 +434,8 @@ export default function ReportsPage() {
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-700 mb-2">No Report Generated</h2>
             <p className="text-gray-500 mb-6">
-              Select a date range and click "Generate Report" to see {selectedChild.name}'s progress.
+              Select a date range and click &quot;Generate Report&quot; to see {selectedChild.name}
+              &apos;s progress.
             </p>
             <button
               onClick={handleGenerateReport}

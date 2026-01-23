@@ -7,9 +7,6 @@
 
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
   BookOpenCheck,
@@ -26,13 +23,13 @@ import {
   PenTool,
   Globe,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
-import { api } from '@/lib/api';
-import {
-  isDevMode,
-  getMockHomeworkSessions,
-  type MockHomeworkSession,
-} from '@/lib/mock-data';
+import { QueryErrorDisplay } from '@/components/error-boundary';
+import { HomeworkPageSkeleton } from '@/components/skeletons';
+import { useHomeworkSessions } from '@/hooks';
+import type { HomeworkSession } from '@/lib/api/parent.api';
 
 const subjectIcons: Record<string, React.ReactNode> = {
   Math: <Calculator className="w-5 h-5" />,
@@ -55,29 +52,12 @@ export default function HomeworkPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'in-progress' | 'completed'>('all');
   const [filterSubject, setFilterSubject] = useState<string>('all');
-  const [selectedSession, setSelectedSession] = useState<MockHomeworkSession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<HomeworkSession | null>(null);
 
-  // Mock student ID - in real app, this would come from context or URL
+  // TODO: Get from auth context or URL params
   const studentId = 'student-1';
 
-  const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['homework-sessions', studentId],
-    queryFn: async () => {
-      try {
-        const data = await api.get<MockHomeworkSession[]>(
-          `/parent/homework/students/${studentId}`
-        );
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock homework sessions data');
-          return getMockHomeworkSessions(studentId);
-        }
-        throw error;
-      }
-    },
-    retry: isDevMode() ? 0 : 3,
-  });
+  const { data: sessions = [], isLoading, error, refetch } = useHomeworkSessions(studentId);
 
   // Filter sessions
   const filteredSessions = sessions.filter((session) => {
@@ -105,7 +85,9 @@ export default function HomeworkPage() {
     return (
       <SessionDetail
         session={selectedSession}
-        onBack={() => setSelectedSession(null)}
+        onBack={() => {
+          setSelectedSession(null);
+        }}
       />
     );
   }
@@ -118,7 +100,9 @@ export default function HomeworkPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  router.push('/dashboard');
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -180,7 +164,9 @@ export default function HomeworkPage() {
                 type="text"
                 placeholder="Search sessions..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
@@ -188,7 +174,9 @@ export default function HomeworkPage() {
             {/* Status Filter */}
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as typeof filterStatus)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as typeof filterStatus);
+              }}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
@@ -199,7 +187,9 @@ export default function HomeworkPage() {
             {/* Subject Filter */}
             <select
               value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
+              onChange={(e) => {
+                setFilterSubject(e.target.value);
+              }}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">All Subjects</option>
@@ -214,9 +204,9 @@ export default function HomeworkPage() {
 
         {/* Sessions List */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
-          </div>
+          <HomeworkPageSkeleton />
+        ) : error ? (
+          <QueryErrorDisplay error={error} onRetry={() => void refetch()} />
         ) : filteredSessions.length === 0 ? (
           <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-100 text-center">
             <BookOpenCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -233,19 +223,14 @@ export default function HomeworkPage() {
               <SessionCard
                 key={session.id}
                 session={session}
-                onClick={() => setSelectedSession(session)}
+                onClick={() => {
+                  setSelectedSession(session);
+                }}
               />
             ))}
           </div>
         )}
       </main>
-
-      {/* DEV Mode Indicator */}
-      {isDevMode() && (
-        <div className="fixed bottom-4 right-4 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium">
-          DEV MODE - Mock Data
-        </div>
-      )}
     </div>
   );
 }
@@ -254,8 +239,8 @@ function SessionCard({
   session,
   onClick,
 }: {
-  session: MockHomeworkSession;
-  onClick: () => void;
+  readonly session: HomeworkSession;
+  readonly onClick: () => void;
 }) {
   const isCompleted = !!session.completedAt;
   const colors = subjectColors[session.subject] || {
@@ -271,14 +256,18 @@ function SessionCard({
     >
       <div className="flex items-start gap-4">
         {/* Subject Icon */}
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors.bg} ${colors.text}`}>
+        <div
+          className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors.bg} ${colors.text}`}
+        >
           {subjectIcons[session.subject] || <BookOpenCheck className="w-5 h-5" />}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors.bg} ${colors.text}`}>
+            <span
+              className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors.bg} ${colors.text}`}
+            >
               {session.subject}
             </span>
             {isCompleted ? (
@@ -326,8 +315,8 @@ function SessionDetail({
   session,
   onBack,
 }: {
-  session: MockHomeworkSession;
-  onBack: () => void;
+  readonly session: HomeworkSession;
+  readonly onBack: () => void;
 }) {
   const isCompleted = !!session.completedAt;
   const colors = subjectColors[session.subject] || {
@@ -355,7 +344,8 @@ function SessionDetail({
     },
     {
       role: 'aivo',
-      message: "Great! Let's approach this step by step. First, let me guide you through the key concepts...",
+      message:
+        "Great! Let's approach this step by step. First, let me guide you through the key concepts...",
       time: new Date(new Date(session.startedAt).getTime() + 180000).toISOString(),
     },
   ];
@@ -384,7 +374,9 @@ function SessionDetail({
         {/* Session Info Card */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-start gap-4">
-            <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${colors.bg} ${colors.text}`}>
+            <div
+              className={`w-16 h-16 rounded-xl flex items-center justify-center ${colors.bg} ${colors.text}`}
+            >
               {subjectIcons[session.subject] || <BookOpenCheck className="w-8 h-8" />}
             </div>
             <div className="flex-1">
