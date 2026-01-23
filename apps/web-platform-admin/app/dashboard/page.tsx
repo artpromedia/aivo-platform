@@ -18,6 +18,7 @@ import { AuditLogViewer } from './components/audit-log-viewer';
 import { IntegrationStatus } from './components/integration-status';
 import { LicenseManagement } from './components/license-management';
 import { MetricCards } from './components/metric-cards';
+import { PlatformAlertsClient } from './components/platform-alerts';
 import { QuickActions } from './components/quick-actions';
 import { RecentActivity } from './components/recent-activity';
 import { SystemHealth } from './components/system-health';
@@ -99,7 +100,9 @@ export default function DashboardPage() {
       </Suspense>
 
       {/* Platform Alerts Banner */}
-      <PlatformAlerts />
+      <Suspense fallback={<AlertsSkeleton />}>
+        <PlatformAlertsClient />
+      </Suspense>
     </div>
   );
 }
@@ -123,67 +126,11 @@ function CardSkeleton({ title }: { title: string }) {
   );
 }
 
-function PlatformAlerts() {
-  // In production, this would fetch from API
-  const alerts = [
-    {
-      id: '1',
-      type: 'warning' as const,
-      message: '3 tenant licenses expiring within 30 days',
-      action: 'View Licenses',
-    },
-    {
-      id: '2',
-      type: 'info' as const,
-      message: 'New AI model v4.0 available for deployment',
-      action: 'View Details',
-    },
-  ];
-
-  if (alerts.length === 0) return null;
-
+function AlertsSkeleton() {
   return (
     <div className="space-y-2">
-      {alerts.map((alert) => (
-        <div
-          key={alert.id}
-          className={`flex items-center justify-between rounded-lg p-4 ${
-            alert.type === 'warning'
-              ? 'bg-amber-50 border border-amber-200'
-              : alert.type === 'info'
-                ? 'bg-blue-50 border border-blue-200'
-                : 'bg-red-50 border border-red-200'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl">
-              {alert.type === 'warning' ? '⚠️' : alert.type === 'info' ? 'ℹ️' : '🚨'}
-            </span>
-            <span
-              className={`text-sm font-medium ${
-                alert.type === 'warning'
-                  ? 'text-amber-800'
-                  : alert.type === 'info'
-                    ? 'text-blue-800'
-                    : 'text-red-800'
-              }`}
-            >
-              {alert.message}
-            </span>
-          </div>
-          <button
-            className={`text-sm font-medium hover:underline ${
-              alert.type === 'warning'
-                ? 'text-amber-700'
-                : alert.type === 'info'
-                  ? 'text-blue-700'
-                  : 'text-red-700'
-            }`}
-          >
-            {alert.action} →
-          </button>
-        </div>
-      ))}
+      <div className="h-14 animate-pulse rounded-lg bg-gray-200" />
+      <div className="h-14 animate-pulse rounded-lg bg-gray-200" />
     </div>
   );
 }

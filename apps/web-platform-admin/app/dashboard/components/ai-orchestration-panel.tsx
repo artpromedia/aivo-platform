@@ -2,29 +2,28 @@
  * AI Orchestration Panel Component
  *
  * Shows multi-provider AI status, costs, latency, and allows manual failover.
- * Inspired by aivo-pro/apps/super-admin/src/pages/Dashboard.tsx
+ * Now connected to real API endpoints via React Query hooks.
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Cpu,
-  Activity,
   DollarSign,
   Clock,
   AlertTriangle,
-  CheckCircle,
   RefreshCw,
   Settings,
-  TrendingUp,
   Zap,
   Server,
   ToggleLeft,
   ToggleRight,
 } from 'lucide-react';
+import { useAIProviders, useOrchestrationSummary, useSwitchPrimaryProvider } from '@/hooks/use-admin-data';
+import type { AIProvider as APIProvider } from '@/lib/api/orchestration.api';
 
-interface AIProvider {
+interface DisplayProvider {
   id: string;
   name: string;
   status: 'active' | 'standby' | 'degraded' | 'offline';
@@ -37,89 +36,60 @@ interface AIProvider {
   lastHealthCheck: string;
 }
 
-interface AIOrchestrationPanelProps {
-  providers?: AIProvider[];
-  totalRequestsToday?: number;
-  totalCostToday?: number;
-  onSwitchPrimary?: (providerId: string) => void;
-  onRefresh?: () => void;
+// Transform API provider to display provider
+function toDisplayProvider(provider: APIProvider): DisplayProvider {
+  return {
+    id: provider.id,
+    name: provider.displayName || provider.name,
+    status: provider.status,
+    requestsToday: provider.requestsToday,
+    costToday: provider.costToday,
+    avgLatency: provider.avgLatencyMs,
+    errorRate: provider.errorRate,
+    isPrimary: provider.isPrimary,
+    models: provider.supportedModels || [],
+    lastHealthCheck: provider.lastHealthCheck,
+  };
 }
 
-const mockProviders: AIProvider[] = [
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    status: 'active',
-    requestsToday: 1_245_832,
-    costToday: 2847.50,
-    avgLatency: 245,
-    errorRate: 0.02,
-    isPrimary: true,
-    models: ['Claude 3.5 Sonnet', 'Claude 3 Haiku'],
-    lastHealthCheck: new Date(Date.now() - 30000).toISOString(),
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    status: 'standby',
-    requestsToday: 156_420,
-    costToday: 892.30,
-    avgLatency: 312,
-    errorRate: 0.05,
-    isPrimary: false,
-    models: ['GPT-4o', 'GPT-4o-mini'],
-    lastHealthCheck: new Date(Date.now() - 30000).toISOString(),
-  },
-  {
-    id: 'google',
-    name: 'Google AI',
-    status: 'standby',
-    requestsToday: 89_234,
-    costToday: 345.80,
-    avgLatency: 278,
-    errorRate: 0.03,
-    isPrimary: false,
-    models: ['Gemini Pro', 'Gemini Flash'],
-    lastHealthCheck: new Date(Date.now() - 30000).toISOString(),
-  },
-  {
-    id: 'meta',
-    name: 'Meta AI',
-    status: 'degraded',
-    requestsToday: 45_123,
-    costToday: 156.20,
-    avgLatency: 456,
-    errorRate: 0.12,
-    isPrimary: false,
-    models: ['Llama 3.1 70B'],
-    lastHealthCheck: new Date(Date.now() - 30000).toISOString(),
-  },
-];
-
-export function AIOrchestrationPanel({
-  providers = mockProviders,
-  totalRequestsToday = 2_847_123,
-  totalCostToday = 4_241.80,
-  onSwitchPrimary,
-  onRefresh,
-}: AIOrchestrationPanelProps) {
+export function AIOrchestrationPanel() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+
+  // Fetch real data from API
+  const { 
+    data: providersData, 
+    isLoading: providersLoading, 
+    error: providersError,
+    refetch: refetchProviders 
+  } = useAIProviders();
+  const { 
+    data: summaryData, 
+    isLoading: summaryLoading,
+    refetch: refetchSummary 
+  } = useOrchestrationSummary();
+  const switchPrimaryMutation = useSwitchPrimaryProvider();
+
+  const providers: DisplayProvider[] = providersData?.map(toDisplayProvider) ?? [];
+  const totalRequestsToday = summaryData?.totalRequestsToday ?? 0;
+  const totalCostToday = summaryData?.totalCostToday ?? 0;
+
+  const isLoading = providersLoading || summaryLoading;
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await onRefresh?.();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    await Promise.all([refetchProviders(), refetchSummary()]);
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   const handleSwitchPrimary = (providerId: string) => {
-    if (confirm(`Switch primary AI provider to ${providers.find(p => p.id === providerId)?.name}?`)) {
-      onSwitchPrimary?.(providerId);
+    const providerName = providers.find(p => p.id === providerId)?.name;
+    if (confirm(`Switch primary AI provider to ${providerName}?`)) {
+      switchPrimaryMutation.mutate({ providerId: providerId as 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'META' });
     }
   };
 
-  const getStatusColor = (status: AIProvider['status']) => {
+  const getStatusColor = (status: DisplayProvider['status']) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-700';
       case 'standby': return 'bg-blue-100 text-blue-700';
@@ -128,7 +98,7 @@ export function AIOrchestrationPanel({
     }
   };
 
-  const getStatusDot = (status: AIProvider['status']) => {
+  const getStatusDot = (status: DisplayProvider['status']) => {
     switch (status) {
       case 'active': return 'bg-green-500';
       case 'standby': return 'bg-blue-500';
@@ -145,6 +115,29 @@ export function AIOrchestrationPanel({
 
   const primaryProvider = providers.find(p => p.isPrimary);
   const activeProviders = providers.filter(p => p.status !== 'offline').length;
+
+  // Error state
+  if (providersError) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <h3 className="font-semibold text-red-800">Failed to load AI providers</h3>
+            <p className="text-sm text-red-600">
+              {providersError instanceof Error ? providersError.message : 'Unable to connect to orchestration service'}
+            </p>
+          </div>
+          <button
+            onClick={() => handleRefresh()}
+            className="ml-auto rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm">

@@ -2,14 +2,19 @@
  * Audit Log Viewer Component
  *
  * View and filter platform-wide audit logs.
- * Based on AuditTrail from aivo-agentic-ai-platform.
+ * Now connected to real API endpoints via React Query hooks.
  */
 
 'use client';
 
 import * as React from 'react';
+import { useAuditLogs } from '@/hooks/use-admin-data';
+import type { AuditLogEntry as APIAuditLogEntry, AuditFilters } from '@/lib/api/audit.api';
 
-interface AuditLogEntry {
+type AuditCategory = 'auth' | 'data' | 'config' | 'admin' | 'api' | 'security';
+type AuditStatus = 'success' | 'failure' | 'warning';
+
+interface DisplayAuditLog {
   id: string;
   timestamp: string;
   actor: {
@@ -19,84 +24,34 @@ interface AuditLogEntry {
     tenant?: string;
   };
   action: string;
-  category: 'auth' | 'data' | 'config' | 'admin' | 'api' | 'security';
+  category: AuditCategory;
   resource: string;
   details: string;
   ipAddress: string;
-  status: 'success' | 'failure' | 'warning';
+  status: AuditStatus;
 }
 
-// Mock data
-const mockLogs: AuditLogEntry[] = [
-  {
-    id: '1',
-    timestamp: '2026-01-10T14:32:15Z',
-    actor: { id: 'u1', name: 'Admin User', role: 'platform_admin' },
-    action: 'model.deploy',
-    category: 'admin',
-    resource: 'AI Model: Tutor Core v3.2.1',
-    details: 'Deployed model to production environment',
-    ipAddress: '10.0.1.45',
-    status: 'success',
-  },
-  {
-    id: '2',
-    timestamp: '2026-01-10T14:28:00Z',
-    actor: { id: 'u2', name: 'Sarah Johnson', role: 'tenant_admin', tenant: 'Springfield SD' },
-    action: 'user.create',
-    category: 'data',
-    resource: 'User: teacher@springfield.edu',
-    details: 'Created new teacher account',
-    ipAddress: '192.168.1.100',
-    status: 'success',
-  },
-  {
-    id: '3',
-    timestamp: '2026-01-10T14:15:22Z',
-    actor: { id: 'sys', name: 'System', role: 'system' },
-    action: 'backup.complete',
-    category: 'admin',
-    resource: 'Database: primary',
-    details: 'Daily backup completed successfully',
-    ipAddress: '10.0.0.1',
-    status: 'success',
-  },
-  {
-    id: '4',
-    timestamp: '2026-01-10T13:45:00Z',
-    actor: { id: 'u3', name: 'Unknown', role: 'anonymous' },
-    action: 'auth.login_failed',
-    category: 'security',
-    resource: 'Account: admin@company.com',
-    details: 'Failed login attempt (3rd attempt)',
-    ipAddress: '45.33.22.11',
-    status: 'failure',
-  },
-  {
-    id: '5',
-    timestamp: '2026-01-10T13:30:00Z',
-    actor: { id: 'u4', name: 'Mike Chen', role: 'platform_admin' },
-    action: 'config.update',
-    category: 'config',
-    resource: 'Feature Flag: new_dashboard',
-    details: 'Enabled new dashboard for 25% of users',
-    ipAddress: '10.0.1.50',
-    status: 'success',
-  },
-  {
-    id: '6',
-    timestamp: '2026-01-10T12:00:00Z',
-    actor: { id: 'api', name: 'API Client', role: 'api_service', tenant: 'Riverside Academy' },
-    action: 'api.rate_limit',
-    category: 'api',
-    resource: 'Endpoint: /v2/analytics',
-    details: 'Rate limit exceeded (1000 req/min)',
-    ipAddress: '192.168.2.50',
-    status: 'warning',
-  },
-];
+// Transform API log to display log
+function toDisplayLog(log: APIAuditLogEntry): DisplayAuditLog {
+  return {
+    id: log.id,
+    timestamp: log.timestamp,
+    actor: {
+      id: log.actor.id,
+      name: log.actor.name,
+      role: log.actor.role,
+      tenant: log.actor.tenantName,
+    },
+    action: log.action,
+    category: (log.category as AuditCategory) || 'data',
+    resource: `${log.resourceType}: ${log.resourceId}`,
+    details: log.details || '',
+    ipAddress: log.metadata?.ipAddress || 'Unknown',
+    status: log.severity === 'critical' ? 'failure' : log.severity === 'warning' ? 'warning' : 'success',
+  };
+}
 
-const categoryColors = {
+const categoryColors: Record<AuditCategory, string> = {
   auth: 'bg-blue-100 text-blue-700',
   data: 'bg-green-100 text-green-700',
   config: 'bg-purple-100 text-purple-700',
@@ -105,7 +60,7 @@ const categoryColors = {
   security: 'bg-red-100 text-red-700',
 };
 
-const categoryIcons = {
+const categoryIcons: Record<AuditCategory, string> = {
   auth: '🔐',
   data: '📊',
   config: '⚙️',
@@ -114,36 +69,66 @@ const categoryIcons = {
   security: '🛡️',
 };
 
-const statusIcons = {
+const statusIcons: Record<AuditStatus, string> = {
   success: '✅',
   failure: '❌',
   warning: '⚠️',
 };
 
 export function AuditLogViewer() {
-  const [logs] = React.useState<AuditLogEntry[]>(mockLogs);
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = React.useState<AuditCategory | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
-
-  const filteredLogs = React.useMemo(() => {
-    let result = logs;
+  
+  // Build filters for API call
+  const filters: AuditFilters = React.useMemo(() => {
+    const f: AuditFilters = {};
     if (selectedCategory) {
-      result = result.filter((log) => log.category === selectedCategory);
+      // Map category to resource type if needed
+      f.resourceType = selectedCategory;
     }
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (log) =>
-          log.action.toLowerCase().includes(query) ||
-          log.resource.toLowerCase().includes(query) ||
-          log.actor.name.toLowerCase().includes(query) ||
-          log.details.toLowerCase().includes(query)
-      );
+      f.search = searchQuery;
     }
-    return result;
-  }, [logs, selectedCategory, searchQuery]);
+    return f;
+  }, [selectedCategory, searchQuery]);
 
-  const categories = ['auth', 'data', 'config', 'admin', 'api', 'security'] as const;
+  // Fetch real data from API
+  const { 
+    data: logsData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useAuditLogs(filters);
+
+  const logs: DisplayAuditLog[] = React.useMemo(() => {
+    if (!logsData?.data) return [];
+    return logsData.data.map(toDisplayLog);
+  }, [logsData]);
+
+  const categories: AuditCategory[] = ['auth', 'data', 'config', 'admin', 'api', 'security'];
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <h3 className="font-semibold text-red-800">Failed to load audit logs</h3>
+            <p className="text-sm text-red-600">
+              {error instanceof Error ? error.message : 'Unable to connect to audit service'}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="ml-auto rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
@@ -215,39 +200,21 @@ export function AuditLogViewer() {
 
       {/* Log Entries */}
       <div className="divide-y divide-gray-100">
-        {filteredLogs.map((log) => (
-          <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 flex-1">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${categoryColors[log.category]}`}>
-                  {categoryIcons[log.category]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-lg">{statusIcons[log.status]}</span>
-                    <span className="font-medium text-gray-900">{log.action}</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${categoryColors[log.category]}`}>
-                      {log.category}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">{log.resource}</p>
-                  <p className="text-sm text-gray-500">{log.details}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                    <span>👤 {log.actor.name}</span>
-                    {log.actor.tenant && <span>🏢 {log.actor.tenant}</span>}
-                    <span>🌐 {log.ipAddress}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-right text-sm text-gray-500 whitespace-nowrap">
-                {formatTimestamp(log.timestamp)}
-              </div>
-            </div>
-          </div>
-        ))}
+        {isLoading ? (
+          <>
+            <AuditLogSkeleton />
+            <AuditLogSkeleton />
+            <AuditLogSkeleton />
+            <AuditLogSkeleton />
+          </>
+        ) : (
+          logs.map((log) => (
+            <AuditLogRow key={log.id} log={log} />
+          ))
+        )}
       </div>
 
-      {filteredLogs.length === 0 && (
+      {!isLoading && logs.length === 0 && (
         <div className="p-8 text-center text-gray-500">
           No logs match the current filter.
         </div>
@@ -282,6 +249,69 @@ function formatTimestamp(timestamp: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function AuditLogRow({ log }: { log: DisplayAuditLog }) {
+  const catColor = categoryColors[log.category] || 'bg-gray-100 text-gray-700';
+  const catIcon = categoryIcons[log.category] || '📋';
+  const statIcon = statusIcons[log.status] || '✅';
+
+  return (
+    <div className="p-4 hover:bg-gray-50 transition-colors">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 flex-1">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${catColor}`}>
+            {catIcon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-lg">{statIcon}</span>
+              <span className="font-medium text-gray-900">{log.action}</span>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${catColor}`}>
+                {log.category}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">{log.resource}</p>
+            <p className="text-sm text-gray-500">{log.details}</p>
+            <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+              <span>👤 {log.actor.name}</span>
+              {log.actor.tenant && <span>🏢 {log.actor.tenant}</span>}
+              <span>🌐 {log.ipAddress}</span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right text-sm text-gray-500 whitespace-nowrap">
+          {formatTimestamp(log.timestamp)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditLogSkeleton() {
+  return (
+    <div className="p-4 animate-pulse">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="h-10 w-10 rounded-lg bg-gray-200" />
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-5 w-5 rounded bg-gray-200" />
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="h-4 w-12 rounded bg-gray-200" />
+            </div>
+            <div className="h-4 w-48 rounded bg-gray-200 mb-1" />
+            <div className="h-3 w-64 rounded bg-gray-200 mb-2" />
+            <div className="flex items-center gap-4">
+              <div className="h-3 w-20 rounded bg-gray-200" />
+              <div className="h-3 w-24 rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+        <div className="h-4 w-16 rounded bg-gray-200" />
+      </div>
+    </div>
+  );
 }
 
 export default AuditLogViewer;

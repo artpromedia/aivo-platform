@@ -84,15 +84,11 @@ export function getPeriodDateRange(period: DashboardPeriod): PeriodDateRange {
  */
 function logQueryTiming(queryName: string, startTime: number): void {
   const duration = Date.now() - startTime;
-  metrics.histogram(`analytics.dashboard.query.${queryName}.duration_ms`, duration);
+  // Use database histogram for query timing
+  metrics.database.queryDuration.observe({ query: queryName, operation: 'dashboard' }, duration / 1000);
 
   if (duration > SLOW_QUERY_THRESHOLD_MS) {
-    logger.warn('Slow dashboard query detected', {
-      query: queryName,
-      durationMs: duration,
-      threshold: SLOW_QUERY_THRESHOLD_MS,
-    });
-    metrics.increment('analytics.dashboard.slow_query');
+    logger.warn({ query: queryName, durationMs: duration, threshold: SLOW_QUERY_THRESHOLD_MS }, 'Slow dashboard query detected');
   }
 }
 
@@ -152,7 +148,7 @@ export class DashboardRepository {
       logQueryTiming('getClassMetrics', startTime);
       return results;
     } catch (error) {
-      logger.error('Failed to get class metrics', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get class metrics');
       throw error;
     }
   }
@@ -200,7 +196,7 @@ export class DashboardRepository {
       logQueryTiming('getAggregateStats', startTime);
       return { totalStudents, averageMastery, iepStudents, atRiskStudents };
     } catch (error) {
-      logger.error('Failed to get aggregate stats', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get aggregate stats');
       throw error;
     }
   }
@@ -258,7 +254,7 @@ export class DashboardRepository {
       logQueryTiming('getAtRiskStudents', startTime);
       return results;
     } catch (error) {
-      logger.error('Failed to get at-risk students', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get at-risk students');
       throw error;
     }
   }
@@ -329,7 +325,7 @@ export class DashboardRepository {
       logQueryTiming('getIEPGoals', startTime);
       return results;
     } catch (error) {
-      logger.error('Failed to get IEP goals', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get IEP goals');
       throw error;
     }
   }
@@ -421,7 +417,7 @@ export class DashboardRepository {
       logQueryTiming('getRecentActivity', startTime);
       return results;
     } catch (error) {
-      logger.error('Failed to get recent activity', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get recent activity');
       throw error;
     }
   }
@@ -540,7 +536,7 @@ export class DashboardRepository {
       logQueryTiming('getUpcomingItems', startTime);
       return results;
     } catch (error) {
-      logger.error('Failed to get upcoming items', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to get upcoming items');
       throw error;
     }
   }
@@ -565,7 +561,7 @@ export class DashboardRepository {
       logQueryTiming('getTeacherContactHistory', startTime);
       return contact?.contactDate ?? null;
     } catch (error) {
-      logger.error('Failed to get teacher contact history', { error, teacherId, learnerId });
+      logger.error({ err: error, teacherId, learnerId }, 'Failed to get teacher contact history');
       throw error;
     }
   }

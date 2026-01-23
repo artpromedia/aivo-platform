@@ -183,7 +183,7 @@ async function getCachedOrCompute<T>(
   try {
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-      metrics.increment('analytics.dashboard.cache.hit');
+      // Cache hit - no increment method, just continue
       const ttl = await redisClient.ttl(cacheKey);
       return {
         data: JSON.parse(cached) as T,
@@ -192,20 +192,21 @@ async function getCachedOrCompute<T>(
       };
     }
   } catch (error) {
-    logger.warn('Cache read failed', { error, cacheKey });
+    logger.warn({ err: error, cacheKey }, 'Cache read failed');
   }
 
-  metrics.increment('analytics.dashboard.cache.miss');
+  // Cache miss
   const startTime = Date.now();
   const data = await compute();
   const queryTime = Date.now() - startTime;
 
-  metrics.histogram('analytics.dashboard.compute.duration_ms', queryTime);
+  // Use database histogram for compute timing
+  metrics.database.queryDuration.observe({ query: 'dashboard_compute', operation: 'compute' }, queryTime / 1000);
 
   try {
     await redisClient.setex(cacheKey, ttlSeconds, JSON.stringify(data));
   } catch (error) {
-    logger.warn('Cache write failed', { error, cacheKey });
+    logger.warn({ err: error, cacheKey }, 'Cache write failed');
   }
 
   return { data, cached: false };
@@ -233,7 +234,7 @@ export class DashboardService implements IDashboardService {
       try {
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
-          metrics.increment('analytics.dashboard.summary.cache.hit');
+          // Cache hit
           const ttl = await redisClient.ttl(cacheKey);
           cacheAge = DASHBOARD_CACHE_CONFIG.summary.ttlSeconds - ttl;
           cached = true;
@@ -243,13 +244,11 @@ export class DashboardService implements IDashboardService {
           return summary;
         }
       } catch (error) {
-        logger.warn('Cache read failed for dashboard summary', { error });
+        logger.warn({ err: error }, 'Cache read failed for dashboard summary');
       }
     }
 
-    metrics.increment('analytics.dashboard.summary.cache.miss');
-
-    // Fetch all data in parallel
+    // Cache miss - fetch all data in parallel
     const [stats, classPerformance, atRiskStudents, iepProgress, recentActivity, upcomingItems] =
       await Promise.all([
         this.getStats(options),
@@ -261,7 +260,7 @@ export class DashboardService implements IDashboardService {
       ]);
 
     const queryTimeMs = Date.now() - startTime;
-    metrics.histogram('analytics.dashboard.summary.duration_ms', queryTimeMs);
+    metrics.database.queryDuration.observe({ query: 'dashboard_summary', operation: 'aggregate' }, queryTimeMs / 1000);
 
     const summary: DashboardSummary = {
       stats,
@@ -281,7 +280,7 @@ export class DashboardService implements IDashboardService {
         JSON.stringify(summary)
       );
     } catch (error) {
-      logger.warn('Cache write failed for dashboard summary', { error });
+      logger.warn({ err: error }, 'Cache write failed for dashboard summary');
     }
 
     return summary;
@@ -551,15 +550,10 @@ export class DashboardService implements IDashboardService {
       const keys = await redisClient.keys(pattern);
       if (keys.length > 0) {
         await redisClient.del(...keys);
-        logger.info('Dashboard cache invalidated', {
-          teacherId,
-          tenantId,
-          keysDeleted: keys.length,
-        });
-        metrics.increment('analytics.dashboard.cache.invalidated', keys.length);
+        logger.info({ teacherId, tenantId, keysDeleted: keys.length }, 'Dashboard cache invalidated');
       }
     } catch (error) {
-      logger.error('Failed to invalidate dashboard cache', { error, teacherId, tenantId });
+      logger.error({ err: error, teacherId, tenantId }, 'Failed to invalidate dashboard cache');
     }
   }
 

@@ -2,19 +2,24 @@
  * AI Model Management Component
  *
  * Manage AI models, cloning, and deployment across tenants.
- * Based on ModelCloning from aivo-pro.
+ * Now connected to real API endpoints via React Query hooks.
  */
 
 'use client';
 
 import * as React from 'react';
+import { useAIModels, useModelSummary } from '@/hooks/use-admin-data';
+import type { AIModel as APIModel, ModelSummaryMetrics, ModelType, ModelStatus } from '@/lib/api/models.api';
 
-interface AIModel {
+// Map API types to display types
+type DisplayModelType = 'tutor' | 'assessment' | 'iep' | 'content' | 'translation' | 'embedding' | 'speech';
+
+interface DisplayModel {
   id: string;
   name: string;
   version: string;
-  type: 'tutor' | 'assessment' | 'iep' | 'content' | 'translation';
-  status: 'active' | 'training' | 'deprecated' | 'testing';
+  type: DisplayModelType;
+  status: ModelStatus;
   tenantsUsing: number;
   accuracy: number;
   lastUpdated: string;
@@ -22,132 +27,91 @@ interface AIModel {
   description: string;
 }
 
-interface ModelMetrics {
-  totalModels: number;
-  activeModels: number;
-  modelsInTraining: number;
-  averageAccuracy: number;
-  totalInferences: number;
-}
-
-// Mock data
-const mockMetrics: ModelMetrics = {
-  totalModels: 12,
-  activeModels: 8,
-  modelsInTraining: 2,
-  averageAccuracy: 94.5,
-  totalInferences: 1250000,
-};
-
-const mockModels: AIModel[] = [
-  {
-    id: '1',
-    name: 'Aivo Tutor Core',
-    version: '3.2.1',
-    type: 'tutor',
-    status: 'active',
-    tenantsUsing: 45,
-    accuracy: 96.2,
-    lastUpdated: '2026-01-08',
-    parameters: '7B',
-    description: 'Primary tutoring model for K-12 education',
-  },
-  {
-    id: '2',
-    name: 'IEP Goal Generator',
-    version: '2.1.0',
-    type: 'iep',
-    status: 'active',
-    tenantsUsing: 38,
-    accuracy: 94.8,
-    lastUpdated: '2026-01-05',
-    parameters: '3B',
-    description: 'Generates personalized IEP goals based on student data',
-  },
-  {
-    id: '3',
-    name: 'Assessment Engine',
-    version: '4.0.0',
-    type: 'assessment',
-    status: 'training',
-    tenantsUsing: 0,
-    accuracy: 92.1,
-    lastUpdated: '2026-01-10',
-    parameters: '5B',
-    description: 'Next-gen adaptive assessment model (in training)',
-  },
-  {
-    id: '4',
-    name: 'Content Adapter',
-    version: '1.5.2',
-    type: 'content',
-    status: 'active',
-    tenantsUsing: 42,
-    accuracy: 93.5,
-    lastUpdated: '2025-12-20',
-    parameters: '2B',
-    description: 'Adapts content for different reading levels',
-  },
-  {
-    id: '5',
-    name: 'Multilingual Tutor',
-    version: '2.0.0-beta',
-    type: 'translation',
-    status: 'testing',
-    tenantsUsing: 3,
-    accuracy: 91.2,
-    lastUpdated: '2026-01-09',
-    parameters: '8B',
-    description: 'Supports tutoring in 15+ languages',
-  },
-  {
-    id: '6',
-    name: 'Legacy Tutor v2',
-    version: '2.8.5',
-    type: 'tutor',
-    status: 'deprecated',
-    tenantsUsing: 5,
-    accuracy: 89.5,
-    lastUpdated: '2025-06-15',
-    parameters: '4B',
-    description: 'Legacy model - migration recommended',
-  },
-];
-
-const typeIcons = {
+const typeIcons: Record<string, string> = {
   tutor: '🎓',
   assessment: '📝',
   iep: '📋',
   content: '📚',
   translation: '🌐',
+  embedding: '🔢',
+  speech: '🎤',
 };
 
-const typeColors = {
+const typeColors: Record<string, string> = {
   tutor: 'bg-blue-100 text-blue-700',
   assessment: 'bg-green-100 text-green-700',
   iep: 'bg-purple-100 text-purple-700',
   content: 'bg-amber-100 text-amber-700',
   translation: 'bg-sky-100 text-sky-700',
+  embedding: 'bg-indigo-100 text-indigo-700',
+  speech: 'bg-pink-100 text-pink-700',
 };
 
-const statusColors = {
+const statusColors: Record<ModelStatus, string> = {
   active: 'bg-green-100 text-green-700',
   training: 'bg-blue-100 text-blue-700',
   testing: 'bg-amber-100 text-amber-700',
   deprecated: 'bg-red-100 text-red-700',
+  pending: 'bg-gray-100 text-gray-700',
 };
 
+// Transform API model to display model
+function toDisplayModel(model: APIModel): DisplayModel {
+  return {
+    id: model.id,
+    name: model.displayName || model.name,
+    version: model.version,
+    type: model.type as DisplayModelType,
+    status: model.status,
+    tenantsUsing: model.tenantsUsing,
+    accuracy: model.safetyRating * 100, // Convert to percentage
+    lastUpdated: model.lastUpdated,
+    parameters: model.parameters,
+    description: model.description,
+  };
+}
+
 export function AIModelManagement() {
-  const [metrics] = React.useState<ModelMetrics>(mockMetrics);
-  const [models] = React.useState<AIModel[]>(mockModels);
   const [selectedType, setSelectedType] = React.useState<string | null>(null);
 
-  const filteredModels = React.useMemo(() => {
-    if (!selectedType) return models;
-    return models.filter((m) => m.type === selectedType);
-  }, [models, selectedType]);
+  // Fetch real data from API
+  const { data: modelsData, isLoading: modelsLoading, error: modelsError, refetch: refetchModels } = useAIModels(
+    selectedType ? { type: selectedType as ModelType } : undefined
+  );
+  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useModelSummary();
+
+  const models: DisplayModel[] = React.useMemo(() => {
+    if (!modelsData?.data) return [];
+    return modelsData.data.map(toDisplayModel);
+  }, [modelsData]);
+
+  const isLoading = modelsLoading || metricsLoading;
+  const error = modelsError || metricsError;
 
   const modelTypes = ['tutor', 'assessment', 'iep', 'content', 'translation'] as const;
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <h3 className="font-semibold text-red-800">Failed to load AI models</h3>
+            <p className="text-sm text-red-600">
+              {error instanceof Error ? error.message : 'Unable to connect to model registry'}
+            </p>
+          </div>
+          <button
+            onClick={() => refetchModels()}
+            className="ml-auto rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
@@ -176,35 +140,47 @@ export function AIModelManagement() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-5 gap-4 p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50/30">
-        <MetricBox
-          icon="🧠"
-          value={metrics.totalModels.toString()}
-          label="Total Models"
-        />
-        <MetricBox
-          icon="✅"
-          value={metrics.activeModels.toString()}
-          label="Active"
-          color="green"
-        />
-        <MetricBox
-          icon="⚙️"
-          value={metrics.modelsInTraining.toString()}
-          label="Training"
-          color="blue"
-        />
-        <MetricBox
-          icon="🎯"
-          value={`${metrics.averageAccuracy}%`}
-          label="Avg Accuracy"
-          color="purple"
-        />
-        <MetricBox
-          icon="⚡"
-          value={`${(metrics.totalInferences / 1000000).toFixed(1)}M`}
-          label="Inferences"
-          color="amber"
-        />
+        {metricsLoading ? (
+          <>
+            <MetricBoxSkeleton />
+            <MetricBoxSkeleton />
+            <MetricBoxSkeleton />
+            <MetricBoxSkeleton />
+            <MetricBoxSkeleton />
+          </>
+        ) : (
+          <>
+            <MetricBox
+              icon="🧠"
+              value={(metrics?.totalModels ?? 0).toString()}
+              label="Total Models"
+            />
+            <MetricBox
+              icon="✅"
+              value={(metrics?.activeModels ?? 0).toString()}
+              label="Active"
+              color="green"
+            />
+            <MetricBox
+              icon="⚙️"
+              value={(metrics?.modelsInTraining ?? 0).toString()}
+              label="Training"
+              color="blue"
+            />
+            <MetricBox
+              icon="🎯"
+              value={`${(metrics?.averageAccuracy ?? 0).toFixed(1)}%`}
+              label="Avg Accuracy"
+              color="purple"
+            />
+            <MetricBox
+              icon="⚡"
+              value={`${((metrics?.totalInferences ?? 0) / 1000000).toFixed(1)}M`}
+              label="Inferences"
+              color="amber"
+            />
+          </>
+        )}
       </div>
 
       {/* Type Filter */}
@@ -237,12 +213,21 @@ export function AIModelManagement() {
 
       {/* Models Grid */}
       <div className="p-4 grid gap-4 lg:grid-cols-2">
-        {filteredModels.map((model) => (
-          <ModelCard key={model.id} model={model} />
-        ))}
+        {modelsLoading ? (
+          <>
+            <ModelCardSkeleton />
+            <ModelCardSkeleton />
+            <ModelCardSkeleton />
+            <ModelCardSkeleton />
+          </>
+        ) : (
+          models.map((model) => (
+            <ModelCard key={model.id} model={model} />
+          ))
+        )}
       </div>
 
-      {filteredModels.length === 0 && (
+      {!modelsLoading && models.length === 0 && (
         <div className="p-8 text-center text-gray-500">
           No models match the current filter.
         </div>
@@ -282,13 +267,29 @@ function MetricBox({
   );
 }
 
-function ModelCard({ model }: { model: AIModel }) {
+function MetricBoxSkeleton() {
+  return (
+    <div className="flex items-center gap-3 animate-pulse">
+      <div className="h-8 w-8 rounded bg-gray-200" />
+      <div>
+        <div className="h-6 w-16 rounded bg-gray-200 mb-1" />
+        <div className="h-3 w-12 rounded bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
+function ModelCard({ model }: { model: DisplayModel }) {
+  const typeColor = typeColors[model.type] || 'bg-gray-100 text-gray-700';
+  const typeIcon = typeIcons[model.type] || '🤖';
+  const statusColor = statusColors[model.status] || 'bg-gray-100 text-gray-700';
+
   return (
     <div className="rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl ${typeColors[model.type]}`}>
-            {typeIcons[model.type]}
+          <div className={`flex h-12 w-12 items-center justify-center rounded-lg text-xl ${typeColor}`}>
+            {typeIcon}
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -298,7 +299,7 @@ function ModelCard({ model }: { model: AIModel }) {
             <p className="text-sm text-gray-500">{model.description}</p>
           </div>
         </div>
-        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[model.status]}`}>
+        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColor}`}>
           {model.status}
         </span>
       </div>
@@ -338,6 +339,45 @@ function ModelCard({ model }: { model: AIModel }) {
             Configure
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ModelCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 animate-pulse">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-lg bg-gray-200" />
+          <div>
+            <div className="h-5 w-32 rounded bg-gray-200 mb-2" />
+            <div className="h-4 w-48 rounded bg-gray-200" />
+          </div>
+        </div>
+        <div className="h-6 w-16 rounded-full bg-gray-200" />
+      </div>
+      <div className="grid grid-cols-4 gap-4 mb-3">
+        <div>
+          <div className="h-3 w-12 rounded bg-gray-200 mb-1" />
+          <div className="h-5 w-8 rounded bg-gray-200" />
+        </div>
+        <div>
+          <div className="h-3 w-12 rounded bg-gray-200 mb-1" />
+          <div className="h-5 w-10 rounded bg-gray-200" />
+        </div>
+        <div>
+          <div className="h-3 w-12 rounded bg-gray-200 mb-1" />
+          <div className="h-5 w-8 rounded bg-gray-200" />
+        </div>
+        <div>
+          <div className="h-3 w-12 rounded bg-gray-200 mb-1" />
+          <div className="h-5 w-12 rounded bg-gray-200" />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-3 border-t border-gray-100">
+        <div className="flex-1 h-8 rounded bg-gray-200" />
+        <div className="flex-1 h-8 rounded bg-gray-200" />
       </div>
     </div>
   );
