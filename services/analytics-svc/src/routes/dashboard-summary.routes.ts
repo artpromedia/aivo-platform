@@ -3,259 +3,110 @@
  *
  * Aggregated API endpoints for the teacher dashboard.
  * Provides summary data for metrics, at-risk students, IEP progress, and activity.
+ *
+ * REAL IMPLEMENTATION: Uses Prisma database queries with Redis caching.
  */
 
-import { logger } from '@aivo/ts-observability';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { logger, metrics } from '@aivo/ts-observability';
+import type { FastifyInstance } from 'fastify';
 
-// =====================
-// Types
-// =====================
+import { dashboardService } from '../services/dashboard.service.js';
+import type {
+  DashboardPeriod,
+  DashboardQueryOptions,
+  AtRiskQueryOptions,
+  ActivityQueryOptions,
+  UpcomingQueryOptions,
+  ActivityType,
+  RiskLevel,
+  UpcomingType,
+  PriorityLevel,
+} from '../types/dashboard.types.js';
 
-interface DashboardSummary {
-  stats: {
-    totalStudents: number;
-    averageMastery: number;
-    iepStudents: number;
-    atRiskStudents: number;
-  };
-  classPerformance: ClassPerformance[];
-  atRiskStudents: AtRiskStudent[];
-  iepProgress: IEPProgressEntry[];
-  recentActivity: ActivityItem[];
-  upcomingItems: UpcomingItem[];
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
 
-interface ClassPerformance {
-  id: string;
-  name: string;
-  mastery: number;
-  engagement: number;
-  students: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
-interface AtRiskStudent {
-  id: string;
-  name: string;
-  className: string;
-  riskLevel: 'high' | 'medium' | 'low';
-  riskFactors: string[];
-  suggestedInterventions: string[];
-  lastActivity: string;
-}
-
-interface IEPProgressEntry {
-  studentId: string;
-  studentName: string;
-  goalArea: string;
-  currentProgress: number;
-  targetProgress: number;
-  status: 'on-track' | 'at-risk' | 'exceeded';
-  nextReviewDate: string;
-}
-
-interface ActivityItem {
-  id: string;
-  type: 'submission' | 'grade' | 'message' | 'alert';
-  title: string;
-  description: string;
-  timestamp: string;
-  studentId?: string;
-  studentName?: string;
-}
-
-interface UpcomingItem {
-  id: string;
-  type: 'deadline' | 'meeting' | 'review' | 'event';
-  title: string;
-  date: string;
-  priority: 'high' | 'medium' | 'low';
-}
-
-// =====================
-// Mock Data Generators
-// =====================
-
-function generateMockDashboardSummary(teacherId: string): DashboardSummary {
+/**
+ * Extract user and tenant info from request
+ */
+function extractRequestContext(request: { user?: { id?: string; tenantId?: string } }): {
+  teacherId: string;
+  tenantId: string;
+} {
+  const user = request.user as { id?: string; tenantId?: string } | undefined;
   return {
-    stats: {
-      totalStudents: 127,
-      averageMastery: 78.5,
-      iepStudents: 12,
-      atRiskStudents: 8,
-    },
-    classPerformance: [
-      { id: 'class-1', name: 'Algebra I - Period 1', mastery: 82, engagement: 88, students: 28, trend: 'up' },
-      { id: 'class-2', name: 'Algebra I - Period 3', mastery: 75, engagement: 79, students: 26, trend: 'stable' },
-      { id: 'class-3', name: 'Pre-Algebra - Period 4', mastery: 71, engagement: 85, students: 24, trend: 'down' },
-      { id: 'class-4', name: 'Geometry - Period 5', mastery: 85, engagement: 91, students: 27, trend: 'up' },
-      { id: 'class-5', name: 'Algebra II - Period 6', mastery: 79, engagement: 76, students: 22, trend: 'stable' },
-    ],
-    atRiskStudents: [
-      {
-        id: 'student-1',
-        name: 'Alex Johnson',
-        className: 'Pre-Algebra - Period 4',
-        riskLevel: 'high',
-        riskFactors: ['Low engagement (42%)', 'Declining mastery', 'Missing assignments'],
-        suggestedInterventions: ['One-on-one tutoring', 'Parent conference', 'Modified assignments'],
-        lastActivity: '3 days ago',
-      },
-      {
-        id: 'student-2',
-        name: 'Sarah Williams',
-        className: 'Algebra I - Period 3',
-        riskLevel: 'medium',
-        riskFactors: ['Inconsistent attendance', 'Struggling with fractions'],
-        suggestedInterventions: ['Fraction remediation', 'Check-in meetings'],
-        lastActivity: '1 day ago',
-      },
-      {
-        id: 'student-3',
-        name: 'Michael Chen',
-        className: 'Geometry - Period 5',
-        riskLevel: 'medium',
-        riskFactors: ['Low assessment scores', 'Anxiety during tests'],
-        suggestedInterventions: ['Extended time', 'Test-taking strategies'],
-        lastActivity: 'Today',
-      },
-    ],
-    iepProgress: [
-      {
-        studentId: 'iep-1',
-        studentName: 'Emma Davis',
-        goalArea: 'Math Problem Solving',
-        currentProgress: 72,
-        targetProgress: 80,
-        status: 'on-track',
-        nextReviewDate: '2026-02-15',
-      },
-      {
-        studentId: 'iep-2',
-        studentName: 'James Wilson',
-        goalArea: 'Number Fluency',
-        currentProgress: 58,
-        targetProgress: 75,
-        status: 'at-risk',
-        nextReviewDate: '2026-02-01',
-      },
-      {
-        studentId: 'iep-3',
-        studentName: 'Olivia Brown',
-        goalArea: 'Written Expression',
-        currentProgress: 85,
-        targetProgress: 80,
-        status: 'exceeded',
-        nextReviewDate: '2026-03-01',
-      },
-      {
-        studentId: 'iep-4',
-        studentName: 'Liam Martinez',
-        goalArea: 'Self-Regulation',
-        currentProgress: 68,
-        targetProgress: 70,
-        status: 'on-track',
-        nextReviewDate: '2026-02-20',
-      },
-    ],
-    recentActivity: [
-      {
-        id: 'activity-1',
-        type: 'submission',
-        title: 'New Assignment Submission',
-        description: 'Emma Davis submitted "Chapter 5 Quiz"',
-        timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        studentId: 'iep-1',
-        studentName: 'Emma Davis',
-      },
-      {
-        id: 'activity-2',
-        type: 'alert',
-        title: 'At-Risk Alert',
-        description: 'Alex Johnson has not logged in for 3 days',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        studentId: 'student-1',
-        studentName: 'Alex Johnson',
-      },
-      {
-        id: 'activity-3',
-        type: 'grade',
-        title: 'Assessment Completed',
-        description: 'Graded 24 submissions for "Linear Equations Test"',
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'activity-4',
-        type: 'message',
-        title: 'Parent Message',
-        description: 'Sarah Williams\' parent requested a meeting',
-        timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        studentId: 'student-2',
-        studentName: 'Sarah Williams',
-      },
-    ],
-    upcomingItems: [
-      {
-        id: 'upcoming-1',
-        type: 'review',
-        title: 'IEP Review: James Wilson',
-        date: '2026-02-01',
-        priority: 'high',
-      },
-      {
-        id: 'upcoming-2',
-        type: 'deadline',
-        title: 'Quarter 2 Grades Due',
-        date: '2026-01-17',
-        priority: 'high',
-      },
-      {
-        id: 'upcoming-3',
-        type: 'meeting',
-        title: 'Department Meeting',
-        date: '2026-01-12',
-        priority: 'medium',
-      },
-      {
-        id: 'upcoming-4',
-        type: 'event',
-        title: 'Math Competition Prep',
-        date: '2026-01-20',
-        priority: 'low',
-      },
-    ],
+    teacherId: user?.id ?? 'anonymous',
+    tenantId: user?.tenantId ?? 'default',
   };
 }
 
-// =====================
-// Route Schemas
-// =====================
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTE SCHEMAS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const periodQuerySchema = {
   type: 'object' as const,
   properties: {
-    period: { type: 'string', enum: ['today', 'week', 'month', 'quarter', 'year'] },
+    period: {
+      type: 'string',
+      enum: ['today', 'week', 'month', 'quarter', 'year'],
+      default: 'week',
+    },
+    skipCache: { type: 'boolean', default: false },
   },
 };
 
-// =====================
-// Routes
-// =====================
+const atRiskQuerySchema = {
+  type: 'object' as const,
+  properties: {
+    period: {
+      type: 'string',
+      enum: ['today', 'week', 'month', 'quarter', 'year'],
+      default: 'week',
+    },
+    limit: { type: 'number', default: 10, minimum: 1, maximum: 100 },
+    riskLevel: { type: 'string', enum: ['high', 'medium', 'low'] },
+  },
+};
+
+const activityQuerySchema = {
+  type: 'object' as const,
+  properties: {
+    limit: { type: 'number', default: 20, minimum: 1, maximum: 100 },
+    type: { type: 'string', enum: ['submission', 'grade', 'message', 'alert'] },
+  },
+};
+
+const upcomingQuerySchema = {
+  type: 'object' as const,
+  properties: {
+    days: { type: 'number', default: 14, minimum: 1, maximum: 90 },
+    type: { type: 'string', enum: ['deadline', 'meeting', 'review', 'event'] },
+    priority: { type: 'string', enum: ['high', 'medium', 'low'] },
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export async function dashboardSummaryRoutes(fastify: FastifyInstance) {
   /**
-   * Get complete dashboard summary
-   * Returns aggregated data for the teacher dashboard
+   * GET /summary
+   * Get complete dashboard summary with all data
    */
-  fastify.get<{ Querystring: { period?: string } }>(
+  fastify.get<{
+    Querystring: { period?: DashboardPeriod; skipCache?: boolean };
+  }>(
     '/summary',
     {
       schema: {
         querystring: periodQuerySchema,
         tags: ['Dashboard'],
         summary: 'Get complete dashboard summary',
-        description: 'Returns aggregated metrics, at-risk students, IEP progress, and activity for the teacher dashboard.',
+        description:
+          'Returns aggregated metrics, at-risk students, IEP progress, and activity for the teacher dashboard. Uses database queries with Redis caching.',
         response: {
           200: {
             type: 'object',
@@ -274,194 +125,305 @@ export async function dashboardSummaryRoutes(fastify: FastifyInstance) {
               iepProgress: { type: 'array' },
               recentActivity: { type: 'array' },
               upcomingItems: { type: 'array' },
+              metadata: { type: 'object' },
             },
           },
         },
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const startTime = Date.now();
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { period = 'week', skipCache = false } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
+        metrics.increment('analytics.dashboard.summary.request');
+
+        const options: DashboardQueryOptions = {
+          teacherId,
+          tenantId,
+          period,
+          skipCache,
+        };
+
+        const summary = await dashboardService.getDashboardSummary(options);
+
+        const duration = Date.now() - startTime;
+        metrics.histogram('analytics.dashboard.summary.response_time_ms', duration);
+
+        if (duration > 1000) {
+          logger.warn('Slow dashboard summary response', {
+            teacherId,
+            tenantId,
+            durationMs: duration,
+          });
+        }
+
         return reply.send(summary);
       } catch (error) {
-        logger.error('Failed to get dashboard summary', { error, teacherId });
+        metrics.increment('analytics.dashboard.summary.error');
+        logger.error('Failed to get dashboard summary', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get dashboard summary' });
       }
     }
   );
 
   /**
-   * Get dashboard stats only
+   * GET /stats
+   * Get dashboard stats only (lightweight endpoint)
    */
-  fastify.get(
+  fastify.get<{
+    Querystring: { period?: DashboardPeriod };
+  }>(
     '/stats',
     {
       schema: {
+        querystring: periodQuerySchema,
         tags: ['Dashboard'],
         summary: 'Get dashboard stats',
-        description: 'Returns just the key metrics for the dashboard header.',
+        description:
+          'Returns just the key metrics for the dashboard header. Lightweight endpoint for polling.',
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { period = 'week' } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
-        return reply.send(summary.stats);
+        metrics.increment('analytics.dashboard.stats.request');
+
+        const options: DashboardQueryOptions = { teacherId, tenantId, period };
+        const stats = await dashboardService.getStats(options);
+
+        return reply.send(stats);
       } catch (error) {
-        logger.error('Failed to get dashboard stats', { error, teacherId });
+        metrics.increment('analytics.dashboard.stats.error');
+        logger.error('Failed to get dashboard stats', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get dashboard stats' });
       }
     }
   );
 
   /**
-   * Get at-risk students
+   * GET /classes
+   * Get class performance breakdown
    */
-  fastify.get<{ Querystring: { limit?: number } }>(
-    '/at-risk',
+  fastify.get<{
+    Querystring: { period?: DashboardPeriod };
+  }>(
+    '/classes',
     {
       schema: {
-        querystring: {
-          type: 'object',
-          properties: {
-            limit: { type: 'number', default: 10 },
-          },
-        },
+        querystring: periodQuerySchema,
         tags: ['Dashboard'],
-        summary: 'Get at-risk students',
-        description: 'Returns students who are at risk of falling behind with suggested interventions.',
+        summary: 'Get class performance',
+        description: 'Returns performance breakdown for all classes taught by the teacher.',
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
-      const { limit = 10 } = request.query;
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { period = 'week' } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
-        return reply.send({
-          students: summary.atRiskStudents.slice(0, limit),
-          total: summary.stats.atRiskStudents,
-        });
+        metrics.increment('analytics.dashboard.classes.request');
+
+        const options: DashboardQueryOptions = { teacherId, tenantId, period };
+        const classes = await dashboardService.getClassPerformance(options);
+
+        return reply.send({ classes, total: classes.length });
       } catch (error) {
-        logger.error('Failed to get at-risk students', { error, teacherId });
+        metrics.increment('analytics.dashboard.classes.error');
+        logger.error('Failed to get class performance', { error, teacherId, tenantId });
+        return reply.status(500).send({ error: 'Failed to get class performance' });
+      }
+    }
+  );
+
+  /**
+   * GET /at-risk
+   * Get at-risk students with intervention suggestions
+   */
+  fastify.get<{
+    Querystring: { period?: DashboardPeriod; limit?: number; riskLevel?: RiskLevel };
+  }>(
+    '/at-risk',
+    {
+      schema: {
+        querystring: atRiskQuerySchema,
+        tags: ['Dashboard'],
+        summary: 'Get at-risk students',
+        description:
+          'Returns students who are at risk of falling behind with AI-suggested interventions.',
+      },
+    },
+    async (request, reply) => {
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { period = 'week', limit = 10, riskLevel } = request.query;
+
+      try {
+        metrics.increment('analytics.dashboard.at_risk.request');
+
+        const options: AtRiskQueryOptions = {
+          teacherId,
+          tenantId,
+          period,
+          limit,
+          riskLevel,
+        };
+
+        const result = await dashboardService.getAtRiskStudents(options);
+
+        return reply.send(result);
+      } catch (error) {
+        metrics.increment('analytics.dashboard.at_risk.error');
+        logger.error('Failed to get at-risk students', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get at-risk students' });
       }
     }
   );
 
   /**
-   * Get IEP progress summary
+   * GET /iep-progress
+   * Get IEP goal progress for students with IEPs
    */
-  fastify.get(
+  fastify.get<{
+    Querystring: { period?: DashboardPeriod };
+  }>(
     '/iep-progress',
     {
       schema: {
+        querystring: periodQuerySchema,
         tags: ['Dashboard'],
         summary: 'Get IEP progress summary',
-        description: 'Returns IEP goal progress for students with IEPs.',
+        description: 'Returns IEP goal progress for students with IEPs in teacher classes.',
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { period = 'week' } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
-        const statusCounts = summary.iepProgress.reduce(
-          (acc, entry) => {
-            acc[entry.status]++;
-            return acc;
-          },
-          { 'on-track': 0, 'at-risk': 0, exceeded: 0 }
-        );
+        metrics.increment('analytics.dashboard.iep_progress.request');
 
-        return reply.send({
-          entries: summary.iepProgress,
-          summary: {
-            total: summary.iepProgress.length,
-            ...statusCounts,
-          },
-        });
+        const options: DashboardQueryOptions = { teacherId, tenantId, period };
+        const result = await dashboardService.getIEPProgress(options);
+
+        return reply.send(result);
       } catch (error) {
-        logger.error('Failed to get IEP progress', { error, teacherId });
+        metrics.increment('analytics.dashboard.iep_progress.error');
+        logger.error('Failed to get IEP progress', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get IEP progress' });
       }
     }
   );
 
   /**
-   * Get recent activity
+   * GET /activity
+   * Get recent activity feed
    */
-  fastify.get<{ Querystring: { limit?: number; type?: string } }>(
+  fastify.get<{
+    Querystring: { limit?: number; type?: ActivityType };
+  }>(
     '/activity',
     {
       schema: {
-        querystring: {
-          type: 'object',
-          properties: {
-            limit: { type: 'number', default: 20 },
-            type: { type: 'string', enum: ['submission', 'grade', 'message', 'alert'] },
-          },
-        },
+        querystring: activityQuerySchema,
         tags: ['Dashboard'],
         summary: 'Get recent activity',
-        description: 'Returns recent activity feed for the teacher.',
+        description: 'Returns recent activity feed for the teacher classes.',
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
-      const { limit = 20, type } = request.query;
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { limit = 20, type: activityType } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
-        let activity = summary.recentActivity;
+        metrics.increment('analytics.dashboard.activity.request');
 
-        if (type) {
-          activity = activity.filter((item) => item.type === type);
-        }
+        const options: ActivityQueryOptions = {
+          teacherId,
+          tenantId,
+          limit,
+          activityType,
+        };
 
-        return reply.send({
-          items: activity.slice(0, limit),
-          hasMore: activity.length > limit,
-        });
+        const result = await dashboardService.getRecentActivity(options);
+
+        return reply.send(result);
       } catch (error) {
-        logger.error('Failed to get activity', { error, teacherId });
+        metrics.increment('analytics.dashboard.activity.error');
+        logger.error('Failed to get activity', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get activity' });
       }
     }
   );
 
   /**
-   * Get upcoming items
+   * GET /upcoming
+   * Get upcoming items (deadlines, meetings, reviews)
    */
-  fastify.get<{ Querystring: { days?: number } }>(
+  fastify.get<{
+    Querystring: { days?: number; type?: UpcomingType; priority?: PriorityLevel };
+  }>(
     '/upcoming',
     {
       schema: {
-        querystring: {
-          type: 'object',
-          properties: {
-            days: { type: 'number', default: 14 },
-          },
-        },
+        querystring: upcomingQuerySchema,
         tags: ['Dashboard'],
         summary: 'Get upcoming items',
-        description: 'Returns upcoming deadlines, meetings, and events.',
+        description: 'Returns upcoming deadlines, meetings, IEP reviews, and events.',
       },
     },
     async (request, reply) => {
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const { teacherId, tenantId } = extractRequestContext(request);
+      const { days: daysAhead = 14, type: itemType, priority } = request.query;
 
       try {
-        const summary = generateMockDashboardSummary(teacherId);
-        return reply.send({
-          items: summary.upcomingItems,
-        });
+        metrics.increment('analytics.dashboard.upcoming.request');
+
+        const options: UpcomingQueryOptions = {
+          teacherId,
+          tenantId,
+          daysAhead,
+          itemType,
+          priority,
+        };
+
+        const result = await dashboardService.getUpcomingItems(options);
+
+        return reply.send(result);
       } catch (error) {
-        logger.error('Failed to get upcoming items', { error, teacherId });
+        metrics.increment('analytics.dashboard.upcoming.error');
+        logger.error('Failed to get upcoming items', { error, teacherId, tenantId });
         return reply.status(500).send({ error: 'Failed to get upcoming items' });
+      }
+    }
+  );
+
+  /**
+   * POST /cache/invalidate
+   * Invalidate dashboard cache for current teacher
+   */
+  fastify.post(
+    '/cache/invalidate',
+    {
+      schema: {
+        tags: ['Dashboard'],
+        summary: 'Invalidate dashboard cache',
+        description: 'Forces refresh of cached dashboard data for the current teacher.',
+      },
+    },
+    async (request, reply) => {
+      const { teacherId, tenantId } = extractRequestContext(request);
+
+      try {
+        await dashboardService.invalidateCache(teacherId, tenantId);
+        metrics.increment('analytics.dashboard.cache.manual_invalidate');
+
+        return reply.send({ success: true, message: 'Cache invalidated' });
+      } catch (error) {
+        logger.error('Failed to invalidate cache', { error, teacherId, tenantId });
+        return reply.status(500).send({ error: 'Failed to invalidate cache' });
       }
     }
   );

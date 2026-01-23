@@ -37,3 +37,11 @@ export type {
   EarlyWarningStudent,
   EarlyWarningReport,
 } from './teacher-analytics.service.js';
+
+// Dashboard Service
+export { DashboardService, dashboardService } from './dashboard.service.js';
+export {
+  DashboardRepository,
+  dashboardRepository,
+  getPeriodDateRange,
+} from './dashboard.repository.js';
