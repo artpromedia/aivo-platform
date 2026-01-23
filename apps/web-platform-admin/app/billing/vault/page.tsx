@@ -5,199 +5,16 @@ import { useState } from 'react';
 
 import { useAuth } from '../../providers';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface VaultLicense {
-  id: string;
-  tenantId: string;
-  type: string;
-  seats: number;
-  seatsUsed: number;
-  status: string;
-  features: string[];
-  issuedAt: string;
-  expiresAt: string | null;
-  activatedAt: string | null;
-  enterpriseDealId: string | null;
-  notes: string | null;
-}
-
-interface VaultCode {
-  id: string;
-  licenseId: string;
-  codeType: string;
-  status: string;
-  maxRedemptions: number | null;
-  redemptionCount: number;
-  expiresAt: string | null;
-  createdAt: string;
-}
-
-interface VaultAuditLog {
-  id: string;
-  licenseId: string | null;
-  codeId: string | null;
-  action: string;
-  performedBy: string;
-  timestamp: string;
-  ipAddress: string | null;
-  details: Record<string, unknown> | null;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MOCK DATA
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const mockLicenses: VaultLicense[] = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440001',
-    tenantId: 'tenant-nvusd-001',
-    type: 'ENTERPRISE',
-    seats: 5000,
-    seatsUsed: 4523,
-    status: 'ACTIVE',
-    features: ['ai_tutor', 'advanced_analytics', 'custom_content'],
-    issuedAt: '2024-08-15T10:00:00Z',
-    expiresAt: '2025-08-15T10:00:00Z',
-    activatedAt: '2024-08-16T09:30:00Z',
-    enterpriseDealId: 'deal-001',
-    notes: 'North Valley USD enterprise license',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    tenantId: 'tenant-metro-002',
-    type: 'TRIAL',
-    seats: 100,
-    seatsUsed: 45,
-    status: 'ACTIVE',
-    features: ['ai_tutor'],
-    issuedAt: '2024-12-01T10:00:00Z',
-    expiresAt: '2025-01-01T10:00:00Z',
-    activatedAt: '2024-12-02T14:00:00Z',
-    enterpriseDealId: null,
-    notes: 'Metro ISD trial',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440003',
-    tenantId: 'tenant-csa-003',
-    type: 'ENTERPRISE',
-    seats: 3500,
-    seatsUsed: 3500,
-    status: 'ACTIVE',
-    features: ['ai_tutor', 'advanced_analytics', 'custom_content', 'api_access'],
-    issuedAt: '2024-06-01T10:00:00Z',
-    expiresAt: '2025-06-01T10:00:00Z',
-    activatedAt: '2024-06-02T08:00:00Z',
-    enterpriseDealId: 'deal-003',
-    notes: 'Charter School Alliance full deployment',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440004',
-    tenantId: 'tenant-old-004',
-    type: 'SEAT',
-    seats: 50,
-    seatsUsed: 0,
-    status: 'EXPIRED',
-    features: [],
-    issuedAt: '2023-06-01T10:00:00Z',
-    expiresAt: '2024-06-01T10:00:00Z',
-    activatedAt: '2023-06-05T10:00:00Z',
-    enterpriseDealId: null,
-    notes: 'Expired license',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440005',
-    tenantId: 'tenant-suspended-005',
-    type: 'ENTERPRISE',
-    seats: 1000,
-    seatsUsed: 800,
-    status: 'SUSPENDED',
-    features: ['ai_tutor'],
-    issuedAt: '2024-03-01T10:00:00Z',
-    expiresAt: '2025-03-01T10:00:00Z',
-    activatedAt: '2024-03-02T10:00:00Z',
-    enterpriseDealId: 'deal-005',
-    notes: 'Suspended due to payment issue',
-  },
-];
-
-const mockCodes: VaultCode[] = [
-  {
-    id: 'code-001',
-    licenseId: '550e8400-e29b-41d4-a716-446655440001',
-    codeType: 'ACTIVATION',
-    status: 'REDEEMED',
-    maxRedemptions: 1,
-    redemptionCount: 1,
-    expiresAt: '2025-12-31T23:59:59Z',
-    createdAt: '2024-08-15T10:05:00Z',
-  },
-  {
-    id: 'code-002',
-    licenseId: '550e8400-e29b-41d4-a716-446655440001',
-    codeType: 'REDEMPTION',
-    status: 'VALID',
-    maxRedemptions: 100,
-    redemptionCount: 45,
-    expiresAt: '2025-08-15T10:00:00Z',
-    createdAt: '2024-08-15T10:10:00Z',
-  },
-  {
-    id: 'code-003',
-    licenseId: '550e8400-e29b-41d4-a716-446655440002',
-    codeType: 'PIN',
-    status: 'VALID',
-    maxRedemptions: null,
-    redemptionCount: 12,
-    expiresAt: null,
-    createdAt: '2024-12-01T10:05:00Z',
-  },
-];
-
-const mockAuditLogs: VaultAuditLog[] = [
-  {
-    id: 'log-001',
-    licenseId: '550e8400-e29b-41d4-a716-446655440001',
-    codeId: null,
-    action: 'LICENSE_ACTIVATED',
-    performedBy: 'admin-user-001',
-    timestamp: '2024-08-16T09:30:00Z',
-    ipAddress: '192.168.1.100',
-    details: { activatedSeats: 5000 },
-  },
-  {
-    id: 'log-002',
-    licenseId: '550e8400-e29b-41d4-a716-446655440001',
-    codeId: 'code-002',
-    action: 'CODE_REDEEMED',
-    performedBy: 'teacher-user-042',
-    timestamp: '2024-12-10T14:22:00Z',
-    ipAddress: '10.0.0.45',
-    details: { redemptionNumber: 45 },
-  },
-  {
-    id: 'log-003',
-    licenseId: '550e8400-e29b-41d4-a716-446655440005',
-    codeId: null,
-    action: 'LICENSE_SUSPENDED',
-    performedBy: 'billing-admin-001',
-    timestamp: '2024-11-15T08:00:00Z',
-    ipAddress: '192.168.1.50',
-    details: { reason: 'Payment overdue 30+ days' },
-  },
-  {
-    id: 'log-004',
-    licenseId: '550e8400-e29b-41d4-a716-446655440003',
-    codeId: null,
-    action: 'LICENSE_ISSUED',
-    performedBy: 'sales-rep-003',
-    timestamp: '2024-06-01T10:00:00Z',
-    ipAddress: '172.16.0.10',
-    details: { enterpriseDealId: 'deal-003', seats: 3500 },
-  },
-];
+import {
+  useVaultLicenses,
+  useVaultCodes,
+  useVaultAuditLogs,
+  useActivateLicense,
+  useSuspendLicense,
+  useRevokeLicense,
+  useRevokeCode,
+} from '@/hooks/use-billing';
+import type { VaultLicense, VaultCode, VaultAuditLog } from '@/lib/api/billing.api';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -262,15 +79,31 @@ function truncateId(id: string): string {
 export default function LicenseVaultPage() {
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<'licenses' | 'codes' | 'audit'>('licenses');
-  const [licenses] = useState<VaultLicense[]>(mockLicenses);
-  const [codes] = useState<VaultCode[]>(mockCodes);
-  const [auditLogs] = useState<VaultAuditLog[]>(mockAuditLogs);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Fetch real data via hooks
+  const {
+    data: licensesData,
+    isLoading: licensesLoading,
+    error: licensesError,
+  } = useVaultLicenses({});
+  const { data: codesData, isLoading: codesLoading, error: codesError } = useVaultCodes({});
+  const { data: auditData, isLoading: auditLoading, error: auditError } = useVaultAuditLogs({});
+
+  // Mutations
+  const activateLicenseMutation = useActivateLicense();
+  const suspendLicenseMutation = useSuspendLicense();
+  const revokeLicenseMutation = useRevokeLicense();
+  const revokeCodeMutation = useRevokeCode();
+
+  const licenses = licensesData?.items ?? [];
+  const codes = codesData?.items ?? [];
+  const auditLogs = auditData?.items ?? [];
+
   // Filter licenses
-  const filteredLicenses = licenses.filter((license) => {
+  const filteredLicenses = licenses.filter((license: VaultLicense) => {
     if (statusFilter !== 'all' && license.status !== statusFilter) return false;
     if (typeFilter !== 'all' && license.type !== typeFilter) return false;
     if (searchQuery) {
@@ -287,11 +120,11 @@ export default function LicenseVaultPage() {
   // Calculate stats
   const stats = {
     totalLicenses: licenses.length,
-    activeLicenses: licenses.filter((l) => l.status === 'ACTIVE').length,
-    totalSeats: licenses.reduce((sum, l) => sum + l.seats, 0),
-    usedSeats: licenses.reduce((sum, l) => sum + l.seatsUsed, 0),
+    activeLicenses: licenses.filter((l: VaultLicense) => l.status === 'ACTIVE').length,
+    totalSeats: licenses.reduce((sum: number, l: VaultLicense) => sum + l.seats, 0),
+    usedSeats: licenses.reduce((sum: number, l: VaultLicense) => sum + l.seatsUsed, 0),
     totalCodes: codes.length,
-    validCodes: codes.filter((c) => c.status === 'VALID').length,
+    validCodes: codes.filter((c: VaultCode) => c.status === 'VALID').length,
   };
 
   if (!isAuthenticated) {

@@ -5,119 +5,17 @@ import { useState } from 'react';
 
 import { useAuth } from '../providers';
 
-// Mock data types
-interface QuoteSummary {
-  id: string;
-  quoteNumber: string;
-  name: string | null;
-  status: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CONVERTED';
-  validUntil: string;
-  totalAmountCents: number;
-  tenantName: string;
-  createdAt: string;
-}
-
-interface PurchaseOrderSummary {
-  id: string;
-  poNumber: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CLOSED' | 'CANCELLED';
-  amountCents: number;
-  tenantName: string;
-  createdAt: string;
-}
-
-interface RenewalTask {
-  id: string;
-  contractNumber: string;
-  tenantName: string;
-  status: 'SCHEDULED' | 'DUE' | 'IN_PROGRESS' | 'COMPLETED' | 'NOT_RENEWING' | 'CHURNED';
-  dueDate: string;
-  contractEndDate: string;
-  totalValueCents: number;
-}
-
-// Mock data
-const mockQuotes: QuoteSummary[] = [
-  {
-    id: '1',
-    quoteNumber: 'Q-2025-00001',
-    name: 'North Valley USD - 2025-26',
-    status: 'SENT',
-    validUntil: '2025-01-15',
-    totalAmountCents: 4500000,
-    tenantName: 'North Valley USD',
-    createdAt: '2024-12-01',
-  },
-  {
-    id: '2',
-    quoteNumber: 'Q-2025-00002',
-    name: 'Riverside School District',
-    status: 'DRAFT',
-    validUntil: '2025-01-30',
-    totalAmountCents: 2750000,
-    tenantName: 'Riverside School District',
-    createdAt: '2024-12-10',
-  },
-  {
-    id: '3',
-    quoteNumber: 'Q-2024-00045',
-    name: 'Metro ISD Renewal',
-    status: 'ACCEPTED',
-    validUntil: '2024-12-31',
-    totalAmountCents: 8200000,
-    tenantName: 'Metro ISD',
-    createdAt: '2024-11-15',
-  },
-];
-
-const mockPOs: PurchaseOrderSummary[] = [
-  {
-    id: '1',
-    poNumber: 'PO-2025-4521',
-    status: 'PENDING',
-    amountCents: 8200000,
-    tenantName: 'Metro ISD',
-    createdAt: '2024-12-10',
-  },
-  {
-    id: '2',
-    poNumber: 'PO-2024-8872',
-    status: 'APPROVED',
-    amountCents: 3500000,
-    tenantName: 'Lakeside Schools',
-    createdAt: '2024-11-20',
-  },
-];
-
-const mockRenewals: RenewalTask[] = [
-  {
-    id: '1',
-    contractNumber: 'DST-2024-00012',
-    tenantName: 'Valley View Schools',
-    status: 'DUE',
-    dueDate: '2024-12-15',
-    contractEndDate: '2025-03-15',
-    totalValueCents: 5600000,
-  },
-  {
-    id: '2',
-    contractNumber: 'DST-2024-00018',
-    tenantName: 'Greenfield District',
-    status: 'IN_PROGRESS',
-    dueDate: '2024-12-01',
-    contractEndDate: '2025-03-01',
-    totalValueCents: 3200000,
-  },
-  {
-    id: '3',
-    contractNumber: 'DST-2024-00025',
-    tenantName: 'Mountain View USD',
-    status: 'SCHEDULED',
-    dueDate: '2025-01-15',
-    contractEndDate: '2025-04-15',
-    totalValueCents: 4100000,
-  },
-];
+import {
+  useQuotes,
+  usePurchaseOrders,
+  useRenewals,
+  useBillingSummary,
+  useSendQuote,
+  useApprovePO,
+  useRejectPO,
+  useProcessRenewal,
+} from '@/hooks/use-billing';
+import type { Quote, PurchaseOrder, Renewal } from '@/lib/api/billing.api';
 
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -156,6 +54,31 @@ const statusColors: Record<string, string> = {
 export default function BillingDashboardPage() {
   const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<'quotes' | 'pos' | 'renewals'>('quotes');
+
+  // Fetch real data
+  const { data: quotesData, isLoading: quotesLoading, error: quotesError } = useQuotes({});
+  const { data: posData, isLoading: posLoading, error: posError } = usePurchaseOrders({});
+  const { data: renewalsData, isLoading: renewalsLoading, error: renewalsError } = useRenewals({});
+  const { data: summaryData } = useBillingSummary();
+
+  // Mutations
+  const sendQuoteMutation = useSendQuote();
+  const approvePOMutation = useApprovePO();
+  const rejectPOMutation = useRejectPO();
+  const processRenewalMutation = useProcessRenewal();
+
+  const quotes = quotesData?.items ?? [];
+  const pos = posData?.items ?? [];
+  const renewals = renewalsData?.items ?? [];
+
+  // Calculate stats from real data
+  const activeQuotes = quotes.filter((q: Quote) => ['DRAFT', 'SENT'].includes(q.status)).length;
+  const awaitingResponse = quotes.filter((q: Quote) => q.status === 'SENT').length;
+  const pendingPOs = pos.filter((p: PurchaseOrder) => p.status === 'PENDING').length;
+  const renewalsDue = renewals.filter((r: Renewal) => r.status === 'DUE').length;
+  const totalPipeline = quotes
+    .filter((q: Quote) => q.status === 'ACCEPTED')
+    .reduce((sum: number, q: Quote) => sum + q.totalAmountCents, 0);
 
   if (!isAuthenticated) {
     return (
@@ -211,22 +134,28 @@ export default function BillingDashboardPage() {
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-slate-600">Active Quotes</div>
-          <div className="text-2xl font-bold">12</div>
-          <div className="text-xs text-slate-500">3 awaiting response</div>
+          <div className="text-2xl font-bold">{summaryData?.activeQuotes ?? activeQuotes}</div>
+          <div className="text-xs text-slate-500">{awaitingResponse} awaiting response</div>
         </div>
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-slate-600">Pending POs</div>
-          <div className="text-2xl font-bold text-yellow-600">5</div>
+          <div className="text-2xl font-bold text-yellow-600">
+            {summaryData?.pendingPOs ?? pendingPOs}
+          </div>
           <div className="text-xs text-slate-500">Needs review</div>
         </div>
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-slate-600">Renewals Due</div>
-          <div className="text-2xl font-bold text-orange-600">8</div>
+          <div className="text-2xl font-bold text-orange-600">
+            {summaryData?.renewalsDue ?? renewalsDue}
+          </div>
           <div className="text-xs text-slate-500">Next 30 days</div>
         </div>
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-slate-600">Total Pipeline</div>
-          <div className="text-2xl font-bold text-green-600">$2.4M</div>
+          <div className="text-2xl font-bold text-green-600">
+            {formatCurrency(summaryData?.totalPipelineCents ?? totalPipeline)}
+          </div>
           <div className="text-xs text-slate-500">Accepted quotes</div>
         </div>
       </div>
@@ -257,197 +186,251 @@ export default function BillingDashboardPage() {
       {/* Quotes Tab */}
       {activeTab === 'quotes' && (
         <div className="rounded-lg border bg-white">
-          <table className="w-full">
-            <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
-              <tr>
-                <th className="px-4 py-3 font-medium">Quote #</th>
-                <th className="px-4 py-3 font-medium">District</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Valid Until</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {mockQuotes.map((quote) => (
-                <tr key={quote.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/billing/quotes/${quote.id}`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {quote.quoteNumber}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{quote.tenantName}</div>
-                    <div className="text-sm text-slate-500">{quote.name}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[quote.status]}`}
-                    >
-                      {quote.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {formatCurrency(quote.totalAmountCents)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(quote.validUntil)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {quote.status === 'DRAFT' && (
-                        <button className="text-sm text-blue-600 hover:underline">Send</button>
-                      )}
-                      {quote.status === 'ACCEPTED' && (
-                        <button className="text-sm text-green-600 hover:underline">
-                          Create Contract
-                        </button>
-                      )}
+          {quotesLoading ? (
+            <div className="p-8 text-center text-slate-500">Loading quotes...</div>
+          ) : quotesError ? (
+            <div className="p-8 text-center text-red-500">Failed to load quotes</div>
+          ) : quotes.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">No quotes found</div>
+          ) : (
+            <table className="w-full">
+              <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Quote #</th>
+                  <th className="px-4 py-3 font-medium">District</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Amount</th>
+                  <th className="px-4 py-3 font-medium">Valid Until</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {quotes.map((quote: Quote) => (
+                  <tr key={quote.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
                       <Link
                         href={`/billing/quotes/${quote.id}`}
-                        className="text-sm text-slate-600 hover:underline"
+                        className="font-medium text-blue-600 hover:underline"
                       >
-                        View
+                        {quote.quoteNumber}
                       </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{quote.tenantName}</div>
+                      <div className="text-sm text-slate-500">{quote.name}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[quote.status]}`}
+                      >
+                        {quote.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {formatCurrency(quote.totalAmountCents)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(quote.validUntil)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        {quote.status === 'DRAFT' && (
+                          <button
+                            onClick={() => {
+                              sendQuoteMutation.mutate(quote.id);
+                            }}
+                            disabled={sendQuoteMutation.isPending}
+                            className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                          >
+                            {sendQuoteMutation.isPending ? 'Sending...' : 'Send'}
+                          </button>
+                        )}
+                        {quote.status === 'ACCEPTED' && (
+                          <button className="text-sm text-green-600 hover:underline">
+                            Create Contract
+                          </button>
+                        )}
+                        <Link
+                          href={`/billing/quotes/${quote.id}`}
+                          className="text-sm text-slate-600 hover:underline"
+                        >
+                          View
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
       {/* Purchase Orders Tab */}
       {activeTab === 'pos' && (
         <div className="rounded-lg border bg-white">
-          <table className="w-full">
-            <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
-              <tr>
-                <th className="px-4 py-3 font-medium">PO #</th>
-                <th className="px-4 py-3 font-medium">District</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {mockPOs.map((po) => (
-                <tr key={po.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/billing/pos/${po.id}`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {po.poNumber}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-medium">{po.tenantName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[po.status]}`}
-                    >
-                      {po.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium">{formatCurrency(po.amountCents)}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(po.createdAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {po.status === 'PENDING' && (
-                        <>
-                          <button className="text-sm text-green-600 hover:underline">
-                            Approve
-                          </button>
-                          <button className="text-sm text-red-600 hover:underline">Reject</button>
-                        </>
-                      )}
-                      {po.status === 'APPROVED' && (
-                        <button className="text-sm text-blue-600 hover:underline">
-                          Activate Contract
-                        </button>
-                      )}
+          {posLoading ? (
+            <div className="p-8 text-center text-slate-500">Loading purchase orders...</div>
+          ) : posError ? (
+            <div className="p-8 text-center text-red-500">Failed to load purchase orders</div>
+          ) : pos.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">No purchase orders found</div>
+          ) : (
+            <table className="w-full">
+              <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 font-medium">PO #</th>
+                  <th className="px-4 py-3 font-medium">District</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Amount</th>
+                  <th className="px-4 py-3 font-medium">Submitted</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {pos.map((po: PurchaseOrder) => (
+                  <tr key={po.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
                       <Link
                         href={`/billing/pos/${po.id}`}
-                        className="text-sm text-slate-600 hover:underline"
+                        className="font-medium text-blue-600 hover:underline"
                       >
-                        View
+                        {po.poNumber}
                       </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-4 py-3 font-medium">{po.tenantName}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[po.status]}`}
+                      >
+                        {po.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium">{formatCurrency(po.amountCents)}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatDate(po.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        {po.status === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                approvePOMutation.mutate(po.id);
+                              }}
+                              disabled={approvePOMutation.isPending}
+                              className="text-sm text-green-600 hover:underline disabled:opacity-50"
+                            >
+                              {approvePOMutation.isPending ? 'Approving...' : 'Approve'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                rejectPOMutation.mutate({ id: po.id, reason: 'Rejected by admin' });
+                              }}
+                              disabled={rejectPOMutation.isPending}
+                              className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                            >
+                              {rejectPOMutation.isPending ? 'Rejecting...' : 'Reject'}
+                            </button>
+                          </>
+                        )}
+                        {po.status === 'APPROVED' && (
+                          <button className="text-sm text-blue-600 hover:underline">
+                            Activate Contract
+                          </button>
+                        )}
+                        <Link
+                          href={`/billing/pos/${po.id}`}
+                          className="text-sm text-slate-600 hover:underline"
+                        >
+                          View
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
       {/* Renewals Tab */}
       {activeTab === 'renewals' && (
         <div className="rounded-lg border bg-white">
-          <table className="w-full">
-            <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
-              <tr>
-                <th className="px-4 py-3 font-medium">Contract</th>
-                <th className="px-4 py-3 font-medium">District</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Value</th>
-                <th className="px-4 py-3 font-medium">Expires</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {mockRenewals.map((renewal) => (
-                <tr key={renewal.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/billing/renewals/${renewal.id}`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {renewal.contractNumber}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 font-medium">{renewal.tenantName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[renewal.status]}`}
-                    >
-                      {renewal.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {formatCurrency(renewal.totalValueCents)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="text-slate-900">{formatDate(renewal.contractEndDate)}</div>
-                    <div className="text-xs text-slate-500">Due: {formatDate(renewal.dueDate)}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      {(renewal.status === 'DUE' || renewal.status === 'SCHEDULED') && (
-                        <button className="text-sm text-blue-600 hover:underline">
-                          Create Quote
-                        </button>
-                      )}
-                      {renewal.status === 'IN_PROGRESS' && (
-                        <button className="text-sm text-green-600 hover:underline">
-                          View Quote
-                        </button>
-                      )}
+          {renewalsLoading ? (
+            <div className="p-8 text-center text-slate-500">Loading renewals...</div>
+          ) : renewalsError ? (
+            <div className="p-8 text-center text-red-500">Failed to load renewals</div>
+          ) : renewals.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">No renewals found</div>
+          ) : (
+            <table className="w-full">
+              <thead className="border-b bg-slate-50 text-left text-sm text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Contract</th>
+                  <th className="px-4 py-3 font-medium">District</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Value</th>
+                  <th className="px-4 py-3 font-medium">Expires</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {renewals.map((renewal: Renewal) => (
+                  <tr key={renewal.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
                       <Link
                         href={`/billing/renewals/${renewal.id}`}
-                        className="text-sm text-slate-600 hover:underline"
+                        className="font-medium text-blue-600 hover:underline"
                       >
-                        Details
+                        {renewal.contractNumber}
                       </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-4 py-3 font-medium">{renewal.tenantName}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${statusColors[renewal.status]}`}
+                      >
+                        {renewal.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      {formatCurrency(renewal.totalValueCents)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-slate-900">{formatDate(renewal.contractEndDate)}</div>
+                      <div className="text-xs text-slate-500">
+                        Due: {formatDate(renewal.dueDate)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        {(renewal.status === 'DUE' || renewal.status === 'SCHEDULED') && (
+                          <button
+                            onClick={() => {
+                              processRenewalMutation.mutate({ id: renewal.id, action: 'start' });
+                            }}
+                            disabled={processRenewalMutation.isPending}
+                            className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                          >
+                            {processRenewalMutation.isPending ? 'Starting...' : 'Create Quote'}
+                          </button>
+                        )}
+                        {renewal.status === 'IN_PROGRESS' && (
+                          <button className="text-sm text-green-600 hover:underline">
+                            View Quote
+                          </button>
+                        )}
+                        <Link
+                          href={`/billing/renewals/${renewal.id}`}
+                          className="text-sm text-slate-600 hover:underline"
+                        >
+                          Details
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>

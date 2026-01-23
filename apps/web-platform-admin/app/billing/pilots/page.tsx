@@ -1,10 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+import {
+  usePilotPrograms,
+  usePilotStats,
+  useCreatePilot,
+  useExtendPilot,
+  useConvertPilot,
+  useCancelPilot,
+} from '@/hooks/use-billing';
+import type { PilotProgram, PilotStats, CreatePilotInput } from '@/lib/api/billing.api';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
+// TYPES - Using types from billing.api.ts
 // ═══════════════════════════════════════════════════════════════════════════════
 
 type PilotStatus =
@@ -23,30 +33,6 @@ type PilotType =
   | 'ENTERPRISE_TRIAL'
   | 'PROMOTIONAL';
 
-interface PilotProgram {
-  id: string;
-  tenantId: string;
-  type: PilotType;
-  status: PilotStatus;
-  name: string;
-  seats: number;
-  seatsUsed: number;
-  startDate: string;
-  endDate: string;
-  daysRemaining: number;
-  primaryContactEmail: string | null;
-}
-
-interface PilotStats {
-  byStatus: { status: string; count: number }[];
-  byType: { type: string; count: number }[];
-  conversionRate: number;
-  totalSeats: number;
-  seatsInUse: number;
-  endingThisWeek: number;
-  endingThisMonth: number;
-}
-
 interface CreatePilotForm {
   tenantId: string;
   type: PilotType;
@@ -60,88 +46,6 @@ interface CreatePilotForm {
   autoConvertEnabled: boolean;
   conversionDiscountPct: number | null;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MOCK DATA (Replace with API calls)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const mockPilots: PilotProgram[] = [
-  {
-    id: '1',
-    tenantId: 'tenant-1',
-    type: 'DISTRICT_PILOT',
-    status: 'ACTIVE',
-    name: 'North Valley USD Pilot',
-    seats: 500,
-    seatsUsed: 234,
-    startDate: '2024-11-01',
-    endDate: '2025-01-30',
-    daysRemaining: 25,
-    primaryContactEmail: 'sjohnson@nvusd.edu',
-  },
-  {
-    id: '2',
-    tenantId: 'tenant-2',
-    type: 'NONPROFIT_PILOT',
-    status: 'ACTIVE',
-    name: 'Education Alliance Foundation',
-    seats: 200,
-    seatsUsed: 189,
-    startDate: '2024-10-15',
-    endDate: '2025-01-14',
-    daysRemaining: 9,
-    primaryContactEmail: 'info@edalliance.org',
-  },
-  {
-    id: '3',
-    tenantId: 'tenant-3',
-    type: 'CHARTER_PILOT',
-    status: 'EXTENDED',
-    name: 'Metro Charter Academy',
-    seats: 100,
-    seatsUsed: 98,
-    startDate: '2024-09-01',
-    endDate: '2025-02-15',
-    daysRemaining: 41,
-    primaryContactEmail: 'admin@metrocharter.org',
-  },
-  {
-    id: '4',
-    tenantId: 'tenant-4',
-    type: 'DISTRICT_PILOT',
-    status: 'CONVERTED',
-    name: 'Riverside School District',
-    seats: 1000,
-    seatsUsed: 1000,
-    startDate: '2024-08-01',
-    endDate: '2024-10-31',
-    daysRemaining: 0,
-    primaryContactEmail: 'cto@riversideschools.edu',
-  },
-];
-
-const mockStats: PilotStats = {
-  byStatus: [
-    { status: 'ACTIVE', count: 12 },
-    { status: 'EXTENDED', count: 3 },
-    { status: 'PENDING', count: 2 },
-    { status: 'CONVERTED', count: 8 },
-    { status: 'EXPIRED', count: 4 },
-    { status: 'CANCELLED', count: 1 },
-  ],
-  byType: [
-    { type: 'DISTRICT_PILOT', count: 15 },
-    { type: 'NONPROFIT_PILOT', count: 6 },
-    { type: 'CHARTER_PILOT', count: 5 },
-    { type: 'ENTERPRISE_TRIAL', count: 3 },
-    { type: 'PROMOTIONAL', count: 1 },
-  ],
-  conversionRate: 66.7,
-  totalSeats: 12500,
-  seatsInUse: 8340,
-  endingThisWeek: 2,
-  endingThisMonth: 5,
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -184,10 +88,20 @@ function getTypeLabel(type: PilotType): string {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function PilotsPage() {
-  // Auth context available via useAuth() if needed for authorization
-  const [pilots, setPilots] = useState<PilotProgram[]>([]);
-  const [stats, setStats] = useState<PilotStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Fetch real data via hooks
+  const { data: pilotsData, isLoading: pilotsLoading, error: pilotsError } = usePilotPrograms({});
+  const { data: statsData, isLoading: statsLoading } = usePilotStats();
+
+  // Mutations
+  const createPilotMutation = useCreatePilot();
+  const extendPilotMutation = useExtendPilot();
+  const convertPilotMutation = useConvertPilot();
+  const cancelPilotMutation = useCancelPilot();
+
+  const pilots = pilotsData?.items ?? [];
+  const stats: PilotStats | null = statsData ?? null;
+  const isLoading = pilotsLoading || statsLoading;
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<PilotStatus | 'ALL'>('ALL');
   const [filterType, setFilterType] = useState<PilotType | 'ALL'>('ALL');
@@ -207,40 +121,44 @@ export default function PilotsPage() {
     conversionDiscountPct: null,
   });
 
-  useEffect(() => {
-    // [PLACEHOLDER] Using mock data - API integration pending
-    // fetchPilots();
-    // fetchStats();
-    setPilots(mockPilots);
-    setStats(mockStats);
-    setIsLoading(false);
-  }, []);
-
-  const filteredPilots = pilots.filter((p) => {
+  const filteredPilots = pilots.filter((p: PilotProgram) => {
     if (filterStatus !== 'ALL' && p.status !== filterStatus) return false;
     if (filterType !== 'ALL' && p.type !== filterType) return false;
     return true;
   });
 
   const handleCreatePilot = async () => {
-    // [PLACEHOLDER] API call to create pilot pending
-    console.log('Creating pilot:', createForm);
-    setShowCreateModal(false);
-    // Refresh list
+    createPilotMutation.mutate(createForm as CreatePilotInput, {
+      onSuccess: () => {
+        setShowCreateModal(false);
+        // Reset form
+        setCreateForm({
+          tenantId: '',
+          type: 'DISTRICT_PILOT',
+          name: '',
+          seats: 100,
+          durationDays: 90,
+          primaryContactName: '',
+          primaryContactEmail: '',
+          primaryContactPhone: '',
+          description: '',
+          autoConvertEnabled: false,
+          conversionDiscountPct: null,
+        });
+      },
+    });
   };
 
   const handleExtendPilot = async (pilotId: string) => {
     const days = prompt('Enter number of days to extend:');
     if (days && !Number.isNaN(Number(days))) {
-      // [PLACEHOLDER] API call to extend pilot pending
-      console.log(`Extending pilot ${pilotId} by ${days} days`);
+      extendPilotMutation.mutate({ id: pilotId, days: Number(days) });
     }
   };
 
   const handleConvertPilot = async (pilotId: string) => {
     if (confirm('Convert this pilot to a paid contract? This action cannot be undone.')) {
-      // [PLACEHOLDER] API call to convert pilot pending
-      console.log(`Converting pilot ${pilotId}`);
+      convertPilotMutation.mutate(pilotId);
     }
   };
 

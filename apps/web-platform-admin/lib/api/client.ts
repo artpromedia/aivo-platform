@@ -59,7 +59,10 @@ export class ApiError extends Error {
 }
 
 export class NetworkError extends Error {
-  constructor(message: string, public readonly originalError?: Error) {
+  constructor(
+    message: string,
+    public readonly originalError?: Error
+  ) {
     super(message);
     this.name = 'NetworkError';
   }
@@ -112,16 +115,20 @@ export async function apiClient<T>(
   const url = `${baseUrl}${path}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(customHeaders && typeof customHeaders === 'object' && !Array.isArray(customHeaders) ? customHeaders as Record<string, string> : {}),
+    ...(customHeaders && typeof customHeaders === 'object' && !Array.isArray(customHeaders)
+      ? (customHeaders as Record<string, string>)
+      : {}),
   };
 
   if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+    headers.Authorization = `Bearer ${accessToken}`;
   }
 
   // Create abort controller for timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeout);
 
   // Combine signals if external signal provided
   const combinedSignal = signal
@@ -154,7 +161,7 @@ export async function apiClient<T>(
 
       // Handle empty responses
       const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+      if (!contentType?.includes('application/json')) {
         return {} as T;
       }
 
@@ -189,10 +196,7 @@ export async function apiClient<T>(
     throw lastError;
   }
 
-  throw new NetworkError(
-    lastError?.message || 'Network request failed',
-    lastError
-  );
+  throw new NetworkError(lastError?.message || 'Network request failed', lastError);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -224,7 +228,13 @@ function combineAbortSignals(...signals: AbortSignal[]): AbortSignal {
       controller.abort();
       break;
     }
-    signal.addEventListener('abort', () => controller.abort(), { once: true });
+    signal.addEventListener(
+      'abort',
+      () => {
+        controller.abort();
+      },
+      { once: true }
+    );
   }
 
   return controller.signal;
@@ -249,13 +259,15 @@ export interface PaginatedResponse<T> {
   nextCursor?: string;
 }
 
-export function buildQueryString(params: Record<string, unknown>): string {
+export function buildQueryString(params: object): string {
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== '') {
       if (Array.isArray(value)) {
-        value.forEach((v) => searchParams.append(key, String(v)));
+        value.forEach((v) => {
+          searchParams.append(key, String(v));
+        });
       } else if (value instanceof Date) {
         searchParams.append(key, value.toISOString());
       } else {
