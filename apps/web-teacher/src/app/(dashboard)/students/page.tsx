@@ -2,70 +2,48 @@
  * Students List Page
  */
 
+'use client';
+
 import Link from 'next/link';
 import * as React from 'react';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
-
-// Mock data
-const students = [
-  {
-    id: '1',
-    firstName: 'Emma',
-    lastName: 'Wilson',
-    grade: 8,
-    currentGrade: 92,
-    hasIep: false,
-    missingAssignments: 0,
-  },
-  {
-    id: '2',
-    firstName: 'Michael',
-    lastName: 'Chen',
-    grade: 8,
-    currentGrade: 85,
-    hasIep: true,
-    missingAssignments: 1,
-  },
-  {
-    id: '3',
-    firstName: 'Olivia',
-    lastName: 'Brown',
-    grade: 8,
-    currentGrade: 78,
-    hasIep: false,
-    missingAssignments: 2,
-  },
-  {
-    id: '4',
-    firstName: 'Alex',
-    lastName: 'Smith',
-    grade: 8,
-    currentGrade: 65,
-    hasIep: true,
-    missingAssignments: 4,
-  },
-  {
-    id: '5',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    grade: 8,
-    currentGrade: 88,
-    hasIep: false,
-    missingAssignments: 0,
-  },
-  {
-    id: '6',
-    firstName: 'David',
-    lastName: 'Lee',
-    grade: 8,
-    currentGrade: 72,
-    hasIep: false,
-    missingAssignments: 3,
-  },
-];
+import { useStudents } from '@/hooks';
 
 export default function StudentsPage() {
+  const { students, loading, error } = useStudents();
+
+  if (loading) {
+    return (
+      <div>
+        <PageHeader title="Students" description="View and manage all your students" />
+        <div className="mt-6 flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+          <span className="ml-3 text-gray-500">Loading students...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader title="Students" description="View and manage all your students" />
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-red-600">Failed to load students: {error.message}</p>
+          <button
+            onClick={() => {
+              globalThis.location.reload();
+            }}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -118,18 +96,18 @@ export default function StudentsPage() {
                 <td className="px-4 py-3">
                   <Link href={`/students/${student.id}`} className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
-                      {student.firstName[0]}
-                      {student.lastName[0]}
+                      {student.firstName?.[0] ?? '?'}
+                      {student.lastName?.[0] ?? ''}
                     </div>
                     <span className="font-medium text-gray-900 hover:text-primary-600">
-                      {student.firstName} {student.lastName}
+                      {student.name ?? `${student.firstName ?? ''} ${student.lastName ?? ''}`}
                     </span>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">{student.grade}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">{student.gradeLevel ?? '-'}</td>
                 <td className="px-4 py-3">
-                  <span className={getGradeClass(student.currentGrade)}>
-                    {student.currentGrade}%
+                  <span className={getGradeClass(student.averageScore ?? 0)}>
+                    {student.averageScore != null ? `${student.averageScore}%` : '-'}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -138,9 +116,14 @@ export default function StudentsPage() {
                       IEP
                     </span>
                   )}
+                  {student.has504 && (
+                    <span className="ml-1 rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                      504
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
-                  {student.missingAssignments > 0 ? (
+                  {(student.missingAssignments ?? 0) > 0 ? (
                     <span className="text-sm text-red-600">{student.missingAssignments}</span>
                   ) : (
                     <span className="text-sm text-green-600">✓</span>

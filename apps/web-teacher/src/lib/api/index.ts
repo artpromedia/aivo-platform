@@ -12,6 +12,12 @@ export { gradesApi } from './grades';
 export { reportsApi } from './reports';
 export { messagesApi } from './messages';
 export { calendarApi } from './calendar';
+export {
+  iepApi,
+  type IEPStudentSummary,
+  type IEPServiceSummary,
+  type ComplianceAlert,
+} from './iep';
 
 // Professional Development
 export {

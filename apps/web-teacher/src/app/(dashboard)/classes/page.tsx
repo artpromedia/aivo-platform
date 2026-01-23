@@ -2,66 +2,64 @@
  * Classes List Page
  */
 
+'use client';
+
 import Link from 'next/link';
 import * as React from 'react';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useClasses } from '@/hooks';
 
-// Mock data
-const classes = [
-  {
-    id: '1',
-    name: 'Algebra I',
-    section: 'Period 1',
-    room: 'Room 204',
-    studentCount: 28,
-    averageGrade: 82.5,
-    schedule: 'Mon, Wed, Fri 8:00-8:50 AM',
-    color: 'bg-blue-500',
-  },
-  {
-    id: '2',
-    name: 'Algebra I',
-    section: 'Period 3',
-    room: 'Room 204',
-    studentCount: 26,
-    averageGrade: 78.3,
-    schedule: 'Mon, Wed, Fri 10:00-10:50 AM',
-    color: 'bg-blue-500',
-  },
-  {
-    id: '3',
-    name: 'Geometry',
-    section: 'Period 2',
-    room: 'Room 204',
-    studentCount: 24,
-    averageGrade: 85.1,
-    schedule: 'Tue, Thu 9:00-10:15 AM',
-    color: 'bg-green-500',
-  },
-  {
-    id: '4',
-    name: 'Pre-Calculus',
-    section: 'Period 5',
-    room: 'Room 204',
-    studentCount: 22,
-    averageGrade: 88.7,
-    schedule: 'Mon, Wed, Fri 1:00-1:50 PM',
-    color: 'bg-purple-500',
-  },
-  {
-    id: '5',
-    name: 'Math Lab',
-    section: 'Period 6',
-    room: 'Room 204',
-    studentCount: 15,
-    averageGrade: 75.2,
-    schedule: 'Tue, Thu 2:00-3:15 PM',
-    color: 'bg-orange-500',
-  },
+// Color palette for class cards
+const classColors = [
+  'bg-blue-500',
+  'bg-green-500',
+  'bg-purple-500',
+  'bg-orange-500',
+  'bg-pink-500',
+  'bg-teal-500',
 ];
 
 export default function ClassesPage() {
+  const { classes, loading, error } = useClasses();
+
+  if (loading) {
+    return (
+      <div>
+        <PageHeader
+          title="My Classes"
+          description="Manage your classes and view student progress"
+        />
+        <div className="mt-6 flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
+          <span className="ml-3 text-gray-500">Loading classes...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <PageHeader
+          title="My Classes"
+          description="Manage your classes and view student progress"
+        />
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <p className="text-red-600">Failed to load classes: {error.message}</p>
+          <button
+            onClick={() => {
+              globalThis.location.reload();
+            }}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -75,21 +73,23 @@ export default function ClassesPage() {
       />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {classes.map((cls) => (
+        {classes.map((cls, index) => (
           <Link
             key={cls.id}
             href={`/classes/${cls.id}`}
             className="group rounded-xl border bg-white p-5 transition-shadow hover:shadow-lg"
           >
             <div className="flex items-start justify-between">
-              <div className={`h-3 w-3 rounded-full ${cls.color}`} />
-              <span className="text-xs text-gray-400">{cls.room}</span>
+              <div className={`h-3 w-3 rounded-full ${classColors[index % classColors.length]}`} />
+              <span className="text-xs text-gray-400">{cls.gradeLevel}</span>
             </div>
             <h3 className="mt-3 text-lg font-semibold text-gray-900 group-hover:text-primary-600">
               {cls.name}
             </h3>
-            <p className="text-sm text-gray-500">{cls.section}</p>
-            <p className="mt-1 text-xs text-gray-400">{cls.schedule}</p>
+            <p className="text-sm text-gray-500">{cls.subject}</p>
+            {cls.period != null && (
+              <p className="mt-1 text-xs text-gray-400">Period {cls.period}</p>
+            )}
 
             <div className="mt-4 flex items-center justify-between border-t pt-4">
               <div>
@@ -97,7 +97,9 @@ export default function ClassesPage() {
                 <p className="text-xs text-gray-500">students</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-gray-900">{cls.averageGrade.toFixed(1)}%</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {cls.averageGrade != null ? `${cls.averageGrade.toFixed(1)}%` : '-'}
+                </p>
                 <p className="text-xs text-gray-500">class average</p>
               </div>
             </div>

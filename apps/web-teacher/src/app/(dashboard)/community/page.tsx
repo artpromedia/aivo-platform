@@ -21,6 +21,7 @@ import {
 } from '../../../../lib/api/community';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 
 const categoryConfig: Record<PostCategory, { label: string; color: string; icon: string }> = {
   discussion: { label: 'Discussion', color: 'bg-blue-100 text-blue-700', icon: '💬' },
@@ -29,7 +30,11 @@ const categoryConfig: Record<PostCategory, { label: string; color: string; icon:
   'success-story': { label: 'Success Story', color: 'bg-purple-100 text-purple-700', icon: '🌟' },
   tips: { label: 'Tips', color: 'bg-teal-100 text-teal-700', icon: '💡' },
   questions: { label: 'Questions', color: 'bg-amber-100 text-amber-700', icon: '❓' },
-  'success-stories': { label: 'Success Stories', color: 'bg-purple-100 text-purple-700', icon: '🌟' },
+  'success-stories': {
+    label: 'Success Stories',
+    color: 'bg-purple-100 text-purple-700',
+    icon: '🌟',
+  },
   general: { label: 'General', color: 'bg-gray-100 text-gray-700', icon: '📌' },
   announcements: { label: 'Announcements', color: 'bg-red-100 text-red-700', icon: '📢' },
 };
@@ -42,6 +47,7 @@ const resourceTypeIcons: Record<string, string> = {
 };
 
 export default function CommunityPage() {
+  const { accessToken, isLoading: authLoading } = useAccessToken();
   const [activeTab, setActiveTab] = React.useState<'feed' | 'resources'>('feed');
   const [selectedCategory, setSelectedCategory] = React.useState<PostCategory | null>(null);
   const [posts, setPosts] = React.useState<Post[]>([]);
@@ -52,9 +58,9 @@ export default function CommunityPage() {
 
   React.useEffect(() => {
     async function loadData() {
+      if (authLoading || !accessToken) return;
       try {
         setIsLoading(true);
-        const accessToken = 'mock-token';
         const [postsData, resourcesData, statsData] = await Promise.all([
           fetchPosts(accessToken, { category: selectedCategory ?? undefined }),
           fetchResources(accessToken),
@@ -71,11 +77,11 @@ export default function CommunityPage() {
       }
     }
     void loadData();
-  }, [selectedCategory]);
+  }, [selectedCategory, accessToken, authLoading]);
 
   const handleLikePost = async (postId: string) => {
+    if (!accessToken) return;
     try {
-      const accessToken = 'mock-token';
       await likePost(postId, accessToken);
       // Refresh posts
       const postsData = await fetchPosts(accessToken, { category: selectedCategory ?? undefined });
@@ -85,7 +91,7 @@ export default function CommunityPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />

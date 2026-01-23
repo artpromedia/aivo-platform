@@ -1,7 +1,9 @@
 'use client';
 
 import { Card, Heading, Button } from '@aivo/ui-web';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+import { iepApi } from '@/lib/api/iep';
 
 // IEP Types matching the backend iep-svc
 type IEPStatus = 'draft' | 'active' | 'review_pending' | 'expired';
@@ -70,223 +72,6 @@ interface IEPStudent {
   }[];
 }
 
-// Mock data
-const MOCK_IEP_STUDENTS: IEPStudent[] = [
-  {
-    id: 'st1',
-    name: 'Emma Rodriguez',
-    grade: '5th',
-    iepId: 'iep-001',
-    iepStatus: 'active',
-    eligibilityCategory: 'Specific Learning Disability',
-    caseManager: 'Ms. Johnson',
-    nextMeetingDate: '2025-02-15',
-    annualReviewDate: '2025-05-20',
-    goals: [
-      {
-        id: 'g1',
-        domain: 'Reading',
-        description:
-          'Emma will improve reading fluency from 85 to 120 words per minute with 95% accuracy.',
-        baseline: '85 words per minute',
-        target: '120 words per minute',
-        currentProgress: 102,
-        targetProgress: 120,
-        status: 'on_track',
-        targetDate: '2025-05-20',
-        lastUpdated: '2025-01-10',
-        progressHistory: [
-          { date: '2024-09-15', value: 85, notes: 'Initial baseline' },
-          { date: '2024-10-15', value: 90 },
-          { date: '2024-11-15', value: 95 },
-          { date: '2024-12-15', value: 98 },
-          { date: '2025-01-10', value: 102, notes: 'Good progress this month' },
-        ],
-      },
-      {
-        id: 'g2',
-        domain: 'Writing',
-        description:
-          'Emma will write a 5-sentence paragraph with proper capitalization and punctuation in 4 out of 5 trials.',
-        baseline: '2 out of 5 trials',
-        target: '4 out of 5 trials',
-        currentProgress: 3,
-        targetProgress: 5,
-        status: 'in_progress',
-        targetDate: '2025-05-20',
-        lastUpdated: '2025-01-08',
-        progressHistory: [
-          { date: '2024-09-15', value: 2 },
-          { date: '2024-11-15', value: 2.5 },
-          { date: '2025-01-08', value: 3 },
-        ],
-      },
-    ],
-    services: [
-      {
-        id: 'svc1',
-        type: 'Specialized Instruction',
-        provider: 'Ms. Johnson',
-        frequency: '5x/week',
-        duration: '45 min',
-        location: 'Resource Room',
-        minutesDelivered: 180,
-        minutesRequired: 225,
-      },
-      {
-        id: 'svc2',
-        type: 'Speech Therapy',
-        provider: 'Ms. Patterson',
-        frequency: '2x/week',
-        duration: '30 min',
-        location: 'Speech Room',
-        minutesDelivered: 56,
-        minutesRequired: 60,
-      },
-    ],
-    accommodations: [
-      'Extended time (1.5x) on tests',
-      'Preferential seating',
-      'Audio books for longer texts',
-      'Reduced assignments (quality over quantity)',
-    ],
-    complianceAlerts: [],
-  },
-  {
-    id: 'st2',
-    name: 'Marcus Thompson',
-    grade: '5th',
-    iepId: 'iep-002',
-    iepStatus: 'review_pending',
-    eligibilityCategory: 'Autism Spectrum Disorder',
-    caseManager: 'Mr. Davis',
-    nextMeetingDate: '2025-01-25',
-    annualReviewDate: '2025-01-25',
-    goals: [
-      {
-        id: 'g3',
-        domain: 'Social/Emotional',
-        description:
-          'Marcus will initiate appropriate peer interactions 3 times per day across settings.',
-        baseline: '0-1 times per day',
-        target: '3 times per day',
-        currentProgress: 2,
-        targetProgress: 3,
-        status: 'on_track',
-        targetDate: '2025-01-25',
-        lastUpdated: '2025-01-12',
-        progressHistory: [
-          { date: '2024-09-15', value: 0.5 },
-          { date: '2024-11-15', value: 1 },
-          { date: '2025-01-12', value: 2 },
-        ],
-      },
-      {
-        id: 'g4',
-        domain: 'Behavior',
-        description:
-          'Marcus will use coping strategies when frustrated, reducing outbursts from 5 per week to 1 or fewer.',
-        baseline: '5 per week',
-        target: '1 or fewer per week',
-        currentProgress: 3,
-        targetProgress: 1,
-        status: 'at_risk',
-        targetDate: '2025-01-25',
-        lastUpdated: '2025-01-12',
-        progressHistory: [
-          { date: '2024-09-15', value: 5 },
-          { date: '2024-11-15', value: 4 },
-          { date: '2025-01-12', value: 3, notes: 'Needs additional support' },
-        ],
-      },
-    ],
-    services: [
-      {
-        id: 'svc3',
-        type: 'Specialized Instruction',
-        provider: 'Mr. Davis',
-        frequency: '5x/week',
-        duration: '60 min',
-        location: 'Inclusion Classroom',
-        minutesDelivered: 280,
-        minutesRequired: 300,
-      },
-      {
-        id: 'svc4',
-        type: 'Behavioral Support',
-        provider: 'Ms. Lee',
-        frequency: '3x/week',
-        duration: '20 min',
-        location: 'Various',
-        minutesDelivered: 48,
-        minutesRequired: 60,
-      },
-    ],
-    accommodations: [
-      'Visual schedule',
-      'Sensory breaks',
-      'Advance notice of transitions',
-      'Quiet testing environment',
-    ],
-    complianceAlerts: [
-      {
-        type: 'Annual Review',
-        message: 'Annual review meeting due in 9 days',
-        dueDate: '2025-01-25',
-        severity: 'urgent',
-      },
-    ],
-  },
-  {
-    id: 'st3',
-    name: 'Sophia Chen',
-    grade: '5th',
-    iepId: 'iep-003',
-    iepStatus: 'active',
-    eligibilityCategory: 'Speech/Language Impairment',
-    caseManager: 'Ms. Patterson',
-    nextMeetingDate: '2025-03-10',
-    annualReviewDate: '2025-06-15',
-    goals: [
-      {
-        id: 'g5',
-        domain: 'Communication',
-        description:
-          'Sophia will produce /r/ and /r/ blends correctly in conversational speech with 80% accuracy.',
-        baseline: '40% accuracy',
-        target: '80% accuracy',
-        currentProgress: 65,
-        targetProgress: 80,
-        status: 'in_progress',
-        targetDate: '2025-06-15',
-        lastUpdated: '2025-01-11',
-        progressHistory: [
-          { date: '2024-09-15', value: 40 },
-          { date: '2024-11-15', value: 55 },
-          { date: '2025-01-11', value: 65 },
-        ],
-      },
-    ],
-    services: [
-      {
-        id: 'svc5',
-        type: 'Speech Therapy',
-        provider: 'Ms. Patterson',
-        frequency: '3x/week',
-        duration: '30 min',
-        location: 'Speech Room',
-        minutesDelivered: 85,
-        minutesRequired: 90,
-      },
-    ],
-    accommodations: [
-      'Extra time to respond verbally',
-      'Alternative to oral presentations when requested',
-    ],
-    complianceAlerts: [],
-  },
-];
-
 function getStatusColor(status: GoalStatus): string {
   switch (status) {
     case 'mastered':
@@ -351,12 +136,37 @@ function ProgressBar({
 }
 
 export default function IEPManagerPage() {
-  const [students] = useState<IEPStudent[]>(MOCK_IEP_STUDENTS);
+  const [students, setStudents] = useState<IEPStudent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<IEPStudent | null>(null);
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [showProgressModal, setShowProgressModal] = useState<IEPGoal | null>(null);
   const [progressNote, setProgressNote] = useState('');
   const [progressValue, setProgressValue] = useState('');
+
+  // Fetch IEP students on mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const data = await iepApi.getStudentsWithIEP();
+        // Transform API response to local types
+        const transformed: IEPStudent[] = (data as unknown as IEPStudent[]).map((s) => ({
+          ...s,
+          goals: Array.isArray(s.goals) ? s.goals : [],
+          services: Array.isArray(s.services) ? s.services : [],
+          accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
+          complianceAlerts: Array.isArray(s.complianceAlerts) ? s.complianceAlerts : [],
+        }));
+        setStudents(transformed);
+      } catch (e) {
+        setError(e instanceof Error ? e : new Error('Failed to load IEP students'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    void fetchStudents();
+  }, []);
 
   const urgentAlerts = students.flatMap((s) =>
     s.complianceAlerts
@@ -366,14 +176,11 @@ export default function IEPManagerPage() {
 
   const handleRecordProgress = async (goal: IEPGoal) => {
     try {
-      await fetch(`/api/iep/goals/${goal.id}/progress`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          value: parseFloat(progressValue),
-          notes: progressNote,
-          recordedAt: new Date().toISOString(),
-        }),
+      if (!selectedStudent) return;
+      await iepApi.addProgress(selectedStudent.id, goal.id, {
+        value: parseFloat(progressValue),
+        notes: progressNote,
+        date: new Date().toISOString(),
       });
       setShowProgressModal(null);
       setProgressNote('');
@@ -383,6 +190,41 @@ export default function IEPManagerPage() {
       setShowProgressModal(null);
     }
   };
+
+  if (loading) {
+    return (
+      <section className="space-y-6">
+        <Heading kicker="Special Education" className="text-headline font-semibold">
+          IEP Manager
+        </Heading>
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <span className="ml-3 text-gray-500">Loading IEP students...</span>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="space-y-6">
+        <Heading kicker="Special Education" className="text-headline font-semibold">
+          IEP Manager
+        </Heading>
+        <Card className="p-6 text-center">
+          <p className="text-red-600">{error.message}</p>
+          <button
+            onClick={() => {
+              globalThis.location.reload();
+            }}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </Card>
+      </section>
+    );
+  }
 
   const renderStudentList = () => (
     <div className="space-y-6">

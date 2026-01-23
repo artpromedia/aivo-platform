@@ -17,6 +17,7 @@ import {
 } from '../../../../lib/api/monitoring';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 
 const focusStateConfig: Record<FocusState, { label: string; color: string; icon: string }> = {
   focused: {
@@ -42,6 +43,7 @@ const focusStateConfig: Record<FocusState, { label: string; color: string; icon:
 };
 
 export default function MonitoringPage() {
+  const { accessToken, isLoading: authLoading } = useAccessToken();
   const [sessions, setSessions] = React.useState<StudentSession[]>([]);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = React.useState(true);
@@ -49,8 +51,8 @@ export default function MonitoringPage() {
 
   React.useEffect(() => {
     async function loadSessions() {
+      if (authLoading || !accessToken) return;
       try {
-        const accessToken = 'mock-token';
         const data = await fetchActiveSessions(undefined, accessToken);
         setSessions(data);
         setError(null);
@@ -66,11 +68,11 @@ export default function MonitoringPage() {
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [accessToken, authLoading]);
 
   const handleOfferHelp = async (studentId: string) => {
+    if (!accessToken) return;
     try {
-      const accessToken = 'mock-token';
       await acknowledgeHelpRequest(`help-${studentId}`, accessToken);
       // Refresh sessions to update help status
       const data = await fetchActiveSessions(undefined, accessToken);
@@ -80,7 +82,7 @@ export default function MonitoringPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />

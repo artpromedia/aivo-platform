@@ -16,8 +16,10 @@ import {
 } from '../../../../lib/api/messages';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 
 export default function MessagesPage() {
+  const { accessToken, isLoading: authLoading } = useAccessToken();
   const [conversations, setConversations] = React.useState<Conversation[]>([]);
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [selected, setSelected] = React.useState<Conversation | null>(null);
@@ -27,8 +29,8 @@ export default function MessagesPage() {
 
   React.useEffect(() => {
     async function loadConversations() {
+      if (authLoading || !accessToken) return;
       try {
-        const accessToken = 'mock-token';
         const data = await fetchConversations(accessToken);
         setConversations(data);
         if (data.length > 0 && !selected) {
@@ -41,13 +43,12 @@ export default function MessagesPage() {
       }
     }
     void loadConversations();
-  }, [selected]);
+  }, [selected, accessToken, authLoading]);
 
   React.useEffect(() => {
     async function loadMessages() {
-      if (!selected) return;
+      if (!selected || !accessToken) return;
       try {
-        const accessToken = 'mock-token';
         const data = await fetchConversationMessages(selected.id, accessToken);
         setMessages(data);
         if (selected.unread) {
@@ -58,13 +59,12 @@ export default function MessagesPage() {
       }
     }
     void loadMessages();
-  }, [selected]);
+  }, [selected, accessToken]);
 
   const handleSendMessage = async () => {
-    if (!selected || !newMessage.trim()) return;
+    if (!selected || !newMessage.trim() || !accessToken) return;
     try {
       setIsSending(true);
-      const accessToken = 'mock-token';
       const sent = await sendMessage(selected.id, newMessage.trim(), accessToken);
       setMessages((prev) => [...prev, sent]);
       setNewMessage('');
@@ -75,7 +75,7 @@ export default function MessagesPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />

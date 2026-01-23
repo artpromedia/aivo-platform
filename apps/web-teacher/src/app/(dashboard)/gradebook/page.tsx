@@ -16,9 +16,11 @@ import {
 
 import { GradebookTable } from '@/components/gradebook/gradebook-table';
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 import type { Gradebook } from '@/lib/types';
 
 export default function GradebookPage() {
+  const { accessToken, isLoading: authLoading } = useAccessToken();
   const [selectedClass, setSelectedClass] = React.useState('1');
   const [gradebook, setGradebook] = React.useState<APIGradebook | null>(null);
   const [classes, setClasses] = React.useState<TeacherClass[]>([]);
@@ -27,10 +29,9 @@ export default function GradebookPage() {
 
   React.useEffect(() => {
     async function loadData() {
+      if (authLoading || !accessToken) return;
       try {
         setIsLoading(true);
-        // In production, get access token from auth context
-        const accessToken = 'mock-token';
         const [gradebookData, classesData] = await Promise.all([
           fetchGradebook(selectedClass, accessToken),
           fetchTeacherClasses(accessToken),
@@ -45,7 +46,7 @@ export default function GradebookPage() {
       }
     }
     void loadData();
-  }, [selectedClass]);
+  }, [selectedClass, accessToken, authLoading]);
 
   // Transform API gradebook to component-compatible format
   const compatibleGradebook: Gradebook | null = gradebook
@@ -87,8 +88,8 @@ export default function GradebookPage() {
     assignmentId: string,
     score: number | null
   ) => {
+    if (!accessToken) return;
     try {
-      const accessToken = 'mock-token';
       // Find the grade ID
       const student = gradebook?.students.find((s) => s.studentId === studentId);
       const grade = student?.grades.find((g) => g.assignmentId === assignmentId);
@@ -100,7 +101,7 @@ export default function GradebookPage() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />

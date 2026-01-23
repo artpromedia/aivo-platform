@@ -2,6 +2,9 @@
  * Hooks Index
  */
 
+// Auth hooks
+export { useAccessToken, useRequiredAccessToken } from './use-access-token';
+
 export { useClasses, useClass, useClassAnalytics } from './use-classes';
 export { useStudents, useStudent, useStudentProgress, useIEPGoals } from './use-students';
 export { useAssignments, useAssignment, useSubmissions } from './use-assignments';
@@ -47,8 +50,4 @@ export {
 } from './use-student-risk';
 
 // Dashboard hooks
-export {
-  useDashboard,
-  type UseDashboardOptions,
-  type UseDashboardReturn,
-} from './use-dashboard';
+export { useDashboard, type UseDashboardOptions, type UseDashboardReturn } from './use-dashboard';

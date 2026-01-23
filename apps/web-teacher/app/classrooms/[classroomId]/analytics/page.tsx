@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 
+import { ClassroomEngagementCard } from '../../../../components/classroom-engagement';
 import { MasteryDistribution } from '../../../../components/mastery-distribution';
 import { SessionsChart } from '../../../../components/sessions-chart';
-import { ClassroomEngagementCard } from '../../../../components/classroom-engagement';
 import {
   fetchClassroomOverview,
   fetchClassroomLearnerList,
@@ -18,6 +18,8 @@ import {
   getMasteryLabel,
 } from '../../../../lib/classroom-analytics';
 
+import { useAccessToken } from '@/hooks';
+
 // Helper to safely format date string
 function formatDateString(date: Date): string {
   return date.toISOString().split('T')[0] ?? '';
@@ -26,6 +28,7 @@ function formatDateString(date: Date): string {
 export default function ClassroomAnalyticsPage() {
   const params = useParams();
   const classroomId = params.classroomId as string;
+  const { accessToken, isLoading: authLoading } = useAccessToken();
 
   const [overview, setOverview] = useState<ClassroomOverviewResponse | null>(null);
   const [learnerList, setLearnerList] = useState<ClassroomLearnerListResponse | null>(null);
@@ -43,13 +46,11 @@ export default function ClassroomAnalyticsPage() {
   });
 
   const loadData = useCallback(async () => {
+    if (authLoading || !accessToken) return;
     setLoading(true);
     setError(null);
 
     try {
-      // In production, get access token from auth context
-      const accessToken = 'mock-token';
-
       const [overviewData, learnerData] = await Promise.all([
         fetchClassroomOverview(classroomId, accessToken, dateRange),
         fetchClassroomLearnerList(classroomId, accessToken, dateRange),
@@ -67,7 +68,7 @@ export default function ClassroomAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [classroomId, dateRange, selectedSubject]);
+  }, [classroomId, dateRange, selectedSubject, accessToken, authLoading]);
 
   useEffect(() => {
     void loadData();
@@ -77,7 +78,7 @@ export default function ClassroomAnalyticsPage() {
     setDateRange({ from, to });
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <section className="space-y-6">
         <div className="flex items-center justify-center py-12">
@@ -342,10 +343,7 @@ export default function ClassroomAnalyticsPage() {
       </div>
 
       {/* Gamification & Rewards */}
-      <ClassroomEngagementCard
-        classroomId={classroomId}
-        classroomName={overview.classroomName}
-      />
+      <ClassroomEngagementCard classroomId={classroomId} classroomName={overview.classroomName} />
     </section>
   );
 }

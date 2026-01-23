@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { Card, Heading, Button } from '@aivo/ui-web';
+import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+
+import { classesApi } from '@/lib/api';
+import type { ClassSummary } from '@/lib/types';
 
 // Types matching the backend service
 interface Assignment {
@@ -42,87 +45,6 @@ interface Gradebook {
   students: GradebookStudent[];
 }
 
-interface TeacherClass {
-  id: string;
-  name: string;
-  period: string;
-  studentCount: number;
-}
-
-// Mock data for development
-const MOCK_CLASSES: TeacherClass[] = [
-  { id: '1', name: 'Algebra I - Period 1', period: '1', studentCount: 25 },
-  { id: '2', name: 'Algebra I - Period 3', period: '3', studentCount: 28 },
-  { id: '3', name: 'Geometry - Period 2', period: '2', studentCount: 22 },
-];
-
-function getMockGradebook(classId: string): Gradebook {
-  return {
-    classId,
-    className: classId === '1' ? 'Algebra I - Period 1' : classId === '2' ? 'Algebra I - Period 3' : 'Geometry - Period 2',
-    gradingPeriod: 'Q2 2024-25',
-    assignments: [
-      { id: 'a1', classId, title: 'Quiz 1: Equations', type: 'quiz', category: 'Quizzes', totalPoints: 20, dueDate: '2024-12-01', status: 'closed' },
-      { id: 'a2', classId, title: 'HW Ch5: Linear Functions', type: 'homework', category: 'Homework', totalPoints: 10, dueDate: '2024-12-05', status: 'closed' },
-      { id: 'a3', classId, title: 'Quiz 2: Graphing', type: 'quiz', category: 'Quizzes', totalPoints: 20, dueDate: '2024-12-10', status: 'closed' },
-      { id: 'a4', classId, title: 'HW Ch6: Inequalities', type: 'homework', category: 'Homework', totalPoints: 10, dueDate: '2024-12-12', status: 'published' },
-      { id: 'a5', classId, title: 'Unit Test 1', type: 'test', category: 'Tests', totalPoints: 100, dueDate: '2024-12-15', status: 'published' },
-    ],
-    students: [
-      {
-        studentId: 's1', studentName: 'Emma Wilson', overallGrade: 92, missingCount: 0,
-        grades: [
-          { id: 'g1', studentId: 's1', assignmentId: 'a1', score: 19, status: 'graded' },
-          { id: 'g2', studentId: 's1', assignmentId: 'a2', score: 10, status: 'graded' },
-          { id: 'g3', studentId: 's1', assignmentId: 'a3', score: 18, status: 'graded' },
-          { id: 'g4', studentId: 's1', assignmentId: 'a4', score: 9, status: 'graded' },
-          { id: 'g5', studentId: 's1', assignmentId: 'a5', score: 95, status: 'graded' },
-        ],
-      },
-      {
-        studentId: 's2', studentName: 'Michael Chen', overallGrade: 85, missingCount: 0,
-        grades: [
-          { id: 'g6', studentId: 's2', assignmentId: 'a1', score: 17, status: 'graded' },
-          { id: 'g7', studentId: 's2', assignmentId: 'a2', score: 9, status: 'graded' },
-          { id: 'g8', studentId: 's2', assignmentId: 'a3', score: 16, status: 'graded' },
-          { id: 'g9', studentId: 's2', assignmentId: 'a4', score: 8, status: 'graded' },
-          { id: 'g10', studentId: 's2', assignmentId: 'a5', score: 88, status: 'graded' },
-        ],
-      },
-      {
-        studentId: 's3', studentName: 'Olivia Brown', overallGrade: 78, missingCount: 1,
-        grades: [
-          { id: 'g11', studentId: 's3', assignmentId: 'a1', score: 15, status: 'graded' },
-          { id: 'g12', studentId: 's3', assignmentId: 'a2', score: 8, status: 'graded' },
-          { id: 'g13', studentId: 's3', assignmentId: 'a3', score: 14, status: 'graded' },
-          { id: 'g14', studentId: 's3', assignmentId: 'a4', score: null, status: 'missing' },
-          { id: 'g15', studentId: 's3', assignmentId: 'a5', score: 82, status: 'graded' },
-        ],
-      },
-      {
-        studentId: 's4', studentName: 'Alex Smith', overallGrade: 65, missingCount: 2,
-        grades: [
-          { id: 'g16', studentId: 's4', assignmentId: 'a1', score: 12, status: 'graded' },
-          { id: 'g17', studentId: 's4', assignmentId: 'a2', score: null, status: 'missing' },
-          { id: 'g18', studentId: 's4', assignmentId: 'a3', score: 13, status: 'graded' },
-          { id: 'g19', studentId: 's4', assignmentId: 'a4', score: null, status: 'missing' },
-          { id: 'g20', studentId: 's4', assignmentId: 'a5', score: 70, status: 'graded' },
-        ],
-      },
-      {
-        studentId: 's5', studentName: 'Sarah Johnson', overallGrade: 88, missingCount: 0,
-        grades: [
-          { id: 'g21', studentId: 's5', assignmentId: 'a1', score: 18, status: 'graded' },
-          { id: 'g22', studentId: 's5', assignmentId: 'a2', score: 9, status: 'graded' },
-          { id: 'g23', studentId: 's5', assignmentId: 'a3', score: 17, status: 'graded' },
-          { id: 'g24', studentId: 's5', assignmentId: 'a4', score: 10, status: 'graded' },
-          { id: 'g25', studentId: 's5', assignmentId: 'a5', score: 90, status: 'graded' },
-        ],
-      },
-    ],
-  };
-}
-
 function getGradeColor(grade: number): string {
   if (grade >= 90) return 'text-green-700 bg-green-50';
   if (grade >= 80) return 'text-blue-700 bg-blue-50';
@@ -147,25 +69,56 @@ function getLetterGrade(percentage: number): string {
 }
 
 export default function GradebookPage() {
-  const [classes] = useState<TeacherClass[]>(MOCK_CLASSES);
-  const [selectedClassId, setSelectedClassId] = useState<string>(MOCK_CLASSES[0].id);
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [gradebook, setGradebook] = useState<Gradebook | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editingCell, setEditingCell] = useState<{ studentId: string; assignmentId: string } | null>(null);
+  const [classesLoading, setClassesLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [editingCell, setEditingCell] = useState<{
+    studentId: string;
+    assignmentId: string;
+  } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [filter, setFilter] = useState<'all' | 'at-risk' | 'missing'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch classes on mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const data = await classesApi.list();
+        setClasses(data);
+        if (data.length > 0) {
+          setSelectedClassId(data[0].id);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e : new Error('Failed to load classes'));
+      } finally {
+        setClassesLoading(false);
+      }
+    };
+    void fetchClasses();
+  }, []);
+
   const loadGradebook = useCallback(async (classId: string) => {
+    if (!classId) return;
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    setGradebook(getMockGradebook(classId));
-    setLoading(false);
+    setError(null);
+    try {
+      const data = (await classesApi.getGradebook(classId)) as unknown as Gradebook;
+      setGradebook(data);
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error('Failed to load gradebook'));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    loadGradebook(selectedClassId);
+    if (selectedClassId) {
+      void loadGradebook(selectedClassId);
+    }
   }, [selectedClassId, loadGradebook]);
 
   const handleGradeSubmit = async (studentId: string, assignmentId: string) => {
@@ -177,15 +130,15 @@ export default function GradebookPage() {
     }
 
     // Update local state (in production, this would call the API)
-    setGradebook(prev => {
+    setGradebook((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        students: prev.students.map(student => {
+        students: prev.students.map((student) => {
           if (student.studentId !== studentId) return student;
           return {
             ...student,
-            grades: student.grades.map(grade => {
+            grades: student.grades.map((grade) => {
               if (grade.assignmentId !== assignmentId) return grade;
               return {
                 ...grade,
@@ -208,21 +161,54 @@ export default function GradebookPage() {
     setEditValue(currentScore?.toString() ?? '');
   };
 
-  const filteredStudents = gradebook?.students.filter(student => {
-    if (searchTerm && !student.studentName.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    if (filter === 'at-risk' && student.overallGrade >= 70) return false;
-    if (filter === 'missing' && student.missingCount === 0) return false;
-    return true;
-  }) ?? [];
+  const filteredStudents =
+    gradebook?.students.filter((student) => {
+      if (searchTerm && !student.studentName.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      if (filter === 'at-risk' && student.overallGrade >= 70) return false;
+      if (filter === 'missing' && student.missingCount === 0) return false;
+      return true;
+    }) ?? [];
 
-  const classStats = gradebook ? {
-    classAverage: (gradebook.students.reduce((sum, s) => sum + s.overallGrade, 0) / gradebook.students.length).toFixed(1),
-    atRiskCount: gradebook.students.filter(s => s.overallGrade < 70).length,
-    totalMissing: gradebook.students.reduce((sum, s) => sum + s.missingCount, 0),
-    totalStudents: gradebook.students.length,
-  } : null;
+  const classStats = gradebook
+    ? {
+        classAverage: (
+          gradebook.students.reduce((sum, s) => sum + s.overallGrade, 0) /
+          (gradebook.students.length || 1)
+        ).toFixed(1),
+        atRiskCount: gradebook.students.filter((s) => s.overallGrade < 70).length,
+        totalMissing: gradebook.students.reduce((sum, s) => sum + s.missingCount, 0),
+        totalStudents: gradebook.students.length,
+      }
+    : null;
+
+  // Show error if classes failed to load
+  if (!classesLoading && error && classes.length === 0) {
+    return (
+      <section className="space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Heading kicker="Teacher Tools" className="text-headline font-semibold">
+              Gradebook
+            </Heading>
+            <p className="text-muted mt-1">Manage grades for your classes</p>
+          </div>
+        </div>
+        <Card className="p-6 text-center">
+          <p className="text-red-600">{error.message}</p>
+          <button
+            onClick={() => {
+              globalThis.location.reload();
+            }}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-6">
@@ -239,7 +225,9 @@ export default function GradebookPage() {
         <div className="flex items-center gap-3">
           <select
             value={selectedClassId}
-            onChange={(e) => setSelectedClassId(e.target.value)}
+            onChange={(e) => {
+              setSelectedClassId(e.target.value);
+            }}
             className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium"
           >
             {classes.map((cls) => (
@@ -259,19 +247,25 @@ export default function GradebookPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="p-4">
             <p className="text-sm text-muted">Class Average</p>
-            <p className={`text-2xl font-bold ${getGradeColor(parseFloat(classStats.classAverage)).split(' ')[0]}`}>
+            <p
+              className={`text-2xl font-bold ${getGradeColor(parseFloat(classStats.classAverage)).split(' ')[0]}`}
+            >
               {classStats.classAverage}%
             </p>
           </Card>
           <Card className="p-4">
             <p className="text-sm text-muted">Students at Risk</p>
-            <p className={`text-2xl font-bold ${classStats.atRiskCount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <p
+              className={`text-2xl font-bold ${classStats.atRiskCount > 0 ? 'text-red-600' : 'text-green-600'}`}
+            >
               {classStats.atRiskCount}
             </p>
           </Card>
           <Card className="p-4">
             <p className="text-sm text-muted">Missing Assignments</p>
-            <p className={`text-2xl font-bold ${classStats.totalMissing > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+            <p
+              className={`text-2xl font-bold ${classStats.totalMissing > 0 ? 'text-orange-600' : 'text-green-600'}`}
+            >
               {classStats.totalMissing}
             </p>
           </Card>
@@ -289,18 +283,20 @@ export default function GradebookPage() {
             type="text"
             placeholder="Search students..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+            }}
             className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
           />
           <div className="flex rounded-lg border border-border">
             {(['all', 'at-risk', 'missing'] as const).map((f) => (
               <button
                 key={f}
-                onClick={() => setFilter(f)}
+                onClick={() => {
+                  setFilter(f);
+                }}
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  filter === f
-                    ? 'bg-primary text-white'
-                    : 'bg-surface text-muted hover:bg-muted/10'
+                  filter === f ? 'bg-primary text-white' : 'bg-surface text-muted hover:bg-muted/10'
                 } ${f === 'all' ? 'rounded-l-lg' : f === 'missing' ? 'rounded-r-lg' : ''}`}
               >
                 {f === 'all' ? 'All Students' : f === 'at-risk' ? 'At Risk (<70%)' : 'Missing Work'}
@@ -334,18 +330,29 @@ export default function GradebookPage() {
               <thead>
                 {/* Category Row */}
                 <tr className="bg-muted/30">
-                  <th className="sticky left-0 z-20 bg-muted/30 border-b border-r border-border p-2 text-left" colSpan={2}>
+                  <th
+                    className="sticky left-0 z-20 bg-muted/30 border-b border-r border-border p-2 text-left"
+                    colSpan={2}
+                  >
                     <span className="text-xs font-semibold uppercase text-muted">
                       {gradebook.gradingPeriod}
                     </span>
                   </th>
                   {/* Group by category */}
-                  {['Quizzes', 'Homework', 'Tests'].map(category => {
-                    const count = gradebook.assignments.filter(a => a.category === category).length;
+                  {['Quizzes', 'Homework', 'Tests'].map((category) => {
+                    const count = gradebook.assignments.filter(
+                      (a) => a.category === category
+                    ).length;
                     if (count === 0) return null;
                     return (
-                      <th key={category} colSpan={count} className="border-b border-r border-border p-2 text-center">
-                        <span className="text-xs font-semibold uppercase text-muted">{category}</span>
+                      <th
+                        key={category}
+                        colSpan={count}
+                        className="border-b border-r border-border p-2 text-center"
+                      >
+                        <span className="text-xs font-semibold uppercase text-muted">
+                          {category}
+                        </span>
                       </th>
                     );
                   })}
@@ -368,7 +375,9 @@ export default function GradebookPage() {
                       title={`${assignment.title}\nDue: ${new Date(assignment.dueDate).toLocaleDateString()}\nPoints: ${assignment.totalPoints}`}
                     >
                       <div className="flex flex-col">
-                        <span className="text-xs font-medium truncate max-w-[70px]">{assignment.title}</span>
+                        <span className="text-xs font-medium truncate max-w-[70px]">
+                          {assignment.title}
+                        </span>
                         <span className="text-[10px] text-muted">{assignment.totalPoints} pts</span>
                       </div>
                     </th>
@@ -384,17 +393,28 @@ export default function GradebookPage() {
                   const gradeColor = getGradeColor(student.overallGrade);
 
                   return (
-                    <tr key={student.studentId} className={idx % 2 === 0 ? 'bg-surface' : 'bg-muted/10'}>
+                    <tr
+                      key={student.studentId}
+                      className={idx % 2 === 0 ? 'bg-surface' : 'bg-muted/10'}
+                    >
                       {/* Student Name */}
                       <td className="sticky left-0 z-10 border-b border-r border-border p-3 bg-inherit">
-                        <Link href={`/students/${student.studentId}`} className="flex items-center gap-2 hover:text-primary">
+                        <Link
+                          href={`/students/${student.studentId}`}
+                          className="flex items-center gap-2 hover:text-primary"
+                        >
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                            {student.studentName.split(' ').map(n => n[0]).join('')}
+                            {student.studentName
+                              .split(' ')
+                              .map((n) => n[0])
+                              .join('')}
                           </div>
                           <div>
                             <span className="font-medium">{student.studentName}</span>
                             {student.missingCount > 0 && (
-                              <span className="ml-2 text-xs text-red-500">{student.missingCount} missing</span>
+                              <span className="ml-2 text-xs text-red-500">
+                                {student.missingCount} missing
+                              </span>
                             )}
                           </div>
                         </Link>
@@ -402,35 +422,48 @@ export default function GradebookPage() {
 
                       {/* Average */}
                       <td className="sticky left-[180px] z-10 border-b border-r border-border p-2 text-center bg-inherit">
-                        <span className={`inline-block rounded px-2 py-1 text-sm font-medium ${gradeColor}`}>
+                        <span
+                          className={`inline-block rounded px-2 py-1 text-sm font-medium ${gradeColor}`}
+                        >
                           {student.overallGrade.toFixed(1)}%
                         </span>
                       </td>
 
                       {/* Grade Cells */}
                       {gradebook.assignments.map((assignment) => {
-                        const grade = student.grades.find(g => g.assignmentId === assignment.id);
-                        const isEditing = editingCell?.studentId === student.studentId && editingCell?.assignmentId === assignment.id;
-                        const percentage = grade?.score !== null && grade?.score !== undefined
-                          ? (grade.score / assignment.totalPoints) * 100
-                          : null;
+                        const grade = student.grades.find((g) => g.assignmentId === assignment.id);
+                        const isEditing =
+                          editingCell?.studentId === student.studentId &&
+                          editingCell?.assignmentId === assignment.id;
+                        const percentage =
+                          grade?.score !== null && grade?.score !== undefined
+                            ? (grade.score / assignment.totalPoints) * 100
+                            : null;
                         const cellColor = percentage !== null ? getGradeColor(percentage) : '';
 
                         return (
                           <td
                             key={assignment.id}
                             className="border-b border-r border-border p-1 text-center"
-                            onDoubleClick={() => startEditing(student.studentId, assignment.id, grade?.score ?? null)}
+                            onDoubleClick={() => {
+                              startEditing(student.studentId, assignment.id, grade?.score ?? null);
+                            }}
                           >
                             {isEditing ? (
                               <input
                                 type="number"
                                 value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
+                                onChange={(e) => {
+                                  setEditValue(e.target.value);
+                                }}
                                 onBlur={() => handleGradeSubmit(student.studentId, assignment.id)}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleGradeSubmit(student.studentId, assignment.id);
-                                  if (e.key === 'Escape') { setEditingCell(null); setEditValue(''); }
+                                  if (e.key === 'Enter')
+                                    handleGradeSubmit(student.studentId, assignment.id);
+                                  if (e.key === 'Escape') {
+                                    setEditingCell(null);
+                                    setEditValue('');
+                                  }
                                 }}
                                 className="w-16 rounded border border-primary px-2 py-1 text-center text-sm"
                                 autoFocus
@@ -438,7 +471,9 @@ export default function GradebookPage() {
                                 max={assignment.totalPoints * 1.5}
                               />
                             ) : (
-                              <div className={`inline-flex items-center justify-center rounded px-2 py-1 ${cellColor}`}>
+                              <div
+                                className={`inline-flex items-center justify-center rounded px-2 py-1 ${cellColor}`}
+                              >
                                 {grade?.score !== null && grade?.score !== undefined ? (
                                   <span className="text-sm font-medium">{grade.score}</span>
                                 ) : grade?.status === 'missing' ? (
@@ -460,7 +495,9 @@ export default function GradebookPage() {
                           <span className={`rounded px-2 py-1 text-sm font-bold ${gradeColor}`}>
                             {letterGrade}
                           </span>
-                          <span className="text-xs text-muted">{student.overallGrade.toFixed(1)}%</span>
+                          <span className="text-xs text-muted">
+                            {student.overallGrade.toFixed(1)}%
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -478,14 +515,18 @@ export default function GradebookPage() {
                   </td>
                   {gradebook.assignments.map((assignment) => {
                     const scores = gradebook.students
-                      .map(s => s.grades.find(g => g.assignmentId === assignment.id)?.score)
+                      .map((s) => s.grades.find((g) => g.assignmentId === assignment.id)?.score)
                       .filter((s): s is number => s !== null && s !== undefined);
-                    const avg = scores.length > 0
-                      ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
-                      : '-';
+                    const avg =
+                      scores.length > 0
+                        ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+                        : '-';
 
                     return (
-                      <td key={assignment.id} className="border-t border-r border-border p-2 text-center text-sm">
+                      <td
+                        key={assignment.id}
+                        className="border-t border-r border-border p-2 text-center text-sm"
+                      >
                         {avg}
                       </td>
                     );

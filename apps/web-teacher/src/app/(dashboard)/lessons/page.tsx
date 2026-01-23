@@ -13,6 +13,7 @@ import * as React from 'react';
 import { fetchLessons, type LessonSummary, type LessonStatus } from '../../../../lib/api/lessons';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 
 const subjectIcons: Record<string, string> = {
   Math: '🔢',
@@ -23,6 +24,7 @@ const subjectIcons: Record<string, string> = {
 };
 
 export default function LessonsPage() {
+  const { accessToken, isLoading: authLoading } = useAccessToken();
   const [filter, setFilter] = React.useState<'all' | LessonStatus>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [lessons, setLessons] = React.useState<LessonSummary[]>([]);
@@ -31,9 +33,9 @@ export default function LessonsPage() {
 
   React.useEffect(() => {
     async function loadLessons() {
+      if (authLoading || !accessToken) return;
       try {
         setIsLoading(true);
-        const accessToken = 'mock-token';
         const data = await fetchLessons(accessToken, {
           status: filter === 'all' ? undefined : filter,
           search: searchQuery || undefined,
@@ -47,9 +49,9 @@ export default function LessonsPage() {
       }
     }
     void loadLessons();
-  }, [filter, searchQuery]);
+  }, [filter, searchQuery, accessToken, authLoading]);
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
