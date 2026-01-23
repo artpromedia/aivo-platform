@@ -1,6 +1,12 @@
 'use client';
 
 import type { Role } from '@aivo/ts-rbac';
+import {
+  ErrorBoundary,
+  PageErrorFallback,
+  OfflineBanner,
+  useNetworkStatus,
+} from '@aivo/ui/components';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -58,11 +64,29 @@ export function AuthProvider({
   const value = useMemo(() => ({ ...state, logout }), [state, logout]);
 
   return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-      </QueryClientProvider>
-    </SessionProvider>
+    <ErrorBoundary fallback={<PageErrorFallback />}>
+      <SessionProvider>
+        <QueryClientProvider client={queryClient}>
+          <NetworkStatusWrapper>
+            <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+          </NetworkStatusWrapper>
+        </QueryClientProvider>
+      </SessionProvider>
+    </ErrorBoundary>
+  );
+}
+
+/**
+ * Network Status Wrapper - Shows offline banner when connectivity is lost
+ */
+function NetworkStatusWrapper({ children }: { children: ReactNode }) {
+  const { isOnline } = useNetworkStatus();
+
+  return (
+    <>
+      {!isOnline && <OfflineBanner />}
+      {children}
+    </>
   );
 }
 

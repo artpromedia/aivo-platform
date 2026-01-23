@@ -1,6 +1,12 @@
 'use client';
 
 import type { Role } from '@aivo/ts-rbac';
+import {
+  ErrorBoundary,
+  PageErrorFallback,
+  OfflineBanner,
+  useNetworkStatus,
+} from '@aivo/ui/components';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
@@ -48,4 +54,29 @@ export function AuthProvider({
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+/**
+ * Network Status Wrapper - Shows offline banner when connectivity is lost
+ */
+function NetworkStatusWrapper({ children }: { children: ReactNode }) {
+  const { isOnline } = useNetworkStatus();
+
+  return (
+    <>
+      {!isOnline && <OfflineBanner />}
+      {children}
+    </>
+  );
+}
+
+/**
+ * Root Providers with Error Boundary and Network Status
+ */
+export function RootProviders({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBoundary fallback={<PageErrorFallback />}>
+      <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
+    </ErrorBoundary>
+  );
 }

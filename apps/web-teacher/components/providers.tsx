@@ -11,6 +11,12 @@
 
 import type { Role } from '@aivo/ts-rbac';
 import { GradeThemeProvider, AccessibilityProvider } from '@aivo/ui-web';
+import {
+  ErrorBoundary,
+  PageErrorFallback,
+  OfflineBanner,
+  useNetworkStatus,
+} from '@aivo/ui/components';
 import { WebPushProvider } from '@aivo/ui-web/components/notifications';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -87,6 +93,20 @@ interface ProvidersProps {
   initialAuth?: AuthState;
 }
 
+/**
+ * Network Status Wrapper - Shows offline banner when connectivity is lost
+ */
+function NetworkStatusWrapper({ children }: { children: ReactNode }) {
+  const { isOnline } = useNetworkStatus();
+
+  return (
+    <>
+      {!isOnline && <OfflineBanner />}
+      {children}
+    </>
+  );
+}
+
 export function Providers({ children, initialAuth }: ProvidersProps) {
   const defaultAuth: AuthState = {
     isAuthenticated: false,
@@ -100,20 +120,22 @@ export function Providers({ children, initialAuth }: ProvidersProps) {
   };
 
   return (
-    <AuthProvider initialAuth={initialAuth || defaultAuth}>
-      <GradeThemeProvider initialTheme="navigator">
-        <AccessibilityProvider>
-          <WebPushProvider
-            vapidPublicKey={VAPID_PUBLIC_KEY}
-            serviceWorkerPath="/push-service-worker.js"
-            userRole="teacher"
-            registerEndpoint="/api/notifications/push/subscribe"
-            unregisterEndpoint="/api/notifications/push/unsubscribe"
-          >
-            {children}
-          </WebPushProvider>
-        </AccessibilityProvider>
-      </GradeThemeProvider>
-    </AuthProvider>
+    <ErrorBoundary fallback={<PageErrorFallback />}>
+      <AuthProvider initialAuth={initialAuth || defaultAuth}>
+        <GradeThemeProvider initialTheme="navigator">
+          <AccessibilityProvider>
+            <WebPushProvider
+              vapidPublicKey={VAPID_PUBLIC_KEY}
+              serviceWorkerPath="/push-service-worker.js"
+              userRole="teacher"
+              registerEndpoint="/api/notifications/push/subscribe"
+              unregisterEndpoint="/api/notifications/push/unsubscribe"
+            >
+              <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
+            </WebPushProvider>
+          </AccessibilityProvider>
+        </GradeThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

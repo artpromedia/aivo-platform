@@ -49,3 +49,42 @@ export type {
   ProgressIndicatorProps,
   GameBreakProps,
 } from './Assessment/types';
+
+// ErrorBoundary (Sprint 4.2)
+export {
+  // Error Boundary
+  ErrorBoundary,
+  DefaultErrorFallback,
+  PageErrorFallback,
+  // API Error
+  ApiErrorDisplay,
+  InlineError,
+  // Network Error
+  NetworkErrorDisplay,
+  OfflineBanner,
+  useNetworkStatus,
+  // Retry Button
+  RetryButton,
+  useRetry,
+  fetchWithRetry,
+  // Error Reporter
+  reportError,
+  reportMessage,
+  initErrorReporter,
+  addBreadcrumb,
+  setUser,
+} from './ErrorBoundary';
+export type {
+  ErrorBoundaryProps,
+  ErrorFallbackProps,
+  PageErrorFallbackProps,
+  ApiErrorProps,
+  ApiError,
+  NetworkErrorProps,
+  OfflineBannerProps,
+  RetryButtonProps,
+  UseRetryOptions,
+  FetchWithRetryOptions,
+  ErrorContext,
+  Breadcrumb,
+} from './ErrorBoundary';
