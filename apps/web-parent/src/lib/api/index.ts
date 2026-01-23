@@ -113,3 +113,7 @@ export * from './gamification.api';
 // AI API (Sprint 3.2)
 export { aiApi } from './ai.api';
 export * from './ai.api';
+
+// Analytics API (Sprint 3.3)
+export { analyticsApi } from './analytics.api';
+export * from './analytics.api';

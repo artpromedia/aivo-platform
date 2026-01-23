@@ -22,6 +22,7 @@ const mockPrisma = {
   periodMetrics: {
     findMany: vi.fn(),
     upsert: vi.fn(),
+    groupBy: vi.fn(),
   },
   topicProgress: {
     findMany: vi.fn(),

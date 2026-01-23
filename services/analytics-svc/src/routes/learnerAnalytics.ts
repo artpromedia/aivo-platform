@@ -15,6 +15,7 @@ import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+import type { Prisma } from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -194,11 +195,526 @@ interface Milestone {
   target?: number;
 }
 
+// Mobile App Progress Summary Response Types
+interface MobileDailyStat {
+  day: string;
+  minutes: number;
+  xp: number;
+}
+
+interface MobileSubjectProgress {
+  subject: string;
+  progress: number;
+  colorHex: string;
+  lessonsCompleted: number;
+  totalLessons: number;
+  mastery: number;
+}
+
+interface MobileSkillProgress {
+  skill: string;
+  level: number;
+  maxLevel: number;
+  emoji: string;
+}
+
+interface MobileRecentActivity {
+  id: string;
+  type: string;
+  title: string;
+  xp: number;
+  time: string;
+  emoji: string;
+}
+
+interface MobileProgressSummaryResponse {
+  totalMinutesThisWeek: number;
+  totalXpThisWeek: number;
+  currentStreak: number;
+  lessonsCompleted: number;
+  weeklyStats: MobileDailyStat[];
+  subjectProgress: MobileSubjectProgress[];
+  skills: MobileSkillProgress[];
+  recentActivity: MobileRecentActivity[];
+}
+
+// Subject color mapping
+const SUBJECT_COLORS: Record<string, string> = {
+  MATH: '#3B82F6',
+  ELA: '#A855F7',
+  SCIENCE: '#22C55E',
+  SOCIAL_STUDIES: '#F97316',
+  READING: '#A855F7',
+  WRITING: '#EC4899',
+  default: '#6B7280',
+};
+
+// Skill emoji mapping
+const SKILL_EMOJIS: Record<string, string> = {
+  fraction: '🔢',
+  reading_comprehension: '📖',
+  scientific_method: '🔬',
+  problem_solving: '🧩',
+  writing: '✍️',
+  geography: '🗺️',
+  algebra: '📊',
+  grammar: '📝',
+  vocabulary: '📚',
+  default: '📚',
+};
+
+function getSkillEmoji(skillName: string): string {
+  const normalizedName = skillName.toLowerCase().replace(/\s+/g, '_');
+  return SKILL_EMOJIS[normalizedName] ?? SKILL_EMOJIS.default ?? '📚';
+}
+
+function getActivityEmoji(activityType: string): string {
+  switch (activityType.toLowerCase()) {
+    case 'lesson':
+      return '📖';
+    case 'assessment':
+      return '📝';
+    case 'practice':
+      return '🎯';
+    case 'game':
+      return '🎮';
+    case 'video':
+      return '🎬';
+    case 'achievement':
+      return '🏆';
+    default:
+      return '📚';
+  }
+}
+
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 60) {
+    return `${diffMins} minutes ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  } else if (diffDays < 7) {
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+}
+
+/**
+ * Maps database goal types to mobile app goal types
+ */
+function mapGoalType(
+  dbType: string
+): 'lessons' | 'minutes' | 'xp' | 'streak' | 'subject' | 'custom' {
+  const typeMap: Record<
+    string,
+    'lessons' | 'minutes' | 'xp' | 'streak' | 'subject' | 'custom'
+  > = {
+    lesson_count: 'lessons',
+    lessons: 'lessons',
+    time_spent: 'minutes',
+    minutes: 'minutes',
+    xp_earned: 'xp',
+    xp: 'xp',
+    streak_days: 'streak',
+    streak: 'streak',
+    subject_mastery: 'subject',
+    subject: 'subject',
+  };
+  return typeMap[dbType.toLowerCase()] ?? 'custom';
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTES
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const learnerAnalyticsRoutes: FastifyPluginAsync = async (app) => {
+  /**
+   * GET /analytics/learners/:learnerId/progress-summary
+   *
+   * Returns progress summary optimized for mobile learner app.
+   * Includes weekly stats, subject progress, skills, and recent activity.
+   */
+  app.get<{
+    Params: { learnerId: string };
+  }>('/learners/:learnerId/progress-summary', async (request, reply) => {
+    const user = getUser(request);
+    const { learnerId } = request.params;
+
+    // Verify learner can access their own data
+    if (user.role === 'learner' && user.learnerId !== learnerId) {
+      return reply.code(403).send({ error: 'Access denied' });
+    }
+
+    // Get learner key from warehouse
+    const learnerDim = await prisma.$queryRaw<Array<{ learner_key: number }>>`
+      SELECT learner_key FROM dim_learner
+      WHERE learner_id = ${learnerId}::uuid AND is_current = true
+      LIMIT 1
+    `;
+
+    if (learnerDim.length === 0) {
+      return reply.code(404).send({ error: 'Learner not found' });
+    }
+
+    const learnerKey = learnerDim[0].learner_key;
+
+    // Calculate date range for this week
+    const now = new Date();
+    const weekStart = getWeekStart(now);
+    const weekStartKey = convertToDateKey(weekStart);
+    const todayKey = convertToDateKey(now);
+
+    // Get weekly stats (daily breakdown)
+    const dailyStats = await prisma.$queryRaw<
+      Array<{ date_key: number; total_time_seconds: bigint; xp_earned: bigint }>
+    >`
+      SELECT 
+        date_key,
+        COALESCE(SUM(duration_seconds), 0) as total_time_seconds,
+        COALESCE(SUM(xp_earned), 0) as xp_earned
+      FROM fact_sessions
+      WHERE learner_key = ${learnerKey}
+        AND date_key >= ${weekStartKey}
+        AND date_key <= ${todayKey}
+      GROUP BY date_key
+      ORDER BY date_key
+    `;
+
+    // Build weekly stats array (Mon-Sun)
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weeklyStats: MobileDailyStat[] = [];
+    const statsMap = new Map<number, { minutes: number; xp: number }>();
+
+    for (const stat of dailyStats) {
+      statsMap.set(stat.date_key, {
+        minutes: Math.round(Number(stat.total_time_seconds) / 60),
+        xp: Number(stat.xp_earned),
+      });
+    }
+
+    // Fill in all 7 days
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + i);
+      const dateKey = convertToDateKey(date);
+      const dayName = dayNames[date.getDay()] ?? 'Day';
+      const stats = statsMap.get(dateKey) ?? { minutes: 0, xp: 0 };
+      weeklyStats.push({
+        day: dayName,
+        minutes: stats.minutes,
+        xp: stats.xp,
+      });
+    }
+
+    // Calculate totals
+    const totalMinutesThisWeek = weeklyStats.reduce((sum, s) => sum + s.minutes, 0);
+    const totalXpThisWeek = weeklyStats.reduce((sum, s) => sum + s.xp, 0);
+
+    // Get current streak
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const ninetyDaysAgoKey = convertToDateKey(ninetyDaysAgo);
+
+    const sessionDates = await prisma.$queryRaw<Array<{ date_key: number }>>`
+      SELECT DISTINCT date_key
+      FROM fact_sessions
+      WHERE learner_key = ${learnerKey}
+        AND date_key >= ${ninetyDaysAgoKey}
+        AND date_key <= ${todayKey}
+      ORDER BY date_key DESC
+    `;
+
+    const activeDates = new Set<number>(sessionDates.map((r: { date_key: number }) => r.date_key));
+    let currentStreak = 0;
+    const checkDate = new Date(now);
+    const yesterdayKey = convertToDateKey(new Date(now.getTime() - 86400000));
+
+    if (activeDates.has(todayKey) || activeDates.has(yesterdayKey)) {
+      for (let i = 0; i < 90; i++) {
+        const checkKey = convertToDateKey(checkDate);
+        if (activeDates.has(checkKey)) {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else if (i === 0 && !activeDates.has(todayKey)) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Get lessons completed (total all time)
+    const lessonsResult = await prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*) as count FROM fact_content_events
+      WHERE learner_key = ${learnerKey}
+        AND event_type = 'COMPLETED'
+        AND content_type = 'lesson'
+    `;
+    const lessonsCompleted = Number(lessonsResult[0]?.count ?? 0);
+
+    // Get subject progress
+    const subjectData = await prisma.$queryRaw<
+      Array<{
+        subject_code: string;
+        subject_name: string;
+        average_mastery: Prisma.Decimal;
+        mastered_skills: number;
+        total_skills: number;
+        lessons_completed: number;
+        total_lessons: number;
+      }>
+    >`
+      SELECT 
+        s.subject_code,
+        s.subject_name,
+        COALESCE(p.average_mastery, 0) as average_mastery,
+        COALESCE(p.mastered_skills, 0) as mastered_skills,
+        COALESCE(p.total_skills, 1) as total_skills,
+        COALESCE(p.lessons_completed, 0) as lessons_completed,
+        COALESCE(p.total_lessons, 1) as total_lessons
+      FROM dim_subject s
+      LEFT JOIN LATERAL (
+        SELECT 
+          average_mastery,
+          mastered_skills,
+          total_skills,
+          lessons_completed,
+          total_lessons
+        FROM fact_learning_progress
+        WHERE learner_key = ${learnerKey}
+          AND subject_key = s.subject_key
+        ORDER BY date_key DESC
+        LIMIT 1
+      ) p ON true
+      WHERE s.is_active = true
+      ORDER BY s.subject_name
+    `;
+
+    const subjectProgress: MobileSubjectProgress[] = subjectData.map((s) => ({
+      subject: s.subject_name,
+      progress: s.total_lessons > 0 ? Math.round((s.lessons_completed / s.total_lessons) * 100) : 0,
+      colorHex: SUBJECT_COLORS[s.subject_code] ?? SUBJECT_COLORS.default ?? '#6B7280',
+      lessonsCompleted: s.lessons_completed,
+      totalLessons: s.total_lessons,
+      mastery: Math.round(Number(s.average_mastery) * 100),
+    }));
+
+    // Get top skills
+    const skillsData = await prisma.$queryRaw<
+      Array<{
+        skill_code: string;
+        skill_name: string;
+        mastery_level: Prisma.Decimal;
+      }>
+    >`
+      SELECT 
+        sk.skill_code,
+        sk.skill_name,
+        COALESCE(sm.mastery_level, 0) as mastery_level
+      FROM dim_skill sk
+      LEFT JOIN fact_skill_mastery sm ON sm.skill_key = sk.skill_key
+        AND sm.learner_key = ${learnerKey}
+      WHERE sk.is_active = true
+      ORDER BY sm.mastery_level DESC NULLS LAST
+      LIMIT 6
+    `;
+
+    const skills: MobileSkillProgress[] = skillsData.map((s) => ({
+      skill: s.skill_name,
+      level: Math.min(Math.ceil(Number(s.mastery_level) / 20), 5), // Convert 0-100 to 1-5
+      maxLevel: 5,
+      emoji: getSkillEmoji(s.skill_code),
+    }));
+
+    // Get recent activity
+    const activityData = await prisma.$queryRaw<
+      Array<{
+        event_id: string;
+        event_type: string;
+        content_type: string;
+        content_title: string;
+        xp_earned: number;
+        event_timestamp: Date;
+      }>
+    >`
+      SELECT 
+        event_id::text,
+        event_type,
+        content_type,
+        COALESCE(content_title, content_type) as content_title,
+        COALESCE(xp_earned, 0) as xp_earned,
+        event_timestamp
+      FROM fact_content_events
+      WHERE learner_key = ${learnerKey}
+      ORDER BY event_timestamp DESC
+      LIMIT 5
+    `;
+
+    const recentActivity: MobileRecentActivity[] = activityData.map((a) => ({
+      id: a.event_id,
+      type: a.content_type,
+      title: `${a.event_type === 'COMPLETED' ? 'Completed' : 'Started'} "${a.content_title}"`,
+      xp: a.xp_earned,
+      time: formatRelativeTime(a.event_timestamp),
+      emoji: getActivityEmoji(a.content_type),
+    }));
+
+    const response: MobileProgressSummaryResponse = {
+      totalMinutesThisWeek,
+      totalXpThisWeek,
+      currentStreak,
+      lessonsCompleted,
+      weeklyStats,
+      subjectProgress,
+      skills,
+      recentActivity,
+    };
+
+    return response;
+  });
+
+  /**
+   * GET /analytics/learners/:learnerId/goals
+   *
+   * Returns active and completed goals for a learner.
+   * Used by mobile learner app for goals tracking.
+   */
+  app.get<{
+    Params: { learnerId: string };
+    Querystring: { includeCompleted?: string };
+  }>('/learners/:learnerId/goals', async (request, reply) => {
+    const user = getUser(request);
+    const { learnerId } = request.params;
+    const includeCompleted = request.query.includeCompleted !== 'false';
+
+    // Verify learner can access their own data
+    if (user.role === 'learner' && user.learnerId !== learnerId) {
+      return reply.code(403).send({ error: 'Access denied' });
+    }
+
+    // Get learner key from warehouse
+    const learnerDim = await prisma.$queryRaw<Array<{ learner_key: number }>>`
+      SELECT learner_key FROM dim_learner
+      WHERE learner_id = ${learnerId}::uuid AND is_current = true
+      LIMIT 1
+    `;
+
+    if (learnerDim.length === 0) {
+      return reply.code(404).send({ error: 'Learner not found' });
+    }
+
+    const learnerKey = learnerDim[0].learner_key;
+
+    // Get active goals
+    const activeGoalsData = await prisma.$queryRaw<
+      Array<{
+        goal_id: string;
+        title: string;
+        description: string;
+        goal_type: string;
+        target_value: number;
+        current_value: number;
+        deadline: Date | null;
+        status: string;
+      }>
+    >`
+      SELECT 
+        g.goal_id::text,
+        g.title,
+        COALESCE(g.description, '') as description,
+        g.goal_type,
+        g.target_value,
+        COALESCE(g.current_value, 0) as current_value,
+        g.deadline,
+        g.status
+      FROM dim_learner_goal g
+      WHERE g.learner_key = ${learnerKey}
+        AND g.status = 'active'
+        AND g.is_current = true
+      ORDER BY g.deadline ASC NULLS LAST
+    `;
+
+    const activeGoals = activeGoalsData.map((g) => ({
+      id: g.goal_id,
+      title: g.title,
+      description: g.description,
+      type: mapGoalType(g.goal_type),
+      targetValue: g.target_value,
+      currentValue: g.current_value,
+      deadline: g.deadline?.toISOString() ?? null,
+      status: 'active',
+      objectives: [],
+    }));
+
+    // Get completed goals if requested
+    let completedGoals: Array<{
+      id: string;
+      title: string;
+      description: string;
+      type: string;
+      targetValue: number;
+      currentValue: number;
+      deadline: string | null;
+      status: string;
+      objectives: never[];
+    }> = [];
+
+    if (includeCompleted) {
+      const completedGoalsData = await prisma.$queryRaw<
+        Array<{
+          goal_id: string;
+          title: string;
+          description: string;
+          goal_type: string;
+          target_value: number;
+          current_value: number;
+          deadline: Date | null;
+          status: string;
+        }>
+      >`
+        SELECT 
+          g.goal_id::text,
+          g.title,
+          COALESCE(g.description, '') as description,
+          g.goal_type,
+          g.target_value,
+          COALESCE(g.current_value, 0) as current_value,
+          g.deadline,
+          g.status
+        FROM dim_learner_goal g
+        WHERE g.learner_key = ${learnerKey}
+          AND g.status = 'completed'
+          AND g.is_current = true
+        ORDER BY g.completed_at DESC
+        LIMIT 10
+      `;
+
+      completedGoals = completedGoalsData.map((g) => ({
+        id: g.goal_id,
+        title: g.title,
+        description: g.description,
+        type: mapGoalType(g.goal_type),
+        targetValue: g.target_value,
+        currentValue: g.current_value,
+        deadline: g.deadline?.toISOString() ?? null,
+        status: 'completed',
+        objectives: [],
+      }));
+    }
+
+    return {
+      activeGoals,
+      completedGoals,
+    };
+  });
+
   /**
    * GET /analytics/learners/:learnerId/summary
    *
@@ -295,7 +811,7 @@ export const learnerAnalyticsRoutes: FastifyPluginAsync = async (app) => {
         subject_code: string;
         subject_name: string;
         date_key: number;
-        average_mastery: number;
+        average_mastery: Prisma.Decimal;
         mastered_skills: number;
         total_skills: number;
       }>
@@ -479,7 +995,7 @@ export const learnerAnalyticsRoutes: FastifyPluginAsync = async (app) => {
       Array<{
         subject_code: string;
         subject_name: string;
-        average_mastery: number;
+        average_mastery: Prisma.Decimal;
         mastered_skills: number;
         total_skills: number;
       }>

@@ -43,9 +43,9 @@ describe('Independence Scoring', () => {
 
   describe('getIndependenceLabelText', () => {
     it('returns human-readable text for each label', () => {
-      expect(getIndependenceLabelText('needs_support')).toBe('Needs Support');
-      expect(getIndependenceLabelText('building_independence')).toBe('Building Independence');
-      expect(getIndependenceLabelText('mostly_independent')).toBe('Mostly Independent');
+      expect(getIndependenceLabelText('needs_support')).toBe('Needs a lot of support');
+      expect(getIndependenceLabelText('building_independence')).toBe('Building independence');
+      expect(getIndependenceLabelText('mostly_independent')).toBe('Mostly independent');
     });
   });
 });

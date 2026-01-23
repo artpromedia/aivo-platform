@@ -2,54 +2,51 @@
  * Analytics Routes Integration Tests
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import Fastify, { type FastifyInstance } from 'fastify';
+
+// vi.mock is hoisted - the factory must be self-contained without external references
+vi.mock('../../src/prisma.js', () => ({
+  prisma: {
+    learningEvent: {
+      findMany: async () => [],
+      findUnique: async () => null,
+      create: async (data: any) => ({ id: 'event-001', ...data.data }),
+      createMany: async (data: any) => ({ count: data.data.length }),
+      count: async () => 0,
+      groupBy: async () => [],
+    },
+    dailyUserMetrics: {
+      findMany: async () => [],
+      findUnique: async () => null,
+      aggregate: async () => ({
+        _sum: {
+          totalTimeSeconds: 0,
+          contentCompleted: 0,
+          assessmentsCompleted: 0,
+          sessionsCount: 0,
+        },
+        _count: { userId: 0 },
+      }),
+      groupBy: async () => [],
+    },
+    dailyContentMetrics: {
+      findMany: async () => [],
+      groupBy: async () => [],
+    },
+    topicProgress: {
+      findMany: async () => [],
+      groupBy: async () => [],
+    },
+    periodMetrics: {
+      findMany: async () => [],
+    },
+  },
+}));
+
 import analyticsRoutes from '../../src/routes/analytics.routes.js';
 import eventsRoutes from '../../src/routes/events.routes.js';
 import dashboardRoutes from '../../src/routes/dashboards.routes.js';
-
-// Mock the prisma module
-const mockPrisma = {
-  learningEvent: {
-    findMany: async () => [],
-    findUnique: async () => null,
-    create: async (data: any) => ({ id: 'event-001', ...data.data }),
-    createMany: async (data: any) => ({ count: data.data.length }),
-    count: async () => 0,
-    groupBy: async () => [],
-  },
-  dailyUserMetrics: {
-    findMany: async () => [],
-    findUnique: async () => null,
-    aggregate: async () => ({
-      _sum: {
-        totalTimeSeconds: 0,
-        contentCompleted: 0,
-        assessmentsCompleted: 0,
-        sessionsCount: 0,
-      },
-      _count: { userId: 0 },
-    }),
-    groupBy: async () => [],
-  },
-  dailyContentMetrics: {
-    findMany: async () => [],
-    groupBy: async () => [],
-  },
-  topicProgress: {
-    findMany: async () => [],
-  },
-  periodMetrics: {
-    findMany: async () => [],
-  },
-};
-
-// Mock the prisma import
-vi.mock('../../src/prisma.js', () => ({
-  prisma: mockPrisma,
-}));
-
-import { vi } from 'vitest';
 
 describe('Analytics API Integration Tests', () => {
   let app: FastifyInstance;
