@@ -4,24 +4,84 @@ import type { LLMProvider } from '../types/agent.js';
 import {
   createFailoverRegistry,
   type ProviderHealth,
+  type ProviderFailoverRegistry,
 } from './failover.js';
-import type {
-  ProviderFailoverRegistry,
-} from './failover.js';
+import type { LLMOrchestrator } from './llm-orchestrator.js';
+import { createLLMOrchestratorFromEnv } from './llm-orchestrator.js';
 import { MockLLMProvider } from './MockLLMProvider.js';
 
-// Singleton failover registry
+// Singleton instances
 let failoverRegistry: ProviderFailoverRegistry | null = null;
+let _llmOrchestrator: LLMOrchestrator | null = null;
+
+// ════════════════════════════════════════════════════════════════════════════════
+// PRODUCTION-READY PROVIDER ACCESS
+// ════════════════════════════════════════════════════════════════════════════════
 
 /**
- * Get a single provider by name (legacy support)
+ * Get the LLM Orchestrator instance (RECOMMENDED)
+ *
+ * This is the primary method for obtaining LLM access in production.
+ * Supports: Google Gemini, OpenAI, Anthropic, Ollama with automatic failover.
+ *
+ * @example
+ * const orchestrator = getOrchestrator();
+ * const result = await orchestrator.complete([
+ *   { role: 'user', content: 'Hello!' }
+ * ]);
+ */
+export function getOrchestrator(): LLMOrchestrator {
+  if (!_llmOrchestrator) {
+    _llmOrchestrator = createLLMOrchestratorFromEnv();
+  }
+  return _llmOrchestrator;
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// LEGACY PROVIDER ACCESS (DEPRECATED)
+// ════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get a single provider by name (DEPRECATED - use getOrchestrator() instead)
+ *
+ * @deprecated This function only returns MockLLMProvider and does not support
+ * production LLM providers. Use `getOrchestrator()` for production workloads.
+ *
+ * In production (NODE_ENV=production), this function will throw an error
+ * to prevent accidental use of mock data.
  */
 export function getProvider(providerName?: string): LLMProvider {
   const provider = (providerName ?? config.provider).toUpperCase();
+  const isProduction = config.nodeEnv === 'production';
+
+  // In production, reject mock provider usage through this legacy function
+  if (isProduction && provider !== 'MOCK') {
+    console.warn(
+      '[DEPRECATED] getProvider() called in production. ' +
+        'This function is deprecated and only returns MockLLMProvider. ' +
+        'Use getOrchestrator() instead for production workloads.'
+    );
+  }
+
+  // If explicitly requesting mock OR in development with mock config
   if (provider === 'MOCK') {
     return new MockLLMProvider(config.mockSeed);
   }
-  // Future: add OpenAI, Anthropic, etc.
+
+  // For any other provider request in production, throw error to force migration
+  if (isProduction) {
+    throw new Error(
+      'getProvider() is deprecated and cannot be used in production. ' +
+        'Migrate to getOrchestrator() which supports Google, OpenAI, Anthropic, and Ollama ' +
+        'with automatic failover. See: services/ai-orchestrator/src/providers/llm-orchestrator.ts'
+    );
+  }
+
+  // In development, warn but allow fallback to mock for backwards compatibility
+  console.warn(
+    `[DEPRECATED] getProvider("${provider}") returning MockLLMProvider. ` +
+      'Migrate to getOrchestrator() for real LLM access.'
+  );
   return new MockLLMProvider(config.mockSeed);
 }
 
@@ -168,4 +228,18 @@ export type {
 export { OpenAIProvider } from './openai.provider.js';
 export { AnthropicProvider } from './anthropic.provider.js';
 export { GoogleGeminiProvider } from './google-gemini.provider.js';
-export { LLMOrchestrator, createLLMOrchestratorFromEnv } from './llm-orchestrator.js';
+export { OllamaProvider } from './ollama.provider.js';
+export {
+  LLMOrchestrator,
+  createLLMOrchestratorFromEnv,
+  getLLMOrchestrator,
+} from './llm-orchestrator.js';
+
+// Environment validation
+export {
+  validateEnvironment,
+  validateAndStartOrFail,
+  getEnvironmentConfig,
+  type ValidationResult,
+  type EnvironmentConfig,
+} from '../utils/env-validator.js';

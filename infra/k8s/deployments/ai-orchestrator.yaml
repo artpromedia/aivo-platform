@@ -39,7 +39,28 @@ data:
   LOG_LEVEL: "info"
   PORT: "3000"
   HOST: "0.0.0.0"
-  # Add service-specific non-secret configuration here
+  # LLM Provider Configuration (Production)
+  # Google Gemini is primary, OpenAI and Anthropic are fallbacks
+  LLM_PRIMARY_PROVIDER: "google"
+  LLM_FALLBACK_ORDER: "google,openai,anthropic"
+  # Google Gemini settings
+  GOOGLE_LOCATION: "us-central1"
+  GOOGLE_RATE_LIMIT_TPM: "100000"
+  GOOGLE_RATE_LIMIT_RPM: "500"
+  # OpenAI settings
+  OPENAI_RATE_LIMIT_TPM: "150000"
+  OPENAI_RATE_LIMIT_RPM: "500"
+  # Anthropic settings
+  ANTHROPIC_RATE_LIMIT_TPM: "100000"
+  ANTHROPIC_RATE_LIMIT_RPM: "500"
+  # LLM Cache settings
+  LLM_CACHE_ENABLED: "true"
+  LLM_CACHE_TTL_SECONDS: "3600"
+  # Safety settings
+  SAFETY_STRICT_MODE: "true"
+  SAFETY_LOG_BLOCKED_CONTENT: "true"
+  # Development mode MUST be false in production
+  IS_DEVELOPMENT: "false"
 
 ---
 apiVersion: apps/v1
@@ -128,7 +149,55 @@ spec:
                   name: shared-secrets
                   key: nats-url
 
-            # Add service-specific secrets here
+            # ════════════════════════════════════════════════════════════════
+            # LLM Provider API Keys (from GCP Secret Manager)
+            # ════════════════════════════════════════════════════════════════
+
+            # Google Gemini (PRIMARY)
+            - name: GOOGLE_GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-provider-secrets
+                  key: google-gemini-api-key
+            - name: GOOGLE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: llm-provider-secrets
+                  key: google-project-id
+
+            # OpenAI (FALLBACK 1)
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-provider-secrets
+                  key: openai-api-key
+            - name: OPENAI_ORGANIZATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: llm-provider-secrets
+                  key: openai-organization-id
+                  optional: true
+
+            # Anthropic (FALLBACK 2)
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-provider-secrets
+                  key: anthropic-api-key
+
+            # LLM Cache Redis URL
+            - name: LLM_CACHE_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+
+            # Internal API Key for service-to-service auth
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-orchestrator-secrets
+                  key: internal-api-key
 
           resources:
             requests:
