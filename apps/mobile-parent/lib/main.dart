@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'auth/auth_controller.dart';
+import 'config/startup_checks.dart';
 import 'firebase_options.dart';
 import 'services/parent_notification_service.dart';
 import 'auth/auth_state.dart';
@@ -196,6 +197,9 @@ Future<void> main() async {
   // Run with Crashlytics error handling
   await CrashlyticsService.runWithCrashlytics(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Run startup checks to validate environment configuration
+    StartupChecks.run();
 
     // Initialize environment configuration
     EnvConfig.initialize();

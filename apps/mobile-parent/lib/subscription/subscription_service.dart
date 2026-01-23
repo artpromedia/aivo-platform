@@ -2,28 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/environment.dart';
 import 'subscription_models.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════════════════════════════════════════════════════
-
-const _paymentsBaseUrl = String.fromEnvironment(
-  'PAYMENTS_BASE_URL',
-  defaultValue: 'http://localhost:4070',
-);
-
-const _billingBaseUrl = String.fromEnvironment(
-  'BILLING_BASE_URL',
-  defaultValue: 'http://localhost:4060',
-);
-
-const _entitlementsBaseUrl = String.fromEnvironment(
-  'ENTITLEMENTS_BASE_URL',
-  defaultValue: 'http://localhost:4080',
-);
-
-const _useMock = bool.fromEnvironment('USE_SUBSCRIPTION_MOCK', defaultValue: false);
 
 /// Exception thrown when mock data is used in production.
 class SubscriptionServiceException implements Exception {
@@ -56,9 +40,9 @@ class SubscriptionService {
   SubscriptionService({String? accessToken}) {
     final headers = accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null;
     
-    _paymentsDio = Dio(BaseOptions(baseUrl: _paymentsBaseUrl, headers: headers));
-    _billingDio = Dio(BaseOptions(baseUrl: _billingBaseUrl, headers: headers));
-    _entitlementsDio = Dio(BaseOptions(baseUrl: _entitlementsBaseUrl, headers: headers));
+    _paymentsDio = Dio(BaseOptions(baseUrl: EnvironmentConfig.paymentsBaseUrl, headers: headers));
+    _billingDio = Dio(BaseOptions(baseUrl: EnvironmentConfig.billingBaseUrl, headers: headers));
+    _entitlementsDio = Dio(BaseOptions(baseUrl: EnvironmentConfig.entitlementsBaseUrl, headers: headers));
   }
 
   late final Dio _paymentsDio;
@@ -71,7 +55,7 @@ class SubscriptionService {
 
   /// Get or create billing account for tenant.
   Future<BillingAccount> getBillingAccount(String tenantId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getBillingAccount');
       return _mockBillingAccount(tenantId);
     }
@@ -82,7 +66,7 @@ class SubscriptionService {
 
   /// Ensure Stripe customer exists for billing account.
   Future<String> ensureStripeCustomer(String billingAccountId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('ensureStripeCustomer');
       return 'cus_mock_${billingAccountId.substring(0, 8)}';
     }
@@ -103,7 +87,7 @@ class SubscriptionService {
     String paymentMethodId, {
     bool setAsDefault = true,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('attachPaymentMethod');
       return _mockPaymentInstrument();
     }
@@ -120,7 +104,7 @@ class SubscriptionService {
 
   /// Get default payment method for billing account.
   Future<PaymentInstrument?> getDefaultPaymentMethod(String billingAccountId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getDefaultPaymentMethod');
       return null; // No payment method by default in mock
     }
@@ -142,7 +126,7 @@ class SubscriptionService {
 
   /// Get subscription for billing account.
   Future<Subscription?> getSubscription(String billingAccountId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getSubscription');
       return null; // No subscription by default
     }
@@ -160,7 +144,7 @@ class SubscriptionService {
 
   /// Get subscription by ID.
   Future<Subscription> getSubscriptionById(String subscriptionId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getSubscriptionById');
       return _mockSubscription(subscriptionId);
     }
@@ -175,7 +159,7 @@ class SubscriptionService {
   Future<CreateSubscriptionResponse> createSubscription(
     CreateSubscriptionRequest request,
   ) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('createSubscription');
       return _mockCreateSubscription(request);
     }
@@ -192,7 +176,7 @@ class SubscriptionService {
     String subscriptionId, {
     bool cancelImmediately = false,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('cancelSubscription');
       return;
     }
@@ -208,7 +192,7 @@ class SubscriptionService {
     String subscriptionId,
     String moduleCode,
   ) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('scheduleModuleRemoval');
       return;
     }
@@ -223,7 +207,7 @@ class SubscriptionService {
     String subscriptionId,
     String moduleCode,
   ) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('addModuleToSubscription');
       return;
     }
@@ -239,7 +223,7 @@ class SubscriptionService {
 
   /// Get available plans.
   Future<List<Plan>> getAvailablePlans() async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getAvailablePlans');
       return _mockPlans();
     }
@@ -254,7 +238,7 @@ class SubscriptionService {
 
   /// Get plan by SKU.
   Future<Plan?> getPlanBySku(String sku) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getPlanBySku');
       return _mockPlans().where((p) => p.sku == sku).firstOrNull;
     }
@@ -274,7 +258,7 @@ class SubscriptionService {
 
   /// Get entitlements for tenant.
   Future<List<Entitlement>> getEntitlements(String tenantId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('getEntitlements');
       return _mockEntitlements(tenantId);
     }
@@ -286,7 +270,7 @@ class SubscriptionService {
 
   /// Check if a specific module is enabled.
   Future<bool> isModuleEnabled(String tenantId, String moduleCode) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useSubscriptionMock) {
       _ensureMockAllowedOrThrow('isModuleEnabled');
       return moduleCode == 'ELA' || moduleCode == 'MATH';
     }

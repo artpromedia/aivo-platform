@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _baseUrl = String.fromEnvironment('REPORTS_BASE_URL', defaultValue: 'http://localhost:4050');
-const _useReportsMock = bool.fromEnvironment('USE_REPORTS_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Ensures mock data is only used in debug mode.
 /// Throws [ReportsException] if mock is enabled in production.
@@ -285,7 +284,7 @@ class ReportsException implements Exception {
 class ReportsService {
   ReportsService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.reportsBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -296,7 +295,7 @@ class ReportsService {
     required String learnerId,
     int days = 28,
   }) async {
-    if (_useReportsMock) {
+    if (EnvironmentConfig.useReportsMock) {
       _ensureMockAllowedOrThrow('getParentLearnerReport');
       await Future.delayed(const Duration(milliseconds: 600));
       return _mockParentLearnerReport(learnerId);

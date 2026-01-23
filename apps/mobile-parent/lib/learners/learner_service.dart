@@ -3,16 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment('LEARNER_BASE_URL', defaultValue: 'http://localhost:4002');
-const _useLearnerMock = bool.fromEnvironment('USE_LEARNER_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 class LearnerService {
-  LearnerService() : _dio = Dio(BaseOptions(baseUrl: _baseUrl));
+  LearnerService() : _dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.learnerBaseUrl));
 
   final Dio _dio;
 
   Future<List<Learner>> listChildren(String tenantId) async {
-    if (_useLearnerMock) return mockLearners;
+    if (EnvironmentConfig.useLearnerMock) return mockLearners;
 
     try {
       final response = await _dio.get<List<dynamic>>('/learners', queryParameters: {'tenant_id': tenantId});
@@ -34,7 +33,7 @@ class LearnerService {
   /// Updates the learner's profile with IDEA/Section 504 aligned assessment data
   /// including accommodations, disability categories, and support needs.
   Future<void> saveParentAssessment(String learnerId, ParentAssessmentData assessment) async {
-    if (_useLearnerMock) {
+    if (EnvironmentConfig.useLearnerMock) {
       debugPrint('[LearnerService] Mock: Saving parent assessment for learner $learnerId');
       return;
     }

@@ -2,18 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment(
-  'LEARNER_MODEL_BASE_URL',
-  defaultValue: 'http://localhost:4015',
-);
-
-const _useMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Service for interacting with Virtual Brain Plan APIs.
 class PlanService {
   PlanService({String? accessToken}) {
     _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
+      baseUrl: EnvironmentConfig.learnerModelBaseUrl,
       headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
     ));
   }
@@ -26,7 +21,7 @@ class PlanService {
     String? domain,
     String? skillCode,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.usePlanMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockDifficultyRecommendation(learnerId, domain: domain, skillCode: skillCode);
     }

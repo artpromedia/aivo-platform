@@ -8,18 +8,12 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/environment.dart';
 import 'coverage_profile_models.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
 // ══════════════════════════════════════════════════════════════════════════════
-
-const _billingBaseUrl = String.fromEnvironment(
-  'BILLING_BASE_URL',
-  defaultValue: 'http://localhost:4060',
-);
-
-const _useMock = bool.fromEnvironment('USE_COVERAGE_MOCK', defaultValue: false);
 
 // Cache duration
 const _cacheDuration = Duration(minutes: 5);
@@ -35,7 +29,7 @@ class CoverageProfileService {
         ? {'Authorization': 'Bearer $accessToken'} 
         : <String, dynamic>{};
     
-    _dio = Dio(BaseOptions(baseUrl: _billingBaseUrl, headers: headers));
+    _dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.billingBaseUrl, headers: headers));
   }
 
   late final Dio _dio;
@@ -67,7 +61,7 @@ class CoverageProfileService {
 
     // Fetch from service
     CoverageProfile profile;
-    if (_useMock) {
+    if (EnvironmentConfig.useCoverageMock) {
       profile = _mockCoverageProfile(learnerId, tenantId, grade, schoolId);
     } else {
       final response = await _dio.get(
@@ -128,7 +122,7 @@ class CoverageProfileService {
     required int grade,
     String? schoolId,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCoverageMock) {
       return _mockFeatureAccess(featureKey);
     }
 
@@ -154,7 +148,7 @@ class CoverageProfileService {
     required List<LearnerInfo> learners,
     bool includeDetails = false,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCoverageMock) {
       return {
         for (final l in learners)
           l.learnerId: _mockCoverageProfile(l.learnerId, l.tenantId, l.grade, l.schoolId),

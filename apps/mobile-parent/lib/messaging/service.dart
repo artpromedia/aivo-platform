@@ -8,13 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../auth/token_storage.dart';
+import '../config/environment.dart';
 import 'models.dart';
-
-const _baseUrl = String.fromEnvironment(
-  'MESSAGING_API_URL',
-  defaultValue: 'https://api.aivo.app',
-);
-const _useMock = bool.fromEnvironment('USE_MESSAGING_MOCK', defaultValue: false);
 
 /// Service for messaging operations
 class MessagingService {
@@ -23,7 +18,7 @@ class MessagingService {
   factory MessagingService() => _instance;
   MessagingService._internal()
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.messagingBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 30),
         )),
@@ -56,7 +51,7 @@ class MessagingService {
     int page = 1,
     int pageSize = 20,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 600));
       return _mockConversations;
     }
@@ -84,7 +79,7 @@ class MessagingService {
 
   /// Get conversations for a specific learner
   Future<List<Conversation>> getConversationsForLearner(String learnerId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockConversations
           .where((c) => c.context?.learnerId == learnerId)
@@ -114,7 +109,7 @@ class MessagingService {
     String? name,
     String? description,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       final existing = _mockConversations.firstWhere(
         (c) => c.context?.type == ContextType.learner && c.context?.learnerId == learnerId,
@@ -159,7 +154,7 @@ class MessagingService {
     String? name,
     String? description,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return Conversation(
         id: 'thread-ap-${DateTime.now().millisecondsSinceEpoch}',
@@ -204,7 +199,7 @@ class MessagingService {
     String? name,
     String? description,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return Conversation(
         id: 'thread-meeting-${DateTime.now().millisecondsSinceEpoch}',
@@ -241,7 +236,7 @@ class MessagingService {
 
   /// Get a conversation by ID
   Future<Conversation?> getConversation(String id) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockConversations.firstWhere(
         (c) => c.id == id,
@@ -272,7 +267,7 @@ class MessagingService {
     int pageSize = 50,
     String? beforeId,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockMessages.where((m) => m.conversationId == conversationId).toList();
     }
@@ -308,7 +303,7 @@ class MessagingService {
     String? replyToId,
     Map<String, dynamic>? metadata,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return Message(
         id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
@@ -345,7 +340,7 @@ class MessagingService {
     required String messageId,
     required String content,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       final original = _mockMessages.firstWhere((m) => m.id == messageId);
       return Message(
@@ -374,7 +369,7 @@ class MessagingService {
 
   /// Delete a message
   Future<void> deleteMessage(String messageId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -389,7 +384,7 @@ class MessagingService {
 
   /// Mark messages as read
   Future<void> markMessagesAsRead(String conversationId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -407,7 +402,7 @@ class MessagingService {
     required String messageId,
     required String emoji,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -428,7 +423,7 @@ class MessagingService {
     required String messageId,
     required String emoji,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -450,7 +445,7 @@ class MessagingService {
 
   /// Get thread summary for a learner
   Future<LearnerThreadSummary> getLearnerThreadSummary(String learnerId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return LearnerThreadSummary(
         learnerId: learnerId,
@@ -476,7 +471,7 @@ class MessagingService {
 
   /// Get total unread count across all conversations
   Future<int> getTotalUnreadCount() async {
-    if (_useMock) {
+    if (EnvironmentConfig.useMessagingMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return 5;
     }

@@ -1,12 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _baseUrl = String.fromEnvironment(
-  'PARENT_API_BASE_URL',
-  defaultValue: 'http://localhost:3010',
-);
-
-const _useMock = bool.fromEnvironment('USE_DIFFICULTY_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Skill domain enum
 enum SkillDomain {
@@ -344,7 +339,7 @@ class RespondToRecommendationResponse {
 class DifficultyService {
   DifficultyService({String? accessToken}) {
     _dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
+      baseUrl: EnvironmentConfig.parentApiBaseUrl,
       headers: accessToken != null
           ? {'Authorization': 'Bearer $accessToken'}
           : null,
@@ -356,7 +351,7 @@ class DifficultyService {
   /// Get pending difficulty recommendations for a child
   Future<PendingRecommendationsResponse> getPendingRecommendations(
       String studentId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockPendingRecommendations(studentId);
     }
@@ -375,7 +370,7 @@ class DifficultyService {
     int? modifiedLevel,
     String? parentNotes,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockRespondToRecommendation(action, modifiedLevel);
     }
@@ -396,7 +391,7 @@ class DifficultyService {
   /// Get current difficulty levels for a child by domain
   Future<Map<SkillDomain, DifficultyLevel>> getDifficultyLevels(
       String studentId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockDifficultyLevels();
     }
@@ -426,7 +421,7 @@ class DifficultyService {
     required int level,
     String? reason,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }
@@ -444,7 +439,7 @@ class DifficultyService {
 
   /// Get difficulty preferences for a child
   Future<DifficultyPreferences> getPreferences(String studentId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockPreferences();
     }
@@ -466,7 +461,7 @@ class DifficultyService {
     int? maxDifficultyLevel,
     int? minDifficultyLevel,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockPreferences().copyWith(
         autoApproveIncreases: autoApproveIncreases,
@@ -501,7 +496,7 @@ class DifficultyService {
     String studentId, {
     int limit = 20,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useDifficultyMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockDifficultyHistory();
     }

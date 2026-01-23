@@ -2,10 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/environment.dart';
 import 'analytics_service.dart';
-
-const _baseUrl = String.fromEnvironment('ANALYTICS_BASE_URL', defaultValue: 'http://localhost:4030');
-const _useAnalyticsMock = bool.fromEnvironment('USE_ANALYTICS_MOCK', defaultValue: false);
 
 /// Log warning when mock data is used in non-debug mode
 void _logMockWarning() {
@@ -350,7 +348,7 @@ class AnalyticsController extends StateNotifier<ChildProgressState> {
     required this.learnerId,
     String? accessToken,
   })  : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.analyticsBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         )),
         super(const ChildProgressState());
@@ -363,7 +361,7 @@ class AnalyticsController extends StateNotifier<ChildProgressState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      if (_useAnalyticsMock) {
+      if (EnvironmentConfig.useAnalyticsMock) {
         _logMockWarning();
         await Future.delayed(const Duration(milliseconds: 600));
         state = state.copyWith(

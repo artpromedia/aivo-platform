@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment('BASELINE_BASE_URL', defaultValue: 'http://localhost:4003');
-const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Exception thrown by baseline API operations.
 class BaselineException implements Exception {
@@ -19,7 +18,7 @@ class BaselineException implements Exception {
 class BaselineService {
   BaselineService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.baselineBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -32,7 +31,7 @@ class BaselineService {
     required String learnerId,
     required String gradeBand,
   }) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return BaselineProfile(
         id: 'mock-profile-${learnerId.hashCode}',
@@ -62,7 +61,7 @@ class BaselineService {
   /// Start a baseline attempt.
   /// POST /baseline/profiles/:profileId/start
   Future<StartAttemptResponse> startAttempt(String profileId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return StartAttemptResponse(
         attemptId: 'mock-attempt-${DateTime.now().millisecondsSinceEpoch}',
@@ -84,7 +83,7 @@ class BaselineService {
   /// Get next unanswered item.
   /// GET /baseline/attempts/:attemptId/next
   Future<NextItemResponse> getNextItem(String attemptId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockNextItem(attemptId);
     }
@@ -106,7 +105,7 @@ class BaselineService {
     required dynamic response,
     int? latencyMs,
   }) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return AnswerResponse(
         responseId: 'mock-response-${DateTime.now().millisecondsSinceEpoch}',
@@ -132,7 +131,7 @@ class BaselineService {
   /// Complete a baseline attempt.
   /// POST /baseline/attempts/:attemptId/complete
   Future<CompleteAttemptResponse> completeAttempt(String attemptId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return CompleteAttemptResponse(
         attemptId: attemptId,
@@ -165,7 +164,7 @@ class BaselineService {
     required RetestReason reason,
     String? notes,
   }) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }
@@ -186,7 +185,7 @@ class BaselineService {
   /// Accept final results.
   /// POST /baseline/profiles/:profileId/accept-final
   Future<void> acceptFinal(String profileId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }
@@ -203,7 +202,7 @@ class BaselineService {
   /// Get a baseline profile with attempts.
   /// GET /baseline/profiles/:profileId
   Future<BaselineProfile> getProfile(String profileId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockProfile(profileId);
     }
@@ -221,7 +220,7 @@ class BaselineService {
   /// Get baseline profile by learner ID.
   /// GET /baseline/profiles/by-learner?learnerId=...
   Future<BaselineProfile?> getProfileByLearner(String learnerId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       // Return mock profile in various states for testing
       final mockState = learnerId.hashCode % 4;

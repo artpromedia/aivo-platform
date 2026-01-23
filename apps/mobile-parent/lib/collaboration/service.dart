@@ -5,14 +5,9 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
+
+import '../config/environment.dart';
 import 'models.dart';
-
-const _baseUrl = String.fromEnvironment(
-  'COLLABORATION_BASE_URL',
-  defaultValue: 'http://localhost:3020',
-);
-
-const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: false);
 
 /// Service for interacting with Collaboration APIs.
 class CollaborationService {
@@ -27,12 +22,12 @@ class CollaborationService {
 
   /// Get care team members for a learner.
   Future<List<CareTeamMember>> getCareTeam(String learnerId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareTeam(learnerId);
     }
 
-    final response = await _apiClient.get('$_baseUrl/api/v1/learners/$learnerId/care-team');
+    final response = await _apiClient.get('${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/care-team');
     final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
     return data
         .whereType<Map<String, dynamic>>()
@@ -95,14 +90,14 @@ class CollaborationService {
 
   /// Get action plans for a learner.
   Future<List<ActionPlan>> getActionPlans(String learnerId, {ActionPlanStatus? status}) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockActionPlans(learnerId, status: status);
     }
 
     final queryParams = status != null ? '?status=${status.name.toUpperCase()}' : '';
     final response =
-        await _apiClient.get('$_baseUrl/api/v1/learners/$learnerId/action-plans$queryParams');
+        await _apiClient.get('${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/action-plans$queryParams');
     final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
     return data
         .whereType<Map<String, dynamic>>()
@@ -112,13 +107,13 @@ class CollaborationService {
 
   /// Get a specific action plan with tasks.
   Future<ActionPlan> getActionPlan(String learnerId, String planId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockActionPlanDetail(learnerId, planId);
     }
 
     final response =
-        await _apiClient.get('$_baseUrl/api/v1/learners/$learnerId/action-plans/$planId');
+        await _apiClient.get('${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/action-plans/$planId');
     return ActionPlan.fromJson((response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>);
   }
 
@@ -279,13 +274,13 @@ class CollaborationService {
     TaskContext? completedInContext,
     int? effectivenessRating,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return;
     }
 
     await _apiClient.post(
-      '$_baseUrl/api/v1/learners/$learnerId/action-plans/$planId/tasks/$taskId/completions',
+      '${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/action-plans/$planId/tasks/$taskId/completions',
       data: {
         'dueDate': DateTime.now().toIso8601String(),
         'completedAt': DateTime.now().toIso8601String(),
@@ -303,13 +298,13 @@ class CollaborationService {
 
   /// Get care notes for a learner.
   Future<List<CareNote>> getCareNotes(String learnerId, {String? actionPlanId}) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareNotes(learnerId);
     }
 
     final queryParams = actionPlanId != null ? '?actionPlanId=$actionPlanId' : '';
-    final response = await _apiClient.get('$_baseUrl/api/v1/learners/$learnerId/notes$queryParams');
+    final response = await _apiClient.get('${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/notes$queryParams');
     final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
     return data.whereType<Map<String, dynamic>>().map((json) => CareNote.fromJson(json)).toList();
   }
@@ -325,13 +320,13 @@ class CollaborationService {
     List<String> tags = const [],
     bool requiresFollowUp = false,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockCareNotes(learnerId).first;
     }
 
     final response = await _apiClient.post(
-      '$_baseUrl/api/v1/learners/$learnerId/notes',
+      '${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/notes',
       data: {
         'noteType': noteType.name.toUpperCase(),
         if (title != null) 'title': title,
@@ -347,13 +342,13 @@ class CollaborationService {
 
   /// Acknowledge a care note.
   Future<void> acknowledgeCareNote(String learnerId, String noteId) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
 
     await _apiClient.post(
-      '$_baseUrl/api/v1/learners/$learnerId/notes/$noteId/acknowledge',
+      '${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/notes/$noteId/acknowledge',
       data: {'acknowledge': true},
     );
   }
@@ -440,14 +435,14 @@ class CollaborationService {
 
   /// Get meetings for a learner.
   Future<List<CareMeeting>> getMeetings(String learnerId, {MeetingStatus? status}) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockMeetings(learnerId);
     }
 
     final queryParams = status != null ? '?status=${status.name.toUpperCase()}' : '';
     final response =
-        await _apiClient.get('$_baseUrl/api/v1/learners/$learnerId/meetings$queryParams');
+        await _apiClient.get('${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/meetings$queryParams');
     final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>;
     return data
         .whereType<Map<String, dynamic>>()
@@ -468,13 +463,13 @@ class CollaborationService {
     List<String>? agenda,
     List<String>? participantIds,
   }) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockMeetings(learnerId).first;
     }
 
     final response = await _apiClient.post(
-      '$_baseUrl/api/v1/learners/$learnerId/meetings',
+      '${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/meetings',
       data: {
         'title': title,
         'scheduledAt': scheduledAt.toIso8601String(),
@@ -497,13 +492,13 @@ class CollaborationService {
     String participantId,
     String rsvpStatus,
   ) async {
-    if (_useMock) {
+    if (EnvironmentConfig.useCollaborationMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
 
     await _apiClient.patch(
-      '$_baseUrl/api/v1/learners/$learnerId/meetings/$meetingId/participants/$participantId',
+      '${EnvironmentConfig.collaborationBaseUrl}/api/v1/learners/$learnerId/meetings/$meetingId/participants/$participantId',
       data: {'rsvpStatus': rsvpStatus},
     );
   }

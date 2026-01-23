@@ -3,16 +3,25 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-const _baseUrl = String.fromEnvironment('AUTH_BASE_URL', defaultValue: 'http://localhost:4001');
-const _useAuthMock = bool.fromEnvironment('USE_AUTH_MOCK');
+import '../config/environment.dart';
 
+/// Auth service for handling authentication with the backend.
+///
+/// Uses [EnvironmentConfig] for configuration. Mock mode is only available
+/// in development builds with explicit opt-in.
 class AuthService {
-  AuthService() : _dio = Dio(BaseOptions(baseUrl: _baseUrl));
+  AuthService() : _dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.authBaseUrl));
 
   final Dio _dio;
 
+  /// Authenticates the user with email and password.
+  ///
+  /// Returns [AuthTokens] containing access and refresh tokens from the server.
+  /// Throws [AuthException] if authentication fails.
   Future<AuthTokens> login(String email, String password) async {
-    if (_useAuthMock) {
+    // Mock mode only available in development with explicit opt-in
+    if (EnvironmentConfig.useAuthMock) {
+      debugPrint('⚠️ [AuthService] Using mock authentication - development only');
       return _mockTokens(email: email);
     }
 
@@ -40,18 +49,32 @@ class AuthService {
     }
   }
 
+  /// Creates mock tokens for development testing only.
+  ///
+  /// This method is only callable when [EnvironmentConfig.useAuthMock] is true,
+  /// which requires debug mode + development environment + explicit opt-in.
   AuthTokens _mockTokens({required String email}) {
+    // Defense in depth: verify mock mode is actually enabled
+    assert(EnvironmentConfig.useAuthMock, 'Mock tokens should only be created in mock mode');
+    
+    if (!kDebugMode) {
+      throw const AuthException('Mock authentication is not available in release builds');
+    }
+
     final payload = {
       'sub': email,
       'tenant_id': 'mock-tenant',
       'roles': ['PARENT'],
       'exp': DateTime.now().add(const Duration(hours: 8)).millisecondsSinceEpoch ~/ 1000,
+      'mock': true, // Flag to identify mock tokens
     };
     final token = _encodeMockJwt(payload);
     return AuthTokens(accessToken: token, refreshToken: '${token}_refresh');
   }
 
   String _encodeMockJwt(Map<String, dynamic> payload) {
+    // Note: This creates a non-cryptographic JWT for development only.
+    // Real tokens come from the authentication server.
     final header = base64Url.encode(utf8.encode(jsonEncode({'alg': 'none', 'typ': 'JWT'})));
     final body = base64Url.encode(utf8.encode(jsonEncode(payload)));
     return '$header.$body.';
