@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { AiLoggingService, LogAiCallInput } from '../logging/index.js';
 import { getPolicyEnforcer, PolicyViolationError } from '../policy/index.js';
-import { getProvider } from '../providers/index.js';
+import { generateCompletion } from '../providers/llm-adapter.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
 import { evaluateSafety, type SafetyResult, type SafetyStatus } from '../safety/SafetyAgent.js';
 import { estimateCostUsd } from '../telemetry/cost.js';
@@ -53,7 +53,6 @@ export async function runAiCall(
   const startedAt = new Date();
   const rolloutKey = context.learnerId ?? context.tenantId;
   const config = await registry.getConfigForRollout(context.agentType, rolloutKey);
-  const provider = getProvider(config.provider);
 
   // ─── Policy Enforcement (Pre-Call) ────────────────────────────────────────────
   // Check if the call is allowed by policy before executing.
@@ -91,16 +90,26 @@ export async function runAiCall(
       userRole: context.userRole,
     });
 
-  let providerResult;
+  let providerResult: {
+    content: string;
+    tokensUsed: number;
+    tokensPrompt?: number;
+    tokensCompletion?: number;
+    provider?: string;
+    metadata?: Record<string, unknown>;
+  };
   let safetyResult: SafetyResult;
   let completedAt: Date = new Date();
   try {
-    providerResult = await provider.generateCompletion({
+    // Use the new LLM adapter for production-ready completions
+    const llmResponse = await generateCompletion({
       prompt,
-      promptTemplate: config.promptTemplate,
-      modelName: config.modelName,
-      hyperparameters: config.hyperparameters,
-      metadata: {
+      systemPrompt: config.promptTemplate,
+      temperature: config.hyperparameters?.temperature as number | undefined,
+      maxTokens: config.hyperparameters?.maxTokens as number | undefined,
+      agentType: context.agentType,
+      tenantId: context.tenantId,
+      context: {
         ...context.metadata,
         ...input.metadata,
         agentType: context.agentType,
@@ -108,6 +117,21 @@ export async function runAiCall(
         configId: config.id,
       },
     });
+
+    // Map the new response format to the expected format
+    providerResult = {
+      content: llmResponse.content,
+      tokensUsed: llmResponse.usage?.totalTokens ?? 0,
+      tokensPrompt: llmResponse.usage?.inputTokens ?? 0,
+      tokensCompletion: llmResponse.usage?.outputTokens ?? 0,
+      provider: llmResponse.provider,
+      metadata: {
+        model: llmResponse.model,
+        latencyMs: llmResponse.latencyMs,
+        usedFallback: llmResponse.usedFallback,
+        finishReason: llmResponse.finishReason,
+      },
+    };
 
     safetyResult = evaluateSafety(context, {
       content: providerResult.content,

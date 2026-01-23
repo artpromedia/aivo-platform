@@ -57,10 +57,16 @@ export async function callLessonPlanner(
 ): Promise<LessonPlannerResponse> {
   const aiOrchestratorUrl = config.aiOrchestratorUrl;
   const apiKey = config.aiOrchestratorApiKey;
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // If no API key configured, return activities as-is with deterministic ordering
+  // If no API key configured, use deterministic ordering with production warning
   if (!apiKey) {
-    console.log('[AI Orchestrator] No API key configured, using deterministic ordering');
+    const message = 'No AI_ORCHESTRATOR_API_KEY configured, using deterministic ordering';
+    if (isProduction) {
+      console.warn(`[AI Orchestrator] PRODUCTION WARNING: ${message}`);
+    } else {
+      console.log(`[AI Orchestrator] ${message}`);
+    }
     return {
       orderedActivities: applyDeterministicOrdering(request.activities),
       success: true,
@@ -82,11 +88,17 @@ export async function callLessonPlanner(
     });
 
     if (!response.ok) {
-      console.error('[AI Orchestrator] Error:', response.status, await response.text());
+      const errorText = await response.text();
+      const errorMsg = `AI planner unavailable (HTTP ${response.status}): ${errorText}`;
+      if (isProduction) {
+        console.error(`[AI Orchestrator] PRODUCTION WARNING: ${errorMsg}`);
+      } else {
+        console.error('[AI Orchestrator] Error:', response.status, errorText);
+      }
       return {
         orderedActivities: applyDeterministicOrdering(request.activities),
         success: false,
-        error: `AI planner unavailable (HTTP ${response.status})`,
+        error: errorMsg,
       };
     }
 
@@ -97,11 +109,16 @@ export async function callLessonPlanner(
       aiNotes: 'Activities ordered by AI lesson planner',
     };
   } catch (error) {
-    console.error('[AI Orchestrator] Network error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Network error';
+    if (isProduction) {
+      console.error(`[AI Orchestrator] PRODUCTION WARNING: Network error: ${errorMsg}`);
+    } else {
+      console.error('[AI Orchestrator] Network error:', error);
+    }
     return {
       orderedActivities: applyDeterministicOrdering(request.activities),
       success: false,
-      error: error instanceof Error ? error.message : 'Network error',
+      error: errorMsg,
     };
   }
 }

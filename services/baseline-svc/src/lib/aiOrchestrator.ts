@@ -7,8 +7,16 @@ import type {
 } from '../types/baseline.js';
 
 /**
+ * Check if we're running in production mode
+ */
+const isProduction = process.env.NODE_ENV === 'production';
+
+/**
  * Calls ai-orchestrator to generate baseline questions.
- * Falls back to deterministic stubs if orchestrator is unavailable.
+ *
+ * In production: Requires ai-orchestrator to be available - throws error if unavailable.
+ * In development: Falls back to deterministic stubs if orchestrator is unavailable.
+ *
  * Supports adaptive difficulty level (1-5 scale).
  */
 export async function generateBaselineQuestions(
@@ -33,7 +41,7 @@ export async function generateBaselineQuestions(
             gradeBand,
             domain,
             skillCodes,
-            difficulty,  // Include adaptive difficulty
+            difficulty, // Include adaptive difficulty
           },
         }),
       });
@@ -42,13 +50,30 @@ export async function generateBaselineQuestions(
         // Ensure difficulty is set on all questions
         return data.questions.map((q) => ({ ...q, difficulty: q.difficulty ?? difficulty }));
       }
-      console.warn('AI orchestrator returned non-OK, falling back to stubs');
+
+      const errorMsg = `AI orchestrator returned ${res.status}: ${res.statusText}`;
+      if (isProduction) {
+        throw new Error(`[PRODUCTION ERROR] ${errorMsg}. Cannot use stub questions in production.`);
+      }
+      console.warn(errorMsg + ', falling back to stubs');
     } catch (err) {
+      if (isProduction) {
+        throw new Error(
+          `[PRODUCTION ERROR] AI orchestrator unreachable: ${err instanceof Error ? err.message : 'Unknown error'}. ` +
+            'Cannot use stub questions in production. Ensure AI_ORCHESTRATOR_URL and AI_ORCHESTRATOR_API_KEY are configured.'
+        );
+      }
       console.warn('AI orchestrator unreachable, falling back to stubs', err);
     }
+  } else if (isProduction) {
+    throw new Error(
+      '[PRODUCTION ERROR] AI orchestrator not configured. ' +
+        'Set AI_ORCHESTRATOR_URL and AI_ORCHESTRATOR_API_KEY environment variables for production.'
+    );
   }
 
-  // Deterministic fallback: generate stub questions
+  // Deterministic fallback: generate stub questions (development only)
+  console.warn('[DEV ONLY] Using stub questions - not for production use');
   return generateStubQuestions(gradeBand, domain, skillCodes, difficulty);
 }
 
@@ -67,10 +92,11 @@ function generateStubQuestions(
   gradeBand: string,
   domain: string,
   skillCodes: string[],
-  difficulty: number = 3
+  difficulty = 3
 ): GeneratedQuestion[] {
   const questions: GeneratedQuestion[] = [];
-  const difficultyLabel = DIFFICULTY_LABELS[difficulty as keyof typeof DIFFICULTY_LABELS] || 'medium';
+  const difficultyLabel =
+    DIFFICULTY_LABELS[difficulty as keyof typeof DIFFICULTY_LABELS] || 'medium';
 
   for (const skillCode of skillCodes) {
     questions.push({
@@ -92,7 +118,15 @@ function generateStubQuestions(
  * For open-ended: AI-powered semantic scoring using rubric.
  */
 export async function scoreResponse(payload: ScoreResponsePayload): Promise<ScoreResponseResult> {
-  const { questionType, correctAnswer, selectedOption, openResponse, rubric, skillCode, gradeBand } = payload;
+  const {
+    questionType,
+    correctAnswer,
+    selectedOption,
+    openResponse,
+    rubric,
+    skillCode,
+    gradeBand,
+  } = payload;
 
   if (questionType === 'MULTIPLE_CHOICE') {
     const isCorrect = correctAnswer === selectedOption;
@@ -230,15 +264,88 @@ function scoreOpenEndedHeuristic(
 function extractKeywords(text: string): string[] {
   // Common stop words to filter out
   const stopWords = new Set([
-    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'to', 'of',
-    'in', 'for', 'on', 'with', 'at', 'by', 'from', 'or', 'and', 'but',
-    'if', 'then', 'else', 'when', 'up', 'down', 'out', 'off', 'over',
-    'under', 'again', 'further', 'once', 'here', 'there', 'all', 'each',
-    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only',
-    'same', 'so', 'than', 'too', 'very', 'just', 'that', 'this', 'these',
-    'those', 'what', 'which', 'who', 'whom', 'how', 'why', 'where', 'when',
+    'a',
+    'an',
+    'the',
+    'is',
+    'are',
+    'was',
+    'were',
+    'be',
+    'been',
+    'being',
+    'have',
+    'has',
+    'had',
+    'do',
+    'does',
+    'did',
+    'will',
+    'would',
+    'could',
+    'should',
+    'may',
+    'might',
+    'must',
+    'shall',
+    'can',
+    'need',
+    'to',
+    'of',
+    'in',
+    'for',
+    'on',
+    'with',
+    'at',
+    'by',
+    'from',
+    'or',
+    'and',
+    'but',
+    'if',
+    'then',
+    'else',
+    'when',
+    'up',
+    'down',
+    'out',
+    'off',
+    'over',
+    'under',
+    'again',
+    'further',
+    'once',
+    'here',
+    'there',
+    'all',
+    'each',
+    'few',
+    'more',
+    'most',
+    'other',
+    'some',
+    'such',
+    'no',
+    'not',
+    'only',
+    'same',
+    'so',
+    'than',
+    'too',
+    'very',
+    'just',
+    'that',
+    'this',
+    'these',
+    'those',
+    'what',
+    'which',
+    'who',
+    'whom',
+    'how',
+    'why',
+    'where',
+    'when',
   ]);
 
   // Extract words, filter stop words, require length > 3

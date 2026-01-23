@@ -235,6 +235,20 @@ export {
   getLLMOrchestrator,
 } from './llm-orchestrator.js';
 
+// LLM Adapter (high-level API)
+export {
+  generateCompletion,
+  generateJsonCompletion,
+  isLLMAvailable,
+  getLLMHealth,
+  // Intentionally exporting deprecated function for backward compatibility during migration
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  getLegacyProvider,
+  LLMProviderError,
+  type LLMRequest,
+  type LLMResponse,
+} from './llm-adapter.js';
+
 // Environment validation
 export {
   validateEnvironment,

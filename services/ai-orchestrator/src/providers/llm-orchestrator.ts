@@ -258,6 +258,32 @@ export class LLMOrchestrator {
   }
 
   /**
+   * Get the primary provider name
+   */
+  getPrimaryProvider(): string {
+    return this.primaryProvider;
+  }
+
+  /**
+   * Get health status of all providers
+   */
+  getProvidersHealth(): { name: string; healthy: boolean; circuitState: string }[] {
+    const health: { name: string; healthy: boolean; circuitState: string }[] = [];
+
+    for (const [name] of this.providers) {
+      const circuitBreaker = this.circuitBreakers.get(name);
+      const isOpen = circuitBreaker?.isOpen() ?? false;
+      health.push({
+        name,
+        healthy: !isOpen,
+        circuitState: circuitBreaker?.getStats().state ?? 'UNKNOWN',
+      });
+    }
+
+    return health;
+  }
+
+  /**
    * Reset circuit breaker for a specific provider
    */
   resetCircuitBreaker(providerName: string): void {
@@ -343,9 +369,10 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
 
   // Ollama configuration (local LLM for development)
   // Always enable Ollama if OLLAMA_BASE_URL is set, or in development mode
-  const ollamaUrl = process.env.OLLAMA_BASE_URL ?? 
+  const ollamaUrl =
+    process.env.OLLAMA_BASE_URL ??
     (process.env.NODE_ENV === 'production' ? undefined : 'http://ollama:11434');
-  
+
   if (ollamaUrl) {
     config.ollama = {
       apiKey: 'not-required', // Ollama doesn't need an API key
