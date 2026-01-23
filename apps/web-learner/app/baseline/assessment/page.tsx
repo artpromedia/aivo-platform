@@ -281,12 +281,24 @@ const GAME_BREAKS: GameBreak[] = [
 
 type AssessmentPhase = 
   | 'loading'
+  | 'preparing'  // Pre-generating questions for all domains
   | 'learning_style' 
   | 'transition_to_domains'
   | 'domain_intro'
   | 'domain_questions' 
   | 'game_break' 
   | 'completing';
+
+/**
+ * Pre-generated questions for a domain
+ */
+interface PreparedDomain {
+  domain: string;
+  name: string;
+  questions: AssessmentQuestion[];
+  source: 'ai' | 'stub' | 'fallback';
+  generationId?: string;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -322,32 +334,94 @@ export default function BaselineAssessmentPage() {
   
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Pre-generated questions (loaded during 'preparing' phase)
+  const [preparedDomains, setPreparedDomains] = useState<PreparedDomain[]>([]);
+  const [preparationProgress, setPreparationProgress] = useState(0);
+  const [preparationStatus, setPreparationStatus] = useState<string>('Connecting to AI...');
+  const [isPrepared, setIsPrepared] = useState(false);
 
   // ════════════════════════════════════════════════════════════════════════════
   // FETCH ASSESSMENT CONFIG ON LOAD
   // ════════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
-    async function fetchConfig() {
+    async function prepareAssessment() {
+      setPhase('preparing');
+      setPreparationProgress(10);
+      setPreparationStatus('Loading your learning profile...');
+      
       try {
-        const response = await fetch('/api/baseline/config');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.config) {
-            setConfig(data.config);
-            if (data.learnerName) {
-              setLearnerName(data.learnerName);
+        // First fetch config (for UI settings)
+        const configResponse = await fetch('/api/baseline/config');
+        if (configResponse.ok) {
+          const configData = await configResponse.json();
+          if (configData.config) {
+            setConfig(configData.config);
+            if (configData.learnerName) {
+              setLearnerName(configData.learnerName);
             }
           }
         }
+        setPreparationProgress(20);
+        setPreparationStatus('Understanding your learning needs...');
+        
+        // Now call prepare endpoint to pre-generate ALL questions
+        setPreparationProgress(30);
+        setPreparationStatus('Creating personalized questions just for you...');
+        
+        const prepareResponse = await fetch('/api/baseline/prepare', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (prepareResponse.ok) {
+          const prepareData = await prepareResponse.json();
+          
+          if (prepareData.success && prepareData.domains) {
+            // Update config with assessment type from profile
+            if (prepareData.profile?.assessmentType) {
+              setConfig(prev => ({
+                ...prev,
+                assessmentType: prepareData.profile.assessmentType,
+                gradeBand: prepareData.profile.gradeBand || prev.gradeBand,
+              }));
+            }
+            
+            // Store pre-generated questions
+            setPreparedDomains(prepareData.domains.map((d: { domain: string; name: string; questions: AssessmentQuestion[]; source: string; generationId?: string }) => ({
+              domain: d.domain,
+              name: d.name,
+              questions: d.questions,
+              source: d.source as 'ai' | 'stub' | 'fallback',
+              generationId: d.generationId,
+            })));
+            
+            if (prepareData.profile?.firstName) {
+              setLearnerName(prepareData.profile.firstName);
+            }
+            
+            setIsPrepared(true);
+            console.log(`[Assessment] Pre-generated ${prepareData.totalQuestions} questions in ${prepareData.generationTimeMs}ms`);
+          }
+        }
+        
+        setPreparationProgress(100);
+        setPreparationStatus('All set! Let\'s begin!');
+        
+        // Brief pause to show completion
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
       } catch (error) {
-        console.log('Using default config:', error);
+        console.log('Preparation error, using defaults:', error);
+        setPreparationProgress(100);
+        setPreparationStatus('Ready!');
       } finally {
         setIsConfigLoaded(true);
         setPhase('learning_style');
       }
     }
-    fetchConfig();
+    prepareAssessment();
   }, []);
 
   // Current domain info - use config domains
@@ -361,7 +435,7 @@ export default function BaselineAssessmentPage() {
   const totalDomainQuestions = enabledDomains.reduce((sum, d) => sum + d.questionsPerDomain, 0);
   const totalQuestions = LEARNING_STYLE_QUESTIONS.length + totalDomainQuestions;
   const completedDomainQuestions = enabledDomains.slice(0, currentDomainIndex).reduce((sum, d) => sum + d.questionsPerDomain, 0);
-  const questionsCompleted = phase === 'learning_style' || phase === 'loading'
+  const questionsCompleted = phase === 'learning_style' || phase === 'loading' || phase === 'preparing'
     ? lsIndex 
     : LEARNING_STYLE_QUESTIONS.length + completedDomainQuestions + currentQuestionInDomain;
   const overallProgress = (questionsCompleted / totalQuestions) * 100;
@@ -372,12 +446,27 @@ export default function BaselineAssessmentPage() {
   const isAlternate = config.assessmentType === 'ALTERNATE';
 
   // ════════════════════════════════════════════════════════════════════════════
-  // FETCH DOMAIN QUESTIONS FROM AI
+  // FETCH DOMAIN QUESTIONS - Use pre-generated if available
   // ════════════════════════════════════════════════════════════════════════════
 
   const fetchDomainQuestions = useCallback(async (domain: AssessmentDomain) => {
     setIsLoadingQuestions(true);
+    
     try {
+      // First check if we have pre-generated questions for this domain
+      if (isPrepared && preparedDomains.length > 0) {
+        const preparedDomain = preparedDomains.find(d => d.domain === domain);
+        if (preparedDomain && preparedDomain.questions.length > 0) {
+          console.log(`[Assessment] Using pre-generated questions for ${domain} (${preparedDomain.source})`);
+          setDomainQuestions(preparedDomain.questions);
+          setIsLoadingQuestions(false);
+          setQuestionStartTime(Date.now());
+          return;
+        }
+      }
+      
+      // Fall back to fetching questions on-demand
+      console.log(`[Assessment] Fetching questions on-demand for ${domain}`);
       const response = await fetch('/api/baseline/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1088,6 +1177,7 @@ export default function BaselineAssessmentPage() {
             <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
               <span>
                 {phase === 'loading' && 'Loading...'}
+                {phase === 'preparing' && 'Preparing your questions...'}
                 {phase === 'learning_style' && 'Getting to know you...'}
                 {phase === 'transition_to_domains' && 'Ready for the fun part!'}
                 {phase === 'domain_intro' && `Starting ${currentDomainConfig?.name || 'Questions'}...`}
@@ -1121,6 +1211,51 @@ export default function BaselineAssessmentPage() {
           </div>
         </div>
       )}
+      
+      {/* Preparing phase - Pre-generating questions */}
+      {phase === 'preparing' && (
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center max-w-md mx-auto">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] via-[var(--aivo-purple-100)] to-[var(--aivo-brand-primary-light)] rounded-full flex items-center justify-center mb-8 relative">
+              {/* Animated rings */}
+              <div className="absolute inset-0 rounded-full border-4 border-[var(--aivo-teal-300)] animate-ping opacity-30" />
+              <div className="absolute inset-2 rounded-full border-2 border-[var(--aivo-purple-300)] animate-pulse" />
+              <span className="text-6xl animate-bounce">🧠</span>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-3">
+              {learnerName ? `Getting ready for you, ${learnerName}!` : 'Preparing Your Assessment'}
+            </h2>
+            
+            <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">
+              {preparationStatus}
+            </p>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-[var(--aivo-neutral-200)] rounded-full h-3 mb-4 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[var(--aivo-teal-400)] via-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] transition-all duration-700 ease-out rounded-full"
+                style={{ width: `${preparationProgress}%` }}
+              />
+            </div>
+            
+            <p className="text-sm text-[var(--aivo-neutral-500)]">
+              {preparationProgress < 30 && '🔍 Analyzing your learning profile...'}
+              {preparationProgress >= 30 && preparationProgress < 70 && '✨ Creating personalized questions...'}
+              {preparationProgress >= 70 && preparationProgress < 100 && '🎯 Almost ready...'}
+              {preparationProgress >= 100 && "🚀 Let's go!"}
+            </p>
+            
+            {/* Fun facts while waiting */}
+            <div className="mt-8 p-4 bg-white/50 rounded-xl border border-[var(--aivo-neutral-200)]">
+              <p className="text-sm text-[var(--aivo-neutral-600)] italic">
+                💡 Did you know? Our AI creates unique questions just for you based on your grade level and learning needs!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {phase === 'learning_style' && renderLearningStylePhase()}
       {phase === 'transition_to_domains' && renderTransitionToDomains()}
       {phase === 'domain_intro' && renderDomainIntro()}

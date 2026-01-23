@@ -46,6 +46,14 @@ export interface BaselineQuestionRequest {
   assessmentType?: AssessmentType;
   /** Specific accommodations to apply */
   accommodations?: string[];
+  /** Areas of concern from parent assessment - helps focus question difficulty */
+  areasOfConcern?: string[];
+  /** Whether learner has an IEP */
+  hasIep?: boolean;
+  /** Whether learner has a 504 plan */
+  has504?: boolean;
+  /** Disability categories from parent assessment */
+  disabilityCategories?: string[];
 }
 
 export interface BaselineQuestion {
@@ -361,6 +369,398 @@ const ASSESSMENT_TYPE_GUIDANCE: Record<AssessmentType, {
   },
 };
 
+// ══════════════════════════════════════════════════════════════════════════════
+// EVIDENCE-BASED NEURODIVERSE TEACHING STRATEGIES
+// Based on research from: National Center on Educational Outcomes, Council for
+// Exceptional Children, International Dyslexia Association, CHADD, Autism Society
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Evidence-based teaching strategies for neurodiverse learners.
+ * These strategies are incorporated into question design and presentation
+ * to maximize learning effectiveness for each disability category.
+ */
+const NEURODIVERSE_TEACHING_STRATEGIES: Record<string, {
+  description: string;
+  questionDesignPrinciples: string[];
+  presentationStrategies: string[];
+  languageGuidelines: string[];
+  avoidPatterns: string[];
+}> = {
+  // Autism Spectrum Disorder (ASD)
+  autism: {
+    description: 'Autism Spectrum Disorder - Focus on predictability, concrete language, and clear structure',
+    questionDesignPrinciples: [
+      'Use explicit, literal language - avoid idioms, sarcasm, and figurative speech',
+      'Provide clear, predictable structure with consistent formatting',
+      'Break complex questions into single-concept steps',
+      'Include visual supports and concrete examples',
+      'Use specific rather than general terms',
+    ],
+    presentationStrategies: [
+      'Maintain consistent visual layout across questions',
+      'Use bullet points and numbered lists for clarity',
+      'Provide advance organizers explaining what to expect',
+      'Allow processing time without time pressure',
+      'Minimize sensory distractions in question presentation',
+    ],
+    languageGuidelines: [
+      'Use concrete, specific vocabulary',
+      'Say exactly what you mean - no hidden meanings',
+      'Avoid open-ended questions when possible',
+      'Provide clear examples of expected responses',
+      'Use "first/then" sequential language',
+    ],
+    avoidPatterns: [
+      'Idioms (e.g., "piece of cake", "raining cats and dogs")',
+      'Sarcasm or implied meanings',
+      'Vague pronouns without clear antecedents',
+      'Questions requiring inference of social cues',
+      'Unexpected format changes',
+    ],
+  },
+
+  // Attention Deficit Hyperactivity Disorder (ADHD)
+  adhd: {
+    description: 'ADHD - Focus on engagement, chunking, and executive function support',
+    questionDesignPrinciples: [
+      'Keep questions concise and focused on one concept',
+      'Use engaging, high-interest contexts',
+      'Chunk information into manageable pieces',
+      'Highlight key information visually',
+      'Provide clear start/stop points',
+    ],
+    presentationStrategies: [
+      'Use bold or color to highlight important words',
+      'Break long passages into shorter paragraphs',
+      'Include movement or interactive elements where possible',
+      'Provide frequent feedback and encouragement',
+      'Use timers/progress indicators to support pacing',
+    ],
+    languageGuidelines: [
+      'Use action-oriented, dynamic language',
+      'Keep sentences under 15 words',
+      'Front-load important information',
+      'Use active voice rather than passive',
+      'Include engaging hooks and real-world connections',
+    ],
+    avoidPatterns: [
+      'Long, dense text blocks',
+      'Multiple concepts in one question',
+      'Monotonous or repetitive formats',
+      'Excessive distractors in answer choices',
+      'Open-ended questions without clear boundaries',
+    ],
+  },
+
+  // Dyslexia and Reading Disabilities
+  dyslexia: {
+    description: 'Dyslexia - Focus on multi-sensory approaches, phonetic support, and visual clarity',
+    questionDesignPrinciples: [
+      'Use dyslexia-friendly fonts and spacing',
+      'Include audio support options for text',
+      'Avoid visually confusing letter combinations (b/d, p/q)',
+      'Use phonetically regular words when possible',
+      'Provide visual context alongside text',
+    ],
+    presentationStrategies: [
+      'Use left-aligned text (not justified)',
+      'Provide generous line spacing (1.5-2x)',
+      'Use cream/off-white backgrounds instead of pure white',
+      'Keep text lines short (60-70 characters max)',
+      'Offer text-to-speech options',
+    ],
+    languageGuidelines: [
+      'Use familiar, high-frequency words',
+      'Avoid complex word patterns or silent letters',
+      'Use consistent vocabulary throughout',
+      'Break compound sentences into simple ones',
+      'Repeat key terms rather than using synonyms',
+    ],
+    avoidPatterns: [
+      'Words with similar visual patterns (was/saw, on/no)',
+      'Dense text without visual breaks',
+      'Serif fonts or decorative typefaces',
+      'Small font sizes',
+      'Red/green color coding (often hard to distinguish)',
+    ],
+  },
+
+  // Dyscalculia and Math Learning Disabilities
+  dyscalculia: {
+    description: 'Dyscalculia - Focus on concrete representations, visual math, and step-by-step approaches',
+    questionDesignPrinciples: [
+      'Include visual representations of quantities',
+      'Break multi-step problems into explicit single steps',
+      'Use real-world, concrete contexts for math',
+      'Provide number lines and visual aids',
+      'Minimize working memory demands',
+    ],
+    presentationStrategies: [
+      'Show math problems vertically when possible',
+      'Use grid paper or structured layouts',
+      'Include manipulative-based representations',
+      'Highlight operation signs clearly',
+      'Provide worked examples before practice',
+    ],
+    languageGuidelines: [
+      'Explicitly state what operation is needed',
+      'Use consistent math vocabulary',
+      'Avoid word problems with unnecessary narrative',
+      'Define math terms in context',
+      'Use "math to English" translations',
+    ],
+    avoidPatterns: [
+      'Problems requiring mental math',
+      'Crowded number arrangements',
+      'Mixing different operations without clear cues',
+      'Abstract number concepts without visuals',
+      'Timed math fact drills',
+    ],
+  },
+
+  // Speech and Language Impairments
+  speech_language: {
+    description: 'Speech/Language Impairment - Focus on visual supports, simplified language, and alternative response options',
+    questionDesignPrinciples: [
+      'Provide visual cues alongside verbal content',
+      'Use simplified, direct sentence structures',
+      'Offer multiple response modalities (pointing, selecting)',
+      'Reduce vocabulary complexity',
+      'Allow extra processing time',
+    ],
+    presentationStrategies: [
+      'Include pictures, symbols, or icons',
+      'Use AAC-compatible formats',
+      'Provide sentence starters for open responses',
+      'Model expected responses visually',
+      'Allow voice or typing alternatives',
+    ],
+    languageGuidelines: [
+      'Use simple subject-verb-object structures',
+      'Avoid complex grammatical constructions',
+      'Repeat key information in different ways',
+      'Use high-frequency vocabulary',
+      'Provide context clues for new words',
+    ],
+    avoidPatterns: [
+      'Complex syntax or embedded clauses',
+      'Abstract or technical vocabulary',
+      'Questions requiring verbal-only responses',
+      'Rapid-fire question sequences',
+      'Phonetically complex words',
+    ],
+  },
+
+  // Intellectual/Developmental Disabilities
+  intellectual: {
+    description: 'Intellectual Disability - Focus on functional skills, concrete examples, and scaffolded support',
+    questionDesignPrinciples: [
+      'Focus on functional, life-relevant skills',
+      'Use very concrete, observable concepts',
+      'Provide step-by-step scaffolding',
+      'Limit answer choices to 2-3 options',
+      'Include real-life photos and examples',
+    ],
+    presentationStrategies: [
+      'Use picture-based questions when possible',
+      'Pair text with visual symbols',
+      'Provide immediate feedback',
+      'Use familiar, everyday contexts',
+      'Allow demonstration-based responses',
+    ],
+    languageGuidelines: [
+      'Use very simple vocabulary',
+      'Single-step instructions only',
+      'Avoid abstract concepts',
+      'Use consistent, predictable language patterns',
+      'Connect to personal experience',
+    ],
+    avoidPatterns: [
+      'Multi-step reasoning',
+      'Abstract or hypothetical scenarios',
+      'Complex vocabulary',
+      'Time-sensitive questions',
+      'Questions requiring generalization',
+    ],
+  },
+
+  // Emotional/Behavioral Disorders
+  emotional: {
+    description: 'Emotional/Behavioral Disorder - Focus on positive framing, choice, and anxiety reduction',
+    questionDesignPrinciples: [
+      'Use positive, encouraging language',
+      'Provide choice and control where possible',
+      'Break tasks into small, achievable steps',
+      'Reduce anxiety through familiar formats',
+      'Include calming visual design',
+    ],
+    presentationStrategies: [
+      'Start with easier questions to build confidence',
+      'Provide progress indicators',
+      'Use calming colors (blues, greens)',
+      'Include self-regulation check-ins',
+      'Offer breaks as part of assessment structure',
+    ],
+    languageGuidelines: [
+      'Use growth mindset language',
+      'Avoid language that feels judgmental',
+      'Provide clear expectations',
+      'Use "I" statements in examples',
+      'Normalize challenge as part of learning',
+    ],
+    avoidPatterns: [
+      'High-pressure language',
+      'Comparison to others',
+      'Unexpected or startling content',
+      'Themes involving conflict or distress',
+      'Questions that feel personal or invasive',
+    ],
+  },
+
+  // Executive Function Difficulties
+  executive_function: {
+    description: 'Executive Function Challenges - Focus on organization, planning support, and working memory scaffolds',
+    questionDesignPrinciples: [
+      'Provide clear organizational structure',
+      'Minimize working memory demands',
+      'Include step-by-step guidance',
+      'Use visual organizers and checklists',
+      'Highlight key information',
+    ],
+    presentationStrategies: [
+      'Number steps explicitly',
+      'Provide scratch space or note areas',
+      'Use color coding for organization',
+      'Show progress through tasks',
+      'Include planning prompts',
+    ],
+    languageGuidelines: [
+      'Use explicit transitional language',
+      'State the goal clearly at the beginning',
+      'Provide "what you need to do" summaries',
+      'Use numbered or bulleted lists',
+      'Repeat key information at relevant points',
+    ],
+    avoidPatterns: [
+      'Implicit instructions',
+      'Questions requiring planning without support',
+      'Multiple pieces of information to hold in memory',
+      'Long delays between question parts',
+      'Assumptions about prior organization',
+    ],
+  },
+
+  // Sensory Processing Differences
+  sensory: {
+    description: 'Sensory Processing Differences - Focus on clean design, predictable layouts, and sensory modulation',
+    questionDesignPrinciples: [
+      'Use clean, uncluttered visual design',
+      'Maintain consistent layouts',
+      'Provide options for sensory preferences',
+      'Avoid sudden changes or surprises',
+      'Use muted colors and simple graphics',
+    ],
+    presentationStrategies: [
+      'Minimize visual "noise" and decorations',
+      'Use consistent, predictable formatting',
+      'Provide adjustable display options',
+      'Allow for sensory breaks',
+      'Offer alternative sensory modalities',
+    ],
+    languageGuidelines: [
+      'Clear, simple language without excessive description',
+      'Avoid sensory-heavy imagery that may distract',
+      'Use straightforward explanations',
+      'Provide content warnings for potentially triggering content',
+      'Maintain calm, neutral tone',
+    ],
+    avoidPatterns: [
+      'Busy backgrounds or animations',
+      'Sudden sounds or visual changes',
+      'Complex visual patterns',
+      'Overwhelming amounts of information',
+      'Bright, high-contrast colors',
+    ],
+  },
+};
+
+/**
+ * Maps areas of concern keywords to disability categories for strategy selection
+ */
+const CONCERN_TO_CATEGORY_MAP: Record<string, string[]> = {
+  // ADHD-related concerns
+  'attention': ['adhd'],
+  'focus': ['adhd'],
+  'hyperactivity': ['adhd'],
+  'impulsivity': ['adhd'],
+  'distracted': ['adhd'],
+  'concentration': ['adhd'],
+  'sitting still': ['adhd'],
+  
+  // Autism-related concerns
+  'autism': ['autism'],
+  'asd': ['autism'],
+  'social skills': ['autism', 'emotional'],
+  'repetitive': ['autism'],
+  'routines': ['autism'],
+  'transitions': ['autism', 'executive_function'],
+  'sensory': ['sensory', 'autism'],
+  'literal': ['autism'],
+  
+  // Dyslexia/Reading concerns
+  'reading': ['dyslexia'],
+  'dyslexia': ['dyslexia'],
+  'spelling': ['dyslexia'],
+  'letters': ['dyslexia'],
+  'decoding': ['dyslexia'],
+  'phonics': ['dyslexia'],
+  'words': ['dyslexia'],
+  
+  // Math concerns
+  'math': ['dyscalculia'],
+  'numbers': ['dyscalculia'],
+  'calculation': ['dyscalculia'],
+  'dyscalculia': ['dyscalculia'],
+  'counting': ['dyscalculia'],
+  'arithmetic': ['dyscalculia'],
+  
+  // Speech/Language concerns
+  'speech': ['speech_language'],
+  'language': ['speech_language'],
+  'articulation': ['speech_language'],
+  'stuttering': ['speech_language'],
+  'communication': ['speech_language', 'autism'],
+  'vocabulary': ['speech_language'],
+  'expressive': ['speech_language'],
+  'receptive': ['speech_language'],
+  
+  // Emotional/Behavioral concerns
+  'anxiety': ['emotional'],
+  'behavior': ['emotional'],
+  'emotional': ['emotional'],
+  'regulation': ['emotional', 'executive_function'],
+  'anger': ['emotional'],
+  'depression': ['emotional'],
+  'meltdowns': ['emotional', 'sensory'],
+  
+  // Executive function concerns
+  'organization': ['executive_function'],
+  'planning': ['executive_function'],
+  'memory': ['executive_function'],
+  'working memory': ['executive_function'],
+  'following directions': ['executive_function', 'speech_language'],
+  'time management': ['executive_function'],
+  'task completion': ['executive_function'],
+  
+  // Intellectual concerns
+  'developmental': ['intellectual'],
+  'intellectual': ['intellectual'],
+  'cognitive': ['intellectual'],
+  'slow learner': ['intellectual'],
+  'global delay': ['intellectual'],
+};
+
 const GRADE_BAND_DESCRIPTIONS: Record<
   GradeBand,
   { grades: string; ageRange: string; complexity: string }
@@ -571,6 +971,32 @@ export class BaselineQuestionGenerationService {
       parts.push('', 'Specific Accommodations:', ...request.accommodations.map(a => `  - ${a}`));
     }
 
+    // Add IEP/504 context - important for understanding learner needs
+    if (request.hasIep || request.has504) {
+      parts.push('', '═══ LEARNER SUPPORT CONTEXT ═══');
+      if (request.hasIep) {
+        parts.push('- Learner has an Individualized Education Program (IEP)');
+      }
+      if (request.has504) {
+        parts.push('- Learner has a Section 504 Plan');
+      }
+    }
+
+    // Add areas of concern from parent assessment
+    if (request.areasOfConcern && request.areasOfConcern.length > 0) {
+      parts.push(
+        '',
+        '═══ PARENT-IDENTIFIED AREAS OF CONCERN ═══',
+        'The parent/caregiver has noted the following areas where the learner may need support:',
+        ...request.areasOfConcern.map(area => `  - ${area}`),
+        '',
+        'Consider these when calibrating question difficulty. Start with accessible questions to build confidence.'
+      );
+    }
+
+    // Add neurodiverse teaching strategies based on disability categories and concerns
+    this.addNeurodiverseStrategies(parts, request);
+
     // Add curriculum standards context
     this.addCurriculumContext(parts, request);
 
@@ -602,7 +1028,14 @@ export class BaselineQuestionGenerationService {
       '6. For OPEN_ENDED: correctAnswer is a sample correct response, include a rubric',
       '7. Make distractors plausible - based on common misconceptions',
       `8. Language must be appropriate for ${assessmentType === 'MODIFIED' || assessmentType === 'ALTERNATE' ? 'simplified accessibility' : 'the grade band'}`,
-      '9. Questions should be clear, concise, and unambiguous'
+      '9. Questions should be clear, concise, and unambiguous',
+      '',
+      '═══ CRITICAL: ANSWER CORRECTNESS ═══',
+      '- VERIFY that the correctAnswer index points to the ACTUALLY CORRECT answer',
+      '- For math: Double-check your arithmetic! If 2x + 5 = 11, then x = 3 (verify: 2*3 + 5 = 11)',
+      '- The correct answer MUST be included in the options array',
+      '- Options should be just the answer values, NOT prefixed with "Option A:" or "A."',
+      '- Example: options: ["3", "5", "7", "9"] NOT ["Option A: 3", "Option B: 5", ...]'
     );
 
     // Add assessment-type specific requirements
@@ -665,6 +1098,102 @@ export class BaselineQuestionGenerationService {
   }
 
   /**
+   * Add evidence-based neurodiverse teaching strategies to prompt parts.
+   * This method infers disability categories from areas of concern, explicit categories,
+   * and assessment type to include targeted, research-backed teaching strategies.
+   */
+  private addNeurodiverseStrategies(parts: string[], request: BaselineQuestionRequest): void {
+    // Collect applicable disability categories
+    const categories = new Set<string>();
+
+    // Add explicitly specified disability categories
+    if (request.disabilityCategories) {
+      for (const cat of request.disabilityCategories) {
+        const normalizedCat = cat.toLowerCase().replace(/[^a-z]/g, '_');
+        if (NEURODIVERSE_TEACHING_STRATEGIES[normalizedCat]) {
+          categories.add(normalizedCat);
+        }
+      }
+    }
+
+    // Infer categories from areas of concern
+    if (request.areasOfConcern) {
+      for (const concern of request.areasOfConcern) {
+        const normalizedConcern = concern.toLowerCase();
+        for (const [keyword, cats] of Object.entries(CONCERN_TO_CATEGORY_MAP)) {
+          if (normalizedConcern.includes(keyword)) {
+            cats.forEach(cat => categories.add(cat));
+          }
+        }
+      }
+    }
+
+    // Infer from assessment type
+    if (request.assessmentType === 'ALTERNATE') {
+      categories.add('intellectual');
+    } else if (request.assessmentType === 'MODIFIED' && (request.hasIep || request.has504)) {
+      // Modified assessment often indicates learning disabilities
+      categories.add('executive_function');
+    }
+
+    // If no categories identified but has IEP/504, add general executive function support
+    if (categories.size === 0 && (request.hasIep || request.has504)) {
+      categories.add('executive_function');
+    }
+
+    // If no neurodiverse categories apply, return early
+    if (categories.size === 0) {
+      return;
+    }
+
+    parts.push(
+      '',
+      '═══ NEURODIVERSE TEACHING STRATEGIES (EVIDENCE-BASED) ═══',
+      'Apply the following research-backed strategies to make questions effective for this learner:',
+      ''
+    );
+
+    // Add strategies for each applicable category
+    for (const category of categories) {
+      const strategies = NEURODIVERSE_TEACHING_STRATEGIES[category];
+      if (!strategies) continue;
+
+      parts.push(
+        `▸ ${strategies.description}`,
+        ''
+      );
+
+      // Add top question design principles (limit to 3 for prompt length)
+      parts.push('  Question Design:');
+      strategies.questionDesignPrinciples.slice(0, 3).forEach(principle => {
+        parts.push(`    • ${principle}`);
+      });
+
+      // Add top language guidelines (limit to 2 for prompt length)
+      parts.push('  Language Guidelines:');
+      strategies.languageGuidelines.slice(0, 2).forEach(guideline => {
+        parts.push(`    • ${guideline}`);
+      });
+
+      // Add patterns to avoid (limit to 2 for prompt length)
+      parts.push('  AVOID:');
+      strategies.avoidPatterns.slice(0, 2).forEach(pattern => {
+        parts.push(`    ✗ ${pattern}`);
+      });
+
+      parts.push('');
+    }
+
+    // Add summary guidance
+    parts.push(
+      'IMPORTANT: These strategies are based on research from the National Center on Educational',
+      'Outcomes, Council for Exceptional Children, and disability-specific organizations.',
+      'Apply them thoughtfully to maximize the learner\'s ability to demonstrate their knowledge.',
+      ''
+    );
+  }
+
+  /**
    * Add skill descriptions to prompt parts
    */
   private addSkillDescriptions(parts: string[], skillCodes: string[]): void {
@@ -687,22 +1216,25 @@ export class BaselineQuestionGenerationService {
    * Get the response format example JSON based on assessment type
    */
   private getResponseFormatExample(assessmentType: AssessmentType = 'STANDARD'): string {
-    // Adjust options based on assessment type
-    const optionCount = assessmentType === 'ALTERNATE' ? 3 : assessmentType === 'MODIFIED' ? 3 : 4;
-    const options = ['Option A', 'Option B', 'Option C'];
-    if (optionCount === 4) options.push('Option D');
+    // Use realistic example options (NOT "Option A", "Option B" - those are placeholders!)
+    // The LLM should generate actual answer content
+    const mathExample = assessmentType === 'ALTERNATE' 
+      ? ['Yes', 'No', 'Help me']
+      : assessmentType === 'MODIFIED'
+        ? ['3', '5', '7']
+        : ['12', '15', '18', '21'];
 
     const examples: Array<{ skillCode: string; questionType: string; questionText: string; options?: string[]; correctAnswer: number | string; rubric?: string }> = [
       {
-        skillCode: 'SKILL_CODE',
+        skillCode: 'MATH_NUMBER_SENSE',
         questionType: 'MULTIPLE_CHOICE',
         questionText: assessmentType === 'ALTERNATE' 
-          ? 'Simple, functional question here?' 
+          ? 'Can you count to 5?' 
           : assessmentType === 'MODIFIED'
-            ? 'Clear, simplified question here?'
-            : 'The question text here?',
-        options,
-        correctAnswer: 0
+            ? 'What is 2 + 1?'
+            : 'What is 7 + 5?',
+        options: mathExample,
+        correctAnswer: 0  // The FIRST option must be the correct answer
       }
     ];
 
@@ -718,6 +1250,19 @@ export class BaselineQuestionGenerationService {
     }
 
     return JSON.stringify({ questions: examples }, null, 2);
+  }
+
+  /**
+   * Clean option text by removing common prefixes like "Option A:", "A.", "A)", etc.
+   */
+  private cleanOptionText(option: string): string {
+    if (typeof option !== 'string') return String(option);
+    // Remove prefixes like "Option A:", "Option B:", "A.", "B)", "1.", "1)", etc.
+    return option
+      .replace(/^Option\s*[A-Da-d]\s*[:.)/-]?\s*/i, '')
+      .replace(/^[A-Da-d]\s*[:.)/-]\s*/i, '')
+      .replace(/^[1-4]\s*[:.)/-]\s*/i, '')
+      .trim();
   }
 
   /**
@@ -740,14 +1285,18 @@ export class BaselineQuestionGenerationService {
         const questionType =
           (question.questionType as string) === 'OPEN_ENDED' ? 'OPEN_ENDED' : 'MULTIPLE_CHOICE';
 
+        // Clean option texts to remove prefixes
+        let options: string[] | undefined;
+        if (questionType === 'MULTIPLE_CHOICE') {
+          const rawOptions = (question.options as string[]) ?? ['A', 'B', 'C', 'D'];
+          options = rawOptions.map(opt => this.cleanOptionText(opt));
+        }
+
         return {
           skillCode: (question.skillCode as string) ?? expectedSkillCodes[0],
           questionType,
           questionText: (question.questionText as string) ?? '',
-          options:
-            questionType === 'MULTIPLE_CHOICE'
-              ? ((question.options as string[]) ?? ['A', 'B', 'C', 'D'])
-              : undefined,
+          options,
           correctAnswer: (question.correctAnswer as number | string) ?? 0,
           rubric: questionType === 'OPEN_ENDED' ? (question.rubric as string) : undefined,
         };

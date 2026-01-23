@@ -79,6 +79,10 @@ const baselineGenerateSchema = z.object({
       .optional(),
     accommodations: z.array(z.string()).optional(),
     gradeLevel: z.number().optional(),
+    areasOfConcern: z.array(z.string()).optional(),
+    hasIep: z.boolean().optional(),
+    has504: z.boolean().optional(),
+    disabilityCategories: z.array(z.string()).optional(),
   }),
 });
 
@@ -306,7 +310,7 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     }
 
     const { tenantId, learnerId, payload } = parsed.data;
-    const { gradeBand, domain, skillCodes, assessmentType, accommodations, gradeLevel } = payload;
+    const { gradeBand, domain, skillCodes, assessmentType, accommodations, gradeLevel, areasOfConcern, hasIep, has504, disabilityCategories } = payload;
 
     try {
       const llm = getLLMOrchestrator();
@@ -321,6 +325,10 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
         assessmentType,
         accommodations,
         gradeLevel,
+        areasOfConcern,
+        hasIep,
+        has504,
+        disabilityCategories,
       });
 
       reply.code(200).send({
