@@ -13,6 +13,7 @@ export * from './modelCards.js';
 export * from './audit.js';
 export * from './copy.js';
 export * from './gamification.types.js';
+export * from './ai.types.js';
 export * from './district.js';
 export * from './scratchPad.js';
 export * from './readingLevel.js';

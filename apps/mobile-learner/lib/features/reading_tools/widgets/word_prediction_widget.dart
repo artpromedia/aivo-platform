@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/environment.dart';
 import '../reading_tools_models.dart';
+import '../reading_tools_service.dart';
 
 /// Word Prediction Widget
 class WordPredictionWidget extends ConsumerStatefulWidget {
@@ -30,6 +32,7 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
   final TextEditingController _textController = TextEditingController();
   List<WordPrediction> _predictions = [];
   bool _isLoadingPredictions = false;
+  late final ReadingToolsService _readingToolsService;
 
   // Sentence starters for different contexts
   final List<Map<String, dynamic>> _sentenceStarters = [
@@ -93,6 +96,10 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
   @override
   void initState() {
     super.initState();
+    _readingToolsService = ReadingToolsService(
+      baseUrl: EnvironmentConfig.readingToolsBaseUrl,
+      learnerId: widget.learnerId,
+    );
     _textController.addListener(_onTextChanged);
   }
 
@@ -116,19 +123,41 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
 
     setState(() => _isLoadingPredictions = true);
 
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 200));
+    // Use mock predictions in development mode when explicitly enabled
+    if (EnvironmentConfig.useReadingMock) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      final words = text.split(RegExp(r'\s+'));
+      final lastWord = words.isNotEmpty ? words.last.toLowerCase() : '';
+      final mockPredictions = _getMockPredictions(lastWord, text);
+      setState(() {
+        _predictions = mockPredictions;
+        _isLoadingPredictions = false;
+      });
+      return;
+    }
 
-    // Mock predictions based on last word
-    final words = text.split(RegExp(r'\s+'));
-    final lastWord = words.isNotEmpty ? words.last.toLowerCase() : '';
-
-    final mockPredictions = _getMockPredictions(lastWord, text);
-
-    setState(() {
-      _predictions = mockPredictions;
-      _isLoadingPredictions = false;
-    });
+    // Call real AI prediction service
+    try {
+      final predictions = await _readingToolsService.getWordPredictions(text);
+      if (mounted) {
+        setState(() {
+          _predictions = predictions;
+          _isLoadingPredictions = false;
+        });
+      }
+    } catch (e) {
+      // Fallback to mock on error to maintain UX
+      debugPrint('Word prediction error, falling back to mock: $e');
+      final words = text.split(RegExp(r'\s+'));
+      final lastWord = words.isNotEmpty ? words.last.toLowerCase() : '';
+      final mockPredictions = _getMockPredictions(lastWord, text);
+      if (mounted) {
+        setState(() {
+          _predictions = mockPredictions;
+          _isLoadingPredictions = false;
+        });
+      }
+    }
   }
 
   List<WordPrediction> _getMockPredictions(String lastWord, String context) {

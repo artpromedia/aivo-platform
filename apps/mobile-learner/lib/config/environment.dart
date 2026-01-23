@@ -148,6 +148,9 @@ class EnvironmentConfig {
   /// Whether to use mock analytics service.
   static bool get useAnalyticsMock => useMockServices;
 
+  /// Whether to use mock reading tools service.
+  static bool get useReadingMock => useMockServices;
+
   // ══════════════════════════════════════════════════════════════════════════
   // API BASE URLS
   // ══════════════════════════════════════════════════════════════════════════
@@ -216,6 +219,12 @@ class EnvironmentConfig {
   static const String executiveFunctionBaseUrl = String.fromEnvironment(
     'EXECUTIVE_FUNCTION_BASE_URL',
     defaultValue: 'http://localhost:4031',
+  );
+
+  /// Reading tools service base URL (uses embedded-tools-svc).
+  static const String readingToolsBaseUrl = String.fromEnvironment(
+    'READING_TOOLS_BASE_URL',
+    defaultValue: 'http://localhost:4022',
   );
 
   // ══════════════════════════════════════════════════════════════════════════
