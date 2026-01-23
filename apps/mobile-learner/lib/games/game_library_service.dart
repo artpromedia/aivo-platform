@@ -2,11 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' show useMockWhen;
 
-const _baseUrl = String.fromEnvironment('GAME_LIBRARY_BASE_URL', defaultValue: 'http://localhost:4030');
-const _useGameMock = bool.fromEnvironment('USE_GAME_MOCK', defaultValue: false);
-
-/// Check if mock mode should be used (safe guard - only in debug mode)
-bool get _shouldUseMock => useMockWhen(_useGameMock, 'GameLibraryService');
+import '../config/environment.dart';
 
 /// Game types available in the library.
 enum GameType {
@@ -236,7 +232,7 @@ class GameLibraryException implements Exception {
 class GameLibraryService {
   GameLibraryService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.gameLibraryBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -250,7 +246,7 @@ class GameLibraryService {
     CognitiveSkill? cognitiveSkill,
     int? maxDurationSec,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return _mockGames();
     }
@@ -277,7 +273,7 @@ class GameLibraryService {
 
   /// Get a random focus break game.
   Future<Game?> getFocusBreakGame({required String gradeBand, List<String>? excludeSlugs}) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockGames().first;
     }
@@ -306,7 +302,7 @@ class GameLibraryService {
     required String gradeBand,
     int limit = 5,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockGames().take(limit).toList();
     }
@@ -335,7 +331,7 @@ class GameLibraryService {
     String? difficulty,
     String? learningSessionId,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return GameSession(
         id: 'mock-session-${DateTime.now().millisecondsSinceEpoch}',
@@ -375,7 +371,7 @@ class GameLibraryService {
     Map<String, dynamic>? metrics,
     required bool completed,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return GameSession(
         id: sessionId,
@@ -414,7 +410,7 @@ class GameLibraryService {
 
   /// Get today's brain training plan.
   Future<BrainTrainingPlan> getBrainTrainingPlan({required String gradeBand}) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return BrainTrainingPlan(
         date: DateTime.now(),
@@ -443,7 +439,7 @@ class GameLibraryService {
 
   /// Mark a brain training game as completed.
   Future<BrainTrainingPlan> completeBrainTrainingGame({required String gameId}) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return BrainTrainingPlan(
         date: DateTime.now(),
@@ -471,7 +467,7 @@ class GameLibraryService {
 
   /// Get brain training statistics.
   Future<BrainTrainingStats> getBrainTrainingStats() async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useGameMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return BrainTrainingStats(
         totalSessions: 42,

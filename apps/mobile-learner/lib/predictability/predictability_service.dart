@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/environment.dart';
 import 'predictability_models.dart';
-
-const _baseUrl = String.fromEnvironment('SESSION_BASE_URL', defaultValue: 'http://localhost:4020');
-const _usePredictabilityMock = bool.fromEnvironment('USE_PREDICTABILITY_MOCK', defaultValue: false);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDERS
@@ -90,14 +88,14 @@ class SessionPlanNotifier extends StateNotifier<AsyncValue<PredictableSessionPla
 /// Service for predictability API calls.
 class PredictabilityService {
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: _baseUrl,
+    baseUrl: EnvironmentConfig.sessionBaseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   ));
 
   /// Check if predictability is required for a learner.
   Future<bool> requiresPredictability(String tenantId, String learnerId) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       // Mock: return true for testing
       return Future.delayed(const Duration(milliseconds: 100), () => true);
     }
@@ -115,7 +113,7 @@ class PredictabilityService {
 
   /// Get predictability preferences for a learner.
   Future<PredictabilityPreferences> getPreferences(String tenantId, String learnerId) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 100),
         () => PredictabilityPreferences.defaultPreferences,
@@ -139,7 +137,7 @@ class PredictabilityService {
     String learnerId,
     PredictabilityPreferences preferences,
   ) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(const Duration(milliseconds: 100), () => preferences);
     }
 
@@ -162,7 +160,7 @@ class PredictabilityService {
     required List<Map<String, dynamic>> activities,
     String structureType = 'default',
   }) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 200),
         () => _mockSessionPlan(sessionId, learnerId, activities),
@@ -184,7 +182,7 @@ class PredictabilityService {
 
   /// Get a session plan by ID.
   Future<PredictableSessionPlan?> getSessionPlan(String tenantId, String planId) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 100),
         () => _mockSessionPlan('session-1', 'learner-1', []),
@@ -208,7 +206,7 @@ class PredictabilityService {
     String planId,
     String currentItemId,
   ) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 100),
         () => _mockSessionPlan('session-1', 'learner-1', []),
@@ -235,7 +233,7 @@ class PredictabilityService {
     String learnerId,
     RoutineType routineType,
   ) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 100),
         () => _mockRoutine(routineType),
@@ -270,7 +268,7 @@ class PredictabilityService {
     String? triggerCategory,
     String? triggerId,
   }) async {
-    if (_usePredictabilityMock) {
+    if (EnvironmentConfig.usePredictabilityMock) {
       return Future.delayed(
         const Duration(milliseconds: 100),
         () => AnxietyReportResult(

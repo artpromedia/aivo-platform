@@ -2,10 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/environment.dart';
 import '../offline/offline_api_clients.dart';
-
-const _baseUrl = String.fromEnvironment('SESSION_BASE_URL', defaultValue: 'http://localhost:4020');
-const _useTransitionMock = bool.fromEnvironment('USE_TRANSITION_MOCK', defaultValue: false);
 
 /// Log warning when mock data is used in non-debug mode
 void _logMockWarning() {
@@ -457,7 +455,7 @@ class TransitionException implements Exception {
 class TransitionService {
   TransitionService({Future<String?> Function()? getAccessToken})
       : _getAccessToken = getAccessToken,
-        _dio = Dio(BaseOptions(baseUrl: _baseUrl));
+        _dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.sessionBaseUrl));
 
   final Dio _dio;
   final Future<String?> Function()? _getAccessToken;
@@ -477,7 +475,7 @@ class TransitionService {
   Future<TransitionPreferences> getPreferences({
     required String learnerId,
   }) async {
-    if (_useTransitionMock) {
+    if (EnvironmentConfig.useTransitionMock) {
       _logMockWarning();
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockPreferences();
@@ -514,7 +512,7 @@ class TransitionService {
     bool? avoidTimers,
     String? urgency,
   }) async {
-    if (_useTransitionMock) {
+    if (EnvironmentConfig.useTransitionMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockTransitionPlan(
         currentActivity: currentActivity,
@@ -579,7 +577,7 @@ class TransitionService {
     required String learnerId,
     String readyState = 'ready',
   }) async {
-    if (_useTransitionMock) {
+    if (EnvironmentConfig.useTransitionMock) {
       await Future.delayed(const Duration(milliseconds: 100));
       return;
     }
@@ -612,7 +610,7 @@ class TransitionService {
     int routineStepsCompleted = 0,
     int learnerInteractions = 0,
   }) async {
-    if (_useTransitionMock) {
+    if (EnvironmentConfig.useTransitionMock) {
       await Future.delayed(const Duration(milliseconds: 100));
       return;
     }
@@ -643,7 +641,7 @@ class TransitionService {
     String? learnerId,
     bool includeSystem = true,
   }) async {
-    if (_useTransitionMock) {
+    if (EnvironmentConfig.useTransitionMock) {
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockRoutines();
     }

@@ -3,19 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment('LEARNER_BASE_URL', defaultValue: 'http://localhost:4002');
-const _useLearnerMock = bool.fromEnvironment('USE_LEARNER_MOCK', defaultValue: false);
-
-/// Check if mock mode should be used (safe guard - only in debug mode)
-bool get _shouldUseMock => useMockWhen(_useLearnerMock, 'LearnerService');
+import '../config/environment.dart';
 
 class LearnerService {
-  LearnerService() : _dio = Dio(BaseOptions(baseUrl: _baseUrl));
+  LearnerService() : _dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.learnerBaseUrl));
 
   final Dio _dio;
 
   Future<Learner> fetchLearner(String learnerId) async {
-    if (_shouldUseMock) return mockLearnerById(learnerId);
+    if (EnvironmentConfig.useLearnerMock) {
+      debugPrint('⚠️ [LearnerService] Using mock data - development only');
+      return mockLearnerById(learnerId);
+    }
 
     try {
       final response = await _dio.get<Map<String, dynamic>>('/learners/$learnerId');

@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _baseUrl = String.fromEnvironment('AI_ORCHESTRATOR_BASE_URL', defaultValue: 'http://localhost:4020');
-const _useWritingMock = bool.fromEnvironment('USE_WRITING_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Writing types supported by the assistant.
 enum WritingType {
@@ -162,7 +161,7 @@ class WritingAssistantException implements Exception {
 class WritingAssistantService {
   WritingAssistantService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.aiOrchestratorBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -175,7 +174,7 @@ class WritingAssistantService {
     required WritingLevel writingLevel,
     String? assignmentPrompt,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 800));
       return _mockFeedback();
     }
@@ -208,7 +207,7 @@ class WritingAssistantService {
     required WritingType writingType,
     required WritingLevel writingLevel,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockCompletion(partialSentence);
     }
@@ -235,7 +234,7 @@ class WritingAssistantService {
     required WritingLevel writingLevel,
     String? topic,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return _mockPrompt(writingType);
     }
@@ -261,7 +260,7 @@ class WritingAssistantService {
     required String text,
     required WritingLevel writingLevel,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockVocabSuggestions();
     }
@@ -287,7 +286,7 @@ class WritingAssistantService {
     required String text,
     required WritingLevel writingLevel,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockGrammarSuggestions();
     }
@@ -314,7 +313,7 @@ class WritingAssistantService {
     String? assignmentPrompt,
     String? currentDraft,
   }) async {
-    if (_useWritingMock) {
+    if (EnvironmentConfig.useWritingMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return "Every writer gets stuck sometimes! Try starting with just one sentence about what you're thinking. "
           "You don't have to write perfectly - just get your ideas down and we can work on them together.";

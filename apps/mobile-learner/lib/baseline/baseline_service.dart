@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment('BASELINE_BASE_URL', defaultValue: 'http://localhost:4003');
-const _useBaselineMock = bool.fromEnvironment('USE_BASELINE_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Ensures mock data is only used in debug mode.
 /// Throws [BaselineException] if mock is enabled in production.
@@ -33,7 +32,7 @@ class BaselineException implements Exception {
 class LearnerBaselineService {
   LearnerBaselineService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.baselineBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -42,7 +41,7 @@ class LearnerBaselineService {
   /// Get baseline profile by learner ID.
   /// GET /baseline/profiles/by-learner?learnerId=...
   Future<BaselineProfile?> getProfileByLearner(String learnerId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('getProfileByLearner');
       await Future.delayed(const Duration(milliseconds: 200));
       // Deterministic mock state based on learnerId for consistent testing
@@ -107,7 +106,7 @@ class LearnerBaselineService {
   /// Get next unanswered item.
   /// GET /baseline/attempts/:attemptId/next
   Future<NextItemResponse> getNextItem(String attemptId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('getNextItem');
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockNextItem(attemptId);
@@ -130,7 +129,7 @@ class LearnerBaselineService {
     required dynamic response,
     int? latencyMs,
   }) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('submitAnswer');
       await Future.delayed(const Duration(milliseconds: 200));
       return AnswerResponse(
@@ -165,7 +164,7 @@ class LearnerBaselineService {
     bool has504 = false,
     List<String>? disabilityCategories,
   }) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('prepareBaseline');
       await Future.delayed(const Duration(milliseconds: 2000));
       return PrepareBaselineResponse(
@@ -198,7 +197,7 @@ class LearnerBaselineService {
   /// Complete a baseline attempt.
   /// POST /baseline/attempts/:attemptId/complete
   Future<CompleteAttemptResponse> completeAttempt(String attemptId) async {
-    if (_useBaselineMock) {
+    if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('completeAttempt');
       await Future.delayed(const Duration(milliseconds: 300));
       return CompleteAttemptResponse(

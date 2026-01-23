@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _baseUrl = String.fromEnvironment('ANALYTICS_BASE_URL', defaultValue: 'http://localhost:4030');
-const _useAnalyticsMock = bool.fromEnvironment('USE_ANALYTICS_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MODELS
@@ -165,7 +164,7 @@ class EffortController extends StateNotifier<EffortState> {
     required this.learnerId,
     String? accessToken,
   })  : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.analyticsBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         )),
         super(const EffortState());
@@ -178,7 +177,7 @@ class EffortController extends StateNotifier<EffortState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      if (_useAnalyticsMock) {
+      if (EnvironmentConfig.useAnalyticsMock) {
         await Future.delayed(const Duration(milliseconds: 500));
         state = state.copyWith(
           isLoading: false,

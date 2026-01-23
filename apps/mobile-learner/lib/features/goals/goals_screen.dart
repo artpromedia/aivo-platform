@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../widgets/error_widgets.dart';
 import '../progress/progress_models.dart';
+import '../progress/progress_service.dart';
 
 /// Goals Screen
 class GoalsScreen extends ConsumerStatefulWidget {
@@ -29,110 +31,17 @@ class GoalsScreen extends ConsumerStatefulWidget {
 class _GoalsScreenState extends ConsumerState<GoalsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isLoading = true;
-  List<LearningGoal> _activeGoals = [];
-  List<LearningGoal> _completedGoals = [];
-
-  // Mock goals for demo
-  final List<LearningGoal> _mockActiveGoals = [
-    LearningGoal(
-      id: '1',
-      title: 'Complete 5 Math Lessons',
-      description: 'Work through fractions and decimals unit',
-      type: GoalType.lessons,
-      targetValue: 5,
-      currentValue: 3,
-      deadline: DateTime.now().add(const Duration(days: 7)),
-      status: GoalStatus.active,
-      objectives: const [
-        GoalObjective(id: 'o1', title: 'Intro to Fractions', isComplete: true),
-        GoalObjective(id: 'o2', title: 'Adding Fractions', isComplete: true),
-        GoalObjective(id: 'o3', title: 'Subtracting Fractions', isComplete: true),
-        GoalObjective(id: 'o4', title: 'Multiplying Fractions', isComplete: false),
-        GoalObjective(id: 'o5', title: 'Dividing Fractions', isComplete: false),
-      ],
-    ),
-    LearningGoal(
-      id: '2',
-      title: 'Earn 500 XP This Week',
-      description: 'Stay consistent and learn every day!',
-      type: GoalType.xp,
-      targetValue: 500,
-      currentValue: 350,
-      deadline: DateTime.now().add(const Duration(days: 3)),
-      status: GoalStatus.active,
-    ),
-    LearningGoal(
-      id: '3',
-      title: 'Build a 7-Day Streak',
-      description: 'Practice every day for a week',
-      type: GoalType.streak,
-      targetValue: 7,
-      currentValue: 5,
-      status: GoalStatus.active,
-    ),
-    LearningGoal(
-      id: '4',
-      title: 'Read for 60 Minutes',
-      description: 'Use reading tools to practice',
-      type: GoalType.minutes,
-      targetValue: 60,
-      currentValue: 25,
-      deadline: DateTime.now().add(const Duration(days: 5)),
-      status: GoalStatus.active,
-    ),
-  ];
-
-  final List<LearningGoal> _mockCompletedGoals = [
-    LearningGoal(
-      id: 'c1',
-      title: 'Complete Science Unit 1',
-      description: 'Learned about the scientific method',
-      type: GoalType.subject,
-      targetValue: 4,
-      currentValue: 4,
-      status: GoalStatus.completed,
-    ),
-    LearningGoal(
-      id: 'c2',
-      title: 'First Week Streak',
-      description: 'Practiced every day for 7 days',
-      type: GoalType.streak,
-      targetValue: 7,
-      currentValue: 7,
-      status: GoalStatus.completed,
-    ),
-    LearningGoal(
-      id: 'c3',
-      title: 'Earn 1000 XP',
-      description: 'Reached first XP milestone',
-      type: GoalType.xp,
-      targetValue: 1000,
-      currentValue: 1000,
-      status: GoalStatus.completed,
-    ),
-  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadGoals();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadGoals() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _activeGoals = _mockActiveGoals;
-      _completedGoals = _mockCompletedGoals;
-      _isLoading = false;
-    });
   }
 
   IconData _getGoalIcon(GoalType type) {
@@ -183,7 +92,35 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final goalsAsync = ref.watch(goalsDataProvider(widget.learnerId));
 
+    return goalsAsync.when(
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('My Goals')),
+        body: const GoalsLoadingWidget(),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(title: const Text('My Goals')),
+        body: LearnerErrorWidget(
+          message: 'We couldn\'t load your goals right now.',
+          onRetry: () => ref.invalidate(goalsDataProvider(widget.learnerId)),
+        ),
+      ),
+      data: (goalsData) => _buildGoalsScaffold(
+        theme,
+        colorScheme,
+        goalsData.activeGoals,
+        goalsData.completedGoals,
+      ),
+    );
+  }
+
+  Widget _buildGoalsScaffold(
+    ThemeData theme,
+    ColorScheme colorScheme,
+    List<LearningGoal> activeGoals,
+    List<LearningGoal> completedGoals,
+  ) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Goals'),
@@ -192,24 +129,22 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
           tabs: [
             Tab(
               icon: const Icon(Icons.flag),
-              text: 'Active (${_activeGoals.length})',
+              text: 'Active (${activeGoals.length})',
             ),
             Tab(
               icon: const Icon(Icons.check_circle),
-              text: 'Completed (${_completedGoals.length})',
+              text: 'Completed (${completedGoals.length})',
             ),
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildActiveGoals(theme, colorScheme),
-                _buildCompletedGoals(theme, colorScheme),
-              ],
-            ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildActiveGoals(theme, colorScheme, activeGoals),
+          _buildCompletedGoals(theme, colorScheme, completedGoals),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddGoalDialog(context),
         icon: const Icon(Icons.add),
@@ -218,39 +153,21 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
     );
   }
 
-  Widget _buildActiveGoals(ThemeData theme, ColorScheme colorScheme) {
-    if (_activeGoals.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.flag_outlined,
-              size: 64,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No active goals',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Set a goal to start tracking!',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildActiveGoals(
+      ThemeData theme, ColorScheme colorScheme, List<LearningGoal> activeGoals) {
+    if (activeGoals.isEmpty) {
+      return const EmptyStateWidget(
+        emoji: '🎯',
+        title: 'No goals yet!',
+        message: 'Set a goal to start your adventure!',
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _activeGoals.length,
+      itemCount: activeGoals.length,
       itemBuilder: (context, index) {
-        final goal = _activeGoals[index];
+        final goal = activeGoals[index];
         return _GoalCard(
           goal: goal,
           getIcon: _getGoalIcon,
@@ -262,39 +179,21 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
     );
   }
 
-  Widget _buildCompletedGoals(ThemeData theme, ColorScheme colorScheme) {
-    if (_completedGoals.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.emoji_events_outlined,
-              size: 64,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No completed goals yet',
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Keep working on your goals!',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildCompletedGoals(
+      ThemeData theme, ColorScheme colorScheme, List<LearningGoal> completedGoals) {
+    if (completedGoals.isEmpty) {
+      return const EmptyStateWidget(
+        emoji: '🏆',
+        title: 'No completed goals yet',
+        message: 'Keep working on your goals - you can do it!',
       );
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _completedGoals.length,
+      itemCount: completedGoals.length,
       itemBuilder: (context, index) {
-        final goal = _completedGoals[index];
+        final goal = completedGoals[index];
         return _CompletedGoalCard(
           goal: goal,
           getIcon: _getGoalIcon,

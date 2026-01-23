@@ -3,11 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' show useMockWhen;
 
-const _baseUrl = String.fromEnvironment('HOMEWORK_HELPER_BASE_URL', defaultValue: 'http://localhost:4025');
-const _useHomeworkMock = bool.fromEnvironment('USE_HOMEWORK_MOCK', defaultValue: false);
-
-/// Check if mock mode should be used (safe guard - only in debug mode)
-bool get _shouldUseMock => useMockWhen(_useHomeworkMock, 'HomeworkService');
+import '../config/environment.dart';
 
 /// Subject areas for homework help.
 enum HomeworkSubject {
@@ -169,7 +165,7 @@ class HomeworkException implements Exception {
 class HomeworkService {
   HomeworkService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.homeworkHelperBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -183,7 +179,7 @@ class HomeworkService {
     required String gradeBand,
     String sourceType = 'TEXT',
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 800));
       return _mockHomeworkSession(problemText, subject);
     }
@@ -213,7 +209,7 @@ class HomeworkService {
   /// Get steps for an existing homework session.
   /// GET /homework/:id/steps
   Future<List<HomeworkStep>> getSteps(String homeworkId) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockSteps();
     }
@@ -241,7 +237,7 @@ class HomeworkService {
     required String responseText,
     bool requestFeedback = true,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return _mockAnswerResult(stepId, responseText);
     }
@@ -268,7 +264,7 @@ class HomeworkService {
   /// Complete the homework session.
   /// POST /homework/:id/complete
   Future<void> completeHomework(String homeworkId) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return;
     }
@@ -468,7 +464,7 @@ extension HomeworkOCRService on HomeworkService {
     required String gradeBand,
     bool detectMath = true,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 1200));
       return _mockOCRResult(subject);
     }
@@ -505,7 +501,7 @@ extension HomeworkOCRService on HomeworkService {
     int maxSteps = 5,
     bool autoStart = true,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useHomeworkMock) {
       await Future.delayed(const Duration(milliseconds: 1500));
       return _mockScanAndStartResult(subject, gradeBand);
     }

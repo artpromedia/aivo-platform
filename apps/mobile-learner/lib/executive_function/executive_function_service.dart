@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const _baseUrl = String.fromEnvironment('EXECUTIVE_FUNCTION_BASE_URL', defaultValue: 'http://localhost:4031');
-const _useEFMock = bool.fromEnvironment('USE_EF_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Task status for learner tasks.
 enum TaskStatus {
@@ -205,7 +204,7 @@ class ExecutiveFunctionException implements Exception {
 class ExecutiveFunctionService {
   ExecutiveFunctionService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.executiveFunctionBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -217,7 +216,7 @@ class ExecutiveFunctionService {
 
   /// Get all tasks for the current learner.
   Future<List<LearnerTask>> getTasks({TaskStatus? status, TaskPriority? priority}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockTasks();
     }
@@ -248,7 +247,7 @@ class ExecutiveFunctionService {
     DateTime? dueDate,
     String? parentTaskId,
   }) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return LearnerTask(
         id: 'task-${DateTime.now().millisecondsSinceEpoch}',
@@ -287,7 +286,7 @@ class ExecutiveFunctionService {
 
   /// Update a task's status.
   Future<LearnerTask> updateTaskStatus({required String taskId, required TaskStatus status}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       final tasks = _mockTasks();
       return tasks.firstWhere((t) => t.id == taskId, orElse: () => tasks.first);
@@ -312,7 +311,7 @@ class ExecutiveFunctionService {
 
   /// Break down a task into subtasks using AI.
   Future<List<LearnerTask>> breakdownTask({required String taskId}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 600));
       return [
         LearnerTask(
@@ -360,7 +359,7 @@ class ExecutiveFunctionService {
 
   /// Get today's visual schedule.
   Future<VisualSchedule?> getTodaySchedule() async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockSchedule();
     }
@@ -377,7 +376,7 @@ class ExecutiveFunctionService {
 
   /// Mark a schedule block as completed.
   Future<ScheduleBlock> completeBlock({required String scheduleId, required String blockId}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return ScheduleBlock(
         id: blockId,
@@ -411,7 +410,7 @@ class ExecutiveFunctionService {
 
   /// Get recommended EF strategies.
   Future<List<EFStrategy>> getRecommendedStrategies({String? skill, String? situation}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 400));
       return _mockStrategies();
     }
@@ -435,7 +434,7 @@ class ExecutiveFunctionService {
 
   /// Get time estimation help.
   Future<Map<String, dynamic>> getTimeEstimate({required String taskDescription}) async {
-    if (_useEFMock) {
+    if (EnvironmentConfig.useEFMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return {
         'estimatedMinutes': 25,

@@ -66,6 +66,12 @@
 @import image_picker_ios;
 #endif
 
+#if __has_include(<local_auth_darwin/LocalAuthPlugin.h>)
+#import <local_auth_darwin/LocalAuthPlugin.h>
+#else
+@import local_auth_darwin;
+#endif
+
 #if __has_include(<package_info_plus/FPPPackageInfoPlusPlugin.h>)
 #import <package_info_plus/FPPPackageInfoPlusPlugin.h>
 #else
@@ -133,6 +139,7 @@
   [FlutterNativeSplashPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterNativeSplashPlugin"]];
   [FlutterSecureStoragePlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterSecureStoragePlugin"]];
   [FLTImagePickerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTImagePickerPlugin"]];
+  [LocalAuthPlugin registerWithRegistrar:[registry registrarForPlugin:@"LocalAuthPlugin"]];
   [FPPPackageInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPPackageInfoPlusPlugin"]];
   [PathProviderPlugin registerWithRegistrar:[registry registrarForPlugin:@"PathProviderPlugin"]];
   [PermissionHandlerPlugin registerWithRegistrar:[registry registrarForPlugin:@"PermissionHandlerPlugin"]];

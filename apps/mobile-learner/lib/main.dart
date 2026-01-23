@@ -10,6 +10,7 @@ import 'package:flutter_common/flutter_common.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'baseline/baseline_controller.dart';
+import 'config/startup_checks.dart';
 import 'firebase_options.dart';
 import 'focus/focus_service.dart';
 import 'offline/offline.dart';
@@ -340,6 +341,9 @@ Future<void> main() async {
   // Run with Crashlytics error handling
   await CrashlyticsService.runWithCrashlytics(() async {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Run startup checks to validate environment configuration
+    StartupChecks.run();
 
     // Initialize environment configuration
     EnvConfig.initialize();

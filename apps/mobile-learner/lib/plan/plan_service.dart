@@ -2,8 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-const _baseUrl = String.fromEnvironment('LEARNER_MODEL_BASE_URL', defaultValue: 'http://localhost:4015');
-const _usePlanMock = bool.fromEnvironment('USE_PLAN_MOCK', defaultValue: false);
+import '../config/environment.dart';
 
 /// Exception thrown by plan API operations.
 class PlanException implements Exception {
@@ -19,7 +18,7 @@ class PlanException implements Exception {
 class PlanService {
   PlanService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.learnerModelBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -33,7 +32,7 @@ class PlanService {
     List<String>? includeDomains,
     bool useAiPlanner = false,
   }) async {
-    if (_usePlanMock) {
+    if (EnvironmentConfig.usePlanMock) {
       await Future.delayed(const Duration(milliseconds: 500));
       return _mockTodaysPlan(learnerId);
     }
@@ -65,7 +64,7 @@ class PlanService {
     String? domain,
     String? skillCode,
   }) async {
-    if (_usePlanMock) {
+    if (EnvironmentConfig.usePlanMock) {
       await Future.delayed(const Duration(milliseconds: 300));
       return _mockDifficultyRecommendation(learnerId, domain: domain);
     }

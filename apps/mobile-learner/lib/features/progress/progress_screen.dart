@@ -12,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../widgets/error_widgets.dart';
 import 'progress_models.dart';
+import 'progress_service.dart';
 
 /// Progress Screen
 class ProgressScreen extends ConsumerStatefulWidget {
@@ -28,124 +30,6 @@ class ProgressScreen extends ConsumerStatefulWidget {
 }
 
 class _ProgressScreenState extends ConsumerState<ProgressScreen> {
-  bool _isLoading = true;
-  late ProgressSummary _summary;
-
-  // Mock data for demo
-  final _mockSummary = ProgressSummary(
-    totalMinutesThisWeek: 215,
-    totalXpThisWeek: 710,
-    currentStreak: 5,
-    lessonsCompleted: 31,
-    weeklyStats: const [
-      DailyStat(day: 'Mon', minutes: 45, xp: 150),
-      DailyStat(day: 'Tue', minutes: 30, xp: 100),
-      DailyStat(day: 'Wed', minutes: 60, xp: 200),
-      DailyStat(day: 'Thu', minutes: 25, xp: 80),
-      DailyStat(day: 'Fri', minutes: 40, xp: 130),
-      DailyStat(day: 'Sat', minutes: 15, xp: 50),
-      DailyStat(day: 'Sun', minutes: 0, xp: 0),
-    ],
-    subjectProgress: const [
-      SubjectProgress(
-        subject: 'Math',
-        progress: 45,
-        colorHex: '#3B82F6',
-        lessonsCompleted: 11,
-        totalLessons: 24,
-        mastery: 72,
-      ),
-      SubjectProgress(
-        subject: 'Science',
-        progress: 30,
-        colorHex: '#22C55E',
-        lessonsCompleted: 6,
-        totalLessons: 20,
-        mastery: 65,
-      ),
-      SubjectProgress(
-        subject: 'Reading',
-        progress: 60,
-        colorHex: '#A855F7',
-        lessonsCompleted: 11,
-        totalLessons: 18,
-        mastery: 85,
-      ),
-      SubjectProgress(
-        subject: 'Social Studies',
-        progress: 20,
-        colorHex: '#F97316',
-        lessonsCompleted: 3,
-        totalLessons: 16,
-        mastery: 55,
-      ),
-    ],
-    skills: const [
-      SkillProgress(skill: 'Fractions', level: 4, maxLevel: 5, emoji: '🔢'),
-      SkillProgress(skill: 'Reading Comprehension', level: 5, maxLevel: 5, emoji: '📖'),
-      SkillProgress(skill: 'Scientific Method', level: 3, maxLevel: 5, emoji: '🔬'),
-      SkillProgress(skill: 'Problem Solving', level: 4, maxLevel: 5, emoji: '🧩'),
-      SkillProgress(skill: 'Writing', level: 3, maxLevel: 5, emoji: '✍️'),
-      SkillProgress(skill: 'Geography', level: 2, maxLevel: 5, emoji: '🗺️'),
-    ],
-    recentActivity: const [
-      RecentActivity(
-        id: '1',
-        type: 'lesson',
-        title: 'Completed "Dividing Fractions"',
-        xp: 50,
-        time: '2 hours ago',
-        emoji: '📖',
-      ),
-      RecentActivity(
-        id: '2',
-        type: 'quiz',
-        title: 'Passed Math Quiz',
-        xp: 100,
-        time: '4 hours ago',
-        emoji: '✅',
-      ),
-      RecentActivity(
-        id: '3',
-        type: 'game',
-        title: 'Played Focus Game',
-        xp: 25,
-        time: '1 day ago',
-        emoji: '🎮',
-      ),
-      RecentActivity(
-        id: '4',
-        type: 'lesson',
-        title: 'Started "The Water Cycle"',
-        xp: 10,
-        time: '1 day ago',
-        emoji: '📖',
-      ),
-      RecentActivity(
-        id: '5',
-        type: 'achievement',
-        title: 'Earned "Math Whiz" badge',
-        xp: 75,
-        time: '2 days ago',
-        emoji: '🏆',
-      ),
-    ],
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProgress();
-  }
-
-  Future<void> _loadProgress() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _summary = _mockSummary;
-      _isLoading = false;
-    });
-  }
-
   Color _hexToColor(String hex) {
     hex = hex.replaceFirst('#', '');
     if (hex.length == 6) hex = 'FF$hex';
@@ -156,61 +40,72 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+    final progressAsync = ref.watch(progressSummaryProvider(widget.learnerId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Progress'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadProgress,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                'Track your learning journey',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Stats Overview
-              _buildStatsOverview(theme, colorScheme),
-              const SizedBox(height: 24),
-
-              // Weekly Activity Chart
-              _buildWeeklyChart(theme, colorScheme),
-              const SizedBox(height: 24),
-
-              // Subject Progress
-              _buildSubjectProgress(theme, colorScheme),
-              const SizedBox(height: 24),
-
-              // Skills
-              _buildSkills(theme, colorScheme),
-              const SizedBox(height: 24),
-
-              // Recent Activity
-              _buildRecentActivity(theme, colorScheme),
-              const SizedBox(height: 16),
-            ],
-          ),
+      body: progressAsync.when(
+        loading: () => const ProgressLoadingWidget(),
+        error: (error, stack) => LearnerErrorWidget(
+          message: 'We couldn\'t load your progress right now.',
+          onRetry: () =>
+              ref.invalidate(progressSummaryProvider(widget.learnerId)),
+        ),
+        data: (summary) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(progressSummaryProvider(widget.learnerId));
+          },
+          child: _buildProgressContent(theme, colorScheme, summary),
         ),
       ),
     );
   }
 
-  Widget _buildStatsOverview(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildProgressContent(
+      ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Text(
+            'Track your learning journey',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stats Overview
+          _buildStatsOverview(theme, colorScheme, summary),
+          const SizedBox(height: 24),
+
+          // Weekly Activity Chart
+          _buildWeeklyChart(theme, colorScheme, summary),
+          const SizedBox(height: 24),
+
+          // Subject Progress
+          _buildSubjectProgress(theme, colorScheme, summary),
+          const SizedBox(height: 24),
+
+          // Skills
+          _buildSkills(theme, colorScheme, summary),
+          const SizedBox(height: 24),
+
+          // Recent Activity
+          _buildRecentActivity(theme, colorScheme, summary),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsOverview(
+      ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -221,7 +116,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
       children: [
         _StatCard(
           emoji: '⏱️',
-          value: '${_summary.totalMinutesThisWeek}',
+          value: '${summary.totalMinutesThisWeek}',
           label: 'Minutes this week',
           gradientColors: [Colors.blue.shade50, Colors.cyan.shade50],
           borderColor: Colors.blue.shade200,
@@ -230,7 +125,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         ),
         _StatCard(
           emoji: '⭐',
-          value: '${_summary.totalXpThisWeek}',
+          value: '${summary.totalXpThisWeek}',
           label: 'XP earned',
           gradientColors: [Colors.purple.shade50, Colors.pink.shade50],
           borderColor: Colors.purple.shade200,
@@ -239,7 +134,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         ),
         _StatCard(
           emoji: '🔥',
-          value: '${_summary.currentStreak}',
+          value: '${summary.currentStreak}',
           label: 'Day streak',
           gradientColors: [AivoBrand.sunshine[50]!, Colors.yellow.shade50],
           borderColor: AivoBrand.sunshine[200]!,
@@ -248,7 +143,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
         ),
         _StatCard(
           emoji: '📚',
-          value: '${_summary.lessonsCompleted}',
+          value: '${summary.lessonsCompleted}',
           label: 'Lessons completed',
           gradientColors: [AivoBrand.mint[50]!, Colors.teal.shade50],
           borderColor: AivoBrand.mint[200]!,
@@ -259,8 +154,8 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
-  Widget _buildWeeklyChart(ThemeData theme, ColorScheme colorScheme) {
-    final maxMinutes = _summary.weeklyStats
+  Widget _buildWeeklyChart(ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
+    final maxMinutes = summary.weeklyStats
         .map((s) => s.minutes)
         .reduce((a, b) => a > b ? a : b);
 
@@ -287,7 +182,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               height: 180,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: _summary.weeklyStats.asMap().entries.map((entry) {
+                children: summary.weeklyStats.asMap().entries.map((entry) {
                   final index = entry.key;
                   final stat = entry.value;
                   final heightPercent =
@@ -350,7 +245,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
-  Widget _buildSubjectProgress(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSubjectProgress(ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -370,7 +265,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ..._summary.subjectProgress.map((subject) {
+            ...summary.subjectProgress.map((subject) {
               final color = _hexToColor(subject.colorHex);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -438,7 +333,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
-  Widget _buildSkills(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSkills(ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -467,9 +362,9 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
-              itemCount: _summary.skills.length,
+              itemCount: summary.skills.length,
               itemBuilder: (context, index) {
-                final skill = _summary.skills[index];
+                final skill = summary.skills[index];
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -530,7 +425,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
     );
   }
 
-  Widget _buildRecentActivity(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildRecentActivity(ThemeData theme, ColorScheme colorScheme, ProgressSummary summary) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -550,7 +445,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ..._summary.recentActivity.map((activity) {
+            ...summary.recentActivity.map((activity) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),

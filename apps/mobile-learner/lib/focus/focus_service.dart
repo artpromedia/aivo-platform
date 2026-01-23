@@ -2,11 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart' show useMockWhen;
 
-const _baseUrl = String.fromEnvironment('FOCUS_BASE_URL', defaultValue: 'http://localhost:4026');
-const _useFocusMock = bool.fromEnvironment('USE_FOCUS_MOCK', defaultValue: false);
-
-/// Check if mock mode should be used (safe guard - only in debug mode)
-bool get _shouldUseMock => useMockWhen(_useFocusMock, 'FocusService');
+import '../config/environment.dart';
 
 /// Types of regulation/break activities.
 enum BreakActivityType {
@@ -264,7 +260,7 @@ class FocusException implements Exception {
 class FocusService {
   FocusService({String? accessToken})
       : _dio = Dio(BaseOptions(
-          baseUrl: _baseUrl,
+          baseUrl: EnvironmentConfig.focusBaseUrl,
           headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
         ));
 
@@ -281,7 +277,7 @@ class FocusService {
     SelfReportedMood? mood,
     bool? rapidExit,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 100));
       return _mockPingResult(idleMs, mood, rapidExit);
     }
@@ -321,7 +317,7 @@ class FocusService {
     SelfReportedMood? mood,
     List<String>? focusLossReasons,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockRecommendation(gradeBand, mood);
     }
@@ -359,7 +355,7 @@ class FocusService {
     required BreakActivityType activityType,
     String? activityTitle,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 50));
       return;
     }
@@ -389,7 +385,7 @@ class FocusService {
     int? helpfulnessRating,
     int? actualDurationSeconds,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 50));
       return;
     }
@@ -425,7 +421,7 @@ class FocusService {
     String? preferredDomain,
     int? maxDurationSeconds,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 200));
       return _mockLearningBreak(gradeBand, preferredDomain);
     }
@@ -463,7 +459,7 @@ class FocusService {
     required List<String> targetSkillCodes,
     required int difficulty,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 50));
       return;
     }
@@ -499,7 +495,7 @@ class FocusService {
     List<String>? targetSkillCodes,
     int? helpfulnessRating,
   }) async {
-    if (_shouldUseMock) {
+    if (EnvironmentConfig.useFocusMock) {
       await Future.delayed(const Duration(milliseconds: 100));
       return LearningBreakCompleteResult(
         success: true,
