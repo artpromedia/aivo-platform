@@ -1,19 +1,18 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
 import {
   ErrorBoundary,
-  PageErrorFallback,
   OfflineBanner,
   useNetworkStatus,
 } from '@aivo/ui/components';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 /**
  * Network Status Wrapper - Shows offline banner when connectivity is lost
  */
-function NetworkStatusWrapper({ children }: { children: ReactNode }) {
+function NetworkStatusWrapper({ children }: Readonly<{ children: ReactNode }>) {
   const { isOnline } = useNetworkStatus();
 
   return (
@@ -32,7 +31,7 @@ function NetworkStatusWrapper({ children }: { children: ReactNode }) {
  * - Network status monitoring
  * - React Query for data fetching
  */
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -46,7 +45,7 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ErrorBoundary fallback={<PageErrorFallback />}>
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
       </QueryClientProvider>
