@@ -47,7 +47,12 @@ export type {
 } from './parent.api';
 
 // Reports API
-export { reportsApi, downloadBlob, generateReportFilename, generateMockProgressSummary } from './reports.api';
+export {
+  reportsApi,
+  downloadBlob,
+  generateReportFilename,
+  generateMockProgressSummary,
+} from './reports.api';
 export type {
   DateRange,
   ReportOptions,
@@ -79,3 +84,24 @@ export * from './community-support-api';
 
 // Resource Library API
 export * from './resource-library-api';
+
+// Messaging API (Sprint 1.8)
+export { messagingApi } from './messaging.api';
+export type {
+  Participant,
+  StudentContext,
+  Attachment,
+  Message as MessagingMessage,
+  Conversation as MessagingConversation,
+  MessagePage,
+  ConversationsPage,
+  GetMessagesOptions,
+  GetConversationsOptions,
+  SendMessagePayload,
+  CreateConversationPayload,
+  Teacher as MessagingTeacher,
+  ChildWithTeachers,
+  TypingIndicator,
+  ReadReceipt,
+  UnreadCounts,
+} from './messaging.api';

@@ -21,6 +21,7 @@
   "dependencies": {
     "@aivo/events": "workspace:*",
     "@aivo/ts-api-utils": "workspace:*",
+    "@aivo/ts-observability": "workspace:*",
     "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^6.1.0",
     "croner": "^8.0.0",

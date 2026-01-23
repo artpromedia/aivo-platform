@@ -1,13 +1,14 @@
 /**
  * Messages Page
  *
- * Parent-teacher messaging interface with real-time updates,
+ * Parent-teacher messaging interface with real-time updates via WebSocket,
  * compose functionality, and browser notifications.
+ *
+ * Sprint 1.8: Integrated with messaging-svc
  */
 
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import {
   Send,
@@ -24,44 +25,23 @@ import {
   Circle,
   X,
   Loader2,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { api, isDevMode } from '@/lib/api';
+import {
+  useMessaging,
+  useChildrenWithTeachers,
+  useArchiveConversation,
+  type Message,
+  type Conversation,
+  type ChildWithTeachers,
+} from '@/hooks/use-messaging';
+import { useMessagingNotifications } from '@/lib/notifications/messaging-notifications';
 
-interface Message {
-  id: string;
-  senderId: string;
-  senderType: 'parent' | 'teacher';
-  senderName: string;
-  senderAvatar?: string;
-  content: string;
-  sentAt: string;
-  readAt?: string;
-  attachments?: {
-    id: string;
-    name: string;
-    url: string;
-    type: string;
-  }[];
-}
-
-interface Conversation {
-  id: string;
-  teacherId: string;
-  teacherName: string;
-  teacherAvatar?: string;
-  teacherSubject?: string;
-  studentId: string;
-  studentName: string;
-  subject: string;
-  lastMessage?: string;
-  lastMessageAt?: string;
-  unreadCount: number;
-  archived: boolean;
-}
-
+// Re-export types for ComposeModal
 interface Teacher {
   id: string;
   name: string;
@@ -69,284 +49,65 @@ interface Teacher {
   subject?: string;
 }
 
-interface Child {
-  id: string;
-  name: string;
-  grade?: string;
-  teachers?: Teacher[];
-}
-
-// Mock data for development
-function getMockConversations(): Conversation[] {
-  return [
-    {
-      id: 'conv-1',
-      teacherId: 'teacher-1',
-      teacherName: 'Mrs. Anderson',
-      teacherSubject: 'Math',
-      studentId: 'student-1',
-      studentName: 'Emma',
-      subject: 'Great progress this week!',
-      lastMessage: 'Emma has been showing excellent progress in fractions...',
-      lastMessageAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      unreadCount: 2,
-      archived: false,
-    },
-    {
-      id: 'conv-2',
-      teacherId: 'teacher-2',
-      teacherName: 'Mr. Chen',
-      teacherSubject: 'Science',
-      studentId: 'student-1',
-      studentName: 'Emma',
-      subject: 'Science Fair Project',
-      lastMessage: 'Just a reminder about the upcoming science fair...',
-      lastMessageAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      unreadCount: 0,
-      archived: false,
-    },
-    {
-      id: 'conv-3',
-      teacherId: 'teacher-1',
-      teacherName: 'Mrs. Anderson',
-      teacherSubject: 'Math',
-      studentId: 'student-2',
-      studentName: 'Noah',
-      subject: 'Parent-Teacher Conference',
-      lastMessage: "I'd like to schedule a brief conference...",
-      lastMessageAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      unreadCount: 0,
-      archived: false,
-    },
-  ];
-}
-
-function getMockMessages(_conversationId: string): Message[] {
-  const baseMessages: Message[] = [
-    {
-      id: 'msg-1',
-      senderId: 'teacher-1',
-      senderType: 'teacher',
-      senderName: 'Mrs. Anderson',
-      content: "Hello! I wanted to share some updates about Emma's progress in class.",
-      sentAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      readAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'msg-2',
-      senderId: 'teacher-1',
-      senderType: 'teacher',
-      senderName: 'Mrs. Anderson',
-      content:
-        'Emma has been showing excellent progress in fractions. She helped other students understand the concept today!',
-      sentAt: new Date(Date.now() - 3.5 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 'msg-3',
-      senderId: 'parent-1',
-      senderType: 'parent',
-      senderName: 'Sarah Johnson',
-      content: "Thank you so much for letting me know! We've been practicing at home.",
-      sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      readAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
-
-  return baseMessages;
-}
-
-function getMockChildren(): Child[] {
-  return [
-    {
-      id: 'student-1',
-      name: 'Emma',
-      grade: '4',
-      teachers: [
-        { id: 'teacher-1', name: 'Mrs. Anderson', subject: 'Math' },
-        { id: 'teacher-2', name: 'Mr. Chen', subject: 'Science' },
-        { id: 'teacher-3', name: 'Ms. Williams', subject: 'Reading' },
-      ],
-    },
-    {
-      id: 'student-2',
-      name: 'Noah',
-      grade: '2',
-      teachers: [{ id: 'teacher-4', name: 'Mrs. Brown', subject: 'General' }],
-    },
-  ];
-}
-
 export default function MessagesPage() {
   const { t } = useTranslation('parent');
-  const queryClient = useQueryClient();
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Check notification permission on mount
-  useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationsEnabled(Notification.permission === 'granted');
-    }
-  }, []);
+  // Notification hook
+  const notifications = useMessagingNotifications({
+    onlyWhenHidden: true,
+    playSound: true,
+  });
 
-  // Request notification permission
-  const requestNotificationPermission = async () => {
-    if ('Notification' in window && Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
-    }
-  };
+  // TODO: Replace with actual auth context
+  const userId = 'current-user';
+  const authToken = 'mock-token';
 
-  // Show browser notification
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const showNotification = useCallback(
-    (title: string, body: string) => {
-      if (notificationsEnabled && 'Notification' in window) {
-        new Notification(title, {
-          body: body.substring(0, 100),
-          icon: '/icon.png',
-          badge: '/badge.png',
-        });
-      }
-    },
-    [notificationsEnabled]
-  );
-
-  // Fetch conversations
-  const { data: conversations, isLoading: conversationsLoading } = useQuery({
-    queryKey: ['conversations', { includeArchived: showArchived }],
-    queryFn: async () => {
-      try {
-        const data = await api.get<Conversation[]>(
-          `/messages/conversations?includeArchived=${showArchived}`
-        );
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock conversations data');
-          return getMockConversations();
+  // Use the combined messaging hook with WebSocket
+  const messaging = useMessaging({
+    userId,
+    authToken,
+    includeArchived: showArchived,
+    selectedConversationId,
+    onNewMessage: useCallback(
+      (message: Message, conversation: Conversation) => {
+        // Show browser notification for new messages
+        if (notifications.isEnabled && message.senderType !== 'parent') {
+          notifications.showMessageNotification(message, conversation, {
+            onClick: () => {
+              setSelectedConversationId(conversation.id);
+            },
+          });
         }
-        throw error;
-      }
-    },
-    refetchInterval: 30000, // Poll every 30 seconds for real-time updates
-    retry: isDevMode() ? 0 : 3,
+      },
+      [notifications]
+    ),
   });
 
-  // Fetch messages for selected conversation
-  const { data: messagesData, isLoading: messagesLoading } = useQuery({
-    queryKey: ['messages', selectedConversation],
-    queryFn: async () => {
-      if (!selectedConversation) return null;
-      try {
-        const data = await api.get<{ messages: Message[]; conversation: Conversation }>(
-          `/messages/conversations/${selectedConversation}`
-        );
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock messages data');
-          const conv = getMockConversations().find((c) => c.id === selectedConversation);
-          return {
-            messages: getMockMessages(selectedConversation),
-            conversation: conv || getMockConversations()[0],
-          };
-        }
-        throw error;
-      }
-    },
-    enabled: !!selectedConversation,
-    refetchInterval: 10000, // Poll every 10 seconds for real-time messages
-    retry: isDevMode() ? 0 : 3,
-  });
+  // Children data for compose modal
+  const { data: childrenData } = useChildrenWithTeachers();
 
-  // Fetch children for compose modal
-  const { data: children } = useQuery({
-    queryKey: ['children-with-teachers'],
-    queryFn: async () => {
-      try {
-        const data = await api.get<Child[]>('/parent/children/with-teachers');
-        return data;
-      } catch (error) {
-        if (isDevMode()) {
-          console.warn('[DEV] Using mock children data');
-          return getMockChildren();
-        }
-        throw error;
-      }
-    },
-    retry: isDevMode() ? 0 : 3,
-  });
-
-  // Send message mutation
-  const sendMessage = useMutation({
-    mutationFn: async (content: string) => {
-      if (isDevMode()) {
-        // Simulate API delay in dev mode
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return { success: true };
-      }
-      return api.post(`/messages/conversations/${selectedConversation}/messages`, { content });
-    },
-    onSuccess: () => {
-      setMessageInput('');
-      queryClient.invalidateQueries({ queryKey: ['messages', selectedConversation] });
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    },
-  });
-
-  // Mark as read mutation
-  const markAsRead = useMutation({
-    mutationFn: async (conversationId: string) => {
-      if (isDevMode()) {
-        return { success: true };
-      }
-      return api.put(`/messages/conversations/${conversationId}/read`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-    },
-  });
-
-  // Create new conversation mutation
-  const createConversation = useMutation({
-    mutationFn: async (data: {
-      teacherId: string;
-      childId: string;
-      subject: string;
-      content: string;
-    }) => {
-      if (isDevMode()) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return { conversationId: `conv-${Date.now()}` };
-      }
-      return api.post<{ conversationId: string }>('/messages/conversations', data);
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      setShowCompose(false);
-      setSelectedConversation(data.conversationId);
-    },
-  });
+  // Archive mutation
+  const archiveConversation = useArchiveConversation();
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messagesData?.messages]);
+  }, [messaging.messages]);
 
   // Mark as read when selecting conversation
   useEffect(() => {
-    if (selectedConversation) {
-      markAsRead.mutate(selectedConversation);
+    if (selectedConversationId) {
+      messaging.selectConversation(selectedConversationId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversation]);
+  }, [selectedConversationId]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -358,8 +119,9 @@ export default function MessagesPage() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (messageInput.trim() && selectedConversation) {
-      sendMessage.mutate(messageInput.trim());
+    if (messageInput.trim() && selectedConversationId) {
+      messaging.send(messageInput.trim());
+      setMessageInput('');
     }
   };
 
@@ -370,15 +132,31 @@ export default function MessagesPage() {
     }
   };
 
-  const filteredConversations = conversations?.filter(
-    (c) =>
-      c.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.studentName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter conversations by search query
+  const filteredConversations = useMemo(() => {
+    return messaging.conversations.filter((c) => {
+      const conv = c as Conversation & {
+        teacherName?: string;
+        studentName?: string;
+        subject?: string;
+      };
+      const lowerQuery = searchQuery.toLowerCase();
+      return (
+        (conv.teacherName?.toLowerCase().includes(lowerQuery) ?? false) ||
+        (conv.subject?.toLowerCase().includes(lowerQuery) ?? false) ||
+        (conv.studentName?.toLowerCase().includes(lowerQuery) ?? false)
+      );
+    });
+  }, [messaging.conversations, searchQuery]);
 
-  const selectedConversationData = messagesData?.conversation;
-  const unreadTotal = conversations?.reduce((sum, c) => sum + c.unreadCount, 0) || 0;
+  // Get typing indicators for current conversation
+  const typingIndicator = selectedConversationId
+    ? messaging.getTypingIndicator(selectedConversationId)
+    : undefined;
+  const typingIndicators = typingIndicator ? [typingIndicator] : [];
+
+  const selectedConversationData = messaging.selectedConversation;
+  const unreadTotal = messaging.totalUnread;
 
   const formatMessageDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -388,8 +166,8 @@ export default function MessagesPage() {
   };
 
   // Group messages by date
-  const groupedMessages =
-    messagesData?.messages?.reduce<{ date: string; messages: Message[] }[]>((groups, message) => {
+  const groupedMessages = useMemo(() => {
+    return messaging.messages.reduce<{ date: string; messages: Message[] }[]>((groups, message) => {
       const date = formatMessageDate(message.sentAt);
       const lastGroup = groups[groups.length - 1];
 
@@ -400,7 +178,8 @@ export default function MessagesPage() {
       }
 
       return groups;
-    }, []) || [];
+    }, []);
+  }, [messaging.messages]);
 
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
@@ -413,17 +192,38 @@ export default function MessagesPage() {
               {unreadTotal} unread
             </span>
           )}
+          {/* WebSocket Connection Indicator */}
+          <span
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs ${
+              messaging.isConnected ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+            }`}
+            title={messaging.isConnected ? 'Real-time updates active' : 'Reconnecting...'}
+          >
+            {messaging.isConnected ? (
+              <>
+                <Wifi className="w-3 h-3" />
+                <span className="hidden sm:inline">Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-3 h-3" />
+                <span className="hidden sm:inline">Offline</span>
+              </>
+            )}
+          </span>
         </div>
         <button
-          onClick={notificationsEnabled ? undefined : requestNotificationPermission}
+          onClick={
+            notifications.isEnabled ? undefined : () => void notifications.requestPermission()
+          }
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-            notificationsEnabled
+            notifications.isEnabled
               ? 'bg-green-100 text-green-700'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
-          title={notificationsEnabled ? 'Notifications enabled' : 'Enable notifications'}
+          title={notifications.isEnabled ? 'Notifications enabled' : 'Enable notifications'}
         >
-          {notificationsEnabled ? (
+          {notifications.isEnabled ? (
             <>
               <Bell className="w-4 h-4" />
               <span className="hidden sm:inline">Notifications On</span>
@@ -442,7 +242,7 @@ export default function MessagesPage() {
           {/* Conversation List */}
           <div
             className={`w-full md:w-96 border-r border-gray-100 flex flex-col ${
-              selectedConversation ? 'hidden md:flex' : 'flex'
+              selectedConversationId ? 'hidden md:flex' : 'flex'
             }`}
           >
             {/* Search & New Message */}
@@ -500,7 +300,7 @@ export default function MessagesPage() {
 
             {/* Conversation List */}
             <div className="flex-1 overflow-y-auto">
-              {conversationsLoading ? (
+              {messaging.conversationsLoading ? (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
                 </div>
@@ -533,10 +333,10 @@ export default function MessagesPage() {
                     <button
                       key={conversation.id}
                       onClick={() => {
-                        setSelectedConversation(conversation.id);
+                        setSelectedConversationId(conversation.id);
                       }}
                       className={`w-full p-4 text-left hover:bg-gray-50 transition-colors ${
-                        selectedConversation === conversation.id
+                        selectedConversationId === conversation.id
                           ? 'bg-violet-50 border-l-4 border-violet-500'
                           : conversation.unreadCount > 0
                             ? 'bg-violet-50/50'
@@ -546,16 +346,24 @@ export default function MessagesPage() {
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
                         <div className="relative flex-shrink-0">
-                          {conversation.teacherAvatar ? (
+                          {(conversation as Conversation & { teacherAvatar?: string })
+                            .teacherAvatar ? (
                             <img
-                              src={conversation.teacherAvatar}
-                              alt={conversation.teacherName}
+                              src={
+                                (conversation as Conversation & { teacherAvatar?: string })
+                                  .teacherAvatar
+                              }
+                              alt={
+                                (conversation as Conversation & { teacherName: string }).teacherName
+                              }
                               className="w-12 h-12 rounded-full object-cover"
                             />
                           ) : (
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
                               <span className="text-white font-semibold">
-                                {conversation.teacherName.charAt(0)}
+                                {(
+                                  conversation as Conversation & { teacherName: string }
+                                ).teacherName?.charAt(0)}
                               </span>
                             </div>
                           )}
@@ -572,7 +380,7 @@ export default function MessagesPage() {
                                 conversation.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'
                               }`}
                             >
-                              {conversation.teacherName}
+                              {(conversation as Conversation & { teacherName: string }).teacherName}
                             </p>
                             {conversation.lastMessageAt && (
                               <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
@@ -584,11 +392,15 @@ export default function MessagesPage() {
                           </div>
                           <div className="flex items-center gap-1 mb-1">
                             <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
-                              {conversation.studentName}
+                              {(conversation as Conversation & { studentName: string }).studentName}
                             </span>
-                            {conversation.teacherSubject && (
+                            {(conversation as Conversation & { teacherSubject?: string })
+                              .teacherSubject && (
                               <span className="text-xs px-1.5 py-0.5 bg-violet-100 text-violet-600 rounded">
-                                {conversation.teacherSubject}
+                                {
+                                  (conversation as Conversation & { teacherSubject?: string })
+                                    .teacherSubject
+                                }
                               </span>
                             )}
                           </div>
@@ -618,46 +430,68 @@ export default function MessagesPage() {
           {/* Message Thread */}
           <div
             className={`flex-1 flex flex-col bg-gray-50 ${
-              !selectedConversation ? 'hidden md:flex' : 'flex'
+              !selectedConversationId ? 'hidden md:flex' : 'flex'
             }`}
           >
-            {selectedConversation && selectedConversationData ? (
+            {selectedConversationId && selectedConversationData ? (
               <>
                 {/* Header */}
                 <div className="p-4 border-b border-gray-200 bg-white flex items-center gap-3">
                   <button
                     onClick={() => {
-                      setSelectedConversation(null);
+                      setSelectedConversationId(null);
                     }}
                     className="md:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg"
                     aria-label="Back to conversations"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  {selectedConversationData.teacherAvatar ? (
+                  {(selectedConversationData as Conversation & { teacherAvatar?: string })
+                    .teacherAvatar ? (
                     <img
-                      src={selectedConversationData.teacherAvatar}
-                      alt={selectedConversationData.teacherName}
+                      src={
+                        (selectedConversationData as Conversation & { teacherAvatar?: string })
+                          .teacherAvatar
+                      }
+                      alt={
+                        (selectedConversationData as Conversation & { teacherName: string })
+                          .teacherName
+                      }
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center">
                       <span className="text-white font-semibold">
-                        {selectedConversationData.teacherName.charAt(0)}
+                        {(
+                          selectedConversationData as Conversation & { teacherName: string }
+                        ).teacherName?.charAt(0)}
                       </span>
                     </div>
                   )}
                   <div className="flex-1">
                     <h2 className="font-semibold text-gray-900">
-                      {selectedConversationData.teacherName}
+                      {
+                        (selectedConversationData as Conversation & { teacherName: string })
+                          .teacherName
+                      }
                     </h2>
                     <p className="text-sm text-gray-500">
-                      {selectedConversationData.teacherSubject &&
-                        `${selectedConversationData.teacherSubject} - `}
-                      {selectedConversationData.studentName}
+                      {(selectedConversationData as Conversation & { teacherSubject?: string })
+                        .teacherSubject &&
+                        `${(selectedConversationData as Conversation & { teacherSubject?: string }).teacherSubject} - `}
+                      {
+                        (selectedConversationData as Conversation & { studentName: string })
+                          .studentName
+                      }
                     </p>
                   </div>
                   <button
+                    onClick={() => {
+                      if (selectedConversationId) {
+                        archiveConversation.mutate(selectedConversationId);
+                        setSelectedConversationId(null);
+                      }
+                    }}
                     className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
                     aria-label="Archive conversation"
                   >
@@ -667,7 +501,7 @@ export default function MessagesPage() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                  {messagesLoading ? (
+                  {messaging.messagesLoading ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="w-6 h-6 text-violet-600 animate-spin" />
                     </div>
@@ -684,7 +518,7 @@ export default function MessagesPage() {
 
                           {/* Messages */}
                           <div className="space-y-3">
-                            {group.messages.map((message) => (
+                            {group.messages.map((message: Message) => (
                               <div
                                 key={message.id}
                                 className={`flex ${
@@ -783,6 +617,31 @@ export default function MessagesPage() {
                           </div>
                         </div>
                       ))}
+
+                      {/* Typing Indicators */}
+                      {typingIndicators.length > 0 && (
+                        <div className="flex items-center gap-2 text-gray-500 text-sm">
+                          <div className="flex gap-1">
+                            <span
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: '0ms' }}
+                            />
+                            <span
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: '150ms' }}
+                            />
+                            <span
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: '300ms' }}
+                            />
+                          </div>
+                          <span>
+                            {typingIndicators.map((t) => t.participantName ?? 'Someone').join(', ')}{' '}
+                            {typingIndicators.length === 1 ? 'is' : 'are'} typing...
+                          </span>
+                        </div>
+                      )}
+
                       <div ref={messagesEndRef} />
                     </>
                   )}
@@ -800,21 +659,25 @@ export default function MessagesPage() {
                         value={messageInput}
                         onChange={(e) => {
                           setMessageInput(e.target.value);
+                          // Send typing indicator
+                          if (selectedConversationId) {
+                            messaging.sendTypingIndicator(selectedConversationId);
+                          }
                         }}
                         onKeyDown={handleKeyDown}
                         placeholder="Type a message..."
                         rows={1}
                         className="w-full px-4 py-2.5 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                        disabled={sendMessage.isPending}
+                        disabled={messaging.isSending}
                       />
                     </div>
                     <button
                       type="submit"
-                      disabled={!messageInput.trim() || sendMessage.isPending}
+                      disabled={!messageInput.trim() || messaging.isSending}
                       className="p-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       aria-label="Send message"
                     >
-                      {sendMessage.isPending ? (
+                      {messaging.isSending ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <Send className="w-5 h-5" />
@@ -850,14 +713,24 @@ export default function MessagesPage() {
       {/* Compose Modal */}
       {showCompose && (
         <ComposeModal
-          childrenList={children || []}
+          childrenList={childrenData || []}
           onClose={() => {
             setShowCompose(false);
           }}
           onSend={async (data) => {
-            await createConversation.mutateAsync(data);
+            const result = await messaging.createConversation({
+              participantIds: [data.teacherId],
+              studentContext: {
+                studentId: data.childId,
+                studentName: '', // Will be resolved by API
+              },
+              subject: data.subject,
+              initialMessage: data.content,
+            });
+            setShowCompose(false);
+            setSelectedConversationId(result.id);
           }}
-          isLoading={createConversation.isPending}
+          isLoading={messaging.isCreating}
         />
       )}
     </main>
@@ -871,7 +744,7 @@ function ComposeModal({
   onSend,
   isLoading,
 }: {
-  childrenList: Child[];
+  childrenList: ChildWithTeachers[];
   onClose: () => void;
   onSend: (data: {
     teacherId: string;
@@ -881,7 +754,7 @@ function ComposeModal({
   }) => Promise<void>;
   isLoading?: boolean;
 }) {
-  const [selectedChild, setSelectedChild] = useState<Child | null>(
+  const [selectedChild, setSelectedChild] = useState<ChildWithTeachers | null>(
     childrenList.length === 1 ? childrenList[0] : null
   );
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
@@ -913,12 +786,12 @@ function ComposeModal({
     };
   }, [onClose]);
 
-  const filteredTeachers =
-    selectedChild?.teachers?.filter(
-      (teacher) =>
-        teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        teacher.subject?.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
+  const teachers = selectedChild?.teachers || [];
+  const filteredTeachers = teachers.filter(
+    (teacher) =>
+      teacher.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      teacher.subject?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

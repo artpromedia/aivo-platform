@@ -386,6 +386,7 @@ class SafetyCoachingBubble extends StatelessWidget {
 }
 
 extension on Color {
+  // ignore: unused_element
   Color get shade700 {
     final hsl = HSLColor.fromColor(this);
     return hsl.withLightness((hsl.lightness - 0.2).clamp(0.0, 1.0)).toColor();

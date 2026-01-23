@@ -81,3 +81,34 @@ export * from './use-community-support';
 
 // Resource Library Hooks
 export * from './use-resource-library';
+
+// Real-time Messaging Hooks (Sprint 1.8)
+export {
+  // Query Keys
+  messagingQueryKeys,
+  // Combined Hook
+  useMessaging,
+  // Individual Hooks
+  useConversations as useMessagingConversations,
+  useConversation,
+  useMessages as useMessagingMessages,
+  useInfiniteMessages,
+  useSendMessage as useMessagingSendMessage,
+  useMarkAsRead,
+  useCreateConversation as useMessagingCreateConversation,
+  useArchiveConversation,
+  useUnarchiveConversation,
+  useMuteConversation,
+  useDeleteMessage,
+  useEditMessage,
+  useUnreadCounts,
+  useChildrenWithTeachers as useMessagingChildrenWithTeachers,
+  useSearchMessages,
+} from './use-messaging';
+
+export type {
+  Conversation as MessagingConversation,
+  Message as MessagingMessage,
+  ConnectionState,
+  TypingIndicator,
+} from './use-messaging';

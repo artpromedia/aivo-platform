@@ -34,7 +34,7 @@ export 'widgets/offline_widgets.dart' hide SyncStatus, OfflineBanner;
 export 'services/services.dart' 
     hide AuthState, isAuthenticatedProvider, BaselineProfile, JwtClaims, 
          SessionType, DeviceRegistration, TokenStorageKeys, ContentType,
-         ConnectionState; // Prefer ConnectionState from offline/connectivity_service.dart
+         ConnectionState, AssessmentType; // Prefer ConnectionState from offline/connectivity_service.dart, AssessmentType from learner.dart
 
 // Offline support
 export 'offline/offline.dart';
