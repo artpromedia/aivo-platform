@@ -40,10 +40,16 @@ export interface OfflineBannerProps {
 // =============================================================================
 
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState(() => globalThis.navigator.onLine);
+  // SSR-safe: navigator is undefined during server-side rendering
+  const [isOnline, setIsOnline] = useState(() => 
+    typeof globalThis.navigator !== 'undefined' ? globalThis.navigator.onLine : true
+  );
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
+    // Only run in browser environment
+    if (typeof globalThis.window === 'undefined') return;
+
     const handleOnline = () => {
       setIsOnline(true);
       if (wasOffline) {
