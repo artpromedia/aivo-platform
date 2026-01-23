@@ -1,10 +1,14 @@
 import { config } from '../config.js';
+import { questionAnalyticsService } from '../services/question-analytics.service.js';
+import { questionGeneratorService } from '../services/question-generator.service.js';
 import type {
   BaselineQuestionGenerationPayload,
   GeneratedQuestion,
+  GradeBand,
   ScoreResponsePayload,
   ScoreResponseResult,
 } from '../types/baseline.js';
+import type { DifficultyLevel } from '../types/questions.types.js';
 
 /**
  * Check if we're running in production mode
@@ -12,10 +16,37 @@ import type {
 const isProduction = process.env.NODE_ENV === 'production';
 
 /**
+ * Map difficulty level (1-5) to DifficultyLevel type
+ */
+function mapDifficultyLevel(difficulty: number): DifficultyLevel {
+  if (difficulty <= 2) return 'foundational';
+  if (difficulty <= 3) return 'grade-level';
+  return 'challenging';
+}
+
+/**
+ * Map numeric grade to grade level
+ */
+function gradeBandToGradeLevel(gradeBand: GradeBand): number {
+  switch (gradeBand) {
+    case 'K5':
+      return 3; // Middle of K-5
+    case 'G6_8':
+      return 7; // Middle of 6-8
+    case 'G9_12':
+      return 10; // Middle of 9-12
+    default:
+      return 6;
+  }
+}
+
+/**
  * Calls ai-orchestrator to generate baseline questions.
  *
- * In production: Requires ai-orchestrator to be available - throws error if unavailable.
- * In development: Falls back to deterministic stubs if orchestrator is unavailable.
+ * Uses the QuestionGeneratorService with robust fallback chain:
+ * 1. AI-powered generation via ai-orchestrator
+ * 2. Curated question bank (educationally validated)
+ * 3. Static validated questions (emergency fallback)
  *
  * Supports adaptive difficulty level (1-5 scale).
  */
@@ -24,93 +55,109 @@ export async function generateBaselineQuestions(
 ): Promise<GeneratedQuestion[]> {
   const { tenantId, learnerId, gradeBand, domain, skillCodes, difficulty = 3 } = payload;
 
-  // Try real orchestrator first
-  if (config.aiOrchestratorUrl && config.aiOrchestratorApiKey) {
-    try {
-      const res = await fetch(`${config.aiOrchestratorUrl}/internal/ai/baseline/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-api-key': config.aiOrchestratorApiKey,
-        },
-        body: JSON.stringify({
-          tenantId,
-          learnerId,
-          agentType: 'BASELINE',
-          payload: {
-            gradeBand,
-            domain,
-            skillCodes,
-            difficulty, // Include adaptive difficulty
-          },
-        }),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { questions: GeneratedQuestion[] };
-        // Ensure difficulty is set on all questions
-        return data.questions.map((q) => ({ ...q, difficulty: q.difficulty ?? difficulty }));
-      }
+  const startTime = Date.now();
 
-      const errorMsg = `AI orchestrator returned ${res.status}: ${res.statusText}`;
-      if (isProduction) {
-        throw new Error(`[PRODUCTION ERROR] ${errorMsg}. Cannot use stub questions in production.`);
-      }
-      console.warn(errorMsg + ', falling back to stubs');
-    } catch (err) {
-      if (isProduction) {
-        throw new Error(
-          `[PRODUCTION ERROR] AI orchestrator unreachable: ${err instanceof Error ? err.message : 'Unknown error'}. ` +
-            'Cannot use stub questions in production. Ensure AI_ORCHESTRATOR_URL and AI_ORCHESTRATOR_API_KEY are configured.'
-        );
-      }
-      console.warn('AI orchestrator unreachable, falling back to stubs', err);
-    }
-  } else if (isProduction) {
-    throw new Error(
-      '[PRODUCTION ERROR] AI orchestrator not configured. ' +
-        'Set AI_ORCHESTRATOR_URL and AI_ORCHESTRATOR_API_KEY environment variables for production.'
-    );
-  }
-
-  // Deterministic fallback: generate stub questions (development only)
-  console.warn('[DEV ONLY] Using stub questions - not for production use');
-  return generateStubQuestions(gradeBand, domain, skillCodes, difficulty);
-}
-
-/**
- * Difficulty level descriptions for adaptive question generation
- */
-const DIFFICULTY_LABELS = {
-  1: 'very easy',
-  2: 'easy',
-  3: 'medium',
-  4: 'hard',
-  5: 'very hard',
-};
-
-function generateStubQuestions(
-  gradeBand: string,
-  domain: string,
-  skillCodes: string[],
-  difficulty = 3
-): GeneratedQuestion[] {
-  const questions: GeneratedQuestion[] = [];
-  const difficultyLabel =
-    DIFFICULTY_LABELS[difficulty as keyof typeof DIFFICULTY_LABELS] || 'medium';
-
-  for (const skillCode of skillCodes) {
-    questions.push({
-      skillCode,
-      questionType: 'MULTIPLE_CHOICE',
-      questionText: `[Stub ${difficultyLabel}] ${domain} question for skill ${skillCode} (grade band ${gradeBand})`,
-      options: ['Option A', 'Option B', 'Option C', 'Option D'],
-      correctAnswer: 0, // Option A is correct
-      difficulty,
+  try {
+    // Use the new question generator service with full fallback chain
+    const response = await questionGeneratorService.generateQuestions({
+      tenantId,
+      learnerId,
+      subject: domain,
+      gradeLevel: gradeBandToGradeLevel(gradeBand),
+      gradeBand,
+      topicArea: domain, // Use domain as topic area
+      skillCodes,
+      difficultyLevel: mapDifficultyLevel(difficulty),
+      targetDifficulty: difficulty / 5, // Normalize to 0-1
+      questionCount: skillCodes.length,
+      questionTypes: ['multiple-choice'], // Default to MC for baseline
     });
-  }
 
-  return questions;
+    // Record generation analytics
+    await questionAnalyticsService.recordGeneration({
+      generationId: response.generationId,
+      success: true,
+      latencyMs: Date.now() - startTime,
+      questionCount: response.questions.length,
+      qualityScore: response.qualitySummary.averageQuality,
+      source:
+        response.sourceBreakdown.aiGenerated > 0
+          ? 'ai'
+          : response.sourceBreakdown.curatedBank > 0
+            ? 'curated'
+            : 'static',
+    });
+
+    // Log warnings if any
+    if (response.warnings && response.warnings.length > 0) {
+      console.warn('[generateBaselineQuestions] Warnings:', response.warnings);
+    }
+
+    // Transform to baseline GeneratedQuestion format
+    return response.questions.map((q) => {
+      // Handle correctAnswer - can be string id, number index, or array for multi-select
+      let correctAnswer: number | string;
+      if (Array.isArray(q.correctAnswer)) {
+        // For multi-select, take the first answer for baseline format (which only supports single)
+        const firstAnswer = q.correctAnswer[0];
+        correctAnswer =
+          typeof firstAnswer === 'string'
+            ? (q.options?.findIndex((opt) => opt.id === firstAnswer) ?? 0)
+            : firstAnswer;
+      } else if (typeof q.correctAnswer === 'string') {
+        correctAnswer = q.options?.findIndex((opt) => opt.id === q.correctAnswer) ?? 0;
+      } else {
+        correctAnswer = q.correctAnswer;
+      }
+
+      return {
+        skillCode: q.skillCode,
+        questionType: q.type === 'multiple-choice' ? 'MULTIPLE_CHOICE' : 'OPEN_ENDED',
+        questionText: q.stem,
+        options: q.options?.map((opt) => opt.text),
+        correctAnswer,
+        rubric: q.explanation,
+        difficulty: Math.round(q.difficulty * 5), // Convert 0-1 to 1-5
+      };
+    });
+  } catch (err) {
+    // Record failed generation
+    await questionAnalyticsService.recordGeneration({
+      generationId: `failed-${Date.now()}`,
+      success: false,
+      latencyMs: Date.now() - startTime,
+      questionCount: 0,
+      errorType: err instanceof Error ? err.name : 'UnknownError',
+      source: 'ai',
+    });
+
+    // In production, this is a critical failure - all fallbacks exhausted
+    if (isProduction) {
+      throw new Error(
+        `[PRODUCTION ERROR] Question generation failed after all fallbacks: ${err instanceof Error ? err.message : 'Unknown error'}. ` +
+          'This should never happen with curated question bank available.'
+      );
+    }
+
+    console.error('[generateBaselineQuestions] All fallbacks failed:', err);
+    throw err;
+  }
 }
+
+// Difficulty level descriptions are now handled by QuestionGeneratorService
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STUB QUESTIONS REMOVED
+// ═══════════════════════════════════════════════════════════════════════════════
+// The generateStubQuestions function has been removed as part of Sprint 1.5.
+// Question generation now uses the QuestionGeneratorService with a robust
+// fallback chain:
+//   1. AI-powered generation via ai-orchestrator
+//   2. Curated question bank (educationally validated)
+//   3. Static validated questions (emergency fallback)
+//
+// This ensures production-ready, educationally valid assessment items.
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /**
  * Scores a learner response against the correct answer.
