@@ -2,13 +2,13 @@
  * PIN Setup Dialog Component
  *
  * Allows parents to set up a new PIN or change their existing PIN.
- * COPPA compliant - ensures only parents can modify parental controls.
+ * COPPA (Children's Online Privacy Protection Act) compliant - ensures only parents can modify parental controls.
  */
 
 'use client';
 
-import { useState, useCallback } from 'react';
 import { Lock, X, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { useState, useCallback } from 'react';
 
 import { useSetPin, usePinStatus, useRemovePin } from '@/hooks';
 
@@ -32,7 +32,7 @@ export function PinSetupDialog({
   onClose,
   onSuccess,
   mode = 'setup',
-}: PinSetupDialogProps) {
+}: Readonly<PinSetupDialogProps>) {
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -46,6 +46,20 @@ export function PinSetupDialog({
 
   const isChanging = mode === 'change' || (mode === 'setup' && pinStatus?.enabled);
   const isRemoving = mode === 'remove';
+
+  // Helper function to get dialog title based on mode
+  const getDialogTitle = () => {
+    if (isRemoving) return 'Remove PIN';
+    if (isChanging) return 'Change PIN';
+    return 'Set Up PIN';
+  };
+
+  // Helper function to get button text based on mode
+  const getButtonText = () => {
+    if (isRemoving) return 'Remove PIN';
+    if (isChanging) return 'Change PIN';
+    return 'Set PIN';
+  };
 
   const resetForm = useCallback(() => {
     setCurrentPin('');
@@ -136,9 +150,8 @@ export function PinSetupDialog({
       />
 
       {/* Dialog */}
-      <div
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        open
         aria-labelledby="pin-setup-title"
         className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden"
       >
@@ -150,7 +163,7 @@ export function PinSetupDialog({
                 <Lock className="w-5 h-5 text-indigo-600" />
               </div>
               <h2 id="pin-setup-title" className="text-lg font-semibold text-gray-900">
-                {isRemoving ? 'Remove PIN' : isChanging ? 'Change PIN' : 'Set Up PIN'}
+                {getDialogTitle()}
               </h2>
             </div>
             <button
@@ -193,7 +206,9 @@ export function PinSetupDialog({
                 inputMode="numeric"
                 maxLength={4}
                 value={currentPin}
-                onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                onChange={(e) => {
+                  setCurrentPin(e.target.value.replaceAll(/\D/g, '').slice(0, 4));
+                }}
                 placeholder="••••"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-2xl tracking-widest"
                 autoComplete="current-password"
@@ -218,14 +233,18 @@ export function PinSetupDialog({
                     inputMode="numeric"
                     maxLength={4}
                     value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    onChange={(e) => {
+                      setNewPin(e.target.value.replaceAll(/\D/g, '').slice(0, 4));
+                    }}
                     placeholder="••••"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-2xl tracking-widest"
                     autoComplete="new-password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowNewPin(!showNewPin)}
+                    onClick={() => {
+                      setShowNewPin(!showNewPin);
+                    }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     aria-label={showNewPin ? 'Hide PIN' : 'Show PIN'}
                   >
@@ -248,7 +267,9 @@ export function PinSetupDialog({
                   inputMode="numeric"
                   maxLength={4}
                   value={confirmPin}
-                  onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onChange={(e) => {
+                    setConfirmPin(e.target.value.replaceAll(/\D/g, '').slice(0, 4));
+                  }}
                   placeholder="••••"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-2xl tracking-widest"
                   autoComplete="new-password"
@@ -280,10 +301,10 @@ export function PinSetupDialog({
             {(setPinMutation.isPending || removePinMutation.isPending) && (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             )}
-            {isRemoving ? 'Remove PIN' : isChanging ? 'Change PIN' : 'Set PIN'}
+            {getButtonText()}
           </button>
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }

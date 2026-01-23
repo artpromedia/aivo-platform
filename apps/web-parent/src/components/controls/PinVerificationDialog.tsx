@@ -2,7 +2,7 @@
  * PIN Verification Dialog
  *
  * Modal dialog for PIN verification before sensitive parental control operations.
- * COPPA compliant - ensures parents authorize changes to child settings.
+ * COPPA (Children's Online Privacy Protection Act) compliant - ensures parents authorize changes to child settings.
  */
 
 'use client';
@@ -37,7 +37,9 @@ export function PinVerificationDialog({
   actionDescription,
   onVerified,
   onClose,
-}: PinVerificationDialogProps) {
+}: Readonly<PinVerificationDialogProps>) {
+  // Static keys for PIN digit inputs (fixed 4-digit PIN, never reordered)
+  const PIN_KEYS = ['pin-1', 'pin-2', 'pin-3', 'pin-4'] as const;
   const [pin, setPin] = useState(['', '', '', '']);
   const [error, setError] = useState<string | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -71,7 +73,7 @@ export function PinVerificationDialog({
     // Auto-submit when all digits entered
     if (value && index === 3) {
       const fullPin = [...newPin.slice(0, 3), value].join('');
-      handleVerify(fullPin);
+      void handleVerify(fullPin);
     }
   };
 
@@ -95,7 +97,8 @@ export function PinVerificationDialog({
         setPin(['', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-    } catch (err) {
+    } catch {
+      // PIN verification failed due to network or server error
       setError('Failed to verify PIN. Please try again.');
       setPin(['', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -106,10 +109,9 @@ export function PinVerificationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div
+      <dialog
+        open
         className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6"
-        role="dialog"
-        aria-modal="true"
         aria-labelledby="pin-dialog-title"
       >
         {/* Header */}
@@ -134,11 +136,11 @@ export function PinVerificationDialog({
         {/* Description */}
         <p className="text-gray-600 text-center mb-6">{actionDescription}</p>
 
-        {/* PIN Input */}
+        {/* PIN Input - Fixed 4-digit array with stable keys */}
         <div className="flex justify-center gap-3 mb-6">
           {pin.map((digit, index) => (
             <input
-              key={index}
+              key={PIN_KEYS[index]}
               ref={(el) => {
                 inputRefs.current[index] = el;
               }}
@@ -146,8 +148,12 @@ export function PinVerificationDialog({
               inputMode="numeric"
               maxLength={1}
               value={digit}
-              onChange={(e) => handleInputChange(index, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(index, e)}
+              onChange={(e) => {
+                handleInputChange(index, e.target.value);
+              }}
+              onKeyDown={(e) => {
+                handleKeyDown(index, e);
+              }}
               className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all"
               aria-label={`PIN digit ${index + 1}`}
             />
@@ -181,7 +187,7 @@ export function PinVerificationDialog({
             </a>
           </p>
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }

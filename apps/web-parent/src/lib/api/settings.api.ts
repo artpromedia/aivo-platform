@@ -25,11 +25,7 @@ import type {
   VerifyPinResponse,
   SetPinRequest,
   SettingsSyncMetadata,
-  DEFAULT_SCREEN_TIME_SETTINGS,
-  DEFAULT_CONTENT_FILTER_SETTINGS,
-  DEFAULT_NOTIFICATION_SETTINGS,
-  DEFAULT_ACCESSIBILITY_SETTINGS,
-} from '@aivo/ts-types';
+} from '@aivo/ts-types'; // cspell:disable-line
 
 import { apiClient } from './client';
 
@@ -56,6 +52,8 @@ function getCacheKey(prefix: string, params?: Record<string, unknown>): string {
   return `${prefix}:${JSON.stringify(params)}`;
 }
 
+// Generic T is used for type inference at call sites
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function getFromCache<T>(key: string): T | null {
   const entry = cache.get(key);
   if (!entry) return null;
@@ -66,6 +64,7 @@ function getFromCache<T>(key: string): T | null {
   return entry.data as T;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 function setCache<T>(key: string, data: T, ttl: number): void {
   cache.set(key, {
     data,

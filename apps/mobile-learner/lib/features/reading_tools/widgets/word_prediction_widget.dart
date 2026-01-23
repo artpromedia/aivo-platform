@@ -99,6 +99,7 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
     _readingToolsService = ReadingToolsService(
       baseUrl: EnvironmentConfig.readingToolsBaseUrl,
       learnerId: widget.learnerId,
+      getAuthToken: () => '', // TODO: Get auth token from Riverpod provider
     );
     _textController.addListener(_onTextChanged);
   }
@@ -331,7 +332,7 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
                     child: ExpansionTile(
                       leading: CircleAvatar(
                         backgroundColor:
-                            (category['color'] as Color).withOpacity(0.2),
+                            (category['color'] as Color).withValues(alpha: 0.2),
                         child: Icon(
                           category['icon'] as IconData,
                           color: category['color'] as Color,
