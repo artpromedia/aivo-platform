@@ -60,7 +60,7 @@ export interface ErrorReporterConfig {
 let config: ErrorReporterConfig = {
   enabled: process.env.NODE_ENV === 'production',
   environment: process.env.NODE_ENV || 'development',
-  sampleRate: 1.0,
+  sampleRate: 1,
 };
 
 const breadcrumbs: Breadcrumb[] = [];
@@ -76,7 +76,7 @@ const MAX_BREADCRUMBS = 50;
 export function initErrorReporter(newConfig: Partial<ErrorReporterConfig>): void {
   config = { ...config, ...newConfig };
 
-  if (config.enabled && typeof window !== 'undefined') {
+  if (config.enabled) {
     // Set up global error handlers
     setupGlobalHandlers();
   }
@@ -130,7 +130,7 @@ export function getBreadcrumbs(): Breadcrumb[] {
  * Report an error to the error tracking service
  */
 export function reportError(
-  error: Error | unknown,
+  error: unknown,
   context: ErrorContext = {}
 ): void {
   // Ensure we have an Error object
@@ -160,7 +160,7 @@ export function reportError(
 
   // In a real implementation, this would send to Sentry, Datadog, etc.
   // For now, we'll log to console and could make an API call
-  sendErrorToService(errorObj, fullContext);
+  void sendErrorToService(errorObj, fullContext);
 }
 
 /**
@@ -176,7 +176,7 @@ export function reportMessage(
     return;
   }
 
-  sendMessageToService(message, level, context);
+  void sendMessageToService(message, level, context);
 }
 
 // =============================================================================
@@ -185,7 +185,7 @@ export function reportMessage(
 
 function setupGlobalHandlers(): void {
   // Handle unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
+  globalThis.addEventListener('unhandledrejection', (event) => {
     const error =
       event.reason instanceof Error
         ? event.reason
@@ -196,14 +196,14 @@ function setupGlobalHandlers(): void {
     });
   });
 
-  // Handle global errors
-  window.addEventListener('error', (event) => {
+  // Handle global errors (cspell:disable-next-line globalerror)
+  globalThis.addEventListener('error', (event) => {
     // Ignore errors from browser extensions or cross-origin scripts
     if (!event.filename || event.filename.includes('chrome-extension')) {
       return;
     }
 
-    const error = event.error || new Error(event.message);
+    const error = event.error instanceof Error ? event.error : new Error(event.message);
     reportError(error, {
       tags: { type: 'globalerror' },
       extra: {
@@ -215,18 +215,16 @@ function setupGlobalHandlers(): void {
   });
 
   // Track navigation for breadcrumbs
-  if (typeof window !== 'undefined') {
-    const originalPushState = history.pushState;
-    history.pushState = function (...args) {
+  const originalPushState = globalThis.history.pushState.bind(globalThis.history);
+    globalThis.history.pushState = function (...args) {
       addBreadcrumb({
         type: 'navigation',
         category: 'navigation',
         message: `Navigated to ${args[2] as string}`,
         data: { url: args[2] },
       });
-      return originalPushState.apply(this, args);
+      originalPushState(...args);
     };
-  }
 }
 
 async function sendErrorToService(
@@ -245,8 +243,8 @@ async function sendErrorToService(
       stack: error.stack,
     },
     context,
-    url: typeof window !== 'undefined' ? window.location.href : undefined,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+    url: globalThis.location.href,
+    userAgent: globalThis.navigator.userAgent,
   };
 
   // Log in development

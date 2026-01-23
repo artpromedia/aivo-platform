@@ -9,7 +9,7 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 
 import { reportError } from './error-reporter';
 
@@ -40,6 +40,7 @@ export interface ErrorBoundaryState {
 
 export interface ErrorFallbackProps {
   error: Error;
+  /** Component stack info (optional, only available in development) */
   errorInfo?: ErrorInfo;
   resetError: () => void;
 }
@@ -49,7 +50,7 @@ export interface ErrorFallbackProps {
 // =============================================================================
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  static defaultProps = {
+  static readonly defaultProps = {
     reportToService: true,
   };
 
@@ -146,7 +147,7 @@ export function DefaultErrorFallback({
   error,
   errorInfo,
   resetError,
-}: ErrorFallbackProps): JSX.Element {
+}: Readonly<ErrorFallbackProps>): React.JSX.Element {
   const isDev = process.env.NODE_ENV === 'development';
 
   return (
@@ -176,7 +177,7 @@ export function DefaultErrorFallback({
         We&apos;re sorry, but something unexpected happened. Please try again.
       </p>
 
-      {isDev && error && (
+      {isDev && (
         <details className="mb-4 w-full max-w-lg text-left">
           <summary className="cursor-pointer text-sm font-medium text-red-700">
             Error Details (Development Only)
@@ -232,7 +233,7 @@ export function PageErrorFallback({
   resetError,
   title = 'Page Error',
   showHomeButton = true,
-}: PageErrorFallbackProps): JSX.Element {
+}: Readonly<PageErrorFallbackProps>): React.JSX.Element {
   const isDev = process.env.NODE_ENV === 'development';
 
   return (
@@ -261,7 +262,7 @@ export function PageErrorFallback({
         been notified and is working to fix it.
       </p>
 
-      {isDev && error && (
+      {isDev && (
         <div className="mb-6 w-full max-w-2xl overflow-auto rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="mb-2 font-mono text-sm font-medium text-red-800">
             {error.name}: {error.message}
