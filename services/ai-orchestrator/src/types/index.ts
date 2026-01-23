@@ -17,3 +17,25 @@ export type {
 
 export type { LLMProvider, IAgentRequest, IAgentResponse, GenerateParams } from './agent.js';
 export type { AgentConfig, AgentType, ProviderType } from './agentConfig.js';
+
+// IEP Generation Types (Sprint 1.3)
+export type {
+  IEPStudentContext,
+  IEPGenerationRequest,
+  IEPGenerationResponse,
+  IEPGoal,
+  IEPBenchmark,
+  AccommodationSuggestion,
+  IEPGoalValidationResult,
+  IEPValidationResult,
+  ValidationIssue,
+  IEPDomain,
+  DisabilityCategory,
+  MeasurementMethod,
+  ServiceProvider,
+  IEPGoalCategory,
+  PerformanceLevel,
+  SuggestedService,
+  IEPGenerationMetadata,
+  AccommodationCategory,
+} from './iep.types.js';

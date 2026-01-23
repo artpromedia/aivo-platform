@@ -127,8 +127,8 @@ export function createApp(options: AppOptions = {}) {
   // AI-Generated Adaptive Games routes
   app.register(gameGenerationRoutes, { llmOrchestrator });
 
-  // AI-Powered IEP Goal Generation routes
-  app.register(iepGenerationRoutes, { prefix: '/iep' });
+  // AI-Powered IEP Goal Generation routes (Sprint 1.3 - Real AI integration)
+  app.register(iepGenerationRoutes, { prefix: '/iep', llmOrchestrator });
 
   // Prompt Debugging Dashboard API routes
   app.register(registerPromptDebuggingRoutes, { pool: policyPool, redis });
