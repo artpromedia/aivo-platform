@@ -9,7 +9,7 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // =============================================================================
 // Types
@@ -40,9 +40,7 @@ export interface OfflineBannerProps {
 // =============================================================================
 
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
-  );
+  const [isOnline, setIsOnline] = useState(() => globalThis.navigator.onLine);
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
@@ -58,12 +56,12 @@ export function useNetworkStatus() {
       setWasOffline(true);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    globalThis.window.addEventListener('online', handleOnline);
+    globalThis.window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      globalThis.window.removeEventListener('online', handleOnline);
+      globalThis.window.removeEventListener('offline', handleOffline);
     };
   }, [wasOffline]);
 
@@ -80,7 +78,7 @@ export function NetworkErrorDisplay({
   message,
   showStatus = true,
   className = '',
-}: NetworkErrorProps): JSX.Element {
+}: Readonly<NetworkErrorProps>): React.JSX.Element {
   const { isOnline } = useNetworkStatus();
 
   const displayMessage =
@@ -210,7 +208,7 @@ export function NetworkErrorDisplay({
 export function OfflineBanner({
   position = 'top',
   dismissible = false,
-}: OfflineBannerProps): JSX.Element | null {
+}: Readonly<OfflineBannerProps>): React.JSX.Element | null {
   const { isOnline, wasOffline } = useNetworkStatus();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showReconnected, setShowReconnected] = useState(false);
@@ -222,7 +220,9 @@ export function OfflineBanner({
       const timer = setTimeout(() => {
         setShowReconnected(false);
       }, 3000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [isOnline, wasOffline]);
 
@@ -276,7 +276,9 @@ export function OfflineBanner({
             <span>You&apos;re offline. Some features may be unavailable.</span>
             {dismissible && (
               <button
-                onClick={() => setIsDismissed(true)}
+                onClick={() => {
+                  setIsDismissed(true);
+                }}
                 className="ml-2 rounded p-0.5 hover:bg-orange-600"
                 aria-label="Dismiss"
               >

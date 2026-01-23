@@ -205,7 +205,7 @@ function setupGlobalHandlers(): void {
 
     const error = event.error instanceof Error ? event.error : new Error(event.message);
     reportError(error, {
-      tags: { type: 'globalerror' },
+      tags: { type: 'globalerror' }, // cspell:disable-line
       extra: {
         filename: event.filename,
         lineno: event.lineno,
