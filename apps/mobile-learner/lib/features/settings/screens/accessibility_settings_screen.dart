@@ -12,15 +12,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/accessibility_settings_api.dart' as api;
+import '../api/accessibility_settings_api.dart' show currentLearnerIdProvider, accessibilitySettingsApiProvider;
+
 
 // ============================================================================
 // PROVIDERS
 // ============================================================================
 
-/// Provider for accessibility settings state
+/// Provider for accessibility settings state with API persistence
 final accessibilitySettingsProvider =
     StateNotifierProvider<AccessibilitySettingsNotifier, AccessibilitySettingsState>(
-  (ref) => AccessibilitySettingsNotifier(),
+  (ref) => AccessibilitySettingsNotifier(ref),
 );
 
 /// Accessibility settings state
@@ -100,9 +103,115 @@ enum ColorBlindMode {
   final String description;
 }
 
-/// Accessibility settings notifier
+/// Accessibility settings notifier with API persistence
 class AccessibilitySettingsNotifier extends StateNotifier<AccessibilitySettingsState> {
-  AccessibilitySettingsNotifier() : super(const AccessibilitySettingsState());
+  AccessibilitySettingsNotifier(this._ref) : super(const AccessibilitySettingsState()) {
+    // Load settings on init
+    _loadSettings();
+  }
+
+  final Ref _ref;
+  bool _isLoading = false;
+  String? _loadError;
+
+  bool get isLoading => _isLoading;
+  String? get loadError => _loadError;
+
+  /// Load settings from API
+  Future<void> _loadSettings() async {
+    final learnerId = _ref.read(currentLearnerIdProvider);
+    if (learnerId == null) return;
+
+    _isLoading = true;
+    _loadError = null;
+
+    try {
+      final apiClient = _ref.read(accessibilitySettingsApiProvider);
+      final settings = await apiClient.getSettings(learnerId);
+
+      state = AccessibilitySettingsState(
+        textScaleFactor: settings.textScaleFactor,
+        highContrast: settings.highContrast,
+        reduceMotion: settings.reduceMotion,
+        reduceTransparency: settings.reduceTransparency,
+        boldText: settings.boldText,
+        screenReaderOptimized: settings.screenReaderOptimized,
+        hapticFeedbackEnabled: settings.hapticFeedbackEnabled,
+        soundEffectsEnabled: settings.soundEffectsEnabled,
+        soundVolume: settings.soundVolume,
+        readAloudEnabled: settings.readAloudEnabled,
+        readAloudSpeed: settings.readAloudSpeed,
+        colorBlindMode: _mapColorBlindMode(settings.colorBlindMode),
+        isDirty: false,
+      );
+    } catch (e) {
+      _loadError = 'Failed to load settings: $e';
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  /// Save settings to API
+  Future<bool> saveSettings() async {
+    final learnerId = _ref.read(currentLearnerIdProvider);
+    if (learnerId == null) return false;
+
+    try {
+      final apiClient = _ref.read(accessibilitySettingsApiProvider);
+      final settings = api.AccessibilitySettings(
+        textScaleFactor: state.textScaleFactor,
+        highContrast: state.highContrast,
+        reduceMotion: state.reduceMotion,
+        reduceTransparency: state.reduceTransparency,
+        boldText: state.boldText,
+        screenReaderOptimized: state.screenReaderOptimized,
+        hapticFeedbackEnabled: state.hapticFeedbackEnabled,
+        soundEffectsEnabled: state.soundEffectsEnabled,
+        soundVolume: state.soundVolume,
+        readAloudEnabled: state.readAloudEnabled,
+        readAloudSpeed: state.readAloudSpeed,
+        colorBlindMode: _mapColorBlindModeToApi(state.colorBlindMode),
+      );
+
+      await apiClient.updateSettings(learnerId, settings);
+      state = state.copyWith(isDirty: false);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Map API ColorBlindMode to local enum
+  ColorBlindMode _mapColorBlindMode(api.ColorBlindMode apiMode) {
+    switch (apiMode) {
+      case api.ColorBlindMode.none:
+        return ColorBlindMode.none;
+      case api.ColorBlindMode.protanopia:
+        return ColorBlindMode.protanopia;
+      case api.ColorBlindMode.deuteranopia:
+        return ColorBlindMode.deuteranopia;
+      case api.ColorBlindMode.tritanopia:
+        return ColorBlindMode.tritanopia;
+      case api.ColorBlindMode.achromatopsia:
+        return ColorBlindMode.achromatopsia;
+    }
+  }
+
+  /// Map local ColorBlindMode to API enum
+  api.ColorBlindMode _mapColorBlindModeToApi(ColorBlindMode localMode) {
+    switch (localMode) {
+      case ColorBlindMode.none:
+        return api.ColorBlindMode.none;
+      case ColorBlindMode.protanopia:
+        return api.ColorBlindMode.protanopia;
+      case ColorBlindMode.deuteranopia:
+        return api.ColorBlindMode.deuteranopia;
+      case ColorBlindMode.tritanopia:
+        return api.ColorBlindMode.tritanopia;
+      case ColorBlindMode.achromatopsia:
+        return api.ColorBlindMode.achromatopsia;
+    }
+  }
 
   void setTextScaleFactor(double value) {
     state = state.copyWith(textScaleFactor: value, isDirty: true);
@@ -391,17 +500,63 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _saveSettings(BuildContext context, WidgetRef ref) async {
-    // Save to persistent storage
-    ref.read(accessibilitySettingsProvider.notifier).markSaved();
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Saving settings...'),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 10),
+      ),
+    );
+
+    // Save to API
+    final success = await ref.read(accessibilitySettingsProvider.notifier).saveSettings();
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Settings saved'),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // Clear the loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Settings saved'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Failed to save settings. Please try again.'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 

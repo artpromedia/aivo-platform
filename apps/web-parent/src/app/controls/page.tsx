@@ -18,10 +18,12 @@ import {
   SubjectAccess,
   NotificationPreferences,
   SafetySettings,
+  PinVerificationDialog,
+  usePinVerification,
 } from '@/components/controls';
 import { QueryErrorDisplay } from '@/components/error-boundary';
 import { ControlsPageSkeleton } from '@/components/skeletons';
-import { useParentProfile, useParentalControls, useUpdateParentalControls } from '@/hooks';
+import { useParentProfile, useParentalControls, useUpdateParentalControls, usePinStatus } from '@/hooks';
 
 interface Child {
   id: string;
@@ -164,7 +166,35 @@ export default function ParentalControlsPage() {
   // Save controls mutation
   const updateControls = useUpdateParentalControls();
 
+  // PIN verification for sensitive sections
+  const { data: pinStatus } = usePinStatus();
+  const pinVerification = usePinVerification();
+  const [pendingSave, setPendingSave] = useState<{
+    section: string;
+    settings: unknown;
+  } | null>(null);
+
+  // Sections that require PIN verification
+  const SENSITIVE_SECTIONS = ['screenTime', 'contentFilter', 'safety'];
+
   const handleSaveSection = async (section: string, settings: unknown) => {
+    if (!selectedChild) return;
+
+    // Check if PIN is required for this section
+    const isPinRequired = pinStatus?.hasPin && SENSITIVE_SECTIONS.includes(section);
+
+    if (isPinRequired && !pinVerification.isVerified) {
+      // Store pending save and open PIN dialog
+      setPendingSave({ section, settings });
+      pinVerification.open();
+      return;
+    }
+
+    // Proceed with save
+    await performSave(section, settings);
+  };
+
+  const performSave = async (section: string, settings: unknown) => {
     if (!selectedChild) return;
     setSavingSection(section);
     try {
@@ -175,6 +205,15 @@ export default function ParentalControlsPage() {
       });
     } finally {
       setSavingSection(null);
+    }
+  };
+
+  // Handle successful PIN verification
+  const handlePinVerified = async (token: string) => {
+    pinVerification.verify(token);
+    if (pendingSave) {
+      await performSave(pendingSave.section, pendingSave.settings);
+      setPendingSave(null);
     }
   };
 
@@ -418,6 +457,15 @@ export default function ParentalControlsPage() {
           </div>
         )}
       </div>
+
+      {/* PIN Verification Dialog */}
+      <PinVerificationDialog
+        isOpen={pinVerification.isOpen}
+        onClose={pinVerification.close}
+        onVerified={handlePinVerified}
+        title="Verify PIN"
+        description="Enter your 4-digit PIN to modify parental control settings"
+      />
     </main>
   );
 }

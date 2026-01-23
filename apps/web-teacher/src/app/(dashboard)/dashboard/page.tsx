@@ -3,6 +3,7 @@
  *
  * Main dashboard with multi-class management, student monitoring, and comprehensive analytics
  * Sprint 9: Enhanced with ClassSelector, StudentRoster with IEP/504 support
+ * Sprint 4.1: Removed direct mock data imports - uses proper hooks
  */
 
 'use client';
@@ -22,51 +23,58 @@ import {
 import { RealTimeMonitor } from '@/components/dashboard/real-time-monitor';
 import { SELObservationRecorder } from '@/components/dashboard/sel-observation-recorder';
 import { StudentRoster } from '@/components/students';
-import { mockClasses, getClassDashboardData } from '@/lib/mock-data';
+import { useClasses, useClassAnalytics } from '@/hooks';
 import type { Class, DashboardData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const [classes, setClasses] = useState<Class[]>([]);
+  const { classes, loading: classesLoading } = useClasses();
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { analytics, loading: analyticsLoading } = useClassAnalytics(selectedClass?.id || '');
   const [showSELRecorder, setShowSELRecorder] = useState(false);
   const [selectedStudentForSEL, setSelectedStudentForSEL] = useState<{
     id: string;
     name: string;
   } | null>(null);
   const [activeView, setActiveView] = useState<'overview' | 'roster'>('overview');
+  // Local state for tracking dismissed alerts and actions (Sprint 4.1)
+  const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(new Set());
+  const [alertActions, setAlertActions] = useState<Record<string, string>>({});
 
-  // Load classes on mount
+  const isLoading = classesLoading || (selectedClass && analyticsLoading);
+
+  // Construct dashboard data from analytics with local modifications
+  const rawAlerts = analytics?.interventionAlerts ?? [];
+  const filteredAlerts = rawAlerts
+    .filter((a: { id: string }) => !dismissedAlertIds.has(a.id))
+    .map((a: { id: string }) => ({
+      ...a,
+      actionTaken: alertActions[a.id],
+    }));
+
+  const dashboardData: DashboardData | null = analytics ? {
+    stats: {
+      totalStudents: analytics.totalStudents ?? 0,
+      averageProgress: analytics.averageProgress ?? 0,
+      averageMastery: analytics.averageMastery ?? 0,
+      activeStudents: analytics.activeStudents ?? 0,
+      atRiskStudents: analytics.atRiskStudents ?? 0,
+      assignmentsThisWeek: analytics.assignmentsThisWeek ?? 0,
+      completionRate: analytics.completionRate ?? 0,
+    },
+    activities: analytics.recentActivity ?? [],
+    lessons: analytics.upcomingLessons ?? [],
+    alerts: filteredAlerts,
+    performance: analytics.classPerformance ?? [],
+    upcomingEvents: analytics.upcomingEvents ?? [],
+  } : null;
+
+  // Select first class once classes load
   useEffect(() => {
-    const loadClasses = async () => {
-      // In production, this would be an API call
-      // const teacherId = localStorage.getItem('user_id');
-      // const { data } = await supabase.from('classes').select('*').eq('teacher_id', teacherId);
-
-      setClasses(mockClasses);
-      if (mockClasses.length > 0) {
-        setSelectedClass(mockClasses[0]);
-      }
-      setIsLoading(false);
-    };
-
-    loadClasses();
-  }, []);
-
-  // Load dashboard data when class changes
-  useEffect(() => {
-    if (selectedClass) {
-      const loadDashboardData = async () => {
-        // In production, this would fetch from API
-        const data = getClassDashboardData(selectedClass.id);
-        setDashboardData(data);
-      };
-
-      loadDashboardData();
+    if (classes.length > 0 && !selectedClass) {
+      setSelectedClass(classes[0] as Class);
     }
-  }, [selectedClass]);
+  }, [classes, selectedClass]);
 
   const handleClassChange = useCallback((cls: Class) => {
     setSelectedClass(cls);
@@ -149,14 +157,7 @@ export default function DashboardPage() {
               alerts={dashboardData.alerts}
               onDismiss={async (alertId) => {
                 await fetch(`/api/alerts/${alertId}/dismiss`, { method: 'POST' });
-                setDashboardData((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        alerts: prev.alerts.filter((a) => a.id !== alertId),
-                      }
-                    : null
-                );
+                setDismissedAlertIds((prev) => new Set([...prev, alertId]));
               }}
               onActionTaken={async (alertId, action) => {
                 await fetch(`/api/alerts/${alertId}/action`, {
@@ -164,16 +165,7 @@ export default function DashboardPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ action }),
                 });
-                setDashboardData((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        alerts: prev.alerts.map((a) =>
-                          a.id === alertId ? { ...a, actionTaken: action } : a
-                        ),
-                      }
-                    : null
-                );
+                setAlertActions((prev) => ({ ...prev, [alertId]: action }));
               }}
             />
           )}

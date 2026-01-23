@@ -10,3 +10,5 @@ export { ContentFiltering } from './content-filtering';
 export { SubjectAccess } from './subject-access';
 export { NotificationPreferences } from './notification-preferences';
 export { SafetySettings } from './safety-settings';
+export { PinVerificationDialog, usePinVerification } from './PinVerificationDialog';
+export { PinSetupDialog, usePinSetup } from './PinSetupDialog';

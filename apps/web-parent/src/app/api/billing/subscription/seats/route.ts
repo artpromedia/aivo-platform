@@ -1,12 +1,11 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-import { getMockSubscription } from '@/lib/mock-data';
 
 /**
  * POST /api/billing/subscription/seats
  *
  * Manages subscription seats (add/remove children).
+ * Sprint 4.1: Removed mock data fallback - always calls billing microservice.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,31 +17,6 @@ export async function POST(request: NextRequest) {
         { error: { code: 'INVALID_REQUEST', message: 'Changes array is required' } },
         { status: 400 }
       );
-    }
-
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev) {
-      const mockSub = getMockSubscription();
-
-      // Simulate seat changes
-      for (const change of changes) {
-        if (change.action === 'add') {
-          mockSub.usedSeats += 1;
-          mockSub.seats.push({
-            id: `seat-${Date.now()}`,
-            childId: change.childId,
-            childName: change.childName,
-            assignedAt: new Date().toISOString(),
-            status: 'active',
-          });
-        } else if (change.action === 'remove') {
-          mockSub.usedSeats = Math.max(0, mockSub.usedSeats - 1);
-          mockSub.seats = mockSub.seats.filter(s => s.childId !== change.childId);
-        }
-      }
-
-      return NextResponse.json(mockSub);
     }
 
     const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';

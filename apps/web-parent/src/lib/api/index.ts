@@ -117,3 +117,7 @@ export * from './ai.api';
 // Analytics API (Sprint 3.3)
 export { analyticsApi } from './analytics.api';
 export * from './analytics.api';
+
+// Settings API (Sprint 3.4)
+export { settingsApi } from './settings.api';
+export * from './settings.api';

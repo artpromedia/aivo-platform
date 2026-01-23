@@ -27,20 +27,17 @@ import {
   getDateRangeFromPreset,
 } from '@/components/reports';
 import type { DateRangePreset } from '@/components/reports';
-// Hooks - Sprint 1.7: Using new report hooks
+// Hooks - Sprint 1.7: Using new report hooks (Sprint 4.1: Removed legacy mock hooks)
 import {
   useProgressSummary,
   useReportActivityTimeline,
   usePDFExport,
   useCSVExport,
-} from '@/hooks';
-import { isDevMode } from '@/lib/api/client';
-import {
   useParentProfile,
   useProgressReport,
-  useGenerateReportPDF,
   useChildrenEnhanced,
-} from '@/lib/hooks';
+} from '@/hooks';
+import { isDevMode } from '@/lib/api/client';
 
 // Child selector component for reports
 interface ChildSelectorProps {
@@ -142,8 +139,7 @@ export default function ReportsPage() {
     isLoading: timelineLoading,
   } = useReportActivityTimeline(selectedChild?.id || '', { dateRange });
 
-  // PDF/CSV export mutations
-  const generatePDF = useGenerateReportPDF();
+  // PDF/CSV export mutations (Sprint 4.1: Using new hooks only, removed legacy mock fallback)
   const pdfExport = usePDFExport();
   const csvExport = useCSVExport();
 
@@ -173,21 +169,12 @@ export default function ReportsPage() {
   const handleExportPDF = async () => {
     if (!selectedChild || !dateRange) return;
     
-    // Try new export first, fallback to legacy
-    try {
-      await pdfExport.exportPDF({
-        learnerId: selectedChild.id,
-        learnerName: selectedChild.name,
-        dateRange,
-        includeCharts: true,
-      });
-    } catch {
-      await generatePDF.mutateAsync({
-        studentId: selectedChild.id,
-        studentName: selectedChild.name,
-        dateRange,
-      });
-    }
+    await pdfExport.exportPDF({
+      learnerId: selectedChild.id,
+      learnerName: selectedChild.name,
+      dateRange,
+      includeCharts: true,
+    });
   };
 
   const handleExportCSV = async () => {

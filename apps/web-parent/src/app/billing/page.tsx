@@ -26,7 +26,7 @@ import {
   useRemovePaymentMethod,
   useSetDefaultPaymentMethod,
   useCouponValidation,
-} from '@/lib/billing-hooks';
+} from '@/hooks';
 import type { BillingPeriod, SeatChangeRequest } from '@/lib/billing-types';
 
 // Initialize Stripe

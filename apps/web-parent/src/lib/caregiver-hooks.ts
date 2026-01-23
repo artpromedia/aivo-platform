@@ -2,13 +2,14 @@
  * React Query Hooks for Caregiver Delegation
  *
  * These hooks manage caregiver invitations, permissions, and access control.
+ * Sprint 4.1: Updated to import isDevMode from api/client instead of deprecated mock-data.
  */
 
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
-import { isDevMode } from './mock-data';
+import { isDevMode } from './api/client';
 
 // ============================================================================
 // TYPES

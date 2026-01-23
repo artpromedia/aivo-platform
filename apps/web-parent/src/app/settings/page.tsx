@@ -2,11 +2,11 @@
  * Settings Page
  *
  * Parent settings and preferences for the AIVO parent portal.
+ * Uses real persistence via settings API.
  */
 
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Settings,
@@ -20,28 +20,22 @@ import {
   ChevronRight,
   Check,
   Eye,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { isDevMode } from '@/lib/api';
+import {
+  useParentSettings,
+  useUpdateNotificationSettings,
+  useUpdateAppSettings,
+} from '@/hooks';
+import type { NotificationSettings as ApiNotificationSettings } from '@aivo/ts-types';
 
-interface NotificationSettings {
-  emailDigest: 'daily' | 'weekly' | 'never';
-  pushNotifications: boolean;
-  progressAlerts: boolean;
-  teacherMessages: boolean;
-  achievementAlerts: boolean;
-  homeworkReminders: boolean;
-}
-
-interface PrivacySettings {
-  shareProgress: boolean;
-  allowTeacherContact: boolean;
-  dataCollection: boolean;
-}
-
-interface ScreenTimeSettings {
+// Local interface for screen time (kept for backward compatibility in this component)
+interface LocalScreenTimeSettings {
   dailyLimit: number; // minutes
   breakReminders: boolean;
   weekendLimit: number;
@@ -50,50 +44,46 @@ interface ScreenTimeSettings {
 export default function SettingsPage() {
   const router = useRouter();
 
-  // Settings state
-  const [notifications, setNotifications] = useState<NotificationSettings>({
-    emailDigest: 'daily',
-    pushNotifications: true,
-    progressAlerts: true,
-    teacherMessages: true,
-    achievementAlerts: true,
-    homeworkReminders: true,
-  });
+  // Fetch real settings from API
+  const {
+    data: parentSettings,
+    isLoading,
+    error,
+    refetch,
+  } = useParentSettings();
 
-  const [privacy, setPrivacy] = useState<PrivacySettings>({
-    shareProgress: true,
-    allowTeacherContact: true,
-    dataCollection: true,
-  });
+  // Mutations for saving
+  const updateNotifications = useUpdateNotificationSettings();
+  const updateAppSettings = useUpdateAppSettings();
 
-  const [screenTime, setScreenTime] = useState<ScreenTimeSettings>({
+  // Local state for screen time (managed per-child on controls page)
+  const [screenTime, setScreenTime] = useState<LocalScreenTimeSettings>({
     dailyLimit: 120,
     breakReminders: true,
     weekendLimit: 180,
   });
 
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  // Mock save mutation
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { success: true };
-    },
-    onSuccess: () => {
-      setSaveStatus('saved');
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 2000);
-    },
-  });
+  // Derive notification state from API data
+  const notifications = parentSettings?.notifications;
 
-  const handleSave = () => {
-    setSaveStatus('saving');
-    saveMutation.mutate();
-  };
+  const handleSaveNotifications = useCallback(
+    async (newSettings: Partial<ApiNotificationSettings>) => {
+      setSaveStatus('saving');
+      try {
+        await updateNotifications.mutateAsync(newSettings);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch (err) {
+        console.error('Failed to save notifications:', err);
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
+      }
+    },
+    [updateNotifications]
+  );
 
   const sections = [
     {
@@ -134,6 +124,41 @@ export default function SettingsPage() {
     },
   ];
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          <p className="text-gray-600">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-red-200 max-w-md w-full">
+          <div className="flex items-center gap-3 text-red-600 mb-4">
+            <AlertCircle className="w-6 h-6" />
+            <h2 className="text-lg font-semibold">Failed to load settings</h2>
+          </div>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error ? error.message : 'An unexpected error occurred'}
+          </p>
+          <button
+            onClick={() => void refetch()}
+            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -154,26 +179,26 @@ export default function SettingsPage() {
                 <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
               </div>
             </div>
-            {activeSection && (
-              <button
-                onClick={handleSave}
-                disabled={saveStatus === 'saving'}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
+            {/* Save status indicator */}
+            {saveStatus !== 'idle' && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg">
                 {saveStatus === 'saving' ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Saving...
+                    <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                    <span className="text-gray-600">Saving...</span>
                   </>
                 ) : saveStatus === 'saved' ? (
                   <>
-                    <Check className="w-4 h-4" />
-                    Saved!
+                    <Check className="w-4 h-4 text-green-600" />
+                    <span className="text-green-600">Saved!</span>
                   </>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+                ) : saveStatus === 'error' ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <span className="text-red-600">Failed to save</span>
+                  </>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
@@ -212,18 +237,16 @@ export default function SettingsPage() {
               );
             })}
           </div>
-        ) : activeSection === 'notifications' ? (
+        ) : activeSection === 'notifications' && notifications ? (
           <NotificationSettingsPanel
             settings={notifications}
-            onChange={setNotifications}
+            onSave={handleSaveNotifications}
             onBack={() => {
               setActiveSection(null);
             }}
           />
         ) : activeSection === 'privacy' ? (
           <PrivacySettingsPanel
-            settings={privacy}
-            onChange={setPrivacy}
             onBack={() => {
               setActiveSection(null);
             }}
@@ -258,13 +281,26 @@ export default function SettingsPage() {
 // Notification Settings Panel
 function NotificationSettingsPanel({
   settings,
-  onChange,
+  onSave,
   onBack,
 }: {
-  readonly settings: NotificationSettings;
-  readonly onChange: (settings: NotificationSettings) => void;
+  readonly settings: ApiNotificationSettings;
+  readonly onSave: (settings: Partial<ApiNotificationSettings>) => Promise<void>;
   readonly onBack: () => void;
 }) {
+  // Handle toggle changes - save immediately
+  const handleEmailToggle = async (key: keyof ApiNotificationSettings['email'], value: boolean) => {
+    await onSave({
+      email: { ...settings.email, [key]: value },
+    });
+  };
+
+  const handlePushToggle = async (key: keyof ApiNotificationSettings['push'], value: boolean) => {
+    await onSave({
+      push: { ...settings.push, [key]: value },
+    });
+  };
+
   return (
     <div className="space-y-6">
       <button
@@ -288,47 +324,50 @@ function NotificationSettingsPanel({
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gray-400" />
                 <div>
-                  <p className="font-medium text-gray-900">Email Digest</p>
+                  <p className="font-medium text-gray-900">Daily Email Digest</p>
                   <p className="text-sm text-gray-500">Summary of your child&apos;s progress</p>
                 </div>
               </div>
-              <select
-                value={settings.emailDigest}
-                onChange={(e) => {
-                  onChange({
-                    ...settings,
-                    emailDigest: e.target.value as typeof settings.emailDigest,
-                  });
-                }}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+              <button
+                onClick={() => void handleEmailToggle('dailyDigest', !settings.email.dailyDigest)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  settings.email.dailyDigest ? 'bg-indigo-600' : 'bg-gray-300'
+                }`}
               >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="never">Never</option>
-              </select>
+                <div
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    settings.email.dailyDigest ? 'translate-x-6' : ''
+                  }`}
+                />
+              </button>
             </div>
           </div>
 
-          {/* Push Notifications */}
+          {/* Weekly Report */}
+          <ToggleSetting
+            icon={<Mail className="w-5 h-5 text-gray-400" />}
+            title="Weekly Report"
+            description="Receive weekly progress summaries"
+            enabled={settings.email.weeklyReport}
+            onChange={(enabled) => void handleEmailToggle('weeklyReport', enabled)}
+          />
+
+          {/* Push Notifications Master */}
           <ToggleSetting
             icon={<Smartphone className="w-5 h-5 text-gray-400" />}
             title="Push Notifications"
             description="Receive notifications on your device"
-            enabled={settings.pushNotifications}
-            onChange={(enabled) => {
-              onChange({ ...settings, pushNotifications: enabled });
-            }}
+            enabled={settings.push.enabled}
+            onChange={(enabled) => void handlePushToggle('enabled', enabled)}
           />
 
-          {/* Progress Alerts */}
+          {/* Achievement Notifications */}
           <ToggleSetting
             icon={<Bell className="w-5 h-5 text-gray-400" />}
-            title="Progress Alerts"
-            description="Get notified about significant progress changes"
-            enabled={settings.progressAlerts}
-            onChange={(enabled) => {
-              onChange({ ...settings, progressAlerts: enabled });
-            }}
+            title="Achievement Alerts"
+            description="Celebrate when your child earns achievements"
+            enabled={settings.push.achievements}
+            onChange={(enabled) => void handlePushToggle('achievements', enabled)}
           />
 
           {/* Teacher Messages */}
@@ -336,32 +375,17 @@ function NotificationSettingsPanel({
             icon={<Mail className="w-5 h-5 text-gray-400" />}
             title="Teacher Messages"
             description="Notifications for new teacher messages"
-            enabled={settings.teacherMessages}
-            onChange={(enabled) => {
-              onChange({ ...settings, teacherMessages: enabled });
-            }}
+            enabled={settings.push.teacherMessages}
+            onChange={(enabled) => void handlePushToggle('teacherMessages', enabled)}
           />
 
-          {/* Achievement Alerts */}
-          <ToggleSetting
-            icon={<Bell className="w-5 h-5 text-gray-400" />}
-            title="Achievement Alerts"
-            description="Celebrate when your child earns achievements"
-            enabled={settings.achievementAlerts}
-            onChange={(enabled) => {
-              onChange({ ...settings, achievementAlerts: enabled });
-            }}
-          />
-
-          {/* Homework Reminders */}
+          {/* Screen Time Alerts */}
           <ToggleSetting
             icon={<Clock className="w-5 h-5 text-gray-400" />}
-            title="Homework Reminders"
-            description="Reminders for incomplete assignments"
-            enabled={settings.homeworkReminders}
-            onChange={(enabled) => {
-              onChange({ ...settings, homeworkReminders: enabled });
-            }}
+            title="Screen Time Alerts"
+            description="Get notified when screen time limits are reached"
+            enabled={settings.push.screenTimeAlerts}
+            onChange={(enabled) => void handlePushToggle('screenTimeAlerts', enabled)}
           />
         </div>
       </div>
@@ -369,16 +393,14 @@ function NotificationSettingsPanel({
   );
 }
 
-// Privacy Settings Panel
+// Privacy Settings Panel - Now uses controls page for per-child settings
 function PrivacySettingsPanel({
-  settings,
-  onChange,
   onBack,
 }: {
-  settings: PrivacySettings;
-  onChange: (settings: PrivacySettings) => void;
   onBack: () => void;
 }) {
+  const router = useRouter();
+  
   return (
     <div className="space-y-6">
       <button
@@ -395,36 +417,18 @@ function PrivacySettingsPanel({
           Privacy & Safety
         </h2>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-          <ToggleSetting
-            icon={<Eye className="w-5 h-5 text-gray-400" />}
-            title="Share Progress with Teachers"
-            description="Allow teachers to see detailed progress reports"
-            enabled={settings.shareProgress}
-            onChange={(enabled) => {
-              onChange({ ...settings, shareProgress: enabled });
-            }}
-          />
-
-          <ToggleSetting
-            icon={<Mail className="w-5 h-5 text-gray-400" />}
-            title="Allow Teacher Contact"
-            description="Teachers can initiate conversations with you"
-            enabled={settings.allowTeacherContact}
-            onChange={(enabled) => {
-              onChange({ ...settings, allowTeacherContact: enabled });
-            }}
-          />
-
-          <ToggleSetting
-            icon={<Shield className="w-5 h-5 text-gray-400" />}
-            title="Usage Analytics"
-            description="Help improve AIVO by sharing anonymous usage data"
-            enabled={settings.dataCollection}
-            onChange={(enabled) => {
-              onChange({ ...settings, dataCollection: enabled });
-            }}
-          />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <p className="text-gray-600 mb-4">
+            Privacy and safety settings are configured per-child in Parental Controls.
+            This allows you to customize settings based on each child&apos;s age and needs.
+          </p>
+          <button
+            onClick={() => router.push('/controls')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Shield className="w-4 h-4" />
+            Go to Parental Controls
+          </button>
         </div>
 
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
@@ -439,16 +443,18 @@ function PrivacySettingsPanel({
   );
 }
 
-// Screen Time Settings Panel
+// Screen Time Settings Panel - Now redirects to per-child controls
 function ScreenTimeSettingsPanel({
   settings,
   onChange,
   onBack,
 }: {
-  readonly settings: ScreenTimeSettings;
-  readonly onChange: (settings: ScreenTimeSettings) => void;
+  readonly settings: LocalScreenTimeSettings;
+  readonly onChange: (settings: LocalScreenTimeSettings) => void;
   readonly onBack: () => void;
 }) {
+  const router = useRouter();
+
   return (
     <div className="space-y-6">
       <button
@@ -465,73 +471,18 @@ function ScreenTimeSettingsPanel({
           Screen Time Limits
         </h2>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-          {/* Daily Limit */}
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="font-medium text-gray-900">Weekday Daily Limit</p>
-                <p className="text-sm text-gray-500">Maximum learning time per day</p>
-              </div>
-              <span className="text-lg font-semibold text-purple-600">
-                {Math.floor(settings.dailyLimit / 60)}h {settings.dailyLimit % 60}m
-              </span>
-            </div>
-            <input
-              type="range"
-              min={30}
-              max={240}
-              step={15}
-              value={settings.dailyLimit}
-              onChange={(e) => {
-                onChange({ ...settings, dailyLimit: parseInt(e.target.value) });
-              }}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>30 min</span>
-              <span>4 hours</span>
-            </div>
-          </div>
-
-          {/* Weekend Limit */}
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="font-medium text-gray-900">Weekend Daily Limit</p>
-                <p className="text-sm text-gray-500">Saturday and Sunday limits</p>
-              </div>
-              <span className="text-lg font-semibold text-purple-600">
-                {Math.floor(settings.weekendLimit / 60)}h {settings.weekendLimit % 60}m
-              </span>
-            </div>
-            <input
-              type="range"
-              min={30}
-              max={300}
-              step={15}
-              value={settings.weekendLimit}
-              onChange={(e) => {
-                onChange({ ...settings, weekendLimit: parseInt(e.target.value) });
-              }}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>30 min</span>
-              <span>5 hours</span>
-            </div>
-          </div>
-
-          {/* Break Reminders */}
-          <ToggleSetting
-            icon={<Clock className="w-5 h-5 text-gray-400" />}
-            title="Break Reminders"
-            description="Remind your child to take breaks every 25 minutes"
-            enabled={settings.breakReminders}
-            onChange={(enabled) => {
-              onChange({ ...settings, breakReminders: enabled });
-            }}
-          />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <p className="text-gray-600 mb-4">
+            Screen time limits are configured per-child in Parental Controls.
+            This allows you to set appropriate limits for each child based on their age and needs.
+          </p>
+          <button
+            onClick={() => router.push('/controls')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Clock className="w-4 h-4" />
+            Go to Parental Controls
+          </button>
         </div>
       </div>
     </div>

@@ -105,6 +105,16 @@ export default [
         {
           paths: [
             { name: "lodash", message: "Use lodash-es or local helpers for treeshaking." }
+          ],
+          patterns: [
+            {
+              group: ["**/mock-data", "**/mock-data.ts", "**/lib/mock-data"],
+              message: "Mock data imports are forbidden. Use real APIs via hooks from @/hooks."
+            },
+            {
+              group: ["**/*.mock", "**/*.mock.ts"],
+              message: "Mock file imports are forbidden in production code."
+            }
           ]
         }
       ],

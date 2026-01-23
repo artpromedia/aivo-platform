@@ -53,3 +53,16 @@ config/secrets/*.key
 **/ios/fastlane/report.xml
 **/ios/fastlane/Preview.html
 **/ios/fastlane/test_output
+
+# Sprint 4.1: Prevent mock data files in production
+# These patterns block accidentally re-adding mock data files
+**/lib/mock-data.ts
+**/lib/mock-data.js
+**/*.mock.ts
+**/*.mock.js
+**/stub-*.ts
+**/stub-*.js
+# Allow test mocks - they're legitimate
+!**/test/mocks/**
+!**/__mocks__/**
+!**/tests/mocks/**

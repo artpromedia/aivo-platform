@@ -1,21 +1,14 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-import { getMockSubscription } from '@/lib/mock-data';
 
 /**
  * GET /api/billing/subscription
  *
  * Returns the current user's subscription.
+ * Sprint 4.1: Removed mock data fallback - always calls billing microservice.
  */
 export async function GET(request: NextRequest) {
   try {
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev) {
-      return NextResponse.json(getMockSubscription());
-    }
-
     const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
       method: 'GET',
@@ -39,16 +32,11 @@ export async function GET(request: NextRequest) {
  * PUT /api/billing/subscription
  *
  * Updates subscription settings.
+ * Sprint 4.1: Removed mock data fallback - always calls billing microservice.
  */
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev) {
-      const mockSub = getMockSubscription();
-      return NextResponse.json({ ...mockSub, ...body });
-    }
 
     const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
@@ -74,18 +62,10 @@ export async function PUT(request: NextRequest) {
  * DELETE /api/billing/subscription
  *
  * Cancels the subscription.
+ * Sprint 4.1: Removed mock data fallback - always calls billing microservice.
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const isDev = process.env.NODE_ENV === 'development';
-
-    if (isDev) {
-      const mockSub = getMockSubscription();
-      mockSub.cancelAtPeriodEnd = true;
-      mockSub.canceledAt = new Date().toISOString();
-      return NextResponse.json(mockSub);
-    }
-
     const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription/cancel`, {
       method: 'POST',

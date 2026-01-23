@@ -125,3 +125,59 @@ export type {
   ConnectionState,
   TypingIndicator,
 } from './use-messaging';
+
+// Settings Hooks (Sprint 3.4)
+export {
+  settingsKeys,
+  // Parent Settings
+  useParentSettings,
+  useUpdateParentProfile,
+  useUpdateAppSettings,
+  useUpdateNotificationSettings,
+  // Parental Controls
+  useChildParentalControls,
+  useUpdateScreenTime,
+  useUpdateContentFilter,
+  useUpdateSubjectAccess,
+  useUpdateSafetySettings,
+  useUpdateChildNotifications,
+  // PIN Protection
+  usePinStatus,
+  useVerifyPin,
+  useSetPin,
+  useRemovePin,
+  // Accessibility
+  useAccessibilitySettings,
+  useUpdateAccessibilitySettings,
+  // Settings Sync
+  useSyncSettingsOnLogin,
+  usePushSettingsToServer,
+  useSettingsSyncMetadata,
+} from './use-settings';
+
+// Billing Hooks (Sprint 4.1)
+export {
+  billingQueryKeys,
+  // Queries
+  useSubscription,
+  usePlans,
+  usePaymentMethods,
+  useInvoices,
+  useBillingDetails,
+  usePlanChangePreview,
+  useCouponValidation,
+  useAvailableChildren,
+  // Mutations
+  useCreateCheckout,
+  useChangePlan,
+  useCancelSubscription,
+  useResumeSubscription,
+  useManageSeats,
+  useAddPaymentMethod,
+  useRemovePaymentMethod,
+  useSetDefaultPaymentMethod,
+  useCreateBillingPortal,
+  useDownloadInvoice,
+  useUpdateBillingPeriod,
+  useApplyCoupon,
+} from './use-billing';
