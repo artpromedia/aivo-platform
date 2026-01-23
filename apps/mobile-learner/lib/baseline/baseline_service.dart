@@ -154,6 +154,47 @@ class LearnerBaselineService {
     }
   }
 
+  /// Prepare baseline questions based on parent assessment data.
+  /// POST /baseline/prepare
+  Future<PrepareBaselineResponse> prepareBaseline({
+    required String learnerId,
+    required String assessmentType,
+    List<String>? accommodations,
+    List<String>? areasOfConcern,
+    bool hasIep = false,
+    bool has504 = false,
+    List<String>? disabilityCategories,
+  }) async {
+    if (_useBaselineMock) {
+      _ensureMockAllowedOrThrow('prepareBaseline');
+      await Future.delayed(const Duration(milliseconds: 2000));
+      return PrepareBaselineResponse(
+        success: true,
+        domainsReady: ['MATH', 'ELA', 'SPELLING', 'SPEECH', 'CREATIVE_WRITING', 'SEL', 'LIFE_SKILLS'],
+        totalQuestions: 35,
+        estimatedDuration: 'About 35 minutes',
+      );
+    }
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/baseline/prepare',
+        data: {
+          'learnerId': learnerId,
+          'assessmentType': assessmentType,
+          if (accommodations != null) 'accommodations': accommodations,
+          if (areasOfConcern != null) 'areasOfConcern': areasOfConcern,
+          'hasIep': hasIep,
+          'has504': has504,
+          if (disabilityCategories != null) 'disabilityCategories': disabilityCategories,
+        },
+      );
+      return PrepareBaselineResponse.fromJson(response.data ?? {});
+    } on DioException catch (err) {
+      throw _handleError(err);
+    }
+  }
+
   /// Complete a baseline attempt.
   /// POST /baseline/attempts/:attemptId/complete
   Future<CompleteAttemptResponse> completeAttempt(String attemptId) async {

@@ -92,12 +92,86 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
       ref.invalidate(childrenProvider(tenantId));
 
       if (mounted) {
-        // Show success dialog with download instructions
-        await showDialog<void>(
+        // Navigate to parent assessment screen for IDEA/504 compliant questionnaire
+        final shouldContinue = await showDialog<bool>(
           context: context,
+          barrierDismissible: false,
           builder: (context) {
             final theme = Theme.of(context);
             return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: AivoBrand.success),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text('$name Added!')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Great! To personalize $name\'s learning experience, we\'d like to ask a few questions about their needs.',
+                    style: theme.textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.psychology, color: theme.colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'This helps us provide the right accommodations and teaching strategies.',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Skip for Now'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldContinue == true && mounted) {
+          // Navigate to parent assessment
+          context.push('/parent-assessment/$learnerId', extra: {'learnerName': name});
+        } else if (mounted) {
+          // Show the original success dialog
+          await _showSuccessDialog(name);
+        }
+      }
+    } catch (err) {
+      setState(() {
+        _isLoading = false;
+        _error = 'An error occurred. Please try again.';
+      });
+    }
+  }
+
+  Future<void> _showSuccessDialog(String name) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
               title: Row(
                 children: [
                   Icon(Icons.check_circle, color: AivoBrand.success),
@@ -156,13 +230,6 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
         if (mounted) {
           context.pop();
         }
-      }
-    } catch (err) {
-      setState(() {
-        _isLoading = false;
-        _error = 'An error occurred. Please try again.';
-      });
-    }
   }
 
   Widget _buildStep(String number, String text) {

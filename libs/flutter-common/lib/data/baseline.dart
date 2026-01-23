@@ -454,3 +454,31 @@ class NextItemResponse {
     );
   }
 }
+
+/// Response from /prepare endpoint for pre-generating questions.
+class PrepareBaselineResponse {
+  const PrepareBaselineResponse({
+    required this.success,
+    required this.domainsReady,
+    required this.totalQuestions,
+    this.estimatedDuration,
+    this.error,
+  });
+
+  final bool success;
+  final List<String> domainsReady;
+  final int totalQuestions;
+  final String? estimatedDuration;
+  final String? error;
+
+  factory PrepareBaselineResponse.fromJson(Map<String, dynamic> json) {
+    final domainsJson = json['domainsReady'] as List? ?? json['domains'] as List? ?? [];
+    return PrepareBaselineResponse(
+      success: json['success'] == true,
+      domainsReady: domainsJson.whereType<String>().toList(),
+      totalQuestions: (json['totalQuestions'] as num?)?.toInt() ?? 0,
+      estimatedDuration: json['estimatedDuration']?.toString(),
+      error: json['error']?.toString(),
+    );
+  }
+}

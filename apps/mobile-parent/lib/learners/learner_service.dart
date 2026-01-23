@@ -28,6 +28,33 @@ class LearnerService {
       throw const LearnerException('Unable to load learners');
     }
   }
+
+  /// Save parent assessment data for a learner
+  /// 
+  /// Updates the learner's profile with IDEA/Section 504 aligned assessment data
+  /// including accommodations, disability categories, and support needs.
+  Future<void> saveParentAssessment(String learnerId, ParentAssessmentData assessment) async {
+    if (_useLearnerMock) {
+      debugPrint('[LearnerService] Mock: Saving parent assessment for learner $learnerId');
+      return;
+    }
+
+    try {
+      await _dio.put<void>(
+        '/learners/$learnerId/parent-assessment',
+        data: assessment.toJson(),
+      );
+      debugPrint('[LearnerService] Saved parent assessment for learner $learnerId');
+    } on DioException catch (err) {
+      final message = err.response?.data is Map && (err.response!.data as Map)['error'] != null
+          ? (err.response!.data as Map)['error'].toString()
+          : 'Unable to save assessment';
+      throw LearnerException(message);
+    } catch (e) {
+      debugPrint('[LearnerService] Error saving parent assessment: $e');
+      throw const LearnerException('Unable to save assessment');
+    }
+  }
 }
 
 class LearnerException implements Exception {

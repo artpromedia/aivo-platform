@@ -21,6 +21,7 @@ import 'widgets/connectivity_banner.dart';
 import 'screens/baseline_break_screen.dart';
 import 'screens/baseline_complete_screen.dart';
 import 'screens/baseline_intro_screen.dart';
+import 'screens/baseline_preparing_screen.dart';
 import 'screens/baseline_question_screen.dart';
 import 'screens/focus_break_screen.dart';
 import 'screens/homework_helper_intro_screen.dart';
@@ -75,6 +76,22 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/complete', builder: (context, state) => const SessionCompleteScreen()),
       // Baseline flow routes
       GoRoute(path: '/baseline/intro', builder: (context, state) => const BaselineIntroScreen()),
+      GoRoute(
+        path: '/baseline/preparing',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return BaselinePreparingScreen(
+            learnerId: extra?['learnerId'] as String? ?? pinState.learnerId ?? '',
+            learnerName: extra?['learnerName'] as String? ?? 'Learner',
+            assessmentType: extra?['assessmentType'] as String?,
+            accommodations: (extra?['accommodations'] as List<dynamic>?)?.cast<String>(),
+            areasOfConcern: (extra?['areasOfConcern'] as List<dynamic>?)?.cast<String>(),
+            hasIep: extra?['hasIep'] as bool?,
+            has504: extra?['has504'] as bool?,
+            disabilityCategories: (extra?['disabilityCategories'] as List<dynamic>?)?.cast<String>(),
+          );
+        },
+      ),
       GoRoute(path: '/baseline/question', builder: (context, state) => const BaselineQuestionScreen()),
       GoRoute(path: '/baseline/break', builder: (context, state) => const BaselineBreakScreen()),
       GoRoute(path: '/baseline/complete', builder: (context, state) => const BaselineCompleteScreen()),

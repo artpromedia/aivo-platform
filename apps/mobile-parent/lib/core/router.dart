@@ -12,6 +12,7 @@ import '../features/resources/presentation/resource_library_screen.dart';
 import '../features/community/presentation/community_support_screen.dart';
 import '../features/privacy/presentation/data_rights_screen.dart';
 import '../features/iep/presentation/iep_upload_screen.dart';
+import '../screens/parent_assessment_screen.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../shared/widgets/main_scaffold.dart';
@@ -102,6 +103,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               final childId = state.pathParameters['childId']!;
               final childName = state.extra as String? ?? 'Child';
               return IEPUploadScreen(childId: childId, childName: childName);
+            },
+          ),
+          GoRoute(
+            path: '/parent-assessment/:learnerId',
+            name: 'parent-assessment',
+            builder: (context, state) {
+              final learnerId = state.pathParameters['learnerId']!;
+              final extra = state.extra as Map<String, dynamic>?;
+              final learnerName = extra?['learnerName'] as String? ?? 'Your child';
+              return ParentAssessmentScreen(learnerId: learnerId, learnerName: learnerName);
             },
           ),
         ],
