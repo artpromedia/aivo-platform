@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const ASSESSMENT_SVC_URL = process.env.ASSESSMENT_SVC_URL || 'http://localhost:3009';
-const BASELINE_SVC_URL = process.env.BASELINE_SVC_URL || 'http://localhost:3011';
+const BASELINE_SVC_URL = process.env.BASELINE_SVC_URL || 'http://localhost:4011';
 
 // Legacy format (just learning style answers)
 interface LegacyBaselineAnswers {
@@ -197,9 +197,7 @@ function calculateDomainScores(
 /**
  * Transform raw answers into a structured learning profile
  */
-function transformToLearningProfile(
-  answers: Record<string, string | string[]>
-): LearningProfile {
+function transformToLearningProfile(answers: Record<string, string | string[]>): LearningProfile {
   const profile: LearningProfile = {
     preferredLearningStyle: [],
     interests: [],
