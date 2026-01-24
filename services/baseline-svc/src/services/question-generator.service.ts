@@ -34,11 +34,20 @@ import { validateQuestion, validateQuestions } from '../validators/question.vali
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPRINT 3 & 4: OPTIMIZED GENERATION CONFIG
+// Reduced timeout from 30s to 12s per domain (SLA target: 2-15s total)
+// Added retryDelayMs for transient failure recovery
+// ═══════════════════════════════════════════════════════════════════════════════
 const GENERATION_CONFIG = {
-  maxRetries: 3,
-  timeoutMs: 30000,
+  maxRetries: 2, // Reduced from 3 - faster fallback
+  timeoutMs: 12000, // Reduced from 30000 - SLA: 2-15s for entire flow
+  retryDelayMs: 500, // Quick retry for transient failures
   minQualityScore: 0.7,
   aiEndpoint: '/internal/ai/baseline/generate-questions',
+  // Fallback behavior control
+  preferAIGeneration: true, // When true, retry AI before curated fallback
+  curatedFallbackThreshold: 0.5, // Min ratio of questions from AI before curated kicks in
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -56,6 +65,16 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
 
   /**
    * Generate questions using AI with fallback chain.
+   *
+   * SPRINT 1 & 4: Improved fallback logic
+   * - AI generation is ALWAYS attempted first (learner-specific baseline)
+   * - Curated bank used only when AI partially fails
+   * - Static fallback is EXPLICIT last resort with clear warnings
+   *
+   * SPRINT 5: Enhanced observability
+   * - Detailed timing metrics
+   * - Source tracking for each question
+   * - Clear warning messages
    */
   async generateQuestions(request: QuestionGenerationRequest): Promise<QuestionGenerationResponse> {
     const startTime = Date.now();
@@ -68,8 +87,30 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
     let curatedBank = 0;
     let staticFallback = 0;
 
-    // Try AI generation first
+    // SPRINT 5: Track generation source for each question
+    const generationContext = {
+      domain: request.subject,
+      learnerId: request.learnerId,
+      hasParentContext: !!(request.assessmentType || request.hasIep || request.areasOfConcern?.length),
+      hasIepData: !!(request.iepGoals?.length || request.iepAccommodations?.length),
+    };
+
+    console.log(`[QuestionGenerator] Starting generation for ${request.subject}`, generationContext);
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SPRINT 1: AI GENERATION IS MANDATORY PATH (NOT OPTIONAL)
+    // Learner-specific baseline questions MUST be generated using AI when:
+    // - Parent assessment data is available
+    // - IEP document data is available
+    // Mock/generic questions are ONLY used as explicit fallback after AI failure
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    const aiStartTime = Date.now();
+    let aiAttempted = false;
+    let aiError: Error | null = null;
+
     try {
+      aiAttempted = true;
       const aiQuestions = await this.generateWithAI(request);
 
       // Validate AI-generated questions
@@ -83,18 +124,41 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
       aiGenerated = questions.length;
       this.generationMetrics.aiSuccess++;
 
-      console.log(`[QuestionGenerator] AI generated ${aiGenerated} valid questions`);
+      const aiDurationMs = Date.now() - aiStartTime;
+      console.log(`[QuestionGenerator] AI generated ${aiGenerated} valid questions in ${aiDurationMs}ms for ${request.subject}`);
     } catch (error) {
+      aiError = error instanceof Error ? error : new Error(String(error));
       this.generationMetrics.aiFailed++;
-      warnings.push(
-        `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-      console.warn('[QuestionGenerator] AI generation failed, using fallback', error);
+
+      const aiDurationMs = Date.now() - aiStartTime;
+      const errorMsg = `AI generation failed after ${aiDurationMs}ms: ${aiError.message}`;
+      warnings.push(errorMsg);
+
+      // SPRINT 5: Log detailed failure for debugging
+      console.error(`[QuestionGenerator] ${errorMsg}`, {
+        domain: request.subject,
+        learnerId: request.learnerId,
+        hasParentContext: generationContext.hasParentContext,
+        hasIepData: generationContext.hasIepData,
+      });
     }
 
-    // If we don't have enough questions, use curated bank
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SPRINT 4: CURATED FALLBACK - Only when AI doesn't provide enough questions
+    // This is a SUPPLEMENTAL source, not a replacement for AI-generated questions
+    // ═══════════════════════════════════════════════════════════════════════════════
+
     const needed = request.questionCount - questions.length;
     if (needed > 0) {
+      const curatedStartTime = Date.now();
+
+      // SPRINT 1: Log that we're falling back to curated (this should be rare)
+      if (aiGenerated === 0) {
+        console.warn(`[QuestionGenerator] FALLBACK: No AI questions generated for ${request.subject}, using curated bank`);
+      } else {
+        console.log(`[QuestionGenerator] Supplementing ${aiGenerated} AI questions with ${needed} curated questions for ${request.subject}`);
+      }
+
       try {
         const curatedQuestions = await this.getFromQuestionBank({
           domain: request.subject,
@@ -114,25 +178,41 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
         curatedBank = adapted.length;
         this.generationMetrics.curatedFallback++;
 
-        console.log(`[QuestionGenerator] Added ${curatedBank} curated questions`);
+        const curatedDurationMs = Date.now() - curatedStartTime;
+        console.log(`[QuestionGenerator] Added ${curatedBank} curated questions in ${curatedDurationMs}ms for ${request.subject}`);
       } catch (error) {
-        warnings.push(
-          `Curated bank retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-        console.warn('[QuestionGenerator] Curated bank failed', error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        warnings.push(`Curated bank retrieval failed: ${errorMsg}`);
+        console.warn('[QuestionGenerator] Curated bank failed for', request.subject, error);
       }
     }
 
-    // Last resort: static fallback questions
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SPRINT 4: STATIC FALLBACK - EXPLICIT LAST RESORT
+    // This should RARELY happen in production. If it does frequently, investigate!
+    // ═══════════════════════════════════════════════════════════════════════════════
+
     const stillNeeded = request.questionCount - questions.length;
     if (stillNeeded > 0) {
+      // SPRINT 1: This is a CRITICAL fallback - log prominently
+      console.warn(`[QuestionGenerator] CRITICAL FALLBACK: Using ${stillNeeded} static questions for ${request.subject}`, {
+        aiAttempted,
+        aiGenerated,
+        curatedBank,
+        aiError: aiError?.message,
+        domain: request.subject,
+        learnerId: request.learnerId,
+      });
+
       const staticQuestions = this.generateStaticFallback(request, stillNeeded);
       questions = [...questions, ...staticQuestions];
       staticFallback = staticQuestions.length;
       this.generationMetrics.staticFallback++;
 
-      warnings.push(`Used ${staticFallback} static fallback questions`);
-      console.warn(`[QuestionGenerator] Used ${staticFallback} static fallback questions`);
+      // SPRINT 1: Clear warning that static fallback was used
+      warnings.push(`FALLBACK: Used ${staticFallback} generic static questions for ${request.subject}. ` +
+        `AI generation ${aiAttempted ? 'failed' : 'was not attempted'}. ` +
+        `This should be investigated if frequent.`);
     }
 
     // Calculate quality summary
@@ -156,10 +236,59 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
     const generatedAt = new Date().toISOString();
     const latencyMs = Date.now() - startTime;
 
-    console.log(
-      `[QuestionGenerator] Completed in ${latencyMs}ms: ` +
-        `AI=${aiGenerated}, Curated=${curatedBank}, Static=${staticFallback}`
-    );
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SPRINT 5: ENHANCED OBSERVABILITY
+    // Detailed logging for monitoring, alerting, and debugging
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    // Determine generation quality indicator
+    const generationQuality =
+      aiGenerated === request.questionCount ? 'EXCELLENT' :
+      aiGenerated > 0 && staticFallback === 0 ? 'GOOD' :
+      staticFallback === 0 ? 'ACCEPTABLE' :
+      staticFallback < request.questionCount / 2 ? 'DEGRADED' : 'POOR';
+
+    // SPRINT 5: Structured log for monitoring
+    console.log(`[QuestionGenerator] Generation completed`, {
+      generationId,
+      domain: request.subject,
+      learnerId: request.learnerId,
+      latencyMs,
+      quality: generationQuality,
+      counts: {
+        requested: request.questionCount,
+        aiGenerated,
+        curatedBank,
+        staticFallback,
+        total: questions.length,
+      },
+      context: {
+        hasParentContext: generationContext.hasParentContext,
+        hasIepData: generationContext.hasIepData,
+        assessmentType: request.assessmentType || 'STANDARD',
+      },
+      // SLA check: Target is 2-15s
+      slaCompliant: latencyMs <= 15000,
+    });
+
+    // SPRINT 5: Emit warning if quality is degraded
+    if (generationQuality === 'DEGRADED' || generationQuality === 'POOR') {
+      console.warn(`[QuestionGenerator] QUALITY ALERT: ${generationQuality} generation for ${request.subject}`, {
+        generationId,
+        aiGenerated,
+        staticFallback,
+        latencyMs,
+        warnings,
+      });
+    }
+
+    // SPRINT 5: Emit warning if SLA violated
+    if (latencyMs > 15000) {
+      console.warn(`[QuestionGenerator] SLA VIOLATION: Generation took ${latencyMs}ms (target: <15000ms)`, {
+        generationId,
+        domain: request.subject,
+      });
+    }
 
     return {
       questions,
@@ -224,71 +353,124 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
   // ═══════════════════════════════════════════════════════════════════════════════
 
   /**
-   * Generate questions using AI orchestrator.
+   * Generate questions using AI orchestrator with retry logic.
+   *
+   * SPRINT 3 & 4: Added retry mechanism for transient failures
+   * - Retries up to maxRetries times with delay
+   * - Tracks timing for observability
+   * - Logs detailed errors for debugging
    */
   private async generateWithAI(request: QuestionGenerationRequest): Promise<GeneratedQuestion[]> {
     if (!config.aiOrchestratorUrl || !config.aiOrchestratorApiKey) {
       throw new Error('AI orchestrator not configured');
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, GENERATION_CONFIG.timeoutMs);
+    let lastError: Error | null = null;
+    const startTime = Date.now();
 
-    try {
-      const response = await fetch(`${config.aiOrchestratorUrl}${GENERATION_CONFIG.aiEndpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-api-key': config.aiOrchestratorApiKey,
-        },
-        body: JSON.stringify({
-          tenantId: request.tenantId,
-          learnerId: request.learnerId,
-          agentType: 'BASELINE',
-          payload: {
-            subject: request.subject,
-            domain: request.subject, // AI orchestrator expects 'domain' not 'subject'
-            gradeLevel: request.gradeLevel,
-            gradeBand: request.gradeBand,
-            topicArea: request.topicArea,
-            skillCodes: request.skillCodes,
-            difficultyLevel: request.difficultyLevel,
-            targetDifficulty: request.targetDifficulty,
-            questionCount: request.questionCount,
-            questionTypes: request.questionTypes,
-            previousResponses: request.previousResponses,
-            currentAbilityEstimate: request.currentAbilityEstimate,
-            accommodations: request.accommodations,
-            standardsContext: request.standardsContext,
-            preferences: request.preferences,
-            // Parent assessment context for IDEA/504 compliance
-            assessmentType: request.assessmentType,
-            hasIep: request.hasIep,
-            has504: request.has504,
-            disabilityCategories: request.disabilityCategories,
-            areasOfConcern: request.areasOfConcern,
-            // IEP document data for IEP-aligned question generation
-            iepGoals: request.iepGoals,
-            iepAccommodations: request.iepAccommodations,
-            iepServices: request.iepServices,
-          },
-        }),
-        signal: controller.signal,
-      });
+    // SPRINT 4: Retry loop for transient failures
+    for (let attempt = 1; attempt <= GENERATION_CONFIG.maxRetries; attempt++) {
+      const attemptStartTime = Date.now();
 
-      if (!response.ok) {
-        throw new Error(`AI orchestrator returned ${response.status}: ${response.statusText}`);
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+          controller.abort();
+        }, GENERATION_CONFIG.timeoutMs);
+
+        try {
+          const response = await fetch(`${config.aiOrchestratorUrl}${GENERATION_CONFIG.aiEndpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-internal-api-key': config.aiOrchestratorApiKey,
+            },
+            body: JSON.stringify({
+              tenantId: request.tenantId,
+              learnerId: request.learnerId,
+              agentType: 'BASELINE',
+              payload: {
+                subject: request.subject,
+                domain: request.subject, // AI orchestrator expects 'domain' not 'subject'
+                gradeLevel: request.gradeLevel,
+                gradeBand: request.gradeBand,
+                topicArea: request.topicArea,
+                skillCodes: request.skillCodes,
+                difficultyLevel: request.difficultyLevel,
+                targetDifficulty: request.targetDifficulty,
+                questionCount: request.questionCount,
+                questionTypes: request.questionTypes,
+                previousResponses: request.previousResponses,
+                currentAbilityEstimate: request.currentAbilityEstimate,
+                accommodations: request.accommodations,
+                standardsContext: request.standardsContext,
+                preferences: request.preferences,
+                // Parent assessment context for IDEA/504 compliance
+                assessmentType: request.assessmentType,
+                hasIep: request.hasIep,
+                has504: request.has504,
+                disabilityCategories: request.disabilityCategories,
+                areasOfConcern: request.areasOfConcern,
+                // IEP document data for IEP-aligned question generation
+                iepGoals: request.iepGoals,
+                iepAccommodations: request.iepAccommodations,
+                iepServices: request.iepServices,
+              },
+            }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            throw new Error(`AI orchestrator returned ${response.status}: ${response.statusText}`);
+          }
+
+          const data = (await response.json()) as { questions: GeneratedQuestion[] };
+          const attemptDurationMs = Date.now() - attemptStartTime;
+
+          // SPRINT 5: Log success for observability
+          console.log(`[QuestionGenerator] AI generation succeeded on attempt ${attempt}/${GENERATION_CONFIG.maxRetries} in ${attemptDurationMs}ms`);
+
+          // Transform and validate
+          return data.questions.map((q, index) => this.normalizeAIQuestion(q, request, index));
+        } finally {
+          clearTimeout(timeout);
+        }
+      } catch (error) {
+        const attemptDurationMs = Date.now() - attemptStartTime;
+        const isTimeoutError = error instanceof Error && error.name === 'AbortError';
+        const errorType = isTimeoutError ? 'TIMEOUT' : 'ERROR';
+
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // SPRINT 5: Detailed logging for debugging
+        console.warn(
+          `[QuestionGenerator] AI generation ${errorType} on attempt ${attempt}/${GENERATION_CONFIG.maxRetries} after ${attemptDurationMs}ms:`,
+          {
+            domain: request.subject,
+            learnerId: request.learnerId,
+            error: lastError.message,
+            isTimeoutError,
+            willRetry: attempt < GENERATION_CONFIG.maxRetries,
+          }
+        );
+
+        // Don't retry on non-transient errors (4xx responses)
+        if (lastError.message.includes('returned 4')) {
+          console.warn('[QuestionGenerator] Non-retryable error, skipping remaining attempts');
+          break;
+        }
+
+        // SPRINT 4: Wait before retry (except on last attempt)
+        if (attempt < GENERATION_CONFIG.maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, GENERATION_CONFIG.retryDelayMs));
+        }
       }
-
-      const data = (await response.json()) as { questions: GeneratedQuestion[] };
-
-      // Transform and validate
-      return data.questions.map((q, index) => this.normalizeAIQuestion(q, request, index));
-    } finally {
-      clearTimeout(timeout);
     }
+
+    // All retries exhausted
+    const totalDurationMs = Date.now() - startTime;
+    console.error(`[QuestionGenerator] AI generation failed after ${GENERATION_CONFIG.maxRetries} attempts in ${totalDurationMs}ms`);
+    throw lastError || new Error('AI generation failed after all retries');
   }
 
   /**

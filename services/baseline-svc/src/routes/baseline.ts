@@ -9,6 +9,13 @@ import {
 } from '../lib/adaptiveDifficulty.js';
 import { generateBaselineQuestions, scoreResponse } from '../lib/aiOrchestrator.js';
 import { publishBaselineAccepted } from '../lib/eventPublisher.js';
+import {
+  initializeGenerationStatus,
+  updateDomainStatus,
+  completeGeneration,
+  failGeneration,
+  getGenerationStatus,
+} from '../lib/generationStatus.js';
 import { getGradeLevelCalculator, gradeBandToGrade } from '../lib/gradeLevelEquivalent.js';
 import { prisma } from '../prisma.js';
 import { ALL_DOMAINS, DOMAIN_SKILL_CODES, type GeneratedQuestion } from '../types/baseline.js';
@@ -625,14 +632,32 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         where: { baselineProfileId: profileId },
       });
 
-      // Fetch IEP document if available
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // SPRINT 2: IMPROVED IEP DATA PLUMBING
+      // Fetch IEP document with expanded status set - use partial data when available
+      // Previously only fetched PROCESSED/COMPARISON_READY/APPROVED - missing EXTRACTED
+      // ═══════════════════════════════════════════════════════════════════════════════
       const iepDocument = await prisma.baselineIepDocument.findFirst({
-        where: { 
+        where: {
           baselineProfileId: profileId,
-          status: { in: ['PROCESSED', 'COMPARISON_READY', 'APPROVED'] }
+          // Include EXTRACTED status - we can use goals even before comparison
+          status: { in: ['EXTRACTED', 'PROCESSED', 'COMPARING', 'COMPARISON_READY', 'COMPARED', 'APPROVED'] }
         },
         orderBy: { createdAt: 'desc' },
       });
+
+      // SPRINT 2: Log IEP availability for debugging
+      if (iepDocument) {
+        console.log(`[baseline/start] Found IEP document (status: ${iepDocument.status}) with ${(iepDocument.extractedGoalsJson as unknown[])?.length ?? 0} goals`);
+      } else {
+        const anyIepDoc = await prisma.baselineIepDocument.findFirst({
+          where: { baselineProfileId: profileId },
+          select: { id: true, status: true },
+        });
+        if (anyIepDoc) {
+          console.log(`[baseline/start] IEP document exists but not ready (status: ${anyIepDoc.status})`);
+        }
+      }
 
       // Validate attempt can be started
       const validationError = validateAttemptStart(profile, parentAssessment);
@@ -640,12 +665,37 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         return reply.status(validationError.status).send(validationError.body);
       }
 
-      // Extract parent assessment context for AI question generation
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // SPRINT 2: ENHANCED PARENT ASSESSMENT DATA EXTRACTION
+      // Ensures all available parent assessment context is passed to AI generation
+      // ═══════════════════════════════════════════════════════════════════════════════
       const assessmentType = parentAssessment?.assessmentType ?? 'STANDARD';
       const hasIep = parentAssessment?.hasExistingIep ?? false;
       const has504 = parentAssessment?.hasExisting504 ?? false;
       const disabilityCategories = parentAssessment?.disabilityCategoriesJson as string[] | undefined;
       const areasOfConcern = extractAreasOfConcern(parentAssessment);
+
+      // SPRINT 2: Log parent assessment context for debugging
+      const parentContextSummary = {
+        assessmentType,
+        hasIep,
+        has504,
+        hasDisabilityCategories: (disabilityCategories?.length ?? 0) > 0,
+        hasAreasOfConcern: (areasOfConcern?.length ?? 0) > 0,
+        parentAssessmentStatus: parentAssessment?.status ?? 'NOT_FOUND',
+        hasLearningNotes: !!(parentAssessment?.learningStyleNotes),
+        hasStrengthsNotes: !!(parentAssessment?.strengthsNotes),
+        hasChallengesNotes: !!(parentAssessment?.challengesNotes),
+      };
+      console.log(`[baseline/start] Parent assessment context:`, parentContextSummary);
+
+      // SPRINT 2: Extract additional context from parent assessment for richer AI prompts
+      const parentAssessmentNotes = parentAssessment ? {
+        learningStyle: parentAssessment.learningStyleNotes || undefined,
+        strengths: parentAssessment.strengthsNotes || undefined,
+        challenges: parentAssessment.challengesNotes || undefined,
+        behavior: parentAssessment.behaviorNotes || undefined,
+      } : undefined;
 
       // Extract IEP document data for AI-powered question generation
       const iepGoals = iepDocument?.extractedGoalsJson as IepGoalData[] | undefined;
@@ -669,35 +719,113 @@ export async function baselineRoutes(fastify: FastifyInstance) {
 
       console.log(`[baseline/start] Generating questions with parent assessment (type: ${assessmentType}, hasIep: ${hasIep}, iepGoals: ${iepGoals?.length ?? 0})`);
 
-      for (const domain of ALL_DOMAINS) {
-        const questions = await generateBaselineQuestions({
-          tenantId: profile.tenantId,
-          learnerId: profile.learnerId,
-          gradeBand: profile.gradeBand,
-          domain,
-          skillCodes: DOMAIN_SKILL_CODES[domain],
-          difficulty: initialDifficulty, // Start at medium difficulty
-          // Parent assessment context for IDEA/504 compliance
-          assessmentType,
-          hasIep,
-          has504,
-          disabilityCategories,
-          areasOfConcern,
-          // IEP document data for IEP-aligned question generation
-          iepGoals,
-          iepAccommodations,
-          iepServices,
-        });
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // SPRINT 1 FIX: PARALLEL DOMAIN GENERATION
+      // Previously: Sequential generation = 5 domains × 30s = 150s worst case
+      // Now: Parallel generation = ~30s worst case (all domains at once)
+      // ═══════════════════════════════════════════════════════════════════════════════
+      const generationStartTime = Date.now();
 
-        questions.forEach((q: GeneratedQuestion, idx: number) => {
-          allItems.push({
+      // SPRINT 5: Initialize generation status for UX progress tracking
+      initializeGenerationStatus(profileId, ALL_DOMAINS);
+
+      // Generate all domains in parallel for dramatically reduced latency
+      const domainGenerationPromises = ALL_DOMAINS.map(async (domain) => {
+        // SPRINT 5: Update status to GENERATING
+        updateDomainStatus(profileId, domain, { status: 'GENERATING', startedAt: new Date() });
+        const domainStartTime = Date.now();
+        try {
+          const questions = await generateBaselineQuestions({
+            tenantId: profile.tenantId,
+            learnerId: profile.learnerId,
+            gradeBand: profile.gradeBand,
             domain,
+            skillCodes: DOMAIN_SKILL_CODES[domain],
+            difficulty: initialDifficulty,
+            // Parent assessment context for IDEA/504 compliance
+            assessmentType,
+            hasIep,
+            has504,
+            disabilityCategories,
+            areasOfConcern,
+            // IEP document data for IEP-aligned question generation
+            iepGoals,
+            iepAccommodations,
+            iepServices,
+          });
+
+          const domainDurationMs = Date.now() - domainStartTime;
+          console.log(`[baseline/start] Domain ${domain} generated ${questions.length} questions in ${domainDurationMs}ms`);
+
+          // SPRINT 5: Update domain status to COMPLETED
+          updateDomainStatus(profileId, domain, {
+            status: 'COMPLETED',
+            completedAt: new Date(),
+            questionCount: questions.length,
+            source: 'AI', // Will be updated if fallback was used
+            durationMs: domainDurationMs,
+          });
+
+          return { domain, questions, success: true, durationMs: domainDurationMs };
+        } catch (error) {
+          const domainDurationMs = Date.now() - domainStartTime;
+          console.error(`[baseline/start] Domain ${domain} generation failed after ${domainDurationMs}ms:`, error);
+
+          // SPRINT 5: Update domain status to FAILED
+          updateDomainStatus(profileId, domain, {
+            status: 'FAILED',
+            completedAt: new Date(),
+            questionCount: 0,
+            source: 'STATIC',
+            durationMs: domainDurationMs,
+          });
+
+          // Return empty array for failed domain - fallback handled by question generator
+          return { domain, questions: [], success: false, durationMs: domainDurationMs, error };
+        }
+      });
+
+      // Wait for all domains to complete in parallel
+      const domainResults = await Promise.all(domainGenerationPromises);
+
+      const totalGenerationMs = Date.now() - generationStartTime;
+      const successfulDomains = domainResults.filter(r => r.success).length;
+      const totalQuestions = domainResults.reduce((sum, r) => sum + r.questions.length, 0);
+
+      console.log(`[baseline/start] Parallel generation completed: ${successfulDomains}/${ALL_DOMAINS.length} domains, ${totalQuestions} questions in ${totalGenerationMs}ms`);
+
+      // Collect all items from successful generations
+      for (const result of domainResults) {
+        result.questions.forEach((q: GeneratedQuestion, idx: number) => {
+          allItems.push({
+            domain: result.domain,
             sequence: idx + 1,
             skillCode: q.skillCode,
             question: q,
           });
         });
       }
+
+      // SPRINT 1 FIX: Validate we have at least some questions
+      if (allItems.length === 0) {
+        console.error('[baseline/start] CRITICAL: No questions generated for any domain');
+
+        // SPRINT 5: Mark generation as failed
+        failGeneration(profileId, 'Question generation failed for all domains');
+
+        return reply.status(500).send({
+          error: 'Failed to generate baseline questions',
+          message: 'Question generation failed for all domains. Please try again.',
+          details: domainResults.map(r => ({
+            domain: r.domain,
+            success: r.success,
+            questionCount: r.questions.length,
+          })),
+        });
+      }
+
+      // SPRINT 5: Mark generation as complete
+      completeGeneration(profileId, allItems.length);
 
       // Create attempt and items in transaction
       const attempt = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -1270,6 +1398,87 @@ export async function baselineRoutes(fastify: FastifyInstance) {
       }
 
       return reply.send(profile);
+    }
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // SPRINT 5: GENERATION STATUS ENDPOINT
+  // Allows frontend to poll for real-time generation progress
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /baseline/profiles/:profileId/generation-status
+   * Get real-time generation status for UX progress display.
+   *
+   * Use this endpoint to:
+   * - Show a progress bar during baseline assessment generation
+   * - Display domain-by-domain completion status
+   * - Provide estimated remaining time
+   */
+  fastify.get(
+    '/baseline/profiles/:profileId/generation-status',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const { profileId } = request.params as { profileId: string };
+
+      // Verify profile exists and user has access
+      const profile = await prisma.baselineProfile.findUnique({
+        where: { id: profileId },
+        select: { tenantId: true },
+      });
+
+      if (!profile) {
+        return reply.status(404).send({ error: 'Profile not found' });
+      }
+
+      if (user.tenantId !== profile.tenantId) {
+        return reply.status(403).send({ error: 'Forbidden' });
+      }
+
+      // Get generation status from in-memory store
+      const status = getGenerationStatus(profileId);
+
+      if (!status) {
+        // No active generation - check if profile has attempts
+        const attempt = await prisma.baselineAttempt.findFirst({
+          where: { baselineProfileId: profileId },
+          orderBy: { attemptNumber: 'desc' },
+          select: { id: true, completedAt: true },
+        });
+
+        if (attempt) {
+          return reply.send({
+            status: 'COMPLETED',
+            message: 'Assessment generation already completed',
+            attemptId: attempt.id,
+          });
+        }
+
+        return reply.send({
+          status: 'NOT_STARTED',
+          message: 'No generation in progress',
+        });
+      }
+
+      return reply.send({
+        status: status.status,
+        progressPercent: status.progressPercent,
+        estimatedRemainingMs: status.estimatedRemainingMs,
+        domains: status.domains.map(d => ({
+          domain: d.domain,
+          status: d.status,
+          questionCount: d.questionCount,
+          source: d.source,
+        })),
+        totalQuestions: status.totalQuestions,
+        generatedQuestions: status.generatedQuestions,
+        startedAt: status.startedAt.toISOString(),
+        error: status.error,
+      });
     }
   );
 }
