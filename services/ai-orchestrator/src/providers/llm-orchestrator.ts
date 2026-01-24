@@ -314,6 +314,7 @@ export class LLMOrchestrator {
  */
 export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
   const config: LLMOrchestratorConfig = {};
+  const isDevelopment = process.env.NODE_ENV !== 'production';
 
   // OpenAI configuration
   if (process.env.OPENAI_API_KEY) {
@@ -383,8 +384,30 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
   }
 
   // Provider configuration
-  config.primaryProvider = process.env.LLM_PRIMARY_PROVIDER ?? 'openai';
-  config.fallbackOrder = (process.env.LLM_FALLBACK_ORDER ?? 'openai,anthropic,google,ollama')
+  // In development mode, use Ollama as primary if no cloud API keys are set
+  const hasCloudApiKeys = !!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || googleApiKey);
+
+  let defaultPrimaryProvider: string;
+  let defaultFallbackOrder: string;
+
+  if (isDevelopment && !hasCloudApiKeys && ollamaUrl) {
+    // Dev mode with no cloud keys - use Ollama as primary
+    defaultPrimaryProvider = 'ollama';
+    defaultFallbackOrder = 'ollama,google,openai,anthropic';
+    log('info', 'Development mode: Using Ollama as primary LLM provider (no cloud API keys configured)');
+  } else if (isDevelopment && ollamaUrl) {
+    // Dev mode with cloud keys - still prefer Ollama to save costs
+    defaultPrimaryProvider = 'ollama';
+    defaultFallbackOrder = 'ollama,google,openai,anthropic';
+    log('info', 'Development mode: Using Ollama as primary LLM provider (cloud keys available as fallback)');
+  } else {
+    // Production mode - use configured provider or default to google
+    defaultPrimaryProvider = 'google';
+    defaultFallbackOrder = 'google,openai,anthropic,ollama';
+  }
+
+  config.primaryProvider = process.env.LLM_PRIMARY_PROVIDER ?? defaultPrimaryProvider;
+  config.fallbackOrder = (process.env.LLM_FALLBACK_ORDER ?? defaultFallbackOrder)
     .split(',')
     .map((s) => s.trim());
 

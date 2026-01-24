@@ -162,9 +162,22 @@ services:
         reservations:
           cpus: '2.0'
           memory: 4G
-    profiles:
-      - ai
-      - full
+    # No profiles needed - Ollama starts by default for AI question generation
+
+  # Ollama model initialization - pulls required model on startup
+  ollama-setup:
+    image: curlimages/curl:latest
+    <<: *service-defaults
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_DEFAULT_MODEL:-llama3.2:3b}
+    volumes:
+      - ./scripts/init-ollama.sh:/init-ollama.sh:ro
+    entrypoint: ["/bin/sh", "/init-ollama.sh"]
+    restart: "no"
 
   # ════════════════════════════════════════════════════════════════════════════
   # API Gateway
@@ -400,10 +413,15 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_baseline
       ASSESSMENT_SVC_URL: http://assessment-svc:3000
       PERSONALIZATION_SVC_URL: http://personalization-svc:3000
+      # AI Orchestrator for question generation (uses Ollama in dev mode)
+      AI_ORCHESTRATOR_URL: http://ai-orchestrator:3000
+      AI_ORCHESTRATOR_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key}
     depends_on:
       postgres:
         condition: service_healthy
       assessment-svc:
+        condition: service_healthy
+      ai-orchestrator:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
