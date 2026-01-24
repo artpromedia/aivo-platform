@@ -55,8 +55,9 @@ function gradeBandToGradeLevel(gradeBand: GradeBand): number {
 export async function generateBaselineQuestions(
   payload: BaselineQuestionGenerationPayload
 ): Promise<GeneratedQuestion[]> {
-  const { 
+  const {
     tenantId, learnerId, gradeBand, domain, skillCodes, difficulty = 3,
+    questionCount, // Explicit question count (may differ from skillCodes.length)
     // Parent assessment context
     assessmentType, hasIep, has504, disabilityCategories, areasOfConcern,
     // IEP document data
@@ -65,7 +66,10 @@ export async function generateBaselineQuestions(
 
   const startTime = Date.now();
 
-  console.log(`[generateBaselineQuestions] Generating for ${domain} with assessmentType=${assessmentType}, hasIep=${hasIep}, iepGoals=${iepGoals?.length ?? 0}`);
+  // Use explicit questionCount if provided, otherwise fall back to skillCodes.length
+  const targetQuestionCount = questionCount ?? skillCodes.length;
+
+  console.log(`[generateBaselineQuestions] Generating ${targetQuestionCount} questions for ${domain} with assessmentType=${assessmentType}, hasIep=${hasIep}, iepGoals=${iepGoals?.length ?? 0}`);
 
   try {
     // Use the new question generator service with full fallback chain
@@ -79,7 +83,7 @@ export async function generateBaselineQuestions(
       skillCodes,
       difficultyLevel: mapDifficultyLevel(difficulty),
       targetDifficulty: difficulty / 5, // Normalize to 0-1
-      questionCount: skillCodes.length,
+      questionCount: targetQuestionCount, // Use dynamic count based on domain selection
       questionTypes: ['multiple-choice'], // Default to MC for baseline
       // Parent assessment context for IDEA/504 compliance
       assessmentType,

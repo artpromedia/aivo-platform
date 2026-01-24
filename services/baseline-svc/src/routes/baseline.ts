@@ -17,8 +17,9 @@ import {
   getGenerationStatus,
 } from '../lib/generationStatus.js';
 import { getGradeLevelCalculator, gradeBandToGrade } from '../lib/gradeLevelEquivalent.js';
+import { selectDomainsForLearner, getDomainSelectionSummary } from '../lib/domainSelector.js';
 import { prisma } from '../prisma.js';
-import { ALL_DOMAINS, DOMAIN_SKILL_CODES, type GeneratedQuestion } from '../types/baseline.js';
+import { DOMAIN_SKILL_CODES, type GeneratedQuestion, type DomainSelectionContext } from '../types/baseline.js';
 
 // --- Type definitions for JSON fields ---
 interface PromptJson {
@@ -717,6 +718,35 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         question: GeneratedQuestion;
       }[] = [];
 
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // DYNAMIC DOMAIN SELECTION
+      // Select domains based on IEP goals, services, parent concerns, and assessment type
+      // This ensures learners get assessed on domains relevant to their needs:
+      // - MOTOR (fine/gross) for learners receiving OT or with motor goals
+      // - EXECUTIVE_FUNCTION for ADHD, attention concerns, or EF goals
+      // - SENSORY_PROCESSING for SPD, sensory goals, or sensory concerns
+      // - LIFE_SKILLS for ALTERNATE assessments or functional skill goals
+      // ═══════════════════════════════════════════════════════════════════════════════
+      const domainSelectionContext: DomainSelectionContext = {
+        assessmentType,
+        hasIep,
+        has504,
+        iepGoals,
+        iepServices,
+        areasOfConcern,
+        disabilityCategories,
+      };
+
+      const domainSelection = selectDomainsForLearner(domainSelectionContext);
+      const selectedDomains = domainSelection.selectedDomains;
+
+      console.log(`[baseline/start] Domain selection:`, {
+        summary: getDomainSelectionSummary(domainSelection),
+        domains: selectedDomains,
+        questionsPerDomain: domainSelection.questionsPerDomain,
+        reasons: domainSelection.reasons,
+      });
+
       console.log(`[baseline/start] Generating questions with parent assessment (type: ${assessmentType}, hasIep: ${hasIep}, iepGoals: ${iepGoals?.length ?? 0})`);
 
       // ═══════════════════════════════════════════════════════════════════════════════
@@ -727,21 +757,26 @@ export async function baselineRoutes(fastify: FastifyInstance) {
       const generationStartTime = Date.now();
 
       // SPRINT 5: Initialize generation status for UX progress tracking
-      initializeGenerationStatus(profileId, ALL_DOMAINS);
+      initializeGenerationStatus(profileId, selectedDomains);
 
       // Generate all domains in parallel for dramatically reduced latency
-      const domainGenerationPromises = ALL_DOMAINS.map(async (domain) => {
+      const domainGenerationPromises = selectedDomains.map(async (domain) => {
         // SPRINT 5: Update status to GENERATING
         updateDomainStatus(profileId, domain, { status: 'GENERATING', startedAt: new Date() });
         const domainStartTime = Date.now();
+
+        // Get the number of questions for this domain (may vary by domain type and assessment type)
+        const questionCount = domainSelection.questionsPerDomain[domain] || 5;
+
         try {
           const questions = await generateBaselineQuestions({
             tenantId: profile.tenantId,
             learnerId: profile.learnerId,
             gradeBand: profile.gradeBand,
             domain,
-            skillCodes: DOMAIN_SKILL_CODES[domain],
+            skillCodes: DOMAIN_SKILL_CODES[domain] || [],
             difficulty: initialDifficulty,
+            questionCount, // Pass the dynamic question count
             // Parent assessment context for IDEA/504 compliance
             assessmentType,
             hasIep,
@@ -792,7 +827,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
       const successfulDomains = domainResults.filter(r => r.success).length;
       const totalQuestions = domainResults.reduce((sum, r) => sum + r.questions.length, 0);
 
-      console.log(`[baseline/start] Parallel generation completed: ${successfulDomains}/${ALL_DOMAINS.length} domains, ${totalQuestions} questions in ${totalGenerationMs}ms`);
+      console.log(`[baseline/start] Parallel generation completed: ${successfulDomains}/${selectedDomains.length} domains, ${totalQuestions} questions in ${totalGenerationMs}ms`);
 
       // Collect all items from successful generations
       for (const result of domainResults) {

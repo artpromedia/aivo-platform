@@ -388,6 +388,90 @@ const SKILL_DESCRIPTIONS: Record<
     description: 'Ability to organize belongings and tasks',
     sampleTopics: ['keeping things tidy', 'following routines', 'task completion', 'planning'],
   },
+
+  // ═══ MOTOR SKILLS ═══
+  // Fine and gross motor skills assessment (typically for learners receiving OT/PT)
+  MOTOR_FINE_GRASP: {
+    name: 'Fine Motor Grasp',
+    description: 'Ability to hold and manipulate small objects',
+    sampleTopics: ['pencil grip', 'scissors use', 'buttoning', 'zipping', 'utensil use'],
+  },
+  MOTOR_FINE_COORDINATION: {
+    name: 'Fine Motor Coordination',
+    description: 'Precise hand-eye coordination for detailed tasks',
+    sampleTopics: ['tracing', 'cutting on lines', 'threading beads', 'writing legibility', 'drawing shapes'],
+  },
+  MOTOR_FINE_STRENGTH: {
+    name: 'Fine Motor Strength',
+    description: 'Hand and finger strength for sustained tasks',
+    sampleTopics: ['writing endurance', 'pinch strength', 'clay manipulation', 'tearing paper'],
+  },
+  MOTOR_GROSS_BALANCE: {
+    name: 'Gross Motor Balance',
+    description: 'Ability to maintain body position and stability',
+    sampleTopics: ['standing on one foot', 'walking on line', 'posture', 'sitting balance'],
+  },
+  MOTOR_GROSS_COORDINATION: {
+    name: 'Gross Motor Coordination',
+    description: 'Whole body movement coordination',
+    sampleTopics: ['throwing', 'catching', 'jumping', 'running', 'skipping', 'climbing'],
+  },
+
+  // ═══ EXECUTIVE FUNCTION SKILLS ═══
+  // Cognitive control and self-regulation (common in ADHD, autism assessments)
+  EF_ATTENTION: {
+    name: 'Attention Skills',
+    description: 'Ability to focus and sustain attention on tasks',
+    sampleTopics: ['sustained attention', 'selective attention', 'divided attention', 'filtering distractions'],
+  },
+  EF_WORKING_MEMORY: {
+    name: 'Working Memory',
+    description: 'Ability to hold and manipulate information mentally',
+    sampleTopics: ['following multi-step directions', 'mental math', 'remembering sequences', 'holding information while thinking'],
+  },
+  EF_INHIBITION: {
+    name: 'Impulse Control',
+    description: 'Ability to control impulses and delay responses',
+    sampleTopics: ['waiting turn', 'thinking before acting', 'stopping an activity', 'resisting temptation'],
+  },
+  EF_PLANNING: {
+    name: 'Planning and Organization',
+    description: 'Ability to plan steps and organize tasks',
+    sampleTopics: ['breaking tasks into steps', 'time estimation', 'prioritizing', 'goal setting'],
+  },
+  EF_FLEXIBILITY: {
+    name: 'Cognitive Flexibility',
+    description: 'Ability to shift thinking and adapt to changes',
+    sampleTopics: ['switching tasks', 'handling transitions', 'adapting to new rules', 'thinking of alternatives'],
+  },
+
+  // ═══ SENSORY PROCESSING SKILLS ═══
+  // Sensory integration and processing (common in SPD, autism assessments)
+  SENSORY_VISUAL: {
+    name: 'Visual Processing',
+    description: 'Ability to process and interpret visual information',
+    sampleTopics: ['visual discrimination', 'visual tracking', 'figure-ground perception', 'visual memory'],
+  },
+  SENSORY_AUDITORY: {
+    name: 'Auditory Processing',
+    description: 'Ability to process and interpret auditory information',
+    sampleTopics: ['auditory discrimination', 'auditory memory', 'filtering background noise', 'following verbal instructions'],
+  },
+  SENSORY_TACTILE: {
+    name: 'Tactile Processing',
+    description: 'Ability to process touch sensations appropriately',
+    sampleTopics: ['texture tolerance', 'light touch response', 'tactile discrimination', 'messy play tolerance'],
+  },
+  SENSORY_VESTIBULAR: {
+    name: 'Vestibular Processing',
+    description: 'Ability to process movement and balance information',
+    sampleTopics: ['movement tolerance', 'motion sensitivity', 'position awareness', 'movement seeking/avoiding'],
+  },
+  SENSORY_PROPRIOCEPTIVE: {
+    name: 'Proprioceptive Processing',
+    description: 'Ability to sense body position and apply appropriate force',
+    sampleTopics: ['body awareness', 'force modulation', 'motor planning', 'spatial awareness of body'],
+  },
 };
 
 /**
