@@ -461,7 +461,7 @@ export class LaunchService {
    * Mark launch as completed
    */
   async completeLaunch(launchId: string, sessionId?: string) {
-    await this.prisma.ltiLaunch.update({
+    return this.prisma.ltiLaunch.update({
       where: { id: launchId },
       data: {
         status: LtiLaunchStatus.COMPLETED,

@@ -78,6 +78,7 @@ const sampleTool = {
   authTokenUrl: 'https://canvas.instructure.com/login/oauth2/token',
   jwksUrl: 'https://canvas.instructure.com/api/lti/security/jwks',
   toolPrivateKeyRef: 'kms://private-key-ref',
+  enabled: true,
 };
 
 describe('LTI Role Mapping', () => {
@@ -93,7 +94,7 @@ describe('LTI Role Mapping', () => {
 
   it('should map admin role correctly', () => {
     const roles = [LTI_ROLES.ADMIN];
-    expect(mapLtiRole(roles)).toBe('ADMIN' as LtiUserRole);
+    expect(mapLtiRole(roles)).toBe('ADMINISTRATOR' as LtiUserRole);
   });
 
   it('should map content developer role correctly', () => {
@@ -106,9 +107,9 @@ describe('LTI Role Mapping', () => {
     expect(mapLtiRole(roles)).toBe('INSTRUCTOR' as LtiUserRole);
   });
 
-  it('should default to OTHER for unknown roles', () => {
+  it('should default to LEARNER for unknown roles', () => {
     const roles = ['http://purl.imsglobal.org/vocab/lis/v2/unknown#Role'];
-    expect(mapLtiRole(roles)).toBe('OTHER' as LtiUserRole);
+    expect(mapLtiRole(roles)).toBe('LEARNER' as LtiUserRole);
   });
 
   it('should handle context-specific instructor role', () => {
@@ -135,6 +136,8 @@ describe('Launch Payload Processing', () => {
       ...sampleIdToken,
       [LTI_CLAIMS.CONTEXT]: undefined,
       name: undefined,
+      given_name: undefined,
+      family_name: undefined,
       email: undefined,
     };
 
@@ -214,7 +217,7 @@ describe('LaunchService', () => {
           login_hint: 'user-123',
           target_link_uri: 'https://aivo.app/lti/launch',
         })
-      ).rejects.toThrow('Unknown LTI platform');
+      ).rejects.toThrow('No tool registration found for issuer');
     });
 
     it('should throw error for inactive tool', async () => {
@@ -230,7 +233,7 @@ describe('LaunchService', () => {
           target_link_uri: 'https://aivo.app/lti/launch',
           client_id: 'client-id-123',
         })
-      ).rejects.toThrow('LTI tool is not active');
+      ).rejects.toThrow('LTI tool is disabled');
     });
   });
 

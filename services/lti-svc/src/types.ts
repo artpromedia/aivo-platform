@@ -70,6 +70,12 @@ export const LTI_ROLES = {
   CONTEXT_MENTOR: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor',
   CONTEXT_TEACHING_ASSISTANT:
     'http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant',
+
+  // Convenience aliases for common roles
+  INSTRUCTOR: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor',
+  LEARNER: 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner',
+  ADMIN: 'http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator',
+  CONTENT_DEVELOPER: 'http://purl.imsglobal.org/vocab/lis/v2/membership#ContentDeveloper',
 } as const;
 
 /**
@@ -101,6 +107,17 @@ export const LTI_CLAIMS = {
   AGS: 'https://purl.imsglobal.org/spec/lti-ags/claim/endpoint',
   NRPS: 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice',
   DEEP_LINKING: 'https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings',
+} as const;
+
+/**
+ * LTI Assignment and Grade Services (AGS) OAuth2 scopes
+ * @see https://www.imsglobal.org/spec/lti-ags/v2p0
+ */
+export const LTI_AGS_SCOPES = {
+  LINEITEM: 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem',
+  LINEITEM_READONLY: 'https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly',
+  RESULT_READONLY: 'https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly',
+  SCORE: 'https://purl.imsglobal.org/spec/lti-ags/scope/score',
 } as const;
 
 // ══════════════════════════════════════════════════════════════════════════════
