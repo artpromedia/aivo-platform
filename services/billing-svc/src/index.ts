@@ -2,6 +2,7 @@
  * Billing Service - Entry Point
  */
 
+import 'dotenv/config';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyPluginAsync } from 'fastify';

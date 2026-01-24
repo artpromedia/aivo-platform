@@ -2,6 +2,9 @@
  * AIVO Legal Hold Service - Configuration
  */
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 function requireEnvInProduction(name: string, devDefault: string): string {
   const value = process.env[name];
   if (!value && process.env.NODE_ENV === 'production') {

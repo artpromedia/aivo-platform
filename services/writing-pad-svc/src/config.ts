@@ -2,6 +2,8 @@
  * Writing Pad Service Configuration
  */
 
+import 'dotenv/config';
+
 import { readFileSync } from 'fs';
 
 function requireEnvInProduction(name: string, devDefault: string): string {

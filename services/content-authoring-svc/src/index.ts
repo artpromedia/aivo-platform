@@ -42,6 +42,8 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
 
+import 'dotenv/config';
+
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';

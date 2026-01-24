@@ -6,11 +6,13 @@
  * for supporting learners with their families and educators.
  */
 
+// Load environment variables FIRST before any other imports
+import 'dotenv/config';
+
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { config } from 'dotenv';
 import Fastify from 'fastify';
 
 import { prisma } from './db/prisma.js';
@@ -19,9 +21,6 @@ import { actionPlanRoutes } from './routes/action-plans.js';
 import { careNoteRoutes } from './routes/care-notes.js';
 import { careTeamRoutes } from './routes/care-team.js';
 import { careMeetingRoutes } from './routes/meetings.js';
-
-// Load environment variables
-config();
 
 const PORT = Number(process.env.PORT) || 3020;
 const HOST = process.env.HOST || '0.0.0.0';
