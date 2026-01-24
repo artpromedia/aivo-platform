@@ -331,7 +331,7 @@ class _ProgressHeader extends StatelessWidget {
         color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -345,7 +345,7 @@ class _ProgressHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _domainColor(domain).withOpacity(0.15),
+                  color: _domainColor(domain).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -421,6 +421,18 @@ class _ProgressHeader extends StatelessWidget {
         return AivoBrand.warning;
       case BaselineDomain.sel:
         return Colors.pink;
+      case BaselineDomain.spelling:
+        return Colors.teal;
+      case BaselineDomain.creativeWriting:
+        return Colors.deepPurple;
+      case BaselineDomain.lifeSkills:
+        return Colors.orange;
+      case BaselineDomain.motor:
+        return Colors.indigo;
+      case BaselineDomain.executiveFunction:
+        return Colors.cyan;
+      case BaselineDomain.sensoryProcessing:
+        return Colors.amber;
     }
   }
 
@@ -436,6 +448,18 @@ class _ProgressHeader extends StatelessWidget {
         return Icons.record_voice_over;
       case BaselineDomain.sel:
         return Icons.favorite;
+      case BaselineDomain.spelling:
+        return Icons.spellcheck;
+      case BaselineDomain.creativeWriting:
+        return Icons.edit_note;
+      case BaselineDomain.lifeSkills:
+        return Icons.home;
+      case BaselineDomain.motor:
+        return Icons.sports_handball;
+      case BaselineDomain.executiveFunction:
+        return Icons.psychology;
+      case BaselineDomain.sensoryProcessing:
+        return Icons.sensors;
     }
   }
 }

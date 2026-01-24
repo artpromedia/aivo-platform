@@ -698,6 +698,48 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
         SEL_RELATIONSHIPS: 'What would be a good way to respond to this friend?',
         SEL_DECISIONS: 'What is the most responsible choice in this situation?',
       },
+      SPELLING: {
+        SPELL_PATTERNS: 'Which word is spelled correctly?',
+        SPELL_PHONICS: 'Which spelling follows the correct phonetic pattern?',
+        SPELL_RULES: 'Apply the spelling rule to complete the word.',
+        SPELL_SIGHT_WORDS: 'Select the correctly spelled sight word.',
+        SPELL_COMPOUND: 'Which compound word is spelled correctly?',
+      },
+      CREATIVE_WRITING: {
+        CW_STORY_ELEMENTS: 'Which element best completes this story?',
+        CW_CHARACTER: 'How would this character most likely respond?',
+        CW_SETTING: 'Which description best fits the setting?',
+        CW_DESCRIPTIVE: 'Which sentence uses the most vivid language?',
+        CW_IMAGINATION: 'What happens next in this story?',
+      },
+      LIFE_SKILLS: {
+        LIFE_PERSONAL_CARE: 'What is the correct order for this daily routine?',
+        LIFE_HOME_LIVING: 'Which is the safest choice in this situation?',
+        LIFE_COMMUNITY: 'What should you do in this community setting?',
+        LIFE_VOCATIONAL: 'What is the appropriate workplace behavior?',
+        LIFE_SELF_DETERMINATION: 'How can you advocate for yourself here?',
+      },
+      MOTOR: {
+        MOTOR_FINE_GRASP: 'Which grip is best for this activity?',
+        MOTOR_FINE_MANIPULATION: 'What is the correct hand movement?',
+        MOTOR_VISUAL_MOTOR: 'Which picture matches the pattern?',
+        MOTOR_GROSS_BALANCE: 'What helps maintain balance in this position?',
+        MOTOR_GROSS_COORDINATION: 'What is the correct sequence of movements?',
+      },
+      EXECUTIVE_FUNCTION: {
+        EF_WORKING_MEMORY: 'What was mentioned earlier in the directions?',
+        EF_INHIBITION: 'What should you do to stay focused?',
+        EF_FLEXIBILITY: 'How can you adapt to this change?',
+        EF_PLANNING: 'What is the best order to complete these steps?',
+        EF_METACOGNITION: 'What strategy would help you solve this?',
+      },
+      SENSORY_PROCESSING: {
+        SENSORY_MODULATION: 'What helps you feel calm in this situation?',
+        SENSORY_DISCRIMINATION: 'Which texture feels different from the others?',
+        SENSORY_AWARENESS: 'What sensory input are you experiencing?',
+        SENSORY_STRATEGIES: 'Which strategy helps with sensory overload?',
+        SENSORY_INTEGRATION: 'How do these senses work together?',
+      },
     };
 
     return stems[domain]?.[skillCode] || `Select the best answer for this ${domain} question.`;

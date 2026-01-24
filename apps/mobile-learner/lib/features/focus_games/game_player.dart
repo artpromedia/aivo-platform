@@ -653,7 +653,7 @@ class _BreathingVisualizerState extends State<_BreathingVisualizer>
                   gradient: RadialGradient(
                     colors: [
                       Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                     ],
                   ),
                 ),
@@ -785,7 +785,7 @@ class _TapRhythmGameState extends State<_TapRhythmGame> {
                 color: Theme.of(context).colorScheme.primary,
                 boxShadow: [
                   BoxShadow(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),

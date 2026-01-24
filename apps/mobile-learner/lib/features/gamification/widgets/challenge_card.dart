@@ -94,7 +94,7 @@ class ChallengeCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _typeColor.withOpacity(0.15),
+                color: _typeColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -156,11 +156,11 @@ class ChallengeCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: challenge.isCompleted
                 ? [AivoBrand.mint[50]!, AivoBrand.mint[100]!]
-                : [_typeColor.withOpacity(0.05), _typeColor.withOpacity(0.1)],
+                : [_typeColor.withValues(alpha: 0.05), _typeColor.withValues(alpha: 0.1)],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: challenge.isCompleted ? AivoBrand.mint[300]! : _typeColor.withOpacity(0.3),
+            color: challenge.isCompleted ? AivoBrand.mint[300]! : _typeColor.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -208,7 +208,7 @@ class ChallengeCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: _typeColor.withOpacity(0.15),
+                    color: _typeColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(

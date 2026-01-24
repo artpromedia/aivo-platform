@@ -36,11 +36,16 @@ abstract class A11yAnnouncer {
     String message, {
     AnnouncementPriority priority = AnnouncementPriority.polite,
   }) {
-    SemanticsService.announce(
+    final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    if (view == null) return;
+    
+    SemanticsService.sendAnnouncement(
+      view,
       message,
-      priority == AnnouncementPriority.assertive
-          ? TextDirection.ltr // Using ltr for assertive
-          : TextDirection.ltr,
+      TextDirection.ltr,
+      assertiveness: priority == AnnouncementPriority.assertive
+          ? Assertiveness.assertive
+          : Assertiveness.polite,
     );
   }
 
