@@ -4,7 +4,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
-import { PrismaClient } from './generated/prisma-client/index.js';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 import { registerGameRoutes } from './routes/games.js';
 import { GameService } from './services/game.service.js';
 
