@@ -11,13 +11,25 @@ import { v4 as uuidv4 } from 'uuid';
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
+import { getDomainExpert, buildDomainSystemPrompt } from '../agents/domain-experts.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
 export type GradeBand = 'PRE_K' | 'K5' | 'K_2' | 'GRADE_3_5' | 'G6_8' | 'GRADE_6_8' | 'G9_12' | 'GRADE_9_12';
-export type BaselineDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'SPELLING' | 'CREATIVE_WRITING' | 'LIFE_SKILLS';
+export type BaselineDomain = 
+  | 'ELA' 
+  | 'MATH' 
+  | 'SCIENCE' 
+  | 'SPEECH' 
+  | 'SEL' 
+  | 'SPELLING' 
+  | 'CREATIVE_WRITING' 
+  | 'LIFE_SKILLS'
+  | 'MOTOR'              // Fine & gross motor skills assessment
+  | 'EXECUTIVE_FUNCTION' // Attention, planning, working memory, inhibition
+  | 'SENSORY_PROCESSING'; // Sensory integration and processing
 
 /**
  * Assessment Type based on parent assessment results (IDEA/504 aligned)
@@ -27,6 +39,57 @@ export type BaselineDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'SP
  * - ALTERNATE: Performance-based, functional skills focus, caregiver-assisted
  */
 export type AssessmentType = 'STANDARD' | 'STANDARD_WITH_ACCOMMODATIONS' | 'MODIFIED' | 'ALTERNATE';
+
+/**
+ * IEP Goal extracted from uploaded IEP document
+ */
+export interface IepGoalData {
+  id: string;
+  domain: string;
+  category: string;
+  description: string;
+  baseline?: string | null;
+  target?: string | null;
+  measurementMethod?: string | null;
+  timeline?: string | null;
+  confidence?: number;
+}
+
+/**
+ * IEP Accommodation from uploaded IEP document
+ */
+export interface IepAccommodationData {
+  id: string;
+  category: string;
+  description: string;
+  setting?: string | null;
+  frequency?: string | null;
+  confidence?: number;
+}
+
+/**
+ * IEP Service from uploaded IEP document
+ */
+export interface IepServiceData {
+  id: string;
+  type: string;
+  provider?: string | null;
+  frequency?: string | null;
+  duration?: string | null;
+  location?: string | null;
+}
+
+/**
+ * Analyzed IEP context for question generation
+ */
+export interface AnalyzedIepContext {
+  primaryDomains: string[];
+  skillTargets: { skillCode: string; currentLevel: string; targetLevel: string }[];
+  requiredAccommodations: string[];
+  instructionalStrategies: string[];
+  avoidancePatterns: string[];
+  assessmentModifications: string[];
+}
 
 export interface BaselineQuestionRequest {
   tenantId: string;
@@ -54,6 +117,14 @@ export interface BaselineQuestionRequest {
   has504?: boolean;
   /** Disability categories from parent assessment */
   disabilityCategories?: string[];
+  
+  // ═══ IEP DOCUMENT DATA (when available) ═══
+  /** IEP goals extracted from uploaded IEP document */
+  iepGoals?: IepGoalData[];
+  /** IEP accommodations from uploaded IEP document */
+  iepAccommodations?: IepAccommodationData[];
+  /** IEP services from uploaded IEP document */
+  iepServices?: IepServiceData[];
 }
 
 export interface BaselineQuestion {
@@ -880,19 +951,31 @@ export class BaselineQuestionGenerationService {
     try {
       incrementCounter('baseline_question_generation.started');
 
+      // Get domain-specific expert configuration
+      const domainExpert = getDomainExpert(request.domain);
+      const gradeLevel = request.gradeLevel ?? this.inferGradeLevel(request.gradeBand);
+      
+      // Build domain-specific system prompt with curriculum standards
+      const domainSystemPrompt = buildDomainSystemPrompt(
+        request.domain,
+        gradeLevel,
+        request.assessmentType
+      );
+
       const prompt = this.buildPrompt(request, generationId);
       const messages: LLMMessage[] = [
-        { role: 'system', content: BASELINE_SYSTEM_PROMPT },
+        { role: 'system', content: domainSystemPrompt },
         { role: 'user', content: prompt },
       ];
 
+      // Use domain-specific hyperparameters
       const result = await this.llm.complete(messages, {
-        temperature: 0.8, // Higher temperature for more variety
-        maxTokens: 4000,
+        temperature: domainExpert.hyperparameters.temperature,
+        maxTokens: domainExpert.hyperparameters.maxTokens,
         metadata: {
           tenantId: request.tenantId,
           userId: request.learnerId,
-          agentType: 'BASELINE',
+          agentType: domainExpert.agentType, // Use domain-specific agent type
         },
       });
 
@@ -925,6 +1008,23 @@ export class BaselineQuestionGenerationService {
       console.error('Baseline question generation failed', { generationId, error });
       throw error;
     }
+  }
+
+  /**
+   * Infer a representative grade level from the grade band
+   */
+  private inferGradeLevel(gradeBand: GradeBand): number {
+    const gradeMapping: Record<GradeBand, number> = {
+      'PRE_K': 0,
+      'K5': 0,
+      'K_2': 1,
+      'GRADE_3_5': 4,
+      'G6_8': 7,
+      'GRADE_6_8': 7,
+      'G9_12': 10,
+      'GRADE_9_12': 10,
+    };
+    return gradeMapping[gradeBand] ?? 4;
   }
 
   /**
@@ -996,6 +1096,9 @@ export class BaselineQuestionGenerationService {
 
     // Add neurodiverse teaching strategies based on disability categories and concerns
     this.addNeurodiverseStrategies(parts, request);
+
+    // Add IEP document analysis if available (CRITICAL for IEP-aligned assessment)
+    this.addIepDocumentContext(parts, request);
 
     // Add curriculum standards context
     this.addCurriculumContext(parts, request);
@@ -1191,6 +1294,223 @@ export class BaselineQuestionGenerationService {
       'Apply them thoughtfully to maximize the learner\'s ability to demonstrate their knowledge.',
       ''
     );
+  }
+
+  /**
+   * Add IEP document context to prompt for deep IEP-aligned question generation.
+   * This method analyzes uploaded IEP goals, accommodations, and services to:
+   * 1. Align questions with IEP goals and current performance levels
+   * 2. Apply all required accommodations in question design
+   * 3. Focus on skills targeted in the IEP
+   * 4. Match question difficulty to learner's documented levels
+   */
+  private addIepDocumentContext(parts: string[], request: BaselineQuestionRequest): void {
+    // Check if we have IEP document data
+    const hasIepGoals = request.iepGoals && request.iepGoals.length > 0;
+    const hasIepAccommodations = request.iepAccommodations && request.iepAccommodations.length > 0;
+    const hasIepServices = request.iepServices && request.iepServices.length > 0;
+
+    if (!hasIepGoals && !hasIepAccommodations && !hasIepServices) {
+      return;
+    }
+
+    parts.push(
+      '',
+      '╔══════════════════════════════════════════════════════════════════════════════╗',
+      '║                    IEP DOCUMENT ANALYSIS (CRITICAL)                           ║',
+      '║  The following is extracted from the learner\'s official IEP document.        ║',
+      '║  ALL questions MUST align with these goals and accommodations.               ║',
+      '╚══════════════════════════════════════════════════════════════════════════════╝',
+      ''
+    );
+
+    // Add IEP Goals with detailed analysis
+    if (hasIepGoals) {
+      const domainGoals = request.iepGoals!.filter(g => 
+        this.goalMatchesDomain(g, request.domain)
+      );
+      const otherGoals = request.iepGoals!.filter(g => 
+        !this.goalMatchesDomain(g, request.domain)
+      );
+
+      parts.push('═══ IEP GOALS ANALYSIS ═══');
+      
+      if (domainGoals.length > 0) {
+        parts.push(
+          '',
+          `▸ GOALS DIRECTLY RELEVANT TO ${request.domain}:`,
+          '  (Questions MUST assess progress toward these specific goals)',
+          ''
+        );
+        
+        domainGoals.forEach((goal, idx) => {
+          parts.push(
+            `  Goal ${idx + 1}: ${goal.description}`,
+            `    • Domain: ${goal.domain || 'General'}`,
+            `    • Category: ${goal.category || 'Not specified'}`
+          );
+          if (goal.baseline) {
+            parts.push(`    • Current Level (Baseline): ${goal.baseline}`);
+          }
+          if (goal.target) {
+            parts.push(`    • Target Level: ${goal.target}`);
+          }
+          if (goal.measurementMethod) {
+            parts.push(`    • How Progress is Measured: ${goal.measurementMethod}`);
+          }
+          parts.push('');
+        });
+
+        parts.push(
+          '  INSTRUCTION: Design questions that assess skills between the baseline',
+          '  and target levels. Questions should not exceed the target level difficulty.',
+          ''
+        );
+      }
+
+      if (otherGoals.length > 0 && otherGoals.length <= 3) {
+        parts.push(
+          '',
+          '▸ OTHER IEP GOALS (for holistic understanding):',
+          ''
+        );
+        otherGoals.slice(0, 3).forEach((goal, idx) => {
+          parts.push(`  ${idx + 1}. [${goal.domain || 'General'}] ${goal.description}`);
+        });
+        parts.push('');
+      }
+    }
+
+    // Add IEP Accommodations with implementation guidance
+    if (hasIepAccommodations) {
+      parts.push(
+        '',
+        '═══ IEP ACCOMMODATIONS (MANDATORY) ═══',
+        'The following accommodations are legally required. Implement ALL applicable ones:',
+        ''
+      );
+
+      // Group accommodations by category
+      const byCategory = new Map<string, typeof request.iepAccommodations>();
+      request.iepAccommodations!.forEach(acc => {
+        const cat = acc.category || 'General';
+        if (!byCategory.has(cat)) byCategory.set(cat, []);
+        byCategory.get(cat)!.push(acc);
+      });
+
+      byCategory.forEach((accs, category) => {
+        parts.push(`▸ ${category.toUpperCase()}:`);
+        accs.forEach(acc => {
+          parts.push(`  • ${acc.description}`);
+          if (acc.setting) {
+            parts.push(`    Setting: ${acc.setting}`);
+          }
+        });
+        parts.push('');
+      });
+
+      // Add specific implementation guidance based on accommodation types
+      const accommodationTypes = request.iepAccommodations!.map(a => 
+        a.description.toLowerCase()
+      ).join(' ');
+      
+      if (accommodationTypes.includes('extended time') || accommodationTypes.includes('extra time')) {
+        parts.push('  → For timed assessments: Allow 1.5x to 2x standard time');
+      }
+      if (accommodationTypes.includes('read aloud') || accommodationTypes.includes('audio')) {
+        parts.push('  → Write questions suitable for audio presentation');
+      }
+      if (accommodationTypes.includes('visual') || accommodationTypes.includes('graphic')) {
+        parts.push('  → Include visual/graphic elements in questions where possible');
+      }
+      if (accommodationTypes.includes('break') || accommodationTypes.includes('chunk')) {
+        parts.push('  → Keep questions short and allow natural break points');
+      }
+      if (accommodationTypes.includes('calculator') || accommodationTypes.includes('computation')) {
+        parts.push('  → Focus on problem-solving, not computation accuracy');
+      }
+      if (accommodationTypes.includes('scribe') || accommodationTypes.includes('dictate')) {
+        parts.push('  → For open-ended: Accept verbal responses, focus on content not mechanics');
+      }
+      if (accommodationTypes.includes('simplified') || accommodationTypes.includes('plain language')) {
+        parts.push('  → Use simplified language and avoid complex sentence structures');
+      }
+      parts.push('');
+    }
+
+    // Add IEP Services context
+    if (hasIepServices) {
+      parts.push(
+        '',
+        '═══ IEP SERVICES (for context) ═══',
+        'The learner receives the following specialized services:',
+        ''
+      );
+
+      request.iepServices!.forEach(svc => {
+        let serviceDesc = `• ${svc.type}`;
+        if (svc.frequency) serviceDesc += ` (${svc.frequency})`;
+        if (svc.provider) serviceDesc += ` - Provider: ${svc.provider}`;
+        parts.push(`  ${serviceDesc}`);
+      });
+
+      // Add context about services
+      const serviceTypes = request.iepServices!.map(s => s.type.toLowerCase()).join(' ');
+      
+      parts.push('');
+      if (serviceTypes.includes('speech') || serviceTypes.includes('language')) {
+        parts.push('  → Speech/Language services: Use clear, simple language; avoid ambiguous vocabulary');
+      }
+      if (serviceTypes.includes('occupational') || serviceTypes.includes('OT')) {
+        parts.push('  → OT services: Minimize fine motor requirements; consider verbal alternatives');
+      }
+      if (serviceTypes.includes('reading') || serviceTypes.includes('literacy')) {
+        parts.push('  → Reading support: Reduce text complexity; focus on comprehension over decoding');
+      }
+      if (serviceTypes.includes('behavioral') || serviceTypes.includes('counseling') || serviceTypes.includes('SEL')) {
+        parts.push('  → Behavioral/SEL support: Use positive framing; avoid anxiety-inducing content');
+      }
+      parts.push('');
+    }
+
+    // Add synthesis guidance
+    parts.push(
+      '',
+      '═══ IEP-ALIGNED QUESTION GENERATION RULES ═══',
+      '1. ALIGN WITH GOALS: Each question should connect to at least one IEP goal when possible',
+      '2. RESPECT LEVELS: Questions should be at or below the target level, starting from baseline',
+      '3. APPLY ACCOMMODATIONS: All relevant accommodations must be reflected in question design',
+      '4. BUILD CONFIDENCE: Start with accessible questions to reduce anxiety and build momentum',
+      '5. MEASURE PROGRESS: Questions should help identify where the learner is between baseline and target',
+      '6. LEGAL COMPLIANCE: IEP accommodations are legally mandated - they are NOT optional',
+      ''
+    );
+  }
+
+  /**
+   * Check if an IEP goal matches the current assessment domain
+   */
+  private goalMatchesDomain(goal: IepGoalData, domain: string): boolean {
+    const goalDomain = (goal.domain || goal.category || '').toLowerCase();
+    const assessDomain = domain.toLowerCase();
+
+    // Direct match
+    if (goalDomain.includes(assessDomain) || assessDomain.includes(goalDomain)) {
+      return true;
+    }
+
+    // Domain-specific mappings
+    const domainMappings: Record<string, string[]> = {
+      'ela': ['reading', 'writing', 'language', 'literacy', 'phonics', 'fluency', 'vocabulary', 'comprehension', 'english'],
+      'math': ['mathematics', 'number', 'counting', 'arithmetic', 'algebra', 'geometry', 'computation'],
+      'science': ['stem', 'scientific', 'inquiry', 'experiment'],
+      'speech': ['language', 'communication', 'articulation', 'pragmatic', 'expressive', 'receptive', 'verbal'],
+      'sel': ['social', 'emotional', 'behavioral', 'coping', 'self-regulation', 'interpersonal', 'adaptive'],
+      'life_skills': ['functional', 'daily living', 'adaptive', 'self-help', 'independence', 'practical'],
+    };
+
+    const keywords = domainMappings[assessDomain] || [];
+    return keywords.some(kw => goalDomain.includes(kw));
   }
 
   /**

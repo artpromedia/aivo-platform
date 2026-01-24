@@ -202,6 +202,50 @@ export interface QuestionGenerationRequest {
     /** Cultural context preferences */
     culturalContext?: string;
   };
+
+  // ── Parent Assessment Context (IDEA/504 Compliance) ──
+  /** Assessment type from parent assessment */
+  assessmentType?: 'STANDARD' | 'STANDARD_WITH_ACCOMMODATIONS' | 'MODIFIED' | 'ALTERNATE';
+  /** Whether learner has an IEP */
+  hasIep?: boolean;
+  /** Whether learner has a 504 plan */
+  has504?: boolean;
+  /** IDEA disability categories */
+  disabilityCategories?: string[];
+  /** Areas of concern from parent assessment */
+  areasOfConcern?: string[];
+
+  // ── IEP Document Data (when available) ──
+  /** IEP goals extracted from uploaded IEP document */
+  iepGoals?: {
+    id: string;
+    domain: string;
+    category: string;
+    description: string;
+    baseline?: string | null;
+    target?: string | null;
+    measurementMethod?: string | null;
+    timeline?: string | null;
+    confidence?: number;
+  }[];
+  /** IEP accommodations from uploaded IEP document */
+  iepAccommodations?: {
+    id: string;
+    category: string;
+    description: string;
+    setting?: string | null;
+    frequency?: string | null;
+    confidence?: number;
+  }[];
+  /** IEP services from uploaded IEP document */
+  iepServices?: {
+    id: string;
+    type: string;
+    provider?: string | null;
+    frequency?: string | null;
+    duration?: string | null;
+    location?: string | null;
+  }[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

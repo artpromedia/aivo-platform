@@ -6,10 +6,55 @@ const nextConfig = {
     domains: ['localhost', 'api.aivolearning.com'],
   },
   async rewrites() {
+    // Service URLs for local development
+    const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
+    const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://localhost:4001';
+    
     return [
+      // Parent service routes
+      {
+        source: '/api/parent/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/parent/:path*`,
+      },
+      // Auth service routes
+      {
+        source: '/api/auth/:path*',
+        destination: `${AUTH_SVC_URL}/api/v1/auth/:path*`,
+      },
+      // Messages are in parent-svc
+      {
+        source: '/api/messages/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/messages/:path*`,
+      },
+      // Caregiver routes in parent-svc
+      {
+        source: '/api/caregiver/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/caregiver/:path*`,
+      },
+      // Homework routes in parent-svc
+      {
+        source: '/api/homework/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/homework/:path*`,
+      },
+      // Onboarding routes in parent-svc
+      {
+        source: '/api/onboarding/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/onboarding/:path*`,
+      },
+      // Reports routes in parent-svc
+      {
+        source: '/api/reports/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/reports/:path*`,
+      },
+      // Learner routes in parent-svc
+      {
+        source: '/api/learner/:path*',
+        destination: `${PARENT_SVC_URL}/api/v1/learner/:path*`,
+      },
+      // Fallback to API gateway if configured
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4004'}/:path*`,
+        destination: `${process.env.NEXT_PUBLIC_API_URL || PARENT_SVC_URL}/api/v1/:path*`,
       },
     ];
   },

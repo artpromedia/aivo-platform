@@ -114,30 +114,6 @@ export async function registerPreferenceRoutes(fastify: FastifyInstance): Promis
     }
   );
 
-  /**
-   * GET /devices
-   * List registered devices
-   */
-  fastify.get('/devices', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getTenantContext(request);
-
-    const devices = await preferenceService.getActiveDeviceTokens(ctx.userId);
-
-    return reply.send({ data: devices });
-  });
-
-  /**
-   * DELETE /devices/:token
-   * Deactivate a device token
-   */
-  fastify.delete(
-    '/devices/:token',
-    async (request: FastifyRequest<{ Params: { token: string } }>, reply: FastifyReply) => {
-      const { token } = request.params;
-
-      await preferenceService.deactivateDeviceToken(token);
-
-      return reply.status(204).send();
-    }
-  );
+  // NOTE: GET /devices and DELETE /devices/:token routes are in devices.ts
+  // to avoid duplication and leverage the more complete implementation there
 }

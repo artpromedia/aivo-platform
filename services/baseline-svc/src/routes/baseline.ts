@@ -32,6 +32,77 @@ interface ResponseJson {
   openResponse?: string;
 }
 
+// --- IEP Document Types (for AI-powered question generation) ---
+interface IepGoalData {
+  id: string;
+  domain: string;
+  category: string;
+  description: string;
+  baseline?: string | null;
+  target?: string | null;
+  measurementMethod?: string | null;
+  timeline?: string | null;
+  confidence?: number;
+}
+
+interface IepAccommodationData {
+  id: string;
+  category: string;
+  description: string;
+  setting?: string | null;
+  frequency?: string | null;
+  confidence?: number;
+}
+
+interface IepServiceData {
+  id: string;
+  type: string;
+  provider?: string | null;
+  frequency?: string | null;
+  duration?: string | null;
+  location?: string | null;
+}
+
+// --- Parent Assessment Helper ---
+interface ParentAssessmentResponse {
+  questionId: string;
+  answer: string | string[] | number | boolean;
+}
+
+/**
+ * Extract areas of concern from parent assessment responses
+ */
+function extractAreasOfConcern(parentAssessment: {
+  challengesNotes?: string | null;
+  responsesJson?: unknown;
+} | null): string[] | undefined {
+  if (!parentAssessment) return undefined;
+  
+  const concerns: string[] = [];
+  
+  // Extract from challenges notes
+  if (parentAssessment.challengesNotes) {
+    concerns.push(parentAssessment.challengesNotes);
+  }
+  
+  // Extract from responses JSON if available
+  const responses = parentAssessment.responsesJson as ParentAssessmentResponse[] | undefined;
+  if (responses && Array.isArray(responses)) {
+    // Look for concern-related questions
+    for (const r of responses) {
+      if (typeof r.questionId === 'string' && r.questionId.includes('concern')) {
+        if (typeof r.answer === 'string') {
+          concerns.push(r.answer);
+        } else if (Array.isArray(r.answer)) {
+          concerns.push(...r.answer.filter(a => typeof a === 'string'));
+        }
+      }
+    }
+  }
+  
+  return concerns.length > 0 ? concerns : undefined;
+}
+
 // Extended user type from JWT
 interface JwtUser {
   sub: string;
@@ -554,11 +625,32 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         where: { baselineProfileId: profileId },
       });
 
+      // Fetch IEP document if available
+      const iepDocument = await prisma.baselineIepDocument.findFirst({
+        where: { 
+          baselineProfileId: profileId,
+          status: { in: ['PROCESSED', 'COMPARISON_READY', 'APPROVED'] }
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
       // Validate attempt can be started
       const validationError = validateAttemptStart(profile, parentAssessment);
       if (validationError) {
         return reply.status(validationError.status).send(validationError.body);
       }
+
+      // Extract parent assessment context for AI question generation
+      const assessmentType = parentAssessment?.assessmentType ?? 'STANDARD';
+      const hasIep = parentAssessment?.hasExistingIep ?? false;
+      const has504 = parentAssessment?.hasExisting504 ?? false;
+      const disabilityCategories = parentAssessment?.disabilityCategoriesJson as string[] | undefined;
+      const areasOfConcern = extractAreasOfConcern(parentAssessment);
+
+      // Extract IEP document data for AI-powered question generation
+      const iepGoals = iepDocument?.extractedGoalsJson as IepGoalData[] | undefined;
+      const iepAccommodations = iepDocument?.extractedAccommodationsJson as IepAccommodationData[] | undefined;
+      const iepServices = iepDocument?.extractedServicesJson as IepServiceData[] | undefined;
 
       const lastAttempt = profile.attempts[0];
       const attemptNumber = lastAttempt ? lastAttempt.attemptNumber + 1 : 1;
@@ -575,6 +667,8 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         question: GeneratedQuestion;
       }[] = [];
 
+      console.log(`[baseline/start] Generating questions with parent assessment (type: ${assessmentType}, hasIep: ${hasIep}, iepGoals: ${iepGoals?.length ?? 0})`);
+
       for (const domain of ALL_DOMAINS) {
         const questions = await generateBaselineQuestions({
           tenantId: profile.tenantId,
@@ -583,6 +677,16 @@ export async function baselineRoutes(fastify: FastifyInstance) {
           domain,
           skillCodes: DOMAIN_SKILL_CODES[domain],
           difficulty: initialDifficulty, // Start at medium difficulty
+          // Parent assessment context for IDEA/504 compliance
+          assessmentType,
+          hasIep,
+          has504,
+          disabilityCategories,
+          areasOfConcern,
+          // IEP document data for IEP-aligned question generation
+          iepGoals,
+          iepAccommodations,
+          iepServices,
         });
 
         questions.forEach((q: GeneratedQuestion, idx: number) => {

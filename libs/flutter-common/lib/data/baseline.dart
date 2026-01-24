@@ -1,6 +1,7 @@
 /// Baseline assessment domain types and models used across mobile apps.
 
-import '../services/baseline_service.dart' show GradeLevelEquivalent, GradeLevelReport;
+import '../services/baseline_service.dart'
+    show GradeLevelEquivalent, GradeLevelReport;
 
 // Navigation diagram (Parent flow):
 // ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -27,13 +28,21 @@ import '../services/baseline_service.dart' show GradeLevelEquivalent, GradeLevel
 // │   - After Q25: /complete -> BaselineCompleteScreen -> TodayPlan             │
 // └─────────────────────────────────────────────────────────────────────────────┘
 
-/// The five baseline assessment domains.
+/// The baseline assessment domains including IEP-specific domains.
 enum BaselineDomain {
+  // Core academic domains
   ela('ELA', 'Reading & Writing'),
   math('MATH', 'Math'),
   science('SCIENCE', 'Science'),
   speech('SPEECH', 'Speech & Language'),
-  sel('SEL', 'Social-Emotional');
+  sel('SEL', 'Social-Emotional'),
+  spelling('SPELLING', 'Spelling'),
+  creativeWriting('CREATIVE_WRITING', 'Creative Writing'),
+  lifeSkills('LIFE_SKILLS', 'Life Skills'),
+  // IEP-specific domains (added based on learner's IEP/parent assessment)
+  motor('MOTOR', 'Motor Skills'),
+  executiveFunction('EXECUTIVE_FUNCTION', 'Thinking Skills'),
+  sensoryProcessing('SENSORY_PROCESSING', 'Sensory Awareness');
 
   const BaselineDomain(this.code, this.label);
   final String code;
@@ -45,6 +54,10 @@ enum BaselineDomain {
       orElse: () => BaselineDomain.ela,
     );
   }
+
+  /// Whether this is an IEP-specific domain (MOTOR, EXECUTIVE_FUNCTION, SENSORY_PROCESSING)
+  bool get isIepSpecific =>
+      this == motor || this == executiveFunction || this == sensoryProcessing;
 }
 
 /// Baseline profile status enum.
@@ -205,7 +218,8 @@ class BaselineAttempt {
           domain: BaselineDomain.fromCode(entry.key),
           correct: (data['correct'] as num?)?.toInt() ?? 0,
           total: (data['total'] as num?)?.toInt() ?? 5,
-          percentage: (data['correct'] as num? ?? 0) / (data['total'] as num? ?? 5),
+          percentage:
+              (data['correct'] as num? ?? 0) / (data['total'] as num? ?? 5),
           gradeEquivalent: gradeEquivData != null
               ? GradeLevelEquivalent.fromJson(gradeEquivData)
               : null,
@@ -242,7 +256,8 @@ class BaselineAttempt {
     return BaselineAttempt(
       id: json['id']?.toString() ?? '',
       attemptNumber: (json['attemptNumber'] as num?)?.toInt() ?? 1,
-      startedAt: DateTime.tryParse(json['startedAt']?.toString() ?? '') ?? DateTime.now(),
+      startedAt: DateTime.tryParse(json['startedAt']?.toString() ?? '') ??
+          DateTime.now(),
       completedAt: json['completedAt'] != null
           ? DateTime.tryParse(json['completedAt'].toString())
           : null,
@@ -313,7 +328,8 @@ class BaselineProfile {
       tenantId: json['tenantId']?.toString() ?? '',
       learnerId: json['learnerId']?.toString() ?? '',
       gradeBand: json['gradeBand']?.toString() ?? 'K5',
-      status: BaselineProfileStatus.fromValue(json['status']?.toString() ?? 'NOT_STARTED'),
+      status: BaselineProfileStatus.fromValue(
+          json['status']?.toString() ?? 'NOT_STARTED'),
       attemptCount: (json['attemptCount'] as num?)?.toInt() ?? 0,
       finalAttemptId: json['finalAttemptId']?.toString(),
       attempts: attempts,
@@ -463,6 +479,7 @@ class PrepareBaselineResponse {
     required this.totalQuestions,
     this.estimatedDuration,
     this.error,
+    this.adaptiveDomains = const [],
   });
 
   final bool success;
@@ -471,14 +488,25 @@ class PrepareBaselineResponse {
   final String? estimatedDuration;
   final String? error;
 
+  /// IEP-specific domains added based on learner's IEP/parent assessment
+  final List<String> adaptiveDomains;
+
+  /// Whether adaptive assessment domains were added
+  bool get hasAdaptiveDomains => adaptiveDomains.isNotEmpty;
+
   factory PrepareBaselineResponse.fromJson(Map<String, dynamic> json) {
-    final domainsJson = json['domainsReady'] as List? ?? json['domains'] as List? ?? [];
+    final domainsJson =
+        json['domainsReady'] as List? ?? json['domains'] as List? ?? [];
+    final adaptiveJson = json['adaptiveDomains'] as List? ??
+        (json['adaptiveAssessment'] as Map?)?['additionalDomains'] as List? ??
+        [];
     return PrepareBaselineResponse(
       success: json['success'] == true,
       domainsReady: domainsJson.whereType<String>().toList(),
       totalQuestions: (json['totalQuestions'] as num?)?.toInt() ?? 0,
       estimatedDuration: json['estimatedDuration']?.toString(),
       error: json['error']?.toString(),
+      adaptiveDomains: adaptiveJson.whereType<String>().toList(),
     );
   }
 }

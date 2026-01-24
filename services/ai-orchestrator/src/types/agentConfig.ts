@@ -7,6 +7,26 @@ export const AGENT_TYPES = [
   'HOMEWORK_HELPER',
   'PROGRESS',
   'SAFETY',
+  // Domain-specific baseline agents with specialized expertise
+  'BASELINE_ELA',
+  'BASELINE_MATH',
+  'BASELINE_SCIENCE',
+  'BASELINE_SPEECH',
+  'BASELINE_SEL',
+  'BASELINE_SPELLING',
+  'BASELINE_CREATIVE_WRITING',
+  'BASELINE_LIFE_SKILLS',
+  'BASELINE_MOTOR',
+  'BASELINE_EXECUTIVE_FUNCTION',
+  'BASELINE_SENSORY_PROCESSING',
+  // Domain-specific tutor agents
+  'TUTOR_ELA',
+  'TUTOR_MATH',
+  'TUTOR_SCIENCE',
+  'TUTOR_SPEECH',
+  'TUTOR_SEL',
+  'TUTOR_MOTOR',
+  'TUTOR_EXECUTIVE_FUNCTION',
 ] as const;
 
 export type AgentType = (typeof AGENT_TYPES)[number];

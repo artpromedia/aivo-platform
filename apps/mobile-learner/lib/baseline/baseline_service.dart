@@ -33,7 +33,9 @@ class LearnerBaselineService {
   LearnerBaselineService({String? accessToken})
       : _dio = Dio(BaseOptions(
           baseUrl: EnvironmentConfig.baselineBaseUrl,
-          headers: accessToken != null ? {'Authorization': 'Bearer $accessToken'} : null,
+          headers: accessToken != null
+              ? {'Authorization': 'Bearer $accessToken'}
+              : null,
         ));
 
   final Dio _dio;
@@ -163,15 +165,36 @@ class LearnerBaselineService {
     bool hasIep = false,
     bool has504 = false,
     List<String>? disabilityCategories,
+    List<String>? iepGoalDomains,
   }) async {
     if (EnvironmentConfig.useBaselineMock) {
       _ensureMockAllowedOrThrow('prepareBaseline');
       await Future.delayed(const Duration(milliseconds: 2000));
+
+      // Mock adaptive domains based on IEP/parent assessment
+      final baseDomains = [
+        'MATH',
+        'ELA',
+        'SPELLING',
+        'SPEECH',
+        'CREATIVE_WRITING',
+        'SEL',
+        'LIFE_SKILLS'
+      ];
+      final adaptiveDomains = _getAdaptiveDomains(
+        hasIep: hasIep,
+        disabilityCategories: disabilityCategories ?? [],
+        areasOfConcern: areasOfConcern ?? [],
+        iepGoalDomains: iepGoalDomains ?? [],
+      );
+      final allDomains = [...baseDomains, ...adaptiveDomains];
+
       return PrepareBaselineResponse(
         success: true,
-        domainsReady: ['MATH', 'ELA', 'SPELLING', 'SPEECH', 'CREATIVE_WRITING', 'SEL', 'LIFE_SKILLS'],
-        totalQuestions: 35,
-        estimatedDuration: 'About 35 minutes',
+        domainsReady: allDomains,
+        totalQuestions: allDomains.length * 5,
+        estimatedDuration: 'About ${allDomains.length * 5} minutes',
+        adaptiveDomains: adaptiveDomains,
       );
     }
 
@@ -185,13 +208,140 @@ class LearnerBaselineService {
           if (areasOfConcern != null) 'areasOfConcern': areasOfConcern,
           'hasIep': hasIep,
           'has504': has504,
-          if (disabilityCategories != null) 'disabilityCategories': disabilityCategories,
+          if (disabilityCategories != null)
+            'disabilityCategories': disabilityCategories,
+          if (iepGoalDomains != null) 'iepGoalDomains': iepGoalDomains,
         },
       );
       return PrepareBaselineResponse.fromJson(response.data ?? {});
     } on DioException catch (err) {
       throw _handleError(err);
     }
+  }
+
+  /// Determine adaptive domains based on IEP and parent assessment data.
+  static List<String> _getAdaptiveDomains({
+    required bool hasIep,
+    required List<String> disabilityCategories,
+    required List<String> areasOfConcern,
+    required List<String> iepGoalDomains,
+  }) {
+    if (!hasIep && disabilityCategories.isEmpty && areasOfConcern.isEmpty) {
+      return [];
+    }
+
+    final additionalDomains = <String>{};
+
+    // IEP domain triggers based on disability categories
+    const iepDomainTriggers = {
+      'MOTOR': [
+        'orthopedic_impairment',
+        'other_health_impairment',
+        'traumatic_brain_injury',
+        'multiple_disabilities',
+        'developmental_delay',
+        'cerebral_palsy',
+        'muscular_dystrophy',
+      ],
+      'EXECUTIVE_FUNCTION': [
+        'specific_learning_disability',
+        'other_health_impairment',
+        'emotional_disturbance',
+        'autism',
+        'traumatic_brain_injury',
+        'intellectual_disability',
+      ],
+      'SENSORY_PROCESSING': [
+        'autism',
+        'developmental_delay',
+        'sensory_processing_disorder',
+        'deafblindness',
+        'hearing_impairment',
+        'visual_impairment',
+        'multiple_disabilities',
+      ],
+    };
+
+    // Check disability categories
+    for (final entry in iepDomainTriggers.entries) {
+      final domain = entry.key;
+      final triggers = entry.value;
+      for (final category in disabilityCategories) {
+        final normalized =
+            category.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
+        if (triggers.contains(normalized)) {
+          additionalDomains.add(domain);
+          break;
+        }
+      }
+    }
+
+    // Check areas of concern keywords
+    const concernKeywords = {
+      'MOTOR': [
+        'motor',
+        'coordination',
+        'handwriting',
+        'grasp',
+        'balance',
+        'physical',
+        'movement',
+        'fine motor',
+        'gross motor'
+      ],
+      'EXECUTIVE_FUNCTION': [
+        'attention',
+        'focus',
+        'organization',
+        'planning',
+        'memory',
+        'impulse',
+        'adhd',
+        'executive',
+        'distract'
+      ],
+      'SENSORY_PROCESSING': [
+        'sensory',
+        'noise',
+        'texture',
+        'light',
+        'overwhelmed',
+        'meltdown',
+        'sensitive',
+        'overstimulated'
+      ],
+    };
+
+    for (final concern in areasOfConcern) {
+      final lowerConcern = concern.toLowerCase();
+      for (final entry in concernKeywords.entries) {
+        final domain = entry.key;
+        final keywords = entry.value;
+        if (keywords.any((kw) => lowerConcern.contains(kw))) {
+          additionalDomains.add(domain);
+        }
+      }
+    }
+
+    // Map IEP goal domains
+    for (final goalDomain in iepGoalDomains) {
+      final lower = goalDomain.toLowerCase();
+      if (lower.contains('motor') ||
+          lower.contains('ot') ||
+          lower.contains('pt')) {
+        additionalDomains.add('MOTOR');
+      }
+      if (lower.contains('executive') ||
+          lower.contains('attention') ||
+          lower.contains('organization')) {
+        additionalDomains.add('EXECUTIVE_FUNCTION');
+      }
+      if (lower.contains('sensory')) {
+        additionalDomains.add('SENSORY_PROCESSING');
+      }
+    }
+
+    return additionalDomains.toList();
   }
 
   /// Complete a baseline attempt.
@@ -205,11 +355,31 @@ class LearnerBaselineService {
         status: 'COMPLETED',
         score: 0.8,
         domainScores: [
-          const DomainScore(domain: BaselineDomain.ela, correct: 4, total: 5, percentage: 0.8),
-          const DomainScore(domain: BaselineDomain.math, correct: 5, total: 5, percentage: 1.0),
-          const DomainScore(domain: BaselineDomain.science, correct: 3, total: 5, percentage: 0.6),
-          const DomainScore(domain: BaselineDomain.speech, correct: 4, total: 5, percentage: 0.8),
-          const DomainScore(domain: BaselineDomain.sel, correct: 4, total: 5, percentage: 0.8),
+          const DomainScore(
+              domain: BaselineDomain.ela,
+              correct: 4,
+              total: 5,
+              percentage: 0.8),
+          const DomainScore(
+              domain: BaselineDomain.math,
+              correct: 5,
+              total: 5,
+              percentage: 1.0),
+          const DomainScore(
+              domain: BaselineDomain.science,
+              correct: 3,
+              total: 5,
+              percentage: 0.6),
+          const DomainScore(
+              domain: BaselineDomain.speech,
+              correct: 4,
+              total: 5,
+              percentage: 0.8),
+          const DomainScore(
+              domain: BaselineDomain.sel,
+              correct: 4,
+              total: 5,
+              percentage: 0.8),
         ],
       );
     }
@@ -279,6 +449,18 @@ class LearnerBaselineService {
         return 'Which word rhymes with "cat"?';
       case BaselineDomain.sel:
         return 'What should you do when you feel frustrated?';
+      case BaselineDomain.spelling:
+        return 'How do you spell the word that means "cheerful"?';
+      case BaselineDomain.creativeWriting:
+        return 'Which sentence would make a good story beginning?';
+      case BaselineDomain.lifeSkills:
+        return 'What should you do before crossing the street?';
+      case BaselineDomain.motor:
+        return 'Which picture shows the correct way to hold a pencil?';
+      case BaselineDomain.executiveFunction:
+        return 'What should you do first when you have a big project to complete?';
+      case BaselineDomain.sensoryProcessing:
+        return 'What can you do if the room feels too loud?';
     }
   }
 
@@ -289,4 +471,5 @@ class LearnerBaselineService {
 }
 
 /// Provider for the learner baseline service.
-final learnerBaselineServiceProvider = Provider<LearnerBaselineService>((_) => LearnerBaselineService());
+final learnerBaselineServiceProvider =
+    Provider<LearnerBaselineService>((_) => LearnerBaselineService());

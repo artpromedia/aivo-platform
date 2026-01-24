@@ -49,13 +49,23 @@ function gradeBandToGradeLevel(gradeBand: GradeBand): number {
  * 3. Static validated questions (emergency fallback)
  *
  * Supports adaptive difficulty level (1-5 scale).
+ * Supports parent assessment context (IDEA/504 compliance).
+ * Supports IEP document data for IEP-aligned question generation.
  */
 export async function generateBaselineQuestions(
   payload: BaselineQuestionGenerationPayload
 ): Promise<GeneratedQuestion[]> {
-  const { tenantId, learnerId, gradeBand, domain, skillCodes, difficulty = 3 } = payload;
+  const { 
+    tenantId, learnerId, gradeBand, domain, skillCodes, difficulty = 3,
+    // Parent assessment context
+    assessmentType, hasIep, has504, disabilityCategories, areasOfConcern,
+    // IEP document data
+    iepGoals, iepAccommodations, iepServices,
+  } = payload;
 
   const startTime = Date.now();
+
+  console.log(`[generateBaselineQuestions] Generating for ${domain} with assessmentType=${assessmentType}, hasIep=${hasIep}, iepGoals=${iepGoals?.length ?? 0}`);
 
   try {
     // Use the new question generator service with full fallback chain
@@ -71,6 +81,16 @@ export async function generateBaselineQuestions(
       targetDifficulty: difficulty / 5, // Normalize to 0-1
       questionCount: skillCodes.length,
       questionTypes: ['multiple-choice'], // Default to MC for baseline
+      // Parent assessment context for IDEA/504 compliance
+      assessmentType,
+      hasIep,
+      has504,
+      disabilityCategories,
+      areasOfConcern,
+      // IEP document data for IEP-aligned question generation
+      iepGoals,
+      iepAccommodations,
+      iepServices,
     });
 
     // Record generation analytics

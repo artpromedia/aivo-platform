@@ -17,6 +17,7 @@ import { OnboardingController } from './onboarding/onboarding.controller.js';
 import { HomeworkController } from './homework/homework.controller.js';
 import { LearnerController } from './learner/learner.controller.js';
 import { CaregiverController } from './caregiver/caregiver.controller.js';
+import { InternalController } from './internal/internal.controller.js';
 
 // Services
 import { ParentService } from './parent/parent.service.js';
@@ -53,6 +54,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     HomeworkController,
     LearnerController,
     CaregiverController,
+    InternalController,
   ],
   providers: [
     // Core services
@@ -115,6 +117,11 @@ export class ParentModule implements NestModule {
         // Caregiver public routes (invite acceptance)
         { path: 'caregiver/accept-invite', method: RequestMethod.POST },
         { path: 'caregiver/invite/:code', method: RequestMethod.GET },
+        // Internal routes (service-to-service) - multiple patterns for compatibility
+        { path: 'internal/(.*)', method: RequestMethod.ALL },
+        { path: 'internal/create-profile', method: RequestMethod.POST },
+        { path: 'api/v1/internal/(.*)', method: RequestMethod.ALL },
+        { path: 'api/v1/internal/create-profile', method: RequestMethod.POST },
       )
       .forRoutes('*');
   }

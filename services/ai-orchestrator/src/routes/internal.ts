@@ -83,6 +83,34 @@ const baselineGenerateSchema = z.object({
     hasIep: z.boolean().optional(),
     has504: z.boolean().optional(),
     disabilityCategories: z.array(z.string()).optional(),
+    // IEP Document Data - extracted from uploaded IEP documents
+    iepGoals: z.array(z.object({
+      id: z.string(),
+      domain: z.string(),
+      category: z.string(),
+      description: z.string(),
+      baseline: z.string().nullable().optional(),
+      target: z.string().nullable().optional(),
+      measurementMethod: z.string().nullable().optional(),
+      timeline: z.string().nullable().optional(),
+      confidence: z.number().optional(),
+    })).optional(),
+    iepAccommodations: z.array(z.object({
+      id: z.string(),
+      category: z.string(),
+      description: z.string(),
+      setting: z.string().nullable().optional(),
+      frequency: z.string().nullable().optional(),
+      confidence: z.number().optional(),
+    })).optional(),
+    iepServices: z.array(z.object({
+      id: z.string(),
+      type: z.string(),
+      provider: z.string().nullable().optional(),
+      frequency: z.string().nullable().optional(),
+      duration: z.string().nullable().optional(),
+      location: z.string().nullable().optional(),
+    })).optional(),
   }),
 });
 
@@ -310,7 +338,11 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
     }
 
     const { tenantId, learnerId, payload } = parsed.data;
-    const { gradeBand, domain, skillCodes, assessmentType, accommodations, gradeLevel, areasOfConcern, hasIep, has504, disabilityCategories } = payload;
+    const { 
+      gradeBand, domain, skillCodes, assessmentType, accommodations, gradeLevel, 
+      areasOfConcern, hasIep, has504, disabilityCategories,
+      iepGoals, iepAccommodations, iepServices 
+    } = payload;
 
     try {
       const llm = getLLMOrchestrator();
@@ -329,6 +361,10 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
         hasIep,
         has504,
         disabilityCategories,
+        // Pass IEP document data for IEP-aligned question generation
+        iepGoals,
+        iepAccommodations,
+        iepServices,
       });
 
       reply.code(200).send({

@@ -201,14 +201,29 @@ void main() {
     test('fromCode returns correct domain', () {
       expect(BaselineDomain.fromCode('ELA'), equals(BaselineDomain.ela));
       expect(BaselineDomain.fromCode('MATH'), equals(BaselineDomain.math));
-      expect(BaselineDomain.fromCode('SCIENCE'), equals(BaselineDomain.science));
+      expect(
+          BaselineDomain.fromCode('SCIENCE'), equals(BaselineDomain.science));
       expect(BaselineDomain.fromCode('SPEECH'), equals(BaselineDomain.speech));
       expect(BaselineDomain.fromCode('SEL'), equals(BaselineDomain.sel));
+      expect(
+          BaselineDomain.fromCode('SPELLING'), equals(BaselineDomain.spelling));
+      expect(BaselineDomain.fromCode('CREATIVE_WRITING'),
+          equals(BaselineDomain.creativeWriting));
+      expect(BaselineDomain.fromCode('LIFE_SKILLS'),
+          equals(BaselineDomain.lifeSkills));
+      expect(BaselineDomain.fromCode('MOTOR'), equals(BaselineDomain.motor));
+      expect(BaselineDomain.fromCode('EXECUTIVE_FUNCTION'),
+          equals(BaselineDomain.executiveFunction));
+      expect(BaselineDomain.fromCode('SENSORY_PROCESSING'),
+          equals(BaselineDomain.sensoryProcessing));
     });
 
     test('fromCode is case insensitive', () {
       expect(BaselineDomain.fromCode('ela'), equals(BaselineDomain.ela));
       expect(BaselineDomain.fromCode('Math'), equals(BaselineDomain.math));
+      expect(BaselineDomain.fromCode('motor'), equals(BaselineDomain.motor));
+      expect(BaselineDomain.fromCode('Executive_Function'),
+          equals(BaselineDomain.executiveFunction));
     });
 
     test('domain has correct labels', () {
@@ -217,6 +232,19 @@ void main() {
       expect(BaselineDomain.science.label, equals('Science'));
       expect(BaselineDomain.speech.label, equals('Speech & Language'));
       expect(BaselineDomain.sel.label, equals('Social-Emotional'));
+      expect(BaselineDomain.motor.label, equals('Motor Skills'));
+      expect(BaselineDomain.executiveFunction.label, equals('Thinking Skills'));
+      expect(
+          BaselineDomain.sensoryProcessing.label, equals('Sensory Awareness'));
+    });
+
+    test('isIepSpecific correctly identifies IEP domains', () {
+      expect(BaselineDomain.motor.isIepSpecific, isTrue);
+      expect(BaselineDomain.executiveFunction.isIepSpecific, isTrue);
+      expect(BaselineDomain.sensoryProcessing.isIepSpecific, isTrue);
+      expect(BaselineDomain.ela.isIepSpecific, isFalse);
+      expect(BaselineDomain.math.isIepSpecific, isFalse);
+      expect(BaselineDomain.lifeSkills.isIepSpecific, isFalse);
     });
   });
 

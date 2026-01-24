@@ -246,9 +246,10 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
         body: JSON.stringify({
           tenantId: request.tenantId,
           learnerId: request.learnerId,
-          agentType: 'QUESTION_GENERATOR',
+          agentType: 'BASELINE',
           payload: {
             subject: request.subject,
+            domain: request.subject, // AI orchestrator expects 'domain' not 'subject'
             gradeLevel: request.gradeLevel,
             gradeBand: request.gradeBand,
             topicArea: request.topicArea,
@@ -262,6 +263,16 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
             accommodations: request.accommodations,
             standardsContext: request.standardsContext,
             preferences: request.preferences,
+            // Parent assessment context for IDEA/504 compliance
+            assessmentType: request.assessmentType,
+            hasIep: request.hasIep,
+            has504: request.has504,
+            disabilityCategories: request.disabilityCategories,
+            areasOfConcern: request.areasOfConcern,
+            // IEP document data for IEP-aligned question generation
+            iepGoals: request.iepGoals,
+            iepAccommodations: request.iepAccommodations,
+            iepServices: request.iepServices,
           },
         }),
         signal: controller.signal,

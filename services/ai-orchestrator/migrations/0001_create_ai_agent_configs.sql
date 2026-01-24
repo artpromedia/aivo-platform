@@ -11,9 +11,7 @@ CREATE TABLE IF NOT EXISTS ai_agent_configs (
     rollout_percentage INTEGER NOT NULL DEFAULT 100 CHECK (rollout_percentage >= 0 AND rollout_percentage <= 100),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT ai_agent_configs_agent_type_check CHECK (agent_type IN ('BASELINE', 'VIRTUAL_BRAIN', 'LESSON_PLANNER', 'TUTOR', 'FOCUS', 'HOMEWORK_HELPER', 'PROGRESS', 'SAFETY')),
-    CONSTRAINT ai_agent_configs_provider_check CHECK (provider IN ('OPENAI', 'ANTHROPIC', 'GEMINI', 'MOCK'))
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_ai_agent_configs_agent_type_active

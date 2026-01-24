@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { createApp } from './app.js';
 import { initNats, closeNats } from './events/index.js';
 import { prisma } from './prisma.js';
