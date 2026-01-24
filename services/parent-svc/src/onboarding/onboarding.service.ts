@@ -152,31 +152,36 @@ export class OnboardingService {
 
     // Generate a PIN for the learner
     const learnerPin = this.generateLearnerPin();
+    
+    // Hash the PIN for storage
+    const crypto = await import('node:crypto');
+    const pinHash = crypto.createHash('sha256').update(learnerPin).digest('hex');
 
-    // Create learner record in parent-svc database
-    // Note: This creates the parent-learner link. The actual learner profile
-    // is managed by profile-svc, and virtual brain by learner-model-svc
-    const learner = await this.prisma.learner.create({
+    // Create learner profile in parent-svc database
+    // Note: The Profile model stores the learner profile.
+    // Location info is passed to brain-engine for curriculum alignment.
+    const learner = await this.prisma.profile.create({
       data: {
-        firstName: input.firstName,
-        lastName: input.lastName,
-        dateOfBirth: new Date(input.dateOfBirth),
-        gradeLevel: input.gradeLevel,
+        givenName: input.firstName,
+        familyName: input.lastName || '',
+        dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : null,
+        grade: input.gradeLevel || null,
         pin: learnerPin,
-        // Location info for curriculum alignment
-        stateCode: input.location.stateCode || district?.stateCode || null,
-        zipCode: input.location.zipCode,
-        ncesDistrictId: district?.ncesDistrictId || null,
-        districtName: district?.districtName || null,
-        curriculumStandards: locationResult.curriculum.curriculumStandards,
-        // Link to parent
-        parentLinks: {
-          create: {
-            parentId,
-            relationship: 'PARENT',
-            isPrimary: true,
-          },
-        },
+        pinHash,
+        baselineStatus: 'not_started',
+        status: 'active',
+      },
+    });
+
+    // Create parent-student link
+    await this.prisma.parentStudentLink.create({
+      data: {
+        parentId,
+        studentId: learner.id,
+        relationship: 'parent',
+        isPrimary: true,
+        status: 'active',
+        consentStatus: 'pending',
       },
     });
 
@@ -269,48 +274,28 @@ export class OnboardingService {
    * Get onboarding status for a parent
    */
   async getOnboardingStatus(parentId: string): Promise<OnboardingStatus> {
-    // Check if parent has any learners
-    const learners = await this.prisma.learner.findMany({
-      where: {
-        parentLinks: {
-          some: { parentId },
-        },
-      },
+    // Check if parent has any learners via ParentStudentLink
+    const parentLinks = await this.prisma.parentStudentLink.findMany({
+      where: { parentId, status: 'active' },
       include: {
-        baselineAttempts: {
-          where: { status: 'COMPLETED' },
-          take: 1,
-        },
+        student: true,
       },
     });
 
-    if (learners.length === 0) {
+    if (parentLinks.length === 0) {
       return {
         step: 'location',
         baselineComplete: false,
       };
     }
 
-    const learner = learners[0];
-    const hasCompletedBaseline = learner.baselineAttempts.length > 0;
-
-    if (!learner.zipCode) {
-      return {
-        step: 'location',
-        learnerId: learner.id,
-        baselineComplete: hasCompletedBaseline,
-      };
-    }
+    const learner = parentLinks[0].student;
+    const hasCompletedBaseline = learner.baselineStatus === 'completed';
 
     if (!hasCompletedBaseline) {
       return {
         step: 'baseline',
         learnerId: learner.id,
-        location: {
-          zipCode: learner.zipCode,
-          stateCode: learner.stateCode || undefined,
-        },
-        curriculumStandards: learner.curriculumStandards,
         baselineComplete: false,
       };
     }
@@ -318,33 +303,26 @@ export class OnboardingService {
     return {
       step: 'complete',
       learnerId: learner.id,
-      location: {
-        zipCode: learner.zipCode,
-        stateCode: learner.stateCode || undefined,
-      },
-      district: learner.ncesDistrictId ? {
-        ncesDistrictId: learner.ncesDistrictId,
-        districtName: learner.districtName || '',
-        stateCode: learner.stateCode || '',
-        stateName: '',
-      } : undefined,
-      curriculumStandards: learner.curriculumStandards,
       baselineComplete: true,
     };
   }
 
   /**
    * Update learner location (and re-detect curriculum)
+   * Note: Location data is passed to brain-engine for curriculum alignment,
+   * but not stored on the Profile model directly.
    */
   async updateLearnerLocation(
     parentId: string,
     learnerId: string,
     location: LocationInput
   ): Promise<{ curriculumStandards: string[]; district?: DistrictInfo }> {
-    // Verify parent has access to this learner
-    const link = await this.prisma.parentLearnerLink.findUnique({
+    // Verify parent has access to this learner via ParentStudentLink
+    const link = await this.prisma.parentStudentLink.findFirst({
       where: {
-        parentId_learnerId: { parentId, learnerId },
+        parentId,
+        studentId: learnerId,
+        status: 'active',
       },
     });
 
@@ -355,17 +333,8 @@ export class OnboardingService {
     // Look up new district and curriculum
     const locationResult = await this.lookupLocation(location);
 
-    // Update learner
-    await this.prisma.learner.update({
-      where: { id: learnerId },
-      data: {
-        stateCode: location.stateCode || locationResult.district?.stateCode,
-        zipCode: location.zipCode,
-        ncesDistrictId: locationResult.district?.ncesDistrictId,
-        districtName: locationResult.district?.districtName,
-        curriculumStandards: locationResult.curriculum.curriculumStandards,
-      },
-    });
+    // Note: Location fields are not stored on Profile model.
+    // They are passed to brain-engine for curriculum alignment.
 
     // Call learner-model-svc to update Virtual Brain curriculum alignment
     await this.updateLearnerModelCurriculum(

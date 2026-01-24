@@ -102,7 +102,8 @@ export class InternalController {
       };
     } catch (error) {
       console.error('[Internal] Failed to create profile:', error);
-      throw new BadRequestException('Failed to create profile');
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new BadRequestException(`Failed to create profile: ${message}`);
     }
   }
 }
