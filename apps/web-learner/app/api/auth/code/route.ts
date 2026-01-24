@@ -28,6 +28,28 @@ interface CodeRequest {
 }
 
 /**
+ * Fetch learner data from parent service by PIN
+ * Used to get the actual learner's name even in dev mode
+ */
+async function fetchLearnerByPin(pin: string): Promise<LearnerData | null> {
+  try {
+    // Try to get learner data from parent service
+    const response = await fetch(`${PARENT_SVC_URL}/api/v1/learner/by-pin/${pin}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
+      const data = await response.json() as { learner?: LearnerData };
+      return data.learner || null;
+    }
+  } catch (error) {
+    console.log('[DEV] Could not fetch learner by PIN:', error);
+  }
+  return null;
+}
+
+/**
  * Generate a mock JWT for development mode
  */
 function generateDevToken(learnerId: string, firstName: string): string {
@@ -72,19 +94,27 @@ export async function POST(request: NextRequest) {
       } catch (fetchError) {
         // Service not available - handle dev mode fallback
         if (isDev) {
-          console.log('[DEV] Parent service not available, using mock data for PIN:', code);
-          const mockLearnerId = `demo_learner_${code}`;
-          const mockFirstName = 'Demo';
-          
+          console.log('[DEV] Parent service not available, trying to fetch learner data for PIN:', code);
+
+          // Try to get actual learner data even in dev mode
+          const actualLearner = await fetchLearnerByPin(code);
+
+          const learnerId = actualLearner?.id || `demo_learner_${code}`;
+          const firstName = actualLearner?.firstName || 'Friend'; // Use friendly fallback instead of 'Demo'
+          const lastName = actualLearner?.lastName || '';
+          const baselineStatus = actualLearner?.baselineStatus || 'not_started';
+
+          console.log(`[DEV] Using ${actualLearner ? 'actual' : 'fallback'} learner data: ${firstName}`);
+
           data = {
-            accessToken: generateDevToken(mockLearnerId, mockFirstName),
-            refreshToken: generateDevToken(mockLearnerId, mockFirstName),
+            accessToken: generateDevToken(learnerId, firstName),
+            refreshToken: generateDevToken(learnerId, firstName),
             learner: {
-              id: mockLearnerId,
-              firstName: mockFirstName,
-              lastName: 'Learner',
-              avatarUrl: undefined,
-              baselineStatus: 'not_started',
+              id: learnerId,
+              firstName,
+              lastName,
+              avatarUrl: actualLearner?.avatarUrl,
+              baselineStatus,
             },
           };
         } else {
@@ -103,16 +133,16 @@ export async function POST(request: NextRequest) {
         // Service not available - handle dev mode fallback
         if (isDev) {
           console.log('[DEV] Teacher service not available, using mock data for class code:', code);
-          const mockLearnerId = `class_learner_${code}`;
-          const mockFirstName = 'Student';
-          
+          const learnerId = `class_learner_${code}`;
+          const firstName = 'Friend'; // Use friendly fallback
+
           data = {
-            accessToken: generateDevToken(mockLearnerId, mockFirstName),
-            refreshToken: generateDevToken(mockLearnerId, mockFirstName),
+            accessToken: generateDevToken(learnerId, firstName),
+            refreshToken: generateDevToken(learnerId, firstName),
             learner: {
-              id: mockLearnerId,
-              firstName: mockFirstName,
-              lastName: 'User',
+              id: learnerId,
+              firstName,
+              lastName: '',
               avatarUrl: undefined,
               baselineStatus: 'not_started',
             },
@@ -128,19 +158,23 @@ export async function POST(request: NextRequest) {
       if (!response.ok) {
         // Service returned an error - in dev mode, still allow mock login
         if (isDev && response.status === 401) {
-          console.log('[DEV] Service returned 401, using mock data for code:', code);
-          const mockLearnerId = isPin ? `demo_learner_${code}` : `class_learner_${code}`;
-          const mockFirstName = isPin ? 'Demo' : 'Student';
-          
+          console.log('[DEV] Service returned 401, trying to fetch actual learner data for code:', code);
+
+          // Try to get actual learner data even in dev mode
+          const actualLearner = isPin ? await fetchLearnerByPin(code) : null;
+
+          const learnerId = actualLearner?.id || (isPin ? `demo_learner_${code}` : `class_learner_${code}`);
+          const firstName = actualLearner?.firstName || 'Friend'; // Use friendly fallback
+
           data = {
-            accessToken: generateDevToken(mockLearnerId, mockFirstName),
-            refreshToken: generateDevToken(mockLearnerId, mockFirstName),
+            accessToken: generateDevToken(learnerId, firstName),
+            refreshToken: generateDevToken(learnerId, firstName),
             learner: {
-              id: mockLearnerId,
-              firstName: mockFirstName,
-              lastName: 'Learner',
-              avatarUrl: undefined,
-              baselineStatus: 'not_started',
+              id: learnerId,
+              firstName,
+              lastName: actualLearner?.lastName || '',
+              avatarUrl: actualLearner?.avatarUrl,
+              baselineStatus: actualLearner?.baselineStatus || 'not_started',
             },
           };
         } else {
