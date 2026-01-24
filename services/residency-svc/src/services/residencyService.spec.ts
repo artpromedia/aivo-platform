@@ -587,7 +587,7 @@ function createMockTransfer(overrides: Partial<CrossBorderTransfer> = {}): Cross
 
 describe('ResidencyService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('listRegions', () => {
@@ -872,7 +872,7 @@ describe('ResidencyService', () => {
 
   describe('requestTransfer', () => {
     it('should create transfer requiring approval', async () => {
-      const policy = createMockPolicy({ crossBorderApproval: true });
+      const policy = createMockPolicy({ crossBorderApproval: true, blockedRegions: [] });
       mockPrisma.dataResidencyPolicy.findFirst.mockResolvedValueOnce(policy);
       mockPrisma.region.findUnique.mockResolvedValueOnce(createMockRegion({ code: 'EU-WEST', displayName: 'EU West' }));
       mockPrisma.crossBorderTransfer.create.mockResolvedValueOnce(createMockTransfer());
