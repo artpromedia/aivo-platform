@@ -375,11 +375,14 @@ export function createLLMOrchestratorFromEnv(): LLMOrchestrator {
     (process.env.NODE_ENV === 'production' ? undefined : 'http://ollama:11434');
 
   if (ollamaUrl) {
+    // In development, use shorter timeout for faster fallback to static questions
+    // Production can use longer timeout since cloud providers are typically faster
+    const defaultTimeout = isDevelopment ? '15000' : '60000';
     config.ollama = {
       apiKey: 'not-required', // Ollama doesn't need an API key
       baseUrl: ollamaUrl,
       defaultModel: process.env.OLLAMA_DEFAULT_MODEL ?? 'llama3.2:3b',
-      timeout: Number.parseInt(process.env.OLLAMA_TIMEOUT_MS ?? '120000', 10),
+      timeout: Number.parseInt(process.env.OLLAMA_TIMEOUT_MS ?? defaultTimeout, 10),
     };
   }
 
