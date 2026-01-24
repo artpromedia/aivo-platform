@@ -5,7 +5,8 @@
  * and resource access.
  */
 
-const BASE_URL = 'http://localhost:8094';
+// Use relative paths to go through Next.js API routes
+const BASE_URL = '/api';
 
 // ============================================================================
 // Types

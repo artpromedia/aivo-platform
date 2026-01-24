@@ -49,6 +49,13 @@ async function getBlob(endpoint: string): Promise<Blob> {
   return res.blob();
 }
 
+/**
+ * Check if running in development mode
+ */
+export function isDevMode(): boolean {
+  return process.env.NODE_ENV === 'development';
+}
+
 export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint),
   post: <T>(endpoint: string, body: unknown) => request<T>(endpoint, { method: 'POST', body }),
