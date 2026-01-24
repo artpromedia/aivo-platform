@@ -1,0 +1,34 @@
+﻿node.exe : turbo 2.6.3
+At C:\Users\ofema\AppData\Local\fnm_multishells\18020_1769290728166\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (turbo 2.6.3:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ΓÇó Packages in scope: @aivo/ai-orchestrator, @aivo/analytics-svc, @aivo/approval-svc, @aivo/assessment-svc, @aivo/audit-svc, @aivo/auth-svc, @aivo/baseline-svc, @aivo/benchmarking-svc, @aivo/billing-svc, @aivo/collaboration-svc, @aivo/community-svc, @aivo/compliance-svc, @aivo/consent-svc, @aivo/content-authoring-svc, @aivo/content-svc, @aivo/coursework-ingest-svc, @aivo/curriculum-svc, @aivo/device-mgmt-svc, @aivo/dsr-svc, @aivo/edfi-svc, @aivo/embedded-tools-svc, @aivo/engagement-svc, @aivo/event-collector-svc, @aivo/executive-function-svc, @aivo/experimentation-svc, @aivo/focus-svc, @aivo/game-gen-svc, @aivo/game-library-svc, @aivo/gamification-svc, @aivo/goal-svc, @aivo/gradebook-svc, @aivo/homework-helper-svc, @aivo/iep-svc, @aivo/import-export-svc, @aivo/integration-svc, @aivo/learner-model-svc, @aivo/legal-hold-svc, @aivo/life-skills-svc, @aivo/lti-svc, @aivo/marketplace-svc, @aivo/messaging-svc, @aivo/model-registry-svc, @aivo/model-trainer-svc, @aivo/notify-svc, @aivo/orchestrator-svc, @aivo/parent-svc, @aivo/payments-svc, @aivo/personalization-svc, @aivo/professional-dev-svc, @aivo/profile-svc, @aivo/realtime-svc, @aivo/reports-svc, @aivo/research-svc, @aivo/residency-svc, @aivo/retention-svc, @aivo/sandbox-svc, @aivo/scorm-svc, @aivo/search-svc, @aivo/sel-svc, @aivo/session-svc, @aivo/sis-sync-svc, @aivo/speech-therapy-svc, @aivo/sync-svc, @aivo/teacher-planning-svc, @aivo/tenant-svc, @aivo/translation-svc, @aivo/writing-pad-svc
+ΓÇó Running dev in 67 packages
+ΓÇó Remote caching disabled
+@aivo/lti-svc:dev: cache bypass, force executing aae8b6aeeceabbaa
+@aivo/parent-svc:dev: cache bypass, force executing f0bb586947c258e9
+@aivo/baseline-svc:dev: cache bypass, force executing 1a57fd970e2d2e9b
+@aivo/model-trainer-svc:dev: cache bypass, force executing 546028bcd5c70b37
+@aivo/experimentation-svc:dev: cache bypass, force executing 51d76d0036e2a420
+@aivo/research-svc:dev: cache bypass, force executing 09f9b9e80f12e377
+@aivo/gamification-svc:dev: cache bypass, force executing 5ee261ae39454255
+@aivo/scorm-svc:dev: cache bypass, force executing daef41a8cccc285a
+@aivo/import-export-svc:dev: cache bypass, force executing 2f7c889521c324ad
+@aivo/orchestrator-svc:dev: cache bypass, force executing a78119e46c5a2389
+@aivo/tenant-svc:dev: cache bypass, force executing 9088e77a7f3885c9
+@aivo/professional-dev-svc:dev: cache bypass, force executing ae422c47d6d738d0
+@aivo/coursework-ingest-svc:dev: cache bypass, force executing 17ea6b278c9c0edf
+@aivo/device-mgmt-svc:dev: cache bypass, force executing 78f70a1b18bf241e
+@aivo/payments-svc:dev: cache bypass, force executing 0542c1f52a619345
+@aivo/personalization-svc:dev: cache bypass, force executing ec5f119a3ddee9aa
+@aivo/teacher-planning-svc:dev: cache bypass, force executing c71283aec9a190f8
+@aivo/iep-svc:dev: cache bypass, force executing 15f7a4921454a61b
+@aivo/audit-svc:dev: cache bypass, force executing fa61e0cc585e0d68
+@aivo/event-collector-svc:dev: cache bypass, force executing a6314b736fbe58fb
+@aivo/executive-function-svc:dev: cache bypass, force executing 4453c54af8ca9558
+@aivo/community-svc:dev: cache bypass, force executing 3ce0faae3c394b02
+@aivo/sis-sync-svc:dev: cache bypass, force executing 0848d08f0d6273cf
