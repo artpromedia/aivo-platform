@@ -14,7 +14,7 @@
 
 import { randomUUID } from 'node:crypto';
 
-import type { FastifyPluginCallback, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyPluginCallback, FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 
 // Extend Fastify types
@@ -70,7 +70,11 @@ function extractCorrelationId(
 /**
  * Correlation ID plugin for Fastify
  */
-const correlationIdPlugin: FastifyPluginCallback<CorrelationIdOptions> = (fastify, opts, done) => {
+const correlationIdPlugin = (
+  fastify: FastifyInstance,
+  opts: CorrelationIdOptions,
+  done: (err?: Error) => void
+): void => {
   const options = { ...DEFAULT_OPTIONS, ...opts };
 
   // Add hook to extract/generate correlation ID
@@ -104,13 +108,11 @@ const correlationIdPlugin: FastifyPluginCallback<CorrelationIdOptions> = (fastif
   done();
 };
 
-export const correlationIdMiddleware: ReturnType<typeof fp<CorrelationIdOptions>> = fp(
-  correlationIdPlugin as unknown as FastifyPluginAsync<CorrelationIdOptions>,
-  {
-    name: 'correlation-id',
-    fastify: '4.x',
-  }
-);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const correlationIdMiddleware: any = fp<CorrelationIdOptions>(correlationIdPlugin as any, {
+  name: 'correlation-id',
+  fastify: '5.x',
+});
 
 /**
  * Create headers object with correlation ID for outgoing requests
