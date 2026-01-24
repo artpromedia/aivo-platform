@@ -19,10 +19,12 @@
   },
   "dependencies": {
     "@aivo/events": "workspace:*",
+    "@aivo/ts-api-utils": "workspace:^",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ts-shared": "workspace:*",
     "@aws-sdk/client-kinesis": "^3.600.0",
     "@aws-sdk/client-sqs": "^3.600.0",
+    "@fastify/cors": "^11.2.0",
     "@prisma/client": "^5.22.0",
     "fastify": "^4.28.1",
     "fastify-plugin": "^5.0.1",
