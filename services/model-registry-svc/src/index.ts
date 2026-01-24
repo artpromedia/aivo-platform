@@ -9,7 +9,7 @@ import { config } from './config.js';
 import { prisma } from './prisma.js';
 
 async function main() {
-  const app = createApp();
+  const app = await createApp();
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {

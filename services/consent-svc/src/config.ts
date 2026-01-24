@@ -9,6 +9,10 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
     const abs = path.resolve(fileEnv);
     return fs.readFileSync(abs, 'utf-8');
   }
+  // Development fallback
+  if (process.env.NODE_ENV !== 'production') {
+    return 'development-key-not-for-production';
+  }
   throw new Error('JWT public key not provided');
 }
 

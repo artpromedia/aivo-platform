@@ -399,3 +399,6 @@ export function buildLearnerContext(params: BuildLearnerContextParams): LearnerC
 
   return Object.keys(context).length > 0 ? context : undefined;
 }
+
+// Alias for backwards compatibility
+export { generateToolLaunchToken as generateLaunchToken };

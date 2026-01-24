@@ -20,11 +20,6 @@ export const ActivityType = z.enum([
 
 export const HelpfulnessRating = z.enum(['NOT_HELPFUL', 'SOMEWHAT_HELPFUL', 'HELPFUL', 'VERY_HELPFUL']);
 
-// Params
-export const profileIdParamsSchema = z.object({
-  profileId: z.string().uuid('Invalid profile ID format'),
-});
-
 // Query schemas
 export const listActivitiesQuerySchema = z.object({
   competencyId: z.string().uuid().optional(),
