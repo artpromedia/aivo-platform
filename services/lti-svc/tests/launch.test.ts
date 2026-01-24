@@ -70,20 +70,14 @@ const sampleIdToken: LtiIdTokenPayload = {
 
 const sampleTool = {
   id: 'tool-uuid-1',
-  platform_type: 'CANVAS',
-  name: 'Test Canvas Instance',
+  tenantId: 'tenant-1',
+  clientId: 'client-id-123',
+  deploymentId: 'deployment-1',
   issuer: 'https://canvas.instructure.com',
-  client_id: 'client-id-123',
-  deployment_id: 'deployment-1',
-  auth_login_url: 'https://canvas.instructure.com/api/lti/authorize_redirect',
-  auth_token_url: 'https://canvas.instructure.com/login/oauth2/token',
-  jwks_url: 'https://canvas.instructure.com/api/lti/security/jwks',
-  public_key: null,
-  private_key: '---PRIVATE KEY---',
-  is_active: true,
-  tenant_id: 'tenant-1',
-  created_at: new Date(),
-  updated_at: new Date(),
+  authLoginUrl: 'https://canvas.instructure.com/api/lti/authorize_redirect',
+  authTokenUrl: 'https://canvas.instructure.com/login/oauth2/token',
+  jwksUrl: 'https://canvas.instructure.com/api/lti/security/jwks',
+  toolPrivateKeyRef: 'kms://private-key-ref',
 };
 
 describe('LTI Role Mapping', () => {
@@ -125,16 +119,15 @@ describe('LTI Role Mapping', () => {
 
 describe('Launch Payload Processing', () => {
   it('should extract all required fields from payload', () => {
-    const result = processLaunchPayload(sampleIdToken);
+    const result = processLaunchPayload(sampleIdToken, sampleTool);
 
-    expect(result.user_id).toBe('user-123');
-    expect(result.resource_link_id).toBe('resource-link-1');
-    expect(result.context_id).toBe('course-123');
-    expect(result.context_label).toBe('MATH101');
-    expect(result.context_title).toBe('Introduction to Mathematics');
-    expect(result.user_role).toBe('LEARNER');
-    expect(result.user_name).toBe('John Student');
-    expect(result.user_email).toBe('john@school.edu');
+    expect(result.lmsUserId).toBe('user-123');
+    expect(result.lmsResourceLinkId).toBe('resource-link-1');
+    expect(result.lmsContextId).toBe('course-123');
+    expect(result.lmsContextTitle).toBe('Introduction to Mathematics');
+    expect(result.userRole).toBe('LEARNER');
+    expect(result.lmsUserName).toBe('John Student');
+    expect(result.lmsUserEmail).toBe('john@school.edu');
   });
 
   it('should handle missing optional fields gracefully', () => {
@@ -145,12 +138,12 @@ describe('Launch Payload Processing', () => {
       email: undefined,
     };
 
-    const result = processLaunchPayload(minimalPayload);
+    const result = processLaunchPayload(minimalPayload, sampleTool);
 
-    expect(result.context_id).toBeUndefined();
-    expect(result.context_label).toBeUndefined();
-    expect(result.user_name).toBeUndefined();
-    expect(result.user_email).toBeUndefined();
+    expect(result.lmsContextId).toBeUndefined();
+    expect(result.lmsContextTitle).toBeUndefined();
+    expect(result.lmsUserName).toBeUndefined();
+    expect(result.lmsUserEmail).toBeUndefined();
   });
 
   it('should extract AGS claim when present', () => {
@@ -167,12 +160,12 @@ describe('Launch Payload Processing', () => {
       },
     };
 
-    const result = processLaunchPayload(payloadWithAgs);
+    const result = processLaunchPayload(payloadWithAgs, sampleTool);
 
-    expect(result.lineitem_url).toBe(
+    expect(result.agsEndpoint?.lineitem).toBe(
       'https://canvas.instructure.com/api/lti/courses/1/line_items/123'
     );
-    expect(result.lineitems_url).toBe(
+    expect(result.agsEndpoint?.lineitems).toBe(
       'https://canvas.instructure.com/api/lti/courses/1/line_items'
     );
   });
@@ -181,9 +174,16 @@ describe('Launch Payload Processing', () => {
 describe('LaunchService', () => {
   let launchService: LaunchService;
 
+  const serviceConfig = {
+    authServiceUrl: 'https://auth.aivo.app',
+    baseUrl: 'https://aivo.app',
+    launchExpirySeconds: 3600,
+    nonceExpirySeconds: 600,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    launchService = new LaunchService(mockPrisma as any);
+    launchService = new LaunchService(mockPrisma as any, serviceConfig);
   });
 
   describe('handleOidcLogin', () => {
@@ -199,10 +199,10 @@ describe('LaunchService', () => {
         lti_deployment_id: 'deployment-1',
       });
 
-      expect(result.redirect_url).toContain(sampleTool.auth_login_url);
-      expect(result.redirect_url).toContain('state=');
-      expect(result.redirect_url).toContain('nonce=');
-      expect(result.redirect_url).toContain('login_hint=user-123');
+      expect(result.redirectUrl).toContain(sampleTool.authLoginUrl);
+      expect(result.redirectUrl).toContain('state=');
+      expect(result.redirectUrl).toContain('nonce=');
+      expect(result.redirectUrl).toContain('login_hint=user-123');
     });
 
     it('should throw error for unknown platform', async () => {
@@ -220,7 +220,7 @@ describe('LaunchService', () => {
     it('should throw error for inactive tool', async () => {
       mockPrisma.ltiTool.findFirst.mockResolvedValue({
         ...sampleTool,
-        is_active: false,
+        enabled: false,
       });
 
       await expect(
@@ -247,17 +247,17 @@ describe('LaunchService', () => {
       mockPrisma.ltiNonce.create.mockResolvedValue({ id: 'nonce-1' });
       mockPrisma.ltiLaunch.create.mockResolvedValue({
         id: 'launch-uuid-1',
-        tool_id: toolId,
-        lti_user_id: 'user-123',
-        user_role: 'LEARNER',
+        toolId: toolId,
+        ltiUserId: 'user-123',
+        userRole: 'LEARNER',
         status: 'PENDING',
-        created_at: new Date(),
+        createdAt: new Date(),
       });
       mockPrisma.ltiUserMapping.upsert.mockResolvedValue({
         id: 'mapping-1',
-        tool_id: toolId,
-        lti_user_id: 'user-123',
-        aivo_user_id: null,
+        toolId: toolId,
+        ltiUserId: 'user-123',
+        aivoUserId: null,
       });
       mockPrisma.ltiLink.findFirst.mockResolvedValue(null);
 
@@ -276,26 +276,26 @@ describe('LaunchService', () => {
       const launchId = 'launch-uuid-1';
       const mockLaunch = {
         id: launchId,
-        tool_id: sampleTool.id,
-        link_id: 'link-uuid-1',
-        lti_user_id: 'user-123',
-        user_role: 'LEARNER',
-        user_name: 'John Student',
-        context_id: 'course-123',
-        context_label: 'MATH101',
-        context_title: 'Introduction to Mathematics',
+        toolId: sampleTool.id,
+        linkId: 'link-uuid-1',
+        ltiUserId: 'user-123',
+        userRole: 'LEARNER',
+        userName: 'John Student',
+        contextId: 'course-123',
+        contextLabel: 'MATH101',
+        contextTitle: 'Introduction to Mathematics',
         status: 'PENDING',
-        message_type: LTI_MESSAGE_TYPES.RESOURCE_LINK_REQUEST,
-        created_at: new Date(),
-        updated_at: new Date(),
+        messageType: LTI_MESSAGE_TYPES.RESOURCE_LINK_REQUEST,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         tool: sampleTool,
         link: {
           id: 'link-uuid-1',
-          activity_id: 'activity-123',
-          activity_type: 'LESSON',
+          activityId: 'activity-123',
+          activityType: 'LESSON',
           title: 'Math Quiz',
-          max_points: 100,
-          grading_enabled: true,
+          maxPoints: 100,
+          gradingEnabled: true,
         },
       };
 
@@ -305,15 +305,13 @@ describe('LaunchService', () => {
 
       expect(result).not.toBeNull();
       expect(result?.id).toBe(launchId);
-      expect(result?.link?.activity_id).toBe('activity-123');
+      expect(result?.link?.activityId).toBe('activity-123');
     });
 
-    it('should return null for non-existent launch', async () => {
+    it('should throw for non-existent launch', async () => {
       mockPrisma.ltiLaunch.findUnique.mockResolvedValue(null);
 
-      const result = await launchService.getLaunch('non-existent');
-
-      expect(result).toBeNull();
+      await expect(launchService.getLaunch('non-existent')).rejects.toThrow('Launch not found');
     });
   });
 
@@ -325,18 +323,18 @@ describe('LaunchService', () => {
       mockPrisma.ltiLaunch.update.mockResolvedValue({
         id: launchId,
         status: 'COMPLETED',
-        aivo_session_id: aivoSessionId,
-        updated_at: new Date(),
+        aivoSessionId: aivoSessionId,
+        updatedAt: new Date(),
       });
 
       const result = await launchService.completeLaunch(launchId, aivoSessionId);
 
       expect(mockPrisma.ltiLaunch.update).toHaveBeenCalledWith({
         where: { id: launchId },
-        data: {
+        data: expect.objectContaining({
           status: 'COMPLETED',
-          aivo_session_id: aivoSessionId,
-        },
+          aivoSessionId: aivoSessionId,
+        }),
       });
       expect(result.status).toBe('COMPLETED');
     });
@@ -351,7 +349,7 @@ describe('LTI Launch Validation', () => {
     };
 
     // In production, this validation happens during JWT verification
-    expect(invalidPayload.aud).not.toBe(sampleTool.client_id);
+    expect(invalidPayload.aud).not.toBe(sampleTool.clientId);
   });
 
   it('should reject expired token', () => {
@@ -369,6 +367,6 @@ describe('LTI Launch Validation', () => {
       [LTI_CLAIMS.DEPLOYMENT_ID]: 'wrong-deployment',
     };
 
-    expect(wrongDeployment[LTI_CLAIMS.DEPLOYMENT_ID]).not.toBe(sampleTool.deployment_id);
+    expect(wrongDeployment[LTI_CLAIMS.DEPLOYMENT_ID]).not.toBe(sampleTool.deploymentId);
   });
 });

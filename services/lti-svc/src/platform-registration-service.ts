@@ -32,7 +32,7 @@ export const PlatformRegistrationSchema = z.object({
   authLoginUrl: z.string().url(),
   authTokenUrl: z.string().url(),
   jwksUrl: z.string().url(),
-  toolPrivateKeyRef: z.string().min(1),
+  toolPrivateKeyRef: z.string().optional(),
   toolPublicKeyId: z.string().optional(),
   lineItemsUrl: z.string().url().optional(),
   membershipsUrl: z.string().url().optional(),

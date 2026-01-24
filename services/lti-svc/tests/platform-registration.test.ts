@@ -121,7 +121,7 @@ describe('PlatformRegistrationService', () => {
 
   describe('registerPlatform', () => {
     const validRegistration = {
-      tenantId: 'tenant-uuid-1',
+      tenantId: '550e8400-e29b-41d4-a716-446655440001',
       platformType: LtiPlatformType.CANVAS,
       platformName: 'Springfield School Canvas',
       clientId: 'client-123',
@@ -175,11 +175,6 @@ describe('PlatformRegistrationService', () => {
         updatedAt: new Date(),
       });
 
-      const _registrationWithoutKey = {
-        ...validRegistration,
-        toolPrivateKeyRef: '',
-      };
-
       // This will use the mock key generator
       const service2 = new PlatformRegistrationService(
         mockPrisma as any,
@@ -187,14 +182,13 @@ describe('PlatformRegistrationService', () => {
         mockGenerateKeyPair
       );
 
-      // Since toolPrivateKeyRef is empty string (falsy), it should generate
+      // Since toolPrivateKeyRef is undefined (falsy), it should generate
       mockPrisma.ltiTool.findFirst.mockResolvedValue(null);
 
+      const { toolPrivateKeyRef: _omit, ...registrationWithoutKey } = validRegistration;
+
       await expect(
-        service2.registerPlatform({
-          ...validRegistration,
-          toolPrivateKeyRef: '',
-        })
+        service2.registerPlatform(registrationWithoutKey as any)
       ).resolves.toBeDefined();
     });
   });
