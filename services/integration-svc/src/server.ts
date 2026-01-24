@@ -9,6 +9,7 @@ import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 import { ApiKeyService } from './api-key-service.js';
 import { createGoogleClassroomIntegration } from './google-classroom/index.js';
@@ -62,6 +63,10 @@ export async function createServer(config: ServerConfig): Promise<{
       level: process.env.LOG_LEVEL || 'info',
     },
   });
+
+  // Set up Zod type provider for schema validation
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
 
   // Rate limiting
   await app.register(rateLimit, FastifyRateLimitPresets.internalApi('integration-svc'));

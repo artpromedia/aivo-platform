@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import { config } from './config.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { SyncEventEmitter } from './services/sync-events.js';
@@ -13,6 +14,10 @@ const fastify = Fastify({
     level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
   },
 });
+
+// Set up Zod type provider for schema validation
+fastify.setValidatorCompiler(validatorCompiler);
+fastify.setSerializerCompiler(serializerCompiler);
 
 async function main() {
   try {
