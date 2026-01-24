@@ -1,4 +1,4 @@
-import { GradeBand } from '@prisma/client';
+import { GradeBand } from '../../generated/prisma-client/index.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
