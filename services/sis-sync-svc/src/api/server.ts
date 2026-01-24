@@ -2,6 +2,8 @@
  * SIS Sync Service - Main Entry Point
  */
 
+import { fileURLToPath } from 'node:url';
+
 import { PrismaClient as BasePrismaClient } from '@prisma/client';
 import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
@@ -72,8 +74,9 @@ export async function createServer() {
   return { app, prisma, scheduler };
 }
 
-// Start server if run directly
-if (require.main === module) {
+// Start server if run directly (ES module compatible check)
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMainModule) {
   void createServer().then(async ({ app }) => {
     const port = Number.parseInt(process.env.PORT || '3000', 10);
     const host = process.env.HOST || '0.0.0.0';

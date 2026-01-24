@@ -22,6 +22,7 @@
     "fastify": "^4.28.1",
     "fastify-plugin": "^5.0.1",
     "node-cron": "^3.0.3",
+    "pino": "^10.3.0",
     "ssh2-sftp-client": "^10.0.3",
     "zod": "^3.23.8"
   },
