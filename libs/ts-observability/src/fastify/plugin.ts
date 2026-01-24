@@ -298,7 +298,7 @@ const observabilityPluginImpl: FastifyPluginCallback<ObservabilityPluginOptions>
 
 // Export as Fastify plugin
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const observabilityPlugin: any = fp(observabilityPluginImpl, {
+export const observabilityPlugin: any = fp(observabilityPluginImpl as any, {
   name: '@aivo/observability',
   fastify: '5.x',
 });

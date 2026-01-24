@@ -262,7 +262,7 @@ export function PageErrorFallback({
         been notified and is working to fix it.
       </p>
 
-      {isDev && (
+      {isDev && error && (
         <div className="mb-6 w-full max-w-2xl overflow-auto rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="mb-2 font-mono text-sm font-medium text-red-800">
             {error.name}: {error.message}
