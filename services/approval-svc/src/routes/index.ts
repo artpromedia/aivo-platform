@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import * as approvalService from '../services/approvalService.js';
 
 export default async function routes(app: FastifyInstance) {

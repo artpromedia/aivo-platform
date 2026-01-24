@@ -1,5 +1,5 @@
 import { prisma } from '../prisma.js';
-import { ApprovalStatus, WorkflowStatus, StepType, EscalationType } from '@prisma/client';
+import type { ApprovalStatus, WorkflowStatus, StepType, EscalationType } from '@prisma/client';
 
 // Workflow Management
 export async function createWorkflow(tenantId: string, data: {
