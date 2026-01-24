@@ -228,9 +228,10 @@ const IEP_DOMAIN_CONFIGS: Record<string, Record<AssessmentType, DomainConfig>> =
  */
 async function fetchLearnerProfile(authToken?: string): Promise<LearnerProfile> {
   // Default profile for development/unauthenticated
+  // Use empty firstName so UI can show generic greeting instead of a fake name
   const defaultProfile: LearnerProfile = {
     learnerId: 'dev-learner',
-    firstName: 'Learner',
+    firstName: '', // Empty so UI shows generic greeting
     gradeLevel: 2,
     gradeBand: 'K_2',
     assessmentType: 'STANDARD',
