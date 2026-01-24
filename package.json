@@ -28,7 +28,9 @@
     "sec:trivy": "node -e \"const {spawnSync}=require('node:child_process'); const run=(cmd,args)=>spawnSync(cmd,args,{stdio:'inherit'}); const safeRun=(cmd,args)=>{try{return run(cmd,args);}catch(e){if(e.code==='ENOENT'){console.log('trivy not installed; skipping'); return {status:0};} throw e;}}; const version=safeRun('trivy',['--version']); if(version.status===0){const res=safeRun('trivy',['fs','.','--scanners','vuln,secret','--skip-dirs','node_modules,dist,.next']); process.exit(res.status ?? 0);} else {console.log('trivy not installed; skipping');}\"",
     "sec:all": "pnpm run sec:osv && pnpm run sec:trivy",
     "commit": "cz",
-    "clean": "turbo run clean --parallel && rimraf node_modules"
+    "clean": "turbo run clean --parallel && rimraf node_modules",
+    "seed:families": "npx tsx scripts/seed-families.ts",
+    "seed:families:build": "pnpm --filter @aivo/seed-data build"
   },
   "pnpm": {
     "overrides": {

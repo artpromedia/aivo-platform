@@ -16,6 +16,7 @@
     "db:migrate:reset": "prisma migrate reset",
     "db:migrate:create": "prisma migrate dev --create-only",
     "db:seed": "tsx prisma/seed.ts",
+    "seed:families": "tsx prisma/seed-families.ts",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "postinstall": "prisma generate"
@@ -24,6 +25,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aivo/seed-data": "workspace:*",
     "@aivo/ts-api-utils": "workspace:*",
     "@aivo/ts-data-access": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
