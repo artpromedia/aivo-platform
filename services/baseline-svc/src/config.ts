@@ -32,4 +32,24 @@ export const config = {
   notifySvcUrl: process.env.NOTIFY_SVC_URL || 'http://localhost:4012',
   serviceToken: process.env.SERVICE_TOKEN || '',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
+
+  /**
+   * Dev Mode: Use curated question bank instead of AI generation.
+   *
+   * When enabled, questions are served directly from the curated question bank,
+   * bypassing the AI orchestrator. This is useful for:
+   * - Local development when Ollama is slow
+   * - Testing without AI dependencies
+   * - Offline development
+   *
+   * Set BASELINE_DEV_MODE=true to enable.
+   * In dev mode, AI is skipped entirely and all questions come from the curated bank.
+   */
+  devMode: process.env.BASELINE_DEV_MODE === 'true' || process.env.NODE_ENV === 'development',
+
+  /**
+   * Force AI generation even in dev mode.
+   * Set BASELINE_FORCE_AI=true to override devMode and use AI generation.
+   */
+  forceAI: process.env.BASELINE_FORCE_AI === 'true',
 };

@@ -50,6 +50,18 @@ const GENERATION_CONFIG = {
   curatedFallbackThreshold: 0.5, // Min ratio of questions from AI before curated kicks in
 } as const;
 
+/**
+ * Check if dev mode is enabled.
+ * In dev mode, AI generation is skipped and questions come from the curated bank.
+ */
+function isDevModeEnabled(): boolean {
+  // Force AI overrides dev mode
+  if (config.forceAI) {
+    return false;
+  }
+  return config.devMode;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // QUESTION GENERATOR SERVICE
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -60,6 +72,7 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
     aiFailed: 0,
     curatedFallback: 0,
     staticFallback: 0,
+    devModeHits: 0,
     totalRequests: 0,
   };
 
@@ -98,49 +111,62 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
     console.log(`[QuestionGenerator] Starting generation for ${request.subject}`, generationContext);
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // SPRINT 1: AI GENERATION IS MANDATORY PATH (NOT OPTIONAL)
-    // Learner-specific baseline questions MUST be generated using AI when:
-    // - Parent assessment data is available
-    // - IEP document data is available
-    // Mock/generic questions are ONLY used as explicit fallback after AI failure
+    // DEV MODE: Skip AI generation and use curated question bank
+    // This provides fast question retrieval during local development when Ollama is slow
     // ═══════════════════════════════════════════════════════════════════════════════
 
-    const aiStartTime = Date.now();
+    const devModeEnabled = isDevModeEnabled();
     let aiAttempted = false;
     let aiError: Error | null = null;
 
-    try {
-      aiAttempted = true;
-      const aiQuestions = await this.generateWithAI(request);
+    if (devModeEnabled) {
+      console.log(`[QuestionGenerator] DEV MODE: Skipping AI generation, using curated question bank for ${request.subject}`);
+      warnings.push('DEV MODE: Questions served from curated bank (AI generation skipped)');
+      this.generationMetrics.devModeHits++;
+    } else {
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // SPRINT 1: AI GENERATION IS MANDATORY PATH (NOT OPTIONAL)
+      // Learner-specific baseline questions MUST be generated using AI when:
+      // - Parent assessment data is available
+      // - IEP document data is available
+      // Mock/generic questions are ONLY used as explicit fallback after AI failure
+      // ═══════════════════════════════════════════════════════════════════════════════
 
-      // Validate AI-generated questions
-      const validated = await this.validateAndFilterQuestions(aiQuestions, request.gradeBand);
-      questions = validated.passed;
+      const aiStartTime = Date.now();
 
-      if (validated.failed.length > 0) {
-        warnings.push(`${validated.failed.length} AI-generated questions failed validation`);
+      try {
+        aiAttempted = true;
+        const aiQuestions = await this.generateWithAI(request);
+
+        // Validate AI-generated questions
+        const validated = await this.validateAndFilterQuestions(aiQuestions, request.gradeBand);
+        questions = validated.passed;
+
+        if (validated.failed.length > 0) {
+          warnings.push(`${validated.failed.length} AI-generated questions failed validation`);
+        }
+
+        aiGenerated = questions.length;
+        this.generationMetrics.aiSuccess++;
+
+        const aiDurationMs = Date.now() - aiStartTime;
+        console.log(`[QuestionGenerator] AI generated ${aiGenerated} valid questions in ${aiDurationMs}ms for ${request.subject}`);
+      } catch (error) {
+        aiError = error instanceof Error ? error : new Error(String(error));
+        this.generationMetrics.aiFailed++;
+
+        const aiDurationMs = Date.now() - aiStartTime;
+        const errorMsg = `AI generation failed after ${aiDurationMs}ms: ${aiError.message}`;
+        warnings.push(errorMsg);
+
+        // SPRINT 5: Log detailed failure for debugging
+        console.error(`[QuestionGenerator] ${errorMsg}`, {
+          domain: request.subject,
+          learnerId: request.learnerId,
+          hasParentContext: generationContext.hasParentContext,
+          hasIepData: generationContext.hasIepData,
+        });
       }
-
-      aiGenerated = questions.length;
-      this.generationMetrics.aiSuccess++;
-
-      const aiDurationMs = Date.now() - aiStartTime;
-      console.log(`[QuestionGenerator] AI generated ${aiGenerated} valid questions in ${aiDurationMs}ms for ${request.subject}`);
-    } catch (error) {
-      aiError = error instanceof Error ? error : new Error(String(error));
-      this.generationMetrics.aiFailed++;
-
-      const aiDurationMs = Date.now() - aiStartTime;
-      const errorMsg = `AI generation failed after ${aiDurationMs}ms: ${aiError.message}`;
-      warnings.push(errorMsg);
-
-      // SPRINT 5: Log detailed failure for debugging
-      console.error(`[QuestionGenerator] ${errorMsg}`, {
-        domain: request.subject,
-        learnerId: request.learnerId,
-        hasParentContext: generationContext.hasParentContext,
-        hasIepData: generationContext.hasIepData,
-      });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -242,7 +268,10 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     // Determine generation quality indicator
+    const devModeUsed = isDevModeEnabled();
     const generationQuality =
+      devModeUsed && curatedBank >= request.questionCount ? 'DEV_MODE_OK' :
+      devModeUsed ? 'DEV_MODE_PARTIAL' :
       aiGenerated === request.questionCount ? 'EXCELLENT' :
       aiGenerated > 0 && staticFallback === 0 ? 'GOOD' :
       staticFallback === 0 ? 'ACCEPTABLE' :
@@ -255,6 +284,7 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
       learnerId: request.learnerId,
       latencyMs,
       quality: generationQuality,
+      devMode: devModeUsed,
       counts: {
         requested: request.questionCount,
         aiGenerated,
@@ -267,7 +297,7 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
         hasIepData: generationContext.hasIepData,
         assessmentType: request.assessmentType || 'STANDARD',
       },
-      // SLA check: Target is 2-15s
+      // SLA check: Target is 2-15s (dev mode is typically much faster)
       slaCompliant: latencyMs <= 15000,
     });
 
@@ -344,6 +374,7 @@ export class QuestionGeneratorService implements IQuestionGeneratorService {
       aiFailed: 0,
       curatedFallback: 0,
       staticFallback: 0,
+      devModeHits: 0,
       totalRequests: 0,
     };
   }
