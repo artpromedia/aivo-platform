@@ -24,6 +24,8 @@ vi.mock('../src/prisma.js', () => ({
     },
     $transaction: vi.fn(),
   },
+  // Mock toJsonValue helper function
+  toJsonValue: (value: Record<string, unknown> | undefined | null) => value,
 }));
 
 import { prisma } from '../src/prisma.js';

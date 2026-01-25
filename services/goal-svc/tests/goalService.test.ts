@@ -25,6 +25,8 @@ vi.mock('../src/prisma.js', () => ({
       groupBy: vi.fn(),
     },
   },
+  // Mock toJsonValue helper function
+  toJsonValue: (value: Record<string, unknown> | undefined | null) => value,
   GoalStatus: {
     DRAFT: 'DRAFT',
     ACTIVE: 'ACTIVE',

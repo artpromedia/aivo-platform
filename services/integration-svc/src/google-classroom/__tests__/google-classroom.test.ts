@@ -60,6 +60,7 @@ const mockClassroomApi = {
       delete: vi.fn(),
       list: vi.fn(),
       studentSubmissions: {
+        list: vi.fn(),
         get: vi.fn(),
         patch: vi.fn(),
         return: vi.fn(),
@@ -115,6 +116,7 @@ const mockPrisma = {
     update: vi.fn(),
   },
   enrollment: {
+    findFirst: vi.fn(),
     findMany: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -477,6 +479,8 @@ describe('AssignmentSyncService', () => {
 
     beforeEach(() => {
       mockPrisma.lesson.findUnique.mockResolvedValue(mockLesson);
+      // Reset findFirst to null (used for duplicate check)
+      mockPrisma.googleClassroomAssignment.findFirst.mockResolvedValue(null);
       mockPrisma.googleClassroomAssignment.findUnique.mockResolvedValue(null);
       mockClassroomApi.courses.courseWork.create.mockResolvedValue({
         data: {
@@ -495,25 +499,22 @@ describe('AssignmentSyncService', () => {
     });
 
     it('should create assignment in Google Classroom', async () => {
-      const result = await service.postLessonAsAssignment('user123', {
-        lessonId: 'lesson123',
-        courseId: 'course123',
+      // Service signature: postLessonAsAssignment(userId, lessonId, courseId, options)
+      const result = await service.postLessonAsAssignment('user123', 'lesson123', 'course123', {
         title: 'Algebra Basics',
         maxPoints: 100,
       });
 
       expect(mockClassroomApi.courses.courseWork.create).toHaveBeenCalled();
-      expect(result.googleAssignmentId).toBe('assignment123');
+      expect(result.id).toBe('assignment123');
     });
 
     it('should include due date when provided', async () => {
       const dueDate = new Date('2024-12-31T23:59:00Z');
 
-      await service.postLessonAsAssignment('user123', {
-        lessonId: 'lesson123',
-        courseId: 'course123',
+      await service.postLessonAsAssignment('user123', 'lesson123', 'course123', {
         title: 'Algebra Basics',
-        dueDate: dueDate.toISOString(),
+        dueDate,
       });
 
       const createCall = mockClassroomApi.courses.courseWork.create.mock.calls[0][0];
@@ -522,26 +523,23 @@ describe('AssignmentSyncService', () => {
     });
 
     it('should prevent duplicate assignments', async () => {
-      mockPrisma.googleClassroomAssignment.findUnique.mockResolvedValue({
+      // Service uses findFirst to check for existing assignment link
+      mockPrisma.googleClassroomAssignment.findFirst.mockResolvedValue({
         id: 'existing',
         googleAssignmentId: 'assignment123',
+        status: 'active',
       });
 
       await expect(
-        service.postLessonAsAssignment('user123', {
-          lessonId: 'lesson123',
-          courseId: 'course123',
+        service.postLessonAsAssignment('user123', 'lesson123', 'course123', {
           title: 'Algebra Basics',
         })
       ).rejects.toThrow('already posted');
     });
 
     it('should store assignment link in database', async () => {
-      await service.postLessonAsAssignment('user123', {
-        lessonId: 'lesson123',
-        courseId: 'course123',
+      await service.postLessonAsAssignment('user123', 'lesson123', 'course123', {
         title: 'Algebra Basics',
-        autoGradePassback: true,
       });
 
       expect(mockPrisma.googleClassroomAssignment.create).toHaveBeenCalledWith(
@@ -549,7 +547,6 @@ describe('AssignmentSyncService', () => {
           data: expect.objectContaining({
             lessonId: 'lesson123',
             googleCourseId: 'course123',
-            autoGradePassback: true,
           }),
         })
       );
@@ -571,13 +568,24 @@ describe('AssignmentSyncService', () => {
         updatedAt: new Date(),
         deletedAt: null,
       });
-      mockClassroomApi.courses.courseWork.studentSubmissions.get.mockResolvedValue({
+      // Mock enrollment lookup for student's Google user ID
+      mockPrisma.enrollment.findFirst.mockResolvedValue({
+        id: 'enrollment123',
+        studentId: 'student123',
+        googleUserId: 'student123',
+      });
+      // Mock studentSubmissions.list (used by getSubmission)
+      mockClassroomApi.courses.courseWork.studentSubmissions.list.mockResolvedValue({
         data: {
-          id: 'submission123',
-          courseId: 'course123',
-          courseWorkId: 'assignment123',
-          userId: 'student123',
-          state: 'TURNED_IN',
+          studentSubmissions: [
+            {
+              id: 'submission123',
+              courseId: 'course123',
+              courseWorkId: 'assignment123',
+              userId: 'student123',
+              state: 'TURNED_IN',
+            },
+          ],
         },
       });
       mockClassroomApi.courses.courseWork.studentSubmissions.patch.mockResolvedValue({
@@ -624,7 +632,7 @@ describe('AssignmentSyncService', () => {
     });
 
     it('should handle submission not found', async () => {
-      mockClassroomApi.courses.courseWork.studentSubmissions.get.mockRejectedValue({
+      mockClassroomApi.courses.courseWork.studentSubmissions.list.mockRejectedValue({
         code: 404,
         message: 'Submission not found',
       });
@@ -655,8 +663,19 @@ describe('AssignmentSyncService', () => {
         updatedAt: new Date(),
         deletedAt: null,
       });
-      mockClassroomApi.courses.courseWork.studentSubmissions.get.mockResolvedValue({
-        data: { id: 'submission123', state: 'TURNED_IN' },
+      // Mock enrollment lookup for each student's Google user ID
+      mockPrisma.enrollment.findFirst.mockResolvedValue({
+        id: 'enrollment123',
+        studentId: 'student123',
+        googleUserId: 'google_student123',
+      });
+      // Mock studentSubmissions.list (used by getSubmission)
+      mockClassroomApi.courses.courseWork.studentSubmissions.list.mockResolvedValue({
+        data: {
+          studentSubmissions: [
+            { id: 'submission123', state: 'TURNED_IN' },
+          ],
+        },
       });
       mockClassroomApi.courses.courseWork.studentSubmissions.patch.mockResolvedValue({
         data: { assignedGrade: 85 },
@@ -680,10 +699,11 @@ describe('AssignmentSyncService', () => {
     });
 
     it('should continue on individual failures', async () => {
-      mockClassroomApi.courses.courseWork.studentSubmissions.get
-        .mockResolvedValueOnce({ data: { id: 'sub1' } })
+      // Mock studentSubmissions.list to return data, fail, then return data
+      mockClassroomApi.courses.courseWork.studentSubmissions.list
+        .mockResolvedValueOnce({ data: { studentSubmissions: [{ id: 'sub1' }] } })
         .mockRejectedValueOnce(new Error('Not found'))
-        .mockResolvedValueOnce({ data: { id: 'sub3' } });
+        .mockResolvedValueOnce({ data: { studentSubmissions: [{ id: 'sub3' }] } });
 
       const result = await service.batchPassbackGrades('user123', {
         lessonId: 'lesson123',
