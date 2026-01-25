@@ -13,9 +13,7 @@
 
 import { randomBytes, timingSafeEqual, createHmac, pbkdf2 as pbkdf2Async } from 'node:crypto';
 
-import { Prisma } from '@prisma/client';
-
-import type { ExtendedPrismaClient } from '../prisma-types.js';
+import { Prisma, type ExtendedPrismaClient } from '../prisma-types.js';
 
 // Type aliases since generated types might not be available
 type AdminRole = 'SUPER_ADMIN' | 'SANDBOX_ADMIN' | 'SALES_DEMO' | 'SUPPORT';

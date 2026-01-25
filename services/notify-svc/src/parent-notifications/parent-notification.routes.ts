@@ -11,7 +11,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { NotificationPreferencesService } from './notification-preferences.service.js';

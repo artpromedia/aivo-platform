@@ -16,8 +16,7 @@
  * @author AIVO Platform Team
  */
 
-import type { Prisma, GradeBand, SkillDomain } from '@prisma/client';
-import { prisma } from '../prisma.js';
+import { prisma, Prisma, type GradeBand, type SkillDomain } from '../prisma.js';
 
 // Type for template skill state from DB
 interface TemplateSkillStateRecord {

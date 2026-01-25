@@ -6,7 +6,7 @@
  * Handles district procurement flows from initial quote through renewal.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import {
   QuoteRepository,
   QuoteLineItemRepository,

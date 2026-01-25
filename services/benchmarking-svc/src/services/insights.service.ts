@@ -4,7 +4,7 @@
  * AI-powered insights and recommendations for benchmarking.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 import type { Insight, MetricCategory, InsightType } from '../types/index.js';
 

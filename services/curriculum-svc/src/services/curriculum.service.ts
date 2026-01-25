@@ -4,16 +4,14 @@
  * standards alignment, and pacing guide functionality.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, CurriculumStandard, GradeBand, SubjectArea, UnitStatus } from '../prisma.js';
+
+// Re-export enums for consumers of this service
+export type { CurriculumStandard, GradeBand, SubjectArea, UnitStatus } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
-
-export type CurriculumStandard = 'COMMON_CORE' | 'NGSS' | 'C3' | 'STATE_SPECIFIC' | 'CUSTOM';
-export type GradeBand = 'PRE_K' | 'K_2' | 'G3_5' | 'G6_8' | 'G9_12';
-export type SubjectArea = 'ELA' | 'MATH' | 'SCIENCE' | 'SOCIAL_STUDIES' | 'SEL' | 'ARTS' | 'WORLD_LANGUAGE' | 'PHYSICAL_ED' | 'TECHNOLOGY' | 'CAREER_TECH';
-export type UnitStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface CreateCurriculumRequest {
   name: string;

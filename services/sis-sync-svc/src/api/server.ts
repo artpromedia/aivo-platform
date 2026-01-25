@@ -4,7 +4,7 @@
 
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import { PrismaClient as BasePrismaClient } from '../prisma.js';
 import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify from 'fastify';

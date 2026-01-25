@@ -4,7 +4,7 @@
  * Core comparison and analysis engine for district benchmarking.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 import type {
   BenchmarkComparison,

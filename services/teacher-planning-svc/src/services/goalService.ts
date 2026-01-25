@@ -4,10 +4,8 @@
  * Business logic for managing goals and objectives.
  */
 
-import type { Prisma } from '@prisma/client';
-
 import { BadRequestError, NotFoundError } from '../middleware/errorHandler.js';
-import { prisma } from '../prisma.js';
+import { prisma, type Prisma } from '../prisma.js';
 import type {
   Goal,
   GoalDomain,

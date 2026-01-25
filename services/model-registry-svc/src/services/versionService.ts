@@ -5,9 +5,8 @@
  */
 
 import * as semver from 'semver';
-import { Prisma } from '@prisma/client';
 
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type {
   CreateVersionInput,
   UpdateVersionInput,

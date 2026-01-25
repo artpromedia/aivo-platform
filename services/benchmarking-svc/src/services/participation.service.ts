@@ -5,7 +5,7 @@
  * for the benchmarking program.
  */
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { type PrismaClient, Prisma } from '../prisma.js';
 
 // Type for JSON values that can be stored in Prisma
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };

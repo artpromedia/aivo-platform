@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '@aivo/ts-api-utils';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type { App as FirebaseApp } from 'firebase-admin/app';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';

@@ -10,15 +10,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
+import {
+  prisma,
+  type LearningObjectSubject,
+  type LearningObjectGradeBand,
+  type Prisma,
+  type IngestionSource,
+} from '../prisma.js';
 import { contentEventPublisher } from '../services/event-publisher.js';
 import { validateContent, type ValidationResult } from '../validator.js';
-import type {
-  LearningObjectSubject,
-  LearningObjectGradeBand,
-  Prisma,
-  IngestionSource,
-} from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS

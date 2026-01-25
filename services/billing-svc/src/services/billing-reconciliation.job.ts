@@ -14,8 +14,8 @@
  * RUN FREQUENCY: Daily at 2am (configured externally)
  */
 
-import type { PrismaClient } from '@prisma/client';
 import { prisma } from '../prisma.js';
+import type { PrismaClient } from '../prisma.js';
 import {
   coverageProfileRepository,
   type ParentSubscriptionData,

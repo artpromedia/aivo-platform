@@ -9,13 +9,13 @@
  */
 
 import { prisma } from '../prisma.js';
-import { getLicenseVaultService } from './license-vault.service.js';
 import type {
   EnterpriseCustomerType,
   EnterpriseDealStatus,
   EnterpriseDealType,
   VaultLicenseType,
-} from '@prisma/client';
+} from '../prisma.js';
+import { getLicenseVaultService } from './license-vault.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

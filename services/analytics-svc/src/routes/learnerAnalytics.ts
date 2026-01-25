@@ -14,8 +14,7 @@
 import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
-import type { Prisma } from '@prisma/client';
+import { prisma, type Prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS

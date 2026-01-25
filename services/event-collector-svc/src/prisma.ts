@@ -2,7 +2,10 @@
  * AIVO Event Collector Service - Prisma Client
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
+
+// Re-export Prisma namespace for type imports
+export { Prisma };
 
 import { config } from './config.js';
 

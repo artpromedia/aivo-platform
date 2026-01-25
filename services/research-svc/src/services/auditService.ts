@@ -4,9 +4,8 @@
  * Records all research-related actions to an immutable audit log.
  */
 
-import type { AuditAction, Prisma } from '@prisma/client';
-
-import { prisma } from '../prisma.js';
+import type { AuditAction } from '../prisma.js';
+import { type Prisma, prisma } from '../prisma.js';
 
 export interface AuditContext {
   tenantId: string;

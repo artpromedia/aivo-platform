@@ -23,4 +23,5 @@ export {
   FocusState,
   InterventionType,
   FocusLossReason,
+  Prisma,
 } from '../generated/prisma-client/index.js';

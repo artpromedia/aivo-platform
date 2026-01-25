@@ -10,8 +10,9 @@
  * 5. Track change history for outcome analysis
  */
 
-import { PrismaClient, SkillDomain, GradeBand } from '@prisma/client';
 import { logger } from '@aivo/ts-observability';
+
+import { type PrismaClient, SkillDomain, GradeBand } from '../prisma.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

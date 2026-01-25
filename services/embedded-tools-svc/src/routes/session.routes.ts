@@ -7,10 +7,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { Prisma } from '@prisma/client';
-
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import {
   generateToolLaunchToken,
   buildLearnerContext,

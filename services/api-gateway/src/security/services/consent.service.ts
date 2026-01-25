@@ -3,10 +3,10 @@
  * Manages user consent for COPPA, FERPA, and GDPR compliance
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ConsentPurpose, ConsentStatus, ConsentType, ConsentRecord } from '../types';
 import { COMPLIANCE } from '../constants';
 import { AuditLogService } from './audit-log.service';
@@ -32,17 +32,16 @@ export interface ConsentVerificationResult {
 }
 
 @Injectable()
-export class ConsentService {
+export class ConsentService implements OnModuleDestroy {
   private readonly logger = new Logger(ConsentService.name);
-  private readonly prisma: PrismaClient;
   private readonly notifyServiceUrl: string;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly auditService: AuditLogService,
     private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
   ) {
-    this.prisma = new PrismaClient();
     this.notifyServiceUrl = this.configService.get<string>('NOTIFY_SERVICE_URL', 'http://notify-svc:3000');
   }
   
@@ -496,6 +495,6 @@ export class ConsentService {
   }
   
   async onModuleDestroy(): Promise<void> {
-    await this.prisma.$disconnect();
+    // PrismaService handles its own cleanup via NestJS lifecycle
   }
 }

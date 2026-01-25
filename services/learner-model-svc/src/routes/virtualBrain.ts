@@ -1,8 +1,7 @@
-import type { Prisma, SkillDomain } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
+import { prisma, Prisma, type SkillDomain } from '../prisma.js';
 import { virtualBrainTemplateService } from '../services/virtual-brain-template.js';
 
 // --- Type definitions ---

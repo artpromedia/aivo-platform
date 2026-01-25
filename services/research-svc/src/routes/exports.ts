@@ -5,7 +5,7 @@
  * Implements secure S3 presigned URLs for FERPA/COPPA compliant data exports.
  */
 
-import type { ExportJobStatus } from '@prisma/client';
+import type { ExportJobStatus } from '../prisma.js';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 

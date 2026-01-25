@@ -4,7 +4,7 @@
  * Manages researcher access to projects and their data.
  */
 
-import type { AccessGrantScope, AccessGrantStatus } from '@prisma/client';
+import type { AccessGrantScope, AccessGrantStatus } from '../prisma.js';
 
 import { prisma } from '../prisma.js';
 import { publishAccessGranted, publishAccessRevoked } from '../events/publisher.js';

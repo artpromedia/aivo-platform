@@ -1,5 +1,4 @@
-import { prisma } from '../prisma.js';
-import { GameType, GenerationStatus, DifficultyLevel, ContentSource, Prisma } from '@prisma/client';
+import { prisma, GameType, GenerationStatus, DifficultyLevel, ContentSource, Prisma } from '../prisma.js';
 import { config } from '../config.js';
 
 // Template Management

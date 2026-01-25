@@ -7,7 +7,11 @@
  * should be defined in the schema.prisma file and generated via prisma generate.
  */
 
-import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import { PrismaClient as BasePrismaClient, Prisma } from '../generated/prisma-client/index.js';
+
+// Re-export types from generated client
+export { Prisma };
+export type { PartnerStatus, ApiKeyStatus, DeliveryStatus, AdminRole } from '../generated/prisma-client/index.js';
 
 // Re-export the PrismaClient directly - the schema.prisma defines all models
 // No need for custom ExtendedPrismaClient since all models are in the schema

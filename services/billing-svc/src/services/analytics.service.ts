@@ -12,7 +12,7 @@
  */
 
 import type { ParentSku } from '@aivo/billing-common';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

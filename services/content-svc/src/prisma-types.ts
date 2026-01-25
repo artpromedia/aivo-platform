@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars */
 
-import type { PrismaClient as BasePrismaClient } from '@prisma/client';
+import type { PrismaClient as BasePrismaClient } from '../generated/prisma-client/index.js';
 
 // Generic model delegate interface
 interface ModelDelegate {
@@ -103,7 +103,7 @@ export namespace Prisma {
   export type JsonValue = any;
 }
 
-// Re-export content-related types from actual Prisma client
+// Re-export content-related types from generated Prisma client
 export {
   SocialStoryCategory,
   SocialStoryReadingLevel,
@@ -117,7 +117,7 @@ export {
   IncidentSeverity,
   IncidentStatus,
   LessonStatus,
-} from '@prisma/client';
+} from '../generated/prisma-client/index.js';
 
 export type ContentSensoryMetadata = any;
 export type SensoryIncident = any;

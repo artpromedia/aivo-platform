@@ -4,8 +4,7 @@
  * Manages legal matters and cases.
  */
 
-import { Prisma } from '@prisma/client';
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type {
   CreateMatterInput,
   UpdateMatterInput,

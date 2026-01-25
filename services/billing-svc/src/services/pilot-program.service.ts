@@ -8,8 +8,8 @@
  * - Conversion to paid contracts/subscriptions
  */
 
-import type { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
+import type { Prisma } from '../prisma.js';
 
 import { getLicenseVaultService } from './license-vault.service.js';
 import { reminderService } from './reminder.service.js';

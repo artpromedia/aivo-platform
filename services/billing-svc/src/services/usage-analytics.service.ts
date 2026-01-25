@@ -5,7 +5,7 @@
  * Business logic for seat utilization reporting, threshold alerts, and notifications.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import {
   SeatUsageRepository,
   SeatUsageAlertRepository,

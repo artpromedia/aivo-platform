@@ -9,7 +9,7 @@ import Fastify from 'fastify';
 
 import { registerRoutes } from './api/routes.js';
 import type { LearnerDataSource } from './exports/export-service.js';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 import type { ExtendedPrismaClient } from './prisma-types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

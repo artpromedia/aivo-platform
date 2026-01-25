@@ -9,7 +9,7 @@
  * - Re-consent after 18 months (TCPA requirement)
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../prisma.js';
 
 import { phoneValidationService, toE164 } from './phone-validation.js';
 import type {

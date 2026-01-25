@@ -4,7 +4,7 @@
 
 import { config } from '../config.js';
 import { GAME_CATALOG, filterGames, getRandomFocusBreakGame } from '../games/catalog.js';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type {
   GameDefinition,
   GameFilters,

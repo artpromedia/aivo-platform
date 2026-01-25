@@ -5,8 +5,8 @@
  * Data access layer for seat usage views, alerts, and notifications.
  */
 
-import type { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../prisma.js';
+import type { PrismaClient } from '../prisma.js';
 import type {
   SeatUsageEntry,
   SeatUsageAlert,

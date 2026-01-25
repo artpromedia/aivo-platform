@@ -6,7 +6,7 @@
  * are defined in the schema.prisma file and generated via prisma generate.
  */
 
-import type { PrismaClient as BasePrismaClient } from '@prisma/client';
+import type { PrismaClient as BasePrismaClient } from '../generated/prisma-client/index.js';
 
 // Model delegate types that match Prisma's API
 interface ModelDelegate {

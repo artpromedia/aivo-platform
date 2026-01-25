@@ -7,7 +7,7 @@
  * - Webhook signature validation
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import Twilio from 'twilio';
 

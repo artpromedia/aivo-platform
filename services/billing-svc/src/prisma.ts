@@ -2,9 +2,33 @@
  * Prisma Client for Billing Service
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
 
 import { config } from './config.js';
+
+// Re-export Prisma namespace and PrismaClient type
+export { Prisma };
+export type { PrismaClient };
+
+// Re-export all enums from schema
+export {
+  BillingAccountType,
+  SubscriptionStatus,
+  PlanType,
+  BillingPeriod,
+  PaymentProvider,
+  ContractBillingPeriod,
+  ContractStatus,
+  ContractPaymentType,
+  InvoiceStatus,
+  VaultLicenseType,
+  VaultLicenseStatus,
+  VaultCodeType,
+  VaultCodeStatus,
+  EnterpriseDealStatus,
+  EnterpriseDealType,
+  EnterpriseCustomerType,
+} from '../generated/prisma-client/index.js';
 
 export const prisma = new PrismaClient({
   datasources: {

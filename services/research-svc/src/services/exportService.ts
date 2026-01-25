@@ -4,7 +4,7 @@
  * Handles export job creation, execution, and file generation.
  */
 
-import type { DatasetGranularity, ExportFormat, ExportJobStatus } from '@prisma/client';
+import type { DatasetGranularity, ExportFormat, ExportJobStatus } from '../prisma.js';
 
 import { config } from '../config.js';
 import {

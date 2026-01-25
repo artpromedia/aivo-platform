@@ -10,11 +10,10 @@
  * - Updating neurodiverse profiles
  */
 
-import type { Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 
 // ── Type Definitions ─────────────────────────────────────────────────────────
 

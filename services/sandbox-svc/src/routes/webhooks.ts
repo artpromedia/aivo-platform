@@ -4,11 +4,10 @@
 
 import { createHmac } from 'node:crypto';
 
-import { Prisma } from '@prisma/client';
 import type { FastifyPluginAsync } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
-import type { ExtendedPrismaClient } from '../prisma-types.js';
+import { Prisma, type ExtendedPrismaClient } from '../prisma-types.js';
 
 declare module 'fastify' {
   interface FastifyInstance {

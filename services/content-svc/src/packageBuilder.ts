@@ -5,12 +5,12 @@
  * In production, this would integrate with S3 for storage and pre-signed URLs.
  */
 
-import { prisma } from './prisma.js';
-import type {
-  ContentLocale,
-  LearningObjectGradeBand,
-  LearningObjectSubject,
-} from '@prisma/client';
+import {
+  prisma,
+  type ContentLocale,
+  type LearningObjectGradeBand,
+  type LearningObjectSubject,
+} from './prisma.js';
 import { createHash } from 'node:crypto';
 
 // ══════════════════════════════════════════════════════════════════════════════

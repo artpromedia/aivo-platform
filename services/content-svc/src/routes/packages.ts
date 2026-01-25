@@ -12,11 +12,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { buildPackageManifest, generateContentUrl } from '../packageBuilder.js';
-import { prisma } from '../prisma.js';
-import type {
-  LearningObjectGradeBand,
-  LearningObjectSubject,
-} from '@prisma/client';
+import {
+  prisma,
+  type LearningObjectGradeBand,
+  type LearningObjectSubject,
+} from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES (until Prisma schema is migrated)

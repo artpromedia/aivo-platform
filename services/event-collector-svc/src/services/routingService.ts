@@ -8,10 +8,8 @@ import { connect, NatsConnection, StringCodec } from 'nats';
 import { KinesisClient, PutRecordCommand } from '@aws-sdk/client-kinesis';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
-import { Prisma } from '@prisma/client';
-
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type { CreateRouteInput, UpdateRouteInput, DestinationType } from '../types/index.js';
 
 // Destination clients

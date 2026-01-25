@@ -4,10 +4,8 @@
  * Manages legal holds and preservation orders.
  */
 
-import { Prisma } from '@prisma/client';
-
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type {
   CreateHoldInput,
   UpdateHoldInput,

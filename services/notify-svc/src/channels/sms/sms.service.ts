@@ -12,7 +12,7 @@
  */
 
 import { createLogger } from '@aivo/ts-api-utils';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../prisma.js';
 import type { RateLimiterRes } from 'rate-limiter-flexible';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 

@@ -1,5 +1,5 @@
-import type { QuestionType, Prisma } from '@prisma/client';
-import { prisma } from '../prisma.js';
+import type { QuestionType } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
 
 import { questionService } from './question.service.js';

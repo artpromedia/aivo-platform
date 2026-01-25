@@ -1,5 +1,4 @@
-import { prisma } from '../prisma.js';
-import { WorkflowStatus, ExecutionStatus, StepType, TriggerType, Prisma } from '@prisma/client';
+import { prisma, WorkflowStatus, ExecutionStatus, StepType, TriggerType, Prisma } from '../prisma.js';
 
 // Workflow Management
 export async function createWorkflow(tenantId: string, data: {

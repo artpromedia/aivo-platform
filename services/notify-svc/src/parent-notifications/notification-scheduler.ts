@@ -11,7 +11,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 import type { NotificationAggregator } from './notification-aggregator.js';
 import type { NotificationPreferencesService } from './notification-preferences.service.js';

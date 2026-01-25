@@ -5,7 +5,7 @@
  * Data access layer for quotes, purchase orders, invoices, and renewal tasks.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type {
   Quote,
   QuoteLineItem,

@@ -10,7 +10,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { PrismaClient as BasePrismaClient } from '@prisma/client';
+import type { PrismaClient as BasePrismaClient } from '../generated/prisma-client/index.js';
 
 /**
  * Generic model delegate interface for CRUD operations

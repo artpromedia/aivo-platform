@@ -5,7 +5,7 @@
  * Used by aggregation jobs and for on-demand calculations.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

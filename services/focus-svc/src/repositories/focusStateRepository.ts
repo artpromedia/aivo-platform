@@ -4,9 +4,8 @@
  * Persistent storage for learner focus states, pings, and interventions.
  */
 
-import type { Prisma } from '@prisma/client';
-
 import type { FocusState, InterventionType, FocusLossReason } from '../prisma.js';
+import { Prisma } from '../prisma.js';
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

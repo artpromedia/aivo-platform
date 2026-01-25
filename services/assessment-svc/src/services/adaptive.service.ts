@@ -1,5 +1,5 @@
-import type { Question, Difficulty } from '@prisma/client';
-import { prisma } from '../prisma.js';
+import type { Question } from '../prisma.js';
+import { prisma, type Difficulty } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
 
 export interface AdaptiveSelectionOptions {

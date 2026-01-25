@@ -12,7 +12,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type { NatsConnection, Subscription } from 'nats';
 import { StringCodec } from 'nats';
 

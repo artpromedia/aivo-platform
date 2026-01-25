@@ -10,7 +10,7 @@
 
 import type Redis from 'ioredis';
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

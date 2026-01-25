@@ -1,11 +1,7 @@
-import type {
-  Assessment,
-  AssessmentQuestion,
-  Prisma,
-} from '@prisma/client';
-import { publishEvent } from '../events/publisher.js';
-import { prisma } from '../prisma.js';
+import type { Assessment, AssessmentQuestion } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
+import { publishEvent } from '../events/publisher.js';
 import type {
   CreateAssessmentInput,
   UpdateAssessmentInput,

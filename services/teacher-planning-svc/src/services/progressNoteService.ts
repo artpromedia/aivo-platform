@@ -4,10 +4,8 @@
  * Business logic for logging and retrieving progress notes.
  */
 
-import type { Prisma } from '@prisma/client';
-
 import { NotFoundError } from '../middleware/errorHandler.js';
-import { prisma } from '../prisma.js';
+import { prisma, type Prisma } from '../prisma.js';
 import type { ProgressNote, ProgressRating, Visibility, NoteTag } from '../types/domain.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

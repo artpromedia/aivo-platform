@@ -1,10 +1,10 @@
-import { prisma } from '../prisma.js';
-import { Prisma } from '@prisma/client';
-
-// Define types locally since they're not exported from Prisma schema
-type IndexStatus = 'BUILDING' | 'ACTIVE' | 'STALE' | 'REBUILDING' | 'ERROR';
-type DocumentStatus = 'PENDING' | 'INDEXED' | 'ERROR' | 'DELETED';
-type SearchEngine = 'POSTGRES_FTS' | 'MEILISEARCH' | 'ELASTICSEARCH';
+import {
+  prisma,
+  Prisma,
+  IndexStatus,
+  DocumentStatus,
+  SearchEngine,
+} from '../prisma.js';
 
 // Index Management
 export async function createIndex(

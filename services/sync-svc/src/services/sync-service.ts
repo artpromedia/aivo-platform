@@ -1,5 +1,4 @@
-import { prisma } from '../prisma.js';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { prisma, Prisma, type PrismaClient } from '../prisma.js';
 
 // Type for Prisma transaction client
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;

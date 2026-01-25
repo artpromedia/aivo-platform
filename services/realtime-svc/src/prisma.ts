@@ -4,10 +4,13 @@
  * Manages database connections for document state persistence.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
 
 import { config } from './config.js';
 import { logger } from './logger.js';
+
+// Re-export Prisma namespace for type utilities
+export { Prisma };
 
 // Create singleton instance
 const globalForPrisma = globalThis as typeof globalThis & { prisma?: PrismaClient };

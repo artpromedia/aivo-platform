@@ -4,11 +4,10 @@
  * Formal review submission and tracking for Learning Object Versions.
  */
 
-import type { Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
+import { prisma, type Prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

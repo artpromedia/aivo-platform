@@ -12,9 +12,8 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { SkillDomain } from '@prisma/client';
 
-import { prisma } from '../prisma.js';
+import { prisma, SkillDomain } from '../prisma.js';
 import {
   createDifficultyRecommendationService,
   type ParentNotificationPayload,

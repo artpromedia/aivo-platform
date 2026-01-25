@@ -9,7 +9,19 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { PrismaClient as BasePrismaClient } from '@prisma/client';
+import { PrismaClient as BasePrismaClient } from '../generated/prisma-client/index.js';
+
+// Re-export enums from generated client for use throughout the service
+export {
+  LearningObjectSubject,
+  LearningObjectGradeBand,
+  LearningObjectVersionState,
+  QaCheckType,
+  QaCheckStatus,
+  CognitiveLoad,
+  TranslationStatus,
+  ContentVisibility,
+} from '../generated/prisma-client/index.js';
 
 // Model delegate types that match Prisma's API
 interface ModelDelegate {

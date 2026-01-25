@@ -1,7 +1,7 @@
-import type { Question, Prisma } from '@prisma/client';
-import { publishEvent } from '../events/publisher.js';
-import { prisma } from '../prisma.js';
+import type { Question } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
+import { publishEvent } from '../events/publisher.js';
 import type {
   CreateQuestionInput,
   UpdateQuestionInput,

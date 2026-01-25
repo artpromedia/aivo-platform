@@ -1,7 +1,7 @@
-import type { Attempt, Prisma } from '@prisma/client';
-import { publishEvent } from '../events/publisher.js';
-import { prisma } from '../prisma.js';
+import type { Attempt } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
+import { publishEvent } from '../events/publisher.js';
 import type { AttemptQuery } from '../validators/assessment.validator.js';
 import { AttemptMetadataSchema } from '../validators/assessment.validator.js';
 

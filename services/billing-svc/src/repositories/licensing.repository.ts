@@ -6,8 +6,7 @@
 
 import type { z } from 'zod';
 
-import { Prisma } from '@prisma/client';
-import { prisma } from '../prisma.js';
+import { Prisma, prisma } from '../prisma.js';
 import type {
   CreateLicenseAssignmentSchema,
   CreateLicenseEventSchema,

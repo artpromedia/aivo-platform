@@ -4,7 +4,7 @@
  * Handles CRUD operations and status management for research projects.
  */
 
-import type { ProjectStatus, ProjectType } from '@prisma/client';
+import type { ProjectStatus, ProjectType } from '../prisma.js';
 
 import {
   publishProjectApproved,

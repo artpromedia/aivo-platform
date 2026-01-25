@@ -1,5 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
 import { logger } from './logger.js';
+
+// Re-export Prisma namespace for type utilities
+export { Prisma };
+export type { PrismaClient };
 
 export const prisma = new PrismaClient({
   log:
