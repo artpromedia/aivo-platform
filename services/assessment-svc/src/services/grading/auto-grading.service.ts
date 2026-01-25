@@ -106,6 +106,41 @@ export class AutoGradingService {
   }
 
   /**
+   * Grade all responses in an attempt
+   */
+  async gradeAttempt(
+    questions: Question[],
+    responses: { questionId: string; response: QuestionAnswer }[]
+  ): Promise<{
+    totalScore: number;
+    maxScore: number;
+    percentage: number;
+    results: (GradingResult & { questionId: string })[];
+  }> {
+    const responseMap = new Map(responses.map((r) => [r.questionId, r.response]));
+    const results: (GradingResult & { questionId: string })[] = [];
+    let totalScore = 0;
+    let maxScore = 0;
+
+    for (const question of questions) {
+      const response = responseMap.get(question.id) ?? null;
+      const result = await this.gradeResponse(question, response);
+      results.push({ ...result, questionId: question.id });
+      totalScore += result.score;
+      maxScore += result.maxPoints;
+    }
+
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 10000) / 100 : 0;
+
+    return {
+      totalScore,
+      maxScore,
+      percentage,
+      results,
+    };
+  }
+
+  /**
    * Check if a question type can be auto-graded
    */
   canAutoGrade(type: QuestionType): boolean {
