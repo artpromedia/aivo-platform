@@ -1,7 +1,7 @@
 # ==============================================================================
 # AIVO Platform - Content Service Dockerfile
 # ==============================================================================
-# Multi-stage build for NestJS services
+# Multi-stage build for Fastify services
 
 # Stage 1: Builder
 FROM node:20-alpine AS builder
@@ -35,7 +35,8 @@ RUN pnpm deploy --filter="@aivo/content-svc" --prod /deploy
 FROM node:20-alpine AS runner
 
 # Security: Create non-root user
-RUN addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 -G nodejs
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
@@ -50,14 +51,14 @@ COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=4020
 
 # Expose port
-EXPOSE 3000
+EXPOSE 4020
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4020/health || exit 1
 
 # Switch to non-root user
 USER nodejs
@@ -65,4 +66,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/index.js"]
