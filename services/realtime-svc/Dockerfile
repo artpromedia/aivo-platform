@@ -1,5 +1,13 @@
-# Build stage
+# ==============================================================================
+# AIVO Platform - Realtime Service Dockerfile
+# ==============================================================================
+# Multi-stage build for Node.js services
+
+# Stage 1: Builder
 FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache g++ make python3 openssl
 
 WORKDIR /app
 
@@ -7,62 +15,55 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 # Copy workspace files
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY tsconfig.base.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json tsconfig.compat.json ./
+COPY packages/ ./packages/
+COPY libs/ ./libs/
 
-# Copy service package.json
-COPY services/realtime-svc/package.json ./services/realtime-svc/
+# Copy service files
+COPY services/realtime-svc/ ./services/realtime-svc/
 
-# Copy shared libraries
-COPY libs/ts-observability/package.json ./libs/ts-observability/
-COPY libs/ts-types/package.json ./libs/ts-types/
-COPY libs/ts-utils/package.json ./libs/ts-utils/
+# Install dependencies (no --ignore-scripts to allow Prisma postinstall)
+RUN pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Build the service (includes dependencies like events, ts-api-utils)
+RUN pnpm turbo build --filter="@aivo/realtime-svc"
 
-# Copy source files
-COPY services/realtime-svc ./services/realtime-svc/
-COPY libs/ts-observability ./libs/ts-observability/
-COPY libs/ts-types ./libs/ts-types/
-COPY libs/ts-utils ./libs/ts-utils/
+# Create a deployable bundle with all production dependencies
+RUN pnpm deploy --filter="@aivo/realtime-svc" --prod /deploy
 
-# Build the service
-RUN pnpm --filter @aivo/realtime-svc build
+# Stage 2: Runner
+FROM node:20-alpine AS runner
 
-# Production stage
-FROM node:20-alpine AS production
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
-# Install pnpm and add non-root user
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate && \
-    addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
-# Copy built files with read-only permissions
-COPY --from=builder --chmod=444 /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json ./
-COPY --from=builder --chmod=444 /app/services/realtime-svc/package.json ./services/realtime-svc/
-COPY --from=builder --chmod=555 /app/services/realtime-svc/dist ./services/realtime-svc/dist/
-COPY --from=builder --chmod=444 /app/libs/ts-observability/package.json ./libs/ts-observability/
-COPY --from=builder --chmod=555 /app/libs/ts-observability/dist ./libs/ts-observability/dist/
-COPY --from=builder --chmod=444 /app/libs/ts-types/package.json ./libs/ts-types/
-COPY --from=builder --chmod=555 /app/libs/ts-types/dist ./libs/ts-types/dist/
-COPY --from=builder --chmod=444 /app/libs/ts-utils/package.json ./libs/ts-utils/
-COPY --from=builder --chmod=555 /app/libs/ts-utils/dist ./libs/ts-utils/dist/
+# Copy built application from the deploy bundle
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/realtime-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/realtime-svc/generated ./generated
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --ignore-scripts --prod
-
-# Switch to non-root user
-USER nodejs
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=8080
 
 # Expose port
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Start the service
-CMD ["node", "services/realtime-svc/dist/index.js"]
+# Switch to non-root user
+USER nodejs
+
+# Use dumb-init as entrypoint
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
+CMD ["node", "dist/index.js"]

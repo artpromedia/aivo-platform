@@ -1,51 +1,69 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# AIVO Legal Hold Service - Dockerfile
-# ══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
+# AIVO Platform - Legal Hold Service Dockerfile
+# ==============================================================================
+# Multi-stage build for Node.js services
 
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache openssl
+# Install build dependencies
+RUN apk add --no-cache g++ make python3 openssl
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY tsconfig.base.json tsconfig.compat.json ./
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-COPY services/legal-hold-svc ./services/legal-hold-svc
-COPY libs/ts-data-access ./libs/ts-data-access
-COPY libs/events ./libs/events
+# Copy workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json tsconfig.compat.json ./
+COPY packages/ ./packages/
+COPY libs/ ./libs/
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Copy service files
+COPY services/legal-hold-svc/ ./services/legal-hold-svc/
+
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-WORKDIR /app/services/legal-hold-svc
-RUN npx prisma generate
-RUN pnpm build
+# Build the service (includes dependencies like ts-api-utils, events)
+RUN pnpm turbo build --filter="@aivo/legal-hold-svc"
 
-FROM node:20-alpine AS production
+# Create a deployable bundle with all production dependencies
+RUN pnpm deploy --filter="@aivo/legal-hold-svc" --prod /deploy
 
-RUN apk add --no-cache openssl dumb-init
+# Stage 2: Runner
+FROM node:20-alpine AS runner
+
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
-COPY --from=builder /app/services/legal-hold-svc/dist ./dist
-COPY --from=builder /app/services/legal-hold-svc/package.json ./
-COPY --from=builder /app/services/legal-hold-svc/prisma ./prisma
-COPY --from=builder /app/services/legal-hold-svc/node_modules ./node_modules
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Copy built application from the deploy bundle
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/legal-hold-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/legal-hold-svc/generated ./generated
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
-USER nodejs
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=4061
 
-ENV NODE_ENV=production
-ENV PORT=4061
-
+# Expose port
 EXPOSE 4061
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4061/health || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4061/health || exit 1
 
-ENTRYPOINT ["dumb-init", "--"]
+# Switch to non-root user
+USER nodejs
+
+# Use dumb-init as entrypoint
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+
 CMD ["node", "dist/index.js"]
