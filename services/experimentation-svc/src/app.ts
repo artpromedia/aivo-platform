@@ -37,13 +37,15 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // CORS
-  await app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('experimentation-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('experimentation-svc'));
 
   // Health check endpoints
   app.get('/health', async () => ({ status: 'ok', service: 'experimentation-svc' }));

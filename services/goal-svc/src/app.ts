@@ -83,7 +83,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   // RATE LIMITING
   // ════════════════════════════════════════════════════════════════════════════
 
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('goal-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('goal-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // REGISTER ROUTES

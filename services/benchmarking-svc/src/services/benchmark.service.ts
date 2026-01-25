@@ -94,7 +94,7 @@ export class BenchmarkService {
         geographicType:
           participant.geographicType as DistrictSummary['participant']['geographicType'],
         studentCount: participant.studentCount,
-        freeReducedLunchPct: participant.freeReducedLunchPct ?? undefined,
+        freeReducedLunchPct: participant.freeReducedLunchPct ?? null,
         state: participant.state,
         gradeLevelsServed: participant.gradeLevelsServed,
         sharingPreferences: {
@@ -191,7 +191,7 @@ export class BenchmarkService {
       if (relevantAggregates.length === 0) continue;
 
       // Use the first cohort's aggregate (could be extended to merge multiple)
-      const aggregate = relevantAggregates[0];
+      const aggregate = relevantAggregates[0]!;
 
       // Check k-anonymity threshold
       if (aggregate.sampleCount < this.anonymizationConfig.minCohortSize) {
@@ -464,8 +464,8 @@ export class BenchmarkService {
     });
 
     // Calculate trend direction
-    const firstValue = districtMetrics[0].metricValue;
-    const lastValue = districtMetrics[districtMetrics.length - 1].metricValue;
+    const firstValue = districtMetrics[0]!.metricValue;
+    const lastValue = districtMetrics[districtMetrics.length - 1]!.metricValue;
     const changePercent = ((lastValue - firstValue) / firstValue) * 100;
 
     let direction: 'improving' | 'stable' | 'declining';

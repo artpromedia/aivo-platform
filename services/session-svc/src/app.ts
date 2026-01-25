@@ -33,7 +33,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authMiddleware);
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('session-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('session-svc'));
 
   // Register session routes
   await app.register(sessionRoutes);

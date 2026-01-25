@@ -19,7 +19,8 @@ export async function buildApp() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('writing-pad-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('writing-pad-svc'));
 
   // Global error handler
   app.setErrorHandler(async (error, request, reply) => {

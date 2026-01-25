@@ -15,7 +15,8 @@ export function createApp(options: { pool?: Pool; logger?: boolean; enableSchedu
   const pool = options.pool ?? createPool();
 
   // Rate limiting
-  app.register(rateLimit, FastifyRateLimitPresets.internalApi('dsr-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('dsr-svc'));
 
   // Health check endpoint (no auth required)
   app.get('/health', async () => ({ status: 'ok', service: 'dsr-svc' }));

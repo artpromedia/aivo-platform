@@ -51,7 +51,8 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.messaging('realtime-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.messaging('realtime-svc'));
 
   // Initialize HTTP auth middleware
   await httpAuthMiddleware.initialize();

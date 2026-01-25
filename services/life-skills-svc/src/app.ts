@@ -81,7 +81,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ════════════════════════════════════════════════════════════════════════════
 
   if (config.nodeEnv === 'production') {
-    await app.register(rateLimit, FastifyRateLimitPresets.strict);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await app.register(rateLimit as any, FastifyRateLimitPresets.strict);
   }
 
   // ════════════════════════════════════════════════════════════════════════════

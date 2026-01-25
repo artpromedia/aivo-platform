@@ -15,6 +15,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await fastify.register(rateLimit as any, FastifyRateLimitPresets.internalApi('baseline-svc'));
 
   // Health check (no auth required)

@@ -28,7 +28,8 @@ export async function createServer() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.dataIngestion('sis-sync-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.dataIngestion('sis-sync-svc'));
 
   // Initialize scheduler
   const scheduler = new SyncScheduler(prisma, {

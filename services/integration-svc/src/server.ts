@@ -71,7 +71,8 @@ export async function createServer(config: ServerConfig): Promise<{
   app.setSerializerCompiler(serializerCompiler);
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('integration-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('integration-svc'));
 
   // Register routes
   await registerRoutes(app, {

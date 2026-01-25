@@ -31,7 +31,8 @@ async function main() {
     logger: { level: config.logLevel },
   });
 
-  await app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
@@ -40,7 +41,8 @@ async function main() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('speech-therapy-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('speech-therapy-svc'));
 
   // Health checks
   app.get('/health', async () => ({ status: 'ok', service: 'speech-therapy-svc' }));

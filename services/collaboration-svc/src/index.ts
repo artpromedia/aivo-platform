@@ -42,17 +42,20 @@ const fastify = Fastify({
 });
 
 // Register plugins
-await fastify.register(cors, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await fastify.register(cors as any, {
   origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
   credentials: true,
 });
 
-await fastify.register(helmet, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await fastify.register(helmet as any, {
   contentSecurityPolicy: false,
 });
 
 // Rate limiting
-await fastify.register(rateLimit, FastifyRateLimitPresets.publicApi('collaboration-svc'));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await fastify.register(rateLimit as any, FastifyRateLimitPresets.publicApi('collaboration-svc'));
 
 // Health check endpoint
 fastify.get('/health', async () => {

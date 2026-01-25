@@ -42,17 +42,20 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ────────────────────────────────────────────────────────────────────────────
   // Register plugins
   // ────────────────────────────────────────────────────────────────────────────
-  await app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(cors as any, {
     origin: config.nodeEnv === 'production' ? false : true,
     credentials: true,
   });
 
-  await app.register(helmet, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(helmet as any, {
     contentSecurityPolicy: config.nodeEnv === 'production',
   });
 
   // Rate limiting for profile endpoints
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('profile-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('profile-svc'));
 
   // ────────────────────────────────────────────────────────────────────────────
   // Initialize NATS for event publishing
