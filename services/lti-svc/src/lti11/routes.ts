@@ -139,7 +139,8 @@ export function registerLti11Routes(
         const body = Lti11ContentItemReturnSchema.parse(request.body);
 
         // Build content items from selection
-        const contentItems = contentItemService.buildContentItemsFromSelection(body.items);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const contentItems = contentItemService.buildContentItemsFromSelection(body.items as any);
 
         // Build signed response
         const response = await contentItemService.buildContentItemResponse(

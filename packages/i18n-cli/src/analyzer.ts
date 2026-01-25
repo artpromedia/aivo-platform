@@ -143,7 +143,7 @@ export async function analyzeTranslations(
       totalKeys: nsKeys.length,
       translatedKeys: nsKeys.length - missingInNs.length,
       missingKeys: missingInNs.map((k) => k.key),
-      unusedKeys: unusedInNs.map((k) => k.split(':')[1]),
+      unusedKeys: unusedInNs.map((k) => k.split(':')[1]).filter((k): k is string => k !== undefined),
     });
   }
 
@@ -151,7 +151,7 @@ export async function analyzeTranslations(
   const uniqueMissing = deduplicateByKey(allMissing);
 
   // Calculate overall coverage
-  const baseLocale = byLocale.get(locales[0]);
+  const baseLocale = byLocale.get(locales[0]!);
 
   return {
     totalKeys: extractedKeys.length,

@@ -112,14 +112,14 @@ function buildNestedJSON(
     let current: Record<string, unknown> = result;
 
     for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
+      const part = parts[i]!;
       if (!(part in current) || typeof current[part] !== 'object') {
         current[part] = {};
       }
       current = current[part] as Record<string, unknown>;
     }
 
-    const lastPart = parts[parts.length - 1];
+    const lastPart = parts[parts.length - 1]!;
     if (!(lastPart in current)) {
       current[lastPart] = key.defaultValue ?? key.key;
     }

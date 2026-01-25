@@ -14,7 +14,8 @@ export function createApp(options: { pool?: Pool; logger?: boolean } = {}) {
   const pool = options.pool ?? createPool();
 
   // Rate limiting
-  void app.register(rateLimit, FastifyRateLimitPresets.publicApi('consent-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  void app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('consent-svc'));
 
   const auth = authMiddleware({ publicKey: config.jwtPublicKey });
   app.addHook('preHandler', async (request, reply) => {

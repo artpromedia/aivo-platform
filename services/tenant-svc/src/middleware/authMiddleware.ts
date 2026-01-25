@@ -11,8 +11,10 @@ export const authMiddleware = fp(async (fastify) => {
     if (request.routeOptions?.url === '/tenant/resolve') {
       return;
     }
-    await auth(request, reply as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await auth(request as any, reply as any);
     if ((reply as any).sent) return;
-    return requirePlatformAdmin(request, reply as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return requirePlatformAdmin(request as any, reply as any);
   });
 });

@@ -18,12 +18,14 @@ export async function buildApp() {
   });
 
   // Security middleware
-  await app.register(helmet, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(helmet as any, {
     contentSecurityPolicy: false,
   });
 
   // Rate limiting - protect homework helper from abuse
-  await app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, {
     global: true,
     max: 60, // 60 requests per minute (AI calls are expensive)
     timeWindow: '1 minute',
