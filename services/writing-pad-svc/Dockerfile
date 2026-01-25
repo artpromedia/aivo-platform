@@ -28,8 +28,8 @@ RUN pnpm install --frozen-lockfile
 # Build the service
 RUN pnpm turbo build --filter="@aivo/writing-pad-svc"
 
-# Prune dev dependencies
-RUN pnpm prune --prod
+# Create a deployable bundle with all production dependencies
+RUN pnpm deploy --filter="@aivo/writing-pad-svc" --prod /deploy
 
 # Stage 2: Runner
 FROM node:20-alpine AS runner
@@ -44,9 +44,9 @@ WORKDIR /app
 RUN apk add --no-cache dumb-init
 
 # Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/writing-pad-svc/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/writing-pad-svc/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
 ENV NODE_ENV=production \

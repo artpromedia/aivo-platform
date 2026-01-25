@@ -32,8 +32,8 @@ RUN cd services/payments-svc && npx prisma generate --schema=prisma/schema.prism
 # Build the service
 RUN pnpm turbo build --filter="@aivo/payments-svc"
 
-# Prune dev dependencies
-RUN pnpm prune --prod
+# Create a deployable bundle with all production dependencies
+RUN pnpm deploy --filter="@aivo/payments-svc" --prod /deploy
 
 # Stage 2: Runner
 FROM node:20-alpine AS runner
@@ -44,12 +44,13 @@ RUN addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 -G nodejs
 WORKDIR /app
 
 # Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init openssl
 
 # Copy built application
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
 ENV NODE_ENV=production \
