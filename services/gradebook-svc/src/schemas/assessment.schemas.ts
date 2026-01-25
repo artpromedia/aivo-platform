@@ -263,19 +263,19 @@ export const addToQuestionBankBodySchema = z.object({
   type: questionTypeSchema,
   questionText: nonEmptyString.max(5000),
   questionMedia: questionMediaSchema,
-  options: z.array(multipleChoiceOptionSchema).optional(),
+  options: z.array(multipleChoiceOptionSchema).default([]),
   correctAnswer: z.union([
     z.string(),
     z.array(z.string()),
     z.record(z.string(), z.string()),
   ]).optional(),
-  acceptedAnswers: z.array(z.string().max(500)).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional(),
+  acceptedAnswers: z.array(z.string().max(500)).default([]),
+  tags: z.array(z.string().max(50)).max(20).default([]),
   subjectId: uuidSchema.optional(),
   gradeLevel: z.string().max(50).optional(),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
-  isShared: z.boolean().optional(),
-  sharedWith: z.array(uuidSchema).optional(),
+  isShared: z.boolean().default(false),
+  sharedWith: z.array(uuidSchema).default([]),
 });
 
 // ============================================================================

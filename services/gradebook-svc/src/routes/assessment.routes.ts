@@ -84,7 +84,8 @@ router.get(
       const assessment = await assessmentBuilderService.getAssessment(id);
 
       if (!assessment) {
-        return res.status(404).json({ error: 'Assessment not found' });
+        res.status(404).json({ error: 'Assessment not found' });
+        return;
       }
 
       res.json(assessment);
@@ -374,7 +375,9 @@ router.post(
   validateBody(addToQuestionBankBodySchema),
   async (req: Request<{}, {}, AddToQuestionBankBody>, res: Response) => {
     try {
-      const question = await assessmentBuilderService.addToQuestionBank(req.body);
+      // Parse body through schema to ensure all required fields and defaults
+      const parsed = addToQuestionBankBodySchema.parse(req.body);
+      const question = await assessmentBuilderService.addToQuestionBank(parsed as any);
       res.json(question);
     } catch (error) {
       console.error('Error adding to question bank:', error);
@@ -435,7 +438,8 @@ router.get(
       const rubric = await assessmentBuilderService.getRubric(id);
 
       if (!rubric) {
-        return res.status(404).json({ error: 'Rubric not found' });
+        res.status(404).json({ error: 'Rubric not found' });
+        return;
       }
 
       res.json(rubric);

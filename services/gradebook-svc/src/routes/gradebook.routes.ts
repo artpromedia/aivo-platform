@@ -71,7 +71,8 @@ router.get(
       const config = await gradebookService.getGradebookConfig(classroomId);
 
       if (!config) {
-        return res.status(404).json({ error: 'Gradebook config not found' });
+        res.status(404).json({ error: 'Gradebook config not found' });
+        return;
       }
 
       res.json(config);

@@ -10,7 +10,7 @@
 import { randomBytes } from 'node:crypto';
 
 import { getBundleConfig, type BundleType as ConfigBundleType } from '../config/plans.config';
-import type { PrismaClient } from '../generated/prisma-client';
+import type { PrismaClient } from '../../generated/prisma-client';
 
 // Type aliases matching Prisma enums
 type BundleType = 'FAMILY' | 'CLASSROOM' | 'DISTRICT_SEAT';
