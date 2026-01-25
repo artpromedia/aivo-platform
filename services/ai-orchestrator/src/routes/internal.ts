@@ -2,7 +2,12 @@ import { type FastifyInstance, type FastifyPluginAsync, type FastifyRequest } fr
 import { z } from 'zod';
 
 import { config } from '../config.js';
-import { BaselineQuestionGenerationService } from '../generation/baseline-question.service.js';
+import {
+  BaselineQuestionGenerationService,
+  type IepGoalData,
+  type IepAccommodationData,
+  type IepServiceData,
+} from '../generation/baseline-question.service.js';
 import { runAiCall } from '../pipeline/AiCallPipeline.js';
 import { getLLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { AgentConfigRegistry } from '../registry/AgentConfigRegistry.js';
@@ -362,9 +367,10 @@ export const registerInternalRoutes: FastifyPluginAsync<InternalRoutesOptions> =
         has504,
         disabilityCategories,
         // Pass IEP document data for IEP-aligned question generation
-        iepGoals,
-        iepAccommodations,
-        iepServices,
+        // Cast to proper types - Zod schema validation ensures required fields are present
+        iepGoals: iepGoals as IepGoalData[] | undefined,
+        iepAccommodations: iepAccommodations as IepAccommodationData[] | undefined,
+        iepServices: iepServices as IepServiceData[] | undefined,
       });
 
       reply.code(200).send({

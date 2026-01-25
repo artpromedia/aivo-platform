@@ -58,7 +58,7 @@ async function main() {
       return {
         agentType,
         modelName: 'llama3.2:3b',
-        provider: 'ollama' as const,
+        provider: 'MOCK' as const,
         promptTemplate: domainConfig.promptTemplate,
         hyperparameters: domainConfig.hyperparameters,
         version: 'v2-domain',
@@ -72,7 +72,7 @@ async function main() {
     return {
       agentType,
       modelName: 'llama3.2:3b',
-      provider: 'ollama' as const,
+      provider: 'MOCK' as const,
       promptTemplate: defaultPrompt,
       hyperparameters: { temperature: 0.7 },
       version: 'v2-domain',
