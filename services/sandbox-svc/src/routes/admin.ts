@@ -368,7 +368,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
           status: 'APPROVED',
           tier: tier as 'free' | 'standard' | 'enterprise',
           approvedAt: new Date(),
-          approvalNotes: notes,
+          approvalNotes: notes ?? null,
         },
       });
 

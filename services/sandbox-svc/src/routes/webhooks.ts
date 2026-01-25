@@ -4,6 +4,7 @@
 
 import { createHmac } from 'node:crypto';
 
+import { Prisma } from '@prisma/client';
 import type { FastifyPluginAsync } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -229,7 +230,7 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
         data: {
           endpointId: endpoint.id,
           eventType,
-          payloadJson: payload,
+          payloadJson: payload as unknown as Prisma.InputJsonValue,
           status: 'PENDING',
           attempts: 1,
         },

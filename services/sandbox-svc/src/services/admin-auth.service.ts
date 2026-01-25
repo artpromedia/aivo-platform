@@ -13,6 +13,8 @@
 
 import { randomBytes, timingSafeEqual, createHmac, pbkdf2 as pbkdf2Async } from 'node:crypto';
 
+import { Prisma } from '@prisma/client';
+
 import type { ExtendedPrismaClient } from '../prisma-types.js';
 
 // Type aliases since generated types might not be available
@@ -1555,7 +1557,7 @@ export class AdminAuthService {
         adminId,
         adminEmail,
         action,
-        metadata: metadata ?? null,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
       },

@@ -502,14 +502,14 @@ export const publicApiRoutes: FastifyPluginAsync = async (fastify) => {
           include: {
             learner: {
               include: {
-                sessions: {
-                  where: startDate && endDate ? {
+                sessions: startDate && endDate ? {
+                  where: {
                     startedAt: {
                       gte: new Date(startDate),
                       lte: new Date(endDate),
                     },
-                  } : undefined,
-                },
+                  },
+                } : true,
                 progress: true,
               },
             },

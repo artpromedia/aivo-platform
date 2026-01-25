@@ -75,16 +75,16 @@ export const partnerRoutes: FastifyPluginAsync = async (fastify) => {
     const partner = await prisma.partner.create({
       data: {
         name: body.companyName,
-        website: body.website,
+        website: body.website ?? null,
         contactName: body.contactName,
         contactEmail: body.contactEmail,
-        contactRole: body.contactRole,
+        contactRole: body.contactRole ?? null,
         applications: {
           create: {
             integrationType: body.integrationType,
             useCase: body.useCase,
-            expectedVolume: body.expectedVolume,
-            timeline: body.timeline,
+            expectedVolume: body.expectedVolume ?? null,
+            timeline: body.timeline ?? null,
           },
         },
       },
