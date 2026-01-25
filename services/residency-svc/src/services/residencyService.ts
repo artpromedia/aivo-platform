@@ -349,7 +349,7 @@ export async function runComplianceCheck(tenantId: string, userId: string, check
     data: {
       tenantId,
       checkType: checkType as any,
-      scope,
+      scope: scope ?? null,
       status: isCompliant ? 'PASSED' : (violations.length > 0 ? 'FAILED' : 'PASSED_WITH_WARNINGS'),
       isCompliant,
       findings,

@@ -822,12 +822,12 @@ export class ProfessionalDevService {
       period: { startDate, endDate },
       summary: {
         totalTeachersWithActivity: activities.length,
-        totalHoursLogged: activities.reduce((sum, a) => sum + (a._sum.hours ?? 0), 0),
-        totalActivities: activities.reduce((sum, a) => sum + a._count.id, 0),
+        totalHoursLogged: activities.reduce((sum: number, a: (typeof activities)[number]) => sum + (a._sum.hours ?? 0), 0),
+        totalActivities: activities.reduce((sum: number, a: (typeof activities)[number]) => sum + a._count.id, 0),
         totalCompletedPrograms: enrollments.length,
-        totalProgramHours: enrollments.reduce((sum, e) => sum + e.program.creditHours, 0),
+        totalProgramHours: enrollments.reduce((sum: number, e: (typeof enrollments)[number]) => sum + e.program.creditHours, 0),
       },
-      teacherBreakdown: activities.map((a) => ({
+      teacherBreakdown: activities.map((a: (typeof activities)[number]) => ({
         teacherId: a.teacherId,
         hoursLogged: a._sum.hours ?? 0,
         activityCount: a._count.id,
@@ -850,7 +850,7 @@ export class ProfessionalDevService {
       },
     });
 
-    const byProgram = completions.reduce((acc, c) => {
+    const byProgram = completions.reduce((acc: Record<string, any>, c: (typeof completions)[number]) => {
       const programId = c.programId;
       if (!acc[programId]) {
         acc[programId] = {
@@ -866,7 +866,7 @@ export class ProfessionalDevService {
       return acc;
     }, {} as Record<string, any>);
 
-    const byCategory = completions.reduce((acc, c) => {
+    const byCategory = completions.reduce((acc: Record<string, any>, c: (typeof completions)[number]) => {
       const category = c.program.category;
       if (!acc[category]) {
         acc[category] = { category, completions: 0, totalHours: 0 };

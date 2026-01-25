@@ -22,7 +22,7 @@ import {
 } from 'node:crypto';
 
 import { prisma } from '../prisma.js';
-import { Prisma } from '../generated/prisma-client/index.js';
+import { Prisma } from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

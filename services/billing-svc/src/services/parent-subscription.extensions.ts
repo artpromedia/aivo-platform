@@ -19,7 +19,7 @@
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
-import { FeatureKeyValues } from '../types/coverage-profile.types.js';
+import { CoverageFeatureKeyValues } from '../types/coverage-profile.types.js';
 
 // ============================================================================
 // Parent Subscription Metadata Schema
@@ -323,36 +323,36 @@ export const parentSubscriptionExtensions = new ParentSubscriptionExtensions();
 export const PLAN_SKU_TO_FEATURES: Record<string, string[]> = {
   // Parent base plans
   PARENT_BASE: [
-    FeatureKeyValues.MODULE_ELA,
-    FeatureKeyValues.MODULE_MATH,
-    FeatureKeyValues.FEATURE_PROGRESS_REPORTS,
-    FeatureKeyValues.FEATURE_PARENT_INSIGHTS,
+    CoverageFeatureKeyValues.MODULE_ELA,
+    CoverageFeatureKeyValues.MODULE_MATH,
+    CoverageFeatureKeyValues.FEATURE_PROGRESS_REPORTS,
+    CoverageFeatureKeyValues.FEATURE_PARENT_INSIGHTS,
   ],
   PARENT_BASE_PLUS: [
-    FeatureKeyValues.MODULE_ELA,
-    FeatureKeyValues.MODULE_MATH,
-    FeatureKeyValues.MODULE_SCIENCE,
-    FeatureKeyValues.FEATURE_PROGRESS_REPORTS,
-    FeatureKeyValues.FEATURE_PARENT_INSIGHTS,
-    FeatureKeyValues.FEATURE_HOMEWORK_HELPER,
+    CoverageFeatureKeyValues.MODULE_ELA,
+    CoverageFeatureKeyValues.MODULE_MATH,
+    CoverageFeatureKeyValues.MODULE_SCIENCE,
+    CoverageFeatureKeyValues.FEATURE_PROGRESS_REPORTS,
+    CoverageFeatureKeyValues.FEATURE_PARENT_INSIGHTS,
+    CoverageFeatureKeyValues.FEATURE_HOMEWORK_HELPER,
   ],
 
   // Parent add-ons (additive to base)
-  PARENT_ADDON_SEL: [FeatureKeyValues.ADDON_SEL],
-  PARENT_ADDON_SPEECH: [FeatureKeyValues.ADDON_SPEECH],
-  PARENT_ADDON_TUTORING: [FeatureKeyValues.ADDON_TUTORING],
-  PARENT_ADDON_SCIENCE: [FeatureKeyValues.MODULE_SCIENCE],
-  PARENT_ADDON_HOMEWORK: [FeatureKeyValues.FEATURE_HOMEWORK_HELPER],
+  PARENT_ADDON_SEL: [CoverageFeatureKeyValues.ADDON_SEL],
+  PARENT_ADDON_SPEECH: [CoverageFeatureKeyValues.ADDON_SPEECH],
+  PARENT_ADDON_TUTORING: [CoverageFeatureKeyValues.ADDON_TUTORING],
+  PARENT_ADDON_SCIENCE: [CoverageFeatureKeyValues.MODULE_SCIENCE],
+  PARENT_ADDON_HOMEWORK: [CoverageFeatureKeyValues.FEATURE_HOMEWORK_HELPER],
 
   // District plans (for reference)
-  DISTRICT_BASE: [FeatureKeyValues.MODULE_ELA, FeatureKeyValues.MODULE_MATH],
+  DISTRICT_BASE: [CoverageFeatureKeyValues.MODULE_ELA, CoverageFeatureKeyValues.MODULE_MATH],
   DISTRICT_FULL: [
-    FeatureKeyValues.MODULE_ELA,
-    FeatureKeyValues.MODULE_MATH,
-    FeatureKeyValues.MODULE_SCIENCE,
-    FeatureKeyValues.ADDON_SEL,
-    FeatureKeyValues.FEATURE_PROGRESS_REPORTS,
-    FeatureKeyValues.FEATURE_HOMEWORK_HELPER,
+    CoverageFeatureKeyValues.MODULE_ELA,
+    CoverageFeatureKeyValues.MODULE_MATH,
+    CoverageFeatureKeyValues.MODULE_SCIENCE,
+    CoverageFeatureKeyValues.ADDON_SEL,
+    CoverageFeatureKeyValues.FEATURE_PROGRESS_REPORTS,
+    CoverageFeatureKeyValues.FEATURE_HOMEWORK_HELPER,
   ],
 };
 

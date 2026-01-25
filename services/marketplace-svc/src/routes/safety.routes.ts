@@ -17,7 +17,7 @@ import { createSafetyValidationService } from '../services/safety-validation.ser
 declare module 'fastify' {
   interface FastifyRequest {
     user?: {
-      id: string;
+      sub: string;
       role: string;
       tenantId?: string;
     };
@@ -245,7 +245,7 @@ async function startSafetyReview(
   reply: FastifyReply
 ) {
   const { versionId } = VersionIdSchema.parse(request.params);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
 
   // Check version exists
   const version = await prisma.marketplaceItemVersion.findUnique({
@@ -297,7 +297,7 @@ async function submitSafetyReview(
 ) {
   const { versionId } = VersionIdSchema.parse(request.params);
   const body = SafetyReviewSubmissionSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
 
   const version = await prisma.marketplaceItemVersion.findUnique({
     where: { id: versionId },
@@ -368,7 +368,7 @@ async function escalateSafetyReview(
 ) {
   const { versionId } = VersionIdSchema.parse(request.params);
   const { escalateToUserId, reason } = EscalateReviewSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
 
   const version = await prisma.marketplaceItemVersion.findUnique({
     where: { id: versionId },
@@ -445,7 +445,7 @@ async function updateTenantPolicy(
 ) {
   const { tenantId } = TenantIdSchema.parse(request.params);
   const body = TenantPolicyUpdateSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
 
   const policy = await prisma.tenantMarketplacePolicy.upsert({
     where: { tenantId },
@@ -558,7 +558,7 @@ async function verifyVendorDomain(
   reply: FastifyReply
 ) {
   const { vendorId, domain } = request.params;
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
 
   const entry = await prisma.embeddedToolDomainAllowlist.findFirst({
     where: { vendorId, domainPattern: domain },
@@ -647,7 +647,7 @@ async function validateToolLaunch(
 ) {
   const { installationId } = InstallationIdSchema.parse(request.params);
   const { context } = ToolLaunchSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
   const userRole = request.user?.role ?? 'unknown';
 
   const result = await safetyService.validateToolLaunch(installationId, userId, userRole, context);
@@ -668,7 +668,7 @@ async function launchTool(
 ) {
   const { installationId } = InstallationIdSchema.parse(request.params);
   const { context } = ToolLaunchSchema.parse(request.body);
-  const userId = request.user?.id ?? 'system';
+  const userId = request.user?.sub ?? 'system';
   const userRole = request.user?.role ?? 'unknown';
 
   // Validate launch
@@ -689,6 +689,13 @@ async function launchTool(
   // Get installation for logging
   const installation = await prisma.marketplaceInstallation.findUnique({
     where: { id: installationId },
+    include: {
+      version: {
+        select: {
+          safetyRating: true,
+        },
+      },
+    },
   });
 
   if (!installation) {
@@ -701,12 +708,12 @@ async function launchTool(
   await safetyService.logToolLaunch({
     installationId,
     versionId: installation.marketplaceItemVersionId,
+    marketplaceItemId: installation.marketplaceItemId,
     tenantId: installation.tenantId,
     userId,
-    userRole,
     launchUrl: validation.launchUrl ?? '',
     scopesGranted: validation.grantedScopes ?? [],
-    context,
+    safetyRating: installation.version?.safetyRating ?? 'PENDING',
     checks: validation.checks,
     ipAddress: request.ip,
     ...(typeof userAgent === 'string' && { userAgent }),

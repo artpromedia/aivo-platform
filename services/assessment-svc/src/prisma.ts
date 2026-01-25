@@ -1,8 +1,12 @@
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient({
   log:
     process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['warn', 'error'],
 });
 
-export type PrismaTransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+// Type for Prisma transaction client - using Omit to create a compatible type
+export type PrismaTransactionClient = Omit<
+  typeof prisma,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;

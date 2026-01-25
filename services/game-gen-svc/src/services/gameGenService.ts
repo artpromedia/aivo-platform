@@ -1,5 +1,5 @@
 import { prisma } from '../prisma.js';
-import { GameType, GenerationStatus, DifficultyLevel, ContentSource } from '@prisma/client';
+import { GameType, GenerationStatus, DifficultyLevel, ContentSource, Prisma } from '@prisma/client';
 import { config } from '../config.js';
 
 // Template Management
@@ -87,7 +87,7 @@ export async function startGeneration(tenantId: string, data: {
       learningObjectives: data.learningObjectives || [],
       targetAudience: data.targetAudience,
       difficulty: data.difficulty || 'MEDIUM',
-      config: data.config,
+      config: data.config ?? Prisma.JsonNull,
       generatedBy: data.generatedBy,
       status: 'PENDING',
     },
@@ -341,7 +341,7 @@ export async function addToQuestionBank(tenantId: string, data: {
       difficulty: data.difficulty,
       questionType: data.questionType,
       question: data.question,
-      options: data.options,
+      options: data.options ?? Prisma.JsonNull,
       correctAnswer: data.correctAnswer,
       explanation: data.explanation,
       hints: data.hints || [],

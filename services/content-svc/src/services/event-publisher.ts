@@ -5,8 +5,7 @@
 // Publishes content ingestion events to NATS JetStream.
 // Falls back to logging when NATS is disabled or unavailable.
 
-import type { EventPublisher } from '@aivo/events';
-import { createEventPublisher } from '@aivo/events';
+import { EventPublisher } from '@aivo/events';
 
 import { config } from '../config.js';
 
@@ -47,6 +46,7 @@ export interface AiDraftJobData {
 class ContentEventPublisherService {
   private publisher: EventPublisher | null = null;
   private isConnecting = false;
+  private connected = false;
   private connectionError: Error | null = null;
 
   constructor() {
@@ -65,23 +65,24 @@ class ContentEventPublisherService {
     this.isConnecting = true;
 
     try {
-      this.publisher = createEventPublisher({
-        servers: config.nats.servers,
-        serviceName: 'content-svc',
-        serviceVersion: '0.1.0',
-        name: 'content-svc-publisher',
-        token: config.nats.token,
-        user: config.nats.user,
-        pass: config.nats.pass,
+      // Use the EventPublisher constructor with the stub's expected options
+      this.publisher = new EventPublisher({
+        natsUrl: Array.isArray(config.nats.servers)
+          ? config.nats.servers[0]
+          : config.nats.servers,
+        clientId: 'content-svc-publisher',
+        stream: 'content',
       });
 
       await this.publisher.connect();
+      this.connected = true;
       console.log('[content-svc] Connected to NATS');
       this.connectionError = null;
     } catch (err) {
       this.connectionError = err instanceof Error ? err : new Error(String(err));
       console.error('[content-svc] Failed to connect to NATS:', err);
       this.publisher = null;
+      this.connected = false;
     } finally {
       this.isConnecting = false;
     }
@@ -92,7 +93,7 @@ class ContentEventPublisherService {
       return null;
     }
 
-    if (this.publisher?.isConnected()) {
+    if (this.publisher && this.connected) {
       return this.publisher;
     }
 
@@ -130,26 +131,14 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use publishRaw for custom events
-        const result = await publisher.publishRaw({
-          tenantId: data.tenantId ?? 'system',
-          eventType: subject,
-          eventVersion: '1.0.0',
-          payload,
-        });
-
-        if (result.success) {
-          console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
-          return { success: true };
-        } else {
-          console.error(
-            `[content-svc] Failed to publish file ingestion job: ${result.error?.message}`
-          );
-          return { success: false, error: result.error?.message };
-        }
+        // Use publish method from the stub interface
+        await publisher.publish(subject, payload);
+        console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
+        return { success: true };
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         console.error(`[content-svc] Error publishing file ingestion job:`, err);
+        this.connected = false; // Mark as disconnected on error
         return { success: false, error: errorMsg };
       }
     } else {
@@ -191,23 +180,14 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        const result = await publisher.publishRaw({
-          tenantId: data.tenantId ?? 'system',
-          eventType: subject,
-          eventVersion: '1.0.0',
-          payload,
-        });
-
-        if (result.success) {
-          console.log(`[content-svc] Published AI draft job: ${data.jobId}`);
-          return { success: true };
-        } else {
-          console.error(`[content-svc] Failed to publish AI draft job: ${result.error?.message}`);
-          return { success: false, error: result.error?.message };
-        }
+        // Use publish method from the stub interface
+        await publisher.publish(subject, payload);
+        console.log(`[content-svc] Published AI draft job: ${data.jobId}`);
+        return { success: true };
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         console.error(`[content-svc] Error publishing AI draft job:`, err);
+        this.connected = false; // Mark as disconnected on error
         return { success: false, error: errorMsg };
       }
     } else {
@@ -228,6 +208,7 @@ class ContentEventPublisherService {
     if (this.publisher) {
       await this.publisher.close();
       this.publisher = null;
+      this.connected = false;
       console.log('[content-svc] Disconnected from NATS');
     }
   }
@@ -236,7 +217,7 @@ class ContentEventPublisherService {
     if (!config.nats.enabled) {
       return true; // Healthy when disabled
     }
-    return this.publisher?.isConnected() ?? false;
+    return this.connected;
   }
 }
 

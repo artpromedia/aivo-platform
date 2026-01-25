@@ -4,11 +4,22 @@
  * CRUD and workflow operations for Learning Object Versions.
  */
 
-import type { LearningObjectVersionState, Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+
+// Local type definitions since Prisma types may not be exported
+type LearningObjectVersionState = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'RETIRED';
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
+// Local update input type for version transitions
+interface LearningObjectVersionUpdateInput {
+  state?: LearningObjectVersionState;
+  reviewedByUserId?: string;
+  approvedByUserId?: string;
+  publishedAt?: Date;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -188,10 +199,10 @@ export async function versionRoutes(fastify: FastifyInstance) {
           state: 'DRAFT',
           createdByUserId: user.sub,
           changeSummary,
-          contentJson: contentJson as Prisma.InputJsonValue,
-          accessibilityJson: (accessibilityJson ?? {}) as Prisma.InputJsonValue,
-          standardsJson: (standardsJson ?? {}) as Prisma.InputJsonValue,
-          metadataJson: (metadataJson ?? {}) as Prisma.InputJsonValue,
+          contentJson: contentJson as JsonValue,
+          accessibilityJson: (accessibilityJson ?? {}) as JsonValue,
+          standardsJson: (standardsJson ?? {}) as JsonValue,
+          metadataJson: (metadataJson ?? {}) as JsonValue,
           skills: skillAlignments
             ? {
                 create: skillAlignments.map((s) => ({
@@ -285,10 +296,10 @@ export async function versionRoutes(fastify: FastifyInstance) {
         where: { id },
         data: {
           changeSummary,
-          contentJson: contentJson as Prisma.InputJsonValue | undefined,
-          accessibilityJson: accessibilityJson as Prisma.InputJsonValue | undefined,
-          standardsJson: standardsJson as Prisma.InputJsonValue | undefined,
-          metadataJson: metadataJson as Prisma.InputJsonValue | undefined,
+          contentJson: contentJson as JsonValue | undefined,
+          accessibilityJson: accessibilityJson as JsonValue | undefined,
+          standardsJson: standardsJson as JsonValue | undefined,
+          metadataJson: metadataJson as JsonValue | undefined,
         },
         include: { skills: true },
       });
@@ -339,7 +350,7 @@ export async function versionRoutes(fastify: FastifyInstance) {
       }
 
       // Determine reviewer/approver fields
-      const updateData: Prisma.LearningObjectVersionUpdateInput = {
+      const updateData: LearningObjectVersionUpdateInput = {
         state: targetState as LearningObjectVersionState,
       };
 

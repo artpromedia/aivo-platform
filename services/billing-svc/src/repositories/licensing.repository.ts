@@ -6,7 +6,7 @@
 
 import type { z } from 'zod';
 
-import { Prisma } from '../../generated/prisma-client/index.js';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import type {
   CreateLicenseAssignmentSchema,
@@ -40,7 +40,7 @@ export class SeatEntitlementRepository {
         quantityAllocated: 0,
         overageCount: 0,
         isActive: true,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as SeatEntitlement;
   }
@@ -247,7 +247,7 @@ export class LicenseAssignmentRepository {
         ...data,
         status: 'ACTIVE',
         isOverage: data.isOverage ?? false,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as LicenseAssignment;
   }
@@ -438,9 +438,9 @@ export class LicenseEventRepository {
     return prisma.licenseEvent.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
-        previousValue: data.previousValue ?? Prisma.JsonNull,
-        newValue: data.newValue ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
+        previousValue: data.previousValue ?? null,
+        newValue: data.newValue ?? null,
       },
     }) as unknown as LicenseEvent;
   }

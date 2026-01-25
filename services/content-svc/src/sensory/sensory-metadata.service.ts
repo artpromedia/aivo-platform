@@ -55,7 +55,7 @@ export async function createSensoryMetadata(
       cognitiveLoad: cognitiveLoad
         ? (cognitiveLoad.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH')
         : 'MEDIUM',
-      sensoryWarnings: sensoryWarnings ?? [],
+      sensoryWarnings: (sensoryWarnings ?? []) as Prisma.InputJsonValue,
       suitableForPhotosensitive,
       suitableForAudioSensitive,
       suitableForMotionSensitive,

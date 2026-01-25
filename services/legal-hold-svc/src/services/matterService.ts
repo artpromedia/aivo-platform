@@ -40,7 +40,7 @@ export async function createMatter(
       riskLevel: input.riskLevel || 'MEDIUM',
       riskNotes: input.riskNotes,
       tags: input.tags || [],
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue,
       createdBy: userId,
     },
   });

@@ -7,7 +7,7 @@
 
 import type { z } from 'zod';
 
-import { Prisma } from '../../generated/prisma-client/index.js';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import type {
   Contract,
@@ -44,7 +44,7 @@ export class ProductRepository {
     return prisma.product.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as Product;
   }
@@ -123,7 +123,7 @@ export class PriceBookRepository {
     return prisma.priceBook.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as PriceBook;
   }
@@ -211,7 +211,7 @@ export class PriceBookEntryRepository {
     return prisma.priceBookEntry.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as PriceBookEntry;
   }
@@ -276,7 +276,7 @@ export class DistrictBillingProfileRepository {
       data: {
         ...data,
         billingAddressJson: data.billingAddressJson,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as DistrictBillingProfile;
   }
@@ -371,7 +371,7 @@ export class ContractRepository {
         contractNumber,
         status: 'DRAFT',
         totalValueCents: BigInt(0),
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as Contract;
   }
@@ -514,7 +514,7 @@ export class ContractLineItemRepository {
       data: {
         ...data,
         totalValueCents,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as ContractLineItem;
   }
@@ -597,7 +597,7 @@ export class ContractAllocationRepository {
       data: {
         ...data,
         quantityUsed: 0,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as ContractAllocation;
   }
@@ -651,6 +651,22 @@ export class ContractAllocationRepository {
   }
 
   /**
+   * Update an allocation.
+   */
+  async update(
+    id: string,
+    data: { quantityAllocated?: number; metadataJson?: unknown }
+  ): Promise<ContractAllocation> {
+    return prisma.contractAllocation.update({
+      where: { id },
+      data: {
+        ...data,
+        metadataJson: data.metadataJson ?? undefined,
+      },
+    }) as unknown as ContractAllocation;
+  }
+
+  /**
    * Delete an allocation.
    */
   async delete(id: string): Promise<void> {
@@ -673,7 +689,7 @@ export class ContractEntitlementRepository {
       data: {
         ...data,
         isActive: true,
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as ContractEntitlement;
   }
@@ -766,7 +782,7 @@ export class ContractInvoiceScheduleRepository {
         ...data,
         amountCents: BigInt(data.amountCents),
         status: 'PENDING',
-        metadataJson: data.metadataJson ?? Prisma.JsonNull,
+        metadataJson: data.metadataJson ?? null,
       },
     }) as unknown as ContractInvoiceSchedule;
   }

@@ -1,5 +1,10 @@
 import { prisma } from '../prisma.js';
-import type { ApprovalStatus, WorkflowStatus, StepType, EscalationType } from '@prisma/client';
+
+// Type definitions for approval workflow enums
+type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+type WorkflowStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+type StepType = 'SINGLE_APPROVER' | 'ANY_OF' | 'ALL_OF' | 'QUORUM';
+type EscalationType = 'NOTIFY_ONLY' | 'AUTO_APPROVE' | 'AUTO_REJECT' | 'ESCALATE_UP';
 
 // Workflow Management
 export async function createWorkflow(tenantId: string, data: {
@@ -264,7 +269,7 @@ export async function getPendingForUser(tenantId: string, userId: string) {
     },
   });
 
-  const userIds = [userId, ...delegations.map(d => d.fromUserId)];
+  const userIds = [userId, ...delegations.map((d: { fromUserId: string }) => d.fromUserId)];
 
   return prisma.approvalRequest.findMany({
     where: {
@@ -353,7 +358,7 @@ export async function makeDecision(tenantId: string, requestId: string, data: {
     } else {
       // Check for next step
       const nextStep = request.workflow.steps.find(
-        s => s.order === currentStepInstance.step.order + 1
+        (s: { order: number }) => s.order === currentStepInstance.step.order + 1
       );
 
       if (nextStep) {
@@ -463,8 +468,8 @@ export async function createDelegation(tenantId: string, data: {
       toUserId: data.toUserId,
       workflowIds: data.workflowIds || [],
       startDate: data.startDate,
-      endDate: data.endDate,
-      reason: data.reason,
+      endDate: data.endDate ?? null,
+      reason: data.reason ?? null,
     },
   });
 }
@@ -574,8 +579,8 @@ export async function getStats(tenantId: string, startDate: Date, endDate: Date)
   });
 
   return {
-    byStatus: requests.map(r => ({ status: r.status, count: r._count })),
-    total: requests.reduce((sum, r) => sum + r._count, 0),
+    byStatus: requests.map((r: { status: string; _count: number }) => ({ status: r.status, count: r._count })),
+    total: requests.reduce((sum: number, r: { _count: number }) => sum + r._count, 0),
   };
 }
 

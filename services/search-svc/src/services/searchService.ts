@@ -1,4 +1,5 @@
 import { prisma } from '../prisma.js';
+import { Prisma } from '@prisma/client';
 
 // Define types locally since they're not exported from Prisma schema
 type IndexStatus = 'BUILDING' | 'ACTIVE' | 'STALE' | 'REBUILDING' | 'ERROR';
@@ -352,7 +353,7 @@ export async function configureFacet(
       field: data.field,
       label: data.label,
       type: data.type || 'terms',
-      settings: data.settings,
+      settings: data.settings ?? Prisma.JsonNull,
       sortOrder: data.sortOrder || 0,
     },
     update: {

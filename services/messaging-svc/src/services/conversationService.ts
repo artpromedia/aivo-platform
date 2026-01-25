@@ -32,8 +32,6 @@ export async function createConversation(input: CreateConversationInput) {
       contextType: conversationData.contextType,
       contextId: conversationData.contextId,
       contextLearnerId: conversationData.contextLearnerId,
-      contextActionPlanId: conversationData.contextActionPlanId,
-      contextMeetingId: conversationData.contextMeetingId,
       createdBy: conversationData.createdBy,
       participants: {
         create: allParticipantIds.map((userId, index) => ({
@@ -239,8 +237,6 @@ export interface ContextThreadInput {
   contextType: ContextType;
   contextId?: string;
   contextLearnerId?: string;
-  contextActionPlanId?: string;
-  contextMeetingId?: string;
   name: string;
   description?: string;
   participantIds: string[];
@@ -259,12 +255,6 @@ export async function findOrCreateContextThread(input: ContextThreadInput) {
   // Add specific context fields based on type
   if (input.contextLearnerId) {
     contextWhere.contextLearnerId = input.contextLearnerId;
-  }
-  if (input.contextActionPlanId) {
-    contextWhere.contextActionPlanId = input.contextActionPlanId;
-  }
-  if (input.contextMeetingId) {
-    contextWhere.contextMeetingId = input.contextMeetingId;
   }
   if (input.contextId) {
     contextWhere.contextId = input.contextId;
@@ -295,8 +285,6 @@ export async function findOrCreateContextThread(input: ContextThreadInput) {
     contextType: input.contextType,
     contextId: input.contextId,
     contextLearnerId: input.contextLearnerId,
-    contextActionPlanId: input.contextActionPlanId,
-    contextMeetingId: input.contextMeetingId,
   });
 
   return { conversation, created: true };
@@ -372,8 +360,6 @@ export async function getThreadByContext(
       OR: [
         { contextId },
         { contextLearnerId: contextId },
-        { contextActionPlanId: contextId },
-        { contextMeetingId: contextId },
       ],
     },
     include: {

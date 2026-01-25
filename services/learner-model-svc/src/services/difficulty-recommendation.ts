@@ -968,13 +968,7 @@ export class DifficultyRecommendationService {
     // This history record allows the sequencer to look up the current
     // approved difficulty level for each domain.
 
-    logger.info('Applied difficulty change', {
-      learnerId,
-      domain,
-      previousLevel,
-      newLevel,
-      changedByType,
-    });
+    logger.info({ learnerId, domain, previousLevel, newLevel, changedByType }, 'Applied difficulty change');
   }
 
   private masteryToLevel(mastery: number): number {

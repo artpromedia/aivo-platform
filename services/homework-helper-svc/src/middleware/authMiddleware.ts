@@ -1,11 +1,12 @@
-import { authMiddleware as sharedAuthMiddleware } from '@aivo/ts-rbac';
+import { authMiddleware as sharedAuthMiddleware, Role } from '@aivo/ts-rbac';
+import type { AuthContext } from '@aivo/ts-rbac';
 import type { FastifyPluginCallback, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
 
- 
-const auth = sharedAuthMiddleware({ publicKey: config.jwtPublicKey });
+// Use empty string fallback for dev/test when no key is configured
+const auth = sharedAuthMiddleware({ publicKey: config.jwtPublicKey ?? '' });
 
 const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -14,21 +15,20 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
       const testUserHeader = request.headers['x-test-user'] as string | undefined;
       if (testUserHeader) {
         try {
-          (request as FastifyRequest & { user?: unknown }).user = JSON.parse(
+          (request as FastifyRequest & { user?: AuthContext }).user = JSON.parse(
             testUserHeader
-          ) as unknown;
+          ) as AuthContext;
         } catch {
           // Fall through to default test user
         }
       }
 
       // Always provide a user in test runs so routes can execute
-      if (!(request as FastifyRequest & { user?: unknown }).user) {
-        (request as FastifyRequest & { user?: unknown }).user = {
+      if (!(request as FastifyRequest & { user?: AuthContext }).user) {
+        (request as FastifyRequest & { user?: AuthContext }).user = {
           userId: 'test-user',
           tenantId: '11111111-1111-1111-1111-111111111111',
-          learnerId: '22222222-2222-2222-2222-222222222222',
-          roles: ['learner'],
+          roles: [Role.LEARNER],
         };
       }
       return;
@@ -45,4 +45,5 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   done();
 };
 
-export const authMiddleware = fp(authPlugin);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authMiddleware = fp(authPlugin as any);

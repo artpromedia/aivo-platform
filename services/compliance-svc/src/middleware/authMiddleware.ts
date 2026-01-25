@@ -12,7 +12,7 @@ import type { JwtPayload } from '../types/index.js';
 declare module 'fastify' {
   interface FastifyRequest {
     user?: JwtPayload;
-    tenantId?: string;
+    tenantId: string | null;
   }
 }
 
@@ -20,7 +20,7 @@ async function authMiddlewarePlugin(fastify: FastifyInstance) {
   fastify.decorateRequest('user', null);
   fastify.decorateRequest('tenantId', null);
 
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     if (request.url === '/health') {
       return;
     }
@@ -76,7 +76,7 @@ async function authMiddlewarePlugin(fastify: FastifyInstance) {
       const { payload } = await jose.jwtVerify(token, publicKey);
 
       request.user = payload as unknown as JwtPayload;
-      request.tenantId = (payload as JwtPayload).tenantId;
+      request.tenantId = (payload as unknown as JwtPayload).tenantId;
     } catch (err) {
       request.log.warn({ err }, 'JWT verification failed');
       return reply.status(401).send({
@@ -87,6 +87,6 @@ async function authMiddlewarePlugin(fastify: FastifyInstance) {
   });
 }
 
-export const authMiddleware = fp(authMiddlewarePlugin, {
+export const authMiddleware = (fp as any)(authMiddlewarePlugin, {
   name: 'auth-middleware',
 });

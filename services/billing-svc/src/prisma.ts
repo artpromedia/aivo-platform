@@ -2,7 +2,7 @@
  * Prisma Client for Billing Service
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
 
 import { config } from './config.js';
 

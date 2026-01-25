@@ -73,8 +73,8 @@ function generateThreadName(contextType: ContextType, customName?: string): stri
       return 'Task Discussion';
     case ContextType.SESSION:
       return 'Session Notes';
-    case ContextType.CARE_NOTE:
-      return 'Care Note Follow-up';
+    case ContextType.DOCUMENT:
+      return 'Document Discussion';
     case ContextType.CLASS:
       return 'Class Channel';
     default:
@@ -188,7 +188,6 @@ export async function registerThreadRoutes(fastify: FastifyInstance): Promise<vo
         contextType: ContextType.ACTION_PLAN,
         contextId: actionPlanId,
         contextLearnerId: body.learnerId,
-        contextActionPlanId: actionPlanId,
         name: generateThreadName(ContextType.ACTION_PLAN, body.name),
         description: body.description,
         participantIds: body.participantIds,
@@ -238,7 +237,6 @@ export async function registerThreadRoutes(fastify: FastifyInstance): Promise<vo
         contextType: ContextType.MEETING,
         contextId: meetingId,
         contextLearnerId: body.learnerId,
-        contextMeetingId: meetingId,
         name: generateThreadName(ContextType.MEETING, body.name),
         description: body.description,
         participantIds: body.participantIds,

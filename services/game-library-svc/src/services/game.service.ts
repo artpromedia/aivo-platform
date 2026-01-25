@@ -4,7 +4,7 @@
 
 import { config } from '../config.js';
 import { GAME_CATALOG, filterGames, getRandomFocusBreakGame } from '../games/catalog.js';
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 import type {
   GameDefinition,
   GameFilters,
@@ -101,7 +101,7 @@ export class GameService {
       orderBy: { title: 'asc' },
     });
 
-    return games.map((g) => this.toGameSummary(g));
+    return games.map((g: { id: string; slug: string; title: string; description: string; type: string; category: string; estimatedDurationSec: number; thumbnailUrl: string | null; xpReward: number; coinReward: number; cognitiveSkills: string[] }) => this.toGameSummary(g));
   }
 
   /**
@@ -297,7 +297,7 @@ export class GameService {
       take: limit,
     });
 
-    return sessions.map((s) => this.toSessionResponse(s));
+    return sessions.map((s: { id: string; gameId: string; game: { slug: string; title: string }; context: string; status: string; score: number | null; stars: number | null; levelReached: number | null; difficulty: string | null; durationSec: number | null; xpEarned: number | null; coinsEarned: number | null; isPersonalBest: boolean; startedAt: Date; endedAt: Date | null }) => this.toSessionResponse(s));
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -331,7 +331,7 @@ export class GameService {
     const recommendations: GameRecommendation[] = [];
 
     // Filter by context
-    const contextGames = games.filter((g) => {
+    const contextGames = games.filter((g: { id: string; type: string }) => {
       if (context === 'BREAK') {
         return g.type === 'FOCUS_BREAK' || g.type === 'RELAXATION';
       } else if (context === 'BRAIN_TRAINING') {
@@ -341,8 +341,8 @@ export class GameService {
     });
 
     // Prioritize games not recently played
-    const unplayedGames = contextGames.filter((g) => !recentGameIds.includes(g.id));
-    const replayGames = contextGames.filter((g) => recentGameIds.includes(g.id));
+    const unplayedGames = contextGames.filter((g: { id: string }) => !recentGameIds.includes(g.id));
+    const replayGames = contextGames.filter((g: { id: string }) => recentGameIds.includes(g.id));
 
     // Add unplayed games first
     for (const game of unplayedGames.slice(0, limit)) {
@@ -355,7 +355,7 @@ export class GameService {
 
     // Add favorites if space remains
     if (recommendations.length < limit && profile?.favoriteGameIds) {
-      const favoriteGames = contextGames.filter((g) =>
+      const favoriteGames = contextGames.filter((g: { id: string }) =>
         profile.favoriteGameIds.includes(g.id)
       );
       for (const game of favoriteGames.slice(0, limit - recommendations.length)) {

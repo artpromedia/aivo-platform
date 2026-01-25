@@ -316,7 +316,7 @@ export async function addActionToIncident(
 
   return prisma.sensoryIncident.update({
     where: { id },
-    data: { actionsTaken },
+    data: { actionsTaken: actionsTaken as unknown as Prisma.InputJsonValue },
   });
 }
 

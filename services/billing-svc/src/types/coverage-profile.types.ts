@@ -51,7 +51,7 @@ export type CoverageSourceType =
 /**
  * Standard module/feature keys used across the platform.
  */
-export const FeatureKeyValues = {
+export const CoverageFeatureKeyValues = {
   // Core curriculum modules
   MODULE_ELA: 'MODULE_ELA',
   MODULE_MATH: 'MODULE_MATH',
@@ -67,7 +67,7 @@ export const FeatureKeyValues = {
   FEATURE_PROGRESS_REPORTS: 'FEATURE_PROGRESS_REPORTS',
   FEATURE_PARENT_INSIGHTS: 'FEATURE_PARENT_INSIGHTS',
 } as const;
-export type FeatureKey = (typeof FeatureKeyValues)[keyof typeof FeatureKeyValues];
+export type CoverageFeatureKey = (typeof CoverageFeatureKeyValues)[keyof typeof CoverageFeatureKeyValues];
 
 // ============================================================================
 // Coverage Detail Types
@@ -433,7 +433,7 @@ export function createEmptyCoverageProfile(
     effectiveModules: new Set(),
     payerForFeature: new Map(),
     coverageDetails: [],
-    upsellOpportunities: Object.values(FeatureKeyValues),
+    upsellOpportunities: Object.values(CoverageFeatureKeyValues),
     computedAt: now,
     expiresAt: new Date(now.getTime() + 5 * 60 * 1000), // 5 min TTL
   };

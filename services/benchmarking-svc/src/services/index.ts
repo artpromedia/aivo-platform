@@ -2,7 +2,7 @@
  * Benchmarking Services
  */
 
-export { ParticipationService } from './participation.service';
-export { BenchmarkService } from './benchmark.service';
-export { AggregationService } from './aggregation.service';
-export { InsightsService } from './insights.service';
+export { ParticipationService } from './participation.service.js';
+export { BenchmarkService } from './benchmark.service.js';
+export { AggregationService } from './aggregation.service.js';
+export { InsightsService } from './insights.service.js';

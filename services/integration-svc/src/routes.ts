@@ -4,7 +4,7 @@
  * Public APIs for partners and admin APIs for managing webhooks/keys.
  */
 
-import type { PrismaClient, ApiScope, WebhookEventType } from '@prisma/client';
+import type { PrismaClient, ApiScope, WebhookEventType, Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
@@ -51,7 +51,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
   // API KEY AUTHENTICATION HOOK
   // ════════════════════════════════════════════════════════════════════════════
 
-  app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     // Only apply to /public/* routes
     if (!request.url.startsWith('/public/')) {
       return;
@@ -416,7 +416,7 @@ export async function registerRoutes(app: FastifyInstance, config: RouteConfig):
           durationMinutes: body.durationMinutes,
           score: body.score,
           completed: body.completed,
-          metadataJson: body.metadata,
+          metadataJson: (body.metadata ?? null) as Prisma.InputJsonValue,
           apiKeyId: apiKeyAuth.apiKeyId,
         },
       });

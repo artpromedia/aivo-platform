@@ -366,6 +366,7 @@ model IntegrationSettings {
 model GoogleClassroomCredential {
   id             String    @id @default(uuid()) @db.Uuid
   userId         String    @unique @db.Uuid // Internal user ID (teacher)
+  tenantId       String    @db.Uuid
   accessToken    String
   refreshToken   String?
   expiryDate     BigInt?
@@ -373,10 +374,14 @@ model GoogleClassroomCredential {
   tokenType      String?   @default("Bearer")
   email          String?   // Google email address
   googleUserId   String?   // Google user ID
-  
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  /// Relations
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
   @@map("google_classroom_credentials")
 }
 
@@ -662,27 +667,28 @@ model Enrollment {
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   tenantId     String    @db.Uuid
-  
+
   /// Personal info
   email        String
   givenName    String
   familyName   String
   photoUrl     String?
-  
+
   /// Auth
   googleId     String?
-  
+
   /// Role and source
   role         String
   sourceSystem String?
-  
+
   /// Metadata
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
+
   /// Relations
-  enrollments  Enrollment[]
-  
+  enrollments                Enrollment[]
+  googleClassroomCredential  GoogleClassroomCredential?
+
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([googleId])

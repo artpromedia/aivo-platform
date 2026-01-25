@@ -11,7 +11,7 @@ import type {
   BulkSubmissionResult,
   MetricCategory,
   AnonymizationConfig,
-} from '../types';
+} from '../types/index.js';
 
 const DEFAULT_ANONYMIZATION_CONFIG: AnonymizationConfig = {
   minCohortSize: 5,
@@ -201,9 +201,10 @@ export class AggregationService {
     }
 
     // Get all metrics from members
+    type MemberRecord = (typeof members)[number];
     const metrics = await this.prisma.benchmarkMetric.findMany({
       where: {
-        participantId: { in: members.map((m) => m.participantId) },
+        participantId: { in: members.map((m: MemberRecord) => m.participantId) },
       },
     });
 
@@ -349,8 +350,8 @@ export class AggregationService {
       p25: Math.round(this.percentile(sorted, 25) * 100) / 100,
       p75: Math.round(this.percentile(sorted, 75) * 100) / 100,
       p90: Math.round(this.percentile(sorted, 90) * 100) / 100,
-      min: sorted[0],
-      max: sorted[n - 1],
+      min: sorted[0] ?? 0,
+      max: sorted[n - 1] ?? 0,
     };
   }
 
@@ -362,11 +363,14 @@ export class AggregationService {
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
 
+    const lowerValue = sorted[lower] ?? 0;
+    const upperValue = sorted[upper] ?? 0;
+
     if (lower === upper) {
-      return sorted[lower];
+      return lowerValue;
     }
 
-    return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+    return lowerValue + (upperValue - lowerValue) * (index - lower);
   }
 
   /**

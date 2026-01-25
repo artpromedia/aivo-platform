@@ -10,13 +10,13 @@ import routes from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
-  app.register(cors, {
+  app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
-  app.register(helmet);
-  app.register(rateLimit, FastifyRateLimitPresets.publicApi('approval-svc'));
-  app.register(sensible);
+  app.register(helmet as any);
+  app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('approval-svc'));
+  app.register(sensible as any);
   app.get('/health', async () => ({ status: 'healthy', service: 'approval-svc' }));
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);

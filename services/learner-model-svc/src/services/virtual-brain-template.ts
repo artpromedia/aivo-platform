@@ -40,12 +40,15 @@ interface TemplateWithStates {
   id: string;
   gradeBand: GradeBand;
   name: string;
+  description: string | null;
   version: string;
   defaultCurriculumStandards: string[];
   defaultLexileMin: number | null;
   defaultLexileMax: number | null;
   templateBktDefaults: Prisma.JsonValue;
   templateSkillStates: TemplateSkillStateRecord[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**

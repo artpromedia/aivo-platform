@@ -443,13 +443,13 @@ export function registerLtiRoutes(
       const body = request.body as Record<string, unknown>;
       const parsed = LtiLinkConfigSchema.parse(body);
 
-      // Extract ltiToolId for relational syntax, keep rest for scalar fields
-      const { ltiToolId, ...restParsed } = parsed;
-
       const link = await prisma.ltiLink.create({
         data: {
-          ...restParsed,
-          tool: { connect: { id: ltiToolId } },
+          tenantId: parsed.tenantId,
+          tool: { connect: { id: parsed.ltiToolId } },
+          title: parsed.title,
+          gradingEnabled: parsed.gradingEnabled,
+          createdByUserId: parsed.createdByUserId,
           lmsContextId: parsed.lmsContextId ?? null,
           lmsResourceLinkId: parsed.lmsResourceLinkId ?? null,
           classroomId: parsed.classroomId ?? null,

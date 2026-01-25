@@ -14,7 +14,7 @@ async function main() {
       app.log.info('Graceful shutdown completed');
       process.exit(0);
     } catch (err) {
-      app.log.error('Error during shutdown:', err);
+      app.log.error({ err }, 'Error during shutdown');
       process.exit(1);
     }
   };

@@ -2,7 +2,7 @@
  * AIVO Compliance Service - Prisma Client
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
 
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development'

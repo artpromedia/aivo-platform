@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import * as ingestService from '../services/ingestService.js';
 
 export default async function routes(app: FastifyInstance) {
@@ -24,7 +24,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/jobs/:jobId', async (request, reply) => {
     const { jobId } = request.params as { jobId: string };
     const job = await ingestService.getJob(request.tenantId!, jobId);
-    if (!job) return reply.notFound('Job not found');
+    if (!job) return reply.status(404).send({ error: 'Job not found' });
     return job;
   });
 
@@ -57,7 +57,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/items/:itemId', async (request, reply) => {
     const { itemId } = request.params as { itemId: string };
     const item = await ingestService.getItem(request.tenantId!, itemId);
-    if (!item) return reply.notFound('Item not found');
+    if (!item) return reply.status(404).send({ error: 'Item not found' });
     return item;
   });
 

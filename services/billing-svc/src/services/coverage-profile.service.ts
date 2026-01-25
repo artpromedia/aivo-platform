@@ -23,8 +23,8 @@ import {
   CoverageSourceTypeValues,
   type DistrictCoverage,
   type FeatureCoverageDetail,
-  type FeatureKey,
-  FeatureKeyValues,
+  type CoverageFeatureKey,
+  CoverageFeatureKeyValues,
   type FeaturePayer,
   FeaturePayerValues,
   type ParentCoverage,
@@ -181,7 +181,7 @@ export class CoverageProfileService {
     );
 
     // Determine upsell opportunities (features not covered)
-    const upsellOpportunities = Object.values(FeatureKeyValues).filter(
+    const upsellOpportunities = Object.values(CoverageFeatureKeyValues).filter(
       (feature) => !effectiveModules.has(feature) && !districtModules.has(feature)
     );
 
@@ -363,11 +363,11 @@ export class CoverageProfileService {
     ).size;
 
     // Build addon breakdown
-    const featureCounts: Record<FeatureKey, { district: number; parent: number }> = {} as Record<
-      FeatureKey,
+    const featureCounts: Record<CoverageFeatureKey, { district: number; parent: number }> = {} as Record<
+      CoverageFeatureKey,
       { district: number; parent: number }
     >;
-    const allFeatures = Object.values(FeatureKeyValues);
+    const allFeatures = Object.values(CoverageFeatureKeyValues);
 
     for (const feature of allFeatures) {
       featureCounts[feature] = {
@@ -381,7 +381,7 @@ export class CoverageProfileService {
       for (const feature of sub.coveredFeatures) {
         // Only count features that are in our known feature list
         if (Object.prototype.hasOwnProperty.call(featureCounts, feature)) {
-          featureCounts[feature as FeatureKey].parent++;
+          featureCounts[feature as CoverageFeatureKey].parent++;
         }
       }
     }
@@ -472,15 +472,15 @@ export class CoverageProfileService {
  */
 function getFeatureDisplayName(featureKey: string): string {
   const displayNames: Record<string, string> = {
-    [FeatureKeyValues.MODULE_ELA]: 'English Language Arts',
-    [FeatureKeyValues.MODULE_MATH]: 'Mathematics',
-    [FeatureKeyValues.MODULE_SCIENCE]: 'Science',
-    [FeatureKeyValues.ADDON_SEL]: 'Social-Emotional Learning',
-    [FeatureKeyValues.ADDON_SPEECH]: 'Speech & Language',
-    [FeatureKeyValues.ADDON_TUTORING]: 'AI Tutoring',
-    [FeatureKeyValues.FEATURE_HOMEWORK_HELPER]: 'Homework Helper',
-    [FeatureKeyValues.FEATURE_PROGRESS_REPORTS]: 'Progress Reports',
-    [FeatureKeyValues.FEATURE_PARENT_INSIGHTS]: 'Parent Insights',
+    [CoverageFeatureKeyValues.MODULE_ELA]: 'English Language Arts',
+    [CoverageFeatureKeyValues.MODULE_MATH]: 'Mathematics',
+    [CoverageFeatureKeyValues.MODULE_SCIENCE]: 'Science',
+    [CoverageFeatureKeyValues.ADDON_SEL]: 'Social-Emotional Learning',
+    [CoverageFeatureKeyValues.ADDON_SPEECH]: 'Speech & Language',
+    [CoverageFeatureKeyValues.ADDON_TUTORING]: 'AI Tutoring',
+    [CoverageFeatureKeyValues.FEATURE_HOMEWORK_HELPER]: 'Homework Helper',
+    [CoverageFeatureKeyValues.FEATURE_PROGRESS_REPORTS]: 'Progress Reports',
+    [CoverageFeatureKeyValues.FEATURE_PARENT_INSIGHTS]: 'Parent Insights',
   };
   return displayNames[featureKey] ?? featureKey;
 }

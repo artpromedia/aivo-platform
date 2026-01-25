@@ -233,7 +233,7 @@ export async function startEventConsumer(): Promise<void> {
  */
 export async function stopEventConsumer(): Promise<void> {
   if (publisher) {
-    await publisher.disconnect();
+    await publisher.close();
     publisher = null;
   }
 }

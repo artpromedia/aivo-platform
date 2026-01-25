@@ -124,9 +124,9 @@ export async function standardsRoutes(app: FastifyInstance) {
 
   // Search available standards
   app.get('/search', async (request: FastifyRequest<{
-    Querystring: { query: string; framework?: string; gradeLevel?: string }
+    Querystring: { query: string; limit?: string }
   }>) => {
-    const { query, framework, gradeLevel } = request.query;
-    return curriculumService.searchStandards(query, { framework, gradeLevel });
+    const { query, limit } = request.query;
+    return curriculumService.searchStandards(query, limit ? parseInt(limit, 10) : undefined);
   });
 }

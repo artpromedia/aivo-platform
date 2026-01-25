@@ -32,6 +32,7 @@ export interface ModelDelegate<T = any> {
   count: (args?: any) => Promise<number>;
   aggregate: (args: any) => Promise<any>;
   groupBy: (args: any) => Promise<any[]>;
+  fields: Record<string, any>;
 }
 
 /**

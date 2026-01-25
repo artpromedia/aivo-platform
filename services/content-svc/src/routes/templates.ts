@@ -7,10 +7,12 @@
 import { randomUUID } from 'node:crypto';
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+
+// Local type for JSON values since JsonValue may not be exported
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -204,7 +206,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         name,
         description: description ?? null,
         category,
-        blocks: blocks as Prisma.InputJsonValue,
+        blocks: blocks as JsonValue,
         thumbnail: thumbnail ?? null,
         tags: tags ?? [],
         isPublic: effectiveIsPublic,
@@ -263,7 +265,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
       // Cast blocks if present
       const dataToUpdate = {
         ...updateData,
-        ...(updateData.blocks && { blocks: updateData.blocks as Prisma.InputJsonValue }),
+        ...(updateData.blocks && { blocks: updateData.blocks as JsonValue }),
         updatedAt: new Date(),
       };
 

@@ -5,8 +5,7 @@
  * Data access layer for quotes, purchase orders, invoices, and renewal tasks.
  */
 
-import type { PrismaClient } from '../generated/prisma-client';
-import { Prisma } from '../generated/prisma-client';
+import type { PrismaClient } from '@prisma/client';
 import type {
   Quote,
   QuoteLineItem,
@@ -51,7 +50,7 @@ export class QuoteRepository {
         quoteNumber,
         status: QuoteStatus.DRAFT,
         totalAmountCents: 0n,
-        metadataJson: input.metadataJson ?? Prisma.JsonNull,
+        metadataJson: input.metadataJson ?? null,
       },
     }) as unknown as Quote;
   }
@@ -238,7 +237,7 @@ export class QuoteLineItemRepository {
         unitPriceCents: BigInt(input.unitPriceCents),
         totalAmountCents,
         discountPercent: input.discountPercent ?? null,
-        metadataJson: input.metadataJson ?? Prisma.JsonNull,
+        metadataJson: input.metadataJson ?? null,
       },
     });
 
@@ -340,8 +339,8 @@ export class PurchaseOrderRepository {
         ...input,
         amountCents: BigInt(input.amountCents),
         status: POStatus.PENDING,
-        attachmentsJson: input.attachmentsJson ?? Prisma.JsonNull,
-        metadataJson: input.metadataJson ?? Prisma.JsonNull,
+        attachmentsJson: input.attachmentsJson ?? null,
+        metadataJson: input.metadataJson ?? null,
       },
     }) as unknown as PurchaseOrder;
   }
@@ -428,7 +427,7 @@ export class PurchaseOrderRepository {
    */
   async review(
     id: string,
-    status: POStatus.APPROVED | POStatus.REJECTED,
+    status: 'APPROVED' | 'REJECTED',
     reviewedBy: string,
     reviewNotes?: string
   ): Promise<PurchaseOrder> {
@@ -503,7 +502,7 @@ export class DistrictInvoiceRepository {
         status: DistrictInvoiceStatus.DRAFT,
         amountDueCents: BigInt(input.amountDueCents),
         amountPaidCents: 0n,
-        metadataJson: input.metadataJson ?? Prisma.JsonNull,
+        metadataJson: input.metadataJson ?? null,
       },
     }) as unknown as DistrictInvoice;
   }

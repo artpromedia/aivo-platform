@@ -35,8 +35,9 @@ export async function unitsRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { curriculumId } = request.params;
-    const { tenantId } = request.query;
-    return curriculumService.listUnits(curriculumId, tenantId);
+    // Get curriculum with units included
+    const curriculum = await curriculumService.getCurriculum(curriculumId);
+    return curriculum?.units ?? [];
   });
 
   // Get unit by ID
@@ -45,8 +46,7 @@ export async function unitsRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { id } = request.params;
-    const { tenantId } = request.query;
-    return curriculumService.getUnitById(id, tenantId);
+    return curriculumService.getUnit(id);
   });
 
   // Create unit
@@ -56,12 +56,14 @@ export async function unitsRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { curriculumId } = request.params;
-    const { tenantId } = request.query;
     const data = CreateUnitSchema.parse(request.body);
     return curriculumService.createUnit({
-      ...data,
       curriculumId,
-      tenantId,
+      title: data.title,
+      description: data.description,
+      orderIndex: data.orderIndex,
+      durationDays: data.estimatedDuration ?? 0,
+      essentialQuestions: data.objectives,
     });
   });
 
@@ -72,9 +74,13 @@ export async function unitsRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { id } = request.params;
-    const { tenantId } = request.query;
     const data = UpdateUnitSchema.parse(request.body);
-    return curriculumService.updateUnit(id, tenantId, data);
+    return curriculumService.updateUnit(id, {
+      title: data.title,
+      description: data.description,
+      orderIndex: data.orderIndex,
+      durationDays: data.estimatedDuration,
+    });
   });
 
   // Delete unit
@@ -83,8 +89,7 @@ export async function unitsRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { id } = request.params;
-    const { tenantId } = request.query;
-    await curriculumService.deleteUnit(id, tenantId);
+    await curriculumService.deleteUnit(id);
     return { success: true };
   });
 
@@ -94,9 +99,12 @@ export async function unitsRoutes(app: FastifyInstance) {
     Body: z.infer<typeof ReorderUnitsSchema>;
     Querystring: { tenantId: string }
   }>) => {
-    const { curriculumId } = request.params;
-    const { tenantId } = request.query;
     const { unitOrder } = ReorderUnitsSchema.parse(request.body);
-    return curriculumService.reorderUnits(curriculumId, tenantId, unitOrder);
+    // Extract unit IDs in order
+    const unitIds = unitOrder
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map(item => item.unitId);
+    await curriculumService.reorderUnits(unitIds);
+    return { success: true };
   });
 }

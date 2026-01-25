@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AdaptiveService } from '../../src/services/adaptive.service.js';
-import type { Difficulty, Question } from '../../generated/prisma-client/index.js';
+import type { Difficulty, Question } from '@prisma/client';
 
 // Mock prisma
 const mockPrisma = {

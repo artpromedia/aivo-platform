@@ -44,10 +44,10 @@ async function bootstrap() {
   const port = config.port || 3010;
   await app.listen(port);
 
-  logger.info(`Parent service running on port ${port}`, {
-    service: 'parent-svc',
-    environment: config.environment,
-  });
+  logger.info(
+    { service: 'parent-svc', environment: config.environment },
+    `Parent service running on port ${port}`
+  );
 }
 
 bootstrap().catch((error) => {

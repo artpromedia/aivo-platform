@@ -38,6 +38,18 @@ export interface TransactionClient {
   learningObjectTag: ModelDelegate;
   learningObjectSkill: ModelDelegate;
   learningObjectTranslation: ModelDelegate;
+  // Content sharing models
+  contentShare: ModelDelegate;
+  contentShareTag: ModelDelegate;
+  contentFork: ModelDelegate;
+  contentRating: ModelDelegate;
+  contentReview: ModelDelegate;
+  // Teacher community models
+  teacherProfile: ModelDelegate;
+  teacherFollow: ModelDelegate;
+  contentCollection: ModelDelegate;
+  collectionTag: ModelDelegate;
+  collectionItem: ModelDelegate;
   // Include other base prisma methods that are available in transaction
   $queryRaw: BasePrismaClient['$queryRaw'];
   $executeRaw: BasePrismaClient['$executeRaw'];
@@ -55,6 +67,18 @@ export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transacti
   learningObjectTag: ModelDelegate;
   learningObjectSkill: ModelDelegate;
   learningObjectTranslation: ModelDelegate;
+  // Content sharing models
+  contentShare: ModelDelegate;
+  contentShareTag: ModelDelegate;
+  contentFork: ModelDelegate;
+  contentRating: ModelDelegate;
+  contentReview: ModelDelegate;
+  // Teacher community models
+  teacherProfile: ModelDelegate;
+  teacherFollow: ModelDelegate;
+  contentCollection: ModelDelegate;
+  collectionTag: ModelDelegate;
+  collectionItem: ModelDelegate;
   // Override $transaction to use our TransactionClient
   $transaction: {
     // Callback-style transaction (returns the callback result directly)

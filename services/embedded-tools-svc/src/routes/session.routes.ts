@@ -130,10 +130,12 @@ async function fetchToolConfig(
     // Map launch type string to enum
     const launchTypeMap: Record<string, EmbeddedToolLaunchType> = {
       IFRAME_WEB: EmbeddedToolLaunchType.IFRAME_WEB,
-      IFRAME_MOBILE: EmbeddedToolLaunchType.IFRAME_MOBILE,
-      POPUP: EmbeddedToolLaunchType.POPUP,
-      WEBVIEW: EmbeddedToolLaunchType.WEBVIEW,
-      LTI_1_3: EmbeddedToolLaunchType.LTI_1_3,
+      IFRAME_MOBILE: EmbeddedToolLaunchType.IFRAME_WEB, // Mobile iframe uses same type
+      POPUP: EmbeddedToolLaunchType.IFRAME_WEB, // Popup uses iframe-like embedding
+      WEBVIEW: EmbeddedToolLaunchType.NATIVE_DEEPLINK, // Webview maps to native deeplink
+      NATIVE_DEEPLINK: EmbeddedToolLaunchType.NATIVE_DEEPLINK,
+      LTI_1_3: EmbeddedToolLaunchType.LTI_LIKE, // LTI 1.3 maps to LTI_LIKE
+      LTI_LIKE: EmbeddedToolLaunchType.LTI_LIKE,
     };
 
     return {
@@ -364,8 +366,8 @@ async function createSession(
       createdByActorType: data.createdByActorType,
       grantedScopes: grantedScopes,
       status: ToolSessionStatus.ACTIVE,
-      launchConfigJson: data.launchConfig ?? toolConfig.defaultConfig ?? {},
-      learnerContextJson: (learnerContext ?? {}) as Prisma.InputJsonValue,
+      launchConfigJson: (data.launchConfig ?? toolConfig.defaultConfig ?? {}) as Prisma.JsonValue,
+      learnerContextJson: (learnerContext ?? {}) as Prisma.JsonValue,
       tokenJti: tokenResult.jti,
       tokenExpiresAt: new Date(tokenResult.expiresAt * 1000),
       expiresAt,

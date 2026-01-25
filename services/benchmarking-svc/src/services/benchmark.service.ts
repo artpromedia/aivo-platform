@@ -16,7 +16,7 @@ import type {
   TrendPeriod,
   PeerMatchingCriteria,
   AnonymizationConfig,
-} from '../types';
+} from '../types/index.js';
 
 const DEFAULT_ANONYMIZATION_CONFIG: AnonymizationConfig = {
   minCohortSize: 5,
@@ -73,15 +73,16 @@ export class BenchmarkService {
     const overallPercentile = this.calculateOverallPercentile(categoryBreakdown);
 
     // Extract top strengths and opportunities from insights
+    type InsightRecord = (typeof participant.insights)[number];
     const strengths = participant.insights
-      .filter((i) => i.insightType === 'strength')
+      .filter((i: InsightRecord) => i.insightType === 'strength')
       .slice(0, 3)
-      .map((i) => i.title);
+      .map((i: InsightRecord) => i.title);
 
     const opportunities = participant.insights
-      .filter((i) => i.insightType === 'opportunity')
+      .filter((i: InsightRecord) => i.insightType === 'opportunity')
       .slice(0, 3)
-      .map((i) => i.title);
+      .map((i: InsightRecord) => i.title);
 
     return {
       participant: {
@@ -104,7 +105,7 @@ export class BenchmarkService {
           allowPeerContact: participant.allowPeerContact,
         },
         enrolledAt: participant.enrolledAt,
-        cohorts: participant.cohortMemberships.map((m) => ({
+        cohorts: participant.cohortMemberships.map((m: (typeof participant.cohortMemberships)[number]) => ({
           id: m.cohort.id,
           name: m.cohort.name,
           memberCount: m.cohort.memberCount,
@@ -142,7 +143,8 @@ export class BenchmarkService {
     }
 
     // Determine cohorts to compare against
-    const cohortIds = options.cohortIds ?? participant.cohortMemberships.map((m) => m.cohortId);
+    type MembershipRecord = (typeof participant.cohortMemberships)[number];
+    const cohortIds = options.cohortIds ?? participant.cohortMemberships.map((m: MembershipRecord) => m.cohortId);
 
     // Default to last quarter if no period specified
     const periodEnd = options.periodEnd ?? new Date();
@@ -176,13 +178,15 @@ export class BenchmarkService {
     const metricDefs = await this.prisma.metricDefinition.findMany({
       where: { isActive: true },
     });
-    const metricDefMap = new Map(metricDefs.map((m) => [m.key, m]));
+    type MetricDef = (typeof metricDefs)[number];
+    const metricDefMap = new Map<string, MetricDef>(metricDefs.map((m: MetricDef) => [m.key, m]));
 
     // Build comparisons
     const comparisons: BenchmarkComparison[] = [];
+    type CohortAggregateRecord = (typeof cohortAggregates)[number];
 
     for (const metric of districtMetrics) {
-      const relevantAggregates = cohortAggregates.filter((a) => a.metricKey === metric.metricKey);
+      const relevantAggregates = cohortAggregates.filter((a: CohortAggregateRecord) => a.metricKey === metric.metricKey);
 
       if (relevantAggregates.length === 0) continue;
 
@@ -204,7 +208,7 @@ export class BenchmarkService {
       // Get trend data if available
       const trend = await this.getTrendData(participant.id, metric.metricKey, aggregate.cohortId);
 
-      comparisons.push({
+      const comparison: BenchmarkComparison = {
         metricKey: metric.metricKey,
         metricName: metricDef?.name ?? metric.metricKey,
         category: metric.category as MetricCategory,
@@ -223,8 +227,9 @@ export class BenchmarkService {
           sampleCount: aggregate.sampleCount,
         },
         percentileRank: percentile,
-        trend,
-      });
+        ...(trend !== undefined && { trend }),
+      };
+      comparisons.push(comparison);
     }
 
     // Log comparison access
@@ -283,7 +288,8 @@ export class BenchmarkService {
       include: { participant: true },
     });
 
-    const activeMembers = cohortMembers.filter((m) => m.participant.status === 'ACTIVE');
+    type CohortMember = (typeof cohortMembers)[number];
+    const activeMembers = cohortMembers.filter((m: CohortMember) => m.participant.status === 'ACTIVE');
 
     if (activeMembers.length < this.anonymizationConfig.minCohortSize) {
       return null; // Below anonymity threshold
@@ -291,20 +297,22 @@ export class BenchmarkService {
 
     const metrics = await this.prisma.benchmarkMetric.findMany({
       where: {
-        participantId: { in: activeMembers.map((m) => m.participantId) },
+        participantId: { in: activeMembers.map((m: CohortMember) => m.participantId) },
         metricKey,
       },
       orderBy: { metricValue: 'desc' },
     });
 
+    type BenchmarkMetric = (typeof metrics)[number];
+
     // Find district's rank
-    const districtMetric = metrics.find((m) => m.participantId === participant.id);
+    const districtMetric = metrics.find((m: BenchmarkMetric) => m.participantId === participant.id);
     const districtRank = districtMetric
-      ? metrics.findIndex((m) => m.id === districtMetric.id) + 1
+      ? metrics.findIndex((m: BenchmarkMetric) => m.id === districtMetric.id) + 1
       : -1;
 
     // Create distribution buckets
-    const values = metrics.map((m) => m.metricValue);
+    const values = metrics.map((m: BenchmarkMetric) => m.metricValue);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const bucketSize = (max - min) / 5 || 1;
@@ -314,7 +322,7 @@ export class BenchmarkService {
       const rangeMin = min + i * bucketSize;
       const rangeMax = min + (i + 1) * bucketSize;
       const count = values.filter(
-        (v) => v >= rangeMin && (i === 4 ? v <= rangeMax : v < rangeMax)
+        (v: number) => v >= rangeMin && (i === 4 ? v <= rangeMax : v < rangeMax)
       ).length;
 
       distribution.push({
@@ -363,7 +371,8 @@ export class BenchmarkService {
       },
     });
 
-    return cohorts.map((c) => ({
+    type BenchmarkCohort = (typeof cohorts)[number];
+    return cohorts.map((c: BenchmarkCohort) => ({
       cohortId: c.id,
       name: c.name,
       memberCount: c.memberCount,
@@ -429,20 +438,22 @@ export class BenchmarkService {
       return undefined;
     }
 
+    type DistrictMetric = (typeof districtMetrics)[number];
     const cohortAggregates = await this.prisma.cohortAggregate.findMany({
       where: {
         cohortId,
         metricKey,
         periodStart: {
-          in: districtMetrics.map((m) => m.periodStart),
+          in: districtMetrics.map((m: DistrictMetric) => m.periodStart),
         },
       },
       orderBy: { periodStart: 'asc' },
     });
 
-    const periods: TrendPeriod[] = districtMetrics.map((dm) => {
+    type CohortAggregate = (typeof cohortAggregates)[number];
+    const periods: TrendPeriod[] = districtMetrics.map((dm: DistrictMetric) => {
       const cohortAgg = cohortAggregates.find(
-        (ca) => ca.periodStart.getTime() === dm.periodStart.getTime()
+        (ca: CohortAggregate) => ca.periodStart.getTime() === dm.periodStart.getTime()
       );
       return {
         periodStart: dm.periodStart,
@@ -503,9 +514,11 @@ export class BenchmarkService {
       // Get metric definitions
       const metricDefs = await this.prisma.metricDefinition.findMany({
         where: {
-          key: { in: categoryMetrics.map((m) => m.metricKey) },
+          key: { in: categoryMetrics.map((m: (typeof metrics)[number]) => m.metricKey) },
         },
       });
+
+      type MetricDefType = (typeof metricDefs)[number];
 
       // Simplified: use metric value as percentile proxy
       const sorted = [...categoryMetrics].sort((a, b) => b.metricValue - a.metricValue);
@@ -515,11 +528,11 @@ export class BenchmarkService {
         metricCount: categoryMetrics.length,
         avgPercentile: 50, // Would be calculated from actual cohort comparisons
         bestMetric:
-          metricDefs.find((d) => d.key === sorted[0]?.metricKey)?.name ??
+          metricDefs.find((d: MetricDefType) => d.key === sorted[0]?.metricKey)?.name ??
           sorted[0]?.metricKey ??
           '',
         worstMetric:
-          metricDefs.find((d) => d.key === sorted[sorted.length - 1]?.metricKey)?.name ??
+          metricDefs.find((d: MetricDefType) => d.key === sorted[sorted.length - 1]?.metricKey)?.name ??
           sorted[sorted.length - 1]?.metricKey ??
           '',
       });

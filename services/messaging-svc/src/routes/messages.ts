@@ -66,7 +66,10 @@ export async function registerMessageRoutes(fastify: FastifyInstance): Promise<v
         tenantId: ctx.tenantId,
         conversationId,
         senderId: ctx.userId,
-        ...body,
+        content: body.content,
+        type: body.type,
+        metadata: body.metadata,
+        replyToId: body.replyToId,
       });
 
       fastify.log.info(

@@ -15,7 +15,7 @@ import type {
   EnterpriseDealStatus,
   EnterpriseDealType,
   VaultLicenseType,
-} from '../generated/prisma-client/index.js';
+} from '@prisma/client';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

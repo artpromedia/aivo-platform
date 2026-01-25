@@ -30,6 +30,8 @@ export interface ServerConfig {
     clientSecret: string;
     redirectUri: string;
     webhookUrl: string;
+    appBaseUrl: string;
+    frontendUrl: string;
   };
 }
 

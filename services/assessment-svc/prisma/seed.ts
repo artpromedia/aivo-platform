@@ -12,13 +12,13 @@
  * - Question pools
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
 import type {
   GradeBand,
   BaselineStatus,
   BaselineDomain,
   RetestReasonType,
-} from '../generated/prisma-client/index.js';
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 

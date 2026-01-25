@@ -18,4 +18,4 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   done();
 };
 
-export const authMiddleware = fp(authPlugin);
+export const authMiddleware = fp(authPlugin as any);

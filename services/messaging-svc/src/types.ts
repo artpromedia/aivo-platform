@@ -17,8 +17,6 @@ export interface ConversationContext {
   contextType: ContextType;
   contextId?: string;
   contextLearnerId?: string;
-  contextActionPlanId?: string;
-  contextMeetingId?: string;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -36,8 +34,6 @@ export interface CreateConversationInput {
   contextType?: ContextType;
   contextId?: string;
   contextLearnerId?: string;
-  contextActionPlanId?: string;
-  contextMeetingId?: string;
 }
 
 export interface UpdateConversationInput {

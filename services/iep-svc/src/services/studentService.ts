@@ -167,7 +167,7 @@ export async function createEvaluation(tenantId: string, studentId: string, user
       tenantId,
       studentId,
       evaluationType: input.evaluationType,
-      referralDate: input.referralDate ? new Date(input.referralDate) : undefined,
+      referralDate: input.referralDate ? new Date(input.referralDate) : null,
       areasEvaluated: input.areasEvaluated || [],
       status: 'PENDING',
       createdBy: userId,

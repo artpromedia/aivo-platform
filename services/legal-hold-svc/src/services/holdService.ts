@@ -4,6 +4,8 @@
  * Manages legal holds and preservation orders.
  */
 
+import { Prisma } from '@prisma/client';
+
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 import type {
@@ -55,7 +57,7 @@ export async function createHold(
       isConfidential: input.isConfidential ?? false,
       priority: input.priority || 'NORMAL',
       tags: input.tags || [],
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue,
       createdBy: userId,
     },
   });
@@ -212,7 +214,7 @@ export async function updateHold(
       isConfidential: input.isConfidential,
       priority: input.priority,
       tags: input.tags,
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue,
     },
   });
 

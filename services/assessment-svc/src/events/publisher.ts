@@ -23,6 +23,9 @@ export type AssessmentEventType =
   | 'attempt.auto-submitted'
   | 'response.submitted'
   | 'response.graded'
+  | 'response.flagged'
+  | 'grades.released'
+  | 'rubric.created'
   | 'security.violation'
   | 'session.started'
   | 'accommodation.added';

@@ -203,6 +203,19 @@ export class GradebookService {
   }
 
   /**
+   * Get assignment by ID
+   */
+  async getAssignment(assignmentId: string): Promise<Assignment | null> {
+    return prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: {
+        category: true,
+        grades: true
+      }
+    });
+  }
+
+  /**
    * Update assignment
    */
   async updateAssignment(
@@ -581,9 +594,21 @@ export class GradebookService {
   async exportGradebook(classroomId: string): Promise<string> {
     const { config, students } = await this.getClassroomGradebook(classroomId);
 
+    // Get assignments with grades for the config
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        gradebookConfigId: config.id,
+        status: 'PUBLISHED'
+      },
+      orderBy: { dueDate: 'desc' },
+      include: {
+        grades: true
+      }
+    });
+
     // Generate CSV headers
     const headers = ['Student ID', 'Overall Grade', 'Letter Grade'];
-    config.assignments.forEach(assignment => {
+    assignments.forEach(assignment => {
       headers.push(`${assignment.title} (${assignment.totalPoints}pts)`);
     });
 
@@ -595,7 +620,7 @@ export class GradebookService {
         student.calculation.letterGrade
       ];
 
-      config.assignments.forEach(assignment => {
+      assignments.forEach(assignment => {
         const grade = assignment.grades.find(g => g.studentId === student.studentId);
         row.push(grade?.score?.toString() ?? '');
       });

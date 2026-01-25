@@ -125,7 +125,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { classId } = request.params;
       const { period = 'week' } = request.query;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getClassOverview(classId, teacherId, period);
@@ -154,7 +154,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { studentId } = request.params;
       const { period = 'month' } = request.query;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getStudentAnalytics(
@@ -187,7 +187,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { classId } = request.params;
       const { domain } = request.query;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getSkillMasteryMatrix(
@@ -218,7 +218,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { classId } = request.params;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getEarlyWarningReport(classId, teacherId);
@@ -245,7 +245,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { classId } = request.params;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getIEPProgressReport(classId, teacherId);
@@ -274,7 +274,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { classId } = request.params;
       const { period = 'week' } = request.query;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const result = await teacherAnalyticsService.getEngagementAnalytics(
@@ -323,7 +323,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const { classId, metric } = request.params;
       const { period = 'month' } = request.query;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         // Get overview which includes trends
@@ -458,7 +458,7 @@ export async function teacherAnalyticsRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { classIds, period = 'month' } = request.body;
-      const teacherId = (request.user as { id: string })?.id || 'anonymous';
+      const teacherId = (request.user as { sub: string })?.sub || 'anonymous';
 
       try {
         const comparisons = await Promise.all(

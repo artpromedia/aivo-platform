@@ -5,7 +5,7 @@
  * district entitlements and parent subscriptions.
  */
 
-import type { PrismaClient } from '../../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import type { GradeBand } from '../types/licensing.types.js';
 

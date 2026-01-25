@@ -2,7 +2,7 @@ import type {
   Assessment,
   AssessmentQuestion,
   Prisma,
-} from '../../generated/prisma-client/index.js';
+} from '@prisma/client';
 import { publishEvent } from '../events/publisher.js';
 import { prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';

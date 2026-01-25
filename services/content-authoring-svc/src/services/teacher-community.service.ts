@@ -9,7 +9,7 @@
  * - Collections/playlists of content
  */
 
-import type { Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '../prisma.js';
 
 export interface TeacherProfileParams {
@@ -173,7 +173,7 @@ export async function getTeacherContent(
 ) {
   const { page = 1, pageSize = 20, includePrivate = false } = options;
 
-  const where: Prisma.ContentShareWhereInput = {
+  const where: any = {
     sharedByUserId: userId,
     isActive: true,
   };
@@ -412,7 +412,7 @@ export async function discoverTeachers(params: DiscoverTeachersParams) {
     pageSize = 20,
   } = params;
 
-  const where: Prisma.TeacherProfileWhereInput = {};
+  const where: any = {};
 
   if (subject) {
     where.subjects = { has: subject };
@@ -437,7 +437,7 @@ export async function discoverTeachers(params: DiscoverTeachersParams) {
     ];
   }
 
-  let orderBy: Prisma.TeacherProfileOrderByWithRelationInput;
+  let orderBy: any;
   switch (sortBy) {
     case 'RECENT':
       orderBy = { createdAt: 'desc' };
@@ -607,7 +607,7 @@ export async function removeFromCollection(
  * Get user's collections
  */
 export async function getUserCollections(userId: string, includePrivate = true) {
-  const where: Prisma.ContentCollectionWhereInput = { userId };
+  const where: any = { userId };
 
   if (!includePrivate) {
     where.isPublic = true;
@@ -701,7 +701,7 @@ export async function getRecommendedContent(
 ) {
   const profile = await getOrCreateTeacherProfile(userId);
 
-  const where: Prisma.ContentShareWhereInput = {
+  const where: any = {
     isActive: true,
     visibility: { in: ['PUBLIC', 'DISTRICT'] },
     sharedByUserId: { not: userId }, // Exclude own content

@@ -12,11 +12,39 @@
 
 import { prisma } from '../prisma.js';
 import type {
-  QuestionAnalytics,
-  AssessmentAnalytics,
   Question,
   QuestionType,
 } from '../types/assessment.types.js';
+
+// Local types for analytics service (separate from the shared types)
+export interface AssessmentAnalyticsResult {
+  assessmentId: string;
+  assessmentName: string;
+  totalAttempts: number;
+  completionRate: number;
+  averageScore: number;
+  medianScore: number;
+  scoreDistribution: ScoreDistribution;
+  reliability: ReliabilityMetrics;
+  itemAnalyses: ItemAnalysis[];
+  questionCount: number;
+  effectiveQuestionCount: number;
+  averageCompletionTimeSeconds: number;
+  generatedAt: Date;
+}
+
+export interface QuestionAnalyticsResult {
+  questionId: string;
+  attemptsCount: number;
+  correctCount: number;
+  incorrectCount: number;
+  skippedCount: number;
+  averageScore: number;
+  averageTimeSeconds: number;
+  difficulty: number;
+  discrimination: number;
+  lastCalculated: Date;
+}
 
 // ============================================================================
 // TYPES
@@ -103,7 +131,7 @@ export class AnalyticsService {
   async generateAssessmentAnalytics(
     assessmentId: string,
     timeframe?: AnalyticsTimeframe
-  ): Promise<AssessmentAnalytics> {
+  ): Promise<AssessmentAnalyticsResult> {
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       include: {
@@ -407,7 +435,7 @@ export class AnalyticsService {
    */
   async generateQuestionAnalytics(
     questionId: string
-  ): Promise<QuestionAnalytics> {
+  ): Promise<QuestionAnalyticsResult> {
     const question = await prisma.question.findUnique({
       where: { id: questionId },
     });
@@ -435,8 +463,8 @@ export class AnalyticsService {
     ).length;
     const difficulty = correctCount / responses.length;
 
-    const attemptScores = new Map(
-      responses.map(r => [r.attemptId, r.attempt.percentScore ?? 0])
+    const attemptScores = new Map<string, number>(
+      responses.map(r => [r.attemptId as string, (r.attempt.percentScore ?? 0) as number])
     );
     const discrimination = this.calculatePointBiserial(responses, attemptScores);
 
@@ -568,7 +596,7 @@ export class AnalyticsService {
    */
   async persistAnalytics(
     assessmentId: string,
-    analytics: AssessmentAnalytics
+    analytics: AssessmentAnalyticsResult
   ): Promise<void> {
     // Upsert assessment analytics
     await prisma.assessmentAnalytics.upsert({
@@ -669,8 +697,9 @@ export class AnalyticsService {
     responses: any[],
     attemptScores: Map<string, number>
   ): OptionAnalysis[] {
-    const options = question.options ?? [];
-    const correctIndex = question.correctOption;
+    const questionAny = question as any;
+    const options = questionAny.options ?? [];
+    const correctIndex = questionAny.correctOption;
 
     return options.map((opt, idx) => {
       const selected = responses.filter(r => {
@@ -939,7 +968,7 @@ export class AnalyticsService {
     };
   }
 
-  private createEmptyQuestionAnalytics(questionId: string): QuestionAnalytics {
+  private createEmptyQuestionAnalytics(questionId: string): QuestionAnalyticsResult {
     return {
       questionId,
       attemptsCount: 0,

@@ -5,7 +5,8 @@
  * Handles contract lifecycle, seat allocation, and entitlement generation.
  */
 
-import type { Prisma } from '../../generated/prisma-client/index.js';
+import type { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '../prisma.js';
 import {
   contractRepository,

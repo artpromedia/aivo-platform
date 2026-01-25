@@ -7,13 +7,16 @@
 
 import type { PrismaClient } from '@prisma/client';
 
+// Type for JSON values that can be stored in Prisma
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 import type {
   EnrollmentRequest,
   ParticipantProfile,
   SharingPreferences,
   CohortSummary,
   ParticipationStatus,
-} from '../types';
+} from '../types/index.js';
 
 export class ParticipationService {
   constructor(private prisma: PrismaClient) {}
@@ -145,11 +148,11 @@ export class ParticipationService {
     const participant = await this.prisma.benchmarkParticipant.update({
       where: { tenantId },
       data: {
-        shareAcademicData: preferences.shareAcademicData,
-        shareEngagementData: preferences.shareEngagementData,
-        shareAiEffectiveness: preferences.shareAiEffectiveness,
-        shareOperationalData: preferences.shareOperationalData,
-        allowPeerContact: preferences.allowPeerContact,
+        ...(preferences.shareAcademicData !== undefined && { shareAcademicData: preferences.shareAcademicData }),
+        ...(preferences.shareEngagementData !== undefined && { shareEngagementData: preferences.shareEngagementData }),
+        ...(preferences.shareAiEffectiveness !== undefined && { shareAiEffectiveness: preferences.shareAiEffectiveness }),
+        ...(preferences.shareOperationalData !== undefined && { shareOperationalData: preferences.shareOperationalData }),
+        ...(preferences.allowPeerContact !== undefined && { allowPeerContact: preferences.allowPeerContact }),
       },
       include: {
         cohortMemberships: {
@@ -252,8 +255,9 @@ export class ParticipationService {
       this.prisma.benchmarkParticipant.count({ where }),
     ]);
 
+    type ParticipantRecord = (typeof participants)[number];
     return {
-      participants: participants.map((p) => this.toProfile(p)),
+      participants: participants.map((p: ParticipantRecord) => this.toProfile(p)),
       total,
     };
   }
@@ -273,7 +277,8 @@ export class ParticipationService {
       where: { isSystem: true },
     });
 
-    const matchingCohorts = cohorts.filter((cohort) => {
+    type CohortRecord = (typeof cohorts)[number];
+    const matchingCohorts = cohorts.filter((cohort: CohortRecord) => {
       // Size match
       if (cohort.sizeMin && participant.size < cohort.sizeMin) return false;
       if (cohort.sizeMax && participant.size > cohort.sizeMax) return false;
@@ -306,7 +311,7 @@ export class ParticipationService {
 
     // Create memberships
     await this.prisma.cohortMembership.createMany({
-      data: matchingCohorts.map((cohort) => ({
+      data: matchingCohorts.map((cohort: CohortRecord) => ({
         participantId,
         cohortId: cohort.id,
       })),
@@ -351,7 +356,7 @@ export class ParticipationService {
         action,
         actorId,
         actorType: 'user',
-        details,
+        details: details as JsonValue,
       },
     });
   }

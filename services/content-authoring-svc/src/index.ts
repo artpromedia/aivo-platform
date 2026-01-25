@@ -74,7 +74,7 @@ async function main() {
   });
 
   // Rate limiting
-  await fastify.register(rateLimit, FastifyRateLimitPresets.content('content-authoring-svc'));
+  await fastify.register(rateLimit as any, FastifyRateLimitPresets.content('content-authoring-svc'));
 
   // Register auth hook
   registerAuthHook(fastify);

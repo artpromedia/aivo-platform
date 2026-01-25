@@ -1,4 +1,4 @@
-import type { Question, Difficulty } from '../../generated/prisma-client/index.js';
+import type { Question, Difficulty } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';
 

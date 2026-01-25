@@ -2,15 +2,42 @@
  * Lesson Builder Service
  *
  * Manages lesson templates, blocks, versioning, and AI-assisted content
+ *
+ * NOTE: This service maps lesson concepts to the LearningObject schema:
+ * - Lesson -> LearningObject
+ * - LessonVersion -> LearningObjectVersion
+ * - LessonBlock -> stored in LearningObjectVersion.contentJson
  */
 
-import { prisma } from '../prisma.js';
+import { prisma, type TransactionClient } from '../prisma.js';
 import type {
   LessonBlock,
   BlockType,
-  LessonVersion,
   LessonPreviewMode
 } from '../types/lesson-builder.js';
+import { randomUUID } from 'crypto';
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HELPER TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface ContentJson {
+  blocks: LessonBlock[];
+  description?: string;
+  [key: string]: unknown;
+}
+
+// Helper to parse contentJson
+function parseContentJson(contentJson: unknown): ContentJson {
+  if (typeof contentJson === 'object' && contentJson !== null) {
+    const content = contentJson as Record<string, unknown>;
+    return {
+      ...content,
+      blocks: Array.isArray(content.blocks) ? content.blocks : [],
+    };
+  }
+  return { blocks: [] };
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // INTERFACES
@@ -73,29 +100,37 @@ export interface LessonPreview {
 export class LessonBuilderService {
   /**
    * Create a new lesson with initial version
+   * Maps to LearningObject + LearningObjectVersion
    */
   static async createLesson(input: CreateLessonInput) {
-    const lesson = await prisma.$transaction(async (tx) => {
-      // Create lesson
-      const newLesson = await tx.lesson.create({
+    const lesson = await prisma.$transaction(async (tx: TransactionClient) => {
+      // Generate a slug from the title
+      const slug = input.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      // Create learning object (lesson)
+      const newLesson = await tx.learningObject.create({
         data: {
           tenantId: input.tenantId,
           title: input.title,
-          description: input.description,
-          subject: input.subject,
-          gradeBand: input.gradeBand,
+          slug: `${slug}-${Date.now()}`,
+          subject: input.subject.toUpperCase(),
+          gradeBand: input.gradeBand.toUpperCase().replace('-', '_'),
           createdByUserId: input.createdByUserId,
-          isPublished: false,
+          isActive: false, // Not published yet
         },
       });
 
-      // Create initial version
-      const version = await tx.lessonVersion.create({
+      // Create initial version with description in contentJson
+      const version = await tx.learningObjectVersion.create({
         data: {
-          lessonId: newLesson.id,
+          learningObjectId: newLesson.id,
           versionNumber: 1,
-          isDraft: true,
+          state: 'DRAFT',
           createdByUserId: input.createdByUserId,
+          contentJson: {
+            blocks: [],
+            description: input.description || '',
+          },
         },
       });
 
@@ -112,21 +147,15 @@ export class LessonBuilderService {
 
   /**
    * Get lesson by ID with current version and blocks
+   * Maps to LearningObject with LearningObjectVersion
    */
   static async getLesson(lessonId: string, includeBlocks = true) {
-    const lesson = await prisma.lesson.findUnique({
+    const lesson = await prisma.learningObject.findUnique({
       where: { id: lessonId },
       include: {
         versions: {
           orderBy: { versionNumber: 'desc' },
           take: 1,
-          include: includeBlocks
-            ? {
-                blocks: {
-                  orderBy: { position: 'asc' },
-                },
-              }
-            : false,
         },
       },
     });
@@ -135,24 +164,63 @@ export class LessonBuilderService {
       return null;
     }
 
+    const latestVersion = lesson.versions[0] || null;
+
+    // Parse blocks from contentJson if requested
+    let currentVersion = latestVersion;
+    if (latestVersion && includeBlocks) {
+      const contentData = parseContentJson(latestVersion.contentJson);
+      // Sort blocks by position
+      const blocks = contentData.blocks.sort((a: LessonBlock, b: LessonBlock) => a.position - b.position);
+      currentVersion = {
+        ...latestVersion,
+        blocks,
+        description: contentData.description,
+      };
+    }
+
     return {
       ...lesson,
-      currentVersion: lesson.versions[0] || null,
+      description: currentVersion?.description || '',
+      isPublished: lesson.isActive,
+      currentVersion,
     };
   }
 
   /**
    * Update lesson metadata
+   * Maps to LearningObject update
    */
   static async updateLesson(lessonId: string, input: UpdateLessonInput) {
-    const lesson = await prisma.lesson.update({
+    // Update description in the latest version's contentJson if provided
+    if (input.description !== undefined) {
+      const versions = await prisma.learningObjectVersion.findMany({
+        where: { learningObjectId: lessonId },
+        orderBy: { versionNumber: 'desc' },
+        take: 1,
+      });
+
+      if (versions[0]) {
+        const contentData = parseContentJson(versions[0].contentJson);
+        await prisma.learningObjectVersion.update({
+          where: { id: versions[0].id },
+          data: {
+            contentJson: {
+              ...contentData,
+              description: input.description,
+            },
+          },
+        });
+      }
+    }
+
+    const lesson = await prisma.learningObject.update({
       where: { id: lessonId },
       data: {
         title: input.title,
-        description: input.description,
-        subject: input.subject,
-        gradeBand: input.gradeBand,
-        isPublished: input.isPublished,
+        subject: input.subject?.toUpperCase(),
+        gradeBand: input.gradeBand?.toUpperCase().replace('-', '_'),
+        isActive: input.isPublished,
         updatedAt: new Date(),
       },
     });
@@ -161,17 +229,19 @@ export class LessonBuilderService {
   }
 
   /**
-   * Delete lesson (soft delete)
+   * Delete lesson (soft delete via isActive flag)
+   * Maps to LearningObject.isActive = false
    */
   static async deleteLesson(lessonId: string) {
-    await prisma.lesson.update({
+    await prisma.learningObject.update({
       where: { id: lessonId },
-      data: { deletedAt: new Date() },
+      data: { isActive: false },
     });
   }
 
   /**
    * Duplicate/copy a lesson
+   * Maps to LearningObject + LearningObjectVersion duplication
    */
   static async duplicateLesson(
     lessonId: string,
@@ -183,43 +253,48 @@ export class LessonBuilderService {
       throw new Error('Original lesson not found');
     }
 
-    const duplicate = await prisma.$transaction(async (tx) => {
-      // Create new lesson
-      const newLesson = await tx.lesson.create({
+    const duplicate = await prisma.$transaction(async (tx: TransactionClient) => {
+      const title = newTitle || `${originalLesson.title} (Copy)`;
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+      // Create new learning object
+      const newLesson = await tx.learningObject.create({
         data: {
           tenantId: originalLesson.tenantId,
-          title: newTitle || `${originalLesson.title} (Copy)`,
-          description: originalLesson.description,
+          title,
+          slug: `${slug}-${Date.now()}`,
           subject: originalLesson.subject,
           gradeBand: originalLesson.gradeBand,
           createdByUserId,
-          isPublished: false,
+          isActive: false,
         },
       });
 
-      // Create version
-      const version = await tx.lessonVersion.create({
-        data: {
-          lessonId: newLesson.id,
-          versionNumber: 1,
-          isDraft: true,
-          createdByUserId,
-        },
-      });
-
-      // Copy blocks
+      // Copy blocks from original version
       const blocks = originalLesson.currentVersion?.blocks || [];
-      for (const block of blocks) {
-        await tx.lessonBlock.create({
-          data: {
-            versionId: version.id,
-            type: block.type,
-            position: block.position,
-            content: block.content as any,
-            settings: block.settings as any,
+      const copiedBlocks = blocks.map((block: LessonBlock) => ({
+        id: randomUUID(),
+        type: block.type,
+        position: block.position,
+        content: block.content,
+        settings: block.settings,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }));
+
+      // Create version with copied blocks in contentJson
+      await tx.learningObjectVersion.create({
+        data: {
+          learningObjectId: newLesson.id,
+          versionNumber: 1,
+          state: 'DRAFT',
+          createdByUserId,
+          contentJson: {
+            blocks: copiedBlocks,
+            description: originalLesson.description || '',
           },
-        });
-      }
+        },
+      });
 
       return newLesson;
     });
@@ -228,100 +303,208 @@ export class LessonBuilderService {
   }
 
   /**
-   * Add a block to a lesson
+   * Add a block to a lesson version
+   * Blocks are stored in LearningObjectVersion.contentJson
    */
   static async addBlock(versionId: string, input: CreateBlockInput) {
+    // Get current version with contentJson
+    const version = await prisma.learningObjectVersion.findUnique({
+      where: { id: versionId },
+    });
+
+    if (!version) {
+      throw new Error('Version not found');
+    }
+
+    const contentData = parseContentJson(version.contentJson);
+
     // Shift positions of blocks after insertion point
-    await prisma.lessonBlock.updateMany({
-      where: {
-        versionId,
-        position: { gte: input.position },
-      },
+    const updatedBlocks = contentData.blocks.map((block: LessonBlock) => {
+      if (block.position >= input.position) {
+        return { ...block, position: block.position + 1 };
+      }
+      return block;
+    });
+
+    // Create new block
+    const newBlock: LessonBlock = {
+      id: randomUUID(),
+      versionId,
+      type: input.type,
+      position: input.position,
+      content: input.content,
+      settings: input.settings,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Add to blocks array and sort by position
+    updatedBlocks.push(newBlock);
+    updatedBlocks.sort((a: LessonBlock, b: LessonBlock) => a.position - b.position);
+
+    // Update contentJson
+    await prisma.learningObjectVersion.update({
+      where: { id: versionId },
       data: {
-        position: { increment: 1 },
+        contentJson: {
+          ...contentData,
+          blocks: updatedBlocks,
+        },
       },
     });
 
-    const block = await prisma.lessonBlock.create({
-      data: {
-        versionId,
-        type: input.type,
-        position: input.position,
-        content: input.content as any,
-        settings: input.settings as any,
-      },
-    });
-
-    return block;
+    return newBlock;
   }
 
   /**
    * Update a block
+   * Finds and updates the block within contentJson
    */
   static async updateBlock(blockId: string, input: UpdateBlockInput) {
-    const block = await prisma.lessonBlock.update({
-      where: { id: blockId },
+    // Find the version containing this block
+    const versions = await prisma.learningObjectVersion.findMany({});
+
+    let targetVersion = null;
+    let targetBlock: LessonBlock | null = null;
+
+    for (const version of versions) {
+      const contentData = parseContentJson(version.contentJson);
+      const block = contentData.blocks.find((b: LessonBlock) => b.id === blockId);
+      if (block) {
+        targetVersion = version;
+        targetBlock = block;
+        break;
+      }
+    }
+
+    if (!targetVersion || !targetBlock) {
+      throw new Error('Block not found');
+    }
+
+    const contentData = parseContentJson(targetVersion.contentJson);
+
+    // Update the block
+    const updatedBlocks = contentData.blocks.map((block: LessonBlock) => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          type: input.type ?? block.type,
+          content: input.content ?? block.content,
+          settings: input.settings ?? block.settings,
+          updatedAt: new Date(),
+        };
+      }
+      return block;
+    });
+
+    // Update contentJson
+    await prisma.learningObjectVersion.update({
+      where: { id: targetVersion.id },
       data: {
-        type: input.type,
-        content: input.content as any,
-        settings: input.settings as any,
-        updatedAt: new Date(),
+        contentJson: {
+          ...contentData,
+          blocks: updatedBlocks,
+        },
       },
     });
 
-    return block;
+    return updatedBlocks.find((b: LessonBlock) => b.id === blockId);
   }
 
   /**
    * Delete a block
+   * Removes the block from contentJson and shifts positions
    */
   static async deleteBlock(blockId: string) {
-    const block = await prisma.lessonBlock.findUnique({
-      where: { id: blockId },
-      select: { versionId: true, position: true },
-    });
+    // Find the version containing this block
+    const versions = await prisma.learningObjectVersion.findMany({});
 
-    if (!block) {
+    let targetVersion = null;
+    let targetBlock: LessonBlock | null = null;
+
+    for (const version of versions) {
+      const contentData = parseContentJson(version.contentJson);
+      const block = contentData.blocks.find((b: LessonBlock) => b.id === blockId);
+      if (block) {
+        targetVersion = version;
+        targetBlock = block;
+        break;
+      }
+    }
+
+    if (!targetVersion || !targetBlock) {
       throw new Error('Block not found');
     }
 
-    await prisma.$transaction([
-      // Delete the block
-      prisma.lessonBlock.delete({
-        where: { id: blockId },
-      }),
-      // Shift remaining blocks
-      prisma.lessonBlock.updateMany({
-        where: {
-          versionId: block.versionId,
-          position: { gt: block.position },
+    const contentData = parseContentJson(targetVersion.contentJson);
+    const deletedPosition = targetBlock.position;
+
+    // Remove the block and shift remaining positions
+    const updatedBlocks = contentData.blocks
+      .filter((block: LessonBlock) => block.id !== blockId)
+      .map((block: LessonBlock) => {
+        if (block.position > deletedPosition) {
+          return { ...block, position: block.position - 1 };
+        }
+        return block;
+      });
+
+    // Update contentJson
+    await prisma.learningObjectVersion.update({
+      where: { id: targetVersion.id },
+      data: {
+        contentJson: {
+          ...contentData,
+          blocks: updatedBlocks,
         },
-        data: {
-          position: { decrement: 1 },
-        },
-      }),
-    ]);
+      },
+    });
   }
 
   /**
    * Reorder blocks
+   * Updates block positions in contentJson
    */
   static async reorderBlocks(versionId: string, input: ReorderBlocksInput) {
-    await prisma.$transaction(
-      input.blockOrders.map(({ blockId, position }) =>
-        prisma.lessonBlock.update({
-          where: { id: blockId },
-          data: { position },
-        })
-      )
-    );
-
-    const blocks = await prisma.lessonBlock.findMany({
-      where: { versionId },
-      orderBy: { position: 'asc' },
+    const version = await prisma.learningObjectVersion.findUnique({
+      where: { id: versionId },
     });
 
-    return blocks;
+    if (!version) {
+      throw new Error('Version not found');
+    }
+
+    const contentData = parseContentJson(version.contentJson);
+
+    // Create a map of blockId -> new position
+    const positionMap = new Map(
+      input.blockOrders.map(({ blockId, position }) => [blockId, position])
+    );
+
+    // Update block positions
+    const updatedBlocks = contentData.blocks.map((block: LessonBlock) => {
+      const newPosition = positionMap.get(block.id);
+      if (newPosition !== undefined) {
+        return { ...block, position: newPosition };
+      }
+      return block;
+    });
+
+    // Sort by position
+    updatedBlocks.sort((a: LessonBlock, b: LessonBlock) => a.position - b.position);
+
+    // Update contentJson
+    await prisma.learningObjectVersion.update({
+      where: { id: versionId },
+      data: {
+        contentJson: {
+          ...contentData,
+          blocks: updatedBlocks,
+        },
+      },
+    });
+
+    return updatedBlocks;
   }
 
   /**
@@ -357,6 +540,7 @@ export class LessonBuilderService {
 
   /**
    * Publish a lesson (creates new version)
+   * Maps to LearningObjectVersion state change
    */
   static async publishLesson(lessonId: string, userId: string) {
     const lesson = await this.getLesson(lessonId, true);
@@ -369,38 +553,32 @@ export class LessonBuilderService {
       throw new Error('No version to publish');
     }
 
-    const published = await prisma.$transaction(async (tx) => {
+    const published = await prisma.$transaction(async (tx: TransactionClient) => {
       // Mark current version as published
-      await tx.lessonVersion.update({
+      await tx.learningObjectVersion.update({
         where: { id: currentVersion.id },
         data: {
-          isDraft: false,
+          state: 'PUBLISHED',
           publishedAt: new Date(),
         },
       });
 
-      // Create new draft version for future edits
-      const newVersion = await tx.lessonVersion.create({
-        data: {
-          lessonId,
-          versionNumber: currentVersion.versionNumber + 1,
-          isDraft: true,
-          createdByUserId: userId,
-        },
-      });
-
-      // Copy blocks to new version by copying contentJson
+      // Get contentJson from current version
       const currentVersionData = await tx.learningObjectVersion.findUnique({
         where: { id: currentVersion.id },
         select: { contentJson: true },
       });
 
-      if (currentVersionData?.contentJson) {
-        await tx.learningObjectVersion.update({
-          where: { id: newVersion.id },
-          data: { contentJson: currentVersionData.contentJson },
-        });
-      }
+      // Create new draft version for future edits
+      const newVersion = await tx.learningObjectVersion.create({
+        data: {
+          learningObjectId: lessonId,
+          versionNumber: currentVersion.versionNumber + 1,
+          state: 'DRAFT',
+          createdByUserId: userId,
+          contentJson: currentVersionData?.contentJson || { blocks: [] },
+        },
+      });
 
       // Mark learning object as active (published)
       await tx.learningObject.update({
@@ -478,7 +656,7 @@ export class LessonBuilderService {
   // ════════════════════════════════════════════════════════════════════════════
 
   private static async copyBlocksFromTemplate(
-    _tx: any,
+    _tx: TransactionClient,
     _templateId: string,
     _versionId: string
   ) {

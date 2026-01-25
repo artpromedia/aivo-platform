@@ -12,17 +12,17 @@ import routes from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
-  app.register(cors, {
+  app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
-  app.register(helmet);
-  app.register(sensible);
-  app.register(multipart, { limits: { fileSize: config.maxFileSize } });
-  
+  app.register(helmet as any);
+  app.register(sensible as any);
+  app.register(multipart as any, { limits: { fileSize: config.maxFileSize } });
+
   // Rate limiting for ingestion service (high throughput)
-  app.register(rateLimit, FastifyRateLimitPresets.dataIngestion('coursework-ingest-svc'));
-  
+  app.register(rateLimit as any, FastifyRateLimitPresets.dataIngestion('coursework-ingest-svc'));
+
   app.get('/health', async () => ({ status: 'healthy', service: 'coursework-ingest-svc' }));
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);

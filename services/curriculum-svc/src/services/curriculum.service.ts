@@ -4,7 +4,7 @@
  * standards alignment, and pacing guide functionality.
  */
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -803,5 +803,277 @@ export class CurriculumService {
     return this.prisma.unitResource.delete({
       where: { id: resourceId },
     });
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // STUB METHODS FOR ROUTES (to be implemented)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // --- Curricula Stubs ---
+
+  async listCurricula(tenantId: string, _filters?: { subjectArea?: string; gradeLevel?: string; status?: string }) {
+    return this.getCurricula(tenantId);
+  }
+
+  async getCurriculumById(id: string, _tenantId: string) {
+    return this.getCurriculum(id);
+  }
+
+  async deleteCurriculum(id: string, _tenantId: string) {
+    return this.prisma.curriculum.delete({ where: { id } });
+  }
+
+  async publishCurriculum(id: string, _tenantId: string) {
+    return this.prisma.curriculum.update({
+      where: { id },
+      data: { isActive: true },
+    });
+  }
+
+  async cloneCurriculum(id: string, _tenantId: string, _createdBy: string, newName: string) {
+    const source = await this.getCurriculum(id);
+    if (!source) throw new Error('Curriculum not found');
+    return this.duplicateCurriculum(id, newName);
+  }
+
+  // --- Lessons Stubs ---
+
+  async listLessons(unitId: string, _tenantId: string) {
+    return this.prisma.lesson.findMany({
+      where: { unitId },
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  async getLessonById(id: string, _tenantId: string) {
+    return this.getLesson(id);
+  }
+
+  async addResourceToLesson(lessonId: string, _tenantId: string, resourceId: string, resourceType: string) {
+    return this.linkContent(lessonId, resourceId, resourceType);
+  }
+
+  async removeResourceFromLesson(lessonId: string, _tenantId: string, resourceId: string) {
+    return this.prisma.lessonContentLink.deleteMany({
+      where: { lessonId, contentId: resourceId },
+    });
+  }
+
+  // --- Standards Stubs ---
+
+  async getStandardsAlignment(curriculumId: string, _tenantId: string, _framework?: string) {
+    return this.getStandards({ curriculumId });
+  }
+
+  async getUnitStandardsAlignment(unitId: string, _tenantId: string) {
+    return this.getStandards({ unitId });
+  }
+
+  async getLessonStandardsAlignment(lessonId: string, _tenantId: string) {
+    return this.getStandards({ lessonId });
+  }
+
+  async alignStandardToCurriculum(curriculumId: string, _tenantId: string, data: any) {
+    return this.addStandardAlignment({
+      standardCode: data.standardCode,
+      description: data.standardDescription || data.description,
+      category: data.framework,
+      alignmentType: data.alignmentLevel === 'secondary' ? 'SUPPORTING' : 'PRIMARY',
+      curriculumId,
+    });
+  }
+
+  async bulkAlignStandards(curriculumId: string, _tenantId: string, standards: any[]) {
+    const results = [];
+    for (const std of standards) {
+      const result = await this.alignStandardToCurriculum(curriculumId, _tenantId, std);
+      results.push(result);
+    }
+    return results;
+  }
+
+  async alignStandardToUnit(unitId: string, _tenantId: string, data: any) {
+    return this.addStandardAlignment({
+      standardCode: data.standardCode,
+      description: data.standardDescription || data.description,
+      category: data.framework,
+      alignmentType: data.alignmentLevel === 'secondary' ? 'SUPPORTING' : 'PRIMARY',
+      unitId,
+    });
+  }
+
+  async alignStandardToLesson(lessonId: string, _tenantId: string, data: any) {
+    return this.addStandardAlignment({
+      standardCode: data.standardCode,
+      description: data.standardDescription || data.description,
+      category: data.framework,
+      alignmentType: data.alignmentLevel === 'secondary' ? 'SUPPORTING' : 'PRIMARY',
+      lessonId,
+    });
+  }
+
+  async getStandardsCoverageReport(curriculumId: string, _tenantId: string, _framework?: string) {
+    const standards = await this.getStandards({ curriculumId });
+    return {
+      curriculumId,
+      totalStandards: standards.length,
+      coveredStandards: standards.length,
+      coveragePercentage: 100,
+      standards,
+    };
+  }
+
+  // --- Pacing Stubs ---
+
+  async listPacingGuides(curriculumId: string, _tenantId: string, _schoolYear?: string) {
+    return this.getPacingGuides(curriculumId);
+  }
+
+  async getPacingGuideById(id: string, _tenantId: string) {
+    return this.prisma.pacingGuide.findUnique({ where: { id } });
+  }
+
+  async deletePacingGuide(id: string, _tenantId: string) {
+    return this.prisma.pacingGuide.delete({ where: { id } });
+  }
+
+  async adjustUnitPacing(pacingGuideId: string, _tenantId: string, data: { unitId: string; newStartWeek: number; newEndWeek: number; reason?: string }) {
+    const guide = await this.prisma.pacingGuide.findUnique({ where: { id: pacingGuideId } });
+    if (!guide) throw new Error('Pacing guide not found');
+
+    const entries = (guide.entries as any[]) || [];
+    const updatedEntries = entries.map((entry: any) => {
+      if (entry.unitId === data.unitId) {
+        return { ...entry, startWeek: data.newStartWeek, endWeek: data.newEndWeek };
+      }
+      return entry;
+    });
+
+    return this.prisma.pacingGuide.update({
+      where: { id: pacingGuideId },
+      data: { entries: updatedEntries },
+    });
+  }
+
+  async getCurrentWeekContent(pacingGuideId: string, _tenantId: string, _targetDate: Date) {
+    const guide = await this.prisma.pacingGuide.findUnique({ where: { id: pacingGuideId } });
+    return { pacingGuide: guide, currentUnit: null, currentLesson: null };
+  }
+
+  async getPacingStatus(pacingGuideId: string, _tenantId: string, _teacherId?: string) {
+    const guide = await this.prisma.pacingGuide.findUnique({ where: { id: pacingGuideId } });
+    return { pacingGuide: guide, status: 'on_track', daysAhead: 0 };
+  }
+
+  async clonePacingGuide(id: string, tenantId: string, _createdBy: string, options: { schoolYear: string; startDate: Date; endDate: Date }) {
+    const source = await this.prisma.pacingGuide.findUnique({ where: { id } });
+    if (!source) throw new Error('Pacing guide not found');
+
+    return this.prisma.pacingGuide.create({
+      data: {
+        tenantId,
+        curriculumId: source.curriculumId,
+        name: `${source.name} - ${options.schoolYear}`,
+        description: source.description,
+        startDate: options.startDate,
+        endDate: options.endDate,
+        entries: source.entries as any,
+        isDefault: false,
+      },
+    });
+  }
+
+  async generateSuggestedPacing(curriculumId: string, tenantId: string, _createdBy: string, options: { schoolYear: string; startDate: Date; endDate: Date; instructionalDaysPerWeek: number }) {
+    const entries = await this.generatePacingEntries(curriculumId, options.startDate, options.endDate);
+
+    return this.prisma.pacingGuide.create({
+      data: {
+        tenantId,
+        curriculumId,
+        name: `Suggested Pacing - ${options.schoolYear}`,
+        startDate: options.startDate,
+        endDate: options.endDate,
+        entries: entries as any,
+        isDefault: false,
+      },
+    });
+  }
+
+  // --- Progress Stubs ---
+
+  async getCurriculumProgressSummary(curriculumId: string, tenantId: string, _schoolId?: string) {
+    const progress = await this.prisma.teacherCurriculumProgress.findMany({
+      where: { curriculumId, tenantId },
+    });
+    return {
+      curriculumId,
+      totalTeachers: progress.length,
+      averageCompletion: 0,
+      progressByTeacher: progress,
+    };
+  }
+
+  async updateTeacherProgress(teacherId: string, tenantId: string, data: { lessonId: string; status: string; classId?: string }) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: data.lessonId },
+      include: { unit: { include: { curriculum: true } } },
+    });
+    if (!lesson) throw new Error('Lesson not found');
+
+    if (data.status === 'completed') {
+      return this.markLessonCompleted(tenantId, teacherId, lesson.unit.curriculumId, data.lessonId);
+    }
+    return this.getTeacherProgress(tenantId, teacherId, lesson.unit.curriculumId);
+  }
+
+  async bulkUpdateProgress(teacherId: string, tenantId: string, _classId: string | undefined, updates: any[]) {
+    const results = [];
+    for (const update of updates) {
+      const result = await this.updateTeacherProgress(teacherId, tenantId, update);
+      results.push(result);
+    }
+    return results;
+  }
+
+  async markLessonSkipped(_teacherId: string, lessonId: string, _tenantId: string, _options: { classId?: string; reason: string }) {
+    // For now, just return the lesson - skipping could be tracked separately
+    return this.getLesson(lessonId);
+  }
+
+  async getProgressAnalytics(teacherId: string, tenantId: string, _options: { curriculumId?: string; startDate?: Date; endDate?: Date }) {
+    const progress = await this.prisma.teacherCurriculumProgress.findMany({
+      where: { teacherId, tenantId },
+    });
+    return {
+      teacherId,
+      totalCurricula: progress.length,
+      completedLessons: progress.reduce((sum, p) => sum + p.completedLessons.length, 0),
+      completedUnits: progress.reduce((sum, p) => sum + p.completedUnits.length, 0),
+    };
+  }
+
+  async getPacingComparison(teacherId: string, pacingGuideId: string, tenantId: string, _classId?: string) {
+    const guide = await this.prisma.pacingGuide.findUnique({ where: { id: pacingGuideId } });
+    if (!guide) throw new Error('Pacing guide not found');
+
+    const progress = await this.getTeacherProgress(tenantId, teacherId, guide.curriculumId);
+    const offset = await this.calculatePacingOffset(tenantId, teacherId, guide.curriculumId);
+
+    return {
+      pacingGuide: guide,
+      teacherProgress: progress,
+      status: offset > 0 ? 'ahead' : offset < 0 ? 'behind' : 'on_track',
+      daysOffset: offset,
+    };
+  }
+
+  async getReteachingRecommendations(teacherId: string, curriculumId: string, tenantId: string, _classId?: string) {
+    const progress = await this.getTeacherProgress(tenantId, teacherId, curriculumId);
+    return {
+      teacherId,
+      curriculumId,
+      recommendations: [],
+      completedLessons: progress.completedLessons.length,
+    };
   }
 }

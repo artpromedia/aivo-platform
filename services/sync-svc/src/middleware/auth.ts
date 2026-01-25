@@ -13,7 +13,7 @@ declare module 'fastify' {
 export const authMiddleware = fp(async (fastify: FastifyInstance) => {
   fastify.decorateRequest('user', null);
 
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply) => {
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply): Promise<void> => {
     // Skip auth for health check
     if (request.url === '/health') {
       return;

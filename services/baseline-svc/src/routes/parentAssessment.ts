@@ -2,8 +2,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { PARENT_ASSESSMENT_QUESTIONS, validateResponses } from '../lib/parentAssessmentQuestions.js';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
+
+// JSON value type for Prisma fields
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 
 // --- Type definitions ---
 
@@ -342,7 +344,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
       const updated = await prisma.parentAssessment.update({
         where: { id: assessmentId },
         data: {
-          responsesJson: responses as unknown as Record<string, unknown>,
+          responsesJson: responses as JsonValue,
           status: 'COMPLETED',
           completedAt: new Date(),
           startedAt: assessment.startedAt || new Date(),
@@ -399,7 +401,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
       const updated = await prisma.parentAssessment.update({
         where: { id: assessmentId },
         data: {
-          responsesJson: responses as unknown as Record<string, unknown>,
+          responsesJson: responses as JsonValue,
           status: assessment.status === 'PENDING' ? 'IN_PROGRESS' : assessment.status,
           startedAt: assessment.startedAt || new Date(),
         },
@@ -474,7 +476,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
             currentServicesJson: data.currentServices || [],
             assistiveTechnologyJson: data.assistiveTechnology || [],
             recommendationsJson: data.recommendations || [],
-            responsesJson: data.responses as Prisma.InputJsonValue,
+            responsesJson: data.responses as JsonValue,
             learningStyleNotes: insights.learningStyleNotes,
             strengthsNotes: insights.strengthsNotes,
             challengesNotes: insights.challengesNotes,
@@ -492,7 +494,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
             currentServicesJson: data.currentServices || [],
             assistiveTechnologyJson: data.assistiveTechnology || [],
             recommendationsJson: data.recommendations || [],
-            responsesJson: data.responses as Prisma.InputJsonValue,
+            responsesJson: data.responses as JsonValue,
             learningStyleNotes: insights.learningStyleNotes,
             strengthsNotes: insights.strengthsNotes,
             challengesNotes: insights.challengesNotes,

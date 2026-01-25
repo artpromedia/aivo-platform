@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
+import type { JwtPayload } from '../types/index.js';
 
 // Mock Prisma client
 vi.mock('../prisma.js', () => ({
@@ -1116,11 +1117,6 @@ describe('Dashboard Routes', () => {
 declare module 'fastify' {
   interface FastifyRequest {
     tenantId: string | null;
-    user: {
-      sub: string;
-      tenantId: string;
-      email: string;
-      roles: string[];
-    } | null;
+    user?: JwtPayload;
   }
 }

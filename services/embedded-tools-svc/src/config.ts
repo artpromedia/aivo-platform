@@ -40,4 +40,7 @@ export const config = {
 
   // Session service URL (for recording events)
   sessionSvcUrl: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:4050'),
+
+  // Learner model service URL (for fetching learner profiles)
+  learnerModelSvcUrl: requireEnvInProduction('LEARNER_MODEL_SVC_URL', 'http://localhost:4060'),
 };

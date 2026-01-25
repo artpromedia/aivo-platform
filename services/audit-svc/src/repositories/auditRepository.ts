@@ -5,8 +5,10 @@
  */
 
 import { prisma } from '../prisma.js';
-import { Prisma } from '../../generated/prisma-client/index.js';
 import { generateChecksum, generateChainedHash } from '../lib/checksum.js';
+
+// JSON value type for Prisma fields
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 import type {
   CreateAuditLog,
   QueryAuditLogs,
@@ -78,9 +80,9 @@ export async function createAuditLog(
       requestPath: entry.requestPath,
       sourceService: entry.sourceService,
       sourceVersion: entry.sourceVersion,
-      metadata: (entry.metadata || {}) as Prisma.InputJsonValue,
-      previousState: entry.previousState as Prisma.InputJsonValue | undefined,
-      newState: entry.newState as Prisma.InputJsonValue | undefined,
+      metadata: (entry.metadata || {}) as JsonValue,
+      previousState: entry.previousState as JsonValue | undefined,
+      newState: entry.newState as JsonValue | undefined,
       dataClassification: entry.dataClassification,
       complianceFlags: entry.complianceFlags || [],
       retentionPolicy: entry.retentionPolicy,

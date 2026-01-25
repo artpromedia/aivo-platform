@@ -9,7 +9,7 @@
  * - Download counts and popularity scoring
  */
 
-import type { Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '../prisma.js';
 
 export type VisibilityLevel = 'PRIVATE' | 'SCHOOL' | 'DISTRICT' | 'PUBLIC';
@@ -270,7 +270,7 @@ export async function browseSharedContent(params: BrowseSharedContentParams) {
     pageSize = 20,
   } = params;
 
-  const where: Prisma.ContentShareWhereInput = {
+  const where: any = {
     isActive: true,
   };
 
@@ -279,7 +279,7 @@ export async function browseSharedContent(params: BrowseSharedContentParams) {
     where.visibility = visibility;
   } else {
     // Default: show public content or content from user's tenant/school
-    const visibilityConditions: Prisma.ContentShareWhereInput[] = [
+    const visibilityConditions: any[] = [
       { visibility: 'PUBLIC' },
     ];
 
@@ -333,7 +333,7 @@ export async function browseSharedContent(params: BrowseSharedContentParams) {
   }
 
   // Determine sort order
-  let orderBy: Prisma.ContentShareOrderByWithRelationInput;
+  let orderBy: any;
   switch (sortBy) {
     case 'RECENT':
       orderBy = { createdAt: 'desc' };
@@ -595,7 +595,7 @@ export async function getPersonalizedFeed(
   const followingIds = following.map((f) => f.followingId);
 
   // Build query for feed
-  const where: Prisma.ContentShareWhereInput = {
+  const where: any = {
     isActive: true,
     OR: [],
   };

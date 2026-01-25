@@ -359,7 +359,7 @@ export async function getClassOverview(
   try {
     await redisClient.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
   } catch (error) {
-    logger.warn('Cache write failed', { error });
+    logger.warn({ error }, 'Cache write failed');
   }
 
   metrics.histogram('analytics.class_overview.duration_ms', Date.now() - startTime);
@@ -435,7 +435,8 @@ export async function getSkillMasteryMatrix(
   const skills = Array.from(skillsSet.values());
 
   // Build student mastery data from real snapshots
-  const snapshotMap = new Map(latestSnapshots.map((s) => [s.learnerId, s]));
+  type SnapshotType = (typeof latestSnapshots)[number];
+  const snapshotMap = new Map<string, SnapshotType>(latestSnapshots.map((s) => [s.learnerId, s]));
   const students = classInfo.enrollments.map((enrollment) => {
     const student = enrollment.student;
     const snapshot = snapshotMap.get(student.id);
@@ -445,7 +446,7 @@ export async function getSkillMasteryMatrix(
     > = {};
 
     if (snapshot && Array.isArray(snapshot.skillBreakdown)) {
-      const skillBreakdown = snapshot.skillBreakdown as { skillId: string; mastery: number; trend?: string; attempts?: number }[];
+      const skillBreakdown = (snapshot.skillBreakdown as unknown) as { skillId: string; mastery: number; trend?: string; attempts?: number }[];
       for (const skillData of skillBreakdown) {
         if (skills.some((s) => s.skillId === skillData.skillId)) {
           masteryBySkill[skillData.skillId] = {
@@ -496,7 +497,7 @@ export async function getSkillMasteryMatrix(
   try {
     await redisClient.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
   } catch (error) {
-    logger.warn('Cache write failed', { error });
+    logger.warn({ error }, 'Cache write failed');
   }
 
   return result;
@@ -949,7 +950,8 @@ export async function getEngagementAnalytics(
   };
 
   for (const student of students) {
-    const engagement = engagementMap.get(student.id) ?? 0;
+    const engagementValue = engagementMap.get(student.id);
+    const engagement = typeof engagementValue === 'number' ? engagementValue : Number(engagementValue ?? 0);
     if (engagement >= 0.8) distribution.highlyEngaged++;
     else if (engagement >= 0.6) distribution.engaged++;
     else if (engagement >= 0.4) distribution.passive++;

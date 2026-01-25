@@ -494,7 +494,9 @@ export const tenantAnalyticsRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const schoolKeys = schoolData.map((s) => s.school_key);
-    const schoolMap = new Map(schoolData.map((s) => [s.school_key, s]));
+    const schoolMap = new Map<number, { school_key: number; school_id: string; school_name: string }>(
+      schoolData.map((s) => [s.school_key, s])
+    );
 
     // Get learner counts per school
     const learnerCounts = await prisma.$queryRaw<Array<{ school_key: number; count: bigint }>>`
@@ -503,7 +505,7 @@ export const tenantAnalyticsRoutes: FastifyPluginAsync = async (app) => {
         AND is_current = true
       GROUP BY school_key
     `;
-    const learnerCountMap = new Map(learnerCounts.map((r) => [r.school_key, Number(r.count)]));
+    const learnerCountMap = new Map<number, number>(learnerCounts.map((r) => [r.school_key, Number(r.count)]));
 
     // Get classroom counts per school
     const classroomCounts = await prisma.$queryRaw<Array<{ school_key: number; count: bigint }>>`
@@ -512,7 +514,7 @@ export const tenantAnalyticsRoutes: FastifyPluginAsync = async (app) => {
         AND is_current = true
       GROUP BY school_key
     `;
-    const classroomCountMap = new Map(classroomCounts.map((r) => [r.school_key, Number(r.count)]));
+    const classroomCountMap = new Map<number, number>(classroomCounts.map((r) => [r.school_key, Number(r.count)]));
 
     // Get session stats per school
     const sessionStats = await prisma.$queryRaw<
@@ -559,7 +561,7 @@ export const tenantAnalyticsRoutes: FastifyPluginAsync = async (app) => {
       JOIN dim_learner l ON l.learner_key = sub.learner_key
       GROUP BY l.school_key
     `;
-    const masteryMap = new Map(masteryStats.map((r) => [r.school_key, Number(r.avg_mastery)]));
+    const masteryMap = new Map<number, number>(masteryStats.map((r) => [r.school_key, Number(r.avg_mastery)]));
 
     // Build school summaries
     const schools: SchoolSummary[] = [];

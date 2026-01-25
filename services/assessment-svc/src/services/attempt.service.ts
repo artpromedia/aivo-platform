@@ -1,4 +1,4 @@
-import type { Attempt, Prisma } from '../../generated/prisma-client/index.js';
+import type { Attempt, Prisma } from '@prisma/client';
 import { publishEvent } from '../events/publisher.js';
 import { prisma } from '../prisma.js';
 import type { PrismaTransactionClient } from '../prisma.js';

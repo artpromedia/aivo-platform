@@ -121,7 +121,35 @@ export { OneRosterApiProvider } from './oneroster-api';
 export { OneRosterCsvProvider } from './oneroster-csv';
 export { GoogleWorkspaceProvider, GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from './google-workspace';
 export { MicrosoftEntraProvider, MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from './microsoft-entra';
-export { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider';
-export * from './powerschool/powerschool-provider';
-export { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
-export * from './infinite-campus/infinite-campus-provider';
+export {
+  PowerSchoolClient,
+  PowerSchoolSyncService,
+  PowerSchool,
+  type PowerSchoolConfig,
+  type PowerSchoolToken,
+  type PowerSchoolSchool,
+  type PowerSchoolStudent,
+  type PowerSchoolStaff,
+  type PowerSchoolSection,
+  type PowerSchoolEnrollment,
+  type PowerSchoolAddress,
+  type SyncResult as PowerSchoolSyncResult,
+  type FullSyncResult as PowerSchoolFullSyncResult,
+} from './powerschool/powerschool-provider';
+export {
+  InfiniteCampusClient,
+  InfiniteCampusSyncService,
+  InfiniteCampus,
+  type InfiniteCampusConfig,
+  type InfiniteCampusAuth,
+  type InfiniteCampusSchool,
+  type InfiniteCampusStudent,
+  type InfiniteCampusContact,
+  type InfiniteCampusStaff,
+  type InfiniteCampusCourse,
+  type InfiniteCampusSection,
+  type InfiniteCampusRoster,
+  type InfiniteCampusTerm,
+  type SyncResult as InfiniteCampusSyncResult,
+  type FullSyncResult as InfiniteCampusFullSyncResult,
+} from './infinite-campus/infinite-campus-provider';

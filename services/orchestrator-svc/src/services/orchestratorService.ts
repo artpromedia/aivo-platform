@@ -1,5 +1,5 @@
 import { prisma } from '../prisma.js';
-import { WorkflowStatus, ExecutionStatus, StepType, TriggerType } from '@prisma/client';
+import { WorkflowStatus, ExecutionStatus, StepType, TriggerType, Prisma } from '@prisma/client';
 
 // Workflow Management
 export async function createWorkflow(tenantId: string, data: {
@@ -515,7 +515,7 @@ export async function createApprovalRequest(tenantId: string, data: {
       executionId: data.executionId,
       stepId: data.stepId,
       title: data.title,
-      description: data.description,
+      description: data.description ?? null,
       requestedBy: data.requestedBy,
       assignedTo: data.assignedTo,
       expiresAt: data.expiresAt,
@@ -585,7 +585,7 @@ export async function addLog(tenantId: string, executionId: string, data: {
       stepId: data.stepId ?? null,
       level: data.level,
       message: data.message,
-      data: data.data ?? null,
+      data: data.data ?? Prisma.JsonNull,
     },
   });
 }

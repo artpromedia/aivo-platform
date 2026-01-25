@@ -439,7 +439,7 @@ class TrialConversionService {
       where: {
         status: 'PENDING',
         scheduledFor: { lt: new Date() },
-        reminderType: 'PAYMENT_CHARGE_NOTICE',
+        type: 'PAYMENT_CHARGE_NOTICE',
       },
       take: 100,
     });
@@ -472,8 +472,8 @@ class TrialConversionService {
         // Still in trial but reminder was missed - send it now
         await billingEventPublisher.publish('TRIAL_PAYMENT_CHARGE_NOTICE', {
           subscriptionId: reminder.subscriptionId,
-          customerId: reminder.customerId,
-          userEmail: reminder.userEmail,
+          userId: reminder.userId,
+          emailAddress: reminder.emailAddress,
           daysRemaining: status.daysRemaining,
           trialEndDate: status.trialEndDate?.toISOString(),
         });

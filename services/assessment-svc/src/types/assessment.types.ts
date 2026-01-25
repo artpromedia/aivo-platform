@@ -110,6 +110,14 @@ export const AccommodationType = {
 
 export type AccommodationType = (typeof AccommodationType)[keyof typeof AccommodationType];
 
+export const ResponseStatus = {
+  PENDING: 'PENDING',
+  GRADED: 'GRADED',
+  SKIPPED: 'SKIPPED',
+} as const;
+
+export type ResponseStatus = (typeof ResponseStatus)[keyof typeof ResponseStatus];
+
 // ============================================================================
 // QUESTION OPTION TYPES
 // ============================================================================
@@ -519,28 +527,34 @@ export interface QuestionResponse {
   id: string;
   attemptId: string;
   questionId: string;
-  response: QuestionAnswer;
+  answer?: QuestionAnswer;
+  response?: QuestionAnswer;
   responseText?: string;
   isCorrect?: boolean;
+  pointsAwarded?: number | null;
   pointsEarned?: number;
   maxPoints: number;
-  partialCredit: boolean;
-  autoGraded: boolean;
-  status: 'not_answered' | 'answered' | 'graded' | 'flagged';
-  flagged: boolean;
-  rubricScores?: {
+  partialCredit?: boolean;
+  autoGraded?: boolean;
+  status: ResponseStatus | 'not_answered' | 'answered' | 'graded' | 'flagged';
+  flagged?: boolean;
+  flagReason?: string | null;
+  rubricScores?: Record<string, number> | {
     criterionId: string;
     levelId: string;
     points: number;
     comment?: string;
   }[];
-  startedAt: Date;
+  annotations?: unknown[];
+  startedAt?: Date;
   answeredAt?: Date;
-  timeSpentSeconds: number;
-  hintsUsed: number;
-  feedback?: string;
-  gradedBy?: string;
-  gradedAt?: Date;
+  timeSpentSeconds?: number;
+  hintsUsed?: number;
+  feedback?: string | null;
+  gradedBy?: string | null;
+  gradedAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // ============================================================================
@@ -658,21 +672,46 @@ export interface ItemAnalysisReport {
 export interface GradingQueueItem {
   responseId: string;
   questionId: string;
+  attemptId: string;
+  assessmentId: string;
+  assessmentName: string;
   questionStem: string;
-  questionType: QuestionType;
-  studentAnswer: QuestionAnswer;
-  studentName: string;
-  assessmentTitle: string;
+  questionType: QuestionType | string;
+  answer?: QuestionAnswer;
+  studentAnswer?: QuestionAnswer;
+  studentName?: string;
+  studentId?: string;
+  assessmentTitle?: string;
   submittedAt?: Date;
   maxPoints: number;
+  pointsAwarded?: number | null;
+  feedback?: string;
+  status: ResponseStatus;
+  rubric?: Rubric;
   rubricId?: string;
+  rubricScores?: Record<string, number>;
+  annotations?: unknown[];
+  gradingHistory?: {
+    gradedBy: string;
+    gradedAt: Date;
+    pointsAwarded: number;
+    feedback?: string;
+    rubricScores?: Record<string, number>;
+  }[];
 }
 
 export interface GradingQueue {
   total: number;
-  pending: number;
+  page: number;
+  pageSize: number;
+  pending?: number;
   items: GradingQueueItem[];
-  byAssessment: {
+  summary: {
+    pending: number;
+    graded: number;
+    flagged: number;
+  };
+  byAssessment?: {
     assessmentId: string;
     assessmentTitle: string;
     pendingCount: number;
@@ -681,18 +720,34 @@ export interface GradingQueue {
 
 export interface GradingSummary {
   assessmentId: string;
-  assessmentTitle: string;
-  totalAttempts: number;
-  completedAttempts: number;
-  pendingGrading: number;
-  fullyGraded: number;
-  gradingProgress: {
+  assessmentName: string;
+  assessmentTitle?: string;
+  totalResponses: number;
+  totalAttempts?: number;
+  completedAttempts?: number;
+  pending: number;
+  pendingGrading?: number;
+  graded: number;
+  fullyGraded?: number;
+  percentComplete: number;
+  byQuestion: {
+    questionId: string;
+    questionStem: string;
+    pending: number;
+    graded: number;
+    total: number;
+  }[];
+  byGrader: {
+    graderId: string;
+    count: number;
+  }[];
+  gradingProgress?: {
     total: number;
     graded: number;
     pending: number;
     percentComplete: number;
   };
-  scoreDistribution: Record<string, number>;
+  scoreDistribution?: Record<string, number>;
   statistics?: {
     mean: number;
     median: number;
@@ -701,7 +756,7 @@ export interface GradingSummary {
     standardDeviation: number;
     passRate?: number;
   };
-  studentBreakdown: {
+  studentBreakdown?: {
     studentId: string;
     studentName: string;
     attemptId: string;

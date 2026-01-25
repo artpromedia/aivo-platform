@@ -15,7 +15,7 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // Rate limiting
-  void app.register(rateLimit, FastifyRateLimitPresets.internalApi('compliance-svc'));
+  void app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('compliance-svc'));
 
   // Health check
   app.get('/health', async (_request, reply) => {

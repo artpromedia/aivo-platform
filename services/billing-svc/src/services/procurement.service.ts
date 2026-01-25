@@ -6,7 +6,7 @@
  * Handles district procurement flows from initial quote through renewal.
  */
 
-import type { PrismaClient } from '../generated/prisma-client';
+import type { PrismaClient } from '@prisma/client';
 import {
   QuoteRepository,
   QuoteLineItemRepository,
@@ -145,11 +145,13 @@ export class ProcurementService {
       include: { product: true },
     });
 
-    const entryMap = new Map(entries.map((e) => [e.sku, e]));
+    type PriceBookEntryWithProduct = (typeof entries)[number];
+    const entryMap = new Map<string, PriceBookEntryWithProduct>(
+      entries.map((e) => [e.sku, e])
+    );
 
     const lineItems: QuoteLineItem[] = [];
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (const [i, item] of items.entries()) {
       const entry = entryMap.get(item.sku);
 
       if (!entry) {
@@ -349,7 +351,7 @@ export class ProcurementService {
    */
   async reviewPurchaseOrder(
     poId: string,
-    status: POStatus.APPROVED | POStatus.REJECTED,
+    status: 'APPROVED' | 'REJECTED',
     reviewedBy: string,
     reviewNotes?: string
   ): Promise<PurchaseOrder> {

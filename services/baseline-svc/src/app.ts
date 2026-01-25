@@ -15,7 +15,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting
-  await fastify.register(rateLimit, FastifyRateLimitPresets.internalApi('baseline-svc'));
+  await fastify.register(rateLimit as any, FastifyRateLimitPresets.internalApi('baseline-svc'));
 
   // Health check (no auth required)
   fastify.get('/health', async () => {

@@ -9,7 +9,6 @@
  */
 
 import { billingEventPublisher } from '../events/billing.publisher.js';
-import type { Prisma } from '../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -139,7 +138,7 @@ class ReminderService {
           chargeAmountCents,
           emailAddress,
           trialEndDate,
-          metadataJson: (metadata ?? {}) as Prisma.InputJsonValue,
+          metadataJson: metadata ?? {},
         },
       });
       reminderIds.push(result.id);

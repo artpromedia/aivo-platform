@@ -334,7 +334,7 @@ export class ActivityService {
     // Note: We don't remove from feed lists for performance
     // Activities will naturally expire
 
-    logger.debug('Deleted activity', { activityId });
+    logger.debug({ activityId }, 'Deleted activity');
     return true;
   }
 
@@ -347,7 +347,7 @@ export class ActivityService {
     const aggKey = `activity:agg:${scope}:${scopeId}`;
 
     await redis.del(feedKey, aggKey);
-    logger.debug('Cleared activities', { scope, scopeId });
+    logger.debug({ scope, scopeId }, 'Cleared activities');
   }
 
   // ============================================================================

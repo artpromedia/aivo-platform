@@ -575,7 +575,7 @@ export class SpeechTherapyService {
         'Pronunciation-Assessment': Buffer.from(JSON.stringify(pronunciationAssessmentConfig)).toString('base64'),
         'Accept': 'application/json',
       },
-      body: audioBuffer,
+      body: new Uint8Array(audioBuffer),
     });
 
     if (!response.ok) {

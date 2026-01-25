@@ -15,6 +15,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
+
+// JSON value type for Prisma fields
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 import { extractIepContent, compareIepWithAssessment } from '../lib/iepProcessor.js';
 import { publishIepComparisonReady, publishIepDecisionMade } from '../lib/eventPublisher.js';
 
@@ -814,7 +817,7 @@ async function processIepDocumentAsync(
         extractedGoalsJson: extractedContent.goals,
         extractedAccommodationsJson: extractedContent.accommodations,
         extractedServicesJson: extractedContent.services,
-        extractedMetadataJson: extractedContent.metadata,
+        extractedMetadataJson: extractedContent.metadata as unknown as JsonValue,
       },
     });
   } catch (error) {

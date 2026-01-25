@@ -184,16 +184,16 @@ router.get(
   async (req: Request<IdParams>, res: Response) => {
     try {
       const { id } = req.params;
-      const assignment = await gradebookService.updateAssignment(id, {});
+      const assignment = await gradebookService.getAssignment(id);
 
       if (!assignment) {
         return res.status(404).json({ error: 'Assignment not found' });
       }
 
-      res.json(assignment);
+      return res.json(assignment);
     } catch (error) {
       console.error('Error fetching assignment:', error);
-      res.status(500).json({ error: 'Failed to fetch assignment' });
+      return res.status(500).json({ error: 'Failed to fetch assignment' });
     }
   }
 );
@@ -211,11 +211,16 @@ router.put(
   async (req: Request<IdParams, {}, UpdateAssignmentBody>, res: Response) => {
     try {
       const { id } = req.params;
-      const assignment = await gradebookService.updateAssignment(id, req.body);
-      res.json(assignment);
+      // Cast type to match Prisma AssignmentType enum
+      const updateData = {
+        ...req.body,
+        type: req.body.type as import('../../generated/prisma-client/index.js').AssignmentType | undefined,
+      };
+      const assignment = await gradebookService.updateAssignment(id, updateData);
+      return res.json(assignment);
     } catch (error) {
       console.error('Error updating assignment:', error);
-      res.status(500).json({ error: 'Failed to update assignment' });
+      return res.status(500).json({ error: 'Failed to update assignment' });
     }
   }
 );

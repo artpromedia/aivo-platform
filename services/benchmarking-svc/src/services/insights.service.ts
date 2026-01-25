@@ -6,7 +6,7 @@
 
 import type { PrismaClient } from '@prisma/client';
 
-import type { Insight, MetricCategory, InsightType } from '../types';
+import type { Insight, MetricCategory, InsightType } from '../types/index.js';
 
 export class InsightsService {
   constructor(
@@ -39,7 +39,8 @@ export class InsightsService {
       },
     });
 
-    const cohortIds = participant.cohortMemberships.map((m) => m.cohortId);
+    type CohortMembership = (typeof participant.cohortMemberships)[number];
+    const cohortIds = participant.cohortMemberships.map((m: CohortMembership) => m.cohortId);
     const aggregates = await this.prisma.cohortAggregate.findMany({
       where: {
         cohortId: { in: cohortIds },
@@ -52,20 +53,24 @@ export class InsightsService {
     const metricDefs = await this.prisma.metricDefinition.findMany({
       where: { isActive: true },
     });
-    const metricDefMap = new Map(metricDefs.map((m) => [m.key, m]));
+    type MetricDef = (typeof metricDefs)[number];
+    const metricDefMap = new Map<string, MetricDef>(metricDefs.map((m: MetricDef) => [m.key, m]));
 
     const insights: Insight[] = [];
+
+    type Aggregate = (typeof aggregates)[number];
 
     // Analyze each metric
     for (const metric of metrics) {
       const metricDef = metricDefMap.get(metric.metricKey);
       if (!metricDef) continue;
 
-      const relevantAggregates = aggregates.filter((a) => a.metricKey === metric.metricKey);
+      const relevantAggregates = aggregates.filter((a: Aggregate) => a.metricKey === metric.metricKey);
 
       if (relevantAggregates.length === 0) continue;
 
       const aggregate = relevantAggregates[0];
+      if (!aggregate) continue;
       const percentile = this.calculatePercentile(
         metric.metricValue,
         aggregate,
@@ -136,7 +141,8 @@ export class InsightsService {
       take: options.limit ?? 20,
     });
 
-    return insights.map((i) => ({
+    type InsightRecord = (typeof insights)[number];
+    return insights.map((i: InsightRecord) => ({
       id: i.id,
       category: i.category as MetricCategory,
       insightType: i.insightType as InsightType,

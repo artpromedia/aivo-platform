@@ -8,7 +8,37 @@
  * - Comparison with baseline assessment results
  */
 
-import type { BaselineIepDocument, BaselineAttempt, BaselineSkillEstimate } from '@prisma/client';
+// Local type definitions for Prisma models (until Prisma client is generated)
+interface BaselineIepDocument {
+  id: string;
+  baselineProfileId: string;
+  extractedGoalsJson: unknown;
+  extractedAccommodationsJson: unknown;
+  extractedServicesJson: unknown;
+  extractedMetadataJson: unknown;
+  extractedTextJson: unknown;
+  status: string;
+  [key: string]: unknown;
+}
+
+interface BaselineAttempt {
+  id: string;
+  domainScoresJson: unknown;
+  overallEstimateJson: unknown;
+  completedAt: Date | null;
+  attemptNumber: number;
+  skillEstimates: BaselineSkillEstimate[];
+  [key: string]: unknown;
+}
+
+interface BaselineSkillEstimate {
+  id: string;
+  domain: string;
+  skillCode: string;
+  estimatedLevel: number | { toNumber(): number };
+  confidence: number | { toNumber(): number };
+  [key: string]: unknown;
+}
 
 // ── Type Definitions ────────────────────────────────────────────────────────
 

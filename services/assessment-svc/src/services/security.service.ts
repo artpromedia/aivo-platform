@@ -338,26 +338,23 @@ export class SecurityService {
   ): Promise<SessionInfo> {
     const client = tx ?? prisma;
 
-    // End any existing active sessions
+    // End any existing active sessions (sessions without an endedAt timestamp)
     await client.attemptSession.updateMany({
       where: {
         attemptId,
-        active: true,
+        endedAt: null,
       },
       data: {
-        active: false,
-        endTime: new Date(),
+        endedAt: new Date(),
       },
     });
 
-    // Create new session
+    // Create new session (startedAt has a default, so we don't need to set it)
     const session = await client.attemptSession.create({
       data: {
         attemptId,
         ipAddress,
         userAgent,
-        startTime: new Date(),
-        active: true,
       },
     });
 
@@ -370,7 +367,7 @@ export class SecurityService {
     return {
       sessionId: session.id,
       attemptId,
-      startTime: session.startTime,
+      startTime: session.startedAt,
       ipAddress,
       userAgent,
       active: true,
@@ -389,8 +386,7 @@ export class SecurityService {
     await client.attemptSession.update({
       where: { id: sessionId },
       data: {
-        active: false,
-        endTime: new Date(),
+        endedAt: new Date(),
       },
     });
   }
@@ -402,19 +398,19 @@ export class SecurityService {
     const sessions = await prisma.attemptSession.findMany({
       where: {
         attemptId,
-        active: true,
+        endedAt: null,
       },
-      orderBy: { startTime: 'desc' },
+      orderBy: { startedAt: 'desc' },
     });
 
     return sessions.map(s => ({
       sessionId: s.id,
       attemptId: s.attemptId,
-      startTime: s.startTime,
-      endTime: s.endTime ?? undefined,
-      ipAddress: s.ipAddress,
-      userAgent: s.userAgent,
-      active: s.active,
+      startTime: s.startedAt,
+      endTime: s.endedAt ?? undefined,
+      ipAddress: s.ipAddress ?? '',
+      userAgent: s.userAgent ?? '',
+      active: s.endedAt === null,
     }));
   }
 

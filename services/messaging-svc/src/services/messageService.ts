@@ -4,7 +4,7 @@
  * Core business logic for sending and managing messages.
  */
 
-import { prisma, MessageType, MessageStatus } from '../prisma.js';
+import { prisma, MessageType, MessageStatus, Prisma } from '../prisma.js';
 import { config } from '../config.js';
 import type { SendMessageInput, EditMessageInput, MessageFilters } from '../types.js';
 import * as participantService from './participantService.js';
@@ -34,7 +34,7 @@ export async function sendMessage(input: SendMessageInput) {
       senderId: input.senderId,
       type: input.type ?? MessageType.TEXT,
       content: input.content,
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue,
       replyToId: input.replyToId,
       status: MessageStatus.SENT,
     },

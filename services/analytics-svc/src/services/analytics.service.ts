@@ -10,7 +10,7 @@
 
 import type Redis from 'ioredis';
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -147,13 +147,19 @@ export interface CompetencyHeatmapCell {
 interface DailyMetricRow {
   date: Date;
   totalTimeSeconds: number;
-  contentCompleted: number;
-  xpEarned: number;
+  activeTimeSeconds: number;
   sessionsCount: number;
+  contentViewed: number;
+  contentCompleted: number;
+  videosWatched: number;
+  assessmentsStarted: number;
   assessmentsCompleted: number;
   questionsAnswered: number;
   questionsCorrect: number;
+  xpEarned: number;
+  badgesEarned: number;
   aiInteractions: number;
+  averageScore: { toNumber: () => number } | null;
 }
 
 interface TopicProgressRow {

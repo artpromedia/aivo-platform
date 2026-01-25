@@ -1,5 +1,9 @@
 import { prisma } from '../prisma.js';
-import { IngestStatus, ContentType, SourceType } from '@prisma/client';
+
+// Define enums locally since they may not be exported from @prisma/client
+type IngestStatus = 'PENDING' | 'PROCESSING' | 'EXTRACTING' | 'ANALYZING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+type ContentType = 'DOCUMENT' | 'PRESENTATION' | 'SPREADSHEET' | 'VIDEO' | 'AUDIO' | 'SCORM' | 'IMAGE' | 'LINK' | 'OTHER';
+type SourceType = 'UPLOAD' | 'URL' | 'LMS_IMPORT' | 'CLOUD_STORAGE' | 'API';
 
 // Job Management
 export async function createJob(tenantId: string, data: {
@@ -347,8 +351,8 @@ export async function createTemplate(tenantId: string, data: {
       description: data.description,
       contentType: data.contentType,
       mappingRules: data.mappingRules,
-      transformers: data.transformers ?? null,
-      validators: data.validators ?? null,
+      transformers: data.transformers ?? undefined,
+      validators: data.validators ?? undefined,
       isDefault: data.isDefault || false,
       createdBy: data.createdBy,
     },
@@ -380,7 +384,7 @@ export async function createImportMapping(tenantId: string, data: {
       sourceSystem: data.sourceSystem,
       contentType: data.contentType,
       fieldMappings: data.fieldMappings,
-      transformers: data.transformers ?? null,
+      transformers: data.transformers ?? undefined,
     },
   });
 }

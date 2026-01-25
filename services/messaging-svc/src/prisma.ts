@@ -2,9 +2,12 @@
  * Prisma Client Singleton
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
 
 export const prisma = new PrismaClient();
+
+// Re-export Prisma namespace for types
+export { Prisma };
 
 // Re-export enums for convenience
 export {

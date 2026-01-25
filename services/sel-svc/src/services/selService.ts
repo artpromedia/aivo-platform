@@ -198,8 +198,8 @@ export async function submitAssessmentResponse(assessmentId: string, itemNumber:
 
   return prisma.assessmentResponse.upsert({
     where: { assessmentId_itemNumber: { assessmentId, itemNumber } },
-    create: { assessmentId, itemNumber, response, score, responseTime },
-    update: { response, score, responseTime },
+    create: { assessmentId, itemNumber, response, score: score ?? null, responseTime: responseTime ?? null },
+    update: { response, score: score ?? null, responseTime: responseTime ?? null },
   });
 }
 
@@ -220,9 +220,15 @@ export async function completeAssessment(assessmentId: string) {
       totalScore += response.score;
       const item = assessment.template.items.find((i) => i.itemNumber === response.itemNumber);
       if (item?.competencyId) {
-        if (!competencyScores[item.competencyId]) competencyScores[item.competencyId] = { sum: 0, count: 0 };
-        competencyScores[item.competencyId].sum += response.score;
-        competencyScores[item.competencyId].count++;
+        const competencyId = item.competencyId;
+        if (!competencyScores[competencyId]) {
+          competencyScores[competencyId] = { sum: 0, count: 0 };
+        }
+        const entry = competencyScores[competencyId];
+        if (entry) {
+          entry.sum += response.score;
+          entry.count++;
+        }
       }
     }
   }

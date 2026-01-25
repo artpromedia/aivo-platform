@@ -30,7 +30,7 @@ import type {
   HotspotQuestion,
   DragDropQuestion,
   CodeQuestion,
-} from '../types/assessment.types.js';
+} from '../../types/assessment.types.js';
 
 export interface GradingResult {
   score: number;
@@ -45,7 +45,7 @@ export class AutoGradingService {
   /**
    * Grade a response automatically
    */
-  async gradeResponse(question: Question, answer: QuestionAnswer): Promise<GradingResult> {
+  async gradeResponse(question: Question, answer: QuestionAnswer | null | undefined): Promise<GradingResult> {
     if (answer === null || answer === undefined) {
       return {
         score: 0,

@@ -508,9 +508,7 @@ export class PushNotificationService implements OnModuleInit {
         data: { isActive: false },
       });
 
-      logger.info('Deactivated invalid tokens', {
-        count: tokensToDeactivate.length,
-      });
+      logger.info({ count: tokensToDeactivate.length }, 'Deactivated invalid tokens');
     }
   }
 

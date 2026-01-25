@@ -5,10 +5,12 @@
  * Used by teachers, lesson planners, and AI agents.
  */
 
-import type { LearningObjectSubject, LearningObjectGradeBand } from '@prisma/client';
-
 import { config } from './config.js';
 import { prisma } from './prisma.js';
+
+// Local type definitions since Prisma types may not be exported
+type LearningObjectSubject = 'ELA' | 'MATH' | 'SCIENCE' | 'SEL' | 'SPEECH' | 'OTHER';
+type LearningObjectGradeBand = 'K_2' | 'G3_5' | 'G6_8' | 'G9_12';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

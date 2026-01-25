@@ -8,6 +8,8 @@ import { connect, NatsConnection, StringCodec } from 'nats';
 import { KinesisClient, PutRecordCommand } from '@aws-sdk/client-kinesis';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
+import { Prisma } from '@prisma/client';
+
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 import type { CreateRouteInput, UpdateRouteInput, DestinationType } from '../types/index.js';
@@ -523,11 +525,11 @@ export async function updateRoute(
       isActive: input.isActive,
       eventTypePattern: input.eventTypePattern,
       sourcePattern: input.sourcePattern,
-      conditions: input.conditions,
-      destinationConfig: input.destinationConfig,
+      conditions: input.conditions as Prisma.InputJsonValue,
+      destinationConfig: input.destinationConfig as Prisma.InputJsonValue,
       transformTemplate: input.transformTemplate,
-      enrichmentRules: input.enrichmentRules,
-      filterRules: input.filterRules,
+      enrichmentRules: input.enrichmentRules as Prisma.InputJsonValue,
+      filterRules: input.filterRules as Prisma.InputJsonValue,
       rateLimitPerSec: input.rateLimitPerSec,
       rateLimitBurst: input.rateLimitBurst,
       maxRetries: input.maxRetries,

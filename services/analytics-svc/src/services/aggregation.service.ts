@@ -5,7 +5,7 @@
  * Used by aggregation jobs and for on-demand calculations.
  */
 
-import type { PrismaClient, LearningEventCategory, PeriodType, MetricScope } from '../generated/prisma-client/index.js';
+import type { PrismaClient } from '@prisma/client';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES

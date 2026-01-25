@@ -20,7 +20,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/workflows/:workflowId', async (request, reply) => {
     const { workflowId } = request.params as { workflowId: string };
     const workflow = await approvalService.getWorkflow(request.tenantId!, workflowId);
-    if (!workflow) return reply.notFound('Workflow not found');
+    if (!workflow) return reply.status(404).send({ error: 'Workflow not found' });
     return workflow;
   });
 
@@ -92,7 +92,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/requests/:requestId', async (request, reply) => {
     const { requestId } = request.params as { requestId: string };
     const req = await approvalService.getRequest(request.tenantId!, requestId);
-    if (!req) return reply.notFound('Request not found');
+    if (!req) return reply.status(404).send({ error: 'Request not found' });
     return req;
   });
 

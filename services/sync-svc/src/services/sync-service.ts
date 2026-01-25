@@ -1,5 +1,8 @@
 import { prisma } from '../prisma.js';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+
+// Type for Prisma transaction client
+type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 import { config } from '../config.js';
 import {
   EntityType,
@@ -118,7 +121,7 @@ export class SyncService {
   private async processOperation(
     ctx: AuthContext,
     operation: SyncOperation,
-    tx: typeof prisma
+    tx: TransactionClient
   ): Promise<{
     accepted: boolean;
     conflict?: SyncConflict;
@@ -172,7 +175,7 @@ export class SyncService {
   private async applyOperation(
     ctx: AuthContext,
     operation: SyncOperation,
-    tx: typeof prisma
+    tx: TransactionClient
   ): Promise<number> {
     const now = new Date();
     const tableName = this.getTableName(operation.entityType);
@@ -519,7 +522,7 @@ export class SyncService {
           status: ConflictStatus.RESOLVED,
           resolvedAt: new Date(),
           resolvedBy: ctx.userId,
-          resolvedData: resolvedData,
+          resolvedData: resolvedData as Prisma.InputJsonValue,
         },
       });
     });
@@ -545,7 +548,7 @@ export class SyncService {
     ctx: AuthContext,
     entityType: EntityType,
     entityId: string,
-    tx: typeof prisma = prisma
+    tx: TransactionClient | typeof prisma = prisma
   ): Promise<{
     data: Record<string, unknown>;
     version: number;
@@ -573,7 +576,7 @@ export class SyncService {
     ctx: AuthContext,
     operation: SyncOperation,
     serverEntity: { data: Record<string, unknown>; version: number },
-    tx: typeof prisma
+    tx: TransactionClient
   ): Promise<SyncConflict> {
     const conflict = await tx.syncConflict.create({
       data: {
@@ -581,7 +584,7 @@ export class SyncService {
         userId: ctx.userId,
         entityType: operation.entityType,
         entityId: operation.entityId,
-        clientData: operation.data || {},
+        clientData: (operation.data || {}) as Prisma.InputJsonValue,
         serverData: serverEntity.data as Prisma.InputJsonValue,
         clientVersion: operation.clientVersion,
         serverVersion: serverEntity.version,
@@ -616,7 +619,7 @@ export class SyncService {
       data: Record<string, unknown>;
       conflictId: string;
     },
-    tx: typeof prisma
+    tx: TransactionClient
   ): Promise<void> {
     const conflict = await tx.syncConflict.findUnique({
       where: { id: resolved.conflictId },
