@@ -47,13 +47,13 @@ export interface GoogleClassroomRouteOptions {
 
 const log = createLogger('google-classroom-routes');
 
-interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    id: string;
-    tenantId: string;
-    role: string;
-  };
+interface AuthenticatedUser {
+  id: string;
+  tenantId: string;
+  role: string;
 }
+
+type AuthenticatedRequest = FastifyRequest & { user: AuthenticatedUser };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ROUTE REGISTRATION
@@ -75,7 +75,8 @@ export async function registerGoogleClassroomRoutes(
    */
   app.get(
     '/google-classroom/auth/connect',
-    async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (request: any, reply: FastifyReply) => {
       const { redirectUrl, loginHint } = ConnectGoogleClassroomSchema.parse(request.query);
 
       const state = Buffer.from(
@@ -146,7 +147,7 @@ export async function registerGoogleClassroomRoutes(
    * Check connection status
    * GET /google-classroom/status
    */
-  app.get('/google-classroom/status', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/status', async (request: any) => {
     try {
       const isConnected = await googleClassroomService.isConnected(request.user.id);
 
@@ -172,7 +173,7 @@ export async function registerGoogleClassroomRoutes(
    * Disconnect Google Classroom
    * DELETE /google-classroom/auth/disconnect
    */
-  app.delete('/google-classroom/auth/disconnect', async (request: AuthenticatedRequest) => {
+  app.delete('/google-classroom/auth/disconnect', async (request: any) => {
     await googleClassroomService.revokeAccess(request.user.id);
     return { success: true };
   });
@@ -185,7 +186,7 @@ export async function registerGoogleClassroomRoutes(
    * List available courses
    * GET /google-classroom/courses
    */
-  app.get('/google-classroom/courses', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/courses', async (request: any) => {
     const params = ListCoursesSchema.parse(request.query);
 
     if (params.state) {
@@ -233,7 +234,7 @@ export async function registerGoogleClassroomRoutes(
    * Get course details
    * GET /google-classroom/courses/:courseId
    */
-  app.get('/google-classroom/courses/:courseId', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/courses/:courseId', async (request: any) => {
     const { courseId } = request.params as { courseId: string };
     return googleClassroomService.getCourse(request.user.id, courseId);
   });
@@ -242,7 +243,7 @@ export async function registerGoogleClassroomRoutes(
    * Get course roster
    * GET /google-classroom/courses/:courseId/roster
    */
-  app.get('/google-classroom/courses/:courseId/roster', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/courses/:courseId/roster', async (request: any) => {
     const { courseId } = request.params as { courseId: string };
 
     const [students, teachers] = await Promise.all([
@@ -261,7 +262,7 @@ export async function registerGoogleClassroomRoutes(
    * Sync a specific course
    * POST /google-classroom/courses/:courseId/sync
    */
-  app.post('/google-classroom/courses/:courseId/sync', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/courses/:courseId/sync', async (request: any) => {
     const { courseId } = request.params as { courseId: string };
     const body = SyncCourseSchema.parse(request.body);
 
@@ -283,7 +284,7 @@ export async function registerGoogleClassroomRoutes(
    * Sync all courses
    * POST /google-classroom/sync/all
    */
-  app.post('/google-classroom/sync/all', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/sync/all', async (request: any) => {
     const results = await googleClassroomService.syncAllCourses(
       request.user.id,
       request.user.tenantId
@@ -303,7 +304,7 @@ export async function registerGoogleClassroomRoutes(
    */
   app.get(
     '/google-classroom/courses/:courseId/sync/status',
-    async (request: AuthenticatedRequest) => {
+    async (request: any) => {
       const { courseId } = request.params as { courseId: string };
 
       // @ts-expect-error - accessing prisma through service
@@ -330,7 +331,7 @@ export async function registerGoogleClassroomRoutes(
    * Get sync history
    * GET /google-classroom/sync/history
    */
-  app.get('/google-classroom/sync/history', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/sync/history', async (request: any) => {
     const params = SyncHistoryQuerySchema.parse(request.query);
 
     const where: any = {};
@@ -358,15 +359,16 @@ export async function registerGoogleClassroomRoutes(
       }
     }
 
-    // @ts-expect-error - accessing prisma through service
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const svc = googleClassroomService as any;
     const [entries, total] = await Promise.all([
-      googleClassroomService.prisma.googleClassroomSyncLog.findMany({
+      svc.prisma.googleClassroomSyncLog.findMany({
         where,
         orderBy: { syncedAt: 'desc' },
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
       }),
-      googleClassroomService.prisma.googleClassroomSyncLog.count({ where }),
+      svc.prisma.googleClassroomSyncLog.count({ where }),
     ]);
 
     return {
@@ -386,7 +388,7 @@ export async function registerGoogleClassroomRoutes(
    * Post a lesson as a Classroom assignment
    * POST /google-classroom/assignments
    */
-  app.post('/google-classroom/assignments', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/assignments', async (request: any) => {
     const body = PostAssignmentSchema.parse(request.body);
 
     const assignment = await assignmentSyncService.postLessonAsAssignment(
@@ -397,7 +399,9 @@ export async function registerGoogleClassroomRoutes(
         title: body.title,
         description: body.description,
         dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
-        dueTime: body.dueTime,
+        dueTime: body.dueTime?.hours !== undefined && body.dueTime?.minutes !== undefined
+          ? { hours: body.dueTime.hours, minutes: body.dueTime.minutes }
+          : undefined,
         maxPoints: body.maxPoints,
         scheduledTime: body.scheduledTime ? new Date(body.scheduledTime) : undefined,
         topicId: body.topicId,
@@ -411,7 +415,7 @@ export async function registerGoogleClassroomRoutes(
    * Get linked assignments
    * GET /google-classroom/assignments
    */
-  app.get('/google-classroom/assignments', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/assignments', async (request: any) => {
     const params = ListAssignmentsSchema.parse(request.query);
 
     return assignmentSyncService.getLinkedAssignments({
@@ -426,7 +430,7 @@ export async function registerGoogleClassroomRoutes(
    * Get assignment link details
    * GET /google-classroom/assignments/:assignmentId
    */
-  app.get('/google-classroom/assignments/:assignmentId', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/assignments/:assignmentId', async (request: any) => {
     const { assignmentId } = request.params as { assignmentId: string };
 
     const link = await assignmentSyncService.getAssignmentLink(assignmentId);
@@ -442,7 +446,7 @@ export async function registerGoogleClassroomRoutes(
    * Update a linked assignment
    * PUT /google-classroom/assignments/:assignmentId
    */
-  app.put('/google-classroom/assignments/:assignmentId', async (request: AuthenticatedRequest) => {
+  app.put('/google-classroom/assignments/:assignmentId', async (request: any) => {
     const { assignmentId } = request.params as { assignmentId: string };
     const body = UpdateAssignmentSchema.parse(request.body);
 
@@ -461,7 +465,7 @@ export async function registerGoogleClassroomRoutes(
    */
   app.delete(
     '/google-classroom/assignments/:assignmentId',
-    async (request: AuthenticatedRequest) => {
+    async (request: any) => {
       const { assignmentId } = request.params as { assignmentId: string };
 
       await assignmentSyncService.deleteLinkedAssignment(request.user.id, assignmentId);
@@ -477,7 +481,7 @@ export async function registerGoogleClassroomRoutes(
    * Pass back a single grade
    * POST /google-classroom/grades
    */
-  app.post('/google-classroom/grades', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/grades', async (request: any) => {
     const body = UpdateGradeSchema.parse(request.body);
 
     await assignmentSyncService.passbackGrade(request.user.id, {
@@ -496,13 +500,15 @@ export async function registerGoogleClassroomRoutes(
    * Batch pass back grades
    * POST /google-classroom/grades/batch
    */
-  app.post('/google-classroom/grades/batch', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/grades/batch', async (request: any) => {
     const body = BatchGradePassbackSchema.parse(request.body);
 
     return assignmentSyncService.batchPassbackGrades(request.user.id, {
       lessonId: body.lessonId,
       courseId: body.courseId,
-      grades: body.grades,
+      grades: body.grades.filter(
+        (g): g is { studentId: string; grade: number } => g.studentId !== undefined && g.grade !== undefined
+      ),
       returnToStudents: body.returnToStudents,
     });
   });
@@ -511,7 +517,7 @@ export async function registerGoogleClassroomRoutes(
    * Auto-sync grades for completed lessons
    * POST /google-classroom/grades/auto-sync
    */
-  app.post('/google-classroom/grades/auto-sync', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/grades/auto-sync', async (request: any) => {
     const body = AutoSyncGradesSchema.parse(request.query);
 
     return assignmentSyncService.syncPendingGrades(request.user.id, body.courseId);
@@ -525,7 +531,7 @@ export async function registerGoogleClassroomRoutes(
    * Register push notifications for a course
    * POST /google-classroom/webhooks/register
    */
-  app.post('/google-classroom/webhooks/register', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/webhooks/register', async (request: any) => {
     const body = RegisterWebhookSchema.parse(request.body);
 
     return googleClassroomService.registerPushNotifications(
@@ -571,7 +577,7 @@ export async function registerGoogleClassroomRoutes(
    * Create course mapping
    * POST /google-classroom/mappings
    */
-  app.post('/google-classroom/mappings', async (request: AuthenticatedRequest) => {
+  app.post('/google-classroom/mappings', async (request: any) => {
     const body = CreateCourseMappingSchema.parse(request.body);
 
     // @ts-expect-error - accessing prisma through service
@@ -592,7 +598,7 @@ export async function registerGoogleClassroomRoutes(
    * List course mappings
    * GET /google-classroom/mappings
    */
-  app.get('/google-classroom/mappings', async (request: AuthenticatedRequest) => {
+  app.get('/google-classroom/mappings', async (request: any) => {
     // @ts-expect-error - accessing prisma through service
     return googleClassroomService.prisma.googleClassroomCourseMapping.findMany({
       where: { tenantId: request.user.tenantId },
@@ -612,7 +618,7 @@ export async function registerGoogleClassroomRoutes(
    * Update course mapping
    * PUT /google-classroom/mappings/:mappingId
    */
-  app.put('/google-classroom/mappings/:mappingId', async (request: AuthenticatedRequest) => {
+  app.put('/google-classroom/mappings/:mappingId', async (request: any) => {
     const { mappingId } = request.params as { mappingId: string };
     const body = UpdateCourseMappingSchema.parse(request.body);
 
@@ -630,7 +636,7 @@ export async function registerGoogleClassroomRoutes(
    * Delete course mapping
    * DELETE /google-classroom/mappings/:mappingId
    */
-  app.delete('/google-classroom/mappings/:mappingId', async (request: AuthenticatedRequest) => {
+  app.delete('/google-classroom/mappings/:mappingId', async (request: any) => {
     const { mappingId } = request.params as { mappingId: string };
 
     // @ts-expect-error - accessing prisma through service

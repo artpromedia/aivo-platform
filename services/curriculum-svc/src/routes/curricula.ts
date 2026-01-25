@@ -47,11 +47,8 @@ export async function curriculaRoutes(app: FastifyInstance) {
   }>) => {
     const data = CreateCurriculumSchema.parse(request.body);
     const { tenantId, createdBy } = request.query;
-    return curriculumService.createCurriculum({
-      ...data,
-      tenantId,
-      createdBy,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return curriculumService.createCurriculum(tenantId, data as any, createdBy);
   });
 
   // Update curriculum
@@ -61,9 +58,8 @@ export async function curriculaRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { id } = request.params;
-    const { tenantId } = request.query;
     const data = UpdateCurriculumSchema.parse(request.body);
-    return curriculumService.updateCurriculum(id, tenantId, data);
+    return curriculumService.updateCurriculum(id, data);
   });
 
   // Delete curriculum
@@ -93,8 +89,7 @@ export async function curriculaRoutes(app: FastifyInstance) {
     Querystring: { tenantId: string }
   }>) => {
     const { id } = request.params;
-    const { tenantId } = request.query;
-    return curriculumService.archiveCurriculum(id, tenantId);
+    return curriculumService.archiveCurriculum(id);
   });
 
   // Clone curriculum

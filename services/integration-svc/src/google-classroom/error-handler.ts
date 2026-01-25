@@ -282,12 +282,12 @@ export interface ParsedGoogleError {
 export function parseGoogleError(error: unknown): ParsedGoogleError {
   // Handle already-parsed GoogleClassroomError
   if (error instanceof GoogleClassroomError) {
-    const code = mapErrorTypeToCode(error.code);
+    const code = determineErrorCode(error.code, error.message);
     return {
       code,
       message: error.message,
       userMessage: USER_FRIENDLY_MESSAGES[code],
-      httpStatus: error.statusCode || 500,
+      httpStatus: error.code || 500,
       retryConfig: RETRY_CONFIGS[code],
       originalError: error,
     };
@@ -487,13 +487,13 @@ export class GoogleClassroomErrorHandler {
    */
   static requiresUserAction(error: unknown): boolean {
     const parsed = parseGoogleError(error);
-    return [
+    return ([
       ErrorCodes.TOKEN_EXPIRED,
       ErrorCodes.TOKEN_REVOKED,
       ErrorCodes.INVALID_GRANT,
       ErrorCodes.UNAUTHORIZED,
       ErrorCodes.INSUFFICIENT_SCOPES,
-    ].includes(parsed.code);
+    ] as ErrorCode[]).includes(parsed.code);
   }
 
   /**
@@ -501,7 +501,7 @@ export class GoogleClassroomErrorHandler {
    */
   static isRateLimited(error: unknown): boolean {
     const parsed = parseGoogleError(error);
-    return [ErrorCodes.RATE_LIMITED, ErrorCodes.QUOTA_EXCEEDED].includes(parsed.code);
+    return ([ErrorCodes.RATE_LIMITED, ErrorCodes.QUOTA_EXCEEDED] as ErrorCode[]).includes(parsed.code);
   }
 
   /**
@@ -509,7 +509,7 @@ export class GoogleClassroomErrorHandler {
    */
   static isServerError(error: unknown): boolean {
     const parsed = parseGoogleError(error);
-    return [ErrorCodes.GOOGLE_SERVER_ERROR, ErrorCodes.GOOGLE_UNAVAILABLE].includes(parsed.code);
+    return ([ErrorCodes.GOOGLE_SERVER_ERROR, ErrorCodes.GOOGLE_UNAVAILABLE] as ErrorCode[]).includes(parsed.code);
   }
 }
 
