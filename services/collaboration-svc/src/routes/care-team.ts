@@ -157,7 +157,7 @@ export async function careTeamRoutes(fastify: FastifyInstance) {
       memberId: member.id,
       userId: member.userId,
       displayName: member.displayName,
-      role: member.role as 'PARENT' | 'TEACHER' | 'THERAPIST' | 'SPECIALIST' | 'ADMIN' | 'OTHER',
+      role: member.role as 'PARENT' | 'GUARDIAN' | 'TEACHER' | 'SPECIALIST' | 'THERAPIST' | 'COUNSELOR' | 'DISTRICT_ADMIN' | 'CASE_MANAGER' | 'AIDE' | 'OTHER',
       title: member.title,
       addedByUserId: userId,
     });
@@ -274,7 +274,7 @@ export async function careTeamRoutes(fastify: FastifyInstance) {
       memberId: member.id,
       userId: member.userId,
       displayName: member.displayName,
-      role: member.role as 'PARENT' | 'TEACHER' | 'THERAPIST' | 'SPECIALIST' | 'ADMIN' | 'OTHER',
+      role: member.role as 'PARENT' | 'GUARDIAN' | 'TEACHER' | 'SPECIALIST' | 'THERAPIST' | 'COUNSELOR' | 'DISTRICT_ADMIN' | 'CASE_MANAGER' | 'AIDE' | 'OTHER',
     });
 
     return reply.send({ data: member });

@@ -226,10 +226,10 @@ export async function actionPlanRoutes(fastify: FastifyInstance) {
     void publishActionPlanCreated(tenantId, params.learnerId, userId, {
       planId: plan.id,
       title: plan.title,
-      status: plan.status as 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED',
+      status: plan.status as 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED',
       linkedGoalId: plan.linkedGoalId,
       linkedProfileId: plan.linkedProfileId,
-      focusAreas: plan.focusAreas,
+      focusAreas: plan.focusAreas as string[],
       createdById: plan.createdById,
     });
 

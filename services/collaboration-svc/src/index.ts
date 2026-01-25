@@ -88,9 +88,10 @@ fastify.setErrorHandler((error, request, reply) => {
 
   // Zod validation errors
   if (error.name === 'ZodError') {
+    const zodError = error as unknown as { issues: unknown[] };
     return reply.status(400).send({
       error: 'Validation error',
-      details: error.issues,
+      details: zodError.issues,
     });
   }
 

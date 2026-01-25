@@ -7,6 +7,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db/prisma.js';
+import { NoteVisibility } from '@prisma/client';
 import {
   CreateCareNoteSchema,
   UpdateCareNoteSchema,
@@ -60,7 +61,7 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
     // Build visibility filter based on role
     const visibilityFilter = careTeamMember
       ? getVisibilityFilter(careTeamMember.role)
-      : { visibility: 'TEAM' }; // Non-members only see team-visible notes
+      : { visibility: NoteVisibility.TEAM }; // Non-members only see team-visible notes
 
     const where = {
       tenantId,
@@ -282,7 +283,7 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
     // Publish NATS event for note created
     void publishCareNoteCreated(tenantId, params.learnerId, userId, {
       noteId: note.id,
-      noteType: note.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'CONCERN' | 'MEETING_NOTES' | 'RECOMMENDATION' | 'GENERAL',
+      noteType: note.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'QUESTION' | 'HOME_UPDATE' | 'SCHOOL_UPDATE' | 'THERAPY_UPDATE' | 'MEETING_NOTES' | 'STRATEGY_FEEDBACK' | 'CELEBRATION',
       title: note.title,
       visibility: note.visibility as 'TEAM' | 'EDUCATORS_ONLY' | 'PARENTS_ONLY' | 'PRIVATE',
       authorId: note.authorId,
@@ -290,7 +291,7 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
       actionPlanId: note.actionPlanId,
       meetingId: note.meetingId,
       requiresFollowUp: note.requiresFollowUp,
-      tags: note.tags,
+      tags: note.tags as string[],
     });
     // NOTE: Notifications should be sent by a separate notification service
 
@@ -461,7 +462,7 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
     // Publish NATS event for note deleted
     void publishCareNoteDeleted(tenantId, params.learnerId, userId, {
       noteId: params.noteId,
-      noteType: existingNote.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'CONCERN' | 'MEETING_NOTES' | 'RECOMMENDATION' | 'GENERAL',
+      noteType: existingNote.noteType as 'OBSERVATION' | 'PROGRESS_UPDATE' | 'QUESTION' | 'HOME_UPDATE' | 'SCHOOL_UPDATE' | 'THERAPY_UPDATE' | 'MEETING_NOTES' | 'STRATEGY_FEEDBACK' | 'CELEBRATION',
       authorId: existingNote.authorId,
     });
 
@@ -472,24 +473,24 @@ export async function careNoteRoutes(fastify: FastifyInstance) {
 /**
  * Get visibility filter based on user role
  */
-function getVisibilityFilter(role: string) {
+function getVisibilityFilter(role: string): { visibility: NoteVisibility | { in: NoteVisibility[] } } {
   // Parents can see TEAM and PARENTS_ONLY
   if (role === 'PARENT' || role === 'GUARDIAN') {
     return {
-      visibility: { in: ['TEAM', 'PARENTS_ONLY'] },
+      visibility: { in: [NoteVisibility.TEAM, NoteVisibility.PARENTS_ONLY] },
     };
   }
 
   // Educators can see TEAM and EDUCATORS_ONLY
   if (['TEACHER', 'SPECIALIST', 'AIDE', 'COUNSELOR', 'CASE_MANAGER', 'DISTRICT_ADMIN'].includes(role)) {
     return {
-      visibility: { in: ['TEAM', 'EDUCATORS_ONLY'] },
+      visibility: { in: [NoteVisibility.TEAM, NoteVisibility.EDUCATORS_ONLY] },
     };
   }
 
   // Therapists and others see only TEAM
   return {
-    visibility: 'TEAM',
+    visibility: NoteVisibility.TEAM,
   };
 }
 

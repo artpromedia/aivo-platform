@@ -262,7 +262,7 @@ export async function careMeetingRoutes(fastify: FastifyInstance) {
     void publishMeetingScheduled(tenantId, params.learnerId, userId, {
       meetingId: meeting.id,
       title: meeting.title,
-      meetingType: meeting.meetingType as 'CHECK_IN' | 'IEP_REVIEW' | 'PARENT_TEACHER' | 'CARE_COORDINATION' | 'PROGRESS_REVIEW' | 'EMERGENCY' | 'OTHER',
+      meetingType: meeting.meetingType as 'CHECK_IN' | 'IEP_MEETING' | 'PROGRESS_REVIEW' | 'STRATEGY_SESSION' | 'PARENT_TEACHER' | 'TEAM_MEETING' | 'OTHER',
       scheduledStart: meeting.scheduledStart,
       scheduledEnd: meeting.scheduledEnd,
       location: meeting.location,

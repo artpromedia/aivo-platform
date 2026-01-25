@@ -172,9 +172,13 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
     const params = ActionPlanParamsSchema.parse(request.params);
     const body = CreateActionPlanTaskSchema.parse(request.body);
     const tenantId = request.headers['x-tenant-id'] as string;
+    const userId = request.headers['x-user-id'] as string;
 
     if (!tenantId) {
       return reply.status(400).send({ error: 'Missing x-tenant-id header' });
+    }
+    if (!userId) {
+      return reply.status(400).send({ error: 'Missing x-user-id header' });
     }
 
     // Verify plan exists
@@ -242,8 +246,8 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
       taskId: task.id,
       actionPlanId: params.planId,
       title: task.title,
-      context: task.context as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'ALL',
-      frequency: task.frequency as 'DAILY' | 'WEEKLY' | 'AS_NEEDED' | 'ONCE',
+      context: task.context as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'SHARED',
+      frequency: task.frequency as 'DAILY' | 'WEEKLY' | 'TWICE_WEEKLY' | 'MONTHLY' | 'AS_NEEDED',
       assigneeId: task.assigneeId,
     });
 
@@ -507,7 +511,7 @@ export async function actionPlanTaskRoutes(fastify: FastifyInstance) {
         status: completion.status,
         completedAt: completion.completedAt,
         effectivenessRating: completion.effectivenessRating,
-        context: completion.completedInContext as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'ALL' | null,
+        context: completion.completedInContext as 'HOME' | 'SCHOOL' | 'THERAPY' | 'COMMUNITY' | 'SHARED' | null,
       });
 
       return reply.status(201).send({ data: completion });
