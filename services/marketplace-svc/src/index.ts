@@ -35,7 +35,8 @@ async function main() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('marketplace-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('marketplace-svc'));
 
   // Health check endpoints
   app.get('/health', async () => ({ status: 'ok', service: 'marketplace-svc' }));

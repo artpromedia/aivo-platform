@@ -13,7 +13,8 @@ export async function buildApp() {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('device-mgmt-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('device-mgmt-svc'));
 
   // Register plugins
   await app.register(prismaPlugin);

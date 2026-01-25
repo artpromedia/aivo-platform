@@ -58,7 +58,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting - protect webhook and API endpoints from abuse
-  await app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, {
     global: true,
     max: 100, // 100 requests per minute by default
     timeWindow: '1 minute',

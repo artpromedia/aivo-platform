@@ -21,7 +21,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting for messaging endpoints
-  await app.register(rateLimit, FastifyRateLimitPresets.messaging('messaging-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.messaging('messaging-svc'));
 
   // ════════════════════════════════════════════════════════════════════════════
   // HEALTH CHECK

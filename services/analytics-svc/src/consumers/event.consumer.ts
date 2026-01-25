@@ -11,7 +11,7 @@ import type {
   NatsConnection,
   JsMsg,
 } from 'nats';
-import { AckPolicy, RetentionPolicy } from 'nats';
+import { AckPolicy, RetentionPolicy, StorageType } from 'nats';
 
 import { prisma } from '../prisma.js';
 
@@ -227,7 +227,7 @@ export class EventConsumer {
         retention: RetentionPolicy.Limits,
         max_msgs: 10_000_000,
         max_age: 7 * 24 * 60 * 60 * 1_000_000_000, // 7 days in nanoseconds
-        storage: 'file' as unknown as number,
+        storage: StorageType.File,
         num_replicas: 1,
       });
       console.log(`[EventConsumer] Created stream ${streamName}`);

@@ -22,13 +22,15 @@ export async function createServer(config: ServerConfig) {
   const app = Fastify({ logger: true });
 
   // Security middleware
-  await app.register(helmet, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(helmet as any, {
     contentSecurityPolicy: false, // LTI requires embedding in iframes
     frameguard: false, // LTI content is embedded in LMS iframes
   });
 
   // Rate limiting - protect LTI endpoints from abuse
-  await app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, {
     global: true,
     max: 200, // 200 requests per minute (LTI launches can be frequent)
     timeWindow: '1 minute',

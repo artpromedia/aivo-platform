@@ -22,6 +22,8 @@ import {
   type ConsumerConfig,
   AckPolicy,
   DeliverPolicy,
+  RetentionPolicy,
+  StorageType,
 } from 'nats';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -239,10 +241,10 @@ export class MarketplaceEventSubscriber {
       await this.jsm.streams.add({
         name: this.config.streamName,
         subjects: this.config.subjects,
-        retention: 'limits' as const,
+        retention: RetentionPolicy.Limits,
         max_msgs: 1000000,
         max_age: 7 * 24 * 60 * 60 * 1_000_000_000, // 7 days in nanoseconds
-        storage: 'file' as const,
+        storage: StorageType.File,
         num_replicas: 1,
       });
       console.log(`Created stream ${this.config.streamName}`);

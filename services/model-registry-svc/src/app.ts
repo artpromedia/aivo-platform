@@ -16,7 +16,8 @@ export async function createApp() {
   const app = Fastify({ logger: true });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('model-registry-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('model-registry-svc'));
 
   // Health check
   app.get('/health', async (_request, reply) => {

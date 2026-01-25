@@ -32,12 +32,15 @@ async function buildApp() {
   });
 
   // Security plugins
-  await app.register(helmet);
-  await app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(helmet as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? true,
     credentials: true,
   });
-  await app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, {
     max: 100,
     timeWindow: '1 minute',
   });

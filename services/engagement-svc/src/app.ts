@@ -30,7 +30,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.publicApi('engagement-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('engagement-svc'));
 
   // Health check (unauthenticated)
   app.get('/health', async () => ({ status: 'ok', service: 'engagement-svc', version: '0.1.0' }));
@@ -41,8 +42,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // JWT auth for all other routes
-
-  await app.register(authMiddleware);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(authMiddleware as any);
 
   // Register routes
   await app.register(engagementRoutes);

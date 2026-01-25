@@ -11,7 +11,7 @@
  */
 
 import type { JetStreamManager, JetStreamClient, NatsConnection } from 'nats';
-import { connect, StringCodec } from 'nats';
+import { connect, StringCodec, RetentionPolicy, StorageType, DiscardPolicy } from 'nats';
 
 import { config } from '../config.js';
 
@@ -119,11 +119,11 @@ class NatsEventPublisher {
       await this.jsm.streams.add({
         name: this.streamName,
         subjects: ['profile.>', 'accommodation.>'],
-        retention: 'limits' as const,
+        retention: RetentionPolicy.Limits,
         max_msgs: 100000,
         max_age: 7 * 24 * 60 * 60 * 1e9, // 7 days in nanoseconds
-        storage: 'file' as const,
-        discard: 'old' as const,
+        storage: StorageType.File,
+        discard: DiscardPolicy.Old,
         num_replicas: 1,
       });
       console.log(`[NATS] Stream '${this.streamName}' created`);

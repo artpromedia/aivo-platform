@@ -49,7 +49,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Rate limiting
-  await app.register(rateLimit, FastifyRateLimitPresets.internalApi('personalization-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('personalization-svc'));
 
   // Health check
   app.get('/health', async () => ({
