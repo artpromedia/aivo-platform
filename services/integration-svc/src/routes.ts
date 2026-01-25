@@ -4,7 +4,7 @@
  * Public APIs for partners and admin APIs for managing webhooks/keys.
  */
 
-import type { PrismaClient, ApiScope, WebhookEventType, Prisma } from '@prisma/client';
+import type { PrismaClient, ApiScope, WebhookEventType, Prisma } from './prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 

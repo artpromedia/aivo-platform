@@ -13,7 +13,7 @@
 
 import { EventEmitter } from 'node:events';
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type { OAuth2Client, Credentials } from 'google-auth-library';
 import type { classroom_v1 } from 'googleapis';
 import { google } from 'googleapis';

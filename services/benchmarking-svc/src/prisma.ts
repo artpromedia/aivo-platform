@@ -1,5 +1,5 @@
 /**
- * Prisma client singleton for approval-svc
+ * Prisma client singleton for benchmarking-svc
  */
 
 import { PrismaClient } from '../generated/prisma-client/index.js';
@@ -10,10 +10,11 @@ export const prisma = new PrismaClient();
 
 // Re-export enums
 export {
-  ApprovalStatus,
-  WorkflowStatus,
-  StepType,
-  EscalationType,
+  ParticipationStatus,
+  DistrictSize,
+  GeographicType,
+  MetricCategory,
+  ReportStatus,
 } from '../generated/prisma-client/index.js';
 
 // Re-export PrismaClient type

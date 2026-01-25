@@ -5,7 +5,7 @@
  * Handles schedule creation, updates, progress tracking, and preference management.
  */
 
-import type { PrismaClient, ScheduleType, ScheduleDisplayStyle } from '@prisma/client';
+import type { PrismaClient, ScheduleType, ScheduleDisplayStyle } from '../prisma.js';
 
 import type {
   ScheduleItem,

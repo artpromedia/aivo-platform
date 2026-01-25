@@ -5,7 +5,7 @@
  * signals and sending them to the ai-orchestrator for analysis.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 import { logger } from '../logger.js';
 import type { StateHistory, StateHistoryEntry } from './state-history.js';

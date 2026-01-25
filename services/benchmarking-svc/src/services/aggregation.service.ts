@@ -4,7 +4,7 @@
  * Collects, anonymizes, and aggregates benchmark metrics from districts.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 
 import type {
   MetricSubmission,

@@ -6,8 +6,8 @@
 
 import { randomBytes, createHash } from 'node:crypto';
 
-import type { PrismaClient, ApiScope } from '@prisma/client';
-import { ApiKeyStatus } from '@prisma/client';
+import type { PrismaClient, ApiScope } from './prisma.js';
+import { ApiKeyStatus } from './prisma.js';
 
 import { API_KEY_PREFIX } from './types.js';
 

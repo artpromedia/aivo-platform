@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GoogleClassroomService } from '../google-classroom.service.js';
 import { AssignmentSyncService } from '../assignment-sync.service.js';
 import { GoogleClassroomErrorHandler, ErrorCodes } from '../error-handler.js';
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MOCKS

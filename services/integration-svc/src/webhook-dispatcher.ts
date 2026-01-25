@@ -7,8 +7,8 @@
 
 import { randomUUID } from 'node:crypto';
 
-import type { PrismaClient, WebhookEventType } from '@prisma/client';
-import { Prisma, WebhookDeliveryStatus } from '@prisma/client';
+import type { PrismaClient, WebhookEventType } from './prisma.js';
+import { Prisma, WebhookDeliveryStatus } from './prisma.js';
 
 import type { WebhookPayload } from './types.js';
 import { signWebhookPayload, generateWebhookHeaders } from './webhook-signing.js';

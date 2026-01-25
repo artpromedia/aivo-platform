@@ -6,8 +6,7 @@
  */
 
 import { FastifyInstance } from 'fastify';
-import { prisma } from '../db/prisma.js';
-import { NoteVisibility } from '@prisma/client';
+import { prisma, NoteVisibility } from '../db/prisma.js';
 import {
   CreateCareNoteSchema,
   UpdateCareNoteSchema,

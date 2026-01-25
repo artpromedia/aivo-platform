@@ -7,10 +7,12 @@
 
 import type {
   PrismaClient,
+  Prisma,
+} from '../prisma.js';
+import type {
   TransitionPreferences,
   TransitionRoutine,
-  Prisma,
-} from '@prisma/client';
+} from '../../generated/prisma-client/index.js';
 
 import { prisma } from '../prisma.js';
 

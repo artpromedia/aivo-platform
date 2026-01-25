@@ -4,7 +4,7 @@
  * Fastify server setup for the integration service.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import type { FastifyInstance } from 'fastify';

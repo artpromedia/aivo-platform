@@ -7,7 +7,7 @@
  */
 
 // Re-export enums from Prisma client
-export { ScheduleType, ScheduleDisplayStyle } from '@prisma/client';
+export { ScheduleType, ScheduleDisplayStyle } from '../prisma.js';
 
 // Import for local use in type definitions
 import type {
@@ -16,7 +16,7 @@ import type {
   VisualSchedule,
   ScheduleTemplate,
   SchedulePreferences,
-} from '@prisma/client';
+} from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEDULE ITEM TYPES

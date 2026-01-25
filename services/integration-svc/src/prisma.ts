@@ -1,4 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+/**
+ * Prisma client singleton for integration-svc
+ */
+
+import { PrismaClient } from '../generated/prisma-client/index.js';
+
+export { Prisma } from '../generated/prisma-client/index.js';
 
 declare global {
   var __prisma: PrismaClient | undefined;
@@ -12,3 +18,30 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export default prisma;
+
+// Re-export types for convenience
+export type {
+  WebhookEndpoint,
+  WebhookDelivery,
+  ApiKey,
+  ExternalLearningEvent,
+  GoogleClassroomConnection,
+  ClassroomAssignment,
+  ClassroomSubmission,
+  ClassroomEnrollment,
+  ClassroomSyncLog,
+} from '../generated/prisma-client/index.js';
+
+// Re-export enums
+export {
+  WebhookEventType,
+  WebhookDeliveryStatus,
+  ApiKeyStatus,
+  ApiScope,
+  EnrollmentRole,
+  EnrollmentStatus,
+  ClassStatus,
+} from '../generated/prisma-client/index.js';
+
+// Re-export PrismaClient type
+export type { PrismaClient } from '../generated/prisma-client/index.js';

@@ -4,7 +4,7 @@
  * REST API endpoints for cross-district benchmarking.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 

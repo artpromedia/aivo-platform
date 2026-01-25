@@ -10,19 +10,16 @@ import 'dotenv/config';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
-import { PrismaClient } from '@prisma/client';
+import { prisma, type PrismaClient } from './prisma.js';
 import Fastify from 'fastify';
 import pino from 'pino';
 
 import { registerBenchmarkingRoutes } from './api/routes.js';
+import { prisma } from './prisma.js';
 
 const logger = pino({
   level: process.env.LOG_LEVEL ?? 'info',
   ...(process.env.NODE_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
-});
-
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 async function buildApp() {
