@@ -76,4 +76,35 @@ class PinController extends StateNotifier<PinAuthState> {
     );
     debugPrint('[PinController] Authenticated via SSO: $userId @ $tenantId');
   }
+
+  /// Authenticate via biometric login.
+  ///
+  /// Uses stored refresh token from biometric service to obtain new tokens.
+  Future<bool> loginWithBiometrics({required String refreshToken}) async {
+    state = PinAuthState.loading();
+    
+    try {
+      // Exchange refresh token for new access/session token
+      final token = await _service.refreshToken(refreshToken);
+      final decoded = PinAuthState.decode(token);
+      
+      if (decoded.learnerId.isEmpty || decoded.isExpired) {
+        state = PinAuthState.error('Invalid session token');
+        return false;
+      }
+      
+      await _storage.save(token);
+      state = PinAuthState.authenticated(
+        learnerId: decoded.learnerId,
+        tenantId: decoded.tenantId,
+      );
+      
+      debugPrint('[PinController] Biometric login successful: ${decoded.learnerId}');
+      return true;
+    } catch (e) {
+      debugPrint('[PinController] Biometric login error: $e');
+      state = PinAuthState.error('Biometric login failed');
+      return false;
+    }
+  }
 }

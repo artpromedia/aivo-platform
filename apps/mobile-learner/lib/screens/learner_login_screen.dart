@@ -408,6 +408,25 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Biometric login button
+        BiometricLoginButton(
+          size: BiometricButtonSize.large,
+          reason: 'Sign in to Aivo Learning',
+          onSuccess: (userId, refreshToken) async {
+            final success = await ref.read(pinControllerProvider.notifier).loginWithBiometrics(
+              refreshToken: refreshToken,
+            );
+            if (success && mounted) {
+              await loadAndApplyLearnerTheme(ref, userId);
+              context.go('/plan');
+            }
+          },
+          onError: (message) {
+            setState(() => _error = message);
+          },
+        ),
       ],
     );
   }

@@ -36,8 +36,12 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Search coming soon')),
+              showSearch(
+                context: context,
+                delegate: _MessageSearchDelegate(
+                  conversations: state.conversations,
+                  onConversationTap: (id) => context.push('/messages/$id'),
+                ),
               );
             },
           ),
@@ -174,5 +178,111 @@ class ConversationTile extends StatelessWidget {
     } else {
       return DateFormat('MMM d').format(time);
     }
+  }
+}
+
+/// Search delegate for messages
+class _MessageSearchDelegate extends SearchDelegate<String?> {
+  _MessageSearchDelegate({
+    required this.conversations,
+    required this.onConversationTap,
+  });
+
+  final List<Conversation> conversations;
+  final void Function(String id) onConversationTap;
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  Widget _buildSearchResults(BuildContext context) {
+    if (query.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search, size: 64, color: AivoBrand.gray[400]),
+            const SizedBox(height: 16),
+            const Text('Search conversations by name or message'),
+          ],
+        ),
+      );
+    }
+
+    final results = conversations.where((conv) {
+      final searchLower = query.toLowerCase();
+      final nameMatch = conv.participantNames.any(
+        (name) => name.toLowerCase().contains(searchLower),
+      );
+      final messageMatch = conv.lastMessage?.toLowerCase().contains(searchLower) ?? false;
+      return nameMatch || messageMatch;
+    }).toList();
+
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: AivoBrand.gray[400]),
+            const SizedBox(height: 16),
+            Text('No results for "$query"'),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final conv = results[index];
+        return ListTile(
+          leading: CircleAvatar(
+            child: Text(
+              conv.participantNames.isNotEmpty
+                  ? conv.participantNames.first[0].toUpperCase()
+                  : '?',
+            ),
+          ),
+          title: Text(conv.participantNames.join(', ')),
+          subtitle: Text(
+            conv.lastMessage ?? '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: () {
+            close(context, conv.id);
+            onConversationTap(conv.id);
+          },
+        );
+      },
+    );
   }
 }

@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
@@ -10,6 +11,20 @@ import { registerSsoRoutes } from './routes/sso.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
+
+  // CORS configuration for local development
+  void app.register(cors, {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3004',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      /\.aivo\.ai$/,
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id'],
+  });
 
   // Rate limiting - strict limits for auth endpoints to prevent brute force
 

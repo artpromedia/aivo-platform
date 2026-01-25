@@ -15,3 +15,4 @@ export 'sso_login_screen.dart';
 export 'sso_providers.dart';
 export 'enterprise_sso_screen.dart';
 export 'biometric_service.dart';
+export 'biometric_login_button.dart';

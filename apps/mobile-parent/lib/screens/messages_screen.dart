@@ -222,7 +222,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Messages'),
+        title: Semantics(
+          header: true,
+          child: const Text('Messages'),
+        ),
       ),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -289,35 +292,48 @@ class _ThreadTile extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final hasUnread = thread.unreadCount > 0;
 
-    return ListTile(
-      onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: colorScheme.primaryContainer,
-        child: Text(
-          thread.childName.isNotEmpty ? thread.childName[0].toUpperCase() : '?',
-          style: TextStyle(color: colorScheme.onPrimaryContainer),
-        ),
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              thread.childName,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
+    // Build accessibility label
+    final a11yLabel = StringBuffer('Conversation with ${thread.childName}');
+    if (hasUnread) {
+      a11yLabel.write(', ${thread.unreadCount} unread messages');
+    }
+    if (thread.lastMessage != null) {
+      a11yLabel.write(', last message: ${thread.lastMessage!.content}');
+      a11yLabel.write(', ${_formatTime(thread.lastMessage!.createdAt)} ago');
+    }
+
+    return Semantics(
+      label: a11yLabel.toString(),
+      button: true,
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: colorScheme.primaryContainer,
+          child: Text(
+            thread.childName.isNotEmpty ? thread.childName[0].toUpperCase() : '?',
+            style: TextStyle(color: colorScheme.onPrimaryContainer),
           ),
-          if (thread.lastMessage != null)
-            Text(
-              _formatTime(thread.lastMessage!.createdAt),
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: hasUnread ? colorScheme.primary : colorScheme.onSurfaceVariant,
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                thread.childName,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ),
-        ],
-      ),
-      subtitle: thread.lastMessage != null
+            if (thread.lastMessage != null)
+              Text(
+                _formatTime(thread.lastMessage!.createdAt),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: hasUnread ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        subtitle: thread.lastMessage != null
           ? Text(
               thread.lastMessage!.content,
               maxLines: 1,
@@ -328,21 +344,22 @@ class _ThreadTile extends StatelessWidget {
               ),
             )
           : const Text('No messages'),
-      trailing: hasUnread
-          ? Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                thread.unreadCount.toString(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onPrimary,
+        trailing: hasUnread
+            ? Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  shape: BoxShape.circle,
                 ),
-              ),
-            )
-          : null,
+                child: Text(
+                  thread.unreadCount.toString(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onPrimary,
+                  ),
+                ),
+              )
+            : null,
+      ),
     );
   }
 

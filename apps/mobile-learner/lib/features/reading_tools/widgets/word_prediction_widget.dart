@@ -11,6 +11,7 @@ import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../config/environment.dart';
+import '../../../pin/pin_storage.dart';
 import '../reading_tools_models.dart';
 import '../reading_tools_service.dart';
 
@@ -32,7 +33,8 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
   final TextEditingController _textController = TextEditingController();
   List<WordPrediction> _predictions = [];
   bool _isLoadingPredictions = false;
-  late final ReadingToolsService _readingToolsService;
+  ReadingToolsService? _readingToolsService;
+  String _cachedToken = '';
 
   // Sentence starters for different contexts
   final List<Map<String, dynamic>> _sentenceStarters = [
@@ -96,12 +98,20 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
   @override
   void initState() {
     super.initState();
+    _initializeService();
+    _textController.addListener(_onTextChanged);
+  }
+
+  Future<void> _initializeService() async {
+    // Get auth token from storage for API calls
+    final storage = PinTokenStorage();
+    _cachedToken = await storage.read() ?? '';
+    
     _readingToolsService = ReadingToolsService(
       baseUrl: EnvironmentConfig.readingToolsBaseUrl,
       learnerId: widget.learnerId,
-      getAuthToken: () => '', // TODO: Get auth token from Riverpod provider
+      getAuthToken: () => _cachedToken,
     );
-    _textController.addListener(_onTextChanged);
   }
 
   @override
@@ -139,7 +149,8 @@ class _WordPredictionWidgetState extends ConsumerState<WordPredictionWidget> {
 
     // Call real AI prediction service
     try {
-      final predictions = await _readingToolsService.getWordPredictions(text);
+      if (_readingToolsService == null) return;
+      final predictions = await _readingToolsService!.getWordPredictions(text);
       if (mounted) {
         setState(() {
           _predictions = predictions;

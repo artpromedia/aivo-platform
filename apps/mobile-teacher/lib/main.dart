@@ -244,6 +244,70 @@ class TeacherAuthNotifier extends StateNotifier<TeacherAuthState> {
     debugPrint('[TeacherAuth] Authenticated via SSO: $userId');
   }
 
+  /// Authenticate via biometric login.
+  ///
+  /// Uses stored refresh token from biometric service to obtain new tokens.
+  Future<bool> loginWithBiometrics({required String refreshToken}) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      // Exchange refresh token for new access token
+      final apiClient = AivoApiClient.instance;
+      final response = await apiClient.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final accessToken = data['accessToken'] as String;
+      final newRefreshToken = data['refreshToken'] as String?;
+
+      // Store tokens
+      await _secureStorage.write(
+        key: TokenStorageKeys.accessToken,
+        value: accessToken,
+      );
+      if (newRefreshToken != null) {
+        await _secureStorage.write(
+          key: TokenStorageKeys.refreshToken,
+          value: newRefreshToken,
+        );
+      }
+
+      // Verify the user is a teacher
+      final meResponse = await apiClient.get('/auth/me');
+      final meData = meResponse.data as Map<String, dynamic>;
+      final role = meData['role'] as String?;
+
+      if (role != 'TEACHER') {
+        await _secureStorage.delete(key: TokenStorageKeys.accessToken);
+        await _secureStorage.delete(key: TokenStorageKeys.refreshToken);
+
+        state = state.copyWith(
+          isLoading: false,
+          error: 'This account is not a teacher account.',
+        );
+        return false;
+      }
+
+      state = state.copyWith(
+        isAuthenticated: true,
+        isLoading: false,
+        teacherId: meData['userId'] as String,
+        teacherName: meData['displayName'] as String?,
+      );
+
+      debugPrint('[TeacherAuth] Biometric login successful');
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e is ApiException ? e.message : 'Biometric login failed',
+      );
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _secureStorage.delete(key: TokenStorageKeys.accessToken);
     await _secureStorage.delete(key: TokenStorageKeys.refreshToken);

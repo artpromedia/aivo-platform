@@ -156,6 +156,32 @@ class PinService {
     final body = base64Url.encode(utf8.encode(jsonEncode(payload)));
     return '$header.$body.';
   }
+
+  /// Refresh authentication using a stored refresh token.
+  ///
+  /// Used for biometric login to obtain a new session token.
+  Future<String> refreshToken(String refreshToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
+      
+      final data = response.data as Map<String, dynamic>;
+      final token = data['token']?.toString() ?? data['accessToken']?.toString();
+      if (token == null) throw const PinException('Missing token');
+      
+      return token;
+    } on DioException catch (err) {
+      final message = err.response?.data is Map && (err.response!.data as Map)['error'] != null
+          ? (err.response!.data as Map)['error'].toString()
+          : 'Session expired. Please sign in again.';
+      throw PinException(message);
+    } catch (e) {
+      debugPrint('[PinService] Unexpected error refreshing token: $e');
+      throw const PinException('Something went wrong. Please try again.');
+    }
+  }
 }
 
 /// Exception for invalid PIN attempts.

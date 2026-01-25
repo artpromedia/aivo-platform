@@ -230,7 +230,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
                   width: 32,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -244,7 +244,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
                       Row(
                         children: [
                           CircleAvatar(
-                            backgroundColor: color.withOpacity(0.2),
+                            backgroundColor: color.withValues(alpha: 0.2),
                             child: Icon(_getGoalIcon(goal.type), color: color),
                           ),
                           const SizedBox(width: 12),
@@ -293,7 +293,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen>
                                 borderRadius: BorderRadius.circular(8),
                                 child: LinearProgressIndicator(
                                   value: goal.progress,
-                                  backgroundColor: color.withOpacity(0.2),
+                                  backgroundColor: color.withValues(alpha: 0.2),
                                   valueColor: AlwaysStoppedAnimation(color),
                                   minHeight: 16,
                                 ),
@@ -606,7 +606,7 @@ class _GoalCard extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: color.withOpacity(0.2),
+                    backgroundColor: color.withValues(alpha: 0.2),
                     child: Icon(getIcon(goal.type), color: color, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -643,7 +643,7 @@ class _GoalCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: goal.progress,
-                  backgroundColor: color.withOpacity(0.2),
+                  backgroundColor: color.withValues(alpha: 0.2),
                   valueColor: AlwaysStoppedAnimation(color),
                   minHeight: 8,
                 ),
@@ -687,7 +687,7 @@ class _CompletedGoalCard extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: color.withOpacity(0.2),
+              backgroundColor: color.withValues(alpha: 0.2),
               child: Icon(Icons.check, color: color),
             ),
             const SizedBox(width: 12),

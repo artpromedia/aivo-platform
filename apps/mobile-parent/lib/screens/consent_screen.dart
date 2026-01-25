@@ -69,7 +69,10 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Consent for ${widget.learnerName}'),
+        title: Semantics(
+          header: true,
+          child: Text('Consent for ${widget.learnerName}'),
+        ),
       ),
       body: consentState.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -257,91 +260,112 @@ class _ConsentTile extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            type.displayName,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (isRequired) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.errorContainer,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Required',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        type.description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isProcessing)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  Switch(
-                    value: isActive,
-                    onChanged: (value) => onToggle(value),
-                  ),
-              ],
-            ),
-            if (isActive) ...[
-              const SizedBox(height: 8),
+    // Build accessibility label for the consent tile
+    final a11yLabel = StringBuffer('${type.displayName} consent');
+    if (isRequired) {
+      a11yLabel.write(', required');
+    }
+    a11yLabel.write(', currently ${isActive ? 'granted' : 'not granted'}');
+    a11yLabel.write('. ${type.description}');
+
+    return Semantics(
+      label: a11yLabel.toString(),
+      toggled: isActive,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Consent granted',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.primary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              type.displayName,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (isRequired) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.errorContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Required',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          type.description,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  if (isProcessing)
+                    Semantics(
+                      label: 'Processing consent change',
+                      child: const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    Semantics(
+                      label: isActive
+                          ? 'Revoke ${type.displayName} consent'
+                          : 'Grant ${type.displayName} consent',
+                      child: Switch(
+                        value: isActive,
+                        onChanged: (value) => onToggle(value),
+                      ),
+                    ),
                 ],
               ),
+              if (isActive) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: colorScheme.primary,
+                      semanticLabel: 'Consent granted',
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Consent granted',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -358,6 +358,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 )
               : const Text('Sign In'),
         ),
+        const SizedBox(height: 16),
+
+        // Biometric login button
+        BiometricLoginButton(
+          size: BiometricButtonSize.large,
+          reason: 'Sign in to Aivo Parent',
+          onSuccess: (userId, refreshToken) async {
+            final success = await ref.read(authControllerProvider.notifier).loginWithBiometrics(
+              refreshToken: refreshToken,
+            );
+            if (success && mounted) {
+              context.go('/dashboard');
+            }
+          },
+          onError: (message) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(message)),
+            );
+          },
+        ),
         const SizedBox(height: 32),
 
         // SSO options

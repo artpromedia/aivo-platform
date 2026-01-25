@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_common/theme/theme.dart';
 import '../messaging/models.dart';
 import '../messaging/service.dart';
@@ -626,7 +627,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final context = widget.conversation.context!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: _getContextColor(context.type).withOpacity(0.3),
+      color: _getContextColor(context.type).withValues(alpha: 0.3),
       child: Row(
         children: [
           Text(context.type.icon, style: const TextStyle(fontSize: 16)),
@@ -802,7 +803,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, -1),
           ),
@@ -953,12 +954,23 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   child: const Icon(Icons.insert_drive_file, color: Colors.white),
                 ),
                 title: const Text('Document'),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  // Document picker would go here
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Document picker coming soon')),
-                  );
+                  try {
+                    final result = await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
+                    );
+                    if (result != null && result.files.isNotEmpty) {
+                      _handleAttachment(result.files.first.path!, 'document');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Unable to open document picker')),
+                      );
+                    }
+                  }
                 },
               ),
             ],

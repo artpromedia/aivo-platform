@@ -227,6 +227,12 @@ class EnvironmentConfig {
     defaultValue: 'http://localhost:4022',
   );
 
+  /// Gamification service base URL.
+  static const String gamificationBaseUrl = String.fromEnvironment(
+    'GAMIFICATION_BASE_URL',
+    defaultValue: 'http://localhost:4035',
+  );
+
   // ══════════════════════════════════════════════════════════════════════════
   // VALIDATION
   // ══════════════════════════════════════════════════════════════════════════

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthStatus;
 
+import '../accessibility/accessibility_utils.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../baseline/baseline_controller.dart';
@@ -27,20 +29,31 @@ class ParentDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(strings.parentDashboard),
+        title: Semantics(
+          header: true,
+          child: Text(strings.parentDashboard),
+        ),
         actions: [
           // Subscription status chip in app bar
           const PastDuePaymentChip(),
           const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Subscription & Modules',
-            icon: const Icon(Icons.workspace_premium),
-            onPressed: () => context.push('/subscription'),
+          Semantics(
+            button: true,
+            label: 'Subscription and Modules settings',
+            child: IconButton(
+              tooltip: 'Subscription & Modules',
+              icon: const Icon(Icons.workspace_premium),
+              onPressed: () => context.push('/subscription'),
+            ),
           ),
-          IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+          Semantics(
+            button: true,
+            label: 'Logout from account',
+            child: IconButton(
+              tooltip: 'Logout',
+              icon: const Icon(Icons.logout),
+              onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            ),
           )
         ],
       ),
@@ -70,18 +83,26 @@ class ParentDashboardScreen extends ConsumerWidget {
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.person_add_alt),
-                      label: Text(strings.addChild),
-                      onPressed: () => context.push('/add-child'),
+                    child: Semantics(
+                      button: true,
+                      label: 'Add a child to your account',
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.person_add_alt),
+                        label: Text(strings.addChild),
+                        onPressed: () => context.push('/add-child'),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.settings),
-                      label: const Text('Subscription'),
-                      onPressed: () => context.push('/subscription'),
+                    child: Semantics(
+                      button: true,
+                      label: 'Manage subscription settings',
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.settings),
+                        label: const Text('Subscription'),
+                        onPressed: () => context.push('/subscription'),
+                      ),
                     ),
                   ),
                 ],
@@ -89,7 +110,10 @@ class ParentDashboardScreen extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Baseline Status Section
-              Text('Baseline Assessments', style: Theme.of(context).textTheme.titleLarge),
+              Semantics(
+                header: true,
+                child: Text('Baseline Assessments', style: Theme.of(context).textTheme.titleLarge),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Track your children\'s assessment progress',
@@ -136,7 +160,10 @@ class ParentDashboardScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                       
                       // Progress Reports Section
-                      Text('Progress Reports', style: Theme.of(context).textTheme.titleLarge),
+                      Semantics(
+                        header: true,
+                        child: Text('Progress Reports', style: Theme.of(context).textTheme.titleLarge),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'View comprehensive progress summaries for each child',
@@ -151,7 +178,10 @@ class ParentDashboardScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                       
                       // Homework & Focus Analytics Section
-                      Text('Homework & Focus', style: Theme.of(context).textTheme.titleLarge),
+                      Semantics(
+                        header: true,
+                        child: Text('Homework & Focus', style: Theme.of(context).textTheme.titleLarge),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'See how your children use the homework helper and manage focus',
@@ -169,7 +199,10 @@ class ParentDashboardScreen extends ConsumerWidget {
                       const SizedBox(height: 24),
                       
                       // Difficulty Recommendations Section
-                      Text('Learning Progress', style: Theme.of(context).textTheme.titleLarge),
+                      Semantics(
+                        header: true,
+                        child: Text('Learning Progress', style: Theme.of(context).textTheme.titleLarge),
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'Personalized difficulty recommendations for each child',

@@ -15,15 +15,21 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accessibility'),
+        title: Semantics(
+          header: true,
+          child: const Text('Accessibility'),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Header
-          Text(
-            'Display Settings',
-            style: theme.textTheme.titleLarge,
+          Semantics(
+            header: true,
+            child: Text(
+              'Display Settings',
+              style: theme.textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -69,10 +75,13 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Text size
-          Text(
-            'Text Size',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          Semantics(
+            header: true,
+            child: Text(
+              'Text Size',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -140,10 +149,13 @@ class AccessibilitySettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // Preview
-          Text(
-            'Preview',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+          Semantics(
+            header: true,
+            child: Text(
+              'Preview',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -228,47 +240,61 @@ class _SettingCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: colorScheme.primary),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+    // Determine if trailing is a Switch and get its value for accessibility
+    final isSwitch = trailing is Switch;
+    final switchValue = isSwitch ? (trailing as Switch).value : false;
+
+    return Semantics(
+      label: isSwitch
+          ? '$title, $description, currently ${switchValue ? 'enabled' : 'disabled'}'
+          : '$title, $description',
+      toggled: isSwitch ? switchValue : null,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                  child: Icon(icon, color: colorScheme.primary),
+                ),
               ),
-            ),
-            trailing,
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              trailing,
+            ],
+          ),
         ),
       ),
     );

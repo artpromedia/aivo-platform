@@ -74,10 +74,33 @@ class _ParentAssessmentScreenState extends ConsumerState<ParentAssessmentScreen>
   String _sensoryProcessing = 'typical';
   String _attentionFocus = 'typical';
 
-  // Step 7: Current Services
+  // Step 7: Current Services & Strengths
   final Set<String> _currentServices = {};
   final Set<String> _assistiveTech = {};
+  final Set<String> _selectedStrengths = {};
   final _additionalNotesController = TextEditingController();
+
+  /// Available strength options for parents to select
+  static const List<String> _strengthOptions = [
+    'Creative thinking',
+    'Problem solving',
+    'Memory skills',
+    'Visual learning',
+    'Hands-on learning',
+    'Music and rhythm',
+    'Art and drawing',
+    'Physical activities',
+    'Building and construction',
+    'Verbal expression',
+    'Reading comprehension',
+    'Math skills',
+    'Attention to detail',
+    'Working with others',
+    'Self-motivated',
+    'Curious and inquisitive',
+    'Kind and empathetic',
+    'Persistent and determined',
+  ];
 
   @override
   void dispose() {
@@ -266,7 +289,7 @@ class _ParentAssessmentScreenState extends ConsumerState<ParentAssessmentScreen>
         has504: _has504 == 'yes_current',
         disabilityCategories: _selectedDisabilities.toList(),
         areasOfConcern: areasOfConcern,
-        strengths: [], // TODO: Add strengths questions
+        strengths: _selectedStrengths.toList(),
         accommodations: accommodations,
         currentServices: _currentServices.toList(),
         assistiveTechnology: _assistiveTech.toList(),
@@ -918,6 +941,22 @@ class _ParentAssessmentScreenState extends ConsumerState<ParentAssessmentScreen>
             {'value': 'alt_keyboard', 'label': 'Alternative Keyboard'},
             {'value': 'none', 'label': 'None'},
           ],
+        ),
+        const SizedBox(height: 24),
+        _buildQuestion(
+          "${widget.learnerName}'s strengths (select all that apply):",
+          "Help us understand what ${widget.learnerName} excels at so we can build on these strengths.",
+        ),
+        _buildCheckboxGroup(
+          selected: _selectedStrengths,
+          onChanged: (v) => setState(() {
+            if (_selectedStrengths.contains(v)) {
+              _selectedStrengths.remove(v);
+            } else {
+              _selectedStrengths.add(v);
+            }
+          }),
+          options: _strengthOptions.map((s) => {'value': s, 'label': s}).toList(),
         ),
         const SizedBox(height: 24),
         _buildQuestion(

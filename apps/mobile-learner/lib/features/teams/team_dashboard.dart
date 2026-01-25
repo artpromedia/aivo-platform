@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
+import '../../config/environment.dart';
+import '../../pin/pin_storage.dart';
 import '../gamification/gamification_models.dart';
 import '../gamification/gamification_service.dart';
 
@@ -14,12 +16,14 @@ import '../gamification/gamification_service.dart';
 
 class TeamDashboard extends StatefulWidget {
   final String teamId;
+  final String studentId;
   final VoidCallback? onLeaveTeam;
   final VoidCallback? onInviteMembers;
 
   const TeamDashboard({
     super.key,
     required this.teamId,
+    required this.studentId,
     this.onLeaveTeam,
     this.onInviteMembers,
   });
@@ -32,6 +36,7 @@ class _TeamDashboardState extends State<TeamDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   GamificationService? _gamificationService;
+  String _cachedToken = '';
   TeamDetails? _team;
   List<TeamMember> _members = [];
   List<CompetitionStanding> _competitions = [];
@@ -45,11 +50,14 @@ class _TeamDashboardState extends State<TeamDashboard>
   }
 
   Future<void> _initializeService() async {
-    // Initialize service with required parameters - in production, get these from context/provider
+    // Get auth token from storage for API calls
+    final storage = PinTokenStorage();
+    _cachedToken = await storage.read() ?? '';
+    
     _gamificationService = GamificationService(
-      baseUrl: 'https://api.aivo.com',
-      getAuthToken: () => '', // TODO: Get from auth provider
-      studentId: '', // TODO: Get from user context
+      baseUrl: EnvironmentConfig.gamificationBaseUrl,
+      getAuthToken: () => _cachedToken,
+      studentId: widget.studentId,
     );
     await _loadTeamData();
   }

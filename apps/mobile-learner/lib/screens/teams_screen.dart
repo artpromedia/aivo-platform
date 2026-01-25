@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/theme/theme.dart';
 
+import '../config/environment.dart';
 import '../features/gamification/gamification_models.dart';
 import '../features/gamification/gamification_service.dart';
+import '../pin/pin_storage.dart';
 
 /// Teams Screen
 ///
@@ -24,7 +26,8 @@ class TeamsScreen extends ConsumerStatefulWidget {
 class _TeamsScreenState extends ConsumerState<TeamsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late GamificationService _gamificationService;
+  GamificationService? _gamificationService;
+  String _cachedToken = '';
 
   // Real data from API
   TeamDetails? _myTeam;
@@ -40,17 +43,22 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
     _initializeService();
   }
 
-  void _initializeService() {
-    // TODO: Get baseUrl and authToken from app config/auth provider
+  Future<void> _initializeService() async {
+    // Get auth token from storage for API calls
+    final storage = PinTokenStorage();
+    _cachedToken = await storage.read() ?? '';
+    
     _gamificationService = GamificationService(
-      baseUrl: 'http://localhost:3000', // Replace with actual base URL
-      getAuthToken: () => '', // Replace with actual auth token getter
+      baseUrl: EnvironmentConfig.gamificationBaseUrl,
+      getAuthToken: () => _cachedToken,
       studentId: widget.learnerId,
     );
     _loadData();
   }
 
   Future<void> _loadData() async {
+    if (_gamificationService == null) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -59,9 +67,9 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
     try {
       // Load all data in parallel
       final results = await Future.wait([
-        _gamificationService.getStudentTeam(),
-        _gamificationService.getTeamLeaderboard(),
-        _gamificationService.getCompetitions(),
+        _gamificationService!.getStudentTeam(),
+        _gamificationService!.getTeamLeaderboard(),
+        _gamificationService!.getCompetitions(),
       ]);
 
       if (mounted) {
