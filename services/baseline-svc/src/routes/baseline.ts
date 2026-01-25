@@ -453,7 +453,7 @@ function calculateDomainScoresAndSkillEstimates(
  * Returns null if validation passes, or an error response object if it fails.
  */
 function validateAttemptStart(
-  profile: { status: string; attempts: { attemptNumber: number; completedAt: Date | null }[] },
+  profile: { status: string; attempts: { id: string; attemptNumber: number; completedAt: Date | null }[] },
   parentAssessment: { status: string; id: string } | null
 ): { status: number; body: Record<string, unknown> } | null {
   // Check if parent assessment is completed before allowing baseline to start

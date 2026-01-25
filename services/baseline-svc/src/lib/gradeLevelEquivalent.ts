@@ -373,7 +373,7 @@ export class GradeLevelEquivalentCalculator {
     const weakest = sorted.at(-1);
 
     const strongestName = strongest.domainDisplayName;
-    const weakestName = weakest.domainDisplayName;
+    const weakestName = weakest?.domainDisplayName ?? strongest.domainDisplayName;
 
     if (overall.comparedToActualGrade === 'at') {
       return `Overall, your child is performing at ${actualGradeDisplay} level. ` +
