@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PrismaClient, SisProviderType, SyncStatus } from '@prisma/client';
 import { SyncEngine } from '../src/sync/engine';
 import { ISisProvider, SisSchool, SisClass, SisUser, SisEnrollment, SyncEntityResult } from '../src/providers/types';
+import { createAndInitializeProvider, validateProviderConfig } from '../src/providers';
 
 // Mock Prisma Client
 const mockPrismaClient = {
@@ -96,10 +97,13 @@ class MockProvider implements ISisProvider {
 }
 
 // Mock the provider factory
-vi.mock('../src/providers', () => ({
-  createAndInitializeProvider: vi.fn(),
-  validateProviderConfig: vi.fn().mockReturnValue({ valid: true, errors: [] }),
-}));
+vi.mock('../src/providers', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('../src/providers')>()),
+    createAndInitializeProvider: vi.fn(),
+    validateProviderConfig: vi.fn().mockReturnValue({ valid: true, errors: [] }),
+  };
+});
 
 describe('SyncEngine', () => {
   let engine: SyncEngine;
@@ -135,10 +139,9 @@ describe('SyncEngine', () => {
     mockPrismaClient.sisRawClass.count = vi.fn().mockResolvedValue(0);
     mockPrismaClient.sisRawUser.count = vi.fn().mockResolvedValue(0);
     mockPrismaClient.sisRawEnrollment.count = vi.fn().mockResolvedValue(0);
-    
-    // Mock provider creation
-    const { createAndInitializeProvider } = require('../src/providers');
-    createAndInitializeProvider.mockResolvedValue(mockProvider);
+
+    // Mock provider creation - use the imported mock
+    vi.mocked(createAndInitializeProvider).mockResolvedValue(mockProvider);
   });
   
   afterEach(() => {

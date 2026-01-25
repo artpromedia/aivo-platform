@@ -8,16 +8,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { SyncScheduler, getSchedulePreset, isValidCronExpression } from '../src/scheduler';
 
-// Mock node-cron
-vi.mock('node-cron', () => ({
-  validate: vi.fn((expr: string) => {
+// Create spies for node-cron using vi.hoisted() so they're available before module loads
+const { mockCronSchedule, mockCronValidate } = vi.hoisted(() => ({
+  mockCronSchedule: vi.fn(() => ({
+    stop: vi.fn(),
+  })),
+  mockCronValidate: vi.fn((expr: string) => {
     // Simple validation for common cron expressions
     const parts = expr.split(' ');
     return parts.length === 5;
   }),
-  schedule: vi.fn(() => ({
-    stop: vi.fn(),
-  })),
+}));
+
+// Mock node-cron
+vi.mock('node-cron', () => ({
+  validate: mockCronValidate,
+  schedule: mockCronSchedule,
 }));
 
 // Mock Prisma
@@ -58,8 +64,12 @@ describe('SyncScheduler', () => {
   
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset the cron mock to default behavior
+    mockCronSchedule.mockImplementation(() => ({
+      stop: vi.fn(),
+    }));
     scheduler = new SyncScheduler(mockPrismaClient, { autoStart: false });
-    
+
     mockPrismaClient.sisRawSchool.count = vi.fn().mockResolvedValue(0);
     mockPrismaClient.sisRawClass.count = vi.fn().mockResolvedValue(0);
     mockPrismaClient.sisRawUser.count = vi.fn().mockResolvedValue(0);
@@ -72,8 +82,6 @@ describe('SyncScheduler', () => {
   
   describe('initialize', () => {
     it('should load and schedule enabled providers', async () => {
-      const cron = require('node-cron');
-      
       mockPrismaClient.sisProvider.findMany = vi.fn().mockResolvedValue([
         {
           id: 'provider-1',
@@ -90,18 +98,16 @@ describe('SyncScheduler', () => {
           providerType: 'CLASSLINK',
         },
       ]);
-      
+
       const autoStartScheduler = new SyncScheduler(mockPrismaClient, { autoStart: true });
       await autoStartScheduler.initialize();
-      
-      expect(cron.schedule).toHaveBeenCalledTimes(2);
-      
+
+      expect(mockCronSchedule).toHaveBeenCalledTimes(2);
+
       autoStartScheduler.shutdown();
     });
-    
+
     it('should skip disabled providers', async () => {
-      const cron = require('node-cron');
-      
       mockPrismaClient.sisProvider.findMany = vi.fn().mockResolvedValue([
         {
           id: 'provider-1',
@@ -111,20 +117,18 @@ describe('SyncScheduler', () => {
           providerType: 'CLEVER',
         },
       ]);
-      
+
       const autoStartScheduler = new SyncScheduler(mockPrismaClient, { autoStart: true });
       await autoStartScheduler.initialize();
-      
-      expect(cron.schedule).not.toHaveBeenCalled();
-      
+
+      expect(mockCronSchedule).not.toHaveBeenCalled();
+
       autoStartScheduler.shutdown();
     });
   });
   
   describe('scheduleProvider', () => {
     it('should schedule a provider with valid cron expression', () => {
-      const cron = require('node-cron');
-      
       scheduler.scheduleProvider({
         id: 'provider-1',
         tenantId: 'tenant-1',
@@ -137,13 +141,11 @@ describe('SyncScheduler', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      
-      expect(cron.schedule).toHaveBeenCalledWith('0 2 * * *', expect.any(Function));
+
+      expect(mockCronSchedule).toHaveBeenCalledWith('0 2 * * *', expect.any(Function));
     });
-    
+
     it('should not schedule without cron expression', () => {
-      const cron = require('node-cron');
-      
       scheduler.scheduleProvider({
         id: 'provider-1',
         tenantId: 'tenant-1',
@@ -156,17 +158,16 @@ describe('SyncScheduler', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      
-      expect(cron.schedule).not.toHaveBeenCalled();
+
+      expect(mockCronSchedule).not.toHaveBeenCalled();
     });
   });
   
   describe('unscheduleProvider', () => {
     it('should stop and remove scheduled job', () => {
       const mockTask = { stop: vi.fn() };
-      const cron = require('node-cron');
-      cron.schedule.mockReturnValueOnce(mockTask);
-      
+      mockCronSchedule.mockReturnValueOnce(mockTask);
+
       scheduler.scheduleProvider({
         id: 'provider-1',
         tenantId: 'tenant-1',
@@ -179,9 +180,9 @@ describe('SyncScheduler', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      
+
       scheduler.unscheduleProvider('provider-1');
-      
+
       expect(mockTask.stop).toHaveBeenCalled();
     });
   });
@@ -195,15 +196,26 @@ describe('SyncScheduler', () => {
         providerType: 'CLEVER',
         configJson: '{}',
       });
-      
-      // Start first sync (will hang due to mock)
+
+      // Mock sisSyncRun.create to return a valid sync run
+      mockPrismaClient.sisSyncRun.create = vi.fn().mockResolvedValue({
+        id: 'run-1',
+        tenantId: 'tenant-1',
+        providerId: 'provider-1',
+        status: 'IN_PROGRESS',
+      });
+
+      // Start first sync (will run but we don't await it)
       const syncPromise1 = scheduler.runSync('tenant-1', 'provider-1');
-      
-      // Try to start second sync immediately
+
+      // Try to start second sync immediately - should detect first sync is in progress
       const result2 = await scheduler.runSync('tenant-1', 'provider-1');
-      
+
       expect(result2.success).toBe(false);
       expect(result2.error).toContain('already in progress');
+
+      // Wait for first sync to complete/fail to avoid unhandled rejection
+      await syncPromise1.catch(() => {});
     });
   });
   
@@ -228,9 +240,8 @@ describe('SyncScheduler', () => {
   
   describe('getScheduledJobs', () => {
     it('should return list of scheduled jobs', () => {
-      const cron = require('node-cron');
-      cron.schedule.mockReturnValue({ stop: vi.fn() });
-      
+      mockCronSchedule.mockReturnValue({ stop: vi.fn() });
+
       scheduler.scheduleProvider({
         id: 'provider-1',
         tenantId: 'tenant-1',
@@ -243,9 +254,9 @@ describe('SyncScheduler', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      
+
       const jobs = scheduler.getScheduledJobs();
-      
+
       expect(jobs).toHaveLength(1);
       expect(jobs[0].providerId).toBe('provider-1');
       expect(jobs[0].schedule).toBe('0 2 * * *');

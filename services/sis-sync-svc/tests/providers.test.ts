@@ -206,9 +206,12 @@ describe('OneRosterApiProvider', () => {
         baseUrl: 'https://api.example.com/oneroster',
         clientId: 'client-123',
         clientSecret: 'secret-456',
+        // Provide access token with future expiry to skip OAuth refresh
         accessToken: 'token-abc',
+        tokenExpiry: new Date(Date.now() + 3600000), // 1 hour from now
       };
-      
+
+      // Mock for fetchUsers API call
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -227,7 +230,7 @@ describe('OneRosterApiProvider', () => {
           ],
         }),
       });
-      
+
       await provider.initialize(config);
       const result = await provider.fetchUsers();
       
