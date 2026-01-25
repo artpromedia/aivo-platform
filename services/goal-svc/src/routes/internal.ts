@@ -115,16 +115,14 @@ export async function registerInternalRoutes(app: FastifyInstance): Promise<void
         });
         details.progressNotes = progressNotesResult.count;
 
-        // 2. Delete session plans linked to learner's goals
-        if (goalIds.length > 0) {
-          const sessionPlansResult = await prisma.sessionPlan.deleteMany({
-            where: {
-              tenantId,
-              goalId: { in: goalIds },
-            },
-          });
-          details.sessionPlans = sessionPlansResult.count;
-        }
+        // 2. Delete session plans for this learner
+        const sessionPlansResult = await prisma.sessionPlan.deleteMany({
+          where: {
+            tenantId,
+            learnerId,
+          },
+        });
+        details.sessionPlans = sessionPlansResult.count;
 
         // 3. Delete goal objectives
         if (goalIds.length > 0) {

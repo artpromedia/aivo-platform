@@ -1,4 +1,5 @@
 import { prisma } from '../prisma.js';
+import { Prisma } from '@prisma/client';
 import { config } from '../config.js';
 import {
   EntityType,
@@ -581,7 +582,7 @@ export class SyncService {
         entityType: operation.entityType,
         entityId: operation.entityId,
         clientData: operation.data || {},
-        serverData: serverEntity.data,
+        serverData: serverEntity.data as Prisma.InputJsonValue,
         clientVersion: operation.clientVersion,
         serverVersion: serverEntity.version,
         clientDeviceId: ctx.deviceId,
@@ -643,7 +644,7 @@ export class SyncService {
         status: ConflictStatus.RESOLVED,
         resolvedAt: new Date(),
         resolvedBy: 'auto',
-        resolvedData: resolved.data,
+        resolvedData: resolved.data as Prisma.InputJsonValue,
       },
     });
   }

@@ -347,8 +347,8 @@ export async function createTemplate(tenantId: string, data: {
       description: data.description,
       contentType: data.contentType,
       mappingRules: data.mappingRules,
-      transformers: data.transformers,
-      validators: data.validators,
+      transformers: data.transformers ?? null,
+      validators: data.validators ?? null,
       isDefault: data.isDefault || false,
       createdBy: data.createdBy,
     },
@@ -380,7 +380,7 @@ export async function createImportMapping(tenantId: string, data: {
       sourceSystem: data.sourceSystem,
       contentType: data.contentType,
       fieldMappings: data.fieldMappings,
-      transformers: data.transformers,
+      transformers: data.transformers ?? null,
     },
   });
 }

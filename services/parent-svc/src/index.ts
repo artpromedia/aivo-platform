@@ -51,7 +51,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  logger.error('Failed to start parent service', { error: error.message });
+  logger.error({ error }, 'Failed to start parent service');
   process.exit(1);
 });
 

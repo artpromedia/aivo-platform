@@ -268,23 +268,10 @@ export class OCRService {
       throw new Error('AWS Textract credentials not configured');
     }
 
-    // Using AWS SDK v3 style request (simplified for this implementation)
-    const endpoint = `https://textract.${region}.amazonaws.com`;
-    const base64Image = imageData.toString('base64');
-
-    const requestBody = {
-      Document: {
-        Bytes: base64Image,
-      },
-      FeatureTypes: ['TABLES', 'FORMS'],
-    };
-
-    // Note: In production, use AWS SDK with proper signing
-    // This is a simplified version for demonstration
-    const response = await this.signedAWSRequest(
-      endpoint,
+    // Use AWS SDK v3 with proper credentials
+    const response = await this.executeTextractRequest(
       'AnalyzeDocument',
-      requestBody,
+      imageData,
       { accessKeyId, secretAccessKey, region: region! }
     );
 
@@ -388,6 +375,7 @@ export class OCRService {
 
     try {
       // Dynamic import of tesseract.js (optional dependency)
+      // @ts-expect-error tesseract.js is an optional peer dependency
       const Tesseract = await import('tesseract.js').catch(() => null);
 
       if (!Tesseract) {

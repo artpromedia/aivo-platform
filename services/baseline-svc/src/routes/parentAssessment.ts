@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { PARENT_ASSESSMENT_QUESTIONS, validateResponses } from '../lib/parentAssessmentQuestions.js';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
 
 // --- Type definitions ---
@@ -473,7 +474,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
             currentServicesJson: data.currentServices || [],
             assistiveTechnologyJson: data.assistiveTechnology || [],
             recommendationsJson: data.recommendations || [],
-            responsesJson: data.responses,
+            responsesJson: data.responses as Prisma.InputJsonValue,
             learningStyleNotes: insights.learningStyleNotes,
             strengthsNotes: insights.strengthsNotes,
             challengesNotes: insights.challengesNotes,
@@ -491,7 +492,7 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
             currentServicesJson: data.currentServices || [],
             assistiveTechnologyJson: data.assistiveTechnology || [],
             recommendationsJson: data.recommendations || [],
-            responsesJson: data.responses,
+            responsesJson: data.responses as Prisma.InputJsonValue,
             learningStyleNotes: insights.learningStyleNotes,
             strengthsNotes: insights.strengthsNotes,
             challengesNotes: insights.challengesNotes,

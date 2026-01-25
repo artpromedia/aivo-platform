@@ -5,6 +5,7 @@
  */
 
 import * as semver from 'semver';
+import { Prisma } from '@prisma/client';
 
 import { prisma } from '../prisma.js';
 import type {
@@ -247,8 +248,8 @@ export async function updateVersion(
     data: {
       description: input.description,
       changelog: input.changelog,
-      inputSchema: input.inputSchema,
-      outputSchema: input.outputSchema,
+      inputSchema: input.inputSchema as Prisma.InputJsonValue,
+      outputSchema: input.outputSchema as Prisma.InputJsonValue,
     },
     include: {
       _count: {

@@ -6,8 +6,7 @@
  * CRITICAL: Enables teacher oversight of AI tutor interactions (CRIT-003)
  */
 
-import { prisma } from '../prisma.js';
-import type { Conversation, Message, Participant } from '../prisma.js';
+import { prisma, MessageType } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -539,7 +538,7 @@ export async function logTeacherConversationAccess(
       conversationId,
       senderId: teacherId,
       content: '', // No content - this is an audit entry
-      messageType: 'SYSTEM',
+      type: MessageType.SYSTEM,
       metadata: {
         auditType: 'TEACHER_ACCESS',
         action,

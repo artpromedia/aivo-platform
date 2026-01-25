@@ -52,7 +52,7 @@ const mockPrismaClient = vi.hoisted(() => ({
   $transaction: vi.fn((operations: any) => Promise.all(operations)),
 }));
 
-vi.mock('../generated/prisma-client/index.js', () => ({
+vi.mock('../../generated/prisma-client/index.js', () => ({
   PrismaClient: vi.fn().mockImplementation(() => mockPrismaClient),
 }));
 

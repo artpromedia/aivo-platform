@@ -388,7 +388,7 @@ export async function submitFeedback(tenantId: string, gameId: string, data: {
       gameId,
       learnerId: data.learnerId,
       rating: data.rating,
-      comment: data.comment,
+      comment: data.comment ?? null,
       tags: data.tags || [],
     },
   });

@@ -23,7 +23,7 @@ interface SendNotificationOptions {
   isChildRecipient?: boolean;
 }
 
-interface NotificationResult {
+export interface NotificationResult {
   success: boolean;
   successCount: number;
   failureCount: number;

@@ -83,7 +83,7 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
         updatedAt: new Date(),
       },
       include: {
-        devicePool: {
+        pool: {
           select: { id: true, name: true, tenantId: true },
         },
       },
@@ -101,13 +101,13 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
 
     const policies = await app.prisma.devicePolicy.findMany({
       where: {
-        devicePool: {
+        pool: {
           tenantId: query.tenantId,
           ...(query.schoolId && { schoolId: query.schoolId }),
         },
       },
       include: {
-        devicePool: {
+        pool: {
           select: {
             id: true,
             name: true,
@@ -118,7 +118,7 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
         },
       },
       orderBy: {
-        devicePool: { name: 'asc' },
+        pool: { name: 'asc' },
       },
     });
 
@@ -135,7 +135,7 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
     const policy = await app.prisma.devicePolicy.findUnique({
       where: { id: policyId },
       include: {
-        devicePool: {
+        pool: {
           include: {
             _count: { select: { memberships: true } },
           },
@@ -160,7 +160,7 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
     const policy = await app.prisma.devicePolicy.findUnique({
       where: { devicePoolId: poolId },
       include: {
-        devicePool: {
+        pool: {
           select: { id: true, name: true, gradeBand: true },
         },
       },
@@ -201,7 +201,7 @@ export async function policyRoutes(app: FastifyInstance): Promise<void> {
         updatedAt: new Date(),
       },
       include: {
-        devicePool: {
+        pool: {
           select: { id: true, name: true },
         },
       },

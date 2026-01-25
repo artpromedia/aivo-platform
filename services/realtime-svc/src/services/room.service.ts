@@ -271,7 +271,7 @@ export class RoomService {
             roomConfigId: roomConfig.id,
             activityType,
             userId,
-            details: details || {},
+            details: (details || {}) as Parameters<typeof prisma.roomActivity.create>[0]['data']['details'],
           },
         });
       }

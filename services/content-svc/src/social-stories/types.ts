@@ -329,6 +329,7 @@ export type RecommendationReason =
 
 /** Context for getting recommendations */
 export interface RecommendationContext {
+  tenantId: string;
   learnerId: string;
   currentActivityType?: string;
   nextActivityType?: string;

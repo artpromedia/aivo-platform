@@ -433,7 +433,7 @@ export class GameService {
       where: { id: { in: plan.gameIds } },
     });
 
-    const gameSummaries = games.map((g) => this.toGameSummary(g));
+    const gameSummaries = games.map((g: { id: string; slug: string; title: string; description: string; type: string; category: string; estimatedDurationSec: number; thumbnailUrl: string | null; xpReward: number; coinReward: number; cognitiveSkills: string[] }) => this.toGameSummary(g));
     const completedCount = plan.completedGameIds.length;
     const totalCount = plan.gameIds.length;
 
@@ -522,7 +522,7 @@ export class GameService {
 
     const totalSessions = sessions.length;
     const totalMinutes = Math.round(
-      sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 60
+      sessions.reduce((sum: number, s: { durationSec: number | null; startedAt: Date }) => sum + (s.durationSec || 0), 0) / 60
     );
 
     // Calculate weekly completion rate
@@ -537,7 +537,7 @@ export class GameService {
       },
     });
 
-    const completedPlans = weekPlans.filter((p) => p.isCompleted).length;
+    const completedPlans = weekPlans.filter((p: { isCompleted: boolean }) => p.isCompleted).length;
     const weeklyCompletionRate = weekPlans.length > 0
       ? Math.round((completedPlans / Math.min(weekPlans.length, 7)) * 100)
       : 0;

@@ -319,7 +319,7 @@ export class LaunchService {
   private async markNonceUsed(toolId: string, nonce: string, expiresAt: Date): Promise<void> {
     await this.prisma.ltiNonce.create({
       data: {
-        ltiToolId: toolId,
+        tool: { connect: { id: toolId } },
         nonce,
         expiresAt,
       },
@@ -351,7 +351,7 @@ export class LaunchService {
       link = await this.prisma.ltiLink.create({
         data: {
           tenantId,
-          ltiToolId: toolId,
+          tool: { connect: { id: toolId } },
           lmsContextId: lmsContextId ?? null,
           lmsResourceLinkId,
           title: title || 'Untitled Activity',
@@ -379,8 +379,8 @@ export class LaunchService {
     return this.prisma.ltiLaunch.create({
       data: {
         tenantId: tool.tenantId,
-        ltiToolId: tool.id,
-        ltiLinkId: link?.id ?? null,
+        tool: { connect: { id: tool.id } },
+        ...(link ? { link: { connect: { id: link.id } } } : {}),
         lmsUserId: launchData.lmsUserId,
         lmsUserEmail: launchData.lmsUserEmail ?? null,
         lmsUserName: launchData.lmsUserName ?? null,

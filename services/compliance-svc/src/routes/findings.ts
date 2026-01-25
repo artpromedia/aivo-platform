@@ -6,6 +6,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import * as findingService from '../services/findingService.js';
+import type { CreateFindingInput, UpdateFindingStatusInput } from '../types/index.js';
 
 const CreateFindingSchema = z.object({
   title: z.string().min(1).max(500),
@@ -68,7 +69,7 @@ export async function registerFindingRoutes(fastify: FastifyInstance) {
       const finding = await findingService.createFinding(
         request.tenantId,
         request.user.sub,
-        parseResult.data
+        parseResult.data as CreateFindingInput
       );
 
       request.log.info({ findingId: finding.id }, 'Finding created');
@@ -210,7 +211,7 @@ export async function registerFindingRoutes(fastify: FastifyInstance) {
         request.tenantId,
         request.params.findingId,
         request.user.sub,
-        parseResult.data
+        parseResult.data as UpdateFindingStatusInput
       );
 
       request.log.info({

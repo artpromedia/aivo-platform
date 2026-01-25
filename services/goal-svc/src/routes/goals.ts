@@ -126,12 +126,6 @@ export async function registerGoalRoutes(fastify: FastifyInstance): Promise<void
           learnerId,
           status: status as any,
           domain: domain as any,
-          category,
-          createdAfter: createdAfter ? new Date(createdAfter) : undefined,
-          createdBefore: createdBefore ? new Date(createdBefore) : undefined,
-          targetDateAfter: targetDateAfter ? new Date(targetDateAfter) : undefined,
-          targetDateBefore: targetDateBefore ? new Date(targetDateBefore) : undefined,
-          search,
         },
         {
           page: page ? Number.parseInt(page, 10) : 1,

@@ -537,6 +537,157 @@ export class S3Service {
     return keyTenantId === tenantId;
   }
 
+  /**
+   * Get a preview of an export file (columns and first N rows).
+   *
+   * Downloads the file and parses it based on format to extract
+   * column headers and a limited number of rows for preview.
+   *
+   * @param key - The S3 object key (path)
+   * @param format - The export format (CSV, JSON, PARQUET)
+   * @param limit - Maximum number of rows to return (default: 100)
+   * @returns Preview with columns and rows
+   * @throws S3ServiceError if file doesn't exist or parsing fails
+   */
+  async getExportPreview(
+    key: string,
+    format: 'CSV' | 'JSON' | 'PARQUET',
+    limit: number = 100
+  ): Promise<{ columns: string[]; rows: Record<string, unknown>[] }> {
+    const data = await this.download(key);
+    const content = data.toString('utf-8');
+
+    try {
+      if (format === 'JSON') {
+        return this.parseJsonPreview(content, limit);
+      } else if (format === 'CSV') {
+        return this.parseCsvPreview(content, limit);
+      } else if (format === 'PARQUET') {
+        // Parquet files require specialized parsing libraries
+        // For preview purposes, return an error indicating preview is not supported
+        throw new S3ServiceError(
+          'Preview not supported for Parquet format. Please download the file.',
+          'UNSUPPORTED_FORMAT',
+          400
+        );
+      }
+
+      throw new S3ServiceError(`Unknown format: ${format}`, 'INVALID_FORMAT', 400);
+    } catch (error) {
+      if (error instanceof S3ServiceError) {
+        throw error;
+      }
+      throw new S3ServiceError(
+        `Failed to parse export file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'PARSE_ERROR',
+        500,
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  /**
+   * Parse JSON export content for preview.
+   */
+  private parseJsonPreview(
+    content: string,
+    limit: number
+  ): { columns: string[]; rows: Record<string, unknown>[] } {
+    const parsed = JSON.parse(content);
+
+    // Handle array of objects (most common export format)
+    if (Array.isArray(parsed)) {
+      const rows = parsed.slice(0, limit) as Record<string, unknown>[];
+      const columns = rows.length > 0 ? Object.keys(rows[0] ?? {}) : [];
+      return { columns, rows };
+    }
+
+    // Handle object with data array
+    if (parsed && typeof parsed === 'object' && 'data' in parsed && Array.isArray(parsed.data)) {
+      const rows = (parsed.data as Record<string, unknown>[]).slice(0, limit);
+      const columns = rows.length > 0 ? Object.keys(rows[0] ?? {}) : [];
+      return { columns, rows };
+    }
+
+    // Single object - wrap in array
+    if (parsed && typeof parsed === 'object') {
+      const columns = Object.keys(parsed);
+      return { columns, rows: [parsed as Record<string, unknown>] };
+    }
+
+    return { columns: [], rows: [] };
+  }
+
+  /**
+   * Parse CSV export content for preview.
+   */
+  private parseCsvPreview(
+    content: string,
+    limit: number
+  ): { columns: string[]; rows: Record<string, unknown>[] } {
+    const lines = content.split('\n').filter((line) => line.trim());
+
+    if (lines.length === 0) {
+      return { columns: [], rows: [] };
+    }
+
+    // First line is headers
+    const headerLine = lines[0] ?? '';
+    const columns = this.parseCsvLine(headerLine);
+
+    // Parse data rows
+    const rows: Record<string, unknown>[] = [];
+    const dataLines = lines.slice(1, limit + 1);
+
+    for (const line of dataLines) {
+      const values = this.parseCsvLine(line);
+      const row: Record<string, unknown> = {};
+
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col) {
+          row[col] = values[i] ?? null;
+        }
+      }
+
+      rows.push(row);
+    }
+
+    return { columns, rows };
+  }
+
+  /**
+   * Parse a single CSV line, handling quoted values.
+   */
+  private parseCsvLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Escaped quote
+          current += '"';
+          i++;
+        } else {
+          // Toggle quote mode
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Private Helpers
   // ═══════════════════════════════════════════════════════════════════════════

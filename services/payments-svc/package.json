@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@aivo/ts-api-utils": "workspace:^",
+    "dotenv": "^17.2.3",
     "@fastify/rate-limit": "^9.1.0",
     "@prisma/client": "^6.10.1",
     "fastify": "^4.29.1",

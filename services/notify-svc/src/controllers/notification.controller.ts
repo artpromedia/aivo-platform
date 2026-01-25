@@ -6,7 +6,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { PrismaService } from '../prisma/prisma.service';
-import type { PushNotificationService } from '../services/push-notification.service';
+import type { PushNotificationService, NotificationResult } from '../services/push-notification.service';
 
 interface RegisterDeviceDto {
   token: string;
@@ -156,7 +156,7 @@ export class NotificationController {
 
   @Post('send')
   @ApiOperation({ summary: 'Send a push notification (admin only)' })
-  async sendNotification(@Body() dto: SendNotificationDto) {
+  async sendNotification(@Body() dto: SendNotificationDto): Promise<NotificationResult | { success: boolean }> {
     if (dto.topic) {
       await this.pushService.sendToTopic({
         topic: dto.topic,
@@ -186,7 +186,7 @@ export class NotificationController {
 
   @Post('test')
   @ApiOperation({ summary: 'Send a test notification to yourself' })
-  async sendTestNotification(@CurrentUser() user: { id: string }) {
+  async sendTestNotification(@CurrentUser() user: { id: string }): Promise<NotificationResult> {
     const result = await this.pushService.sendToUsers({
       userId: user.id,
       title: 'Test Notification',

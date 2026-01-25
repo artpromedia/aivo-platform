@@ -8,69 +8,70 @@
  */
 
 import type { FastifyRequest } from 'fastify';
+import { Role } from '@aivo/ts-rbac';
 
 import { prisma } from '../prisma.js';
-import type { AuthUser, UserRole, Visibility } from '../types/index.js';
+import type { AuthUser, Visibility } from '../types/index.js';
 
 import { ForbiddenError } from './errorHandler.js';
 
 /** Roles that can create/edit goals and plans */
-const EDUCATOR_ROLES: UserRole[] = ['TEACHER', 'THERAPIST'];
+const EDUCATOR_ROLES: Role[] = [Role.TEACHER, Role.THERAPIST];
 
 /** Roles with read-only tenant access */
-const ADMIN_ROLES: UserRole[] = ['DISTRICT_ADMIN', 'PLATFORM_ADMIN'];
+const ADMIN_ROLES: Role[] = [Role.DISTRICT_ADMIN, Role.PLATFORM_ADMIN];
 
 /** Roles with full platform access */
-const SUPER_ROLES: UserRole[] = ['PLATFORM_ADMIN', 'SUPPORT'];
+const SUPER_ROLES: Role[] = [Role.PLATFORM_ADMIN, Role.SUPPORT];
 
 /** Roles that can view therapist-only content */
-const THERAPIST_ACCESS_ROLES: UserRole[] = [
-  'THERAPIST',
-  'DISTRICT_ADMIN',
-  'PLATFORM_ADMIN',
-  'SUPPORT',
+const THERAPIST_ACCESS_ROLES: Role[] = [
+  Role.THERAPIST,
+  Role.DISTRICT_ADMIN,
+  Role.PLATFORM_ADMIN,
+  Role.SUPPORT,
 ];
 
 /**
  * Check if user has an educator role (can create/edit)
  */
 export function isEducator(user: AuthUser): boolean {
-  return EDUCATOR_ROLES.includes(user.role);
+  return user.roles.some((r) => EDUCATOR_ROLES.includes(r));
 }
 
 /**
  * Check if user is a therapist
  */
 export function isTherapist(user: AuthUser): boolean {
-  return user.role === 'THERAPIST';
+  return user.roles.includes(Role.THERAPIST);
 }
 
 /**
  * Check if user is a teacher (non-therapist educator)
  */
 export function isTeacher(user: AuthUser): boolean {
-  return user.role === 'TEACHER';
+  return user.roles.includes(Role.TEACHER);
 }
 
 /**
  * Check if user has admin role (read-only or higher)
  */
 export function isAdmin(user: AuthUser): boolean {
-  return ADMIN_ROLES.includes(user.role);
+  return user.roles.some((r) => ADMIN_ROLES.includes(r));
 }
 
 /**
  * Check if user has platform-level access
  */
 export function isSuperUser(user: AuthUser): boolean {
-  return SUPER_ROLES.includes(user.role);
+  return user.roles.some((r) => SUPER_ROLES.includes(r));
 }
 
 /**
  * Check if user can view therapist-only content
  */
 export function canViewTherapistContent(user: AuthUser): boolean {
-  return THERAPIST_ACCESS_ROLES.includes(user.role);
+  return user.roles.some((r) => THERAPIST_ACCESS_ROLES.includes(r));
 }
 
 /**
@@ -225,7 +226,7 @@ export async function ensureCanWriteLearner(
   }
 
   // District admins are read-only
-  if (user.role === 'DISTRICT_ADMIN') {
+  if (user.roles.includes(Role.DISTRICT_ADMIN) && !isSuperUser(user)) {
     throw new ForbiddenError('District admins have read-only access');
   }
 

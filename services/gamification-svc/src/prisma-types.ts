@@ -26,8 +26,39 @@ interface ModelDelegate {
   groupBy: (args: any) => Promise<any[]>;
 }
 
+// List of model properties we override with our generic ModelDelegate
+type GamificationModelKeys =
+  | 'playerProfile'
+  | 'playerSession'
+  | 'playerTitle'
+  | 'xPTransaction'
+  | 'dailyLogin'
+  | 'dailyActivity'
+  | 'dailyGoalRecord'
+  | 'earnedAchievement'
+  | 'achievementProgress'
+  | 'activeChallenge'
+  | 'classChallenge'
+  | 'classChallengeProgress'
+  | 'classChallengeParticipant'
+  | 'activeBooster'
+  | 'shopItem'
+  | 'ownedItem'
+  | 'ownedTitle'
+  | 'equippedItem'
+  | 'streakFreezeUsage'
+  | 'leaderboardArchive'
+  | 'classGamificationSettings'
+  | 'gamificationNotification'
+  | 'competition'
+  | 'competitionParticipant'
+  | 'team'
+  | 'teamMember'
+  | 'teamAchievement';
+
 // Extended PrismaClient type with gamification models
-export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transaction'> {
+// We omit both $transaction and all model properties we redefine to avoid type conflicts
+export interface ExtendedPrismaClient extends Omit<BasePrismaClient, '$transaction' | GamificationModelKeys> {
   // Player/Profile models
   playerProfile: ModelDelegate;
   playerSession: ModelDelegate;

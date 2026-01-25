@@ -2,7 +2,7 @@
  * Gradebook Service Entry Point
  */
 
-import { PrismaClient } from './generated/prisma-client/index.js';
+import { PrismaClient } from '../generated/prisma-client/index.js';
 import { createApp } from './app.js';
 import { config } from './config.js';
 

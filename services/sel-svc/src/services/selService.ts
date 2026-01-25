@@ -303,7 +303,7 @@ export async function createIntervention(tenantId: string, profileId: string, us
       frequency: input.frequency,
       duration: input.duration,
       startDate: new Date(input.startDate),
-      endDate: input.endDate ? new Date(input.endDate) : undefined,
+      endDate: input.endDate ? new Date(input.endDate) : null,
       interventionist: input.interventionist,
       supportTeam: input.supportTeam || [],
       baselineData: input.baselineData,

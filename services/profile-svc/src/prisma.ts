@@ -22,6 +22,7 @@ export type {
 
 // Re-export enums that are actually used by models
 export {
+  Prisma,
   ProfileOrigin,
   AccommodationCategory,
   AccommodationSource,

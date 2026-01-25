@@ -249,8 +249,11 @@ export class ClassroomMonitorService {
    * Get detailed student list with status
    */
   async getStudentList(classroomId: string): Promise<StudentActivityStatus[]> {
-    const { students } = await this.getClassroomState(classroomId);
-    return students;
+    const state = await this.getClassroomState(classroomId);
+    if (!state) {
+      return [];
+    }
+    return state.students;
   }
 
   /**

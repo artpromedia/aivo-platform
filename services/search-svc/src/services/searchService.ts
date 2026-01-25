@@ -357,9 +357,9 @@ export async function configureFacet(
     },
     update: {
       label: data.label,
-      type: data.type,
-      settings: data.settings,
-      sortOrder: data.sortOrder,
+      ...(data.type !== undefined && { type: data.type }),
+      ...(data.settings !== undefined && { settings: data.settings }),
+      ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
     },
   });
 }

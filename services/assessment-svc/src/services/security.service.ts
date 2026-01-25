@@ -434,13 +434,12 @@ export class SecurityService {
         type: accommodation.type,
         value: this.serializeAccommodationValue(accommodation.value),
         reason: accommodation.reason,
-        approvedBy: accommodation.approvedBy,
-        expiresAt: accommodation.expiresAt,
+        grantedBy: accommodation.approvedBy,
       },
     });
 
     // If time extension, update attempt expiry
-    if (accommodation.type === 'TIME_EXTENSION' && typeof accommodation.value === 'number') {
+    if (accommodation.type === 'EXTENDED_TIME' && typeof accommodation.value === 'number') {
       const attempt = await client.attempt.findUnique({
         where: { id: attemptId },
         select: { expiresAt: true, timeLimit: true },
@@ -477,10 +476,9 @@ export class SecurityService {
 
     return accommodations.map(a => ({
       type: a.type as AccommodationType,
-      value: this.deserializeAccommodationValue(a.value),
+      value: this.deserializeAccommodationValue(a.value ?? ''),
       reason: a.reason ?? undefined,
-      approvedBy: a.approvedBy,
-      expiresAt: a.expiresAt ?? undefined,
+      approvedBy: a.grantedBy,
     }));
   }
 

@@ -290,9 +290,9 @@ export async function approveStory(
 /**
  * Get learner story preferences.
  */
-export async function getLearnerPreferences(learnerId: string) {
+export async function getLearnerPreferences(tenantId: string, learnerId: string) {
   return prisma.learnerStoryPreferences.findUnique({
-    where: { learnerId },
+    where: { tenantId_learnerId: { tenantId, learnerId } },
   });
 }
 
@@ -300,6 +300,7 @@ export async function getLearnerPreferences(learnerId: string) {
  * Update learner story preferences.
  */
 export async function updateLearnerPreferences(
+  tenantId: string,
   learnerId: string,
   input: UpdateLearnerPreferencesInput
 ) {
@@ -320,8 +321,9 @@ export async function updateLearnerPreferences(
   if (input.reducedMotion !== undefined) updateData.reducedMotion = input.reducedMotion;
 
   return prisma.learnerStoryPreferences.upsert({
-    where: { learnerId },
+    where: { tenantId_learnerId: { tenantId, learnerId } },
     create: {
+      tenantId,
       learnerId,
       ...updateData,
     },
@@ -565,6 +567,7 @@ export async function getRecommendations(
   context: RecommendationContext
 ): Promise<StoryRecommendation[]> {
   const {
+    tenantId,
     learnerId,
     currentActivityType,
     nextActivityType,
@@ -575,7 +578,7 @@ export async function getRecommendations(
 
   const recommendations: StoryRecommendation[] = [];
 
-  const preferences = await getLearnerPreferences(learnerId);
+  const preferences = await getLearnerPreferences(tenantId, learnerId);
   const readingLevel = preferences?.preferredReadingLevel ?? 'DEVELOPING';
 
   // 1. Assignment-based recommendations

@@ -389,28 +389,23 @@ export class LessonBuilderService {
         },
       });
 
-      // Copy blocks to new version
-      const blocks = await tx.lessonBlock.findMany({
-        where: { versionId: currentVersion.id },
-        orderBy: { position: 'asc' },
+      // Copy blocks to new version by copying contentJson
+      const currentVersionData = await tx.learningObjectVersion.findUnique({
+        where: { id: currentVersion.id },
+        select: { contentJson: true },
       });
 
-      for (const block of blocks) {
-        await tx.lessonBlock.create({
-          data: {
-            versionId: newVersion.id,
-            type: block.type,
-            position: block.position,
-            content: block.content as any,
-            settings: block.settings as any,
-          },
+      if (currentVersionData?.contentJson) {
+        await tx.learningObjectVersion.update({
+          where: { id: newVersion.id },
+          data: { contentJson: currentVersionData.contentJson },
         });
       }
 
-      // Mark lesson as published
-      await tx.lesson.update({
+      // Mark learning object as active (published)
+      await tx.learningObject.update({
         where: { id: lessonId },
-        data: { isPublished: true },
+        data: { isActive: true },
       });
 
       return newVersion;
@@ -421,21 +416,28 @@ export class LessonBuilderService {
 
   /**
    * Get lesson templates
+   * Note: Templates are not yet implemented in the database schema.
+   * This method returns an empty array as a placeholder.
    */
-  static async getTemplates(tenantId: string | null) {
-    const templates = await prisma.lessonTemplate.findMany({
-      where: {
-        OR: [{ tenantId }, { tenantId: null }],
-      },
-      include: {
-        blocks: {
-          orderBy: { position: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return templates;
+  static async getTemplates(_tenantId: string | null) {
+    // LessonTemplate model does not exist in the current schema.
+    // Templates would need to be added to the Prisma schema to enable this feature.
+    // For now, return an empty array.
+    return [] as Array<{
+      id: string;
+      tenantId: string | null;
+      name: string;
+      description: string | null;
+      blocks: Array<{
+        id: string;
+        templateId: string;
+        type: string;
+        position: number;
+        content: Record<string, any>;
+        settings: Record<string, any> | null;
+      }>;
+      createdAt: Date;
+    }>;
   }
 
   /**
@@ -476,26 +478,14 @@ export class LessonBuilderService {
   // ════════════════════════════════════════════════════════════════════════════
 
   private static async copyBlocksFromTemplate(
-    tx: any,
-    templateId: string,
-    versionId: string
+    _tx: any,
+    _templateId: string,
+    _versionId: string
   ) {
-    const templateBlocks = await tx.lessonTemplateBlock.findMany({
-      where: { templateId },
-      orderBy: { position: 'asc' },
-    });
-
-    for (const block of templateBlocks) {
-      await tx.lessonBlock.create({
-        data: {
-          versionId,
-          type: block.type,
-          position: block.position,
-          content: block.content,
-          settings: block.settings,
-        },
-      });
-    }
+    // LessonTemplate and LessonTemplateBlock models do not exist in the current schema.
+    // Templates would need to be added to the Prisma schema to enable this feature.
+    // For now, this is a no-op.
+    console.warn('copyBlocksFromTemplate: Templates are not yet implemented in the database schema.');
   }
 
   private static calculateEstimatedDuration(blocks: any[]): number {

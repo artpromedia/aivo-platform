@@ -395,7 +395,7 @@ export class ParticipationService {
       size: participant.size as ParticipantProfile['size'],
       geographicType: participant.geographicType as ParticipantProfile['geographicType'],
       studentCount: participant.studentCount,
-      freeReducedLunchPct: participant.freeReducedLunchPct ?? undefined,
+      freeReducedLunchPct: participant.freeReducedLunchPct ?? 0,
       state: participant.state,
       gradeLevelsServed: participant.gradeLevelsServed,
       sharingPreferences: {

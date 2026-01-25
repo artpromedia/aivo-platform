@@ -25,10 +25,10 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
       // Always provide a user in test runs so routes can execute
       if (!(request as FastifyRequest & { user?: unknown }).user) {
         (request as FastifyRequest & { user?: unknown }).user = {
-          sub: 'test-user',
+          userId: 'test-user',
           tenantId: '11111111-1111-1111-1111-111111111111',
           learnerId: '22222222-2222-2222-2222-222222222222',
-          role: 'learner',
+          roles: ['learner'],
         };
       }
       return;

@@ -730,10 +730,9 @@ export async function getStudentAnalytics(
 ) {
   const { startDate } = getPeriodDates(period);
 
-  const student = await prisma.profile.findUnique({
+  const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: {
-      user: true,
       sessions: {
         where: { startTime: { gte: startDate } },
         orderBy: { startTime: 'desc' },
@@ -885,7 +884,7 @@ export async function getEngagementAnalytics(
   teacherId: string,
   period: TimePeriod = 'week'
 ) {
-  const { startDate } = getPeriodDates(period);
+  const { startDate, endDate } = getPeriodDates(period);
 
   const classInfo = await prisma.class.findUnique({
     where: { id: classId },

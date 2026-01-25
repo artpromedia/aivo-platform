@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '../prisma.js';
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { generateChecksum, generateChainedHash } from '../lib/checksum.js';
 import type {
   CreateAuditLog,
@@ -77,9 +78,9 @@ export async function createAuditLog(
       requestPath: entry.requestPath,
       sourceService: entry.sourceService,
       sourceVersion: entry.sourceVersion,
-      metadata: entry.metadata || {},
-      previousState: entry.previousState,
-      newState: entry.newState,
+      metadata: (entry.metadata || {}) as Prisma.InputJsonValue,
+      previousState: entry.previousState as Prisma.InputJsonValue | undefined,
+      newState: entry.newState as Prisma.InputJsonValue | undefined,
       dataClassification: entry.dataClassification,
       complianceFlags: entry.complianceFlags || [],
       retentionPolicy: entry.retentionPolicy,

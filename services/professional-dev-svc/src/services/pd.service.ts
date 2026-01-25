@@ -880,9 +880,9 @@ export class ProfessionalDevService {
       period: { startDate, endDate },
       summary: {
         totalCompletions: completions.length,
-        totalHours: completions.reduce((sum, c) => sum + c.program.creditHours, 0),
-        uniqueTeachers: new Set(completions.map((c) => c.teacherId)).size,
-        uniquePrograms: new Set(completions.map((c) => c.programId)).size,
+        totalHours: completions.reduce((sum: number, c: (typeof completions)[number]) => sum + c.program.creditHours, 0),
+        uniqueTeachers: new Set(completions.map((c: (typeof completions)[number]) => c.teacherId)).size,
+        uniquePrograms: new Set(completions.map((c: (typeof completions)[number]) => c.programId)).size,
       },
       byProgram: Object.values(byProgram).sort((a: any, b: any) => b.completions - a.completions),
       byCategory: Object.values(byCategory).sort((a: any, b: any) => b.completions - a.completions),

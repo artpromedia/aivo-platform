@@ -9,7 +9,7 @@
  * - Bulk import/export
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '../../generated/prisma-client/index.js';
 import type {
   Assignment,
   Grade,
@@ -19,7 +19,7 @@ import type {
   AssignmentType,
   GradeStatus,
   GradeCalculationType
-} from '../generated/prisma-client/index.js';
+} from '../../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 

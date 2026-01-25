@@ -98,6 +98,77 @@ enum SubmissionStatus {
 // READ-ONLY MODELS (managed by other services)
 // ══════════════════════════════════════════════════════════════════════════════
 
+/// Student/Learner profiles (managed by profile-svc)
+model Student {
+  id          String    @id @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  givenName   String    @map("given_name")
+  familyName  String    @map("family_name")
+  gradeLevel  String?   @map("grade_level")
+  email       String?
+  status      String    @default("active")
+  createdAt   DateTime  @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @map("updated_at") @db.Timestamptz
+
+  sessions    StudentSession[]
+  enrollments Enrollment[]
+
+  @@index([tenantId])
+  @@map("students")
+}
+
+/// Classes (managed by class-svc)
+model Class {
+  id          String    @id @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String
+  description String?
+  status      String    @default("active")
+  createdAt   DateTime  @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @map("updated_at") @db.Timestamptz
+
+  enrollments Enrollment[]
+
+  @@index([tenantId])
+  @@map("classes")
+}
+
+/// Class enrollments (managed by class-svc)
+model Enrollment {
+  id        String   @id @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  classId   String   @map("class_id") @db.Uuid
+  status    String   @default("active")
+  createdAt DateTime @map("created_at") @db.Timestamptz
+
+  student   Student  @relation(fields: [studentId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+
+  @@unique([studentId, classId])
+  @@index([tenantId, classId])
+  @@index([studentId])
+  @@map("enrollments")
+}
+
+/// Student sessions for analytics (managed by session-svc)
+model StudentSession {
+  id        String    @id @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  studentId String    @map("student_id") @db.Uuid
+  startTime DateTime  @map("start_time") @db.Timestamptz
+  endTime   DateTime? @map("end_time") @db.Timestamptz
+  status    String    @default("in_progress")
+  createdAt DateTime  @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @map("updated_at") @db.Timestamptz
+
+  student   Student   @relation(fields: [studentId], references: [id])
+
+  @@index([tenantId, studentId, startTime(sort: Desc)])
+  @@index([studentId, startTime(sort: Desc)])
+  @@map("student_sessions")
+}
+
 /// Sessions table (managed by session-svc)
 model Session {
   id          String        @id @db.Uuid

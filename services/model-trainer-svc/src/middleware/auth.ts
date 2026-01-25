@@ -33,7 +33,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   const authHeader = request.headers.authorization;
   if (!authHeader?.startsWith('Bearer ') || !jwtVerifier) return reply.status(401).send({ error: 'Unauthorized' });
   try {
-    const payload = jwtVerifier(authHeader.slice(7));
+    const payload = await jwtVerifier(authHeader.slice(7));
     (request as any).tenantId = payload.tenantId;
     (request as any).userId = payload.sub;
   } catch { return reply.status(401).send({ error: 'Invalid token' }); }

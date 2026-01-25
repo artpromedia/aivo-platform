@@ -2,11 +2,11 @@
  * Badge Service - Business logic for badges and achievements
  */
 
-import type {
-  Prisma,
+import {
   prisma,
   BadgeCategory,
   BadgeSource,
+  type Prisma,
   type Badge,
   type LearnerBadge,
 } from '../prisma.js';

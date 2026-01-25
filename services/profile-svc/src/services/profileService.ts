@@ -4,7 +4,7 @@
  * Business logic for learner profile management.
  */
 
-import { prisma, type LearnerProfile } from '../prisma.js';
+import { prisma, Prisma, type LearnerProfile } from '../prisma.js';
 import type {
   CreateProfileRequest,
   UpdateProfileRequest,
@@ -112,7 +112,7 @@ export async function createProfile(
       learnerId,
       version: 1,
       changedFields: Object.keys(data),
-      previousValuesJson: null,
+      previousValuesJson: Prisma.JsonNull,
       changedByUserId: context.userId,
       changedByRole: context.userRole,
     },
@@ -185,21 +185,21 @@ export async function updateProfile(
     where: { id: existing.id },
     data: {
       summary: data.summary ?? existing.summary,
-      learningStyleJson: data.learningStyleJson
+      learningStyleJson: (data.learningStyleJson
         ? mergeJson(existing.learningStyleJson as Record<string, unknown>, data.learningStyleJson)
-        : existing.learningStyleJson,
-      sensoryProfileJson: data.sensoryProfileJson
+        : existing.learningStyleJson) as Prisma.InputJsonValue,
+      sensoryProfileJson: (data.sensoryProfileJson
         ? mergeJson(existing.sensoryProfileJson as Record<string, unknown>, data.sensoryProfileJson)
-        : existing.sensoryProfileJson,
-      communicationPreferencesJson: data.communicationPreferencesJson
+        : existing.sensoryProfileJson) as Prisma.InputJsonValue,
+      communicationPreferencesJson: (data.communicationPreferencesJson
         ? mergeJson(existing.communicationPreferencesJson as Record<string, unknown>, data.communicationPreferencesJson)
-        : existing.communicationPreferencesJson,
-      interactionConstraintsJson: data.interactionConstraintsJson
+        : existing.communicationPreferencesJson) as Prisma.InputJsonValue,
+      interactionConstraintsJson: (data.interactionConstraintsJson
         ? mergeJson(existing.interactionConstraintsJson as Record<string, unknown>, data.interactionConstraintsJson)
-        : existing.interactionConstraintsJson,
-      uiAccessibilityJson: data.uiAccessibilityJson
+        : existing.interactionConstraintsJson) as Prisma.InputJsonValue,
+      uiAccessibilityJson: (data.uiAccessibilityJson
         ? mergeJson(existing.uiAccessibilityJson as Record<string, unknown>, data.uiAccessibilityJson)
-        : existing.uiAccessibilityJson,
+        : existing.uiAccessibilityJson) as Prisma.InputJsonValue,
       origin: data.origin ?? existing.origin,
       profileVersion: newVersion,
       updatedByUserId: context.userId,
@@ -214,7 +214,7 @@ export async function updateProfile(
       learnerId,
       version: newVersion,
       changedFields,
-      previousValuesJson: previousValues,
+      previousValuesJson: previousValues as Prisma.InputJsonValue,
       changedByUserId: context.userId,
       changedByRole: context.userRole,
     },

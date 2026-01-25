@@ -7,6 +7,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { Prisma } from '@prisma/client';
+
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 import {
@@ -363,7 +365,7 @@ async function createSession(
       grantedScopes: grantedScopes,
       status: ToolSessionStatus.ACTIVE,
       launchConfigJson: data.launchConfig ?? toolConfig.defaultConfig ?? {},
-      learnerContextJson: learnerContext ?? {},
+      learnerContextJson: (learnerContext ?? {}) as Prisma.InputJsonValue,
       tokenJti: tokenResult.jti,
       tokenExpiresAt: new Date(tokenResult.expiresAt * 1000),
       expiresAt,

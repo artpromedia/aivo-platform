@@ -21,6 +21,8 @@ import { prisma } from '../prisma.js';
 
 // Type for template skill state from DB
 interface TemplateSkillStateRecord {
+  id: string;
+  templateId: string;
   skillCode: string;
   domain: SkillDomain;
   defaultMastery: Prisma.Decimal;
@@ -29,6 +31,8 @@ interface TemplateSkillStateRecord {
   defaultPGuess: Prisma.Decimal;
   defaultPSlip: Prisma.Decimal;
   difficultyMultiplier: Prisma.Decimal;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Type for template with skill states

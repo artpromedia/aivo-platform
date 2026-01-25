@@ -271,7 +271,7 @@ export class PowerSchoolClient {
       ...options,
       headers: {
         ...(options.headers instanceof Headers
-          ? Object.fromEntries(options.headers.entries())
+          ? Object.fromEntries(Array.from((options.headers as unknown as Iterable<[string, string]>)))
           : Array.isArray(options.headers)
             ? Object.fromEntries(options.headers)
             : options.headers),

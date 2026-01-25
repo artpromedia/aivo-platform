@@ -96,9 +96,10 @@ export interface SeatUsageEntry {
 }
 
 /**
- * Aggregated seat usage summary for a tenant.
+ * Aggregated seat usage summary for a tenant (analytics-specific).
+ * Note: This is distinct from TenantSeatUsageSummary in licensing.types.ts
  */
-export interface TenantSeatUsageSummary {
+export interface AnalyticsTenantSeatUsageSummary {
   tenantId: string;
   totalCommittedSeats: number;
   totalAllocatedSeats: number;

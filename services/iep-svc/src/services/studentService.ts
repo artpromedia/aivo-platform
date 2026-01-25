@@ -183,9 +183,9 @@ export async function updateEvaluation(tenantId: string, evaluationId: string, i
     where: { id: evaluationId },
     data: {
       status: input.status,
-      consentDate: input.consentDate ? new Date(input.consentDate) : undefined,
-      evaluationDate: input.evaluationDate ? new Date(input.evaluationDate) : undefined,
-      reportDate: input.reportDate ? new Date(input.reportDate) : undefined,
+      consentDate: input.consentDate ? new Date(input.consentDate) : null,
+      evaluationDate: input.evaluationDate ? new Date(input.evaluationDate) : null,
+      reportDate: input.reportDate ? new Date(input.reportDate) : null,
       areasEvaluated: input.areasEvaluated,
       eligibilityDetermined: input.eligibilityDetermined,
       eligibilityCategory: input.eligibilityCategory,

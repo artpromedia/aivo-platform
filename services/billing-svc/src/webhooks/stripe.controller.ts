@@ -321,7 +321,7 @@ class StripeWebhookController {
         break;
 
       case 'customer.source.expiring':
-        await this.handlePaymentSourceExpiring(event.data.object, correlationId, logger);
+        await this.handlePaymentSourceExpiring(event.data.object as Stripe.Card, correlationId, logger);
         break;
 
       default:
@@ -688,7 +688,7 @@ class StripeWebhookController {
     );
 
     await billingEventPublisher.publish({
-      type: BillingEventType.TRIAL_ENDING,
+      type: BillingEventType.SUBSCRIPTION_TRIAL_ENDING,
       tenantId,
       customerId: subscription.customer as string,
       subscriptionId: subscription.id,

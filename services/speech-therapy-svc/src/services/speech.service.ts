@@ -822,7 +822,7 @@ export class SpeechTherapyService {
 
     // Shuffle and take requested count
     const shuffled = stimuli.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count).map((s) => s.text);
+    return shuffled.slice(0, count).map((s: { text: string }) => s.text);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -867,7 +867,7 @@ export class SpeechTherapyService {
 
     // Calculate statistics
     const totalSessions = sessions.length;
-    const totalMinutes = sessions.reduce((sum, s) => sum + (s.durationMin ?? 0), 0);
+    const totalMinutes = sessions.reduce((sum: number, s: { durationMin: number | null }) => sum + (s.durationMin ?? 0), 0);
     const avgSessionAccuracy = this.calculateAvgSessionAccuracy(sessions);
     const homePracticeCompliance = this.calculatePracticeCompliance(homePractice);
 
@@ -879,7 +879,14 @@ export class SpeechTherapyService {
         avgSessionAccuracy,
         homePracticeCompliance,
       },
-      goals: goals.map((g) => ({
+      goals: goals.map((g: {
+        id: string;
+        description: string;
+        targetSounds: string[];
+        status: GoalStatus;
+        currentAccuracy: number | null;
+        progressRecords: { accuracy: number }[];
+      }) => ({
         id: g.id,
         description: g.description,
         targetSounds: g.targetSounds,

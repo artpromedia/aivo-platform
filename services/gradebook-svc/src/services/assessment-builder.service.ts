@@ -9,7 +9,7 @@
  * - Rubric builder
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '../../generated/prisma-client/index.js';
 import type {
   CustomAssessment,
   CustomAssessmentQuestion,
@@ -18,7 +18,7 @@ import type {
   GradingRubric,
   RubricCriterion,
   QuestionType
-} from '../generated/prisma-client/index.js';
+} from '../../generated/prisma-client/index.js';
 
 const prisma = new PrismaClient();
 

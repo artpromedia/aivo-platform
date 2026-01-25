@@ -2,8 +2,7 @@
  * Payments Service Configuration
  */
 
-import * as dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 
 import { createLogger } from '@aivo/ts-api-utils';
 

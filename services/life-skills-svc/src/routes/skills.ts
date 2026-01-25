@@ -293,7 +293,7 @@ export async function registerSkillRoutes(app: FastifyInstance): Promise<void> {
           create: data.steps.map((step) => ({
             stepNumber: step.stepNumber,
             instruction: step.instruction,
-            detailedPrompt: step.detailedPrompt,
+            detailedPrompt: step.detailedPrompt ?? null,
             primaryContent: step.primaryContent ?? 'IMAGE_SEQUENCE',
             imageUrl: step.imageUrl,
             videoUrl: step.videoUrl,

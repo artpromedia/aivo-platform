@@ -8,7 +8,7 @@
 import { randomUUID } from 'node:crypto';
 
 import type { PrismaClient, WebhookEventType } from '@prisma/client';
-import { WebhookDeliveryStatus } from '@prisma/client';
+import { Prisma, WebhookDeliveryStatus } from '@prisma/client';
 
 import type { WebhookPayload } from './types.js';
 import { signWebhookPayload, generateWebhookHeaders } from './webhook-signing.js';
@@ -101,7 +101,7 @@ export class WebhookDispatcher {
           webhookId: endpoint.id,
           eventType,
           eventId,
-          payloadJson: payload as unknown as Record<string, unknown>,
+          payloadJson: payload as unknown as Prisma.InputJsonValue,
           status: WebhookDeliveryStatus.PENDING,
           maxAttempts: this.config.maxAttempts,
         },
@@ -663,7 +663,8 @@ export async function deliverWebhook(attempt: {
 
   const TIMEOUT_MS = 30000;
   const payload = JSON.stringify(attempt.payload);
-  const headers = signWebhookPayload(payload, attempt.endpoint.secret);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = signWebhookPayload(payload, attempt.endpoint.secret, timestamp);
 
   try {
     const controller = new AbortController();
@@ -676,7 +677,8 @@ export async function deliverWebhook(attempt: {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...headers,
+          'X-Aivo-Signature': signature,
+          'X-Aivo-Timestamp': timestamp.toString(),
         },
         body: payload,
         signal: controller.signal,

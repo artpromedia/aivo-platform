@@ -6,7 +6,7 @@
  * for learners who require predictable flow.
  */
 
-import type { Prisma, type PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 
 import type {
   PredictabilityPreferences,

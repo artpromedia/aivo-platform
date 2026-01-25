@@ -24,10 +24,15 @@ export type {
   SessionPlanItemAiMetadata,
 } from './domain.js';
 
+// Re-export auth types from ts-rbac for consistency
+export { Role } from '@aivo/ts-rbac';
+export type { AuthContext } from '@aivo/ts-rbac';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // JWT & AUTH TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
+/** @deprecated Use Role enum from @aivo/ts-rbac instead */
 export type UserRole =
   | 'PARENT'
   | 'LEARNER'
@@ -47,20 +52,14 @@ export interface JwtPayload {
   exp: number;
 }
 
-/** Authenticated user info extracted from JWT */
-export interface AuthUser {
-  userId: string;
-  email: string;
-  tenantId: string;
-  role: UserRole;
-}
+/**
+ * Authenticated user info - alias for AuthContext from @aivo/ts-rbac
+ * Uses `roles` array for multi-role support
+ */
+export type { AuthContext as AuthUser } from '@aivo/ts-rbac';
 
-// Extend Fastify request type
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: AuthUser;
-  }
-}
+// Note: FastifyRequest.user is typed by @aivo/ts-rbac as AuthContext
+// Do not redeclare here to avoid type conflicts
 
 // ══════════════════════════════════════════════════════════════════════════════
 // API REQUEST/RESPONSE TYPES

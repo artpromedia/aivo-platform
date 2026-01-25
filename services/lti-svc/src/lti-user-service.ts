@@ -338,7 +338,7 @@ export class LtiUserService {
     return this.prisma.ltiUserMapping.create({
       data: {
         tenantId: context.tenantId,
-        ltiToolId: context.toolId,
+        tool: { connect: { id: context.toolId } },
         lmsUserId: context.sub,
         aivoUserId,
         lmsEmail: context.email ?? null,

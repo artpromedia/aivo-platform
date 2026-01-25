@@ -4,6 +4,7 @@
  * Manages legal matters and cases.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../prisma.js';
 import type {
   CreateMatterInput,
@@ -195,7 +196,7 @@ export async function updateMatter(
       riskLevel: input.riskLevel,
       riskNotes: input.riskNotes,
       tags: input.tags,
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue,
       closedAt: input.status === 'CLOSED' ? new Date() : undefined,
     },
   });
@@ -449,7 +450,7 @@ async function logMatterActivity(
       matterId,
       activityType,
       description,
-      details,
+      details: details as Prisma.InputJsonValue,
       performedBy,
     },
   });

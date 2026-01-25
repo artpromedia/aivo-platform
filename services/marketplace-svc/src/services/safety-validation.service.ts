@@ -45,13 +45,16 @@ const DATA_ACCESS_HIERARCHY: DataAccessProfile[] = [
 interface LogToolLaunchParams {
   installationId: string;
   versionId: string;
+  marketplaceItemId: string;
   tenantId: string;
   userId: string;
-  userRole: string;
   launchUrl: string;
   scopesGranted: string[];
-  context: string;
+  safetyRating: string;
   checks: ToolLaunchSafetyChecks;
+  learnerId?: string;
+  schoolId?: string;
+  classroomId?: string;
   ipAddress?: string;
   userAgent?: string;
   sessionId?: string;
@@ -73,7 +76,7 @@ export class SafetyValidationService {
           include: {
             vendor: {
               include: {
-                domainAllowlist: true,
+                allowedDomains: true,
               },
             },
           },
@@ -95,9 +98,9 @@ export class SafetyValidationService {
     if (version.embeddedToolConfig) {
       const launchUrl = version.embeddedToolConfig.launchUrl;
       const domain = this.extractDomain(launchUrl);
-      const allowedDomains = version.marketplaceItem.vendor.domainAllowlist
+      const allowedDomains = version.marketplaceItem.vendor.allowedDomains
         .filter((d: { isActive: boolean }) => d.isActive)
-        .map((d: { domain: string }) => d.domain);
+        .map((d: { domainPattern: string }) => d.domainPattern);
 
       const domainAllowed = allowedDomains.some(
         (allowed: string) => domain === allowed || domain.endsWith(`.${allowed}`)
@@ -120,9 +123,9 @@ export class SafetyValidationService {
       const optionalScopes = version.embeddedToolConfig.optionalScopes || [];
       const allScopes = [...requiredScopes, ...optionalScopes];
 
-      const scopeAllowlist = await prisma.safetyScopeAllowlist.findMany();
+      const scopeConfigs = await prisma.embeddedToolScopeConfig.findMany();
       const disallowedScopes = allScopes.filter((scope: string) => {
-        const rule = scopeAllowlist.find((s: { scopeName: string }) => s.scopeName === scope);
+        const rule = scopeConfigs.find((s: { scope: string }) => s.scope === scope);
         return rule?.isAllowed === false || DISALLOWED_SCOPES.has(scope);
       });
 
@@ -201,9 +204,9 @@ export class SafetyValidationService {
     }
 
     // Determine if approval is required
-    const requiresApproval = policy?.requireSafetyReview ?? false;
+    const requiresApproval = policy?.requireInstallApproval ?? false;
     const approvalReason = requiresApproval
-      ? 'Tenant policy requires safety review approval for all installations'
+      ? 'Tenant policy requires approval for all installations'
       : undefined;
 
     return {
@@ -220,7 +223,7 @@ export class SafetyValidationService {
   private checkPolicyViolations(
     violations: PolicyViolation[],
     policy: {
-      blockedVendorIds: string[];
+      blockedVendors: string[];
       blockedItemIds: string[];
       allowedSafetyRatings: string[];
       allowedDataAccessProfiles: string[];
@@ -230,7 +233,7 @@ export class SafetyValidationService {
     version: { safetyRating: string; dataAccessProfile: string; policyTags: string[] }
   ): void {
     // Check blocked vendor
-    if (policy.blockedVendorIds.includes(item.vendorId)) {
+    if (policy.blockedVendors.includes(item.vendorId)) {
       violations.push({
         type: 'BLOCKED_VENDOR',
         message: `Vendor ${item.vendor.name} is blocked by tenant policy`,
@@ -296,14 +299,14 @@ export class SafetyValidationService {
     const installation = await prisma.marketplaceInstallation.findUnique({
       where: { id: installationId },
       include: {
-        marketplaceItemVersion: {
+        version: {
           include: {
             embeddedToolConfig: true,
             marketplaceItem: {
               include: {
                 vendor: {
                   include: {
-                    domainAllowlist: true,
+                    allowedDomains: true,
                   },
                 },
               },
@@ -321,7 +324,7 @@ export class SafetyValidationService {
       };
     }
 
-    const version = installation.marketplaceItemVersion;
+    const version = installation.version;
     const toolConfig = version.embeddedToolConfig;
 
     if (!toolConfig) {
@@ -378,9 +381,9 @@ export class SafetyValidationService {
 
     // Check domain allowlist
     const launchDomain = this.extractDomain(toolConfig.launchUrl);
-    const allowedDomains = version.marketplaceItem.vendor.domainAllowlist
+    const allowedDomains = version.marketplaceItem.vendor.allowedDomains
       .filter((d: { isActive: boolean }) => d.isActive)
-      .map((d: { domain: string }) => d.domain);
+      .map((d: { domainPattern: string }) => d.domainPattern);
 
     checks.domainAllowlisted = allowedDomains.some(
       (allowed: string) => launchDomain === allowed || launchDomain.endsWith(`.${allowed}`)
@@ -394,11 +397,11 @@ export class SafetyValidationService {
     }
 
     // Check scopes
-    const scopeAllowlist = await prisma.safetyScopeAllowlist.findMany();
+    const scopeConfigs = await prisma.embeddedToolScopeConfig.findMany();
     const requestedScopes = [...(toolConfig.requiredScopes || []), ...(toolConfig.optionalScopes || [])];
-    
+
     const disallowedScopes = requestedScopes.filter((scope: string) => {
-      const rule = scopeAllowlist.find((s: { scopeName: string }) => s.scopeName === scope);
+      const rule = scopeConfigs.find((s: { scope: string }) => s.scope === scope);
       return rule?.isAllowed === false || DISALLOWED_SCOPES.has(scope);
     });
 
@@ -413,7 +416,7 @@ export class SafetyValidationService {
 
     // Determine granted scopes (only allowed ones)
     const grantedScopes = requestedScopes.filter((scope: string) => {
-      const rule = scopeAllowlist.find((s: { scopeName: string }) => s.scopeName === scope);
+      const rule = scopeConfigs.find((s: { scope: string }) => s.scope === scope);
       return rule?.isAllowed !== false && !DISALLOWED_SCOPES.has(scope);
     });
 
@@ -430,18 +433,21 @@ export class SafetyValidationService {
    * Log a tool launch event
    */
   async logToolLaunch(params: LogToolLaunchParams): Promise<void> {
-    await prisma.toolLaunchLog.create({
+    await prisma.embeddedToolLaunchLog.create({
       data: {
+        toolSessionId: crypto.randomUUID(),
         installationId: params.installationId,
+        marketplaceItemId: params.marketplaceItemId,
         marketplaceItemVersionId: params.versionId,
         tenantId: params.tenantId,
-        userId: params.userId,
-        userRole: params.userRole,
+        launchedByUserId: params.userId,
         launchUrl: params.launchUrl,
         scopesGranted: params.scopesGranted,
-        launchContext: params.context,
-        safetyChecksPassed: Object.values(params.checks).every(v => v === true || Array.isArray(v)),
-        safetyChecksJson: params.checks as unknown as Record<string, unknown>,
+        safetyRatingAtLaunch: params.safetyRating as 'PENDING' | 'APPROVED_K12' | 'RESTRICTED' | 'REJECTED',
+        launchSuccessful: Object.values(params.checks).every(v => v === true || Array.isArray(v)),
+        learnerId: params.learnerId ?? null,
+        schoolId: params.schoolId ?? null,
+        classroomId: params.classroomId ?? null,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
         sessionId: params.sessionId ?? null,

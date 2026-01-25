@@ -6,6 +6,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import * as frameworkService from '../services/frameworkService.js';
+import type { EnableFrameworkInput } from '../types/index.js';
 
 const EnableFrameworkSchema = z.object({
   framework: z.enum([
@@ -47,7 +48,7 @@ export async function registerFrameworkRoutes(fastify: FastifyInstance) {
       const framework = await frameworkService.enableFramework(
         request.tenantId,
         request.user.sub,
-        parseResult.data
+        parseResult.data as EnableFrameworkInput
       );
 
       request.log.info({ frameworkId: framework.id }, 'Framework enabled');

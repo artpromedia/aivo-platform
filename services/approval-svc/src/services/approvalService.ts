@@ -190,7 +190,7 @@ export async function createRequest(tenantId: string, data: {
       assignedTo,
       dueAt: firstStep.timeoutHours
         ? new Date(Date.now() + firstStep.timeoutHours * 60 * 60 * 1000)
-        : undefined,
+        : null,
     },
   });
 
@@ -368,7 +368,7 @@ export async function makeDecision(tenantId: string, requestId: string, data: {
             assignedTo,
             dueAt: nextStep.timeoutHours
               ? new Date(Date.now() + nextStep.timeoutHours * 60 * 60 * 1000)
-              : undefined,
+              : null,
           },
         });
 
@@ -526,7 +526,7 @@ export async function processEscalations(tenantId: string) {
             escalatedAt: new Date(),
             dueAt: step.timeoutHours
               ? new Date(Date.now() + step.timeoutHours * 60 * 60 * 1000)
-              : undefined,
+              : null,
           },
         });
 

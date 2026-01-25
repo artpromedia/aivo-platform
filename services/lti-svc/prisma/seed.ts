@@ -108,7 +108,7 @@ async function main() {
     {
       id: '00000000-0000-0000-lt10-000000000001',
       tenantId: DEV_TENANT_ID,
-      ltiToolId: CANVAS_TOOL_ID,
+      toolId: CANVAS_TOOL_ID,
       lmsContextId: 'course_math_3rd',
       lmsResourceLinkId: 'assignment_fractions_intro',
       classroomId: CLASSROOM_3A_ID,
@@ -128,7 +128,7 @@ async function main() {
     {
       id: '00000000-0000-0000-lt10-000000000002',
       tenantId: DEV_TENANT_ID,
-      ltiToolId: CANVAS_TOOL_ID,
+      toolId: CANVAS_TOOL_ID,
       lmsContextId: 'course_ela_3rd',
       lmsResourceLinkId: 'assignment_reading_detective',
       classroomId: CLASSROOM_3B_ID,
@@ -148,7 +148,7 @@ async function main() {
     {
       id: '00000000-0000-0000-lt10-000000000003',
       tenantId: DEV_TENANT_ID,
-      ltiToolId: CANVAS_TOOL_ID,
+      toolId: CANVAS_TOOL_ID,
       lmsContextId: 'course_math_3rd',
       lmsResourceLinkId: 'assignment_math_practice',
       classroomId: CLASSROOM_3A_ID,
@@ -168,7 +168,7 @@ async function main() {
     {
       id: '00000000-0000-0000-lt10-000000000010',
       tenantId: DEMO_TENANT_ID,
-      ltiToolId: SCHOOLOGY_TOOL_ID,
+      toolId: SCHOOLOGY_TOOL_ID,
       lmsContextId: 'demo_course_1',
       lmsResourceLinkId: 'demo_assignment_1',
       title: 'AIVO Demo Activity',
@@ -182,10 +182,14 @@ async function main() {
   ];
 
   for (const link of links) {
+    const { toolId, ...linkData } = link;
     await prisma.ltiLink.upsert({
       where: { id: link.id },
       update: {},
-      create: link,
+      create: {
+        ...linkData,
+        tool: { connect: { id: toolId } },
+      },
     });
   }
   console.log(`  ✅ Created ${links.length} LTI links (assignments)`);
@@ -194,32 +198,35 @@ async function main() {
   // 3. Create Sample LTI Launch (for demo)
   // ══════════════════════════════════════════════════════════════════════════
 
-  const sampleLaunch = {
-    id: '00000000-0000-0000-lt20-000000000001',
-    tenantId: DEV_TENANT_ID,
-    ltiToolId: CANVAS_TOOL_ID,
-    ltiLinkId: '00000000-0000-0000-lt10-000000000001',
-    lmsUserId: 'canvas_student_001',
-    lmsUserEmail: 'alex.j@springfield.k12.us',
-    lmsUserName: 'Alex Johnson',
-    userRole: LtiUserRole.LEARNER,
-    aivoUserId: '00000000-0000-0000-2000-000000000001', // Alex
-    aivoLearnerId: '00000000-0000-0000-2000-000000000001',
-    lmsContextId: 'course_math_3rd',
-    lmsContextTitle: '3rd Grade Math - Ms. Smith',
-    lmsResourceLinkId: 'assignment_fractions_intro',
-    status: LtiLaunchStatus.COMPLETED,
-    nonce: 'nonce_sample_001_' + Date.now(),
-    aivoSessionId: '00000000-0000-0000-6000-000000000001', // Alex's session
-    gradeStatus: LtiGradeStatus.SENT,
-    gradeValue: 85,
-    gradeSentAt: new Date('2024-01-15T15:30:00Z'),
-  };
+  const sampleLaunchId = '00000000-0000-0000-lt20-000000000001';
+  const sampleLinkId = '00000000-0000-0000-lt10-000000000001';
 
   await prisma.ltiLaunch.upsert({
-    where: { id: sampleLaunch.id },
+    where: { id: sampleLaunchId },
     update: {},
-    create: sampleLaunch,
+    create: {
+      id: sampleLaunchId,
+      tenantId: DEV_TENANT_ID,
+      tool: { connect: { id: CANVAS_TOOL_ID } },
+      link: { connect: { id: sampleLinkId } },
+      lmsUserId: 'canvas_student_001',
+      lmsUserEmail: 'alex.j@springfield.k12.us',
+      lmsUserName: 'Alex Johnson',
+      userRole: LtiUserRole.LEARNER,
+      aivoUserId: '00000000-0000-0000-2000-000000000001', // Alex
+      aivoLearnerId: '00000000-0000-0000-2000-000000000001',
+      lmsContextId: 'course_math_3rd',
+      lmsContextTitle: '3rd Grade Math - Ms. Smith',
+      lmsResourceLinkId: 'assignment_fractions_intro',
+      status: LtiLaunchStatus.COMPLETED,
+      nonce: 'nonce_sample_001_' + Date.now(),
+      aivoSessionId: '00000000-0000-0000-6000-000000000001', // Alex's session
+      gradeStatus: LtiGradeStatus.SENT,
+      scoreGiven: 85,
+      gradeSentAt: new Date('2024-01-15T15:30:00Z'),
+      expiresAt: new Date('2024-12-31T23:59:59Z'),
+      launchParamsJson: {},
+    },
   });
   console.log('  ✅ Created sample LTI launch');
 

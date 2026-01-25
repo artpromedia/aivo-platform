@@ -15,6 +15,13 @@ import type { FastifyInstance} from 'fastify';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+// Extend FastifyContextConfig to include rawBody option
+declare module 'fastify' {
+  interface FastifyContextConfig {
+    rawBody?: boolean;
+  }
+}
+
 import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
 import { ProviderFactory, EnvSecretsResolver } from '../providers/factory.js';

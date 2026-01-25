@@ -245,12 +245,19 @@ export async function registerSessionPlanRoutes(fastify: FastifyInstance): Promi
       if (!user) throw new ForbiddenError('Authentication required');
 
       const { planId } = planIdParamSchema.parse(request.params);
-      const items = createSessionPlanItemsSchema.parse(request.body);
+      const parsedItems = createSessionPlanItemsSchema.parse(request.body);
       const tenantId = getTenantIdForQuery(user);
 
       // Get plan to check learner access
       const plan = await getSessionPlanById(planId, tenantId);
       await ensureCanWriteLearner(request, plan.learnerId);
+
+      // Map items ensuring required fields have values
+      const items = parsedItems.map((item, index) => ({
+        ...item,
+        orderIndex: item.orderIndex ?? index,
+        activityType: item.activityType ?? 'ACTIVITY',
+      }));
 
       const createdItems = await replaceSessionPlanItems(planId, items, tenantId);
 

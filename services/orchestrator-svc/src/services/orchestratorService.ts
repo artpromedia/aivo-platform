@@ -582,10 +582,10 @@ export async function addLog(tenantId: string, executionId: string, data: {
     data: {
       tenantId,
       executionId,
-      stepId: data.stepId,
+      stepId: data.stepId ?? null,
       level: data.level,
       message: data.message,
-      data: data.data,
+      data: data.data ?? null,
     },
   });
 }

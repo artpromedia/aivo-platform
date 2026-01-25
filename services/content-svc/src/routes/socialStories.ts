@@ -603,7 +603,12 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
 
-      const preferences = await socialStoryService.getLearnerPreferences(request.params.learnerId);
+      const userTenantId = getUserTenantId(user);
+      if (!userTenantId) {
+        return reply.status(400).send({ error: 'Tenant ID required' });
+      }
+
+      const preferences = await socialStoryService.getLearnerPreferences(userTenantId, request.params.learnerId);
 
       return reply.send(preferences ?? { learnerId: request.params.learnerId });
     }
@@ -621,6 +626,11 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
 
+      const userTenantId = getUserTenantId(user);
+      if (!userTenantId) {
+        return reply.status(400).send({ error: 'Tenant ID required' });
+      }
+
       const parseResult = UpdatePreferencesSchema.safeParse(request.body);
       if (!parseResult.success) {
         return reply.status(400).send({
@@ -630,6 +640,7 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
       }
 
       const preferences = await socialStoryService.updateLearnerPreferences(
+        userTenantId,
         request.params.learnerId,
         {
           ...parseResult.data,
@@ -872,6 +883,11 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
 
+      const userTenantId = getUserTenantId(user);
+      if (!userTenantId) {
+        return reply.status(400).send({ error: 'Tenant ID required' });
+      }
+
       const parseResult = RecommendationsQuerySchema.safeParse(request.query);
       if (!parseResult.success) {
         return reply.status(400).send({
@@ -883,6 +899,7 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
       const { excludeStoryIds, ...rest } = parseResult.data;
 
       const recommendations = await socialStoryService.getRecommendations({
+        tenantId: userTenantId,
         learnerId: request.params.learnerId,
         ...rest,
         excludeStoryIds: excludeStoryIds?.split(',') ?? [],

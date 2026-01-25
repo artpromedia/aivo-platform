@@ -130,7 +130,7 @@ export const sessionPlanQuerySchema = paginationSchema.extend({
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const createSessionPlanItemSchema = z.object({
-  orderIndex: z.number().int().min(0),
+  orderIndex: z.number().int().min(0).default(0),
   goalId: uuidSchema.optional(),
   goalObjectiveId: uuidSchema.optional(),
   skillId: uuidSchema.optional(),

@@ -717,7 +717,7 @@ export class CurriculumService {
 
     if (!pacingGuide) return 0;
 
-    const entries = pacingGuide.entries as PacingEntry[];
+    const entries = pacingGuide.entries as unknown as PacingEntry[];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 

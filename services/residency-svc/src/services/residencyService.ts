@@ -413,7 +413,7 @@ export async function getDashboard(tenantId: string) {
 
 async function logAction(tenantId: string, action: string, resourceType: string, resourceId: string | null, description: string, performedBy: string, sourceRegion?: string, destRegion?: string) {
   await prisma.residencyAuditLog.create({
-    data: { tenantId, action, resourceType, resourceId, description, performedBy, sourceRegion, destRegion },
+    data: { tenantId, action, resourceType, resourceId, description, performedBy, sourceRegion: sourceRegion ?? null, destRegion: destRegion ?? null },
   });
 }
 

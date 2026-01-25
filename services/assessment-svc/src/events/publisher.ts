@@ -20,8 +20,12 @@ export type AssessmentEventType =
   | 'attempt.expired'
   | 'attempt.abandoned'
   | 'attempt.graded'
+  | 'attempt.auto-submitted'
   | 'response.submitted'
-  | 'response.graded';
+  | 'response.graded'
+  | 'security.violation'
+  | 'session.started'
+  | 'accommodation.added';
 
 export interface AssessmentEvent {
   type: AssessmentEventType;

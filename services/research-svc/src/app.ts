@@ -71,11 +71,12 @@ export async function createApp() {
   app.addHook('onRequest', async (request, reply) => {
     // Skip health checks
     if (request.url === '/health' || request.url === '/ready') {
-      return;
+      return undefined;
     }
 
     try {
       await request.jwtVerify();
+      return undefined;
     } catch (err) {
       request.log.warn({ err }, 'JWT verification failed');
       return reply.status(401).send({ error: 'Unauthorized' });
