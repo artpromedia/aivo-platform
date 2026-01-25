@@ -1,80 +1,69 @@
-# ═══════════════════════════════════════════════════════════════════════════════
-# Research Service Dockerfile
-# ═══════════════════════════════════════════════════════════════════════════════
+# ==============================================================================
+# AIVO Platform - Research Service Dockerfile
+# ==============================================================================
+# Multi-stage build for Fastify services
 
-FROM node:20-alpine AS base
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache g++ make python3
+
+WORKDIR /app
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
-WORKDIR /app
+# Copy workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json tsconfig.compat.json ./
+COPY packages/ ./packages/
+COPY libs/ ./libs/
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Dependencies Stage
-# ───────────────────────────────────────────────────────────────────────────────
-
-FROM base AS deps
-
-# Copy root workspace files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy service package.json
-COPY services/research-svc/package.json services/research-svc/
-
-# Copy workspace dependencies
-COPY libs/events/package.json libs/events/
-COPY libs/ts-rbac/package.json libs/ts-rbac/
-COPY libs/ts-storage/package.json libs/ts-storage/
+# Copy service files
+COPY services/research-svc/ ./services/research-svc/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile --ignore-scripts --filter @aivo/research-svc...
+RUN pnpm install --frozen-lockfile
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Build Stage
-# ───────────────────────────────────────────────────────────────────────────────
+# Build the service (includes dependencies like ts-api-utils)
+RUN pnpm turbo build --filter="@aivo/research-svc"
 
-FROM base AS builder
+# Create a deployable bundle with all production dependencies
+RUN pnpm deploy --filter="@aivo/research-svc" --prod /deploy
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/services/research-svc/node_modules ./services/research-svc/node_modules
+# Stage 2: Runner
+FROM node:20-alpine AS runner
 
-# Copy source
-COPY services/research-svc ./services/research-svc
-COPY libs/events ./libs/events
-COPY libs/ts-rbac ./libs/ts-rbac
-COPY libs/ts-storage ./libs/ts-storage
-COPY tsconfig.base.json ./
-
-# Generate Prisma client
-WORKDIR /app/services/research-svc
-RUN pnpm db:generate && pnpm build
-
-# ───────────────────────────────────────────────────────────────────────────────
-# Production Stage
-# ───────────────────────────────────────────────────────────────────────────────
-
-FROM base AS runner
-
-ENV NODE_ENV=production
-
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 appuser
+# Security: Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
-# Copy built artifacts with proper permissions
-COPY --from=builder --chmod=555 --chown=appuser:nodejs /app/services/research-svc/dist ./dist
-COPY --from=builder --chown=appuser:nodejs /app/services/research-svc/node_modules ./node_modules
-COPY --from=builder --chmod=444 --chown=appuser:nodejs /app/services/research-svc/prisma ./prisma
-COPY --from=builder --chmod=444 --chown=appuser:nodejs /app/services/research-svc/package.json ./
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
-USER appuser
+# Copy built application from the deploy bundle
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/research-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/research-svc/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=4020
+
+# Expose port
 EXPOSE 4020
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4020/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:4020/health || exit 1
+
+# Switch to non-root user
+USER nodejs
+
+# Use dumb-init as entrypoint
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 CMD ["node", "dist/index.js"]
