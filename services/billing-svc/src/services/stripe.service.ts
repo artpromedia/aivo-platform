@@ -900,5 +900,5 @@ export const stripeService = new StripeService();
 // CONVENIENCE EXPORTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export { stripe };
+export { StripeService, stripe };
 export default stripeService;

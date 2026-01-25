@@ -22,13 +22,15 @@ fastify.setSerializerCompiler(serializerCompiler);
 async function main() {
   try {
     // Register CORS
-    await fastify.register(fastifyCors, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await fastify.register(fastifyCors as any, {
       origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
       credentials: true,
     });
 
     // Register auth middleware
-    await fastify.register(authMiddleware);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await fastify.register(authMiddleware as any);
 
     // Connect to database
     await connectDatabase();

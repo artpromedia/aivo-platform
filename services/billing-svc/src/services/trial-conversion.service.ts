@@ -10,7 +10,7 @@
 
 import Stripe from 'stripe';
 
-import { billingEventPublisher } from '../events/billing-event-publisher.js';
+import { billingEventPublisher } from '../events/billing.publisher.js';
 import { prisma } from '../prisma.js';
 
 import { reminderService } from './reminder.service.js';

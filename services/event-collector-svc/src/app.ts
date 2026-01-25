@@ -31,17 +31,20 @@ export function createApp() {
   });
 
   // Plugins
-  app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(cors as any, {
     origin: config.nodeEnv === 'production' ? false : true,
     credentials: true,
   });
 
-  app.register(helmet, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(helmet as any, {
     contentSecurityPolicy: false,
   });
 
   // Rate limiting - protect ingestion endpoints from abuse
-  app.register(rateLimit, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, {
     global: true,
     max: 500, // 500 requests per minute (high throughput service)
     timeWindow: '1 minute',

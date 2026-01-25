@@ -14,11 +14,11 @@ import { PrismaClient } from '@prisma/client';
 import Fastify from 'fastify';
 import pino from 'pino';
 
-import { registerBenchmarkingRoutes } from './api/routes';
+import { registerBenchmarkingRoutes } from './api/routes.js';
 
 const logger = pino({
   level: process.env.LOG_LEVEL ?? 'info',
-  transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
+  ...(process.env.NODE_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
 });
 
 const prisma = new PrismaClient({
@@ -71,7 +71,8 @@ async function buildApp() {
   });
 
   // API routes
-  registerBenchmarkingRoutes(app, prisma);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerBenchmarkingRoutes(app as any, prisma);
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {

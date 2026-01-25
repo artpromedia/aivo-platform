@@ -31,15 +31,18 @@ export function createApp() {
   });
 
   // Plugins
-  app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(cors as any, {
     origin: config.nodeEnv === 'production' ? false : true,
     credentials: true,
   });
 
-  app.register(helmet, { contentSecurityPolicy: false });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(helmet as any, { contentSecurityPolicy: false });
 
   // Rate limiting
-  app.register(rateLimit, FastifyRateLimitPresets.internalApi('legal-hold-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('legal-hold-svc'));
 
   // Health check
   app.get('/health', async () => ({

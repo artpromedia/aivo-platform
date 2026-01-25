@@ -45,9 +45,11 @@ export class WebSocketHandler {
    * Register WebSocket routes with Fastify
    */
   async register(fastify: FastifyInstance): Promise<void> {
-    await fastify.register(import('@fastify/websocket'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await fastify.register(import('@fastify/websocket') as any);
 
-    fastify.get('/ws', { websocket: true }, (socket, request) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fastify.get('/ws', { websocket: true } as any, (socket: any, request: any) => {
       this.handleConnection(socket, request.user as AuthContext);
     });
 

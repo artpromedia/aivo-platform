@@ -13,7 +13,8 @@ export async function buildApp() {
   });
 
   // Rate limiting
-  await fastify.register(rateLimit, FastifyRateLimitPresets.dataIngestion('sync-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await fastify.register(rateLimit as any, FastifyRateLimitPresets.dataIngestion('sync-svc'));
 
   // Register auth middleware
   await fastify.register(authMiddleware);

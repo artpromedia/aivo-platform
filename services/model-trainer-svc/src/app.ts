@@ -10,15 +10,18 @@ import routes from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
-  app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
-  app.register(helmet);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(helmet as any);
   app.register(sensible);
   
   // Rate limiting for AI/ML training service (expensive operations)
-  app.register(rateLimit, FastifyRateLimitPresets.aiService('model-trainer-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, FastifyRateLimitPresets.aiService('model-trainer-svc'));
   
   app.get('/health', async () => ({ status: 'healthy', service: 'model-trainer-svc' }));
   app.register(async (protectedApp) => {

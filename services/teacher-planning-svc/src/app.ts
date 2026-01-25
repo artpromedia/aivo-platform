@@ -16,7 +16,8 @@ export function createApp() {
   app.setErrorHandler(errorHandler);
 
   // Rate limiting
-  app.register(rateLimit, FastifyRateLimitPresets.publicApi('teacher-planning-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('teacher-planning-svc'));
 
   // Health check (no auth required)
   app.register(registerHealthRoutes);

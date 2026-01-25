@@ -126,7 +126,7 @@ export class AggregationService {
             metricValue: metric.metricValue,
             noisyValue,
             sampleSize: metric.sampleSize,
-            confidenceLevel: metric.confidenceLevel,
+            confidenceLevel: metric.confidenceLevel ?? null,
             submittedAt: new Date(),
           },
           create: {
@@ -139,7 +139,7 @@ export class AggregationService {
             periodEnd: metric.periodEnd,
             periodType: metric.periodType,
             sampleSize: metric.sampleSize,
-            confidenceLevel: metric.confidenceLevel,
+            confidenceLevel: metric.confidenceLevel ?? null,
             isAnonymized: true,
           },
         });

@@ -62,7 +62,7 @@ export interface ParticipantProfile {
   size: DistrictSize;
   geographicType: GeographicType;
   studentCount: number;
-  freeReducedLunchPct?: number;
+  freeReducedLunchPct?: number | null;
   state: string;
   gradeLevelsServed: string[];
   sharingPreferences: SharingPreferences;

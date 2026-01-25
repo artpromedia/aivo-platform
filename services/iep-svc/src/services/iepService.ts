@@ -25,8 +25,8 @@ export async function createIEP(tenantId: string, userId: string, input: any) {
       version: 1,
       iepType: input.iepType,
       status: 'DRAFT',
-      meetingDate: input.meetingDate ? new Date(input.meetingDate) : undefined,
-      effectiveDate: input.effectiveDate ? new Date(input.effectiveDate) : undefined,
+      meetingDate: input.meetingDate ? new Date(input.meetingDate) : null,
+      effectiveDate: input.effectiveDate ? new Date(input.effectiveDate) : null,
       academicLevel: input.academicLevel,
       functionalLevel: input.functionalLevel,
       parentConcerns: input.parentConcerns,
@@ -185,7 +185,7 @@ export async function addGoal(tenantId: string, iepId: string, input: any) {
       baseline: input.baseline,
       targetCriteria: input.targetCriteria,
       measurementMethod: input.measurementMethod,
-      targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
+      targetDate: input.targetDate ? new Date(input.targetDate) : null,
       standardsAligned: input.standardsAligned || [],
       status: 'NOT_STARTED',
     },
@@ -226,7 +226,7 @@ export async function updateGoal(tenantId: string, goalId: string, input: any) {
       baseline: input.baseline,
       targetCriteria: input.targetCriteria,
       measurementMethod: input.measurementMethod,
-      targetDate: input.targetDate ? new Date(input.targetDate) : undefined,
+      targetDate: input.targetDate ? new Date(input.targetDate) : null,
       standardsAligned: input.standardsAligned,
       status: input.status,
     },
@@ -308,8 +308,8 @@ export async function addService(tenantId: string, iepId: string, input: any) {
       description: input.description,
       frequency: input.frequency,
       duration: input.duration,
-      startDate: input.startDate ? new Date(input.startDate) : undefined,
-      endDate: input.endDate ? new Date(input.endDate) : undefined,
+      startDate: input.startDate ? new Date(input.startDate) : null,
+      endDate: input.endDate ? new Date(input.endDate) : null,
       location: input.location,
       groupSize: input.groupSize,
       providerType: input.providerType,
@@ -407,7 +407,7 @@ export async function checkCompliance(tenantId: string) {
   });
 
   for (const iep of annualReviewsDue) {
-    const daysUntil = differenceInDays(iep.annualReviewDate, now);
+    const daysUntil = differenceInDays(iep.annualReviewDate!, now);
     alerts.push({
       alertType: 'ANNUAL_REVIEW_DUE',
       severity: daysUntil <= 7 ? 'High' : 'Medium',

@@ -10,13 +10,16 @@ import routes from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
-  app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(cors as any, {
     origin: process.env.CORS_ORIGINS?.split(',') ?? (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:3001']),
     credentials: true,
   });
-  app.register(helmet);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(helmet as any);
   app.register(sensible);
-  app.register(rateLimit, FastifyRateLimitPresets.aiService('game-gen-svc'));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(rateLimit as any, FastifyRateLimitPresets.aiService('game-gen-svc'));
   app.get('/health', async () => ({ status: 'healthy', service: 'game-gen-svc' }));
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);

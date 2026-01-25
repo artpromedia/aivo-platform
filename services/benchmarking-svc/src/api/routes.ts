@@ -13,9 +13,9 @@ import {
   BenchmarkService,
   AggregationService,
   InsightsService,
-} from '../services';
-import { requireAdminRole } from '../middleware/auth';
-import type { MetricCategory, InsightType } from '../types';
+} from '../services/index.js';
+import { requireAdminRole } from '../middleware/auth.js';
+import type { MetricCategory, InsightType } from '../types/index.js';
 
 // Request schemas
 const enrollmentSchema = z.object({
@@ -437,17 +437,8 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
   app.get(
     '/api/v1/admin/participants',
     { preHandler: [requireAdminRole] },
-    async (
-      request: FastifyRequest<{
-        Querystring: {
-          status?: string;
-          state?: string;
-          limit?: string;
-          offset?: string;
-        };
-      }>,
-      reply: FastifyReply
-    ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (request: any, reply: FastifyReply) => {
       const { status, state, limit, offset } = request.query;
 
       const result = await participationService.listParticipants({
@@ -467,13 +458,8 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
   app.post(
     '/api/v1/admin/participants/:tenantId/activate',
     { preHandler: [requireAdminRole] },
-    async (
-      request: FastifyRequest<{
-        Headers: { 'x-admin-id': string };
-        Params: { tenantId: string };
-      }>,
-      reply: FastifyReply
-    ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (request: any, reply: FastifyReply) => {
       // Extract admin ID from JWT user subject
       const adminId = request.user?.sub ?? request.headers['x-admin-id'];
       const { tenantId } = request.params;
@@ -490,14 +476,8 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
   app.post(
     '/api/v1/admin/participants/:tenantId/suspend',
     { preHandler: [requireAdminRole] },
-    async (
-      request: FastifyRequest<{
-        Headers: { 'x-admin-id': string };
-        Params: { tenantId: string };
-        Body: { reason: string };
-      }>,
-      reply: FastifyReply
-    ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (request: any, reply: FastifyReply) => {
       // Extract admin ID from JWT user subject
       const adminId = request.user?.sub ?? request.headers['x-admin-id'];
       const { tenantId } = request.params;
@@ -519,7 +499,8 @@ export function registerBenchmarkingRoutes(app: FastifyInstance, prisma: PrismaC
   app.post(
     '/api/v1/admin/cohorts/:cohortId/recompute',
     { preHandler: [requireAdminRole] },
-    async (request: FastifyRequest<{ Params: { cohortId: string } }>, reply: FastifyReply) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async (request: any, reply: FastifyReply) => {
       const { cohortId } = request.params;
 
       await aggregationService.recomputeCohortAggregates(cohortId);

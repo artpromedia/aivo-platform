@@ -81,7 +81,8 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   done();
 };
 
-export const authMiddleware = fp(authPlugin);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authMiddleware = fp(authPlugin as any) as any;
 
 /**
  * Admin role guard - requires admin, super_admin, or platform_admin role

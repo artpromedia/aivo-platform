@@ -42,13 +42,15 @@ function getCorsOrigins(): string[] {
 
 const corsOrigins = getCorsOrigins();
 
-await fastify.register(cors, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await fastify.register(cors as any, {
   origin: corsOrigins,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true,
 });
 
-await fastify.register(rateLimit, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+await fastify.register(rateLimit as any, {
   max: 100,
   timeWindow: '1 minute',
 });

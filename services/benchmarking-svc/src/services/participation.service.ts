@@ -5,7 +5,7 @@
  * for the benchmarking program.
  */
 
-import type { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 // Type for JSON values that can be stored in Prisma
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
@@ -45,7 +45,7 @@ export class ParticipationService {
         size: request.size,
         geographicType: request.geographicType,
         studentCount: request.studentCount,
-        freeReducedLunchPct: request.freeReducedLunchPct,
+        freeReducedLunchPct: request.freeReducedLunchPct ?? null,
         state: request.state,
         gradeLevelsServed: request.gradeLevelsServed,
         consentedBy: request.consentedBy,
@@ -93,7 +93,7 @@ export class ParticipationService {
         size: request.size,
         geographicType: request.geographicType,
         studentCount: request.studentCount,
-        freeReducedLunchPct: request.freeReducedLunchPct,
+        freeReducedLunchPct: request.freeReducedLunchPct ?? null,
         state: request.state,
         gradeLevelsServed: request.gradeLevelsServed,
         consentedBy: request.consentedBy,
@@ -356,7 +356,7 @@ export class ParticipationService {
         action,
         actorId,
         actorType: 'user',
-        details: details as JsonValue,
+        details: (details ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       },
     });
   }

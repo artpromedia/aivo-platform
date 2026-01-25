@@ -125,7 +125,8 @@ export function registerLtiRoutes(
       const params = { ...query, ...body };
 
       const parsed = OidcLoginSchema.parse(params);
-      const result = await launchService.handleOidcLogin(parsed);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await launchService.handleOidcLogin(parsed as any);
 
       // Redirect to platform's auth endpoint
       return reply.redirect(result.redirectUrl, 302);
@@ -147,7 +148,8 @@ export function registerLtiRoutes(
     try {
       const params = request.query as Record<string, string>;
       const parsed = OidcLoginSchema.parse(params);
-      const result = await launchService.handleOidcLogin(parsed);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await launchService.handleOidcLogin(parsed as any);
       return reply.redirect(result.redirectUrl, 302);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -168,7 +170,8 @@ export function registerLtiRoutes(
     try {
       const body = request.body as Record<string, string>;
       const parsed = LaunchSchema.parse(body);
-      const result = await launchService.handleLaunch(parsed);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await launchService.handleLaunch(parsed as any);
 
       // Redirect to Aivo session page
       return reply.redirect(result.redirectUrl, 302);
@@ -340,7 +343,7 @@ export function registerLtiRoutes(
           membershipsUrl: parsed.membershipsUrl ?? null,
           deepLinkingUrl: parsed.deepLinkingUrl ?? null,
           configJson: parsed.configJson as object,
-        },
+        } as Parameters<typeof prisma.ltiTool.create>[0]['data'],
       });
 
       return reply.status(201).send({

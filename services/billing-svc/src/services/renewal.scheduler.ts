@@ -7,7 +7,7 @@
  * and overdue invoices. Uses cron-like scheduling for periodic tasks.
  */
 
-import type { PrismaClient } from '../generated/prisma-client';
+import type { PrismaClient } from '../../generated/prisma-client';
 import { RenewalTaskRepository, DistrictInvoiceRepository, QuoteRepository } from '../repositories';
 import type { RenewalTask } from '../types';
 import { RenewalTaskStatus } from '../types';

@@ -210,7 +210,8 @@ async function extractFromDart(
   for (const pattern of patterns) {
     let match;
     while ((match = pattern.exec(content)) !== null) {
-      const key = match[1];
+      const key = match[1] ?? '';
+      if (!key) continue;
       const beforeMatch = content.substring(0, match.index);
       const lineNumber = beforeMatch.split('\n').length;
       const lastNewline = beforeMatch.lastIndexOf('\n');
