@@ -61,6 +61,18 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Speech Analyzer initialization failed: {e}")
         app.state.speech_analyzer = None
     
+    # Initialize fluency analyzer
+    try:
+        from .models.fluency import FluencyAnalyzer
+        app.state.fluency_analyzer = FluencyAnalyzer(
+            sample_rate=int(os.getenv("FLUENCY_SAMPLE_RATE", "16000")),
+            device=os.getenv("DEVICE", "cpu"),
+        )
+        logger.info("Fluency Analyzer initialized")
+    except Exception as e:
+        logger.warning(f"Fluency Analyzer initialization failed: {e}")
+        app.state.fluency_analyzer = None
+    
     yield
     
     # Shutdown
@@ -101,10 +113,16 @@ async def readiness_check():
     ready = True
     details = {}
     
-    # Check if analyzer is available
+    # Check if speech analyzer is available
     if hasattr(app.state, 'speech_analyzer'):
         details["speech_analyzer"] = app.state.speech_analyzer is not None
         if not app.state.speech_analyzer:
+            ready = False
+    
+    # Check if fluency analyzer is available
+    if hasattr(app.state, 'fluency_analyzer'):
+        details["fluency_analyzer"] = app.state.fluency_analyzer is not None
+        if not app.state.fluency_analyzer:
             ready = False
     
     return {
