@@ -1,0 +1,349 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* AIVO Grade Theme CSS Variables */
+
+/* Default theme (Navigator/MS) */
+:root {
+  /* Colors */
+  --color-primary: 8 145 178;
+  --color-primary-hover: 14 116 144;
+  --color-secondary: 34 211 238;
+  --color-secondary-hover: 6 182 212;
+  --color-accent: 16 185 129;
+  --color-background: 248 250 251;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 236 254 255;
+  --color-surface-elevated: 255 255 255;
+  --color-text: 26 26 46;
+  --color-text-muted: 82 82 91;
+  --color-on-primary: 255 255 255;
+  --color-on-accent: 255 255 255;
+  --color-success: 16 185 129;
+  --color-warning: 245 158 11;
+  --color-error: 239 68 68;
+  --color-info: 59 130 246;
+  --color-border: 165 243 252;
+  --color-border-muted: 207 250 254;
+  --color-focus: 59 130 246;
+  --color-focus-ring: rgba(59, 130, 246, 0.5);
+  --color-backdrop: rgba(26, 26, 46, 0.45);
+
+  /* Typography */
+  --font-family-default: "Nunito", "Inter", system-ui, sans-serif;
+  --font-family-heading: "Nunito", "Inter", system-ui, sans-serif;
+  --font-family-dyslexia: "Atkinson Hyperlegible", "OpenDyslexic", sans-serif;
+  --font-size-display: 36px;
+  --font-size-headline: 28px;
+  --font-size-title: 22px;
+  --font-size-body: 16px;
+  --font-size-label: 14px;
+  --font-size-caption: 12px;
+  --line-height-display: 44px;
+  --line-height-headline: 36px;
+  --line-height-title: 30px;
+  --line-height-body: 24px;
+  --line-height-label: 20px;
+  --line-height-caption: 18px;
+  --letter-spacing: 0.01em;
+
+  /* Spacing */
+  --spacing-unit: 8.48px;
+  --spacing-scale: 1.06;
+  --space-0: 0px;
+  --space-1: 4.24px;
+  --space-2: 8.48px;
+  --space-3: 12.72px;
+  --space-4: 16.96px;
+  --space-5: 21.2px;
+  --space-6: 25.44px;
+  --space-7: 33.92px;
+  --space-8: 42.4px;
+  --space-9: 50.88px;
+  --space-10: 59.36px;
+
+  /* Border Radii */
+  --radius-button: 12px;
+  --radius-card: 16px;
+  --radius-input: 10px;
+  --radius-modal: 20px;
+
+  /* Padding */
+  --padding-button: 12px 24px;
+  --padding-button-sm: 8px 16px;
+  --padding-button-lg: 16px 32px;
+  --padding-card: 20px;
+
+  /* Animations */
+  --animation-duration: 0.25s;
+  --animation-duration-fast: 0.15s;
+  --animation-duration-slow: 0.4s;
+  --animation-easing: cubic-bezier(0.2, 0, 0, 1);
+  --animation-easing-bounce: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --hover-scale: 1.02;
+  --press-scale: 0.98;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgba(8, 145, 178, 0.12);
+  --shadow-card-hover: 0 8px 24px rgba(8, 145, 178, 0.18);
+
+  /* Touch targets */
+  --touch-target-min: 48px;
+
+  /* Icon size */
+  --icon-size: 24px;
+}
+
+/* Explorer Theme (K-5) */
+[data-grade-theme="K5"],
+[data-theme="k5"] {
+  --color-primary: 255 107 107;
+  --color-primary-hover: 255 82 82;
+  --color-secondary: 78 205 196;
+  --color-secondary-hover: 61 189 181;
+  --color-accent: 255 230 109;
+  --color-background: 255 249 240;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 255 245 230;
+  --color-surface-elevated: 255 255 255;
+  --color-text: 45 52 54;
+  --color-text-muted: 99 110 114;
+  --color-on-primary: 255 255 255;
+  --color-on-accent: 45 52 54;
+  --color-border: 255 216 216;
+  --color-border-muted: 255 232 232;
+  --color-focus: 116 185 255;
+  --color-focus-ring: rgba(116, 185, 255, 0.5);
+
+  --font-family-default: "Nunito", "Comic Neue", "Comic Sans MS", cursive, sans-serif;
+  --font-family-heading: "Fredoka One", "Nunito", cursive, sans-serif;
+  --font-size-display: 42px;
+  --font-size-headline: 34px;
+  --font-size-title: 26px;
+  --font-size-body: 18px;
+  --font-size-label: 16px;
+  --font-size-caption: 14px;
+  --line-height-display: 52px;
+  --line-height-headline: 44px;
+  --line-height-title: 36px;
+  --line-height-body: 28px;
+  --line-height-label: 24px;
+  --line-height-caption: 20px;
+  --letter-spacing: 0.02em;
+
+  --spacing-unit: 9.2px;
+  --spacing-scale: 1.15;
+
+  --radius-button: 20px;
+  --radius-card: 24px;
+  --radius-input: 16px;
+  --radius-modal: 28px;
+
+  --padding-button: 16px 32px;
+  --padding-button-sm: 12px 24px;
+  --padding-button-lg: 20px 40px;
+  --padding-card: 24px;
+
+  --animation-duration: 0.4s;
+  --animation-duration-fast: 0.2s;
+  --animation-duration-slow: 0.6s;
+  --animation-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --animation-easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --hover-scale: 1.05;
+  --press-scale: 0.95;
+
+  --shadow-card: 0 8px 32px rgba(255, 107, 107, 0.2);
+  --shadow-card-hover: 0 12px 40px rgba(255, 107, 107, 0.3);
+
+  --touch-target-min: 56px;
+  --icon-size: 32px;
+}
+
+/* Scholar Theme (9-12) */
+[data-grade-theme="HS"],
+[data-theme="hs"] {
+  --color-primary: 26 26 46;
+  --color-primary-hover: 45 45 71;
+  --color-secondary: 71 71 111;
+  --color-secondary-hover: 90 90 133;
+  --color-accent: 124 58 237;
+  --color-background: 250 250 250;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 244 244 245;
+  --color-surface-elevated: 255 255 255;
+  --color-text: 26 26 46;
+  --color-text-muted: 82 82 91;
+  --color-on-primary: 255 255 255;
+  --color-on-accent: 255 255 255;
+  --color-border: 228 228 231;
+  --color-border-muted: 244 244 245;
+  --color-focus: 59 130 246;
+  --color-focus-ring: rgba(59, 130, 246, 0.5);
+
+  --font-family-default: "Inter", system-ui, -apple-system, sans-serif;
+  --font-family-heading: "Inter", system-ui, -apple-system, sans-serif;
+  --font-size-display: 32px;
+  --font-size-headline: 24px;
+  --font-size-title: 20px;
+  --font-size-body: 15px;
+  --font-size-label: 13px;
+  --font-size-caption: 11px;
+  --line-height-display: 40px;
+  --line-height-headline: 32px;
+  --line-height-title: 28px;
+  --line-height-body: 24px;
+  --line-height-label: 18px;
+  --line-height-caption: 16px;
+  --letter-spacing: 0;
+
+  --spacing-unit: 8px;
+  --spacing-scale: 1.0;
+
+  --radius-button: 8px;
+  --radius-card: 8px;
+  --radius-input: 6px;
+  --radius-modal: 12px;
+
+  --padding-button: 10px 20px;
+  --padding-button-sm: 6px 12px;
+  --padding-button-lg: 14px 28px;
+  --padding-card: 16px;
+
+  --animation-duration: 0.15s;
+  --animation-duration-fast: 0.1s;
+  --animation-duration-slow: 0.25s;
+  --animation-easing: cubic-bezier(0.2, 0, 0, 1);
+  --animation-easing-bounce: cubic-bezier(0.34, 1.1, 0.64, 1);
+  --hover-scale: 1.01;
+  --press-scale: 0.99;
+
+  --shadow-card: 0 2px 8px rgba(26, 26, 46, 0.08);
+  --shadow-card-hover: 0 4px 12px rgba(26, 26, 46, 0.12);
+
+  --touch-target-min: 44px;
+  --icon-size: 20px;
+}
+
+/* Scholar Dark Theme */
+[data-grade-theme="HSDark"],
+[data-theme="hsdark"] {
+  color-scheme: dark;
+
+  --color-primary: 167 139 250;
+  --color-primary-hover: 196 181 253;
+  --color-secondary: 117 117 147;
+  --color-secondary-hover: 138 138 168;
+  --color-accent: 124 58 237;
+  --color-background: 9 9 11;
+  --color-surface: 24 24 27;
+  --color-surface-muted: 39 39 42;
+  --color-surface-elevated: 39 39 42;
+  --color-text: 250 250 250;
+  --color-text-muted: 161 161 170;
+  --color-on-primary: 9 9 11;
+  --color-on-accent: 255 255 255;
+  --color-success: 52 211 153;
+  --color-warning: 251 191 36;
+  --color-error: 248 113 113;
+  --color-info: 96 165 250;
+  --color-border: 63 63 70;
+  --color-border-muted: 39 39 42;
+  --color-focus: 96 165 250;
+  --color-focus-ring: rgba(96, 165, 250, 0.5);
+  --color-backdrop: rgba(0, 0, 0, 0.6);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* High Contrast Mode */
+[data-high-contrast="true"] {
+  --color-text: 0 0 0;
+  --color-text-muted: 26 26 26;
+  --color-background: 255 255 255;
+  --color-surface: 255 255 255;
+  --color-border: 0 0 0;
+}
+
+[data-grade-theme="HSDark"][data-high-contrast="true"],
+[data-theme="hsdark"][data-high-contrast="true"] {
+  --color-text: 255 255 255;
+  --color-text-muted: 228 228 231;
+  --color-background: 0 0 0;
+  --color-surface: 9 9 11;
+  --color-border: 255 255 255;
+}
+
+/* Dyslexia-friendly mode */
+[data-dyslexia="true"] {
+  --font-family-default: var(--font-family-dyslexia);
+  --font-family-heading: var(--font-family-dyslexia);
+  --letter-spacing: 0.05em;
+}
+
+/* Reduced motion mode */
+[data-reduced-motion="true"],
+@media (prefers-reduced-motion: reduce) {
+  --animation-duration: 0ms;
+  --animation-duration-fast: 0ms;
+  --animation-duration-slow: 0ms;
+  --hover-scale: 1;
+  --press-scale: 1;
+}
+
+/* Large text mode */
+[data-large-text="true"] {
+  --font-size-display: calc(var(--font-size-display) * 1.2);
+  --font-size-headline: calc(var(--font-size-headline) * 1.2);
+  --font-size-title: calc(var(--font-size-title) * 1.2);
+  --font-size-body: calc(var(--font-size-body) * 1.2);
+  --font-size-label: calc(var(--font-size-label) * 1.2);
+  --font-size-caption: calc(var(--font-size-caption) * 1.2);
+}
+
+/* Print-friendly styles */
+@media print {
+  :root {
+    --color-background: 255 255 255;
+    --color-surface: 255 255 255;
+    --color-text: 0 0 0;
+    --color-text-muted: 51 51 51;
+    --shadow-card: none;
+    --shadow-card-hover: none;
+    --animation-duration: 0ms;
+  }
+}
+
+/* Custom Animations */
+@keyframes progress-stripes {
+  0% { background-position: 1rem 0; }
+  100% { background-position: 0 0; }
+}
+
+@keyframes progress-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes progress-complete {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes badge-particle {
+  0% { opacity: 1; transform: rotate(var(--rotation, 0deg)) translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--rotation, 0deg)) translateY(-60px) scale(0); }
+}
+
+@keyframes badge-shine {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-family-default);
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-text));
+}

@@ -1,7 +1,7 @@
 /**
  * Gamification Components Index
  *
- * Team-based competitions, leaderboards, and social learning features
+ * Team-based competitions, leaderboards, achievements, and social learning features
  */
 
 export { TeamCard } from './TeamCard';
@@ -11,6 +11,7 @@ export { CompetitionCard } from './CompetitionCard';
 export { CompetitionBracket } from './CompetitionBracket';
 export { TeamChallengeCreator } from './TeamChallengeCreator';
 export { TeamProgressWidget } from './TeamProgressWidget';
+export { AchievementBadge, AchievementGrid } from './AchievementBadge';
 
 export type {
   TeamCardProps,
@@ -25,3 +26,11 @@ export type {
   Competition,
   CompetitionStatus,
 } from './types';
+
+export type {
+  AchievementBadgeProps,
+  AchievementGridProps,
+  AchievementRarity,
+  AchievementSize,
+  AchievementStyle,
+} from './AchievementBadge';

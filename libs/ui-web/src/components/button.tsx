@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../utils/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive' | 'success';
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -14,8 +14,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rightIcon?: ReactNode;
   loading?: boolean;
   asChild?: boolean;
+  /** Enable grade-appropriate hover animations */
+  animated?: boolean;
 }
 
+/**
+ * Theme-aware Button component
+ *
+ * Adapts styling based on the current grade theme:
+ * - K5 (Explorer): Pill-shaped with bouncy animations and larger touch targets
+ * - MS (Navigator): Rounded with subtle animations
+ * - HS (Scholar): Sharp corners with professional minimal animations
+ *
+ * Uses CSS custom properties from the grade theme system for dynamic styling.
+ */
 export function Button({
   className,
   children,
@@ -25,25 +37,49 @@ export function Button({
   rightIcon,
   loading = false,
   asChild: _asChild,
+  animated = true,
   type = 'button',
   disabled,
   ...props
 }: Readonly<ButtonProps>) {
   const variantClass: Record<ButtonVariant, string> = {
-    primary: 'bg-primary text-on-accent shadow-soft hover:bg-primary/90 active:translate-y-[0.5px]',
-    secondary:
-      'bg-surface text-text border border-border shadow-soft hover:bg-surface-muted active:translate-y-[0.5px]',
-    ghost: 'bg-transparent text-text hover:bg-surface-muted border border-transparent',
-    outline:
-      'bg-transparent text-text border border-border hover:bg-surface-muted active:translate-y-[0.5px]',
-    destructive: 'bg-red-600 text-white shadow-soft hover:bg-red-700 active:translate-y-[0.5px]',
+    primary: cn(
+      'bg-primary text-on-primary shadow-soft',
+      'hover:bg-primary-hover hover:shadow-[var(--shadow-card-hover)]',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
+    secondary: cn(
+      'bg-surface text-text border border-border shadow-soft',
+      'hover:bg-surface-muted hover:border-border-muted',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
+    ghost: cn(
+      'bg-transparent text-text border border-transparent',
+      'hover:bg-surface-muted',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
+    outline: cn(
+      'bg-transparent text-text border border-border',
+      'hover:bg-surface-muted hover:border-primary',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
+    destructive: cn(
+      'bg-error text-white shadow-soft',
+      'hover:bg-error/90',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
+    success: cn(
+      'bg-success text-white shadow-soft',
+      'hover:bg-success/90',
+      animated && 'hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]'
+    ),
   };
 
   const sizeClass: Record<ButtonSize, string> = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-    icon: 'p-2',
+    sm: 'min-h-[var(--touch-target-min,36px)] px-[12px] py-[6px] text-label gap-1.5',
+    md: 'min-h-[var(--touch-target-min,44px)] px-[var(--space-4,16px)] py-[var(--space-2,8px)] text-body gap-2',
+    lg: 'min-h-[var(--touch-target-min,52px)] px-[var(--space-6,24px)] py-[var(--space-3,12px)] text-title gap-2.5',
+    icon: 'min-h-[var(--touch-target-min,44px)] min-w-[var(--touch-target-min,44px)] p-2 aspect-square',
   };
 
   return (
@@ -51,9 +87,18 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors duration-150',
-        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--color-focus))]',
-        'disabled:cursor-not-allowed disabled:opacity-60',
+        // Base styles
+        'inline-flex items-center justify-center font-semibold',
+        // Theme-aware border radius
+        'rounded-[var(--radius-button,8px)]',
+        // Theme-aware transitions
+        'transition-all duration-[var(--animation-duration,150ms)] ease-[var(--animation-easing)]',
+        // Focus styles
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'focus-visible:outline-[rgb(var(--color-focus))]',
+        // Disabled styles
+        'disabled:cursor-not-allowed disabled:opacity-60 disabled:transform-none',
+        // Variant and size classes
         variantClass[variant],
         sizeClass[size],
         className
@@ -61,7 +106,11 @@ export function Button({
       {...props}
     >
       {loading && (
-        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+        <svg
+          className="animate-spin"
+          style={{ width: 'var(--icon-size, 16px)', height: 'var(--icon-size, 16px)' }}
+          viewBox="0 0 24 24"
+        >
           <circle
             className="opacity-25"
             cx="12"
