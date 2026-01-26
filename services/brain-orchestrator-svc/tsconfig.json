@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.compat.json",
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "baseUrl": "../..",
+    "paths": {
+      "@aivo/ts-rbac": ["libs/ts-rbac/dist/index.d.ts"]
+    },
+    "rootDir": ".",
+    "outDir": "dist",
+    "noEmit": false
+  },
+  "include": ["src/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist", "build"]
+}

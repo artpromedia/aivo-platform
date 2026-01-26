@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Orchestration Models
+// ============================================
+
+enum PlanStatus {
+  draft
+  active
+  paused
+  completed
+  cancelled
+
+  @@map("plan_status")
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  failed
+  paused
+  cancelled
+
+  @@map("task_status")
+}
+
+model OrchestrationPlan {
+  id          String     @id @default(uuid()) @db.Uuid
+  learnerId   String     @map("learner_id") @db.Uuid
+  tenantId    String     @map("tenant_id") @db.Uuid
+  goal        Json
+  status      PlanStatus @default(draft)
+  tasks       Task[]
+  startedAt   DateTime?  @map("started_at") @db.Timestamptz
+  completedAt DateTime?  @map("completed_at") @db.Timestamptz
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([learnerId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("orchestration_plans")
+}
+
+model Task {
+  id                String            @id @default(uuid()) @db.Uuid
+  planId            String            @map("plan_id") @db.Uuid
+  plan              OrchestrationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  type              String
+  priority          Int               @default(50)
+  estimatedDuration Int               @map("estimated_duration") // minutes
+  cognitiveLoad     String            @map("cognitive_load")
+  status            TaskStatus        @default(pending)
+  result            Json?
+  startedAt         DateTime?         @map("started_at") @db.Timestamptz
+  completedAt       DateTime?         @map("completed_at") @db.Timestamptz
+
+  @@index([planId])
+  @@index([status])
+  @@map("tasks")
+}
+
+// ============================================
+// Cognitive Session Models
+// ============================================
+
+model CognitiveSession {
+  id              String                   @id @default(uuid()) @db.Uuid
+  learnerId       String                   @map("learner_id") @db.Uuid
+  tenantId        String                   @map("tenant_id") @db.Uuid
+  interactions    CognitiveInteraction[]
+  cognitiveStates CognitiveStateSnapshot[]
+  breaks          BreakRecord[]
+  startedAt       DateTime                 @default(now()) @map("started_at") @db.Timestamptz
+  endedAt         DateTime?                @map("ended_at") @db.Timestamptz
+
+  @@index([learnerId])
+  @@index([tenantId])
+  @@map("cognitive_sessions")
+}
+
+model CognitiveInteraction {
+  id            String           @id @default(uuid()) @db.Uuid
+  sessionId     String           @map("session_id") @db.Uuid
+  session       CognitiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  learnerId     String           @map("learner_id") @db.Uuid
+  tenantId      String           @map("tenant_id") @db.Uuid
+  type          String
+  activityId    String?          @map("activity_id") @db.Uuid
+  timestamp     DateTime         @default(now()) @db.Timestamptz
+  duration      Int? // milliseconds
+  responseTime  Int?             @map("response_time") // milliseconds
+  isCorrect     Boolean?         @map("is_correct")
+  attemptNumber Int?             @map("attempt_number")
+  errorType     String?          @map("error_type")
+  metadata      Json             @default("{}")
+
+  @@index([sessionId])
+  @@index([learnerId])
+  @@index([timestamp])
+  @@map("cognitive_interactions")
+}
+
+model CognitiveStateSnapshot {
+  id              String           @id @default(uuid()) @db.Uuid
+  sessionId       String           @map("session_id") @db.Uuid
+  session         CognitiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  loadLevel       String           @map("load_level")
+  loadScore       Int              @map("load_score")
+  fatigueLevel    Int              @map("fatigue_level")
+  attentionScore  Int              @map("attention_score")
+  errorRate       Float            @map("error_rate")
+  responseLatency Int              @map("response_latency")
+  engagementScore Int              @map("engagement_score")
+  timestamp       DateTime         @default(now()) @db.Timestamptz
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("cognitive_state_snapshots")
+}
+
+model BreakRecord {
+  id                   String           @id @default(uuid()) @db.Uuid
+  sessionId            String           @map("session_id") @db.Uuid
+  session              CognitiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  startedAt            DateTime         @default(now()) @map("started_at") @db.Timestamptz
+  endedAt              DateTime?        @map("ended_at") @db.Timestamptz
+  plannedDuration      Int              @map("planned_duration") // minutes
+  actualDuration       Int?             @map("actual_duration") // minutes
+  activityType         String?          @map("activity_type")
+  activityInstructions String?          @map("activity_instructions")
+
+  @@index([sessionId])
+  @@map("break_records")
+}
+
+model DisengagementAlert {
+  id               String   @id @default(uuid()) @db.Uuid
+  learnerId        String   @map("learner_id") @db.Uuid
+  sessionId        String   @map("session_id") @db.Uuid
+  severity         String
+  indicators       String[]
+  suggestedActions String[] @map("suggested_actions")
+  timestamp        DateTime @default(now()) @db.Timestamptz
+
+  @@index([learnerId])
+  @@index([sessionId])
+  @@map("disengagement_alerts")
+}
+
+// ============================================
+// Learning Path Models
+// ============================================
+
+model LearningPath {
+  id                String               @id @default(uuid()) @db.Uuid
+  learnerId         String               @map("learner_id") @db.Uuid
+  tenantId          String               @map("tenant_id") @db.Uuid
+  name              String
+  description       String?
+  activities        Json                 @default("{}") // ActivitySequence
+  estimatedDuration Int                  @map("estimated_duration") // minutes
+  progress          LearningPathProgress?
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([learnerId])
+  @@index([tenantId])
+  @@map("learning_paths")
+}
+
+model LearningPathProgress {
+  id                     String       @id @default(uuid()) @db.Uuid
+  pathId                 String       @unique @map("path_id") @db.Uuid
+  path                   LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  completedActivityIds   String[]     @map("completed_activity_ids")
+  currentActivityId      String?      @map("current_activity_id")
+  totalProgress          Int          @default(0) @map("total_progress") // 0-100
+  estimatedTimeRemaining Int          @map("estimated_time_remaining") // minutes
+  lastActivityAt         DateTime?    @map("last_activity_at") @db.Timestamptz
+  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("learning_path_progress")
+}
+
+// ============================================
+// Mastery Models
+// ============================================
+
+model SkillMastery {
+  id            String   @id @default(uuid()) @db.Uuid
+  learnerId     String   @map("learner_id") @db.Uuid
+  skillId       String   @map("skill_id")
+  level         Int      @default(0) // 0-100
+  confidence    Float    @default(0.5) // 0-1
+  lastPracticed DateTime @default(now()) @map("last_practiced") @db.Timestamptz
+  practiceCount Int      @default(0) @map("practice_count")
+  trend         String   @default("stable") // improving, stable, declining
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([learnerId, skillId])
+  @@index([learnerId])
+  @@index([skillId])
+  @@map("skill_mastery")
+}
+
+// ============================================
+// Workflow Models
+// ============================================
+
+enum WorkflowStatus {
+  pending
+  running
+  paused
+  completed
+  failed
+  rolled_back
+
+  @@map("workflow_status")
+}
+
+model WorkflowExecution {
+  id             String         @id @default(uuid()) @db.Uuid
+  workflowId     String         @map("workflow_id")
+  learnerId      String         @map("learner_id") @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  status         WorkflowStatus @default(pending)
+  currentStepId  String?        @map("current_step_id")
+  completedSteps String[]       @map("completed_steps")
+  variables      Json           @default("{}")
+  result         Json?
+  startedAt      DateTime       @default(now()) @map("started_at") @db.Timestamptz
+  completedAt    DateTime?      @map("completed_at") @db.Timestamptz
+
+  @@index([workflowId])
+  @@index([learnerId])
+  @@index([status])
+  @@map("workflow_executions")
+}
+
+// ============================================
+// Event Models
+// ============================================
+
+model LearningEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String
+  learnerId String   @map("learner_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  timestamp DateTime @default(now()) @db.Timestamptz
+  data      Json
+  source    String
+
+  @@index([learnerId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([timestamp])
+  @@map("learning_events")
+}
