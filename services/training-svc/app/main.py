@@ -38,6 +38,24 @@ try:
 except ImportError:
     BayesianKnowledgeTracing = None
 
+# Import DKT model
+try:
+    from app.models.dkt_model import DeepKnowledgeTracing
+except ImportError:
+    DeepKnowledgeTracing = None
+
+# Import PFA model
+try:
+    from app.models.pfa_model import PerformanceFactorAnalysis
+except ImportError:
+    PerformanceFactorAnalysis = None
+
+# Import KT Ensemble
+try:
+    from app.models.kt_ensemble import KnowledgeTracingEnsemble
+except ImportError:
+    KnowledgeTracingEnsemble = None
+
 # Import API routes
 try:
     from app.api.routes import router as training_api_router
@@ -72,6 +90,53 @@ async def lifespan(_app: FastAPI):
         except Exception as e:
             logger.warning(f"BKT model initialization failed: {e}")
             _app.state.bkt_model = None
+    
+    # Initialize DKT model
+    if DeepKnowledgeTracing:
+        try:
+            num_skills = int(os.getenv("NUM_SKILLS", "1000"))
+            device = os.getenv("DEVICE", "cpu")
+            _app.state.dkt_model = DeepKnowledgeTracing(
+                num_skills=num_skills,
+                hidden_size=128,
+                num_layers=2,
+                device=device
+            )
+            logger.info(f"DKT model initialized with {num_skills} skills on {device}")
+        except Exception as e:
+            logger.warning(f"DKT model initialization failed: {e}")
+            _app.state.dkt_model = None
+    else:
+        _app.state.dkt_model = None
+    
+    # Initialize PFA model
+    if PerformanceFactorAnalysis:
+        try:
+            _app.state.pfa_model = PerformanceFactorAnalysis()
+            logger.info("PFA model initialized")
+        except Exception as e:
+            logger.warning(f"PFA model initialization failed: {e}")
+            _app.state.pfa_model = None
+    else:
+        _app.state.pfa_model = None
+    
+    # Initialize Knowledge Tracing Ensemble
+    if KnowledgeTracingEnsemble:
+        try:
+            bkt = _app.state.bkt_model
+            dkt = _app.state.dkt_model
+            pfa = _app.state.pfa_model
+            _app.state.kt_ensemble = KnowledgeTracingEnsemble(
+                bkt_model=bkt,
+                dkt_model=dkt,
+                pfa_model=pfa
+            )
+            logger.info("Knowledge Tracing Ensemble initialized")
+        except Exception as e:
+            logger.warning(f"KT Ensemble initialization failed: {e}")
+            _app.state.kt_ensemble = None
+    else:
+        _app.state.kt_ensemble = None
     
     # Initialize Brain Cloner for API routes
     try:

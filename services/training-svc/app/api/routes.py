@@ -81,6 +81,51 @@ class AggregateUpdatesRequest(BaseModel):
 
 
 # ============================================================================
+# Ensemble Knowledge Tracing Request/Response Models
+# ============================================================================
+
+class EnsembleUpdateRequest(BaseModel):
+    """Request to update ensemble with interaction"""
+    learner_id: str = Field(..., description="Learner identifier")
+    skill_id: str = Field(..., description="Skill practiced")
+    correct: bool = Field(..., description="Whether response was correct")
+    timestamp: Optional[str] = Field(None, description="ISO timestamp")
+
+
+class EnsemblePredictRequest(BaseModel):
+    """Request ensemble prediction"""
+    learner_id: str = Field(..., description="Learner identifier")
+    skill_id: str = Field(..., description="Skill to predict")
+    history: Optional[List[Dict[str, Any]]] = Field(None, description="Optional interaction history")
+
+
+class EnsembleBatchUpdateRequest(BaseModel):
+    """Batch update for ensemble"""
+    learner_id: str
+    interactions: List[Dict[str, Any]]
+
+
+class DKTTrainRequest(BaseModel):
+    """Request to train DKT model"""
+    training_data: List[Dict[str, Any]] = Field(..., description="List of learner sequences")
+    num_epochs: int = Field(20, ge=1, le=100, description="Training epochs")
+    batch_size: int = Field(32, ge=1, le=256, description="Batch size")
+    learning_rate: float = Field(0.001, ge=0.0001, le=0.1, description="Learning rate")
+
+
+class PFATrainRequest(BaseModel):
+    """Request to train PFA parameters"""
+    training_data: List[Dict[str, Any]] = Field(..., description="Training data tuples")
+
+
+class OptimalSkillRequest(BaseModel):
+    """Request for optimal skill recommendation"""
+    learner_id: str
+    candidate_skills: List[str]
+    target_mastery: float = Field(0.7, ge=0.1, le=0.99)
+
+
+# ============================================================================
 # Model Accessors
 # ============================================================================
 
@@ -98,6 +143,30 @@ def get_brain_cloner(request: Request):
     if cloner is None:
         raise HTTPException(status_code=503, detail="Brain cloner not initialized")
     return cloner
+
+
+def get_kt_ensemble(request: Request):
+    """Get knowledge tracing ensemble from app state"""
+    ensemble = getattr(request.app.state, 'kt_ensemble', None)
+    if ensemble is None:
+        raise HTTPException(status_code=503, detail="Knowledge tracing ensemble not initialized")
+    return ensemble
+
+
+def get_dkt_model(request: Request):
+    """Get DKT model from app state"""
+    dkt = getattr(request.app.state, 'dkt_model', None)
+    if dkt is None:
+        raise HTTPException(status_code=503, detail="DKT model not initialized")
+    return dkt
+
+
+def get_pfa_model(request: Request):
+    """Get PFA model from app state"""
+    pfa = getattr(request.app.state, 'pfa_model', None)
+    if pfa is None:
+        raise HTTPException(status_code=503, detail="PFA model not initialized")
+    return pfa
 
 
 # ============================================================================
@@ -522,4 +591,375 @@ async def get_stats(request: Request):
             "num_skills": cloner.num_skills,
         }
     
+    # Ensemble stats
+    if hasattr(request.app.state, 'kt_ensemble') and request.app.state.kt_ensemble:
+        stats["kt_ensemble"] = request.app.state.kt_ensemble.get_stats()
+    
+    # DKT stats
+    if hasattr(request.app.state, 'dkt_model') and request.app.state.dkt_model:
+        stats["dkt"] = request.app.state.dkt_model.get_stats()
+    
+    # PFA stats
+    if hasattr(request.app.state, 'pfa_model') and request.app.state.pfa_model:
+        stats["pfa"] = request.app.state.pfa_model.get_stats()
+    
     return stats
+
+
+# ============================================================================
+# Knowledge Tracing Ensemble Endpoints
+# ============================================================================
+
+@router.post("/ensemble/predict")
+async def ensemble_predict(request: Request, body: EnsemblePredictRequest):
+    """
+    Get ensemble prediction combining BKT, DKT, and PFA
+    
+    Returns weighted prediction based on data availability and model confidence.
+    """
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        prediction = ensemble.predict(
+            body.learner_id,
+            body.skill_id,
+            body.history,
+        )
+        
+        return prediction.to_dict()
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Ensemble prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ensemble/update")
+async def ensemble_update(request: Request, body: EnsembleUpdateRequest):
+    """
+    Update all ensemble models with new interaction
+    
+    Updates BKT, DKT, and PFA simultaneously.
+    """
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        timestamp = None
+        if body.timestamp:
+            timestamp = datetime.fromisoformat(body.timestamp)
+        
+        prediction = ensemble.update(
+            body.learner_id,
+            body.skill_id,
+            body.correct,
+            timestamp,
+        )
+        
+        return prediction.to_dict()
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Ensemble update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ensemble/update/batch")
+async def ensemble_batch_update(request: Request, body: EnsembleBatchUpdateRequest):
+    """Batch update ensemble with multiple interactions"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        results = []
+        for interaction in body.interactions:
+            timestamp = None
+            if 'timestamp' in interaction:
+                timestamp = datetime.fromisoformat(interaction['timestamp'])
+            
+            prediction = ensemble.update(
+                body.learner_id,
+                interaction['skill_id'],
+                interaction['correct'],
+                timestamp,
+            )
+            results.append(prediction.to_dict())
+        
+        return {
+            "learner_id": body.learner_id,
+            "updates": results,
+            "count": len(results),
+        }
+    
+    except Exception as e:
+        logger.exception(f"Ensemble batch update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ensemble/mastery/{learner_id}")
+async def ensemble_all_mastery(request: Request, learner_id: str):
+    """Get ensemble mastery predictions for all skills a learner has practiced"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        predictions = ensemble.get_all_mastery(learner_id)
+        
+        return {
+            "learner_id": learner_id,
+            "skills": {k: v.to_dict() for k, v in predictions.items()},
+            "count": len(predictions),
+        }
+    
+    except Exception as e:
+        logger.exception(f"Get all mastery failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ensemble/optimal-skill")
+async def ensemble_optimal_skill(request: Request, body: OptimalSkillRequest):
+    """Find optimal skill to practice next (Zone of Proximal Development)"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        optimal = ensemble.get_optimal_skill(
+            body.learner_id,
+            body.candidate_skills,
+            body.target_mastery,
+        )
+        
+        prediction = None
+        if optimal:
+            prediction = ensemble.predict(body.learner_id, optimal).to_dict()
+        
+        return {
+            "learner_id": body.learner_id,
+            "optimal_skill": optimal,
+            "prediction": prediction,
+            "target_mastery": body.target_mastery,
+        }
+    
+    except Exception as e:
+        logger.exception(f"Get optimal skill failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/ensemble/stats")
+async def ensemble_stats(request: Request):
+    """Get ensemble statistics including model performance"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        return ensemble.get_stats()
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Get ensemble stats failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# DKT-Specific Endpoints
+# ============================================================================
+
+@router.post("/dkt/train")
+async def train_dkt(request: Request, body: DKTTrainRequest, background_tasks: BackgroundTasks):
+    """
+    Train DKT model on historical interaction data
+    
+    This should be run periodically with accumulated learner data.
+    Training runs in background to avoid blocking.
+    """
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'dkt' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="DKT model not available")
+        
+        # Run training (in production, this would be async)
+        history = ensemble.train_dkt(
+            body.training_data,
+            num_epochs=body.num_epochs,
+            batch_size=body.batch_size,
+            learning_rate=body.learning_rate,
+        )
+        
+        return {
+            "status": "completed",
+            "training_history": history,
+            "message": "DKT model trained successfully",
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"DKT training failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/dkt/predict")
+async def dkt_predict(request: Request, learner_id: str, skill_id: int):
+    """Get DKT prediction for a specific skill"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'dkt' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="DKT model not available")
+        
+        dkt = ensemble.models['dkt']
+        prob = dkt.predict(learner_id, skill_id)
+        
+        return {
+            "learner_id": learner_id,
+            "skill_id": skill_id,
+            "mastery_probability": prob,
+            "model": "dkt",
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"DKT prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/dkt/predict-all/{learner_id}")
+async def dkt_predict_all(request: Request, learner_id: str):
+    """Get DKT predictions for all skills"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'dkt' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="DKT model not available")
+        
+        dkt = ensemble.models['dkt']
+        predictions = dkt.predict_all_skills(learner_id)
+        
+        return {
+            "learner_id": learner_id,
+            "predictions": predictions,
+            "model": "dkt",
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"DKT predict all failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# PFA-Specific Endpoints
+# ============================================================================
+
+@router.post("/pfa/predict")
+async def pfa_predict(request: Request, learner_id: str, skill_id: str):
+    """Get PFA prediction for a specific skill"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'pfa' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="PFA model not available")
+        
+        pfa = ensemble.models['pfa']
+        prob = pfa.predict(learner_id, skill_id)
+        
+        return {
+            "learner_id": learner_id,
+            "skill_id": skill_id,
+            "mastery_probability": prob,
+            "model": "pfa",
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"PFA prediction failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/pfa/practices-needed")
+async def pfa_practices_needed(
+    request: Request,
+    learner_id: str,
+    skill_id: str,
+    target_mastery: float = 0.8,
+):
+    """Estimate practices needed to reach target mastery"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'pfa' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="PFA model not available")
+        
+        pfa = ensemble.models['pfa']
+        practices = pfa.estimate_practices_needed(learner_id, skill_id, target_mastery)
+        current = pfa.predict(learner_id, skill_id)
+        
+        return {
+            "learner_id": learner_id,
+            "skill_id": skill_id,
+            "current_mastery": current,
+            "target_mastery": target_mastery,
+            "practices_needed": practices,
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"PFA practices needed failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/pfa/learning-curve/{learner_id}/{skill_id}")
+async def pfa_learning_curve(
+    request: Request,
+    learner_id: str,
+    skill_id: str,
+    max_practices: int = 20,
+):
+    """Get projected learning curve for a skill"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'pfa' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="PFA model not available")
+        
+        pfa = ensemble.models['pfa']
+        curve = pfa.get_learning_curve(learner_id, skill_id, max_practices)
+        
+        return {
+            "learner_id": learner_id,
+            "skill_id": skill_id,
+            "learning_curve": [{"practice": p, "mastery": m} for p, m in curve],
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"PFA learning curve failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/pfa/weakest-skills/{learner_id}")
+async def pfa_weakest_skills(request: Request, learner_id: str, n: int = 5):
+    """Get learner's weakest skills"""
+    try:
+        ensemble = get_kt_ensemble(request)
+        
+        if 'pfa' not in ensemble.models:
+            raise HTTPException(status_code=503, detail="PFA model not available")
+        
+        pfa = ensemble.models['pfa']
+        skills = pfa.get_weakest_skills(learner_id, n)
+        
+        return {
+            "learner_id": learner_id,
+            "weakest_skills": [
+                {"skill_id": s, "mastery": m} for s, m in skills
+            ],
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"PFA weakest skills failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
