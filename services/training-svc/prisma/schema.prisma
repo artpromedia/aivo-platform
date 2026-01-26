@@ -1,0 +1,187 @@
+// Training Service Prisma Schema
+// Brain Memory System - Episodic, Semantic, and Belief Tracking
+// Converted from SQL migrations 0001_brain_memory_system.sql
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, vector]
+}
+
+// =============================================================================
+// Episodic Memories
+// Stores specific learning events with importance scoring
+// =============================================================================
+
+model EpisodicMemory {
+  id               String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  memoryId         String                     @unique @map("memory_id")
+
+  // Multi-tenant isolation
+  tenantId         String                     @map("tenant_id") @db.Uuid
+  learnerId        String                     @map("learner_id") @db.Uuid
+
+  // Event classification
+  eventType        String                     @map("event_type") // success, struggle, breakthrough, misconception, etc.
+
+  // Event content
+  content          Json                       @default("{}")
+  context          Json                       @default("{}")
+
+  // Scoring and importance
+  emotionalValence Decimal                    @default(0.0) @map("emotional_valence") @db.Decimal(4, 3)
+  importanceScore  Decimal                    @default(0.5) @map("importance_score") @db.Decimal(4, 3)
+  decayFactor      Decimal                    @default(1.0) @map("decay_factor") @db.Decimal(4, 3)
+
+  // Access tracking
+  accessCount      Int                        @default(0) @map("access_count")
+  lastAccessed     DateTime?                  @map("last_accessed") @db.Timestamptz
+
+  // Consolidation status
+  consolidated     Boolean                    @default(false)
+  consolidatedAt   DateTime?                  @map("consolidated_at") @db.Timestamptz
+
+  // Related skills and session
+  skillIds         String[]                   @default([]) @map("skill_ids")
+  sessionId        String?                    @map("session_id") @db.Uuid
+
+  // Vector embedding for similarity search (384 dimensions for MiniLM)
+  embedding        Unsupported("vector(384)")?
+
+  // Timestamps
+  eventTimestamp   DateTime                   @default(now()) @map("event_timestamp") @db.Timestamptz
+  createdAt        DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime                   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, eventTimestamp(sort: Desc)])
+  @@index([tenantId, learnerId, eventType])
+  @@index([sessionId])
+  @@map("episodic_memories")
+}
+
+// =============================================================================
+// Semantic Knowledge
+// Stores generalized knowledge extracted from episodic patterns
+// =============================================================================
+
+model SemanticKnowledge {
+  id               String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  knowledgeId      String                     @unique @map("knowledge_id")
+
+  // Multi-tenant isolation
+  tenantId         String                     @map("tenant_id") @db.Uuid
+  learnerId        String                     @map("learner_id") @db.Uuid
+
+  // Knowledge classification
+  concept          String
+  knowledgeType    String                     @map("knowledge_type") // skill, preference, pattern, misconception, etc.
+
+  // Confidence and evidence
+  confidence       Decimal                    @default(0.5) @db.Decimal(4, 3)
+  evidenceCount    Int                        @default(1) @map("evidence_count")
+
+  // Related concepts and sources
+  relatedConcepts  String[]                   @default([]) @map("related_concepts")
+  sourceEpisodes   String[]                   @default([]) @map("source_episodes")
+
+  // Additional attributes
+  attributes       Json                       @default("{}")
+
+  // Vector embedding for similarity search
+  embedding        Unsupported("vector(384)")?
+
+  // Timestamps
+  firstObserved    DateTime                   @default(now()) @map("first_observed") @db.Timestamptz
+  lastUpdated      DateTime                   @default(now()) @map("last_updated") @db.Timestamptz
+  createdAt        DateTime                   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, concept, knowledgeType], map: "uq_semantic_knowledge_learner_concept")
+  @@index([tenantId, learnerId])
+  @@index([tenantId, learnerId, knowledgeType])
+  @@index([tenantId, learnerId, confidence(sort: Desc)])
+  @@index([tenantId, concept])
+  @@map("semantic_knowledge")
+}
+
+// =============================================================================
+// Learner Beliefs
+// Bayesian belief tracking for learner knowledge states
+// =============================================================================
+
+model LearnerBelief {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  beliefId         String   @unique @map("belief_id")
+
+  // Multi-tenant isolation
+  tenantId         String   @map("tenant_id") @db.Uuid
+  learnerId        String   @map("learner_id") @db.Uuid
+
+  // Topic/skill being tracked
+  topic            String
+
+  // Belief state (probability of mastery)
+  beliefState      Decimal  @default(0.5) @map("belief_state") @db.Decimal(6, 5)
+  uncertainty      Decimal  @default(0.5) @db.Decimal(6, 5)
+  prior            Decimal  @default(0.5) @db.Decimal(6, 5)
+
+  // Beta distribution parameters
+  alpha            Decimal  @default(1.0) @db.Decimal(10, 4)
+  beta             Decimal  @default(1.0) @db.Decimal(10, 4)
+
+  // Evidence tracking
+  evidenceCount    Int      @default(0) @map("evidence_count")
+  correctCount     Int      @default(0) @map("correct_count")
+  incorrectCount   Int      @default(0) @map("incorrect_count")
+
+  // Evidence history (last N updates)
+  evidenceHistory  Json     @default("[]") @map("evidence_history")
+
+  // Timestamps
+  lastUpdated      DateTime @default(now()) @map("last_updated") @db.Timestamptz
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, topic], map: "uq_learner_beliefs_topic")
+  @@index([tenantId, learnerId])
+  @@index([tenantId, learnerId, topic])
+  @@index([tenantId, learnerId, beliefState(sort: Desc)])
+  @@map("learner_beliefs")
+}
+
+// =============================================================================
+// Memory Consolidation Logs
+// Tracks memory consolidation operations
+// =============================================================================
+
+model MemoryConsolidationLog {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  // Multi-tenant isolation
+  tenantId              String   @map("tenant_id") @db.Uuid
+  learnerId             String   @map("learner_id") @db.Uuid
+
+  // Consolidation results
+  episodesProcessed     Int      @default(0) @map("episodes_processed")
+  episodesConsolidated  Int      @default(0) @map("episodes_consolidated")
+  knowledgeCreated      Int      @default(0) @map("knowledge_created")
+  knowledgeUpdated      Int      @default(0) @map("knowledge_updated")
+
+  // Patterns found (summary)
+  patternsFound         Json     @default("[]") @map("patterns_found")
+
+  // Errors (if any)
+  errors                String[] @default([])
+
+  // Performance
+  durationMs            Int      @default(0) @map("duration_ms")
+
+  // Timestamp
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@map("memory_consolidation_logs")
+}
