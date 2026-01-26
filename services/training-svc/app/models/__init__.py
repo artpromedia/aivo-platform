@@ -17,6 +17,25 @@ from .curriculum_embeddings import (
     SearchResult,
 )
 
+# Brain Memory System
+from .memory import (
+    EpisodicMemory,
+    EpisodicMemoryStore,
+    EventType,
+    SemanticKnowledge,
+    SemanticMemoryStore,
+    KnowledgeType,
+    MemoryConsolidator,
+    ConsolidationResult,
+    ConsolidationConfig,
+    MemoryRetriever,
+    RetrievalResult,
+    RetrievalConfig,
+    LearnerBelief,
+    BayesianBeliefSystem,
+    BeliefUpdate,
+)
+
 # Agentic AI Models
 from .hierarchical_planner import (
     HierarchicalPlanner,
@@ -71,4 +90,20 @@ __all__ = [
     "AgentInteractionGraph",
     "AgentCapability",
     "AgentAssignment",
+    # Brain Memory System
+    "EpisodicMemory",
+    "EpisodicMemoryStore",
+    "EventType",
+    "SemanticKnowledge",
+    "SemanticMemoryStore",
+    "KnowledgeType",
+    "MemoryConsolidator",
+    "ConsolidationResult",
+    "ConsolidationConfig",
+    "MemoryRetriever",
+    "RetrievalResult",
+    "RetrievalConfig",
+    "LearnerBelief",
+    "BayesianBeliefSystem",
+    "BeliefUpdate",
 ]
