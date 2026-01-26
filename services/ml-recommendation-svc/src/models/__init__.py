@@ -15,7 +15,18 @@ from src.models.schemas import (
     SkillRecommendation,
 )
 
+from src.models.hybrid_recommender import (
+    HybridRecommender,
+    RecommendationContext,
+    RecommendedActivity,
+    CollaborativeFilter,
+    ContentBasedFilter,
+    MultiArmedBandit,
+    ActivityMetadata,
+)
+
 __all__ = [
+    # Schema models
     "ContentRecommendation",
     "FeedbackType",
     "LearnerContext",
@@ -26,4 +37,12 @@ __all__ = [
     "RecommendedItem",
     "SkillMastery",
     "SkillRecommendation",
+    # Hybrid recommender
+    "HybridRecommender",
+    "RecommendationContext",
+    "RecommendedActivity",
+    "CollaborativeFilter",
+    "ContentBasedFilter",
+    "MultiArmedBandit",
+    "ActivityMetadata",
 ]
