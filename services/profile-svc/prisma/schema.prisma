@@ -177,6 +177,41 @@ enum FontPreference {
   @@map("font_preference")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// SENSORY PROFILE ENUMS (General Accessibility)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Visual contrast level preference
+enum VisualContrast {
+  LOW                  // Reduced contrast for light sensitivity
+  NORMAL               // Standard contrast
+  HIGH                 // Increased contrast
+  ULTRA_HIGH           // Maximum contrast for low vision
+
+  @@map("visual_contrast")
+}
+
+/// Font size preference for accessibility
+enum FontSize {
+  SMALL                // Smaller than default
+  MEDIUM               // Default size
+  LARGE                // 125% of default
+  EXTRA_LARGE          // 150% of default
+
+  @@map("font_size")
+}
+
+/// Color blindness mode
+enum ColorBlindMode {
+  NONE                 // No color blindness
+  PROTANOPIA           // Red-blind
+  DEUTERANOPIA         // Green-blind
+  TRITANOPIA           // Blue-blind
+  ACHROMATOPSIA        // Complete color blindness
+
+  @@map("color_blind_mode")
+}
+
 /// Text size preference
 enum TextSizePreference {
   SMALL
@@ -814,4 +849,101 @@ model AssessmentModeDecision {
   @@index([algorithmRecommendation])
   @@index([decidedAt])
   @@map("assessment_mode_decisions")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SENSORY PROFILE (General Accessibility Preferences)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Comprehensive sensory profile for accessibility preferences.
+/// Stores visual, auditory, motor, and cognitive accommodations.
+/// Complements LearnerSensoryProfile which handles sensory impairments.
+model SensoryProfile {
+  id                  String          @id @default(uuid()) @db.Uuid
+  learnerId           String          @unique @map("learner_id") @db.Uuid
+  tenantId            String          @map("tenant_id") @db.Uuid
+
+  // ── Visual Accommodations ────────────────────────────────────────────────────
+  /// Visual contrast preference
+  visualContrast      VisualContrast  @default(NORMAL) @map("visual_contrast")
+
+  /// Font size preference
+  fontSize            FontSize        @default(MEDIUM) @map("font_size")
+
+  /// Line spacing multiplier (1.0 = normal, 1.5 = 150%, 2.0 = double)
+  lineSpacing         Float           @default(1.5) @map("line_spacing")
+
+  /// Preferred font family
+  fontFamily          String          @default("OpenDyslexic") @map("font_family")
+
+  /// Reduce or disable animations
+  reduceAnimations    Boolean         @default(false) @map("reduce_animations")
+
+  /// Enable dark mode
+  darkMode            Boolean         @default(false) @map("dark_mode")
+
+  /// Color blindness accommodation mode
+  colorBlindMode      ColorBlindMode  @default(NONE) @map("color_blind_mode")
+
+  // ── Auditory Accommodations ──────────────────────────────────────────────────
+  /// Enable text-to-speech
+  textToSpeech        Boolean         @default(false) @map("text_to_speech")
+
+  /// Speech rate multiplier (0.5 = half speed, 1.0 = normal, 2.0 = double)
+  speechRate          Float           @default(1.0) @map("speech_rate")
+
+  /// Preferred speech voice identifier
+  speechVoice         String          @default("default") @map("speech_voice")
+
+  /// Enable audio descriptions for media
+  audioDescriptions   Boolean         @default(false) @map("audio_descriptions")
+
+  /// Enable closed captions
+  closedCaptions      Boolean         @default(true) @map("closed_captions")
+
+  /// Enable sign language support/overlays
+  signLanguageSupport Boolean         @default(false) @map("sign_language_support")
+
+  // ── Motor Accommodations ─────────────────────────────────────────────────────
+  /// Enable full keyboard navigation
+  keyboardNavigation  Boolean         @default(false) @map("keyboard_navigation")
+
+  /// Time limit extension multiplier (1.0 = normal, 1.5 = 50% more time, 2.0 = double)
+  extendedTimeLimits  Float           @default(1.0) @map("extended_time_limits")
+
+  /// Enable larger click/touch targets
+  largeClickTargets   Boolean         @default(false) @map("large_click_targets")
+
+  /// Enable sticky keys functionality
+  stickyKeys          Boolean         @default(false) @map("sticky_keys")
+
+  /// Enable voice control input
+  voiceControl        Boolean         @default(false) @map("voice_control")
+
+  // ── Cognitive Accommodations ─────────────────────────────────────────────────
+  /// Use simplified layouts with less visual clutter
+  simplifiedLayouts   Boolean         @default(false) @map("simplified_layouts")
+
+  /// Show reading guide/ruler
+  readingGuide        Boolean         @default(false) @map("reading_guide")
+
+  /// Highlight focused element
+  focusHighlight      Boolean         @default(false) @map("focus_highlight")
+
+  /// Enable break reminders
+  breakReminders      Boolean         @default(true) @map("break_reminders")
+
+  /// Break reminder interval in minutes
+  breakIntervalMins   Int             @default(25) @map("break_interval_mins")
+
+  /// Enable content chunking (break content into smaller pieces)
+  contentChunking     Boolean         @default(false) @map("content_chunking")
+
+  // ── Timestamps ───────────────────────────────────────────────────────────────
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@map("sensory_profiles")
 }

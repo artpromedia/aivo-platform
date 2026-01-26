@@ -16,6 +16,7 @@ import { config } from './config.js';
 import { natsPublisher } from './events/index.js';
 import { registerAccommodationRoutes } from './routes/accommodationRoutes.js';
 import { registerProfileRoutes } from './routes/profileRoutes.js';
+import { registerSensoryProfileRoutes } from './routes/sensory-profile.routes.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BUILD APPLICATION
@@ -85,6 +86,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // ────────────────────────────────────────────────────────────────────────────
   await registerProfileRoutes(app);
   await registerAccommodationRoutes(app);
+  await registerSensoryProfileRoutes(app);
 
   // ────────────────────────────────────────────────────────────────────────────
   // Global error handler

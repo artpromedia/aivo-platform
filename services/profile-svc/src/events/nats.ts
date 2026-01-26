@@ -45,7 +45,19 @@ export interface AccommodationEvent {
   };
 }
 
-export type ProfileServiceEvent = ProfileEvent | AccommodationEvent;
+export interface SensoryProfileEvent {
+  type: 'sensory-profile.created' | 'sensory-profile.updated' | 'sensory-profile.reset';
+  tenantId: string;
+  learnerId: string;
+  userId: string;
+  timestamp: string;
+  data: {
+    sensoryProfileId: string;
+    changes?: string[];
+  };
+}
+
+export type ProfileServiceEvent = ProfileEvent | AccommodationEvent | SensoryProfileEvent;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // NATS CLIENT
@@ -118,7 +130,7 @@ class NatsEventPublisher {
       console.log(`[NATS] Creating stream '${this.streamName}'...`);
       await this.jsm.streams.add({
         name: this.streamName,
-        subjects: ['profile.>', 'accommodation.>'],
+        subjects: ['profile.>', 'accommodation.>', 'sensory-profile.>'],
         retention: 'limits' as const,
         max_msgs: 100000,
         max_age: 7 * 24 * 60 * 60 * 1e9, // 7 days in nanoseconds
@@ -303,5 +315,67 @@ export async function emitAccommodationDeleted(
     userId,
     timestamp: new Date().toISOString(),
     data: { accommodationId },
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SENSORY PROFILE EVENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Emit a sensory profile created event
+ */
+export async function emitSensoryProfileCreated(
+  tenantId: string,
+  learnerId: string,
+  sensoryProfileId: string,
+  userId: string
+): Promise<void> {
+  await natsPublisher.publish({
+    type: 'sensory-profile.created',
+    tenantId,
+    learnerId,
+    userId,
+    timestamp: new Date().toISOString(),
+    data: { sensoryProfileId },
+  });
+}
+
+/**
+ * Emit a sensory profile updated event
+ */
+export async function emitSensoryProfileUpdated(
+  tenantId: string,
+  learnerId: string,
+  sensoryProfileId: string,
+  userId: string,
+  changes?: string[]
+): Promise<void> {
+  await natsPublisher.publish({
+    type: 'sensory-profile.updated',
+    tenantId,
+    learnerId,
+    userId,
+    timestamp: new Date().toISOString(),
+    data: { sensoryProfileId, changes },
+  });
+}
+
+/**
+ * Emit a sensory profile reset event
+ */
+export async function emitSensoryProfileReset(
+  tenantId: string,
+  learnerId: string,
+  sensoryProfileId: string,
+  userId: string
+): Promise<void> {
+  await natsPublisher.publish({
+    type: 'sensory-profile.reset',
+    tenantId,
+    learnerId,
+    userId,
+    timestamp: new Date().toISOString(),
+    data: { sensoryProfileId },
   });
 }

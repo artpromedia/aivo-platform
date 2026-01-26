@@ -18,6 +18,7 @@ export type {
   LearnerGoalLink,
   IepDocumentRef,
   ProfileChangeLog,
+  SensoryProfile,
 } from '../generated/prisma-client/index.js';
 
 // Re-export enums that are actually used by models
@@ -35,4 +36,7 @@ export {
   CommunicationModality,
   AACSystemType,
   InputMethod,
+  VisualContrast,
+  FontSize,
+  ColorBlindMode,
 } from '../generated/prisma-client/index.js';
