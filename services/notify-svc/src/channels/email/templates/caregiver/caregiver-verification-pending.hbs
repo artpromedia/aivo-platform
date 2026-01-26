@@ -1,0 +1,85 @@
+{{!-- Caregiver Verification Status Template --}}
+{{!-- Sent when a learner link request is pending or rejected --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  {{#if (eq status "pending")}}
+  <div style="width: 64px; height: 64px; background-color: #fef3c7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">⏳</span>
+  </div>
+  {{else if (eq status "rejected")}}
+  <div style="width: 64px; height: 64px; background-color: #fee2e2; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">❌</span>
+  </div>
+  {{/if}}
+</div>
+
+{{#if (eq status "pending")}}
+<h1 style="text-align: center;">Verification In Progress</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  Hi {{firstName}},
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  Your request to link with a learner is being reviewed by the school administrator. We'll notify you once the verification is complete.
+</p>
+
+<div style="background-color: #fefce8; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 12px 0; color: #854d0e; font-size: 16px;">What's happening?</h2>
+  <p style="margin: 0; color: #854d0e; font-size: 14px; line-height: 1.6;">
+    The school administrator is verifying your relationship with the learner. This typically takes 1-2 business days. You'll receive an email once the review is complete.
+  </p>
+</div>
+
+<div style="background-color: #f4f4f5; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h3 style="margin: 0 0 12px 0; color: #18181b; font-size: 14px;">While you wait, you can:</h3>
+  <ul style="margin: 0; padding-left: 20px; color: #52525b; font-size: 14px; line-height: 1.8;">
+    <li>Prepare any verification documents if requested</li>
+    <li>Contact the school directly if you have questions</li>
+    <li>Add additional learners to your account</li>
+  </ul>
+</div>
+
+{{else if (eq status "rejected")}}
+<h1 style="text-align: center;">Verification Update</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  Hi {{firstName}},
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  Unfortunately, we were unable to verify your learner link request at this time.
+</p>
+
+<div style="background-color: #fef2f2; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 12px 0; color: #991b1b; font-size: 16px;">Reason:</h2>
+  <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
+    {{reason}}
+  </p>
+</div>
+
+<div style="background-color: #f4f4f5; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h3 style="margin: 0 0 12px 0; color: #18181b; font-size: 14px;">What you can do:</h3>
+  <ul style="margin: 0; padding-left: 20px; color: #52525b; font-size: 14px; line-height: 1.8;">
+    <li>Contact the school directly to resolve verification issues</li>
+    <li>Request a verification code from the school office</li>
+    <li>Submit a new link request with additional information</li>
+  </ul>
+</div>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{supportUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    Contact Support
+  </a>
+</div>
+{{/if}}
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  Questions? Visit our <a href="{{supportUrl}}" style="color: {{brandColor}};">Help Center</a>
+</p>
+
+{{/layouts/base}}

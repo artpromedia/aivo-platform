@@ -19,6 +19,11 @@ import { LearnerController } from './learner/learner.controller.js';
 import { CaregiverController } from './caregiver/caregiver.controller.js';
 import { InternalController } from './internal/internal.controller.js';
 
+// Registration Controllers (self-service registration)
+import { RegistrationController } from './registration/registration.controller.js';
+import { AdminVerificationController } from './registration/admin-verification.controller.js';
+import { FamilyController } from './registration/family.controller.js';
+
 // Services
 import { ParentService } from './parent/parent.service.js';
 import { ParentAuthService } from './auth/parent-auth.service.js';
@@ -34,6 +39,10 @@ import { CaregiverService } from './caregiver/caregiver.service.js';
 import { PrismaService } from './prisma/prisma.service.js';
 import { CryptoService } from './crypto/crypto.service.js';
 import { I18nService } from './i18n/i18n.service.js';
+
+// Registration Services (self-service registration)
+import { RegistrationService } from './registration/registration.service.js';
+import { FamilyService } from './registration/family.service.js';
 
 // Middleware
 import { ParentAuthMiddleware } from './auth/parent-auth.middleware.js';
@@ -55,6 +64,10 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     LearnerController,
     CaregiverController,
     InternalController,
+    // Self-service registration controllers
+    RegistrationController,
+    AdminVerificationController,
+    FamilyController,
   ],
   providers: [
     // Core services
@@ -74,6 +87,9 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     OnboardingService,
     HomeworkService,
     CaregiverService,
+    // Self-service registration services
+    RegistrationService,
+    FamilyService,
   ],
   exports: [
     ParentService,
@@ -81,6 +97,8 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     NotificationService,
     OnboardingService,
     CaregiverService,
+    RegistrationService,
+    FamilyService,
   ],
 })
 export class ParentModule implements NestModule {
@@ -117,6 +135,13 @@ export class ParentModule implements NestModule {
         // Caregiver public routes (invite acceptance)
         { path: 'caregiver/accept-invite', method: RequestMethod.POST },
         { path: 'caregiver/invite/:code', method: RequestMethod.GET },
+        // Caregiver self-registration public routes
+        { path: 'api/v1/caregiver/register', method: RequestMethod.POST },
+        { path: 'api/v1/caregiver/verify-email', method: RequestMethod.POST },
+        { path: 'api/v1/caregiver/:registrationId/status', method: RequestMethod.GET },
+        { path: 'api/v1/caregiver/:registrationId/resend-verification', method: RequestMethod.POST },
+        { path: 'api/v1/caregiver/:registrationId/learners', method: RequestMethod.POST },
+        { path: 'api/v1/caregiver/learners/:linkRequestId/verify', method: RequestMethod.POST },
         // Internal routes (service-to-service) - multiple patterns for compatibility
         { path: 'internal/(.*)', method: RequestMethod.ALL },
         { path: 'internal/create-profile', method: RequestMethod.POST },

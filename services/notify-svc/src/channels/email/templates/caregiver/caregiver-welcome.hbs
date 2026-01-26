@@ -1,0 +1,59 @@
+{{!-- Caregiver Welcome Email Template --}}
+{{!-- Sent when a caregiver's registration is completed and account is created --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #d1fae5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">🎉</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">Welcome to AIVO, {{firstName}}!</h1>
+
+<p style="text-align: center; font-size: 18px; color: #3f3f46;">
+  Your caregiver account has been created and {{learnerCount}} {{#if (eq learnerCount 1)}}learner has{{else}}learners have{{/if}} been linked to your account.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{loginUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    Go to Dashboard
+  </a>
+</div>
+
+<div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 16px 0; color: #166534; font-size: 16px;">What you can do:</h2>
+  <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 14px; line-height: 1.8;">
+    <li>View your learner's progress and achievements</li>
+    <li>Track learning activity and time spent</li>
+    <li>Receive notifications about important milestones</li>
+    <li>Access learning reports and insights</li>
+  </ul>
+</div>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+  <tr>
+    <td width="50%" style="padding-right: 8px;">
+      <a href="{{dashboardUrl}}/learners" style="display: block; background-color: #f4f4f5; border-radius: 8px; padding: 20px; text-align: center; text-decoration: none;">
+        <div style="font-size: 24px; margin-bottom: 8px;">👨‍👩‍👧</div>
+        <div style="color: #18181b; font-weight: 600;">View Learners</div>
+        <div style="color: #71717a; font-size: 12px; margin-top: 4px;">See linked children</div>
+      </a>
+    </td>
+    <td width="50%" style="padding-left: 8px;">
+      <a href="{{dashboardUrl}}/progress" style="display: block; background-color: #f4f4f5; border-radius: 8px; padding: 20px; text-align: center; text-decoration: none;">
+        <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+        <div style="color: #18181b; font-weight: 600;">View Progress</div>
+        <div style="color: #71717a; font-size: 12px; margin-top: 4px;">Track learning journey</div>
+      </a>
+    </td>
+  </tr>
+</table>
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  Questions? Visit our <a href="{{supportUrl}}" style="color: {{brandColor}};">Help Center</a> or contact support.
+</p>
+
+{{/layouts/base}}
