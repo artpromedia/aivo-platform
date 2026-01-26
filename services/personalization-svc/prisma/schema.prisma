@@ -1,0 +1,357 @@
+// Personalization Service Prisma Schema
+// Personalization Signals, Decision Logs, Motor Accommodations
+// Converted from prisma/schema.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum SignalType {
+  ENGAGEMENT
+  DIFFICULTY
+  FOCUS
+  HOMEWORK
+  MODULE_UPTAKE
+  PREFERENCE
+  PROGRESSION
+  RECOMMENDATION
+
+  @@map("signal_type")
+}
+
+enum SignalSource {
+  ANALYTICS_ETL
+  ONLINE
+  TEACHER_OVERRIDE
+  PARENT_INPUT
+  ASSESSMENT
+
+  @@map("signal_source")
+}
+
+enum DecisionType {
+  CONTENT_SELECTION
+  DIFFICULTY_ADJUSTMENT
+  FOCUS_INTERVENTION
+  SESSION_LENGTH_ADJUSTMENT
+  SUBJECT_ROTATION
+  BREAK_RECOMMENDATION
+
+  @@map("decision_type")
+}
+
+enum DecisionOutcome {
+  PENDING
+  ACCEPTED
+  DECLINED
+  IGNORED
+  EXPIRED
+
+  @@map("decision_outcome")
+}
+
+enum MotorAbilityLevel {
+  TYPICAL
+  MILD_DIFFICULTY
+  MODERATE_DIFFICULTY
+  SIGNIFICANT_DIFFICULTY
+  REQUIRES_FULL_SUPPORT
+
+  @@map("motor_ability_level")
+}
+
+enum HapticIntensity {
+  none
+  light
+  normal
+  strong
+
+  @@map("haptic_intensity")
+}
+
+enum KeyboardType {
+  standard
+  large
+  split
+  one_handed
+
+  @@map("keyboard_type")
+}
+
+enum DwellIndicatorStyle {
+  circle
+  shrink
+  fill
+
+  @@map("dwell_indicator_style")
+}
+
+enum SwitchAccessMode {
+  auto_scan
+  manual
+  step_scan
+
+  @@map("switch_access_mode")
+}
+
+enum TremorFilterAlgorithm {
+  moving_average
+  kalman
+  exponential
+
+  @@map("tremor_filter_algorithm")
+}
+
+// =============================================================================
+// Personalization Signals
+// =============================================================================
+
+model PersonalizationSignal {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  learnerId   String       @map("learner_id") @db.Uuid
+  date        DateTime     @db.Date
+  signalType  SignalType   @map("signal_type")
+  signalKey   String       @map("signal_key") @db.VarChar(64)
+  signalValue Json         @map("signal_value") // Typed JSONB - schema varies by signal_type
+  confidence  Decimal      @db.Decimal(3, 2)
+  source      SignalSource
+  metadata    Json?
+  expiresAt   DateTime     @map("expires_at") @db.Timestamptz
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([learnerId, date, signalKey], map: "uq_learner_date_signal")
+  @@index([tenantId, learnerId])
+  @@index([learnerId, date(sort: Desc)])
+  @@index([signalType])
+  @@index([expiresAt])
+  @@index([date(sort: Desc)])
+  @@map("personalization_signals")
+}
+
+// =============================================================================
+// Personalization Decision Logs
+// =============================================================================
+
+model PersonalizationDecisionLog {
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String          @map("tenant_id") @db.Uuid
+  learnerId        String          @map("learner_id") @db.Uuid
+  sessionId        String?         @map("session_id") @db.Uuid
+  decisionType     DecisionType    @map("decision_type")
+  agentName        String          @map("agent_name") @db.VarChar(64)
+  agentVersion     String?         @map("agent_version") @db.VarChar(32)
+  inputSignalKeys  String[]        @default([]) @map("input_signal_keys") @db.VarChar(64)
+  inputContext     Json            @map("input_context")
+  outputDecision   Json            @map("output_decision")
+  reasoning        String
+  outcome          DecisionOutcome @default(PENDING)
+  outcomeRecordedAt DateTime?      @map("outcome_recorded_at") @db.Timestamptz
+  feedbackRating   Int?            @map("feedback_rating")
+  feedbackComment  String?         @map("feedback_comment")
+  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([sessionId])
+  @@index([decisionType])
+  @@index([agentName])
+  @@index([outcome])
+  @@index([createdAt(sort: Desc)])
+  @@map("personalization_decision_logs")
+}
+
+// =============================================================================
+// Recommendation Feedback
+// =============================================================================
+
+model RecommendationFeedback {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  learnerId            String    @map("learner_id") @db.Uuid
+  recommendationId     String    @map("recommendation_id") @db.Uuid
+  recommendationType   String    @map("recommendation_type") @db.VarChar(64)
+  recommendedItemType  String    @map("recommended_item_type") @db.VarChar(32) // 'content', 'activity', 'break', etc.
+  recommendedItemId    String?   @map("recommended_item_id") @db.Uuid
+  wasAccepted          Boolean   @map("was_accepted")
+  wasExplicitlyRejected Boolean  @default(false) @map("was_explicitly_rejected")
+  sessionId            String?   @map("session_id") @db.Uuid
+  contextSignals       Json?     @map("context_signals")
+  recommendedAt        DateTime  @map("recommended_at") @db.Timestamptz
+  respondedAt          DateTime? @map("responded_at") @db.Timestamptz
+  responseTimeMs       Int?      @map("response_time_ms")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([recommendationType])
+  @@index([wasAccepted])
+  @@index([recommendedAt(sort: Desc)])
+  @@map("recommendation_feedback")
+}
+
+// =============================================================================
+// Threshold Overrides
+// =============================================================================
+
+model ThresholdOverride {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  learnerId      String?   @map("learner_id") @db.Uuid // NULL means tenant-wide
+  thresholdKey   String    @map("threshold_key") @db.VarChar(64)
+  thresholdValue Decimal   @map("threshold_value") @db.Decimal(10, 4)
+  reason         String?
+  setByUserId    String    @map("set_by_user_id") @db.Uuid
+  effectiveFrom  DateTime  @default(now()) @map("effective_from") @db.Timestamptz
+  effectiveUntil DateTime? @map("effective_until") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([thresholdKey])
+  @@index([effectiveFrom, effectiveUntil])
+  @@map("threshold_overrides")
+}
+
+// =============================================================================
+// Motor Profiles (ND-3.3 Accommodations)
+// =============================================================================
+
+model MotorProfile {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId            String              @unique @map("learner_id") @db.Uuid
+  tenantId             String              @map("tenant_id") @db.Uuid
+
+  // Motor ability assessment
+  fineMotorLevel       MotorAbilityLevel   @default(TYPICAL) @map("fine_motor_level")
+  grossMotorLevel      MotorAbilityLevel   @default(TYPICAL) @map("gross_motor_level")
+
+  // Specific challenges
+  hasTremor            Boolean             @default(false) @map("has_tremor")
+  tremorSeverity       Int?                @map("tremor_severity") @db.SmallInt
+  hasLimitedRange      Boolean             @default(false) @map("has_limited_range")
+  limitedRangeSide     String?             @map("limited_range_side") @db.VarChar(10)
+  hasFatigue           Boolean             @default(false) @map("has_fatigue")
+  fatigueThresholdMinutes Int?             @map("fatigue_threshold_minutes") @db.SmallInt
+
+  // Touch accommodations
+  enlargedTouchTargets Boolean             @default(false) @map("enlarged_touch_targets")
+  touchTargetMultiplier Decimal            @default(1.0) @map("touch_target_multiplier") @db.Decimal(3, 2)
+  touchHoldDuration    Int                 @default(0) @map("touch_hold_duration") @db.SmallInt
+  accidentalTouchFilter Boolean            @default(false) @map("accidental_touch_filter")
+  edgeIgnoreMargin     Int                 @default(0) @map("edge_ignore_margin") @db.SmallInt
+
+  // Gesture accommodations
+  simplifiedGestures   Boolean             @default(false) @map("simplified_gestures")
+  allowSingleFingerGestures Boolean        @default(true) @map("allow_single_finger_gestures")
+  disableMultiTouch    Boolean             @default(false) @map("disable_multi_touch")
+  disablePinchZoom     Boolean             @default(false) @map("disable_pinch_zoom")
+  disableSwipe         Boolean             @default(false) @map("disable_swipe")
+  swipeDistanceMultiplier Decimal          @default(1.0) @map("swipe_distance_multiplier") @db.Decimal(3, 2)
+
+  // Drag & drop accommodations
+  dragAssistEnabled    Boolean             @default(false) @map("drag_assist_enabled")
+  dragSnapToGrid       Boolean             @default(false) @map("drag_snap_to_grid")
+  dragGridSize         Int                 @default(20) @map("drag_grid_size") @db.SmallInt
+  dragAutoComplete     Boolean             @default(false) @map("drag_auto_complete")
+  dragAutoCompleteThreshold Int            @default(30) @map("drag_auto_complete_threshold") @db.SmallInt
+
+  // Timing accommodations
+  extendedResponseTime Boolean             @default(false) @map("extended_response_time")
+  responseTimeMultiplier Decimal           @default(1.0) @map("response_time_multiplier") @db.Decimal(3, 2)
+  disableTimedElements Boolean             @default(false) @map("disable_timed_elements")
+  autoAdvanceDelay     Int                 @default(0) @map("auto_advance_delay") @db.SmallInt
+
+  // Alternative input methods - Voice
+  voiceInputEnabled    Boolean             @default(false) @map("voice_input_enabled")
+  voiceInputForText    Boolean             @default(true) @map("voice_input_for_text")
+  voiceInputForNavigation Boolean          @default(false) @map("voice_input_for_navigation")
+
+  // Alternative input methods - Dwell selection
+  dwellSelectionEnabled Boolean            @default(false) @map("dwell_selection_enabled")
+  dwellTimeMs          Int                 @default(1000) @map("dwell_time_ms") @db.SmallInt
+  dwellIndicatorStyle  DwellIndicatorStyle @default(circle) @map("dwell_indicator_style")
+
+  // Alternative input methods - Switch access
+  switchAccessEnabled  Boolean             @default(false) @map("switch_access_enabled")
+  switchAccessMode     SwitchAccessMode    @default(auto_scan) @map("switch_access_mode")
+  switchScanSpeed      Int                 @default(1500) @map("switch_scan_speed") @db.SmallInt
+
+  // Handwriting alternatives
+  preferTyping         Boolean             @default(false) @map("prefer_typing")
+  preferVoiceInput     Boolean             @default(false) @map("prefer_voice_input")
+  preferMultipleChoice Boolean             @default(false) @map("prefer_multiple_choice")
+  showWordPrediction   Boolean             @default(true) @map("show_word_prediction")
+  enlargedKeyboard     Boolean             @default(false) @map("enlarged_keyboard")
+  keyboardType         KeyboardType        @default(standard) @map("keyboard_type")
+
+  // Visual feedback
+  enhancedTouchFeedback Boolean            @default(false) @map("enhanced_touch_feedback")
+  hapticFeedbackIntensity HapticIntensity  @default(normal) @map("haptic_feedback_intensity")
+  showTouchRipples     Boolean             @default(true) @map("show_touch_ripples")
+  highlightFocusedElement Boolean          @default(true) @map("highlight_focused_element")
+
+  // Tremor filtering
+  tremorFilterEnabled  Boolean             @default(false) @map("tremor_filter_enabled")
+  tremorFilterStrength Int                 @default(50) @map("tremor_filter_strength") @db.SmallInt
+  tremorFilterAlgorithm TremorFilterAlgorithm @default(moving_average) @map("tremor_filter_algorithm")
+
+  // Fatigue management
+  autoBreakReminders   Boolean             @default(false) @map("auto_break_reminders")
+  breakReminderIntervalMinutes Int         @default(15) @map("break_reminder_interval_minutes") @db.SmallInt
+  reduceRequirementsOnFatigue Boolean      @default(false) @map("reduce_requirements_on_fatigue")
+
+  // Custom gestures
+  customGestures       Json?               @map("custom_gestures")
+
+  // Metadata
+  assessedBy           String?             @map("assessed_by") @db.VarChar(20)
+  assessedAt           DateTime?           @map("assessed_at") @db.Timestamptz
+  accommodationNotes   String?             @map("accommodation_notes")
+
+  // Audit
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@index([learnerId])
+  @@map("motor_profiles")
+}
+
+// =============================================================================
+// Motor Interaction Logs
+// =============================================================================
+
+model MotorInteractionLog {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId            String    @map("learner_id") @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  sessionId            String?   @map("session_id") @db.Uuid
+  interactionType      String    @map("interaction_type") @db.VarChar(20) // tap, double_tap, long_press, etc.
+  targetElement        String?   @map("target_element") @db.VarChar(255)
+  attemptCount         Int       @default(1) @map("attempt_count") @db.SmallInt
+  successOnAttempt     Int?      @map("success_on_attempt") @db.SmallInt
+  totalTimeMs          Int?      @map("total_time_ms")
+  targetHitAccuracy    Decimal?  @map("target_hit_accuracy") @db.Decimal(4, 3)
+  dragPathSmoothness   Decimal?  @map("drag_path_smoothness") @db.Decimal(4, 3)
+  accommodationsActive String[]  @default([]) @map("accommodations_active")
+  successful           Boolean
+  usedAlternative      Boolean   @default(false) @map("used_alternative")
+  alternativeMethod    String?   @map("alternative_method") @db.VarChar(50)
+  timestamp            DateTime  @default(now()) @db.Timestamptz
+
+  @@index([learnerId])
+  @@index([sessionId])
+  @@index([interactionType])
+  @@index([timestamp])
+  @@map("motor_interaction_logs")
+}

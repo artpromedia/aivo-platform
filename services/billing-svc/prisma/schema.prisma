@@ -3341,3 +3341,179 @@ model PromotionalPricingRedemption {
   @@index([pilotProgramId])
   @@map("promotional_pricing_redemptions")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARENT BILLING ENHANCEMENTS (from migration 0005)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Discount coupon type
+enum DiscountType {
+  PERCENT // Percentage discount
+  FIXED   // Fixed amount discount
+}
+
+/// Trial record - tracks 30-day free trial usage per tenant/learner/SKU
+model TrialRecord {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  learnerId          String    @map("learner_id") @db.Uuid
+  sku                String
+
+  // Trial lifecycle
+  startedAt          DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  endsAt             DateTime  @map("ends_at") @db.Timestamptz
+  convertedAt        DateTime? @map("converted_at") @db.Timestamptz
+  canceledAt         DateTime? @map("canceled_at") @db.Timestamptz
+
+  // Associated subscription item
+  subscriptionItemId String?   @map("subscription_item_id") @db.Uuid
+
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, sku])
+  @@index([tenantId, learnerId])
+  @@index([endsAt])
+  @@map("trial_records")
+}
+
+/// Discount coupons for parent subscriptions
+model Coupon {
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                 String       @unique // Unique coupon code, uppercase
+  discountType         DiscountType @map("discount_type")
+  percentOff           Decimal?     @map("percent_off") @db.Decimal(5, 2)
+  amountOffCents       Int?         @map("amount_off_cents")
+  currency             String?
+
+  // Validity period
+  validFrom            DateTime?    @map("valid_from") @db.Timestamptz
+  validTo              DateTime?    @map("valid_to") @db.Timestamptz
+
+  // Usage limits
+  maxRedemptions       Int?         @map("max_redemptions")
+  timesRedeemed        Int          @default(0) @map("times_redeemed")
+
+  // Scope
+  tenantId             String?      @map("tenant_id") @db.Uuid // NULL for global coupons
+  applicableSkus       String[]     @default([]) @map("applicable_skus") // Empty for all SKUs
+
+  // Stripe integration
+  stripeCouponId       String?      @unique @map("stripe_coupon_id")
+  stripePromotionCodeId String?     @map("stripe_promotion_code_id")
+
+  // Metadata
+  description          String?
+  isActive             Boolean      @default(true) @map("is_active")
+  createdBy            String?      @map("created_by") @db.Uuid
+
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  redemptions          CouponRedemption[]
+
+  @@index([code])
+  @@index([tenantId])
+  @@index([isActive, validFrom, validTo])
+  @@index([stripeCouponId])
+  @@map("coupons")
+}
+
+/// Tracks each coupon redemption for audit
+model CouponRedemption {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  couponId            String    @map("coupon_id") @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  billingAccountId    String    @map("billing_account_id") @db.Uuid
+  subscriptionId      String?   @map("subscription_id") @db.Uuid
+
+  // Discount applied
+  discountAmountCents Int       @map("discount_amount_cents")
+  currency            String
+
+  // Redemption context
+  appliedAt           DateTime  @default(now()) @map("applied_at") @db.Timestamptz
+  stripeInvoiceId     String?   @map("stripe_invoice_id")
+
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  coupon              Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@map("coupon_redemptions")
+}
+
+/// Daily aggregated subscription analytics
+model SubscriptionAnalyticsDaily {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  date                 DateTime  @db.Date
+  tenantId             String?   @map("tenant_id") @db.Uuid // NULL for global aggregates
+
+  // Revenue metrics
+  mrrCents             BigInt    @default(0) @map("mrr_cents")
+
+  // Subscription counts
+  activeSubscriptions  Int       @default(0) @map("active_subscriptions")
+
+  // Trial metrics
+  trialsStarted        Int       @default(0) @map("trials_started")
+  trialsConverted      Int       @default(0) @map("trials_converted")
+
+  // Churn metrics
+  churnedSubscriptions Int       @default(0) @map("churned_subscriptions")
+
+  // New business
+  newSubscriptions     Int       @default(0) @map("new_subscriptions")
+
+  // Per-SKU breakdown
+  skuBreakdown         Json?     @map("sku_breakdown")
+
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([date, tenantId])
+  @@index([date])
+  @@index([tenantId, date])
+  @@map("subscription_analytics_daily")
+}
+
+/// Dunning progression type
+enum DunningResolutionType {
+  PAYMENT_SUCCEEDED
+  SUBSCRIPTION_CANCELED
+  MANUAL
+}
+
+/// Tracks dunning progression for failed payments
+model DunningRecord {
+  id                 String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId     String                  @map("subscription_id") @db.Uuid
+  tenantId           String                  @map("tenant_id") @db.Uuid
+
+  // Failure tracking
+  firstFailureAt     DateTime                @map("first_failure_at") @db.Timestamptz
+  latestFailureAt    DateTime                @map("latest_failure_at") @db.Timestamptz
+  failureCount       Int                     @default(1) @map("failure_count")
+
+  // Dunning progression
+  day0NotifiedAt     DateTime?               @map("day0_notified_at") @db.Timestamptz
+  day3NotifiedAt     DateTime?               @map("day3_notified_at") @db.Timestamptz
+  day7NotifiedAt     DateTime?               @map("day7_notified_at") @db.Timestamptz
+  limitedModeAt      DateTime?               @map("limited_mode_at") @db.Timestamptz
+
+  // Resolution
+  resolvedAt         DateTime?               @map("resolved_at") @db.Timestamptz
+  resolutionType     DunningResolutionType?  @map("resolution_type")
+
+  // Associated invoice
+  stripeInvoiceId    String?                 @map("stripe_invoice_id")
+
+  createdAt          DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([subscriptionId])
+  @@index([tenantId])
+  @@index([resolvedAt])
+  @@map("dunning_records")
+}

@@ -1,0 +1,139 @@
+// Experimentation Service Prisma Schema
+// A/B Experiments, Variant Assignments, and Exposure Tracking
+// Converted from prisma/schema.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum ExperimentScope {
+  TENANT  // All learners in a tenant get same variant
+  LEARNER // Each learner individually assigned
+
+  @@map("experiment_scope")
+}
+
+enum ExperimentStatus {
+  DRAFT     // Not yet running
+  RUNNING   // Actively assigning and tracking
+  PAUSED    // Temporarily stopped
+  COMPLETED // Finished, no new assignments
+
+  @@map("experiment_status")
+}
+
+enum AssignmentReason {
+  HASH_ALLOCATION        // Normal deterministic assignment
+  TENANT_OPT_OUT         // Tenant disabled experimentation
+  EXPERIMENT_NOT_RUNNING // Experiment not in RUNNING status
+  EXPERIMENT_NOT_FOUND   // Experiment doesn't exist
+  FORCED_VARIANT         // Override for testing
+
+  @@map("assignment_reason")
+}
+
+// =============================================================================
+// Experiments
+// =============================================================================
+
+model Experiment {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key             String           @unique @db.VarChar(64) // Unique key for hash-based assignment
+  name            String           @db.VarChar(255)
+  description     String?
+  scope           ExperimentScope
+  status          ExperimentStatus @default(DRAFT)
+  configJson      Json             @default("{}") @map("config_json") // Targeting rules
+  startAt         DateTime?        @map("start_at") @db.Timestamptz
+  endAt           DateTime?        @map("end_at") @db.Timestamptz
+  createdByUserId String?          @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  variants    ExperimentVariant[]
+  assignments ExperimentAssignment[]
+  exposures   ExperimentExposure[]
+
+  @@index([key])
+  @@index([status])
+  @@index([scope])
+  @@map("experiments")
+}
+
+// =============================================================================
+// Experiment Variants
+// =============================================================================
+
+model ExperimentVariant {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  experimentId String   @map("experiment_id") @db.Uuid
+  key          String   @db.VarChar(64) // e.g., 'control', 'treatment_a'
+  allocation   Decimal  @db.Decimal(4, 3) // 0.0 to 1.0, sum must equal 1.0
+  configJson   Json     @default("{}") @map("config_json") // Treatment parameters
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, key], map: "uq_experiment_variant_key")
+  @@index([experimentId])
+  @@map("experiment_variants")
+}
+
+// =============================================================================
+// Experiment Assignments
+// =============================================================================
+
+model ExperimentAssignment {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  experimentId String           @map("experiment_id") @db.Uuid
+  tenantId     String           @map("tenant_id") @db.Uuid
+  learnerId    String?          @map("learner_id") @db.Uuid // NULL for TENANT-scoped
+  variantKey   String           @map("variant_key") @db.VarChar(64)
+  reason       AssignmentReason
+  assignedAt   DateTime         @default(now()) @map("assigned_at") @db.Timestamptz
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId])
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([variantKey])
+  @@index([assignedAt])
+  @@map("experiment_assignments")
+}
+
+// =============================================================================
+// Experiment Exposures
+// =============================================================================
+
+model ExperimentExposure {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  experimentId String    @map("experiment_id") @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  learnerId    String?   @map("learner_id") @db.Uuid
+  variantKey   String    @map("variant_key") @db.VarChar(64)
+  featureArea  String    @map("feature_area") @db.VarChar(64) // Where exposure occurred
+  sessionId    String?   @map("session_id") @db.Uuid
+  metadata     Json?
+  exposedAt    DateTime  @default(now()) @map("exposed_at") @db.Timestamptz
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@index([experimentId])
+  @@index([tenantId])
+  @@index([learnerId])
+  @@index([experimentId, variantKey])
+  @@index([featureArea])
+  @@index([exposedAt])
+  @@index([sessionId])
+  @@map("experiment_exposures")
+}
