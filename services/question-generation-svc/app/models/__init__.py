@@ -5,7 +5,7 @@ from .distractor_generator import DistractorGenerator
 from .cloze_generator import ClozeGenerator
 from .difficulty_estimator import DifficultyEstimator
 from .bloom_classifier import BloomClassifier
-from .answer_extraction import AnswerExtractor
+from .answer_extractor import AnswerExtractor, AnswerExtractorConfig, ExtractedAnswer
 
 __all__ = [
     "QuestionGenerator",
@@ -14,4 +14,6 @@ __all__ = [
     "DifficultyEstimator",
     "BloomClassifier",
     "AnswerExtractor",
+    "AnswerExtractorConfig",
+    "ExtractedAnswer",
 ]

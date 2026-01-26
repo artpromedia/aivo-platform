@@ -1,118 +1,238 @@
-"""Question Generation Service - FastAPI Application"""
+"""
+Question Generation Service - FastAPI Application.
+
+AI-powered automatic question and assessment item generation service.
+"""
+
 import logging
+import sys
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException
+import structlog
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from app.api.routes import router
+from app.core.config import settings
+from app.services.generation_pipeline import GenerationPipeline, PipelineConfig
+
+# Configure structured logging
+structlog.configure(
+    processors=[
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.JSONRenderer()
+        if settings.LOG_FORMAT == "json"
+        else structlog.dev.ConsoleRenderer(),
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
+# Configure standard logging
+logging.basicConfig(
+    format="%(message)s",
+    stream=sys.stdout,
+    level=getattr(logging, settings.LOG_LEVEL.upper()),
+)
+
+logger = structlog.get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing Question Generation Service...")
-    yield
-    logger.info("Shutting down Question Generation Service...")
+    """Application lifespan manager - handles startup and shutdown."""
+    # STARTUP
+    logger.info(
+        "Starting Question Generation Service",
+        service=settings.SERVICE_NAME,
+        version=settings.VERSION,
+        environment=settings.ENVIRONMENT,
+    )
+
+    # Initialize the generation pipeline
+    try:
+        pipeline_config = PipelineConfig(
+            qg_model_name=settings.QG_MODEL_NAME,
+            device=settings.DEVICE,
+            default_num_questions=settings.DEFAULT_NUM_QUESTIONS,
+            default_num_distractors=settings.DEFAULT_NUM_DISTRACTORS,
+            min_quality_score=settings.MIN_QUALITY_SCORE,
+            enable_caching=settings.CACHE_ENABLED,
+        )
+        app.state.pipeline = GenerationPipeline(config=pipeline_config)
+        logger.info("Generation pipeline initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize generation pipeline", error=str(e))
+        raise
+
+    logger.info(
+        "Question Generation Service started",
+        host=settings.HOST,
+        port=settings.PORT,
+    )
+
+    yield  # Application runs here
+
+    # SHUTDOWN
+    logger.info("Shutting down Question Generation Service")
+
+    # Cleanup resources
+    if hasattr(app.state, "pipeline"):
+        app.state.pipeline.clear_cache()
+
+    logger.info("Question Generation Service stopped")
 
 
+# Create FastAPI application
 app = FastAPI(
-    title="Question Generation Service",
+    title=settings.PROJECT_NAME,
     description="""
 AI-powered automatic question and assessment item generation.
 
 ## Features
 
-- **Question Generation**: Generate questions from any content passage
-- **Distractor Generation**: Create plausible wrong answers for MCQs
+- **Question Generation**: Generate questions from any content passage using T5 models
+- **MCQ Generation**: Create multiple choice questions with plausible distractors
 - **Cloze Generation**: Fill-in-the-blank item creation
 - **Difficulty Estimation**: Pre-deployment difficulty prediction
 - **Bloom's Classification**: Classify cognitive level of questions
+- **Quality Filtering**: Ensure high-quality question output
+
+## API Endpoints
+
+- `POST /api/v1/generate/questions` - Generate questions from passage
+- `POST /api/v1/generate/mcq` - Generate multiple choice questions
+- `POST /api/v1/generate/cloze` - Generate fill-in-blank items
+- `POST /api/v1/generate/distractors` - Generate distractors for MCQ
+- `POST /api/v1/quality/score` - Score question quality
+- `POST /api/v1/bloom/classify` - Classify Bloom's taxonomy level
+- `POST /api/v1/difficulty/estimate` - Estimate question difficulty
     """,
-    version="0.1.0",
+    version=settings.VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/api/v1/openapi.json",
     lifespan=lifespan,
 )
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-class ContentRequest(BaseModel):
-    text: str = Field(..., description="Source text/passage")
-    topic: Optional[str] = None
-    grade_level: Optional[int] = Field(None, ge=1, le=12)
-    num_questions: int = Field(5, ge=1, le=20)
+# Include API routes
+app.include_router(router)
 
 
-class GeneratedQuestion(BaseModel):
-    question: str
-    answer: str
-    distractors: List[str] = []
-    question_type: str  # mcq, short_answer, true_false, cloze
-    difficulty: float
-    bloom_level: str
-    skill_tags: List[str] = []
+# =============================================================================
+# Health Check Endpoints
+# =============================================================================
 
 
-@app.get("/health")
-async def health() -> Dict[str, Any]:
-    return {"status": "healthy", "service": "question-generation-svc"}
+@app.get("/health", tags=["health"])
+async def health_check() -> Dict[str, Any]:
+    """Basic health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
-@app.post("/api/v1/questions/generate")
-async def generate_questions(request: ContentRequest) -> Dict[str, Any]:
-    """Generate questions from content."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/ready", tags=["health"])
+async def readiness_check() -> Dict[str, Any]:
+    """Kubernetes-style readiness check with dependency status."""
+    pipeline_ready = False
+    pipeline_status = "not_initialized"
+
+    if hasattr(app.state, "pipeline"):
+        try:
+            pipeline_ready = app.state.pipeline.is_ready()
+            pipeline_status = "ready" if pipeline_ready else "not_ready"
+        except Exception as e:
+            pipeline_status = f"error: {str(e)}"
+
+    dependencies = {
+        "pipeline": {
+            "status": pipeline_status,
+            "ready": pipeline_ready,
+        },
+    }
+
+    all_ready = all(d.get("ready", False) for d in dependencies.values())
+
+    return {
+        "status": "ready" if all_ready else "not_ready",
+        "service": settings.SERVICE_NAME,
+        "dependencies": dependencies,
+        "models_loaded": pipeline_ready,
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
-@app.post("/api/v1/questions/generate-mcq")
-async def generate_mcq(request: ContentRequest) -> Dict[str, Any]:
-    """Generate multiple choice questions with distractors."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/live", tags=["health"])
+async def liveness_check() -> Dict[str, str]:
+    """Kubernetes-style liveness check."""
+    return {"status": "alive"}
 
 
-@app.post("/api/v1/questions/generate-cloze")
-async def generate_cloze(request: ContentRequest) -> Dict[str, Any]:
-    """Generate fill-in-the-blank questions."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/", tags=["root"])
+async def root() -> Dict[str, Any]:
+    """Root endpoint with service information."""
+    return {
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
+        "status": "running",
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
-@app.post("/api/v1/distractors/generate")
-async def generate_distractors(
-    question: str,
-    correct_answer: str,
-    context: Optional[str] = None,
-    num_distractors: int = 3,
-) -> Dict[str, Any]:
-    """Generate distractors for a given question and answer."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+# =============================================================================
+# Metrics Endpoint (Prometheus-compatible)
+# =============================================================================
 
 
-@app.post("/api/v1/difficulty/estimate")
-async def estimate_difficulty(question: str, answer: str) -> Dict[str, Any]:
-    """Estimate question difficulty before deployment."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/metrics", tags=["monitoring"])
+async def metrics() -> str:
+    """Prometheus metrics endpoint."""
+    try:
+        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
-
-@app.post("/api/v1/bloom/classify")
-async def classify_bloom(question: str) -> Dict[str, Any]:
-    """Classify question by Bloom's taxonomy level."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-@app.post("/api/v1/quality/score")
-async def score_quality(question: str, answer: str) -> Dict[str, Any]:
-    """Score question quality for filtering."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+        return generate_latest()
+    except ImportError:
+        # Return basic metrics if prometheus_client not available
+        return """
+# HELP qg_service_info Question Generation Service info
+# TYPE qg_service_info gauge
+qg_service_info{version="%s",service="%s"} 1
+""" % (
+            settings.VERSION,
+            settings.SERVICE_NAME,
+        )
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=settings.DEBUG,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
