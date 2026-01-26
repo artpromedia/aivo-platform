@@ -7,13 +7,18 @@ Provides REST endpoints for:
 - Diagram analysis
 - Document scanning
 - Combined homework analysis
+- Drawing assessment (Sprint 6)
+- Attention tracking (Sprint 6)
+- Work comparison (Sprint 6)
+- Multimodal analysis (Sprint 6)
 """
 
 import base64
 import io
 import logging
 import time
-from typing import Any, Dict, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 import cv2
 import numpy as np
@@ -30,6 +35,25 @@ from app.models.handwriting_recognition import (
 from app.models.math_equation_detector import (
     MathEquationDetector,
     MathEquationDetectorConfig,
+)
+from app.models.drawing_assessment import (
+    DrawingAssessor,
+    DrawingAssessorConfig,
+    DrawingRubric,
+    DrawingCategory,
+)
+from app.models.attention_tracker import (
+    AttentionTracker,
+    AttentionTrackerConfig,
+    AttentionMetrics,
+)
+from app.models.work_comparator import (
+    WorkComparator,
+    WorkComparatorConfig,
+)
+from app.services.multimodal_fusion import (
+    MultimodalFuser,
+    MultimodalFusionConfig,
 )
 from app.schemas.requests import (
     BoundingBoxSchema,
@@ -49,6 +73,29 @@ from app.schemas.requests import (
     MathRecognizeRequest,
     MathRecognizeResponse,
     WordPositionSchema,
+    # Sprint 6 schemas
+    DrawingAssessRequest,
+    DrawingAssessResponse,
+    DrawingRubricSchema,
+    DetectedElementSchema,
+    LabelDetectionSchema,
+    AttentionProcessRequest,
+    AttentionProcessResponse,
+    AttentionSessionSummaryResponse,
+    AttentionMetricsSchema,
+    SessionSummarySchema,
+    HeadPoseSchema,
+    CompareSubmissionsRequest,
+    CompareSubmissionsResponse,
+    ProgressTrackRequest,
+    ProgressTrackResponse,
+    DifferenceRegionSchema,
+    MultimodalAnalyzeRequest,
+    MultimodalAnalyzeResponse,
+    ContentBlockSchema,
+    RelationshipSchema,
+    DocumentStructureSchema,
+    FusedDocumentSchema,
 )
 
 logger = logging.getLogger(__name__)
@@ -60,11 +107,20 @@ _handwriting_recognizer: Optional[HandwritingRecognizer] = None
 _math_detector: Optional[MathEquationDetector] = None
 _diagram_analyzer: Optional[DiagramAnalyzer] = None
 _document_scanner: Optional[DocumentScanner] = None
+# Sprint 6 components
+_drawing_assessor: Optional[DrawingAssessor] = None
+_attention_tracker: Optional[AttentionTracker] = None
+_work_comparator: Optional[WorkComparator] = None
+_multimodal_fuser: Optional[MultimodalFuser] = None
+
+# Session storage for attention tracking
+_attention_sessions: Dict[str, List[AttentionMetrics]] = {}
 
 
 def init_components(settings: Settings) -> None:
     """Initialize all model components."""
     global _handwriting_recognizer, _math_detector, _diagram_analyzer, _document_scanner
+    global _drawing_assessor, _attention_tracker, _work_comparator, _multimodal_fuser
 
     logger.info("Initializing vision analysis components...")
 
@@ -100,6 +156,34 @@ def init_components(settings: Settings) -> None:
         contrast_method=settings.SCANNER_CONTRAST_METHOD,
     )
     _document_scanner = DocumentScanner(scanner_config)
+
+    # Sprint 6: Drawing assessor
+    drawing_config = DrawingAssessorConfig(
+        device=settings.DEVICE,
+        enable_ocr=True,
+    )
+    _drawing_assessor = DrawingAssessor(drawing_config)
+
+    # Sprint 6: Attention tracker
+    attention_config = AttentionTrackerConfig(
+        device=settings.DEVICE,
+        privacy_mode="strict",
+        local_only=True,
+    )
+    _attention_tracker = AttentionTracker(attention_config)
+
+    # Sprint 6: Work comparator
+    comparator_config = WorkComparatorConfig(
+        enable_feature_matching=True,
+    )
+    _work_comparator = WorkComparator(comparator_config)
+
+    # Sprint 6: Multimodal fuser
+    fusion_config = MultimodalFusionConfig(
+        fusion_strategy="attention",
+        embedding_dim=512,
+    )
+    _multimodal_fuser = MultimodalFuser(fusion_config)
 
     logger.info("All vision analysis components initialized")
 
@@ -608,6 +692,427 @@ async def analyze_homework(request: HomeworkAnalyzeRequest) -> HomeworkAnalyzeRe
 
 
 # =============================================================================
+# Drawing Assessment Endpoints (Sprint 6)
+# =============================================================================
+
+
+@router.post("/assess/drawing", response_model=DrawingAssessResponse)
+async def assess_drawing(request: DrawingAssessRequest) -> DrawingAssessResponse:
+    """
+    Assess a student drawing or artwork.
+
+    Supports:
+    - Art class assignments
+    - Science diagrams (labeled drawings)
+    - Map drawings
+    - Technical sketches
+    """
+    if _drawing_assessor is None:
+        raise HTTPException(status_code=503, detail="Drawing assessor not initialized")
+
+    image = _decode_image(request.image_base64)
+
+    # Convert rubric schema to model rubric if provided
+    rubric = None
+    if request.rubric:
+        rubric = DrawingRubric(
+            rubric_id=request.rubric.rubric_id or "custom",
+            name=request.rubric.name or "Custom Rubric",
+            category=DrawingCategory.ART,
+            dimensions=request.rubric.dimensions,
+            required_elements=request.rubric.required_elements,
+            dimension_weights=request.rubric.dimension_weights or {},
+        )
+
+    # Decode reference image if provided
+    reference = None
+    if request.reference_image_base64:
+        reference = _decode_image(request.reference_image_base64)
+
+    # Perform assessment
+    result = _drawing_assessor.assess_drawing(
+        image=image,
+        rubric=rubric,
+        reference=reference,
+        assignment_type=request.assignment_type,
+    )
+
+    # Convert detected elements
+    detected_elements = [
+        DetectedElementSchema(
+            element_id=elem.element_id,
+            element_type=elem.element_type,
+            name=elem.name,
+            bounding_box=BoundingBoxSchema(
+                x=elem.bounding_box.x,
+                y=elem.bounding_box.y,
+                width=elem.bounding_box.width,
+                height=elem.bounding_box.height,
+            ),
+            confidence=elem.confidence,
+            attributes=elem.attributes,
+        )
+        for elem in result.detected_elements
+    ]
+
+    # Convert labels
+    labels = [
+        LabelDetectionSchema(
+            label_id=label.label_id,
+            text=label.text,
+            text_box=BoundingBoxSchema(
+                x=label.text_box.x,
+                y=label.text_box.y,
+                width=label.text_box.width,
+                height=label.text_box.height,
+            ),
+            confidence=label.confidence,
+            spelling_correct=label.spelling_correct,
+            spelling_suggestions=label.spelling_suggestions,
+        )
+        for label in result.labels
+    ]
+
+    return DrawingAssessResponse(
+        overall_score=result.overall_score,
+        dimension_scores=result.dimension_scores,
+        detected_elements=detected_elements,
+        missing_elements=result.missing_elements,
+        labels=labels,
+        feedback=result.feedback,
+        suggestions=result.suggestions,
+        comparison_to_reference=result.comparison_to_reference,
+        composition_analysis=result.composition_analysis,
+        color_analysis=result.color_analysis,
+        processing_time_ms=result.processing_time_ms,
+    )
+
+
+# =============================================================================
+# Attention Tracking Endpoints (Sprint 6)
+# =============================================================================
+
+
+@router.post("/attention/process", response_model=AttentionProcessResponse)
+async def process_attention_metrics(
+    request: AttentionProcessRequest
+) -> AttentionProcessResponse:
+    """
+    Process batched attention metrics from client-side tracking.
+
+    Note: This endpoint receives pre-computed metrics from client-side code.
+    All image processing happens on the client - only numerical metrics are sent.
+    """
+    if _attention_tracker is None:
+        raise HTTPException(status_code=503, detail="Attention tracker not initialized")
+
+    # Store metrics for the session
+    session_id = request.session_id
+    if session_id not in _attention_sessions:
+        _attention_sessions[session_id] = []
+
+    # Convert and store metrics
+    for metric in request.metrics:
+        head_pose = None
+        if metric.head_pose:
+            from app.models.attention_tracker import HeadPose
+            head_pose = HeadPose(
+                pitch=metric.head_pose.pitch,
+                yaw=metric.head_pose.yaw,
+                roll=metric.head_pose.roll,
+            )
+
+        attention_metric = AttentionMetrics(
+            timestamp=datetime.fromisoformat(metric.timestamp.replace('Z', '+00:00')),
+            attention_score=metric.attention_score,
+            gaze_on_screen=metric.gaze_on_screen,
+            face_detected=metric.face_detected,
+            head_pose=head_pose,
+            engagement_state=metric.engagement_state,
+            blink_detected=metric.blink_detected,
+            eye_aspect_ratio=metric.eye_aspect_ratio,
+        )
+        _attention_sessions[session_id].append(attention_metric)
+
+    # Determine current engagement
+    recent_metrics = _attention_sessions[session_id][-10:]
+    if recent_metrics:
+        avg_score = sum(m.attention_score for m in recent_metrics) / len(recent_metrics)
+        if avg_score >= 0.7:
+            current_engagement = "engaged"
+        elif avg_score >= 0.4:
+            current_engagement = "neutral"
+        else:
+            current_engagement = "distracted"
+    else:
+        current_engagement = "unknown"
+
+    # Generate recommendations
+    recommendations = []
+    if current_engagement == "distracted":
+        recommendations.append("Consider taking a short break to refocus.")
+
+    return AttentionProcessResponse(
+        session_id=session_id,
+        metrics_received=len(request.metrics),
+        current_engagement=current_engagement,
+        recommendations=recommendations,
+    )
+
+
+@router.get("/attention/session/{session_id}/summary", response_model=AttentionSessionSummaryResponse)
+async def get_attention_session_summary(session_id: str) -> AttentionSessionSummaryResponse:
+    """
+    Get summary of attention tracking session.
+
+    Returns aggregated metrics and recommendations.
+    """
+    if _attention_tracker is None:
+        raise HTTPException(status_code=503, detail="Attention tracker not initialized")
+
+    if session_id not in _attention_sessions:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    metrics = _attention_sessions[session_id]
+
+    if not metrics:
+        raise HTTPException(status_code=404, detail=f"No metrics for session {session_id}")
+
+    # Aggregate session data
+    summary = _attention_tracker.aggregate_session(metrics)
+
+    return AttentionSessionSummaryResponse(
+        session_id=session_id,
+        summary=SessionSummarySchema(
+            total_duration_seconds=summary.total_duration_seconds,
+            attention_percentage=summary.attention_percentage,
+            distraction_events=summary.distraction_events,
+            average_engagement=summary.average_engagement,
+            engagement_over_time=summary.engagement_over_time,
+            focus_periods=summary.focus_periods,
+            average_focus_duration_seconds=summary.average_focus_duration_seconds,
+            drowsiness_events=summary.drowsiness_events,
+            recommendations=summary.recommendations,
+        ),
+    )
+
+
+# =============================================================================
+# Work Comparison Endpoints (Sprint 6)
+# =============================================================================
+
+
+@router.post("/compare/submissions", response_model=CompareSubmissionsResponse)
+async def compare_submissions(request: CompareSubmissionsRequest) -> CompareSubmissionsResponse:
+    """
+    Compare two student work submissions.
+
+    Supports:
+    - Similarity comparison
+    - Plagiarism detection
+    - Progress tracking
+    """
+    if _work_comparator is None:
+        raise HTTPException(status_code=503, detail="Work comparator not initialized")
+
+    submission1 = _decode_image(request.submission1_base64)
+    submission2 = _decode_image(request.submission2_base64)
+
+    result = _work_comparator.compare_submissions(
+        submission1=submission1,
+        submission2=submission2,
+        comparison_type=request.comparison_type,
+    )
+
+    # Convert difference regions
+    differences = [
+        DifferenceRegionSchema(
+            region_id=diff.region_id,
+            bounding_box=BoundingBoxSchema(
+                x=diff.bounding_box.x,
+                y=diff.bounding_box.y,
+                width=diff.bounding_box.width,
+                height=diff.bounding_box.height,
+            ),
+            difference_type=diff.difference_type,
+            intensity=diff.intensity,
+            area_percentage=diff.area_percentage,
+        )
+        for diff in result.differences
+    ]
+
+    return CompareSubmissionsResponse(
+        similarity_score=result.similarity_score,
+        structural_similarity=result.structural_similarity,
+        content_similarity=result.content_similarity,
+        differences=differences,
+        is_potential_copy=result.is_potential_copy,
+        copy_confidence=result.copy_confidence,
+        processing_time_ms=result.processing_time_ms,
+    )
+
+
+@router.post("/compare/progress", response_model=ProgressTrackResponse)
+async def track_progress(request: ProgressTrackRequest) -> ProgressTrackResponse:
+    """
+    Track progress across multiple submissions over time.
+
+    Analyzes improvement in quality metrics.
+    """
+    if _work_comparator is None:
+        raise HTTPException(status_code=503, detail="Work comparator not initialized")
+
+    # Decode all submission images
+    submissions = [_decode_image(img_b64) for img_b64 in request.submission_images_base64]
+
+    # Parse timestamps if provided
+    if request.timestamps:
+        timestamps = [
+            datetime.fromisoformat(ts.replace('Z', '+00:00'))
+            for ts in request.timestamps
+        ]
+    else:
+        # Generate sequential timestamps
+        now = datetime.now(timezone.utc)
+        timestamps = [now] * len(submissions)
+
+    result = _work_comparator.track_progress(
+        submissions=submissions,
+        timestamps=timestamps,
+    )
+
+    return ProgressTrackResponse(
+        submissions_count=result.submissions_count,
+        improvement_score=result.improvement_score,
+        metrics_over_time=result.metrics_over_time,
+        notable_improvements=result.notable_improvements,
+        areas_unchanged=result.areas_unchanged,
+        first_submission_score=result.first_submission_score,
+        latest_submission_score=result.latest_submission_score,
+        processing_time_ms=result.processing_time_ms,
+    )
+
+
+# =============================================================================
+# Multimodal Analysis Endpoints (Sprint 6)
+# =============================================================================
+
+
+@router.post("/analyze/multimodal", response_model=MultimodalAnalyzeResponse)
+async def analyze_multimodal(request: MultimodalAnalyzeRequest) -> MultimodalAnalyzeResponse:
+    """
+    Comprehensive multimodal document analysis.
+
+    Combines OCR, math detection, and diagram analysis into
+    a unified document representation.
+    """
+    if _multimodal_fuser is None:
+        raise HTTPException(status_code=503, detail="Multimodal fuser not initialized")
+
+    start_time = time.time()
+    image = _decode_image(request.image_base64)
+
+    # Gather results from other analyzers based on expected content types
+    ocr_result = None
+    math_result = None
+    diagram_result = None
+
+    if "text" in request.expected_content_types and _handwriting_recognizer:
+        try:
+            ocr_result = _handwriting_recognizer.recognize_with_positions(image)
+        except Exception as e:
+            logger.warning(f"OCR failed in multimodal analysis: {e}")
+
+    if "math" in request.expected_content_types and _math_detector:
+        try:
+            math_content = _math_detector.extract_from_document(image)
+            math_result = math_content.equations
+        except Exception as e:
+            logger.warning(f"Math detection failed in multimodal analysis: {e}")
+
+    if "diagram" in request.expected_content_types and _diagram_analyzer:
+        try:
+            diagram_result = _diagram_analyzer.analyze(image)
+        except Exception as e:
+            logger.warning(f"Diagram analysis failed in multimodal analysis: {e}")
+
+    # Fuse all results
+    fused_doc = _multimodal_fuser.fuse_document(
+        image=image,
+        ocr_result=ocr_result,
+        math_result=math_result,
+        diagram_result=diagram_result,
+    )
+
+    # Convert content blocks
+    content_blocks = [
+        ContentBlockSchema(
+            block_id=block.block_id,
+            block_type=block.block_type,
+            content=str(block.content) if block.content else "",
+            bounding_box=BoundingBoxSchema(
+                x=block.bounding_box.x,
+                y=block.bounding_box.y,
+                width=block.bounding_box.width,
+                height=block.bounding_box.height,
+            ),
+            confidence=block.confidence,
+            metadata=block.metadata,
+        )
+        for block in fused_doc.content_blocks
+    ]
+
+    # Convert relationships
+    relationships = [
+        RelationshipSchema(
+            source_id=rel.source_id,
+            target_id=rel.target_id,
+            relationship_type=rel.relationship_type,
+            confidence=rel.confidence,
+        )
+        for rel in fused_doc.relationships
+    ]
+
+    # Convert structure
+    structure = DocumentStructureSchema(
+        page_width=fused_doc.structure.page_width,
+        page_height=fused_doc.structure.page_height,
+        num_columns=fused_doc.structure.num_columns,
+        has_header=fused_doc.structure.has_header,
+        has_footer=fused_doc.structure.has_footer,
+        margins=fused_doc.structure.margins,
+        primary_reading_direction=fused_doc.structure.primary_reading_direction,
+    )
+
+    # Count content types
+    content_type_counts: Dict[str, int] = {}
+    for block in fused_doc.content_blocks:
+        content_type_counts[block.block_type] = content_type_counts.get(block.block_type, 0) + 1
+
+    # Generate summary
+    summary_parts = []
+    if content_type_counts:
+        for content_type, count in content_type_counts.items():
+            summary_parts.append(f"{count} {content_type} block(s)")
+    summary = "; ".join(summary_parts) if summary_parts else "No content detected"
+
+    elapsed_ms = int((time.time() - start_time) * 1000)
+
+    return MultimodalAnalyzeResponse(
+        document=FusedDocumentSchema(
+            content_blocks=content_blocks,
+            reading_order=fused_doc.reading_order,
+            relationships=relationships,
+            unified_text=fused_doc.unified_text,
+            structure=structure,
+        ),
+        summary=summary,
+        content_type_counts=content_type_counts,
+        processing_time_ms=elapsed_ms,
+    )
+
+
+# =============================================================================
 # Utility Functions for Direct Model Access
 # =============================================================================
 
@@ -630,3 +1135,37 @@ def get_diagram_analyzer() -> Optional[DiagramAnalyzer]:
 def get_document_scanner() -> Optional[DocumentScanner]:
     """Get the document scanner instance."""
     return _document_scanner
+
+
+def get_drawing_assessor() -> Optional[DrawingAssessor]:
+    """Get the drawing assessor instance."""
+    return _drawing_assessor
+
+
+def get_attention_tracker() -> Optional[AttentionTracker]:
+    """Get the attention tracker instance."""
+    return _attention_tracker
+
+
+def get_work_comparator() -> Optional[WorkComparator]:
+    """Get the work comparator instance."""
+    return _work_comparator
+
+
+def get_multimodal_fuser() -> Optional[MultimodalFuser]:
+    """Get the multimodal fuser instance."""
+    return _multimodal_fuser
+
+
+def get_components() -> Dict[str, bool]:
+    """Get status of all components for health checks."""
+    return {
+        "handwriting_recognizer": _handwriting_recognizer is not None,
+        "math_detector": _math_detector is not None,
+        "diagram_analyzer": _diagram_analyzer is not None,
+        "document_scanner": _document_scanner is not None,
+        "drawing_assessor": _drawing_assessor is not None,
+        "attention_tracker": _attention_tracker is not None,
+        "work_comparator": _work_comparator is not None,
+        "multimodal_fuser": _multimodal_fuser is not None,
+    }

@@ -269,6 +269,276 @@ class HomeworkAnalyzeResponse(BaseModel):
 
 
 # =============================================================================
+# Drawing Assessment Schemas (Sprint 6)
+# =============================================================================
+
+
+class DrawingRubricSchema(BaseModel):
+    """Rubric for drawing assessment."""
+    rubric_id: Optional[str] = None
+    name: Optional[str] = None
+    dimensions: List[str] = Field(
+        default=["composition", "technical_skill", "creativity"],
+        description="Assessment dimensions"
+    )
+    required_elements: List[str] = Field(
+        default=[],
+        description="Required elements that must be present"
+    )
+    dimension_weights: Optional[Dict[str, float]] = None
+
+
+class DetectedElementSchema(BaseModel):
+    """Detected element in a drawing."""
+    element_id: str
+    element_type: str
+    name: str
+    bounding_box: BoundingBoxSchema
+    confidence: float
+    attributes: Dict[str, Any] = {}
+
+
+class LabelDetectionSchema(BaseModel):
+    """Detected label in a diagram."""
+    label_id: str
+    text: str
+    text_box: BoundingBoxSchema
+    confidence: float
+    spelling_correct: bool = True
+    spelling_suggestions: List[str] = []
+
+
+class DrawingAssessRequest(BaseModel):
+    """Request for drawing assessment."""
+    image_base64: str = Field(
+        ...,
+        description="Base64 encoded drawing image"
+    )
+    assignment_type: str = Field(
+        default="art",
+        description="Type of assignment: art, science_diagram, map, technical"
+    )
+    rubric: Optional[DrawingRubricSchema] = Field(
+        None,
+        description="Optional assessment rubric"
+    )
+    reference_image_base64: Optional[str] = Field(
+        None,
+        description="Optional reference image for comparison"
+    )
+
+
+class DrawingAssessResponse(BaseModel):
+    """Response from drawing assessment."""
+    overall_score: float
+    dimension_scores: Dict[str, float]
+    detected_elements: List[DetectedElementSchema]
+    missing_elements: List[str]
+    labels: List[LabelDetectionSchema] = []
+    feedback: str
+    suggestions: List[str]
+    comparison_to_reference: Optional[float] = None
+    composition_analysis: Dict[str, Any] = {}
+    color_analysis: Dict[str, Any] = {}
+    processing_time_ms: int
+
+
+# =============================================================================
+# Attention Tracking Schemas (Sprint 6)
+# =============================================================================
+
+
+class HeadPoseSchema(BaseModel):
+    """Head pose angles."""
+    pitch: float
+    yaw: float
+    roll: float
+
+
+class AttentionMetricsSchema(BaseModel):
+    """Attention metrics for a single measurement."""
+    timestamp: str
+    attention_score: float
+    gaze_on_screen: bool
+    face_detected: bool
+    head_pose: Optional[HeadPoseSchema] = None
+    engagement_state: str = "unknown"
+    blink_detected: bool = False
+    eye_aspect_ratio: float = 0.0
+
+
+class AttentionProcessRequest(BaseModel):
+    """Request to process attention metrics batch."""
+    session_id: str = Field(
+        ...,
+        description="Unique session identifier"
+    )
+    metrics: List[AttentionMetricsSchema] = Field(
+        ...,
+        description="Batch of attention metrics from client"
+    )
+
+
+class AttentionProcessResponse(BaseModel):
+    """Response from attention processing."""
+    session_id: str
+    metrics_received: int
+    current_engagement: str
+    recommendations: List[str] = []
+
+
+class SessionSummarySchema(BaseModel):
+    """Summary of an attention tracking session."""
+    total_duration_seconds: int
+    attention_percentage: float
+    distraction_events: int
+    average_engagement: float
+    engagement_over_time: List[float]
+    focus_periods: int
+    average_focus_duration_seconds: float
+    drowsiness_events: int = 0
+    recommendations: List[str] = []
+
+
+class AttentionSessionSummaryResponse(BaseModel):
+    """Response with session summary."""
+    session_id: str
+    summary: SessionSummarySchema
+
+
+# =============================================================================
+# Work Comparison Schemas (Sprint 6)
+# =============================================================================
+
+
+class DifferenceRegionSchema(BaseModel):
+    """Region of difference between submissions."""
+    region_id: str
+    bounding_box: BoundingBoxSchema
+    difference_type: str  # added, removed, modified
+    intensity: float
+    area_percentage: float
+
+
+class CompareSubmissionsRequest(BaseModel):
+    """Request to compare two submissions."""
+    submission1_base64: str = Field(
+        ...,
+        description="Base64 encoded first submission image"
+    )
+    submission2_base64: str = Field(
+        ...,
+        description="Base64 encoded second submission image"
+    )
+    comparison_type: str = Field(
+        default="similarity",
+        description="Type: similarity, progress, plagiarism"
+    )
+
+
+class CompareSubmissionsResponse(BaseModel):
+    """Response from submission comparison."""
+    similarity_score: float
+    structural_similarity: float
+    content_similarity: float
+    differences: List[DifferenceRegionSchema]
+    is_potential_copy: bool
+    copy_confidence: float = 0.0
+    processing_time_ms: int
+
+
+class ProgressTrackRequest(BaseModel):
+    """Request to track progress across submissions."""
+    submission_images_base64: List[str] = Field(
+        ...,
+        description="List of base64 encoded submission images in order"
+    )
+    timestamps: Optional[List[str]] = Field(
+        None,
+        description="Optional timestamps for each submission"
+    )
+
+
+class ProgressTrackResponse(BaseModel):
+    """Response from progress tracking."""
+    submissions_count: int
+    improvement_score: float
+    metrics_over_time: Dict[str, List[float]]
+    notable_improvements: List[str]
+    areas_unchanged: List[str]
+    first_submission_score: float
+    latest_submission_score: float
+    processing_time_ms: int
+
+
+# =============================================================================
+# Multimodal Analysis Schemas (Sprint 6)
+# =============================================================================
+
+
+class ContentBlockSchema(BaseModel):
+    """Content block in fused document."""
+    block_id: str
+    block_type: str  # text, math, diagram, image
+    content: Any
+    bounding_box: BoundingBoxSchema
+    confidence: float
+    metadata: Dict[str, Any] = {}
+
+
+class RelationshipSchema(BaseModel):
+    """Relationship between content blocks."""
+    source_id: str
+    target_id: str
+    relationship_type: str
+    confidence: float = 1.0
+
+
+class DocumentStructureSchema(BaseModel):
+    """Document structure analysis."""
+    page_width: int
+    page_height: int
+    num_columns: int
+    has_header: bool
+    has_footer: bool
+    margins: Dict[str, int]
+    primary_reading_direction: str = "ltr"
+
+
+class FusedDocumentSchema(BaseModel):
+    """Fused document representation."""
+    content_blocks: List[ContentBlockSchema]
+    reading_order: List[int]
+    relationships: List[RelationshipSchema]
+    unified_text: str
+    structure: DocumentStructureSchema
+
+
+class MultimodalAnalyzeRequest(BaseModel):
+    """Request for multimodal document analysis."""
+    image_base64: str = Field(
+        ...,
+        description="Base64 encoded document image"
+    )
+    analysis_depth: str = Field(
+        default="standard",
+        description="Analysis depth: quick, standard, deep"
+    )
+    expected_content_types: List[str] = Field(
+        default=["text", "math", "diagram"],
+        description="Expected content types to detect"
+    )
+
+
+class MultimodalAnalyzeResponse(BaseModel):
+    """Response from multimodal analysis."""
+    document: FusedDocumentSchema
+    summary: str
+    content_type_counts: Dict[str, int] = {}
+    processing_time_ms: int
+
+
+# =============================================================================
 # Health Check Schemas
 # =============================================================================
 

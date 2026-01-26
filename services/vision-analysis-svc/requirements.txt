@@ -13,6 +13,7 @@ opencv-python-headless>=4.8.0
 pillow>=10.0.0
 numpy>=1.24.0
 scipy>=1.11.0
+scikit-image>=0.22.0
 
 # Deep Learning
 torch>=2.1.0
@@ -25,6 +26,12 @@ pytesseract>=0.3.10
 
 # Math Equation Recognition (LaTeX OCR)
 pix2tex>=0.1.0
+
+# Sprint 6: Face Detection & Attention Tracking
+mediapipe>=0.10.0
+
+# Sprint 6: Image Comparison & Similarity
+scikit-learn>=1.3.0
 
 # Utilities
 httpx>=0.25.0
