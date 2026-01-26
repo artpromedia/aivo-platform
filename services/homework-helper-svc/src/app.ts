@@ -9,6 +9,7 @@ import { registerHealthRoutes } from './routes/health.js';
 import { registerHomeworkRoutes } from './routes/homework.js';
 import { registerParentRoutes } from './routes/parent.js';
 import { registerUploadRoutes } from './routes/upload.js';
+import { registerImageUploadRoutes } from './routes/image-upload.routes.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -76,6 +77,9 @@ export async function buildApp() {
 
   // Upload routes (OCR)
   await app.register(registerUploadRoutes, { prefix: '/upload' });
+
+  // Image upload routes (new OCR pipeline)
+  await app.register(registerImageUploadRoutes, { prefix: '/api/v1/homework' });
 
   return app;
 }
