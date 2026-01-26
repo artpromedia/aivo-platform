@@ -1,1 +1,1 @@
-# Model Tests
+"""Training Service Model Tests."""

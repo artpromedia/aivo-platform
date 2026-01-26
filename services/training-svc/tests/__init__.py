@@ -1,1 +1,1 @@
-# Training Service Tests
+"""Training Service Tests."""
