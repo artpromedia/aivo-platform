@@ -25,6 +25,13 @@ from src.models.hybrid_recommender import (
     ActivityMetadata,
 )
 
+from src.models.risk_predictor import (
+    AtRiskPredictor,
+    StudentFeatures,
+    RiskPrediction,
+    RiskThresholds,
+)
+
 __all__ = [
     # Schema models
     "ContentRecommendation",
@@ -45,4 +52,9 @@ __all__ = [
     "ContentBasedFilter",
     "MultiArmedBandit",
     "ActivityMetadata",
+    # Risk predictor
+    "AtRiskPredictor",
+    "StudentFeatures",
+    "RiskPrediction",
+    "RiskThresholds",
 ]

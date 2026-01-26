@@ -12,11 +12,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import get_settings
-from src.routers import health, recommendations, student_brain, special_needs, emotion_recognition, analytics, hybrid
+from src.routers import health, recommendations, student_brain, special_needs, emotion_recognition, analytics, hybrid, at_risk
 from src.services.feature_store import FeatureStore
 from src.services.message_consumer import MessageConsumer
 from src.services.recommendation_engine import RecommendationEngine
 from src.models.hybrid_recommender import HybridRecommender
+from src.models.risk_predictor import AtRiskPredictor
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -124,6 +125,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.warning("Hybrid recommender initialization failed", error=str(e))
         app.state.hybrid_recommender = None
 
+    # Initialize at-risk predictor
+    try:
+        model_type = os.getenv('RISK_MODEL_TYPE', 'gradient_boosting')
+        risk_predictor = AtRiskPredictor(model_type=model_type)
+        
+        # Load saved model if exists
+        risk_model_path = os.getenv('RISK_MODEL_PATH', '/app/models/risk_predictor.pkl')
+        if os.path.exists(risk_model_path):
+            try:
+                risk_predictor.load_model(risk_model_path)
+                logger.info("Loaded risk predictor model", path=risk_model_path)
+            except Exception as e:
+                logger.warning("Could not load risk predictor model", error=str(e))
+        
+        app.state.risk_predictor = risk_predictor
+        logger.info("Risk predictor initialized", model_type=model_type)
+    except Exception as e:
+        logger.warning("Risk predictor initialization failed", error=str(e))
+        app.state.risk_predictor = None
+
     # Initialize message consumer
     consumer = MessageConsumer(
         rabbitmq_url=settings.rabbitmq_url,
@@ -140,6 +161,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Cleanup
     logger.info("Shutting down ML Recommendation Service")
+    
+    # Save risk predictor state
+    if hasattr(app.state, 'risk_predictor') and app.state.risk_predictor and app.state.risk_predictor.is_trained:
+        try:
+            risk_model_path = os.getenv('RISK_MODEL_PATH', '/app/models/risk_predictor.pkl')
+            app.state.risk_predictor.save_model(risk_model_path)
+            logger.info("Saved risk predictor model", path=risk_model_path)
+        except Exception as e:
+            logger.warning("Could not save risk predictor model", error=str(e))
     
     # Save hybrid recommender state
     if hasattr(app.state, 'hybrid_recommender') and app.state.hybrid_recommender:
@@ -187,6 +217,7 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(recommendations.router, prefix="/recommendations", tags=["Recommendations"])
 app.include_router(hybrid.router, prefix="/recommendations", tags=["Hybrid Recommendations"])
+app.include_router(at_risk.router, prefix="/interventions", tags=["At-Risk Prediction"])
 app.include_router(student_brain.router, prefix="/student-brain", tags=["Student Brain AI"])
 app.include_router(special_needs.router, prefix="/special-needs", tags=["Special Needs Support"])
 app.include_router(emotion_recognition.router, prefix="/emotions", tags=["Emotion Recognition"])
