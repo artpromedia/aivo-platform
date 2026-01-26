@@ -49,6 +49,21 @@ const configSchema = z.object({
 
   // Internal service URLs
   learnerModelSvcUrl: z.string().default('http://localhost:4022'),
+  notifySvcUrl: z.string().default('http://localhost:4040'),
+
+  // External URLs
+  parentPortalUrl: z.string().default('http://localhost:3000'),
+
+  // Registration settings
+  registrationEmailVerificationExpiryHours: z.coerce.number().default(24),
+  registrationSchoolCodeExpiryDays: z.coerce.number().default(7),
+  registrationMaxFailedAttempts: z.coerce.number().default(5),
+  registrationLockoutMinutes: z.coerce.number().default(30),
+
+  // CAPTCHA
+  captchaEnabled: z.coerce.boolean().default(false),
+  recaptchaSiteKey: z.string().optional(),
+  recaptchaSecretKey: z.string().optional(),
 });
 
 function loadConfig() {
@@ -80,6 +95,15 @@ function loadConfig() {
     coppaMinAge: process.env.COPPA_MIN_AGE,
     parentInviteExpiryDays: process.env.PARENT_INVITE_EXPIRY_DAYS,
     learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL,
+    notifySvcUrl: process.env.NOTIFY_SVC_URL,
+    parentPortalUrl: process.env.PARENT_PORTAL_URL,
+    registrationEmailVerificationExpiryHours: process.env.REGISTRATION_EMAIL_VERIFICATION_EXPIRY_HOURS,
+    registrationSchoolCodeExpiryDays: process.env.REGISTRATION_SCHOOL_CODE_EXPIRY_DAYS,
+    registrationMaxFailedAttempts: process.env.REGISTRATION_MAX_FAILED_ATTEMPTS,
+    registrationLockoutMinutes: process.env.REGISTRATION_LOCKOUT_MINUTES,
+    captchaEnabled: process.env.CAPTCHA_ENABLED,
+    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
+    recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
   });
 
   if (!result.success) {

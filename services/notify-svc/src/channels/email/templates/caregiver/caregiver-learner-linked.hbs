@@ -1,0 +1,53 @@
+{{!-- Caregiver Learner Linked Template --}}
+{{!-- Sent when a learner link request is approved --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #d1fae5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">✅</span>
+  </div>
+</div>
+
+<h1 style="text-align: center;">Learner Link Approved!</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  Hi {{firstName}},
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  Great news! Your request to link with <strong>{{learnerName}}</strong> has been approved. You can now view their learning progress and achievements.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{dashboardUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    View Dashboard
+  </a>
+</div>
+
+<div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px; margin: 24px 0;">
+  <h2 style="margin: 0 0 12px 0; color: #166534; font-size: 16px;">You can now:</h2>
+  <ul style="margin: 0; padding-left: 20px; color: #166534; font-size: 14px; line-height: 1.8;">
+    <li>Track {{learnerName}}'s learning progress</li>
+    <li>View achievements and milestones</li>
+    <li>Monitor learning time and activity</li>
+    <li>Receive notifications about their journey</li>
+  </ul>
+</div>
+
+<div style="background-color: #f4f4f5; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0 0 8px 0; font-size: 14px; color: #71717a;">
+    Linked Learner
+  </p>
+  <p style="margin: 0; font-size: 20px; font-weight: 600; color: #18181b;">
+    {{learnerName}}
+  </p>
+</div>
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  Questions? Visit our <a href="{{supportUrl}}" style="color: {{brandColor}};">Help Center</a>
+</p>
+
+{{/layouts/base}}

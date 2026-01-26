@@ -771,3 +771,160 @@ model CaregiverDelegationLog {
   @@index([createdAt])
   @@map("caregiver_delegation_logs")
 }
+
+// ============================================================================
+// CAREGIVER SELF-REGISTRATION
+// ============================================================================
+// Self-service registration flow for parents/caregivers with secure learner
+// linking and school verification workflows.
+
+enum CaregiverRelationshipType {
+  PARENT
+  GUARDIAN
+  GRANDPARENT
+  FOSTER_PARENT
+  OTHER_FAMILY
+  AUTHORIZED_CAREGIVER
+}
+
+enum RegistrationStatus {
+  PENDING
+  EMAIL_VERIFIED
+  SCHOOL_VERIFICATION_PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum VerificationMethod {
+  SCHOOL_ADMIN_APPROVAL
+  VERIFICATION_CODE_FROM_SCHOOL
+  DOCUMENT_UPLOAD
+  EXISTING_FAMILY_LINK
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// Self-registration record for caregivers (before full account creation)
+model CaregiverRegistration {
+  id               String                   @id @default(uuid())
+  email            String
+  phone            String?
+  firstName        String
+  lastName         String
+  passwordHash     String
+  relationship     CaregiverRelationshipType
+  status           RegistrationStatus       @default(PENDING)
+  verificationCode String                   @unique
+  codeExpiresAt    DateTime
+  verifiedAt       DateTime?
+  tenantId         String?
+
+  // Security tracking
+  ipAddress        String?
+  userAgent        String?
+  failedAttempts   Int                      @default(0)
+  lockedUntil      DateTime?
+
+  // Converted account reference
+  caregiverId      String?                  @unique
+  convertedAt      DateTime?
+
+  // Relations
+  learnerLinks     LearnerLinkRequest[]
+
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([email])
+  @@index([verificationCode])
+  @@index([status])
+  @@index([tenantId])
+  @@map("caregiver_registrations")
+}
+
+// Learner link request from self-registration flow
+model LearnerLinkRequest {
+  id                    String                   @id @default(uuid())
+  registrationId        String
+  registration          CaregiverRegistration    @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  // Learner identification (one of these methods)
+  learnerEmail          String?
+  studentId             String?
+  learnerFirstName      String?
+  learnerLastName       String?
+  learnerDateOfBirth    DateTime?
+  schoolName            String?
+  schoolId              String?
+
+  // Verification
+  verificationMethod    VerificationMethod
+  verificationStatus    VerificationStatus       @default(PENDING)
+  verificationCode      String?
+  codeExpiresAt         DateTime?
+  schoolVerifiedAt      DateTime?
+  verifiedByUserId      String?
+  rejectionReason       String?
+
+  // Result
+  learnerId             String?
+  linkedAt              DateTime?
+
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  @@index([registrationId])
+  @@index([learnerEmail])
+  @@index([studentId])
+  @@index([schoolId])
+  @@index([verificationStatus])
+  @@map("learner_link_requests")
+}
+
+// School-generated verification codes for parent pickup
+model SchoolVerificationCode {
+  id              String    @id @default(uuid())
+  schoolId        String
+  learnerId       String
+  code            String    @unique
+  purpose         String    @default("parent_link") // parent_link, pickup_auth, etc.
+  issuedById      String    // School admin who issued
+  claimedById     String?   // Registration that claimed it
+  expiresAt       DateTime
+  claimedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([code])
+  @@index([schoolId])
+  @@index([learnerId])
+  @@index([expiresAt])
+  @@map("school_verification_codes")
+}
+
+// Registration audit log for compliance
+model RegistrationAuditLog {
+  id              String    @id @default(uuid())
+  registrationId  String?
+  linkRequestId   String?
+  action          String    // registration_started, email_sent, email_verified,
+                            // learner_added, school_notified, school_approved,
+                            // school_rejected, account_created, registration_expired
+  actorId         String?   // Who performed the action (null for system actions)
+  actorType       String    @default("system") // system, caregiver, school_admin
+  metadata        Json?     // Additional action data
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+
+  @@index([registrationId])
+  @@index([linkRequestId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("registration_audit_logs")
+}
