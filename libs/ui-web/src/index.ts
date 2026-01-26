@@ -1,13 +1,77 @@
 // Utility functions
 export { cn } from './lib/utils';
 
+// Legacy theme exports (for backward compatibility)
 export { createGradeThemePlugin } from './tailwind/gradeThemePlugin';
-export { GradeThemeProvider, useGradeTheme } from './theme/grade-theme';
+export { GradeThemeProvider as LegacyGradeThemeProvider, useGradeTheme as useLegacyGradeTheme } from './theme/grade-theme';
 export { AccessibilityProvider, useAccessibility } from './theme/accessibility';
 export type { GradeBand } from './theme/tokens';
 
+// New Grade Theme System
+export {
+  GradeThemeProvider,
+  useGradeTheme,
+  useTheme,
+  useSensoryProfile,
+} from './providers/GradeThemeProvider';
+export type {
+  GradeThemeProviderProps,
+  GradeThemeContextValue,
+} from './providers/GradeThemeProvider';
+
+// Theme Configuration
+export {
+  K5Theme,
+  MSTheme,
+  HSTheme,
+  HSDarkTheme,
+  gradeThemes,
+  defaultTheme,
+} from './themes/grade-themes';
+export type {
+  GradeTheme,
+  SensoryProfile,
+  GradeLevel,
+} from './themes/grade-themes';
+
+// CSS Variables System
+export {
+  generateCSSVariables,
+  generateCSSVariablesObject,
+  generateThemeStylesheet,
+  applyCSSVariables,
+  clearCSSVariables,
+  getSSRStyleTag,
+  injectThemeStyles,
+} from './themes/css-variables';
+
+// Theme Utilities
+export {
+  getThemeForGrade,
+  getThemeIdForGrade,
+  getThemeById,
+  mergeThemeWithSensoryProfile,
+  mergeThemeOverrides,
+  getContrastColor,
+  getContrastRatio,
+  meetsContrastRequirements,
+  verifyThemeAccessibility,
+  getAvailableThemes,
+  getThemeLabels,
+  getSystemDarkModePreference,
+  getSystemReducedMotionPreference,
+  createTheme,
+  loadPersistedTheme,
+  persistTheme,
+  THEME_STORAGE_KEY,
+  SENSORY_PROFILE_STORAGE_KEY,
+} from './themes/utils';
+export type { ThemeOverrides } from './themes/utils';
+
 export { Button } from './components/button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './components/button';
 export { Card } from './components/card';
+export type { CardProps, CardVariant } from './components/card';
 export {
   CardHeader,
   CardTitle,
@@ -31,6 +95,7 @@ export {
 // Additional UI primitives
 export { Alert, AlertTitle, AlertDescription } from './components/ui/alert';
 export { Input } from './components/ui/input';
+export type { InputProps, InputVariant, InputSize } from './components/ui/input';
 export { Label } from './components/ui/label';
 export { Textarea } from './components/ui/textarea';
 export { Switch } from './components/ui/switch';
@@ -43,6 +108,7 @@ export {
   SelectValue,
 } from './components/ui/select';
 export { Progress } from './components/ui/progress';
+export type { ProgressProps, ProgressVariant, ProgressSize, ProgressColor } from './components/ui/progress';
 export {
   Accordion,
   AccordionContent,
@@ -109,7 +175,7 @@ export type {
   FocusMetrics,
 } from './components/games';
 
-// Gamification Components - Teams and Competitions
+// Gamification Components - Teams, Competitions, and Achievements
 export {
   TeamCard,
   TeamGrid,
@@ -118,6 +184,8 @@ export {
   CompetitionBracket,
   TeamChallengeCreator,
   TeamProgressWidget,
+  AchievementBadge,
+  AchievementGrid,
 } from './components/gamification';
 export type {
   TeamCardProps,
@@ -131,6 +199,11 @@ export type {
   TeamMember,
   Competition,
   CompetitionStatus,
+  AchievementBadgeProps,
+  AchievementGridProps,
+  AchievementRarity,
+  AchievementSize,
+  AchievementStyle,
 } from './components/gamification';
 
 // Notification Components
