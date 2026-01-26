@@ -51,6 +51,22 @@ from .agent_coordination_gnn import (
     AgentAssignment,
 )
 
+# SMART Goal Planning
+from .planning import (
+    GoalDomain,
+    GoalStatus,
+    SMARTCriteria,
+    Milestone,
+    LearningGoal,
+    LearnerContext,
+    WeeklyActionPlan,
+    GoalPlanner,
+    GoalPlannerConfig,
+    DiagnosisAdaptationEngine,
+    ProgressEvaluator,
+    ProgressEvaluation,
+)
+
 __all__ = [
     # BKT
     "BayesianKnowledgeTracing",
@@ -90,6 +106,19 @@ __all__ = [
     "AgentInteractionGraph",
     "AgentCapability",
     "AgentAssignment",
+    # SMART Goal Planning
+    "GoalDomain",
+    "GoalStatus",
+    "SMARTCriteria",
+    "Milestone",
+    "LearningGoal",
+    "LearnerContext",
+    "WeeklyActionPlan",
+    "GoalPlanner",
+    "GoalPlannerConfig",
+    "DiagnosisAdaptationEngine",
+    "ProgressEvaluator",
+    "ProgressEvaluation",
     # Brain Memory System
     "EpisodicMemory",
     "EpisodicMemoryStore",
