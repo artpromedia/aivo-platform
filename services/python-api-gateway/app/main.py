@@ -174,6 +174,72 @@ async def get_training_job(job_id: str):
         return response.json()
 
 
+# BKT (Bayesian Knowledge Tracing) Proxy Endpoints
+@app.post("/api/v1/training/bkt/update")
+async def update_bkt(request: Request):
+    """Proxy to update BKT model with learning interaction."""
+    import httpx
+
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.TRAINING_URL}/api/v1/training/bkt/update", json=body
+        )
+        return response.json()
+
+
+@app.get("/api/v1/training/bkt/mastery/{learner_id}/{skill_id}")
+async def get_bkt_mastery(learner_id: str, skill_id: str):
+    """Proxy to get BKT mastery probability."""
+    import httpx
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{settings.TRAINING_URL}/api/v1/training/bkt/mastery/{learner_id}/{skill_id}"
+        )
+        return response.json()
+
+
+# Brain Cloning Proxy Endpoints
+@app.post("/api/v1/training/brain/clone")
+async def clone_brain(request: Request):
+    """Proxy to clone base brain for a learner."""
+    import httpx
+
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.TRAINING_URL}/api/v1/training/brain/clone", json=body
+        )
+        return response.json()
+
+
+@app.post("/api/v1/training/brain/fine-tune")
+async def fine_tune_brain(request: Request):
+    """Proxy to fine-tune learner's brain model."""
+    import httpx
+
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.TRAINING_URL}/api/v1/training/brain/fine-tune", json=body
+        )
+        return response.json()
+
+
+@app.post("/api/v1/training/brain/predict-mastery")
+async def predict_mastery(request: Request):
+    """Proxy to predict mastery using neural network."""
+    import httpx
+
+    body = await request.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.TRAINING_URL}/api/v1/training/brain/predict-mastery", json=body
+        )
+        return response.json()
+
+
 # Error handlers
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

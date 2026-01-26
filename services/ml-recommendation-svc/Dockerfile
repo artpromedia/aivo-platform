@@ -1,63 +1,45 @@
 # ==============================================================================
 # AIVO Platform - ML Recommendation Service Dockerfile
+# Python-based ML service for recommendations, risk prediction, and student brain modeling
 # ==============================================================================
-# Multi-stage build for NestJS services
 
-# Stage 1: Builder
-FROM node:20-alpine AS builder
-
-# Install build dependencies
-RUN apk add --no-cache g++ make python3
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy workspace files
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json tsconfig.compat.json ./
-COPY packages/ ./packages/
-COPY libs/ ./libs/
+# Copy requirements first for caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy service files
-COPY services/ml-recommendation-svc/ ./services/ml-recommendation-svc/
+# Copy application code
+COPY . .
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Create directories for models
+RUN mkdir -p models/hybrid models/risk models/student_brain
 
-# Build the service
-RUN pnpm turbo build --filter="@aivo/ml-recommendation-svc"
+# Create non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
 
-# Create a deployable bundle with all production dependencies
-RUN pnpm deploy --filter="@aivo/ml-recommendation-svc" --prod /deploy
-
-# Stage 2: Runner
-FROM node:20-alpine AS runner
-
-# Security: Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 -G nodejs
-
-WORKDIR /app
-
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Copy built application
-COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/services/ml-recommendation-svc/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
-
-# Set environment variables
-ENV NODE_ENV=production \
-    PORT=3000
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PORT=8000
 
 # Expose port
-EXPOSE 3000
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Run with Gunicorn for production
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # Switch to non-root user
 USER nodejs

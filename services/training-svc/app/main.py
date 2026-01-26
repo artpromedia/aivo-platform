@@ -7,9 +7,12 @@ Provides:
 2. Personalized brain cloning for individual learners
 3. Curriculum-aligned training
 4. Incremental brain updates
+5. Bayesian Knowledge Tracing (BKT) endpoints
 """
 
 import asyncio
+import os
+import logging
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -29,6 +32,20 @@ from app.brain_trainer import (
     LearnerBrainModel,
 )
 
+# Import BKT model
+try:
+    from app.models.bkt_model import BayesianKnowledgeTracing
+except ImportError:
+    BayesianKnowledgeTracing = None
+
+# Import API routes
+try:
+    from app.api.routes import router as training_api_router
+except ImportError:
+    training_api_router = None
+
+logger = logging.getLogger(__name__)
+
 # Global brain trainer instance
 brain_trainer: BrainTrainer = get_brain_trainer()
 
@@ -42,7 +59,38 @@ async def lifespan(_app: FastAPI):
     print("Starting %s %s" % (settings.PROJECT_NAME, settings.VERSION))
     # Brain trainer already initialized at module level
     print("Brain trainer initialized")
+    
+    # Ensure model directories exist
+    os.makedirs("models/learners", exist_ok=True)
+    os.makedirs("models/checkpoints", exist_ok=True)
+    
+    # Initialize BKT model
+    if BayesianKnowledgeTracing:
+        try:
+            _app.state.bkt_model = BayesianKnowledgeTracing()
+            logger.info("BKT model initialized")
+        except Exception as e:
+            logger.warning(f"BKT model initialization failed: {e}")
+            _app.state.bkt_model = None
+    
+    # Initialize Brain Cloner for API routes
+    try:
+        from app.models.learner_model import PersonalizedBrainCloner
+        base_model_path = os.getenv("BASE_MODEL_PATH", "models/base_brain.pt")
+        num_skills = int(os.getenv("NUM_SKILLS", "1000"))
+        device = os.getenv("DEVICE", "cpu")
+        _app.state.brain_cloner = PersonalizedBrainCloner(
+            base_model_path=base_model_path,
+            num_skills=num_skills,
+            device=device,
+        )
+        logger.info(f"Brain cloner initialized with {num_skills} skills on {device}")
+    except Exception as e:
+        logger.warning(f"Brain cloner initialization failed: {e}")
+        _app.state.brain_cloner = None
+    
     yield
+    
     print("Shutting down Training Service")
 
 
@@ -515,6 +563,11 @@ async def predict_performance(
         "p_mastery": p_mastery,
         "recommendation": "practice" if p_mastery < 0.7 else "advance",
     }
+
+
+# Include training API router (BKT and Brain Cloning endpoints)
+if training_api_router:
+    app.include_router(training_api_router)
 
 
 if __name__ == "__main__":

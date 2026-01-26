@@ -55,10 +55,97 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - LOG_LEVEL=INFO
+      - BASE_MODEL_PATH=/app/models/base_brain.pt
+      - NUM_SKILLS=1000
+      - DEVICE=cpu
     volumes:
       - ./services/training-svc:/app
+      - training-models:/app/models
     depends_on:
       - ai-inference-svc
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/training/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Document Intelligence Service
+  document-intelligence-svc:
+    build:
+      context: ./services/document-intelligence-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/documents
+      - REDIS_URL=redis://redis:6379/4
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./services/document-intelligence-svc:/app
+      - uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Speech Analysis Service
+  speech-analysis-svc:
+    build:
+      context: ./services/speech-analysis-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/speech
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./services/speech-analysis-svc:/app
+      - speech-models:/app/models
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # ML Recommendation Service
+  ml-recommendation-svc:
+    build:
+      context: ./services/ml-recommendation-svc
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/recommendations
+      - REDIS_URL=redis://redis:6379/5
+      - LOG_LEVEL=INFO
+      - EXPLORATION_RATE=0.1
+    volumes:
+      - ./services/ml-recommendation-svc:/app
+      - recommendation-models:/app/models
+    depends_on:
       - postgres
       - redis
     healthcheck:
@@ -180,6 +267,9 @@ volumes:
   redis-data:
   ai-models:
   uploads:
+  training-models:
+  speech-models:
+  recommendation-models:
 
 networks:
   aivo-network:
