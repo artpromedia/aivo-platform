@@ -5,15 +5,25 @@ Provides REST endpoints for document processing
 """
 
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query, Request, Body
 from pydantic import BaseModel, Field
 
 from ..extractors.iep_extractor import IEPExtractor, IEPDocument
 from ..extractors.pdf_processor import PDFProcessor
 from ..extractors.curriculum_parser import CurriculumParser
+
+# Import new AI-powered IEP extraction module
+from ..iep import (
+    IEPExtractionService,
+    IEPExtractor as AIIEPExtractor,
+    SMARTValidator,
+    ExtractedGoal,
+    SMARTValidationResult,
+    IEPExtractionResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -368,7 +378,412 @@ async def classify_document(request: ClassificationRequest):
     )
 
 
+# =============================================================================
+# AI-Powered IEP Extraction Endpoints (New)
+# =============================================================================
+
+# Response models for AI-powered extraction
+class AIExtractedGoalResponse(BaseModel):
+    """Goal extracted with AI assistance."""
+    goal_number: str
+    domain: str
+    goal_text: str
+    baseline: Optional[str] = None
+    target: Optional[str] = None
+    measurement_method: Optional[str] = None
+    measurement_frequency: Optional[str] = None
+    page_reference: int
+    confidence_score: float
+    objectives: List[str] = []
+
+
+class AIExtractedServiceResponse(BaseModel):
+    """Service extracted with AI assistance."""
+    service_type: str
+    service_description: str
+    minutes_per_session: Optional[int] = None
+    sessions_per_week: Optional[float] = None
+    total_minutes_per_week: Optional[int] = None
+    provider_type: Optional[str] = None
+    location: Optional[str] = None
+    page_reference: int
+    confidence_score: float
+
+
+class AIExtractedAccommodationResponse(BaseModel):
+    """Accommodation extracted with AI assistance."""
+    category: str
+    description: str
+    applies_to: List[str] = []
+    page_reference: int
+    confidence_score: float
+    is_modification: bool = False
+
+
+class AIPresentLevelResponse(BaseModel):
+    """Present level extracted with AI assistance."""
+    domain: str
+    description: str
+    strengths: List[str] = []
+    needs: List[str] = []
+    assessment_data: Dict[str, str] = {}
+    page_reference: int
+    confidence_score: float
+
+
+class SMARTValidationResponse(BaseModel):
+    """SMART goal validation result."""
+    goal_number: str
+    goal_text: str
+    specific_score: float
+    specific_explanation: str
+    specific_suggestion: Optional[str] = None
+    measurable_score: float
+    measurable_explanation: str
+    measurable_suggestion: Optional[str] = None
+    achievable_score: float
+    achievable_explanation: str
+    achievable_suggestion: Optional[str] = None
+    relevant_score: float
+    relevant_explanation: str
+    relevant_suggestion: Optional[str] = None
+    timebound_score: float
+    timebound_explanation: str
+    timebound_suggestion: Optional[str] = None
+    overall_score: float
+    is_smart: bool
+    recommendations: List[str] = []
+
+
+class QualityAnalysisResponse(BaseModel):
+    """Quality analysis for all goals."""
+    total_goals: int
+    smart_goals: int
+    non_smart_goals: int
+    average_scores: Dict[str, float]
+    weakest_criterion: Optional[str]
+    summary_recommendations: List[str]
+
+
+class AIIEPExtractionResponse(BaseModel):
+    """Complete AI-powered IEP extraction response."""
+    success: bool
+    document_id: str
+
+    # Extracted content
+    goals: List[AIExtractedGoalResponse]
+    services: List[AIExtractedServiceResponse]
+    accommodations: List[AIExtractedAccommodationResponse]
+    present_levels: List[AIPresentLevelResponse]
+
+    # Metadata
+    iep_date: Optional[str] = None
+    annual_review_date: Optional[str] = None
+    eligibility_category: Optional[str] = None
+    placement: Optional[str] = None
+    total_pages: int
+    overall_confidence: float
+    extraction_warnings: List[str] = []
+
+    # Validation (optional)
+    goal_validations: List[SMARTValidationResponse] = []
+    quality_analysis: Optional[QualityAnalysisResponse] = None
+
+    # Processing info
+    processing_time_ms: int
+
+
+class GoalValidationRequest(BaseModel):
+    """Request for validating a single goal."""
+    goal_text: str = Field(..., description="The goal text to validate")
+    baseline: Optional[str] = Field(None, description="Current performance level")
+    target: Optional[str] = Field(None, description="Expected outcome")
+    measurement_method: Optional[str] = Field(None, description="How progress will be measured")
+
+
+class GoalComparisonRequest(BaseModel):
+    """Request for comparing goal versions."""
+    original_goal_text: str = Field(..., description="Original goal text")
+    revised_goal_text: str = Field(..., description="Revised goal text")
+
+
+@router.post("/extract/iep/ai", response_model=AIIEPExtractionResponse)
+async def extract_iep_ai(
+    request: Request,
+    file: UploadFile = File(..., description="IEP PDF file to process"),
+    validate_goals: bool = Query(True, description="Whether to validate goals against SMART criteria"),
+    use_llm: bool = Query(True, description="Whether to use LLM for enhanced extraction"),
+):
+    """
+    Extract structured data from IEP using AI-powered extraction.
+
+    This endpoint uses LLM-based extraction for higher accuracy on varied document formats.
+
+    Features:
+    - AI-powered goal, service, and accommodation extraction
+    - SMART goal validation with actionable feedback
+    - Page reference tracking for source verification
+    - Confidence scoring for extraction quality assessment
+
+    Extracts:
+    - Goals with domain classification and measurement details
+    - Services with minutes and provider information
+    - Accommodations with category classification
+    - Present levels of performance
+    """
+    # Validate file type
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+
+    # Check file size (max 50MB)
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 50MB limit")
+
+    try:
+        # Get LLM client from app state if available
+        llm_client = getattr(request.app.state, 'llm_client', None)
+
+        # Create service
+        service = IEPExtractionService(llm_client=llm_client)
+
+        # Extract and validate
+        result = await service.extract_and_validate(
+            document_bytes=content,
+            use_llm=use_llm,
+            validate_goals=validate_goals,
+        )
+
+        extraction = result["extraction"]
+
+        # Build response
+        response = AIIEPExtractionResponse(
+            success=True,
+            document_id=extraction.document_id,
+            goals=[
+                AIExtractedGoalResponse(
+                    goal_number=g.goal_number,
+                    domain=g.domain.value if hasattr(g.domain, 'value') else str(g.domain),
+                    goal_text=g.goal_text,
+                    baseline=g.baseline,
+                    target=g.target,
+                    measurement_method=g.measurement_method,
+                    measurement_frequency=g.measurement_frequency,
+                    page_reference=g.page_reference,
+                    confidence_score=g.confidence_score,
+                    objectives=g.objectives,
+                )
+                for g in extraction.goals
+            ],
+            services=[
+                AIExtractedServiceResponse(
+                    service_type=s.service_type.value if hasattr(s.service_type, 'value') else str(s.service_type),
+                    service_description=s.service_description,
+                    minutes_per_session=s.minutes_per_session,
+                    sessions_per_week=s.sessions_per_week,
+                    total_minutes_per_week=s.total_minutes_per_week,
+                    provider_type=s.provider_type,
+                    location=s.location,
+                    page_reference=s.page_reference,
+                    confidence_score=s.confidence_score,
+                )
+                for s in extraction.services
+            ],
+            accommodations=[
+                AIExtractedAccommodationResponse(
+                    category=a.category.value if hasattr(a.category, 'value') else str(a.category),
+                    description=a.description,
+                    applies_to=a.applies_to,
+                    page_reference=a.page_reference,
+                    confidence_score=a.confidence_score,
+                    is_modification=a.is_modification,
+                )
+                for a in extraction.accommodations
+            ],
+            present_levels=[
+                AIPresentLevelResponse(
+                    domain=p.domain.value if hasattr(p.domain, 'value') else str(p.domain),
+                    description=p.description,
+                    strengths=p.strengths,
+                    needs=p.needs,
+                    assessment_data=p.assessment_data,
+                    page_reference=p.page_reference,
+                    confidence_score=p.confidence_score,
+                )
+                for p in extraction.present_levels
+            ],
+            iep_date=extraction.iep_date.isoformat() if extraction.iep_date else None,
+            annual_review_date=extraction.annual_review_date.isoformat() if extraction.annual_review_date else None,
+            eligibility_category=extraction.eligibility_category,
+            placement=extraction.placement,
+            total_pages=extraction.total_pages,
+            overall_confidence=extraction.overall_confidence,
+            extraction_warnings=extraction.extraction_warnings,
+            processing_time_ms=result.get("processing_time_ms", 0),
+        )
+
+        # Add validation results if available
+        if validate_goals and result.get("goal_validations"):
+            response.goal_validations = [
+                SMARTValidationResponse(
+                    goal_number=v.goal_number,
+                    goal_text=v.goal_text,
+                    specific_score=v.specific_score,
+                    specific_explanation=v.specific_explanation,
+                    specific_suggestion=v.specific_suggestion,
+                    measurable_score=v.measurable_score,
+                    measurable_explanation=v.measurable_explanation,
+                    measurable_suggestion=v.measurable_suggestion,
+                    achievable_score=v.achievable_score,
+                    achievable_explanation=v.achievable_explanation,
+                    achievable_suggestion=v.achievable_suggestion,
+                    relevant_score=v.relevant_score,
+                    relevant_explanation=v.relevant_explanation,
+                    relevant_suggestion=v.relevant_suggestion,
+                    timebound_score=v.timebound_score,
+                    timebound_explanation=v.timebound_explanation,
+                    timebound_suggestion=v.timebound_suggestion,
+                    overall_score=v.overall_score,
+                    is_smart=v.is_smart,
+                    recommendations=v.recommendations,
+                )
+                for v in result["goal_validations"]
+            ]
+
+            if result.get("quality_analysis"):
+                qa = result["quality_analysis"]
+                response.quality_analysis = QualityAnalysisResponse(
+                    total_goals=qa["total_goals"],
+                    smart_goals=qa["smart_goals"],
+                    non_smart_goals=qa["non_smart_goals"],
+                    average_scores=qa["average_scores"],
+                    weakest_criterion=qa["weakest_criterion"],
+                    summary_recommendations=qa["summary_recommendations"],
+                )
+
+        return response
+
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception(f"AI IEP extraction failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Extraction failed: {str(e)}")
+
+
+@router.post("/validate/goal", response_model=SMARTValidationResponse)
+async def validate_goal(
+    request: Request,
+    goal_request: GoalValidationRequest,
+):
+    """
+    Validate a single IEP goal against SMART criteria.
+
+    Useful for real-time feedback during goal writing.
+
+    Returns scores and suggestions for:
+    - Specific: Clear target behavior/skill
+    - Measurable: Quantifiable criteria
+    - Achievable: Realistic given baseline
+    - Relevant: Addresses identified needs
+    - Time-bound: Clear deadline
+    """
+    try:
+        # Get LLM client from app state if available
+        llm_client = getattr(request.app.state, 'llm_client', None)
+
+        # Create service
+        service = IEPExtractionService(llm_client=llm_client)
+
+        # Validate goal
+        result = await service.revalidate_goal(
+            goal_text=goal_request.goal_text,
+            baseline=goal_request.baseline,
+            target=goal_request.target,
+            measurement_method=goal_request.measurement_method,
+            use_llm=llm_client is not None,
+        )
+
+        return SMARTValidationResponse(
+            goal_number=result.goal_number,
+            goal_text=result.goal_text,
+            specific_score=result.specific_score,
+            specific_explanation=result.specific_explanation,
+            specific_suggestion=result.specific_suggestion,
+            measurable_score=result.measurable_score,
+            measurable_explanation=result.measurable_explanation,
+            measurable_suggestion=result.measurable_suggestion,
+            achievable_score=result.achievable_score,
+            achievable_explanation=result.achievable_explanation,
+            achievable_suggestion=result.achievable_suggestion,
+            relevant_score=result.relevant_score,
+            relevant_explanation=result.relevant_explanation,
+            relevant_suggestion=result.relevant_suggestion,
+            timebound_score=result.timebound_score,
+            timebound_explanation=result.timebound_explanation,
+            timebound_suggestion=result.timebound_suggestion,
+            overall_score=result.overall_score,
+            is_smart=result.is_smart,
+            recommendations=result.recommendations,
+        )
+
+    except Exception as e:
+        logger.exception(f"Goal validation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
+
+@router.post("/validate/goal/compare")
+async def compare_goal_versions(
+    request: Request,
+    comparison_request: GoalComparisonRequest,
+):
+    """
+    Compare original and revised versions of a goal.
+
+    Shows improvement in goal quality between versions.
+    Useful for showing progress in goal writing.
+    """
+    try:
+        # Get LLM client from app state if available
+        llm_client = getattr(request.app.state, 'llm_client', None)
+
+        # Create service
+        service = IEPExtractionService(llm_client=llm_client)
+
+        # Compare versions
+        result = await service.compare_goal_versions(
+            original_goal_text=comparison_request.original_goal_text,
+            revised_goal_text=comparison_request.revised_goal_text,
+            use_llm=llm_client is not None,
+        )
+
+        return {
+            "original": {
+                "text": result["original"]["text"],
+                "overall_score": result["original"]["validation"].overall_score,
+                "is_smart": result["original"]["validation"].is_smart,
+            },
+            "revised": {
+                "text": result["revised"]["text"],
+                "overall_score": result["revised"]["validation"].overall_score,
+                "is_smart": result["revised"]["validation"].is_smart,
+            },
+            "improvements": result["improvements"],
+            "improved_criteria": result["improved_criteria"],
+            "declined_criteria": result["declined_criteria"],
+            "overall_improved": result["overall_improved"],
+        }
+
+    except Exception as e:
+        logger.exception(f"Goal comparison failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+
+
+# =============================================================================
 # Batch Processing Endpoint
+# =============================================================================
+
 class BatchExtractionRequest(BaseModel):
     document_type: str = Field("iep", description="Type of documents to process")
 
