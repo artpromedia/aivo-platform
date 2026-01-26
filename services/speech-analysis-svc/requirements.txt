@@ -1,0 +1,41 @@
+# Speech Analysis Service Dependencies
+
+# Core
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+
+# Audio Processing
+torch>=2.1.0
+torchaudio>=2.1.0
+librosa>=0.10.1
+soundfile>=0.12.1
+pydub>=0.25.1
+
+# Speech Processing
+webrtcvad>=2.0.10
+pyworld>=0.3.4
+
+# Feature Extraction
+numpy>=1.26.0
+scipy>=1.11.0
+
+# Phoneme Processing
+epitran>=1.24
+g2p-en>=2.1.0
+
+# Data Processing
+pandas>=2.1.0
+
+# Async Support
+aiofiles>=23.2.0
+httpx>=0.25.0
+
+# Monitoring
+prometheus-client>=0.19.0
+structlog>=23.2.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
