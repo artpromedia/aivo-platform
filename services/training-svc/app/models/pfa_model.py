@@ -20,7 +20,7 @@ where:
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from scipy.optimize import minimize
 import pickle
 import logging
@@ -168,7 +168,7 @@ class PerformanceFactorAnalysis:
             Tuple of (decayed_successes, decayed_failures)
         """
         if current_time is None:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
         
         s = state.successes
         f = state.failures
@@ -240,7 +240,7 @@ class PerformanceFactorAnalysis:
             Updated probability of mastery
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
         
         params = self.get_skill_params(skill_id)
         state = self.get_learner_state(learner_id, skill_id)
@@ -296,11 +296,12 @@ class PerformanceFactorAnalysis:
                 continue
             
             # Define loss function (negative log-likelihood)
-            def loss(params):
+            # Use default parameter to capture current data value
+            def loss(params, skill_data=data):
                 beta, gamma, rho = params
                 log_likelihood = 0
                 
-                for correct, s, f in data:
+                for correct, s, f in skill_data:
                     logit = beta + gamma * s + rho * f
                     logit = np.clip(logit, -20, 20)
                     prob = 1 / (1 + np.exp(-logit))
@@ -420,7 +421,8 @@ class PerformanceFactorAnalysis:
             curve.append((state.total_practices + i, float(prob)))
             
             # Simulate next practice
-            if np.random.random() < assumed_success_rate:
+            rng = np.random.default_rng(seed=42 + i)
+            if rng.random() < assumed_success_rate:
                 s += 1
             else:
                 f += 1

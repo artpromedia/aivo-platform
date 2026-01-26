@@ -10,6 +10,5 @@ AI-powered support modules for learners with specific needs:
 
 __version__ = "0.1.0"
 __all__ = [
-    "app",
     "adhd",
 ]

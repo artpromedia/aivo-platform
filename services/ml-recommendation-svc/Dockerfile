@@ -20,11 +20,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create directories for models
-RUN mkdir -p models/hybrid models/risk models/student_brain
-
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create directories for models and non-root user
+RUN mkdir -p models/hybrid models/risk models/student_brain \
+    && useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Environment variables
@@ -40,11 +38,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 # Run with Gunicorn for production
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-# Switch to non-root user
-USER nodejs
-
-# Use dumb-init as entrypoint
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-
-CMD ["node", "dist/main.js"]

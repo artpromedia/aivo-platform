@@ -731,7 +731,7 @@ class CurriculumEmbeddings:
     
     def get_prerequisite_skills(self, skill_id: str) -> List[str]:
         """Get direct prerequisites for a skill"""
-        nx = _load_networkx()
+        _load_networkx()  # Ensure networkx is available
         
         if skill_id not in self.skill_graph:
             return []
@@ -740,7 +740,7 @@ class CurriculumEmbeddings:
     
     def get_dependent_skills(self, skill_id: str) -> List[str]:
         """Get skills that depend on this skill"""
-        nx = _load_networkx()
+        _load_networkx()  # Ensure networkx is available
         
         if skill_id not in self.skill_graph:
             return []
@@ -981,7 +981,7 @@ class CurriculumEmbeddings:
         
         # Save graph separately if exists
         if self._skill_graph is not None:
-            nx = _load_networkx()
+            _load_networkx()  # Ensure networkx is available
             data['skill_graph_edges'] = list(self.skill_graph.edges())
         
         Path(filepath).parent.mkdir(parents=True, exist_ok=True)

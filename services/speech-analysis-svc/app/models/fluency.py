@@ -18,7 +18,7 @@ import torch
 import numpy as np
 from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import json
 from pathlib import Path
@@ -190,7 +190,7 @@ class FluencyAssessment:
     areas_for_growth: List[str] = field(default_factory=list)
     
     # Metadata
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -479,7 +479,7 @@ class FluencyAnalyzer:
         In production, use forced alignment (e.g., Montreal Forced Aligner, Wav2Vec2)
         This simplified version simulates alignment for demonstration.
         """
-        lib = _load_librosa()
+        _load_librosa()  # Ensure librosa is available
         
         # Clean and split expected text
         expected_words = self._clean_text(expected_text).split()
@@ -507,10 +507,11 @@ class FluencyAnalyzer:
         # Create segments with timing and accuracy
         segments = []
         current_time = 0.0
+        rng = np.random.default_rng(seed=42)
         
         for i, expected_word in enumerate(expected_words):
             # Add some timing variation
-            word_duration = avg_word_duration * (0.8 + 0.4 * np.random.random())
+            word_duration = avg_word_duration * (0.8 + 0.4 * rng.random())
             
             # Check for pause before this word
             is_hesitation = False
@@ -538,9 +539,9 @@ class FluencyAnalyzer:
             # In production, this comes from actual ASR comparison
             if transcription is None:
                 error_prob = 0.08  # ~92% accuracy simulation
-                if np.random.random() < error_prob:
+                if rng.random() < error_prob:
                     correct = False
-                    if np.random.random() < 0.5:
+                    if rng.random() < 0.5:
                         substitution = self._generate_similar_word(expected_word)
             
             segments.append(FluencySegment(
@@ -548,8 +549,8 @@ class FluencyAnalyzer:
                 start_time=start_time,
                 end_time=end_time,
                 correct=correct,
-                confidence=0.9 + 0.1 * np.random.random(),
-                self_corrected=np.random.random() < 0.02,  # 2% self-correction rate
+                confidence=0.9 + 0.1 * rng.random(),
+                self_corrected=rng.random() < 0.02,  # 2% self-correction rate
                 hesitation=is_hesitation,
                 substitution=substitution
             ))
@@ -905,7 +906,7 @@ class FluencyAnalyzer:
     
     def _generate_recommendations(
         self,
-        wpm: float,
+        _wpm: float,
         wcpm: float,
         accuracy: float,
         prosody_score: float,
@@ -1096,13 +1097,13 @@ if __name__ == "__main__":
     
     # Show norms for grade 3
     norms = analyzer.get_norms(3)
-    print(f"\nGrade 3 norms (WCPM):")
+    print("\nGrade 3 norms (WCPM):")
     print(f"  Fall: {norms['fall']}")
     print(f"  Winter: {norms['winter']}")
     print(f"  Spring: {norms['spring']}")
     
     # Example comparison
     comparison = analyzer.compare_to_norms(wcpm=85, grade_level=3, season="spring")
-    print(f"\nExample comparison (85 WCPM, Grade 3, Spring):")
+    print("\nExample comparison (85 WCPM, Grade 3, Spring):")
     print(f"  Status: {comparison['status']}")
     print(f"  Percent of norm: {comparison['percent_of_norm']}%")

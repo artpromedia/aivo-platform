@@ -251,8 +251,6 @@ class PhonemeRecognitionModel(nn.Module):
             Phoneme logits: [batch, time_steps/4, num_phonemes]
             (optionally) attention weights
         """
-        batch_size = mfcc_features.shape[0]
-        
         # CNN feature extraction
         x = self.cnn(mfcc_features)  # [batch, 256, time_steps/4]
         
@@ -338,7 +336,7 @@ class SpeechAnalyzer:
         ]
         
         self.phoneme_to_idx = {p: i for i, p in enumerate(self.phonemes)}
-        self.idx_to_phoneme = {i: p for i, p in enumerate(self.phonemes)}
+        self.idx_to_phoneme = dict(enumerate(self.phonemes))
         
         # Age-appropriate phoneme norms (by age 8, all should be mastered)
         self.age_norms = {

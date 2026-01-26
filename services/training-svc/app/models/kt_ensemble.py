@@ -16,7 +16,7 @@ Strategy:
 
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import numpy as np
 import logging
 
@@ -229,7 +229,7 @@ class KnowledgeTracingEnsemble:
                     dkt_history.append(DKTInteraction(
                         skill_id=h_skill_id,
                         correct=h.get('correct', False),
-                        timestamp=datetime.fromisoformat(h['timestamp']) if 'timestamp' in h else datetime.utcnow()
+                        timestamp=datetime.fromisoformat(h['timestamp']) if 'timestamp' in h else datetime.now(timezone.utc)
                     ))
                 
                 if dkt_history:
@@ -405,7 +405,7 @@ class KnowledgeTracingEnsemble:
             Updated ensemble prediction
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
         
         # Get prediction before update (for performance tracking)
         pre_prediction = self.predict(learner_id, skill_id)
@@ -475,7 +475,7 @@ class KnowledgeTracingEnsemble:
         history = self.learner_histories.get(learner_id, [])
         
         # Get unique skills
-        skills = set(h['skill_id'] for h in history)
+        skills = {h['skill_id'] for h in history}
         
         return {
             skill_id: self.predict(learner_id, skill_id)
@@ -547,7 +547,7 @@ class KnowledgeTracingEnsemble:
                 interactions.append(DKTInteraction(
                     skill_id=skill_num_id,
                     correct=item['correct'],
-                    timestamp=datetime.fromisoformat(item['timestamp']) if 'timestamp' in item else datetime.utcnow()
+                    timestamp=datetime.fromisoformat(item['timestamp']) if 'timestamp' in item else datetime.now(timezone.utc)
                 ))
             
             if interactions:

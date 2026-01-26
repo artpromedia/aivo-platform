@@ -20,7 +20,7 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import roc_auc_score, precision_recall_curve, f1_score
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import json
 import pickle
@@ -366,11 +366,11 @@ class AtRiskPredictor:
         )
         
         # Normalize features
-        X_train_scaled = self.scaler.fit_transform(X_train)
-        X_test_scaled = self.scaler.transform(X_test)
+        x_train_scaled = self.scaler.fit_transform(X_train)
+        x_test_scaled = self.scaler.transform(X_test)
         
         # Train model
-        self.model.fit(X_train_scaled, y_train)
+        self.model.fit(x_train_scaled, y_train)
         
         # Extract feature importances
         if hasattr(self.model, 'feature_importances_'):
@@ -381,14 +381,14 @@ class AtRiskPredictor:
             }
         
         # Calculate metrics
-        y_train_pred_proba = self.model.predict_proba(X_train_scaled)[:, 1]
-        y_test_pred_proba = self.model.predict_proba(X_test_scaled)[:, 1]
-        y_test_pred = self.model.predict(X_test_scaled)
+        y_train_pred_proba = self.model.predict_proba(x_train_scaled)[:, 1]
+        y_test_pred_proba = self.model.predict_proba(x_test_scaled)[:, 1]
+        y_test_pred = self.model.predict(x_test_scaled)
         
         # Cross-validation on full training set
-        X_scaled = self.scaler.transform(X)
+        x_scaled = self.scaler.transform(X)
         cv_scores = cross_val_score(
-            self.model, X_scaled, y, cv=5, scoring='roc_auc'
+            self.model, x_scaled, y, cv=5, scoring='roc_auc'
         )
         
         # Find optimal threshold using precision-recall
@@ -434,10 +434,10 @@ class AtRiskPredictor:
         
         # Extract and scale features
         X = self._extract_feature_vector(features).reshape(1, -1)
-        X_scaled = self.scaler.transform(X)
+        x_scaled = self.scaler.transform(X)
         
         # Predict probability
-        risk_prob = float(self.model.predict_proba(X_scaled)[0, 1])
+        risk_prob = float(self.model.predict_proba(x_scaled)[0, 1])
         
         # Determine risk level
         risk_level = self._get_risk_level(risk_prob)
@@ -458,7 +458,7 @@ class AtRiskPredictor:
             risk_factors=risk_factors,
             recommended_interventions=interventions,
             confidence=confidence,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             model_version=self.VERSION,
         )
     
@@ -761,40 +761,40 @@ if __name__ == "__main__":
     predictor = AtRiskPredictor(model_type='gradient_boosting')
     
     # Simulate training data
-    np.random.seed(42)
+    rng = np.random.default_rng(seed=42)
     training_data = []
     
     for i in range(1000):
         # Simulate diverse student profiles
-        avg_accuracy = np.random.uniform(0.3, 0.95)
-        practice_freq = np.random.uniform(0.5, 5.0)
-        days_since = np.random.randint(0, 30)
-        completion = np.random.uniform(0.4, 1.0)
-        focus = np.random.uniform(0.3, 0.95)
+        avg_accuracy = rng.uniform(0.3, 0.95)
+        practice_freq = rng.uniform(0.5, 5.0)
+        days_since = rng.integers(0, 30)
+        completion = rng.uniform(0.4, 1.0)
+        focus = rng.uniform(0.3, 0.95)
         
         features = StudentFeatures(
             student_id=f"student_{i}",
             avg_accuracy=avg_accuracy,
-            accuracy_trend=np.random.uniform(-0.2, 0.2),
+            accuracy_trend=rng.uniform(-0.2, 0.2),
             practice_frequency=practice_freq,
-            skills_mastered=np.random.randint(0, 20),
-            skills_struggling=np.random.randint(0, 10),
-            grade_level=np.random.randint(1, 12),
-            avg_session_duration=np.random.uniform(5, 30),
-            session_consistency=np.random.uniform(0.1, 1.0),
-            total_practice_time=np.random.uniform(1, 50),
+            skills_mastered=rng.integers(0, 20),
+            skills_struggling=rng.integers(0, 10),
+            grade_level=rng.integers(1, 12),
+            avg_session_duration=rng.uniform(5, 30),
+            session_consistency=rng.uniform(0.1, 1.0),
+            total_practice_time=rng.uniform(1, 50),
             completion_rate=completion,
-            login_streak=np.random.randint(0, 30),
+            login_streak=rng.integers(0, 30),
             avg_focus_score=focus,
-            frustration_events=np.random.randint(0, 15),
-            help_seeking_rate=np.random.uniform(0.1, 0.8),
-            quit_rate=np.random.uniform(0, 0.5),
+            frustration_events=rng.integers(0, 15),
+            help_seeking_rate=rng.uniform(0.1, 0.8),
+            quit_rate=rng.uniform(0, 0.5),
             days_since_last_session=days_since,
-            longest_gap_days=np.random.randint(1, 21),
-            time_of_day_variance=np.random.uniform(0.1, 0.9),
-            has_iep=np.random.random() < 0.15,
-            accommodations_count=np.random.randint(0, 5),
-            support_services=np.random.randint(0, 3),
+            longest_gap_days=rng.integers(1, 21),
+            time_of_day_variance=rng.uniform(0.1, 0.9),
+            has_iep=rng.random() < 0.15,
+            accommodations_count=rng.integers(0, 5),
+            support_services=rng.integers(0, 3),
         )
         
         # Define "at-risk" as combination of low performance & engagement
@@ -859,10 +859,10 @@ if __name__ == "__main__":
     print(f"Risk Score: {prediction.risk_score:.3f}")
     print(f"Risk Level: {prediction.risk_level.upper()}")
     print(f"Confidence: {prediction.confidence:.3f}")
-    print(f"\nTop Risk Factors:")
+    print("\nTop Risk Factors:")
     for factor, contribution in prediction.risk_factors:
         print(f"  • {factor}: {contribution:.3f}")
-    print(f"\nRecommended Interventions:")
+    print("\nRecommended Interventions:")
     for i, intervention in enumerate(prediction.recommended_interventions, 1):
         print(f"  {i}. {intervention}")
     
@@ -880,10 +880,10 @@ if __name__ == "__main__":
     print(f"Total Students: {summary['total_students']}")
     print(f"At-Risk Rate: {summary['at_risk_rate']:.1%}")
     print(f"Average Risk Score: {summary['avg_risk_score']:.3f}")
-    print(f"\nRisk Distribution:")
+    print("\nRisk Distribution:")
     for level, count in summary['risk_distribution'].items():
         pct = count / summary['total_students'] * 100
         print(f"  {level.capitalize()}: {count} ({pct:.1f}%)")
-    print(f"\nTop School-Wide Risk Factors:")
+    print("\nTop School-Wide Risk Factors:")
     for item in summary['top_risk_factors']:
         print(f"  • {item['factor']}: {item['student_count']} students")

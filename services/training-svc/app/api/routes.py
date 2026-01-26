@@ -12,7 +12,7 @@ This module provides the REST API interface for:
 import os
 import logging
 from typing import List, Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
 from pydantic import BaseModel, Field
@@ -21,6 +21,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/training", tags=["Training"])
 
+# Constants for reusable descriptions
+DESC_UNIQUE_LEARNER_ID = "Unique learner identifier"
+DESC_TRAINING_EPOCHS = "Training epochs"
+DESC_LEARNING_RATE = "Learning rate"
+DESC_LEARNER_ID = "Learner identifier"
+DESC_NUM_RESULTS = "Number of results"
+ERROR_DKT_NOT_AVAILABLE = "DKT model not available"
+ERROR_PFA_NOT_AVAILABLE = "PFA model not available"
+
 
 # ============================================================================
 # Request/Response Models
@@ -28,7 +37,7 @@ router = APIRouter(prefix="/api/v1/training", tags=["Training"])
 
 class BKTUpdateRequest(BaseModel):
     """Request to update BKT with a learning interaction"""
-    learner_id: str = Field(..., description="Unique learner identifier")
+    learner_id: str = Field(..., description=DESC_UNIQUE_LEARNER_ID)
     skill_id: str = Field(..., description="Skill being practiced")
     correct: bool = Field(..., description="Whether response was correct")
 
@@ -49,7 +58,7 @@ class BKTBatchUpdateRequest(BaseModel):
 
 class CloneBrainRequest(BaseModel):
     """Request to clone base brain for a learner"""
-    learner_id: str = Field(..., description="Unique learner identifier")
+    learner_id: str = Field(..., description=DESC_UNIQUE_LEARNER_ID)
     grade_level: int = Field(..., ge=1, le=12, description="Grade level 1-12")
     learning_pace: float = Field(1.0, ge=0.5, le=2.0, description="Learning pace multiplier")
     preferred_modality: str = Field("visual", description="visual, auditory, kinesthetic")
@@ -63,8 +72,8 @@ class FineTuneRequest(BaseModel):
     """Request to fine-tune a learner's model"""
     learner_id: str = Field(..., description="Learner to fine-tune")
     interactions: List[Dict[str, Any]] = Field(..., description="Interaction history")
-    num_epochs: int = Field(5, ge=1, le=20, description="Training epochs")
-    learning_rate: float = Field(0.001, ge=0.0001, le=0.1, description="Learning rate")
+    num_epochs: int = Field(5, ge=1, le=20, description=DESC_TRAINING_EPOCHS)
+    learning_rate: float = Field(0.001, ge=0.0001, le=0.1, description=DESC_LEARNING_RATE)
 
 
 class PredictMasteryRequest(BaseModel):
@@ -86,7 +95,7 @@ class AggregateUpdatesRequest(BaseModel):
 
 class EnsembleUpdateRequest(BaseModel):
     """Request to update ensemble with interaction"""
-    learner_id: str = Field(..., description="Learner identifier")
+    learner_id: str = Field(..., description=DESC_LEARNER_ID)
     skill_id: str = Field(..., description="Skill practiced")
     correct: bool = Field(..., description="Whether response was correct")
     timestamp: Optional[str] = Field(None, description="ISO timestamp")
@@ -94,7 +103,7 @@ class EnsembleUpdateRequest(BaseModel):
 
 class EnsemblePredictRequest(BaseModel):
     """Request ensemble prediction"""
-    learner_id: str = Field(..., description="Learner identifier")
+    learner_id: str = Field(..., description=DESC_LEARNER_ID)
     skill_id: str = Field(..., description="Skill to predict")
     history: Optional[List[Dict[str, Any]]] = Field(None, description="Optional interaction history")
 
@@ -108,9 +117,9 @@ class EnsembleBatchUpdateRequest(BaseModel):
 class DKTTrainRequest(BaseModel):
     """Request to train DKT model"""
     training_data: List[Dict[str, Any]] = Field(..., description="List of learner sequences")
-    num_epochs: int = Field(20, ge=1, le=100, description="Training epochs")
+    num_epochs: int = Field(20, ge=1, le=100, description=DESC_TRAINING_EPOCHS)
     batch_size: int = Field(32, ge=1, le=256, description="Batch size")
-    learning_rate: float = Field(0.001, ge=0.0001, le=0.1, description="Learning rate")
+    learning_rate: float = Field(0.001, ge=0.0001, le=0.1, description=DESC_LEARNING_RATE)
 
 
 class PFATrainRequest(BaseModel):
@@ -131,7 +140,7 @@ class OptimalSkillRequest(BaseModel):
 
 class LoRALearnerProfileRequest(BaseModel):
     """Learner profile for LoRA personalization"""
-    learner_id: str = Field(..., description="Unique learner identifier")
+    learner_id: str = Field(..., description=DESC_UNIQUE_LEARNER_ID)
     grade_level: int = Field(..., ge=1, le=12, description="Grade level 1-12")
     reading_level: str = Field("at", description="below, at, or above grade level")
     learning_style: str = Field("visual", description="visual, verbal, or kinesthetic")
@@ -151,17 +160,17 @@ class LoRATrainingExample(BaseModel):
 
 class LoRAFineTuneRequest(BaseModel):
     """Request to fine-tune LoRA adapter for a learner"""
-    learner_id: str = Field(..., description="Learner identifier")
+    learner_id: str = Field(..., description=DESC_LEARNER_ID)
     profile: LoRALearnerProfileRequest
     examples: List[LoRATrainingExample] = Field(..., min_length=1, description="Training examples")
-    num_epochs: int = Field(3, ge=1, le=10, description="Training epochs")
+    num_epochs: int = Field(3, ge=1, le=10, description=DESC_TRAINING_EPOCHS)
     batch_size: int = Field(4, ge=1, le=16, description="Batch size")
-    learning_rate: float = Field(3e-4, ge=1e-5, le=1e-2, description="Learning rate")
+    learning_rate: float = Field(3e-4, ge=1e-5, le=1e-2, description=DESC_LEARNING_RATE)
 
 
 class LoRAGenerateRequest(BaseModel):
     """Request to generate personalized response"""
-    learner_id: str = Field(..., description="Learner identifier")
+    learner_id: str = Field(..., description=DESC_LEARNER_ID)
     prompt: str = Field(..., description="Input prompt")
     max_length: int = Field(200, ge=50, le=1000, description="Max tokens to generate")
     temperature: float = Field(0.7, ge=0.0, le=1.5, description="Sampling temperature")
@@ -171,7 +180,7 @@ class LoRAGenerateRequest(BaseModel):
 
 class LoRAGenerateWithContextRequest(BaseModel):
     """Request to generate with additional context"""
-    learner_id: str = Field(..., description="Learner identifier")
+    learner_id: str = Field(..., description=DESC_LEARNER_ID)
     prompt: str = Field(..., description="User question")
     context: str = Field(..., description="Additional context (lesson content, etc.)")
     max_length: int = Field(300, ge=50, le=1000, description="Max tokens to generate")
@@ -225,14 +234,14 @@ class SemanticSearchRequest(BaseModel):
     """Request for semantic search"""
     query: str = Field(..., description="Natural language query")
     search_type: str = Field("skills", description="skills, content, standards, or all")
-    n: int = Field(10, ge=1, le=100, description="Number of results")
+    n: int = Field(10, ge=1, le=100, description=DESC_NUM_RESULTS)
     filters: Optional[Dict[str, Any]] = Field(None, description="Optional filters")
 
 
 class SimilarSkillsRequest(BaseModel):
     """Request for similar skills"""
     skill_id: str = Field(..., description="Source skill ID")
-    n: int = Field(5, ge=1, le=50, description="Number of results")
+    n: int = Field(5, ge=1, le=50, description=DESC_NUM_RESULTS)
     domain_filter: Optional[str] = Field(None, description="Filter by domain")
     grade_band_filter: Optional[str] = Field(None, description="Filter by grade band")
 
@@ -240,7 +249,7 @@ class SimilarSkillsRequest(BaseModel):
 class ContentRecommendationRequest(BaseModel):
     """Request for content recommendations"""
     skill_id: str = Field(..., description="Target skill ID")
-    n: int = Field(10, ge=1, le=50, description="Number of results")
+    n: int = Field(10, ge=1, le=50, description=DESC_NUM_RESULTS)
     difficulty_min: Optional[float] = Field(None, ge=0, le=1, description="Min difficulty")
     difficulty_max: Optional[float] = Field(None, ge=0, le=1, description="Max difficulty")
     content_type: Optional[str] = Field(None, description="Filter by content type")
@@ -255,7 +264,7 @@ class LearningPathRequest(BaseModel):
 class LearnerContentRecommendationRequest(BaseModel):
     """Request for learner-specific content recommendations"""
     skill_masteries: Dict[str, float] = Field(..., description="Skill ID -> mastery (0-1)")
-    n: int = Field(10, ge=1, le=50, description="Number of results")
+    n: int = Field(10, ge=1, le=50, description=DESC_NUM_RESULTS)
 
 
 class SkillClusterRequest(BaseModel):
@@ -359,7 +368,7 @@ async def update_bkt(request: Request, body: BKTUpdateRequest):
             learner_id=body.learner_id,
             skill_id=body.skill_id,
             mastery_probability=mastery,
-            updated_at=datetime.utcnow()
+            updated_at=datetime.now(timezone.utc)
         )
     
     except Exception as e:
@@ -395,7 +404,7 @@ async def update_bkt_batch(request: Request, body: BKTBatchUpdateRequest):
             'learner_id': body.learner_id,
             'updates': results,
             'count': len(results),
-            'updated_at': datetime.utcnow().isoformat(),
+            'updated_at': datetime.now(timezone.utc).isoformat(),
         }
     
     except Exception as e:
@@ -509,7 +518,7 @@ async def clone_brain(
         )
         
         # Clone model
-        model = brain_cloner.clone_for_learner(profile)
+        _ = brain_cloner.clone_for_learner(profile)
         
         # Schedule async save
         model_path = f"models/learners/{body.learner_id}.pt"
@@ -557,7 +566,7 @@ async def fine_tune_brain(request: Request, body: FineTuneRequest):
                 response_time_ms=item.get('response_time_ms', 5000),
                 hints_used=item.get('hints_used', 0),
                 difficulty=item.get('difficulty', 0.5),
-                timestamp=datetime.fromisoformat(item['timestamp']) if 'timestamp' in item else datetime.utcnow(),
+                timestamp=datetime.fromisoformat(item['timestamp']) if 'timestamp' in item else datetime.now(timezone.utc),
             ))
         
         # Fine-tune model
@@ -610,7 +619,7 @@ async def predict_mastery(request: Request, body: PredictMasteryRequest):
             "skill_id": body.skill_id,
             "mastery_probability": probability,
             "model_type": "neural_network",
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     
     except Exception as e:
@@ -633,8 +642,17 @@ async def get_brain_status(request: Request, learner_id: str):
             "model_in_memory": has_model,
             "model_on_disk": model_exists,
             "model_path": model_path if model_exists else None,
-            "status": "ready" if has_model else ("loadable" if model_exists else "not_created"),
         }
+        
+        # Determine status
+        if has_model:
+            result["status"] = "ready"
+        elif model_exists:
+            result["status"] = "loadable"
+        else:
+            result["status"] = "not_created"
+        
+        return result
     
     except Exception as e:
         logger.exception(f"Get brain status failed: {e}")
@@ -684,7 +702,7 @@ async def save_checkpoint(request: Request, checkpoint_name: str = "checkpoint")
     try:
         brain_cloner = get_brain_cloner(request)
         
-        checkpoint_path = f"models/checkpoints/{checkpoint_name}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pt"
+        checkpoint_path = f"models/checkpoints/{checkpoint_name}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.pt"
         brain_cloner.save_base_model(checkpoint_path)
         
         return {
@@ -719,7 +737,7 @@ async def health_check(request: Request):
             "brain_cloner": brain_loaded,
         },
         "learner_models_cached": learner_count,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -727,7 +745,7 @@ async def health_check(request: Request):
 async def get_stats(request: Request):
     """Get training service statistics"""
     stats = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     
     # BKT stats
@@ -927,7 +945,7 @@ async def train_dkt(request: Request, body: DKTTrainRequest, background_tasks: B
         ensemble = get_kt_ensemble(request)
         
         if 'dkt' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="DKT model not available")
+            raise HTTPException(status_code=503, detail=ERROR_DKT_NOT_AVAILABLE)
         
         # Run training (in production, this would be async)
         history = ensemble.train_dkt(
@@ -957,7 +975,7 @@ async def dkt_predict(request: Request, learner_id: str, skill_id: int):
         ensemble = get_kt_ensemble(request)
         
         if 'dkt' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="DKT model not available")
+            raise HTTPException(status_code=503, detail=ERROR_DKT_NOT_AVAILABLE)
         
         dkt = ensemble.models['dkt']
         prob = dkt.predict(learner_id, skill_id)
@@ -983,7 +1001,7 @@ async def dkt_predict_all(request: Request, learner_id: str):
         ensemble = get_kt_ensemble(request)
         
         if 'dkt' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="DKT model not available")
+            raise HTTPException(status_code=503, detail=ERROR_DKT_NOT_AVAILABLE)
         
         dkt = ensemble.models['dkt']
         predictions = dkt.predict_all_skills(learner_id)
@@ -1012,7 +1030,7 @@ async def pfa_predict(request: Request, learner_id: str, skill_id: str):
         ensemble = get_kt_ensemble(request)
         
         if 'pfa' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="PFA model not available")
+            raise HTTPException(status_code=503, detail=ERROR_PFA_NOT_AVAILABLE)
         
         pfa = ensemble.models['pfa']
         prob = pfa.predict(learner_id, skill_id)
@@ -1043,7 +1061,7 @@ async def pfa_practices_needed(
         ensemble = get_kt_ensemble(request)
         
         if 'pfa' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="PFA model not available")
+            raise HTTPException(status_code=503, detail=ERROR_PFA_NOT_AVAILABLE)
         
         pfa = ensemble.models['pfa']
         practices = pfa.estimate_practices_needed(learner_id, skill_id, target_mastery)
@@ -1076,7 +1094,7 @@ async def pfa_learning_curve(
         ensemble = get_kt_ensemble(request)
         
         if 'pfa' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="PFA model not available")
+            raise HTTPException(status_code=503, detail=ERROR_PFA_NOT_AVAILABLE)
         
         pfa = ensemble.models['pfa']
         curve = pfa.get_learning_curve(learner_id, skill_id, max_practices)
@@ -1101,7 +1119,7 @@ async def pfa_weakest_skills(request: Request, learner_id: str, n: int = 5):
         ensemble = get_kt_ensemble(request)
         
         if 'pfa' not in ensemble.models:
-            raise HTTPException(status_code=503, detail="PFA model not available")
+            raise HTTPException(status_code=503, detail=ERROR_PFA_NOT_AVAILABLE)
         
         pfa = ensemble.models['pfa']
         skills = pfa.get_weakest_skills(learner_id, n)

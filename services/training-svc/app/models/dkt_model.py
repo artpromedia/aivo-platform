@@ -17,7 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class DKTInteraction:
         return cls(
             skill_id=data["skill_id"],
             correct=data["correct"],
-            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.utcnow(),
+            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(timezone.utc),
             response_time_ms=data.get("response_time_ms"),
             hints_used=data.get("hints_used"),
         )
@@ -277,7 +277,8 @@ class DeepKnowledgeTracing:
             return {'train_loss': [], 'val_loss': [], 'val_auc': []}
         
         # Shuffle and split data
-        np.random.shuffle(sequences)
+        rng = np.random.default_rng(seed=42)
+        rng.shuffle(sequences)
         split_idx = max(1, int(len(sequences) * (1 - validation_split)))
         train_sequences = sequences[:split_idx]
         val_sequences = sequences[split_idx:]
@@ -290,13 +291,15 @@ class DeepKnowledgeTracing:
             train_dataset,
             batch_size=batch_size,
             shuffle=True,
-            drop_last=False
+            drop_last=False,
+            num_workers=0
         )
         val_loader = DataLoader(
             val_dataset,
             batch_size=batch_size,
             shuffle=False,
-            drop_last=False
+            drop_last=False,
+            num_workers=0
         )
         
         # Optimizer and loss
@@ -506,13 +509,13 @@ class DeepKnowledgeTracing:
             Dictionary of skill_id -> probability
         """
         if not self.is_trained:
-            return {i: 0.5 for i in range(self.num_skills)}
+            return dict.fromkeys(range(self.num_skills), 0.5)
         
         if history is None:
             history = self.learner_histories.get(learner_id, [])
         
         if len(history) == 0:
-            return {i: 0.5 for i in range(self.num_skills)}
+            return dict.fromkeys(range(self.num_skills), 0.5)
         
         self.model.eval()
         

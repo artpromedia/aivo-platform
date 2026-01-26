@@ -21,6 +21,9 @@ import os
 
 logger = logging.getLogger(__name__)
 
+# Constants
+PROFILE_FILENAME = "profile.json"
+
 # Lazy imports for heavy dependencies
 transformers = None
 peft = None
@@ -462,7 +465,7 @@ class LoRAFineTuner:
         model.save_pretrained(adapter_output_dir)
         
         # Save profile alongside adapter
-        profile_path = Path(adapter_output_dir) / "profile.json"
+        profile_path = Path(adapter_output_dir) / PROFILE_FILENAME
         with open(profile_path, "w") as f:
             json.dump(profile.to_dict(), f, indent=2)
         
@@ -515,7 +518,7 @@ class LoRAFineTuner:
             self.learner_adapters[learner_id] = model
             
             # Load profile if exists
-            profile_path = Path(adapter_path) / "profile.json"
+            profile_path = Path(adapter_path) / PROFILE_FILENAME
             if profile_path.exists():
                 with open(profile_path) as f:
                     profile_data = json.load(f)
@@ -722,7 +725,7 @@ class LoRAFineTuner:
             
             # Save profile if exists
             if learner_id in self.learner_profiles:
-                profile_path = Path(adapter_path) / "profile.json"
+                profile_path = Path(adapter_path) / PROFILE_FILENAME
                 with open(profile_path, "w") as f:
                     json.dump(self.learner_profiles[learner_id].to_dict(), f, indent=2)
             

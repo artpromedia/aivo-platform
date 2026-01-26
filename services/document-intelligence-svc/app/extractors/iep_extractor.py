@@ -395,30 +395,30 @@ class IEPExtractor:
         self.patterns = {
             # Goal patterns
             'goal_header': re.compile(
-                r'(?:Annual\s+)?Goal\s*[#:]?\s*(\d+(?:\.\d+)?):?\s*(.+?)(?=\n|$)',
+                r'(?:Annual\s+)?Goal\s*[#:]?\s*(\d+(?:\.\d+)?):?\s*([^\n]+)',
                 re.IGNORECASE
             ),
             'objective_header': re.compile(
-                r'(?:Short[- ]term\s+)?Objective\s*[#:]?\s*(\d+(?:\.\d+)?):?\s*(.+?)(?=\n|$)',
+                r'(?:Short[- ]term\s+)?Objective\s*[#:]?\s*(\d+(?:\.\d+)?):?\s*([^\n]+)',
                 re.IGNORECASE
             ),
             
             # Baseline/Present Level patterns
             'baseline': re.compile(
-                r'(?:Current\s+(?:Performance\s+)?Level|Baseline|Present\s+Level(?:s)?|PLOP|PLAAFP)[:\s]+(.+?)(?=\n\n|\n[A-Z]|$)',
-                re.IGNORECASE | re.DOTALL
+                r'(?:Current\s+Level|Baseline|Present\s+Levels?|PLOP|PLAAFP)[:\s]+([^\n]+(?:\n(?![A-Z])[^\n]*)*)',
+                re.IGNORECASE
             ),
             
             # Target/Objective patterns  
             'target': re.compile(
-                r'(?:Goal|Target|Objective|Expected\s+Outcome)[:\s]+(.+?)(?=\n\n|\n[A-Z]|$)',
-                re.IGNORECASE | re.DOTALL
+                r'(?:Goal|Target|Objective|Expected\s+Outcome)[:\s]+([^\n]+(?:\n(?![A-Z])[^\n]*)*)',
+                re.IGNORECASE
             ),
             
             # Measurement patterns
             'measurement': re.compile(
-                r'(?:Measured\s+by|Assessment|Evaluation\s+Method|Progress\s+Monitoring|Criteria)[:\s]+(.+?)(?=\n\n|\n[A-Z]|$)',
-                re.IGNORECASE | re.DOTALL
+                r'(?:Measured\s+by|Assessment|Evaluation\s+Method|Progress\s+Monitoring|Criteria)[:\s]+([^\n]+(?:\n(?![A-Z])[^\n]*)*)',
+                re.IGNORECASE
             ),
             
             # Date patterns
@@ -790,8 +790,8 @@ class IEPExtractor:
             return
         
         # Extract numbered items
-        numbered_pattern = r'(\d+)\.\s+(.+?)(?=\n\d+\.|$)'
-        matches = re.findall(numbered_pattern, goal_section, re.DOTALL)
+        numbered_pattern = r'(\d+)\.\s+([^\n]+(?:\n(?!\d+\.)[^\n]*)*)'
+        matches = re.findall(numbered_pattern, goal_section, re.MULTILINE)
         
         for num, content in matches:
             domain = self._classify_goal_domain(content)
@@ -814,8 +814,8 @@ class IEPExtractor:
         benchmarks = []
         
         # Look for objective patterns
-        obj_pattern = r'(?:Objective|Benchmark)\s*[#:]?\s*\d+[.:]\s*(.+?)(?=\n(?:Objective|Benchmark)|$)'
-        matches = re.findall(obj_pattern, section, re.IGNORECASE | re.DOTALL)
+        obj_pattern = r'(?:Objective|Benchmark)\s*[#:]?\s*\d+[.:]\s*([^\n]+(?:\n(?!(?:Objective|Benchmark))[^\n]*)*)'
+        matches = re.findall(obj_pattern, section, re.IGNORECASE | re.MULTILINE)
         
         for match in matches[:5]:  # Max 5 benchmarks
             clean = self._clean_text(match)
@@ -950,7 +950,7 @@ class IEPExtractor:
                     iep_doc.accommodations.append(accommodation)
         
         # Also extract bullet points
-        bullet_pattern = r'[•\-\*]\s*(.+?)(?=\n[•\-\*]|$)'
+        bullet_pattern = r'[•\-\*]\s*([^\n•\-\*]+)'
         bullets = re.findall(bullet_pattern, acc_section)
         
         for bullet in bullets:
@@ -1179,7 +1179,7 @@ if __name__ == "__main__":
     measurement = extractor._extract_measurement(test_text)
     timeline = extractor._extract_timeline(test_text)
     
-    print(f"\nTest goal analysis:")
+    print("\nTest goal analysis:")
     print(f"  Domain: {domain}")
     print(f"  Category: {category}")
     print(f"  Measurement: {measurement}")

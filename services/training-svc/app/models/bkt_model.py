@@ -9,7 +9,7 @@ the probability a learner has mastered a skill based on their response history.
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import logging
 
@@ -106,7 +106,7 @@ class BayesianKnowledgeTracing:
     def __init__(self, mastery_threshold: float = 0.95):
         self.parameters: Dict[str, BKTParameters] = {}
         self.mastery_states: Dict[str, Dict[str, MasteryRecord]] = {}
-        self.mastery_threshold = mastery_threshold
+        self._mastery_threshold = mastery_threshold
     
     def initialize_skill(
         self, 
@@ -165,7 +165,7 @@ class BayesianKnowledgeTracing:
     
     def is_mastered(self, learner_id: str, skill_id: str) -> bool:
         """Check if a skill is considered mastered"""
-        return self.get_mastery(learner_id, skill_id) >= self.mastery_threshold
+        return self.get_mastery(learner_id, skill_id) >= self._mastery_threshold
     
     def update(
         self, 
@@ -236,7 +236,7 @@ class BayesianKnowledgeTracing:
         # Update record
         record = self.mastery_states[learner_id][skill_id]
         record.probability = p_know_after
-        record.last_updated = timestamp or datetime.utcnow()
+        record.last_updated = timestamp or datetime.now(timezone.utc)
         record.attempts += 1
         if correct:
             record.correct_count += 1
@@ -319,16 +319,17 @@ class BayesianKnowledgeTracing:
         params = self.parameters.get(skill_id, BKTParameters())
         p_know = self.get_mastery(learner_id, skill_id)
         
-        if p_know >= self.mastery_threshold:
+        if p_know >= self._mastery_threshold:
             return 0
         
         # Simulate forward with assumed accuracy
+        rng = np.random.default_rng(seed=42)
         attempts = 0
         max_attempts = 100  # Prevent infinite loop
         
-        while p_know < self.mastery_threshold and attempts < max_attempts:
+        while p_know < self._mastery_threshold and attempts < max_attempts:
             # Calculate expected update
-            correct = np.random.random() < assumed_accuracy
+            correct = rng.random() < assumed_accuracy
             
             p_correct = (
                 p_know * (1 - params.p_slip) +
@@ -505,7 +506,7 @@ class BayesianKnowledgeTracing:
         for skill_id, record in self.mastery_states[learner_id].items():
             skills[skill_id] = {
                 "mastery_probability": record.probability,
-                "is_mastered": record.probability >= self.mastery_threshold,
+                "is_mastered": record.probability >= self._mastery_threshold,
                 "attempts": record.attempts,
                 "accuracy": record.accuracy,
                 "last_updated": record.last_updated.isoformat(),
@@ -544,7 +545,7 @@ class BayesianKnowledgeTracing:
         skill_masteries = []
         for skill_id in available_skills:
             mastery = self.get_mastery(learner_id, skill_id)
-            if mastery < self.mastery_threshold:
+            if mastery < self._mastery_threshold:
                 skill_masteries.append((skill_id, mastery))
         
         if not skill_masteries:
@@ -584,12 +585,12 @@ class BayesianKnowledgeTracing:
                 }
                 for learner_id, skills in self.mastery_states.items()
             },
-            "mastery_threshold": self.mastery_threshold,
+            "mastery_threshold": self._mastery_threshold,
         }
     
     def import_state(self, state: Dict) -> None:
         """Import model state from persistence"""
-        self.mastery_threshold = state.get("mastery_threshold", 0.95)
+        self._mastery_threshold = state.get("mastery_threshold", 0.95)
         
         self.parameters = {
             skill_id: BKTParameters.from_dict(params)

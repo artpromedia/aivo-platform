@@ -145,7 +145,7 @@ async def extract_iep(
     """
     # Validate file type
     if not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="File must be a PDF")
+        raise HTTPException(status_code=400, detail=ERROR_FILE_MUST_BE_PDF)
     
     # Check file size (max 50MB)
     content = await file.read()
@@ -302,7 +302,7 @@ async def extract_pdf_text(
     Uses OCR if native text extraction yields insufficient content
     """
     if not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="File must be a PDF")
+        raise HTTPException(status_code=400, detail=ERROR_FILE_MUST_BE_PDF)
     
     content = await file.read()
     

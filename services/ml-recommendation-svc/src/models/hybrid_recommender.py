@@ -20,7 +20,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 from typing import List, Dict, Tuple, Optional, Any, Set
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import json
 import logging
@@ -146,8 +146,8 @@ class CollaborativeFilter:
             return
         
         # Build learner-activity matrix
-        learner_set = sorted(set(learner for learner, _, _ in interactions))
-        activity_set = sorted(set(activity for _, activity, _ in interactions))
+        learner_set = sorted({learner for learner, _, _ in interactions})
+        activity_set = sorted({activity for _, activity, _ in interactions})
         
         self.learner_ids = learner_set
         self.activity_ids = activity_set
@@ -214,7 +214,7 @@ class CollaborativeFilter:
         
         # Filter by minimum similarity
         similar_mask = similarities >= min_similarity
-        similar_indices = np.where(similar_mask)[0]
+        similar_indices = np.nonzero(similar_mask)[0]
         similar_weights = similarities[similar_mask]
         
         if len(similar_indices) == 0:
@@ -242,10 +242,10 @@ class CollaborativeFilter:
         
         # Exclude already completed
         exclude_set = set(exclude_completed or [])
-        learner_activities = set(
+        learner_activities = {
             self.activity_ids[i] 
             for i in self.interaction_matrix[learner_idx].indices
-        )
+        }
         exclude_set.update(learner_activities)
         
         for activity_id in exclude_set:
@@ -572,7 +572,7 @@ class MultiArmedBandit:
         
         self.activity_pulls[activity_id] += 1
         self.activity_rewards[activity_id].append(reward)
-        self.activity_timestamps[activity_id].append(timestamp or datetime.utcnow())
+        self.activity_timestamps[activity_id].append(timestamp or datetime.now(timezone.utc))
         
         # Keep only recent history
         max_history = 100
@@ -900,7 +900,7 @@ class HybridRecommender:
     ):
         """Log recommendation for analysis"""
         self.recommendation_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "learner_id": context.learner_id,
             "recommendations": [r.activity_id for r in recommendations],
             "scores": [r.score for r in recommendations],
@@ -915,7 +915,6 @@ class HybridRecommender:
         activity_id: str, 
         completed: bool, 
         accuracy: float,
-        duration_minutes: Optional[int] = None
     ):
         """
         Update models with feedback
@@ -924,7 +923,6 @@ class HybridRecommender:
             activity_id: Completed activity
             completed: Whether activity was completed
             accuracy: Accuracy on activity (0-1)
-            duration_minutes: Time spent
         """
         # Calculate reward for bandit
         completion_score = 1.0 if completed else 0.3
@@ -1029,18 +1027,18 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
     # Initialize with skill embeddings
-    np.random.seed(42)
+    rng = np.random.default_rng(seed=42)
     skill_embeddings = {
-        'addition': np.random.randn(64),
-        'subtraction': np.random.randn(64),
-        'multiplication': np.random.randn(64),
-        'division': np.random.randn(64),
-        'fractions': np.random.randn(64),
+        'addition': rng.standard_normal(64),
+        'subtraction': rng.standard_normal(64),
+        'multiplication': rng.standard_normal(64),
+        'division': rng.standard_normal(64),
+        'fractions': rng.standard_normal(64),
     }
     
     # Make related skills more similar
-    skill_embeddings['subtraction'] = skill_embeddings['addition'] + np.random.randn(64) * 0.3
-    skill_embeddings['division'] = skill_embeddings['multiplication'] + np.random.randn(64) * 0.3
+    skill_embeddings['subtraction'] = skill_embeddings['addition'] + rng.standard_normal(64) * 0.3
+    skill_embeddings['division'] = skill_embeddings['multiplication'] + rng.standard_normal(64) * 0.3
     
     recommender = HybridRecommender(skill_embeddings)
     
@@ -1064,7 +1062,7 @@ if __name__ == "__main__":
     learners = ['student_1', 'student_2', 'student_3', 'student_4', 'student_5']
     for learner in learners:
         for act in activities[:7]:
-            rating = np.random.uniform(0.5, 1.0)
+            rating = rng.uniform(0.5, 1.0)
             interactions.append((learner, act['activity_id'], rating))
     
     recommender.fit_collaborative(interactions)

@@ -27,6 +27,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Constant for error message
+ERROR_SERVICE_NOT_INITIALIZED = "Service not initialized"
+
 
 # Service instances
 adhd_service: ADHDSupportService | None = None
@@ -111,7 +114,7 @@ async def readiness() -> Dict[str, Any]:
 async def get_ef_strategies(request: Request) -> Dict[str, Any]:
     """Get executive function strategies for a learner."""
     if not ef_strategies:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
 
     body = await request.json()
     learner_profile = body.get("learner_profile", {})
@@ -131,7 +134,7 @@ async def get_ef_strategies(request: Request) -> Dict[str, Any]:
 async def break_down_project(request: Request) -> Dict[str, Any]:
     """Break down a complex project into manageable chunks."""
     if not project_breakdown:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
 
     body = await request.json()
     project = body.get("project", {})
@@ -149,7 +152,7 @@ async def break_down_project(request: Request) -> Dict[str, Any]:
 async def create_daily_plan(request: Request) -> Dict[str, Any]:
     """Create a personalized daily plan for a learner with ADHD."""
     if not daily_planner:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
 
     body = await request.json()
     learner_profile = body.get("learner_profile", {})
@@ -169,7 +172,7 @@ async def create_daily_plan(request: Request) -> Dict[str, Any]:
 async def get_adhd_support(request: Request) -> Dict[str, Any]:
     """Get comprehensive ADHD support recommendations."""
     if not adhd_service:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
 
     body = await request.json()
     learner_profile = body.get("learner_profile", {})

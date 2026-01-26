@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import numpy as np
 from pathlib import Path
 import json
@@ -27,7 +27,7 @@ class LearnerProfile:
     """Learner characteristics for model personalization"""
     learner_id: str
     grade_level: int
-    learning_pace: float = 1.0  # 0.5 = slow, 1.0 = average, 1.5 = fast
+    learning_pace: float = 1.0  # Range: 0.5 (slow) to 1.5 (fast)
     preferred_modality: str = "visual"  # visual, auditory, kinesthetic
     attention_span_minutes: int = 15
     iep_accommodations: List[str] = field(default_factory=list)
@@ -63,7 +63,7 @@ class InteractionHistory:
     response_time_ms: int
     hints_used: int = 0
     difficulty: float = 0.5
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     attempts: int = 1
     engagement_score: float = 1.0  # 0-1 scale
     scaffolding_level: int = 0  # 0 = none, 1-3 = increasing support
@@ -136,7 +136,7 @@ class BaseBrainModel(nn.Module):
         layers = []
         input_dim = embedding_dim * 2  # skill + context/state
         
-        for i in range(num_layers):
+        for _ in range(num_layers):
             layers.extend([
                 nn.Linear(input_dim, hidden_dim),
                 nn.LayerNorm(hidden_dim),
@@ -313,6 +313,9 @@ class PersonalizedBrainCloner:
         self.learner_profiles: Dict[str, LearnerProfile] = {}
         self.training_history: Dict[str, List[Dict]] = {}
         
+        # Random generator for reproducibility
+        self._rng = np.random.default_rng(seed=42)
+        
         logger.info(f"Initialized PersonalizedBrainCloner with {num_skills} skills")
     
     def _load_base_model(self, model_path: str) -> nn.Module:
@@ -324,8 +327,7 @@ class PersonalizedBrainCloner:
             embedding_dim=checkpoint.get('embedding_dim', self.embedding_dim),
             hidden_dim=checkpoint.get('hidden_dim', self.hidden_dim),
         )
-        model.load_state_dict(checkpoint['model_state_dict'])
-        
+        model.load_state_dict(checkpoint['model_state_dict'])        model.eval()  # Set model to evaluation mode        
         logger.info(f"Loaded base model from {model_path}")
         return model
     
@@ -462,7 +464,7 @@ class PersonalizedBrainCloner:
             raise ValueError(f"Model not found for learner: {learner_id}. Call clone_for_learner first.")
         
         # Prepare training data
-        X_skills, X_context, X_state, y = self._prepare_training_data(
+        x_skills, x_context, x_state, y = self._prepare_training_data(
             interactions, 
             self.learner_profiles.get(learner_id)
         )
@@ -494,9 +496,9 @@ class PersonalizedBrainCloner:
             model.train()
             optimizer.zero_grad()
             
-            train_skills = X_skills[train_indices]
-            train_context = X_context[train_indices]
-            train_state = X_state[train_indices] if X_state is not None else None
+            train_skills = x_skills[train_indices]
+            train_context = x_context[train_indices]
+            train_state = x_state[train_indices] if x_state is not None else None
             train_labels = y[train_indices]
             
             predictions = model(train_skills, train_context, train_state).squeeze()
@@ -512,9 +514,9 @@ class PersonalizedBrainCloner:
             # Validation step
             model.eval()
             with torch.no_grad():
-                val_skills = X_skills[val_indices]
-                val_context = X_context[val_indices]
-                val_state = X_state[val_indices] if X_state is not None else None
+                val_skills = x_skills[val_indices]
+                val_context = x_context[val_indices]
+                val_state = x_state[val_indices] if x_state is not None else None
                 val_labels = y[val_indices]
                 
                 val_predictions = model(val_skills, val_context, val_state).squeeze()
@@ -540,12 +542,12 @@ class PersonalizedBrainCloner:
         
         # Calculate accuracy
         with torch.no_grad():
-            all_predictions = model(X_skills, X_context, X_state).squeeze()
+            all_predictions = model(x_skills, x_context, x_state).squeeze()
             accuracy = ((all_predictions > 0.5) == (y > 0.5)).float().mean().item()
         
         # Record training history
         training_record = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "num_samples": len(interactions),
             "num_epochs": len(train_losses),
             "final_train_loss": train_losses[-1],
@@ -595,7 +597,7 @@ class PersonalizedBrainCloner:
                 interaction.engagement_score,  # Already 0-1
                 interaction.scaffolding_level / 3.0,  # Normalized scaffolding
                 1.0 if interaction.correct else 0.0,  # Previous correctness signal
-                np.random.random() * 0.1,  # Small noise for regularization
+                self._rng.random() * 0.1,  # Small noise for regularization
             ]
             contexts.append(context)
             labels.append(1.0 if interaction.correct else 0.0)
@@ -739,7 +741,7 @@ class PersonalizedBrainCloner:
             'hidden_dim': self.hidden_dim,
             'profile': profile.to_dict() if profile else None,
             'training_history': history,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
         }
         
         torch.save(save_data, save_path)
@@ -859,7 +861,7 @@ class PersonalizedBrainCloner:
             'num_skills': self.num_skills,
             'embedding_dim': self.embedding_dim,
             'hidden_dim': self.hidden_dim,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
         }
         torch.save(save_data, save_path)
         logger.info(f"Saved base model to {save_path}")
@@ -921,14 +923,15 @@ if __name__ == "__main__":
     print(f"Created personalized model with {sum(p.numel() for p in learner_model.parameters())} parameters")
     
     # Generate some interaction history
+    rng = np.random.default_rng(seed=42)
     interactions = []
-    for i in range(50):
+    for _ in range(50):
         interactions.append(InteractionHistory(
-            skill_id=f"skill_{np.random.randint(0, 100)}",
-            correct=np.random.random() > 0.4,
-            response_time_ms=int(np.random.exponential(5000)),
-            hints_used=np.random.randint(0, 3),
-            difficulty=np.random.random(),
+            skill_id=f"skill_{rng.integers(0, 100)}",
+            correct=rng.random() > 0.4,
+            response_time_ms=int(rng.exponential(5000)),
+            hints_used=rng.integers(0, 3),
+            difficulty=rng.random(),
         ))
     
     # Fine-tune on interactions

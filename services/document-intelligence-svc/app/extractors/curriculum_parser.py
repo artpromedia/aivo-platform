@@ -241,7 +241,7 @@ class CurriculumParser:
         if re.search(r'\bPre-?K\b|\bPreschool\b', text, re.IGNORECASE):
             grades.add('PK')
         
-        return sorted(list(grades), key=lambda x: -1 if x in ['PK', 'K'] else int(x))
+        return sorted(grades, key=lambda x: -1 if x in ['PK', 'K'] else int(x))
     
     def _parse_standards(self, text: str) -> List[LearningStandard]:
         """Parse learning standards from text"""
@@ -317,9 +317,9 @@ class CurriculumParser:
         """Parse curriculum units"""
         units = []
         
-        # Look for unit headers
-        unit_pattern = r'Unit\s*(\d+)[:\s]+(.+?)(?=\nUnit\s*\d+|$)'
-        matches = re.findall(unit_pattern, text, re.IGNORECASE | re.DOTALL)
+        # Look for unit headers - use [^\\n]+ instead of .+? to match content to end of section
+        unit_pattern = r'Unit\\s*(\\d+)[:\\s]+([^\\n]+(?:\\n(?!Unit\\s*\\d+)[^\\n]+)*)'
+        matches = re.findall(unit_pattern, text, re.IGNORECASE)
         
         for num, content in matches:
             # Extract title (first line)
@@ -393,8 +393,8 @@ class CurriculumParser:
                     if len(part) > 10:
                         items.append(part[:300])
         
-        # Also look for bullet lists
-        bullet_pattern = r'[•\-\*]\s*(.+?)(?=\n[•\-\*]|\n\n|$)'
+        # Also look for bullet lists - use [^\\n]+ for single line items
+        bullet_pattern = r'[•*-]\\s*([^\\n]+)'
         bullets = re.findall(bullet_pattern, text)
         for bullet in bullets:
             bullet = bullet.strip()

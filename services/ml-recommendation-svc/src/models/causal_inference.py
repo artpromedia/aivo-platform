@@ -14,7 +14,7 @@ not just correlations in the data.
 import numpy as np
 from typing import List, Dict, Tuple, Optional, Any, Set
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from collections import defaultdict
 
@@ -169,9 +169,8 @@ class CausalGraph:
             return False
         
         for node in self.nodes:
-            if node not in visited:
-                if dfs(node):
-                    return True
+            if node not in visited and dfs(node):
+                return True
         
         return False
     
@@ -252,10 +251,10 @@ class CausalGraph:
         2. There is an instrumental variable
         """
         # Check if adjustment set exists
-        adjustment_set = self.get_adjustment_set(treatment, outcome)
-        
         # For now, we consider effect identifiable if we have adjustment set
         # More sophisticated: check for instruments, front-door criterion, etc.
+        _ = self.get_adjustment_set(treatment, outcome)  # Validate adjustment set exists
+        
         return True
     
     def create_educational_dag(self) -> "CausalGraph":
@@ -426,7 +425,7 @@ class PropensityScoreMatching:
         n, d = X.shape
         
         # Add intercept
-        X_aug = np.column_stack([np.ones(n), X])
+        x_aug = np.column_stack([np.ones(n), X])
         
         # Initialize weights
         weights = np.zeros(d + 1)
@@ -435,15 +434,15 @@ class PropensityScoreMatching:
         learning_rate = 0.1
         for _ in range(1000):
             # Predictions
-            logits = X_aug @ weights
+            logits = x_aug @ weights
             probs = 1 / (1 + np.exp(-np.clip(logits, -500, 500)))
             
             # Gradient
-            gradient = X_aug.T @ (probs - y) / n
+            gradient = x_aug.T @ (probs - y) / n
             weights -= learning_rate * gradient
         
         # Final predictions
-        logits = X_aug @ weights
+        logits = x_aug @ weights
         return 1 / (1 + np.exp(-np.clip(logits, -500, 500)))
     
     def match(
@@ -462,8 +461,8 @@ class PropensityScoreMatching:
         if self.propensity_scores is None:
             raise ValueError("Must call fit() first")
         
-        treated_idx = np.where(self.treatment == 1)[0]
-        control_idx = np.where(self.treatment == 0)[0]
+        treated_idx = np.nonzero(self.treatment == 1)[0]
+        control_idx = np.nonzero(self.treatment == 0)[0]
         
         treated_scores = self.propensity_scores[treated_idx]
         control_scores = self.propensity_scores[control_idx]
@@ -549,9 +548,10 @@ class PropensityScoreMatching:
         # Bootstrap confidence interval
         n_bootstrap = 1000
         bootstrap_effects = []
+        rng = np.random.default_rng(seed=42)
         
         for _ in range(n_bootstrap):
-            indices = np.random.choice(len(treated_outcomes), len(treated_outcomes), replace=True)
+            indices = rng.choice(len(treated_outcomes), len(treated_outcomes), replace=True)
             boot_effect = np.mean(treated_outcomes[indices] - control_outcomes[indices])
             bootstrap_effects.append(boot_effect)
         
@@ -708,8 +708,6 @@ class DoubleMachineLearning:
         Returns:
             CausalEffect with debiased estimate
         """
-        n = len(outcome)
-        
         if HAS_SKLEARN:
             return self._estimate_sklearn(covariates, treatment, outcome, n_folds)
         else:
@@ -794,13 +792,13 @@ class DoubleMachineLearning:
         
         # Simple linear regression for nuisance functions
         # Y ~ X
-        X_aug = np.column_stack([np.ones(n), covariates])
-        outcome_coef = np.linalg.lstsq(X_aug, outcome, rcond=None)[0]
-        outcome_pred = X_aug @ outcome_coef
+        x_aug = np.column_stack([np.ones(n), covariates])
+        outcome_coef = np.linalg.lstsq(x_aug, outcome, rcond=None)[0]
+        outcome_pred = x_aug @ outcome_coef
         
         # T ~ X
-        treatment_coef = np.linalg.lstsq(X_aug, treatment, rcond=None)[0]
-        treatment_pred = X_aug @ treatment_coef
+        treatment_coef = np.linalg.lstsq(x_aug, treatment, rcond=None)[0]
+        treatment_pred = x_aug @ treatment_coef
         
         # Residualize
         outcome_resid = outcome - outcome_pred
@@ -873,7 +871,6 @@ class InterventionEffectAnalyzer:
         outcome: np.ndarray,
         confounders: np.ndarray,
         methods: List[str] = ["psm", "dml"],
-        confounder_names: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Analyze effect of an educational intervention
@@ -884,14 +881,13 @@ class InterventionEffectAnalyzer:
             outcome: Outcome variable
             confounders: Confounding variables
             methods: Which methods to use
-            confounder_names: Names for confounders (for reporting)
         
         Returns:
             Dictionary with effect estimates from each method
         """
         results = {
             "intervention": intervention_name,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "sample_size": len(treatment),
             "treated_count": int(treatment.sum()),
             "control_count": len(treatment) - int(treatment.sum()),
@@ -998,8 +994,8 @@ class InterventionEffectAnalyzer:
         """Get summary of all analyses"""
         return {
             "total_analyses": len(self.analysis_history),
-            "interventions_analyzed": list(set(
+            "interventions_analyzed": list({
                 a["intervention"] for a in self.analysis_history
-            )),
+            }),
             "recent_analyses": self.analysis_history[-5:],
         }

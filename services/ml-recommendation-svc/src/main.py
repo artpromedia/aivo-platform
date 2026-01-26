@@ -25,55 +25,55 @@ settings = get_settings()
 
 def create_default_skill_embeddings() -> dict:
     """Create default skill embeddings for common educational skills."""
-    np.random.seed(42)
+    rng = np.random.default_rng(seed=42)
     embedding_dim = 64
     
     # Math skills cluster
-    math_base = np.random.randn(embedding_dim)
+    math_base = rng.standard_normal(embedding_dim)
     skills = {
-        'addition': math_base + np.random.randn(embedding_dim) * 0.2,
-        'subtraction': math_base + np.random.randn(embedding_dim) * 0.2,
-        'multiplication': math_base + np.random.randn(embedding_dim) * 0.3,
-        'division': math_base + np.random.randn(embedding_dim) * 0.3,
-        'fractions': math_base + np.random.randn(embedding_dim) * 0.4,
-        'decimals': math_base + np.random.randn(embedding_dim) * 0.4,
-        'algebra': math_base + np.random.randn(embedding_dim) * 0.5,
-        'geometry': math_base + np.random.randn(embedding_dim) * 0.5,
-        'measurement': math_base + np.random.randn(embedding_dim) * 0.4,
-        'statistics': math_base + np.random.randn(embedding_dim) * 0.5,
+        'addition': math_base + rng.standard_normal(embedding_dim) * 0.2,
+        'subtraction': math_base + rng.standard_normal(embedding_dim) * 0.2,
+        'multiplication': math_base + rng.standard_normal(embedding_dim) * 0.3,
+        'division': math_base + rng.standard_normal(embedding_dim) * 0.3,
+        'fractions': math_base + rng.standard_normal(embedding_dim) * 0.4,
+        'decimals': math_base + rng.standard_normal(embedding_dim) * 0.4,
+        'algebra': math_base + rng.standard_normal(embedding_dim) * 0.5,
+        'geometry': math_base + rng.standard_normal(embedding_dim) * 0.5,
+        'measurement': math_base + rng.standard_normal(embedding_dim) * 0.4,
+        'statistics': math_base + rng.standard_normal(embedding_dim) * 0.5,
     }
     
     # Reading skills cluster
-    reading_base = np.random.randn(embedding_dim)
+    reading_base = rng.standard_normal(embedding_dim)
     skills.update({
-        'phonics': reading_base + np.random.randn(embedding_dim) * 0.2,
-        'fluency': reading_base + np.random.randn(embedding_dim) * 0.2,
-        'vocabulary': reading_base + np.random.randn(embedding_dim) * 0.3,
-        'comprehension': reading_base + np.random.randn(embedding_dim) * 0.3,
-        'inference': reading_base + np.random.randn(embedding_dim) * 0.4,
-        'main_idea': reading_base + np.random.randn(embedding_dim) * 0.3,
-        'summarization': reading_base + np.random.randn(embedding_dim) * 0.4,
+        'phonics': reading_base + rng.standard_normal(embedding_dim) * 0.2,
+        'fluency': reading_base + rng.standard_normal(embedding_dim) * 0.2,
+        'vocabulary': reading_base + rng.standard_normal(embedding_dim) * 0.3,
+        'comprehension': reading_base + rng.standard_normal(embedding_dim) * 0.3,
+        'inference': reading_base + rng.standard_normal(embedding_dim) * 0.4,
+        'main_idea': reading_base + rng.standard_normal(embedding_dim) * 0.3,
+        'summarization': reading_base + rng.standard_normal(embedding_dim) * 0.4,
     })
     
     # Writing skills cluster
-    writing_base = np.random.randn(embedding_dim)
+    writing_base = rng.standard_normal(embedding_dim)
     skills.update({
-        'spelling': writing_base + np.random.randn(embedding_dim) * 0.2,
-        'grammar': writing_base + np.random.randn(embedding_dim) * 0.3,
-        'punctuation': writing_base + np.random.randn(embedding_dim) * 0.2,
-        'sentence_structure': writing_base + np.random.randn(embedding_dim) * 0.3,
-        'paragraph_writing': writing_base + np.random.randn(embedding_dim) * 0.4,
-        'essay_writing': writing_base + np.random.randn(embedding_dim) * 0.5,
+        'spelling': writing_base + rng.standard_normal(embedding_dim) * 0.2,
+        'grammar': writing_base + rng.standard_normal(embedding_dim) * 0.3,
+        'punctuation': writing_base + rng.standard_normal(embedding_dim) * 0.2,
+        'sentence_structure': writing_base + rng.standard_normal(embedding_dim) * 0.3,
+        'paragraph_writing': writing_base + rng.standard_normal(embedding_dim) * 0.4,
+        'essay_writing': writing_base + rng.standard_normal(embedding_dim) * 0.5,
     })
     
     # Science skills cluster
-    science_base = np.random.randn(embedding_dim)
+    science_base = rng.standard_normal(embedding_dim)
     skills.update({
-        'scientific_method': science_base + np.random.randn(embedding_dim) * 0.2,
-        'biology': science_base + np.random.randn(embedding_dim) * 0.4,
-        'chemistry': science_base + np.random.randn(embedding_dim) * 0.4,
-        'physics': science_base + np.random.randn(embedding_dim) * 0.4,
-        'earth_science': science_base + np.random.randn(embedding_dim) * 0.4,
+        'scientific_method': science_base + rng.standard_normal(embedding_dim) * 0.2,
+        'biology': science_base + rng.standard_normal(embedding_dim) * 0.4,
+        'chemistry': science_base + rng.standard_normal(embedding_dim) * 0.4,
+        'physics': science_base + rng.standard_normal(embedding_dim) * 0.4,
+        'earth_science': science_base + rng.standard_normal(embedding_dim) * 0.4,
     })
     
     return skills

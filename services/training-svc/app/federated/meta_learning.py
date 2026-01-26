@@ -13,7 +13,7 @@ with minimal data, critical for educational deployments.
 import numpy as np
 from typing import List, Dict, Tuple, Optional, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import copy
 
@@ -136,18 +136,19 @@ class FederatedMAML:
                 nn.Linear(self.hidden_dim, self.output_dim),
             )
         
-        self.meta_optimizer = optim.Adam(self.model.parameters(), lr=self.meta_lr)
+        self.meta_optimizer = optim.Adam(self.model.parameters(), lr=self.meta_lr, weight_decay=1e-5)
         self.loss_fn = nn.CrossEntropyLoss()
     
     def _init_numpy_model(self):
         """Initialize NumPy-based model"""
         # Simple 2-layer MLP weights
+        rng = np.random.default_rng(seed=42)
         self.weights = {
-            'W1': np.random.randn(self.input_dim, self.hidden_dim) * 0.1,
+            'W1': rng.standard_normal((self.input_dim, self.hidden_dim)) * 0.1,
             'b1': np.zeros(self.hidden_dim),
-            'W2': np.random.randn(self.hidden_dim, self.hidden_dim) * 0.1,
+            'W2': rng.standard_normal((self.hidden_dim, self.hidden_dim)) * 0.1,
             'b2': np.zeros(self.hidden_dim),
-            'W3': np.random.randn(self.hidden_dim, self.output_dim) * 0.1,
+            'W3': rng.standard_normal((self.hidden_dim, self.output_dim)) * 0.1,
             'b3': np.zeros(self.output_dim),
         }
     
@@ -259,9 +260,9 @@ class FederatedMAML:
             pre_loss = self.loss_fn(pre_logits, query_y).item()
         
         # Inner loop adaptation
-        inner_optimizer = optim.SGD(adapted_model.parameters(), lr=self.inner_lr)
+        inner_optimizer = optim.SGD(adapted_model.parameters(), lr=self.inner_lr, momentum=0.9, weight_decay=1e-5)
         
-        for step in range(num_steps):
+        for _ in range(num_steps):
             inner_optimizer.zero_grad()
             logits = adapted_model(support_x)
             loss = self.loss_fn(logits, support_y)
@@ -296,7 +297,7 @@ class FederatedMAML:
         pre_loss = self._cross_entropy_loss(pre_logits, task.query_y)
         
         # Inner loop adaptation
-        for step in range(num_steps):
+        for _ in range(num_steps):
             grads = self._compute_gradients_numpy(
                 task.support_x, task.support_y, adapted_weights
             )
@@ -355,7 +356,7 @@ class FederatedMAML:
             query_y = torch.LongTensor(task.query_y)
             
             # Inner loop
-            for step in range(self.inner_steps):
+            for _ in range(self.inner_steps):
                 # Manual forward with adapted params
                 logits = self._forward_with_params(support_x, adapted_params)
                 loss = self.loss_fn(logits, support_y)
@@ -417,7 +418,7 @@ class FederatedMAML:
             # Adapt to task
             adapted_weights = {k: v.copy() for k, v in self.weights.items()}
             
-            for step in range(self.inner_steps):
+            for _ in range(self.inner_steps):
                 grads = self._compute_gradients_numpy(
                     task.support_x, task.support_y, adapted_weights
                 )
@@ -513,11 +514,14 @@ class PerFedAvg:
         self.global_lr = global_lr
         self.local_epochs = local_epochs
         
+        # Random generator for reproducibility
+        self._rng = np.random.default_rng(seed=42)
+        
         # Shared base model weights
         self.base_weights = {
-            'W1': np.random.randn(input_dim, hidden_dim) * 0.1,
+            'W1': self._rng.standard_normal((input_dim, hidden_dim)) * 0.1,
             'b1': np.zeros(hidden_dim),
-            'W2': np.random.randn(hidden_dim, hidden_dim) * 0.1,
+            'W2': self._rng.standard_normal((hidden_dim, hidden_dim)) * 0.1,
             'b2': np.zeros(hidden_dim),
         }
         
@@ -533,7 +537,7 @@ class PerFedAvg:
         """Get or initialize personalized head for tenant"""
         if tenant_id not in self.tenant_heads:
             self.tenant_heads[tenant_id] = {
-                'W3': np.random.randn(self.hidden_dim, self.output_dim) * 0.1,
+                'W3': self._rng.standard_normal((self.hidden_dim, self.output_dim)) * 0.1,
                 'b3': np.zeros(self.output_dim),
             }
         return self.tenant_heads[tenant_id]
@@ -631,7 +635,7 @@ class PerFedAvg:
         local_base = {k: v.copy() for k, v in self.base_weights.items()}
         
         # Local training
-        for epoch in range(self.local_epochs):
+        for _ in range(self.local_epochs):
             base_grads, head_grads = self._compute_gradients(
                 x, y, local_base, head_weights
             )
@@ -756,7 +760,7 @@ class TenantAdaptation:
         """
         self.tenant_profiles[tenant_id] = {
             "profile": profile,
-            "registered_at": datetime.utcnow().isoformat(),
+            "registered_at": datetime.now(timezone.utc).isoformat(),
             "adaptations": 0,
         }
         logger.info(f"Registered tenant: {tenant_id}")
@@ -868,7 +872,7 @@ class TenantAdaptation:
         # Record adaptation
         self.adaptation_history.append({
             "tenant_id": tenant_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "strategy": adaptation_strategy,
             "similar_tenants": [s[0] for s in similar],
         })
@@ -885,8 +889,8 @@ class TenantAdaptation:
         return {
             "total_tenants": len(self.tenant_profiles),
             "total_adaptations": len(self.adaptation_history),
-            "strategies_used": list(set(
+            "strategies_used": list({
                 h["strategy"] for h in self.adaptation_history
-            )),
+            }),
             "recent_adaptations": self.adaptation_history[-10:],
         }

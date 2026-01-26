@@ -18,7 +18,7 @@ import hashlib
 import hmac
 import secrets
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class SecretShare:
     share_values: np.ndarray
     original_shape: Tuple[int, ...]
     verification_hash: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class SecureAggregator:
@@ -444,7 +444,8 @@ class DifferentialPrivacyAggregator:
         epsilon: float = 1.0,
         delta: float = 1e-5,
         sensitivity: float = 1.0,
-        mechanism: str = "gaussian"
+        mechanism: str = "gaussian",
+        seed: int = 42
     ):
         """
         Args:
@@ -452,11 +453,14 @@ class DifferentialPrivacyAggregator:
             delta: Failure probability
             sensitivity: L2 sensitivity (max gradient norm change)
             mechanism: "gaussian" or "laplace"
+            seed: Random seed for reproducibility
         """
         self.epsilon = epsilon
         self.delta = delta
         self.sensitivity = sensitivity
         self.mechanism = mechanism
+        self.seed = seed
+        self._rng = np.random.default_rng(seed=seed)
         
         # Compute noise scale
         if mechanism == "gaussian":
@@ -496,11 +500,11 @@ class DifferentialPrivacyAggregator:
         if gradient_norm > self.sensitivity:
             gradient = gradient * (self.sensitivity / gradient_norm)
         
-        # Generate noise
+        # Generate noise using modern random generator
         if self.mechanism == "gaussian":
-            noise = np.random.normal(0, self.noise_scale, gradient.shape)
+            noise = self._rng.normal(0, self.noise_scale, gradient.shape)
         else:
-            noise = np.random.laplace(0, self.noise_scale, gradient.shape)
+            noise = self._rng.laplace(0, self.noise_scale, gradient.shape)
         
         # Track budget
         self.budget_consumed += self.epsilon
@@ -511,7 +515,6 @@ class DifferentialPrivacyAggregator:
     def aggregate_with_dp(
         self,
         gradients: List[np.ndarray],
-        num_clients: int
     ) -> np.ndarray:
         """
         Aggregate gradients with differential privacy
@@ -520,7 +523,6 @@ class DifferentialPrivacyAggregator:
         
         Args:
             gradients: List of client gradients
-            num_clients: Total number of clients (for noise scaling)
         
         Returns:
             DP-aggregated gradient
@@ -543,10 +545,10 @@ class DifferentialPrivacyAggregator:
         if self.mechanism == "gaussian":
             import math
             noise_scale = aggregate_sensitivity * math.sqrt(2 * math.log(1.25 / self.delta)) / self.epsilon
-            noise = np.random.normal(0, noise_scale, aggregated.shape)
+            noise = self._rng.normal(0, noise_scale, aggregated.shape)
         else:
             noise_scale = aggregate_sensitivity / self.epsilon
-            noise = np.random.laplace(0, noise_scale, aggregated.shape)
+            noise = self._rng.laplace(0, noise_scale, aggregated.shape)
         
         # Average
         result = (aggregated + noise) / len(gradients)

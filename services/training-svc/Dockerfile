@@ -15,20 +15,16 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Download spaCy model (for NLP tasks)
-RUN python -m spacy download en_core_web_sm || true
+# Install Python dependencies, download spaCy model, and create directories
+RUN pip install --no-cache-dir -r requirements.txt \
+    && (python -m spacy download en_core_web_sm || true)
 
 # Copy application code
 COPY . .
 
-# Create directories for models
-RUN mkdir -p models/learners models/checkpoints
-
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create directories for models and non-root user
+RUN mkdir -p models/learners models/checkpoints \
+    && useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Health check

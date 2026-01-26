@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Dict, Tuple, Optional, Any
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 import numpy as np
 import logging
 
@@ -522,11 +522,11 @@ class MultiAgentCoordinator:
         
         # Generate reasoning
         reasoning = self._generate_reasoning(
-            task, primary_agent, support_agents, context
+            primary_agent, support_agents, context
         )
         
         assignment = AgentAssignment(
-            task_id=f"task_{datetime.utcnow().timestamp():.0f}",
+            task_id=f"task_{datetime.now(timezone.utc).timestamp():.0f}",
             primary_agent=primary_agent,
             support_agents=support_agents,
             confidence=confidence,
@@ -535,7 +535,7 @@ class MultiAgentCoordinator:
         
         # Track history
         self.coordination_history.append({
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "task": task,
             "assignment": assignment,
         })
@@ -643,7 +643,6 @@ class MultiAgentCoordinator:
     
     def _generate_reasoning(
         self,
-        task: str,
         primary_agent: str,
         support_agents: List[str],
         context: Dict
