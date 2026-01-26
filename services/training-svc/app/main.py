@@ -56,6 +56,12 @@ try:
 except ImportError:
     KnowledgeTracingEnsemble = None
 
+# Import LoRA Fine-Tuner
+try:
+    from app.pipelines.lora_fine_tuning import LoRAFineTuner
+except ImportError:
+    LoRAFineTuner = None
+
 # Import API routes
 try:
     from app.api.routes import router as training_api_router
@@ -153,6 +159,26 @@ async def lifespan(_app: FastAPI):
     except Exception as e:
         logger.warning(f"Brain cloner initialization failed: {e}")
         _app.state.brain_cloner = None
+    
+    # Initialize LoRA Fine-Tuner for personalized LLM responses
+    if LoRAFineTuner:
+        try:
+            lora_base_model = os.getenv("LORA_BASE_MODEL", "microsoft/phi-2")
+            lora_device = os.getenv("LORA_DEVICE", "cpu")
+            lora_r = int(os.getenv("LORA_R", "8"))
+            lora_alpha = int(os.getenv("LORA_ALPHA", "16"))
+            _app.state.lora_fine_tuner = LoRAFineTuner(
+                base_model_name=lora_base_model,
+                device=lora_device,
+                lora_r=lora_r,
+                lora_alpha=lora_alpha,
+            )
+            logger.info(f"LoRA Fine-Tuner initialized with {lora_base_model} on {lora_device}")
+        except Exception as e:
+            logger.warning(f"LoRA Fine-Tuner initialization failed: {e}")
+            _app.state.lora_fine_tuner = None
+    else:
+        _app.state.lora_fine_tuner = None
     
     yield
     

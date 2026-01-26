@@ -126,6 +126,64 @@ class OptimalSkillRequest(BaseModel):
 
 
 # ============================================================================
+# LoRA Fine-Tuning Request/Response Models
+# ============================================================================
+
+class LoRALearnerProfileRequest(BaseModel):
+    """Learner profile for LoRA personalization"""
+    learner_id: str = Field(..., description="Unique learner identifier")
+    grade_level: int = Field(..., ge=1, le=12, description="Grade level 1-12")
+    reading_level: str = Field("at", description="below, at, or above grade level")
+    learning_style: str = Field("visual", description="visual, verbal, or kinesthetic")
+    iep_goals: List[str] = Field(default_factory=list, description="IEP learning goals")
+    strengths: List[str] = Field(default_factory=list, description="Learning strengths")
+    challenges: List[str] = Field(default_factory=list, description="Learning challenges")
+    preferred_language: str = Field("en", description="ISO language code")
+    accessibility_needs: List[str] = Field(default_factory=list, description="Accessibility needs")
+
+
+class LoRATrainingExample(BaseModel):
+    """Single training example for LoRA fine-tuning"""
+    prompt: str = Field(..., description="Input prompt/question")
+    response: str = Field(..., description="Ideal response")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata")
+
+
+class LoRAFineTuneRequest(BaseModel):
+    """Request to fine-tune LoRA adapter for a learner"""
+    learner_id: str = Field(..., description="Learner identifier")
+    profile: LoRALearnerProfileRequest
+    examples: List[LoRATrainingExample] = Field(..., min_length=1, description="Training examples")
+    num_epochs: int = Field(3, ge=1, le=10, description="Training epochs")
+    batch_size: int = Field(4, ge=1, le=16, description="Batch size")
+    learning_rate: float = Field(3e-4, ge=1e-5, le=1e-2, description="Learning rate")
+
+
+class LoRAGenerateRequest(BaseModel):
+    """Request to generate personalized response"""
+    learner_id: str = Field(..., description="Learner identifier")
+    prompt: str = Field(..., description="Input prompt")
+    max_length: int = Field(200, ge=50, le=1000, description="Max tokens to generate")
+    temperature: float = Field(0.7, ge=0.0, le=1.5, description="Sampling temperature")
+    top_p: float = Field(0.9, ge=0.0, le=1.0, description="Nucleus sampling threshold")
+    include_context: bool = Field(True, description="Include personalized system prompt")
+
+
+class LoRAGenerateWithContextRequest(BaseModel):
+    """Request to generate with additional context"""
+    learner_id: str = Field(..., description="Learner identifier")
+    prompt: str = Field(..., description="User question")
+    context: str = Field(..., description="Additional context (lesson content, etc.)")
+    max_length: int = Field(300, ge=50, le=1000, description="Max tokens to generate")
+
+
+class LoRACompareRequest(BaseModel):
+    """Request to compare responses from multiple adapters"""
+    learner_ids: List[str] = Field(..., description="Learner IDs to compare")
+    prompt: str = Field(..., description="Input prompt")
+
+
+# ============================================================================
 # Model Accessors
 # ============================================================================
 
@@ -167,6 +225,14 @@ def get_pfa_model(request: Request):
     if pfa is None:
         raise HTTPException(status_code=503, detail="PFA model not initialized")
     return pfa
+
+
+def get_lora_fine_tuner(request: Request):
+    """Get LoRA fine-tuner from app state"""
+    tuner = getattr(request.app.state, 'lora_fine_tuner', None)
+    if tuner is None:
+        raise HTTPException(status_code=503, detail="LoRA fine-tuner not initialized")
+    return tuner
 
 
 # ============================================================================
@@ -962,4 +1028,279 @@ async def pfa_weakest_skills(request: Request, learner_id: str, n: int = 5):
         raise
     except Exception as e:
         logger.exception(f"PFA weakest skills failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# LoRA Fine-Tuning Routes
+# ============================================================================
+
+@router.post("/lora/fine-tune")
+async def lora_fine_tune(
+    request: Request,
+    req: LoRAFineTuneRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Fine-tune a LoRA adapter for a learner
+    
+    This creates a personalized LLM adapter that generates responses
+    tailored to the learner's profile, grade level, and learning style.
+    """
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        # Convert request to pipeline types
+        from app.pipelines.lora_fine_tuning import LearnerProfile, FineTuningExample
+        
+        profile = LearnerProfile(
+            learner_id=req.profile.learner_id,
+            grade_level=req.profile.grade_level,
+            reading_level=req.profile.reading_level,
+            learning_style=req.profile.learning_style,
+            iep_goals=req.profile.iep_goals,
+            strengths=req.profile.strengths,
+            challenges=req.profile.challenges,
+            preferred_language=req.profile.preferred_language,
+            accessibility_needs=req.profile.accessibility_needs
+        )
+        
+        examples = [
+            FineTuningExample(
+                prompt=ex.prompt,
+                response=ex.response,
+                metadata=ex.metadata
+            )
+            for ex in req.examples
+        ]
+        
+        # Run fine-tuning
+        metrics = tuner.fine_tune(
+            learner_id=req.learner_id,
+            profile=profile,
+            examples=examples,
+            num_epochs=req.num_epochs,
+            batch_size=req.batch_size,
+            learning_rate=req.learning_rate
+        )
+        
+        return {
+            "status": "success",
+            "learner_id": req.learner_id,
+            "metrics": {
+                "train_loss": metrics.train_loss,
+                "epochs": metrics.epochs,
+                "examples_count": metrics.examples_count,
+                "trainable_params": metrics.trainable_params,
+                "total_params": metrics.total_params,
+                "trainable_percentage": metrics.trainable_percentage,
+                "training_time_seconds": metrics.training_time_seconds
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA fine-tuning failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lora/generate")
+async def lora_generate(request: Request, req: LoRAGenerateRequest):
+    """
+    Generate a personalized response for a learner
+    
+    Uses the learner's LoRA adapter if available, otherwise falls back to base model.
+    """
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        response = tuner.generate(
+            learner_id=req.learner_id,
+            prompt=req.prompt,
+            max_length=req.max_length,
+            temperature=req.temperature,
+            top_p=req.top_p,
+            include_system_prompt=req.include_context
+        )
+        
+        return {
+            "learner_id": req.learner_id,
+            "prompt": req.prompt,
+            "response": response,
+            "has_personalized_adapter": req.learner_id in tuner.learner_adapters
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lora/generate-with-context")
+async def lora_generate_with_context(request: Request, req: LoRAGenerateWithContextRequest):
+    """
+    Generate a response with additional context (e.g., lesson content)
+    
+    Useful for homework help where the response should reference specific lesson material.
+    """
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        response = tuner.generate_with_context(
+            learner_id=req.learner_id,
+            prompt=req.prompt,
+            context=req.context,
+            max_length=req.max_length
+        )
+        
+        return {
+            "learner_id": req.learner_id,
+            "prompt": req.prompt,
+            "response": response
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA context generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lora/compare")
+async def lora_compare_responses(request: Request, req: LoRACompareRequest):
+    """
+    Compare responses from different learner adapters
+    
+    Useful for debugging and evaluating personalization quality.
+    """
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        responses = tuner.compare_responses(
+            learner_ids=req.learner_ids,
+            prompt=req.prompt
+        )
+        
+        return {
+            "prompt": req.prompt,
+            "responses": responses
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA comparison failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lora/adapter/{learner_id}/load")
+async def lora_load_adapter(
+    request: Request,
+    learner_id: str,
+    adapter_path: str
+):
+    """Load a previously saved LoRA adapter"""
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        success = tuner.load_learner_adapter(learner_id, adapter_path)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Adapter not found or failed to load")
+        
+        return {
+            "status": "success",
+            "learner_id": learner_id,
+            "message": f"Adapter loaded from {adapter_path}"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA adapter load failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/lora/adapter/{learner_id}")
+async def lora_unload_adapter(request: Request, learner_id: str):
+    """Unload a learner adapter to free memory"""
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        success = tuner.unload_learner_adapter(learner_id)
+        
+        return {
+            "status": "success" if success else "not_found",
+            "learner_id": learner_id,
+            "unloaded": success
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA adapter unload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/lora/adapter/{learner_id}")
+async def lora_get_adapter_info(request: Request, learner_id: str):
+    """Get information about a learner's LoRA adapter"""
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        info = tuner.get_adapter_info(learner_id)
+        
+        if info is None:
+            raise HTTPException(status_code=404, detail="Adapter not found")
+        
+        return info
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA adapter info failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/lora/adapters")
+async def lora_list_adapters(request: Request):
+    """List all currently loaded LoRA adapters"""
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        adapters = tuner.list_loaded_adapters()
+        
+        return {
+            "count": len(adapters),
+            "adapters": adapters,
+            "base_model": tuner.base_model_name
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA list adapters failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/lora/adapters/save-all")
+async def lora_save_all_adapters(request: Request, output_dir: str = "models/lora_adapters"):
+    """Save all loaded adapters to disk"""
+    try:
+        tuner = get_lora_fine_tuner(request)
+        
+        tuner.save_all_adapters(output_dir)
+        
+        return {
+            "status": "success",
+            "output_dir": output_dir,
+            "adapters_saved": tuner.list_loaded_adapters()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"LoRA save all failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
