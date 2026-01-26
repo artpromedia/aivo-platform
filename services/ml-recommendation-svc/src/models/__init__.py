@@ -32,6 +32,15 @@ from src.models.risk_predictor import (
     RiskThresholds,
 )
 
+from src.models.causal_inference import (
+    CausalGraph,
+    CausalNode,
+    CausalEffect,
+    PropensityScoreMatching,
+    DoubleMachineLearning,
+    InterventionEffectAnalyzer,
+)
+
 __all__ = [
     # Schema models
     "ContentRecommendation",
@@ -57,4 +66,11 @@ __all__ = [
     "StudentFeatures",
     "RiskPrediction",
     "RiskThresholds",
+    # Causal Inference
+    "CausalGraph",
+    "CausalNode",
+    "CausalEffect",
+    "PropensityScoreMatching",
+    "DoubleMachineLearning",
+    "InterventionEffectAnalyzer",
 ]

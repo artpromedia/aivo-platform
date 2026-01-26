@@ -17,6 +17,21 @@ from .curriculum_embeddings import (
     SearchResult,
 )
 
+# Agentic AI Models
+from .hierarchical_planner import (
+    HierarchicalPlanner,
+    Task,
+    TaskStatus,
+    TaskPriority,
+    LearningPlan,
+)
+from .agent_coordination_gnn import (
+    MultiAgentCoordinator,
+    AgentInteractionGraph,
+    AgentCapability,
+    AgentAssignment,
+)
+
 __all__ = [
     # BKT
     "BayesianKnowledgeTracing",
@@ -45,4 +60,15 @@ __all__ = [
     "Content",
     "Standard",
     "SearchResult",
+    # Agentic AI - Hierarchical Planner
+    "HierarchicalPlanner",
+    "Task",
+    "TaskStatus",
+    "TaskPriority",
+    "LearningPlan",
+    # Agentic AI - Multi-Agent Coordination
+    "MultiAgentCoordinator",
+    "AgentInteractionGraph",
+    "AgentCapability",
+    "AgentAssignment",
 ]
