@@ -598,3 +598,440 @@ class ReadinessResponse(BaseModel):
         ...,
         description="Whether ML models are loaded",
     )
+
+
+# =============================================================================
+# Batch Generation Schemas
+# =============================================================================
+
+
+class PassageInput(BaseModel):
+    """Input for a single passage in batch generation."""
+
+    passage_id: str = Field(
+        ...,
+        description="Unique identifier for this passage",
+    )
+    text: str = Field(
+        ...,
+        min_length=50,
+        max_length=5000,
+        description="The passage text",
+    )
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Additional metadata for this passage",
+    )
+    grade_level: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=12,
+        description="Target grade level for this passage",
+    )
+    subject: Optional[str] = Field(
+        default=None,
+        description="Subject area for this passage",
+    )
+
+
+class BatchGenerateRequest(BaseModel):
+    """Request model for batch question generation."""
+
+    passages: List[PassageInput] = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="Multiple passages to generate questions from",
+    )
+    questions_per_passage: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Number of questions to generate per passage",
+    )
+    question_types: List[QuestionType] = Field(
+        default=[QuestionType.FACTUAL, QuestionType.MCQ],
+        description="Types of questions to generate",
+    )
+    include_distractors: bool = Field(
+        default=True,
+        description="Include distractors for MCQ questions",
+    )
+    difficulty_target: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="Target difficulty level",
+    )
+
+
+class PassageQuestions(BaseModel):
+    """Questions generated for a single passage."""
+
+    passage_id: str = Field(..., description="ID of the source passage")
+    questions: List[GeneratedQuestion] = Field(
+        ...,
+        description="Generated questions for this passage",
+    )
+    success: bool = Field(
+        default=True,
+        description="Whether generation succeeded",
+    )
+    error: Optional[str] = Field(
+        default=None,
+        description="Error message if generation failed",
+    )
+
+
+class BatchGenerateResponse(BaseModel):
+    """Response model for batch question generation."""
+
+    request_id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        description="Unique request identifier",
+    )
+    results: List[PassageQuestions] = Field(
+        ...,
+        description="Results for each passage",
+    )
+    total_questions: int = Field(
+        ...,
+        ge=0,
+        description="Total questions generated",
+    )
+    successful_passages: int = Field(
+        ...,
+        ge=0,
+        description="Number of passages successfully processed",
+    )
+    failed_passages: int = Field(
+        ...,
+        ge=0,
+        description="Number of passages that failed",
+    )
+    generation_time_ms: int = Field(
+        ...,
+        ge=0,
+        description="Total generation time in milliseconds",
+    )
+
+
+# =============================================================================
+# Model Status Schemas
+# =============================================================================
+
+
+class ModelStatus(BaseModel):
+    """Status of a single ML model."""
+
+    loaded: bool = Field(
+        ...,
+        description="Whether the model is loaded",
+    )
+    model_name: str = Field(
+        ...,
+        description="Name/identifier of the model",
+    )
+    device: str = Field(
+        ...,
+        description="Device model is running on (cpu/cuda)",
+    )
+    memory_mb: float = Field(
+        ...,
+        ge=0.0,
+        description="Memory usage in MB",
+    )
+    last_inference_ms: Optional[int] = Field(
+        default=None,
+        description="Last inference time in milliseconds",
+    )
+    model_version: Optional[str] = Field(
+        default=None,
+        description="Model version if available",
+    )
+
+
+class ModelsStatusResponse(BaseModel):
+    """Response model for models status endpoint."""
+
+    question_generator: ModelStatus = Field(
+        ...,
+        description="Question generator model status",
+    )
+    distractor_generator: ModelStatus = Field(
+        ...,
+        description="Distractor generator model status",
+    )
+    bloom_classifier: ModelStatus = Field(
+        ...,
+        description="Bloom's taxonomy classifier status",
+    )
+    difficulty_estimator: ModelStatus = Field(
+        ...,
+        description="Difficulty estimator status",
+    )
+    cloze_generator: Optional[ModelStatus] = Field(
+        default=None,
+        description="Cloze generator status",
+    )
+    total_memory_mb: float = Field(
+        ...,
+        ge=0.0,
+        description="Total memory usage",
+    )
+
+
+# =============================================================================
+# Curriculum Generation Schemas
+# =============================================================================
+
+
+class CurriculumGenerateRequest(BaseModel):
+    """Request model for generating questions from curriculum."""
+
+    curriculum_id: str = Field(
+        ...,
+        description="Reference to curriculum in curriculum-py-svc",
+    )
+    unit_id: Optional[str] = Field(
+        default=None,
+        description="Specific unit to generate from",
+    )
+    learning_objectives: List[str] = Field(
+        ...,
+        min_length=1,
+        description="Learning objectives to cover",
+    )
+    question_distribution: Dict[str, int] = Field(
+        ...,
+        description="Distribution by Bloom's level (e.g., {'remember': 3, 'apply': 5})",
+    )
+    grade_level: int = Field(
+        ...,
+        ge=1,
+        le=12,
+        description="Target grade level",
+    )
+    subject: str = Field(
+        ...,
+        description="Subject area",
+    )
+    include_standards_alignment: bool = Field(
+        default=True,
+        description="Include curriculum standards alignment",
+    )
+
+
+class CurriculumGenerateResponse(BaseModel):
+    """Response model for curriculum-based generation."""
+
+    request_id: str = Field(
+        default_factory=lambda: str(uuid4()),
+    )
+    curriculum_id: str = Field(
+        ...,
+        description="Curriculum ID used",
+    )
+    questions: List[GeneratedQuestion] = Field(
+        ...,
+        description="Generated questions",
+    )
+    bloom_distribution: Dict[str, int] = Field(
+        ...,
+        description="Actual distribution by Bloom's level",
+    )
+    standards_covered: List[str] = Field(
+        default=[],
+        description="Curriculum standards covered",
+    )
+    generation_time_ms: int = Field(...)
+
+
+# =============================================================================
+# Async Job Schemas
+# =============================================================================
+
+
+class JobStatus(str, Enum):
+    """Status of a background job."""
+
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class AsyncGenerateRequest(BaseModel):
+    """Request model for async batch generation."""
+
+    passages: List[PassageInput] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Multiple passages to generate questions from",
+    )
+    questions_per_passage: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+        description="Number of questions to generate per passage",
+    )
+    question_types: List[QuestionType] = Field(
+        default=[QuestionType.FACTUAL, QuestionType.MCQ],
+        description="Types of questions to generate",
+    )
+    webhook_url: Optional[str] = Field(
+        default=None,
+        description="URL to call when job completes",
+    )
+    priority: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Job priority (1=lowest, 10=highest)",
+    )
+
+
+class AsyncGenerateResponse(BaseModel):
+    """Response model for async generation request."""
+
+    job_id: str = Field(
+        ...,
+        description="Unique job identifier",
+    )
+    status: JobStatus = Field(
+        ...,
+        description="Initial job status",
+    )
+    estimated_completion_seconds: Optional[int] = Field(
+        default=None,
+        description="Estimated time to completion",
+    )
+    status_url: str = Field(
+        ...,
+        description="URL to check job status",
+    )
+
+
+class JobStatusResponse(BaseModel):
+    """Response model for job status check."""
+
+    job_id: str = Field(...)
+    status: JobStatus = Field(...)
+    progress: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Progress percentage",
+    )
+    created_at: datetime = Field(...)
+    started_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    passages_processed: int = Field(default=0)
+    passages_total: int = Field(default=0)
+    error: Optional[str] = Field(default=None)
+    result_url: Optional[str] = Field(
+        default=None,
+        description="URL to fetch results when completed",
+    )
+
+
+class JobResultResponse(BaseModel):
+    """Response model for completed job results."""
+
+    job_id: str = Field(...)
+    status: JobStatus = Field(...)
+    results: Optional[BatchGenerateResponse] = Field(
+        default=None,
+        description="Generation results if completed",
+    )
+    error: Optional[str] = Field(
+        default=None,
+        description="Error message if failed",
+    )
+
+
+# =============================================================================
+# Curriculum Alignment Schemas
+# =============================================================================
+
+
+class StandardAlignmentItem(BaseModel):
+    """A single curriculum standard alignment."""
+
+    standard_id: str = Field(
+        ...,
+        description="Curriculum standard identifier",
+    )
+    description: str = Field(
+        ...,
+        description="Standard description",
+    )
+    confidence: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Alignment confidence score",
+    )
+    grade_level: Optional[int] = Field(
+        default=None,
+        description="Grade level for this standard",
+    )
+
+
+class AlignToStandardsRequest(BaseModel):
+    """Request model for aligning questions to standards."""
+
+    questions: List[Dict[str, Any]] = Field(
+        ...,
+        description="Questions to align (with question_text and answer)",
+    )
+    grade: int = Field(
+        ...,
+        ge=1,
+        le=12,
+        description="Target grade level",
+    )
+    subject: str = Field(
+        ...,
+        description="Subject area",
+    )
+    standard_type: str = Field(
+        default="common_core",
+        description="Type of standards (common_core, state, custom)",
+    )
+
+
+class AlignedQuestionItem(BaseModel):
+    """A question with its curriculum alignments."""
+
+    question_id: str = Field(...)
+    question_text: str = Field(...)
+    aligned_standards: List[StandardAlignmentItem] = Field(
+        default=[],
+        description="Aligned curriculum standards",
+    )
+    primary_standard: Optional[StandardAlignmentItem] = Field(
+        default=None,
+        description="Best matching standard",
+    )
+    alignment_confidence: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Overall alignment confidence",
+    )
+
+
+class AlignToStandardsResponse(BaseModel):
+    """Response model for standards alignment."""
+
+    request_id: str = Field(default_factory=lambda: str(uuid4()))
+    aligned_questions: List[AlignedQuestionItem] = Field(...)
+    standards_used: int = Field(
+        ...,
+        ge=0,
+        description="Number of standards considered",
+    )
+    alignment_time_ms: int = Field(...)
