@@ -1,0 +1,20 @@
+# Question Generation Service Dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Transformers & NLP
+transformers>=4.35.0
+torch>=2.1.0
+spacy>=3.7.0
+nltk>=3.8.0
+sense2vec>=2.0.0
+
+# Text Processing
+sentencepiece>=0.1.99
+regex>=2023.10.0
+
+# Utilities
+numpy>=1.24.0
+structlog>=23.2.0
+httpx>=0.25.0

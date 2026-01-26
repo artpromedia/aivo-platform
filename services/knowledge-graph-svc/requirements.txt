@@ -1,0 +1,24 @@
+# Knowledge Graph Service Dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# Graph Database
+neo4j>=5.14.0
+py2neo>=2021.2.0
+
+# Knowledge Extraction
+spacy>=3.7.0
+transformers>=4.35.0
+torch>=2.1.0
+sentence-transformers>=2.2.0
+
+# Graph Algorithms
+networkx>=3.2.0
+node2vec>=0.4.0
+scipy>=1.11.0
+
+# Utilities
+numpy>=1.24.0
+structlog>=23.2.0
+httpx>=0.25.0

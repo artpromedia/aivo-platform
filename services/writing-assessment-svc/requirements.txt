@@ -1,0 +1,26 @@
+# Writing Assessment Service Dependencies
+# Core
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+
+# NLP & Transformers
+transformers>=4.35.0
+torch>=2.1.0
+sentence-transformers>=2.2.0
+spacy>=3.7.0
+
+# Grammar & Language
+language-tool-python>=2.7.0
+textstat>=0.7.3
+nltk>=3.8.0
+
+# Text Processing
+beautifulsoup4>=4.12.0
+regex>=2023.10.0
+
+# Utilities
+numpy>=1.24.0
+scikit-learn>=1.3.0
+structlog>=23.2.0
+httpx>=0.25.0

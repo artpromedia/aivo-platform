@@ -1,0 +1,28 @@
+# Vision Analysis Service Dependencies
+# Core
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+
+# Computer Vision
+opencv-python>=4.8.0
+torch>=2.1.0
+torchvision>=0.16.0
+pillow>=10.0.0
+
+# OCR & Handwriting
+easyocr>=1.7.0
+pytesseract>=0.3.10
+
+# Math Equation Recognition
+pix2tex>=0.1.0
+
+# Face/Gaze Detection (for engagement)
+mediapipe>=0.10.0
+dlib>=19.24.0
+
+# Utilities
+numpy>=1.24.0
+structlog>=23.2.0
+httpx>=0.25.0
