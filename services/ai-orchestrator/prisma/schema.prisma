@@ -1,0 +1,1083 @@
+// AI Orchestrator Prisma Schema
+// Converted from SQL migrations 0001-0010
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, vector]
+}
+
+// =============================================================================
+// AI Agent Configuration
+// =============================================================================
+
+model AiAgentConfig {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agentType           String   @map("agent_type")
+  modelName           String   @map("model_name")
+  provider            String
+  promptTemplate      String   @map("prompt_template")
+  hyperparametersJson Json     @default("{}") @map("hyperparameters_json")
+  version             String
+  rolloutPercentage   Int      @default(100) @map("rollout_percentage")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([agentType, isActive(sort: Desc), rolloutPercentage(sort: Desc)])
+  @@map("ai_agent_configs")
+}
+
+// =============================================================================
+// AI Call Logs
+// =============================================================================
+
+model AiCallLog {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String?   @map("tenant_id") @db.Uuid
+  agentType         String    @map("agent_type")
+  modelName         String    @map("model_name")
+  provider          String
+  version           String
+  requestId         String    @map("request_id")
+  startedAt         DateTime  @map("started_at") @db.Timestamptz
+  completedAt       DateTime  @map("completed_at") @db.Timestamptz
+  latencyMs         Int       @map("latency_ms")
+  tokensPrompt      Int       @default(0) @map("tokens_prompt")
+  tokensCompletion  Int       @default(0) @map("tokens_completion")
+  estimatedCostUsd  Decimal   @default(0) @map("estimated_cost_usd") @db.Decimal(12, 6)
+  safetyStatus      String    @map("safety_status") // OK, BLOCKED, NEEDS_REVIEW
+  status            String    // SUCCESS, ERROR
+  errorCode         String?   @map("error_code")
+  errorMessage      String?   @map("error_message")
+  userId            String?   @map("user_id") @db.Uuid
+  learnerId         String?   @map("learner_id") @db.Uuid
+  sessionId         String?   @map("session_id") @db.Uuid
+  useCase           String?   @map("use_case")
+  promptSummary     String?   @map("prompt_summary")
+  responseSummary   String?   @map("response_summary")
+  safetyLabel       String?   @default("SAFE") @map("safety_label")
+  safetyMetadataJson Json?    @default("{}") @map("safety_metadata_json")
+  costCentsEstimate Int?      @default(0) @map("cost_cents_estimate")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, agentType])
+  @@index([createdAt(sort: Desc)])
+  @@map("ai_call_logs")
+}
+
+// =============================================================================
+// AI Incidents
+// =============================================================================
+
+model AiIncident {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  severity         String    @default("MEDIUM") // INFO, LOW, MEDIUM, HIGH, CRITICAL
+  category         String    // SAFETY, PRIVACY, COMPLIANCE, PERFORMANCE, COST
+  status           String    @default("OPEN") // OPEN, INVESTIGATING, RESOLVED, DISMISSED
+  title            String
+  description      String?
+  firstSeenAt      DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz
+  lastSeenAt       DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz
+  occurrenceCount  Int       @default(1) @map("occurrence_count")
+  createdBySystem  Boolean   @default(true) @map("created_by_system")
+  createdByUserId  String?   @map("created_by_user_id") @db.Uuid
+  assignedToUserId String?   @map("assigned_to_user_id") @db.Uuid
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz
+  resolvedByUserId String?   @map("resolved_by_user_id") @db.Uuid
+  resolutionNotes  String?   @map("resolution_notes")
+  metadataJson     Json      @default("{}") @map("metadata_json")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, status])
+  @@map("ai_incidents")
+}
+
+// =============================================================================
+// AI Usage Tracking
+// =============================================================================
+
+model AiUsage {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  date               DateTime @db.Date
+  provider           String
+  model              String
+  agentType          String   @map("agent_type")
+  tokensInput        BigInt   @default(0) @map("tokens_input")
+  tokensOutput       BigInt   @default(0) @map("tokens_output")
+  estimatedCostCents Int      @default(0) @map("estimated_cost_cents")
+  callCount          Int      @default(0) @map("call_count")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, date, provider, model, agentType], map: "uq_ai_usage_daily_aggregate")
+  @@index([tenantId, date(sort: Desc)])
+  @@index([date, provider])
+  @@index([tenantId, agentType, date(sort: Desc)])
+  @@map("ai_usage")
+}
+
+// =============================================================================
+// Learner Skill Mastery (Virtual Brain)
+// =============================================================================
+
+model LearnerSkillMastery {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  learnerId      String    @map("learner_id") @db.Uuid
+  skillCode      String    @map("skill_code")
+  subject        String
+  masteryLevel   Decimal   @default(0.0) @map("mastery_level") @db.Decimal(5, 4)
+  confidence     Decimal   @default(0.0) @db.Decimal(5, 4)
+  attemptCount   Int       @default(0) @map("attempt_count")
+  correctCount   Int       @default(0) @map("correct_count")
+  lastActivityAt DateTime? @map("last_activity_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, learnerId, skillCode], map: "uq_learner_skill_mastery")
+  @@index([tenantId, learnerId])
+  @@index([tenantId, learnerId, subject])
+  @@map("learner_skill_mastery")
+}
+
+// =============================================================================
+// Learner Activity Events
+// =============================================================================
+
+model LearnerActivityEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  learnerId      String   @map("learner_id") @db.Uuid
+  sessionId      String?  @map("session_id") @db.Uuid
+  skillCode      String   @map("skill_code")
+  subject        String
+  eventType      String   @map("event_type") // ATTEMPT, CORRECT, INCORRECT, SKIP, HINT_USED, REVIEW
+  isCorrect      Boolean? @map("is_correct")
+  timeSpentMs    Int?     @map("time_spent_ms")
+  difficultyLevel Int?    @map("difficulty_level")
+  metadataJson   Json     @default("{}") @map("metadata_json")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId, createdAt(sort: Desc)])
+  @@index([tenantId, learnerId, skillCode, createdAt(sort: Desc)])
+  @@index([sessionId])
+  @@map("learner_activity_events")
+}
+
+// =============================================================================
+// Emotional State Events
+// =============================================================================
+
+model EmotionalStateEvent {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId                String    @map("session_id")
+  learnerId                String    @map("learner_id")
+  tenantId                 String    @map("tenant_id")
+  primaryState             String    @map("primary_state")
+  secondaryState           String?   @map("secondary_state")
+  confidence               Float
+  stateIntensity           Float     @map("state_intensity")
+  stateDetails             Json      @default("{}") @map("state_details")
+  detectionSource          String[]  @default([]) @map("detection_source")
+  activityId               String?   @map("activity_id")
+  activityType             String?   @map("activity_type")
+  contentId                String?   @map("content_id")
+  timeInActivitySeconds    Int?      @map("time_in_activity_seconds")
+  timeSinceLastBreak       Int?      @map("time_since_last_break")
+  consecutiveErrors        Int       @default(0) @map("consecutive_errors")
+  interventionTriggered    Boolean   @default(false) @map("intervention_triggered")
+  interventionType         String?   @map("intervention_type")
+  interventionId           String?   @map("intervention_id") @db.Uuid
+  interventionAccepted     Boolean?  @map("intervention_accepted")
+  stateAfterIntervention   String?   @map("state_after_intervention")
+  stateImproved            Boolean?  @map("state_improved")
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([sessionId])
+  @@index([learnerId])
+  @@index([primaryState])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("emotional_state_events")
+}
+
+// =============================================================================
+// Anxiety Patterns
+// =============================================================================
+
+model AnxietyPattern {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId              String    @map("learner_id")
+  tenantId               String    @map("tenant_id")
+  patternType            String    @map("pattern_type")
+  patternName            String    @map("pattern_name")
+  triggers               Json      @default("[]")
+  behavioralIndicators   Json      @default("{}") @map("behavioral_indicators")
+  occurrenceCount        Int       @default(0) @map("occurrence_count")
+  lastOccurrence         DateTime? @map("last_occurrence") @db.Timestamptz
+  averageIntensity       Float     @default(0) @map("average_intensity")
+  effectiveInterventions Json      @default("[]") @map("effective_interventions")
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([learnerId, patternType])
+  @@index([learnerId])
+  @@index([tenantId])
+  @@map("anxiety_patterns")
+}
+
+// =============================================================================
+// Overwhelm Thresholds
+// =============================================================================
+
+model OverwhelmThreshold {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId                  String    @unique @map("learner_id")
+  tenantId                   String    @map("tenant_id")
+  cognitiveLoadThreshold     Float     @default(7) @map("cognitive_load_threshold")
+  sensoryLoadThreshold       Float     @default(7) @map("sensory_load_threshold")
+  emotionalLoadThreshold     Float     @default(6) @map("emotional_load_threshold")
+  timeOnTaskThreshold        Int       @default(20) @map("time_on_task_threshold")
+  consecutiveErrorsThreshold Int       @default(5) @map("consecutive_errors_threshold")
+  minBreakAfterOverwhelmMin  Int       @default(5) @map("min_break_after_overwhelm_min")
+  preferredCalmingActivities String[]  @default([]) @map("preferred_calming_activities")
+  autoAdjustEnabled          Boolean   @default(true) @map("auto_adjust_enabled")
+  lastAutoAdjust             DateTime? @map("last_auto_adjust") @db.Timestamptz
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId])
+  @@map("overwhelm_thresholds")
+}
+
+// =============================================================================
+// Interventions
+// =============================================================================
+
+model Intervention {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String    @map("tenant_id")
+  name                String
+  type                String    // BREATHING, GROUNDING, MOVEMENT, etc.
+  description         String
+  content             Json      @default("{}")
+  targetStates        String[]  @default([]) @map("target_states")
+  targetIntensityMin  Float     @default(0) @map("target_intensity_min")
+  targetIntensityMax  Float     @default(10) @map("target_intensity_max")
+  requiresAudio       Boolean   @default(false) @map("requires_audio")
+  requiresMotion      Boolean   @default(false) @map("requires_motion")
+  requiresPrivacy     Boolean   @default(false) @map("requires_privacy")
+  usageCount          Int       @default(0) @map("usage_count")
+  successRate         Float     @default(0) @map("success_rate")
+  isDefault           Boolean   @default(false) @map("is_default")
+  isActive            Boolean   @default(true) @map("is_active")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  learnerHistories LearnerInterventionHistory[]
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([isActive, tenantId])
+  @@map("interventions")
+}
+
+// =============================================================================
+// Learner Intervention History
+// =============================================================================
+
+model LearnerInterventionHistory {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId        String    @map("learner_id")
+  tenantId         String    @map("tenant_id")
+  interventionId   String    @map("intervention_id") @db.Uuid
+  usageCount       Int       @default(0) @map("usage_count")
+  successCount     Int       @default(0) @map("success_count")
+  successRate      Float     @default(0) @map("success_rate")
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz
+  lastStateBefore  String?   @map("last_state_before")
+  lastStateAfter   String?   @map("last_state_after")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  intervention Intervention @relation(fields: [interventionId], references: [id])
+
+  @@unique([learnerId, interventionId])
+  @@index([learnerId])
+  @@index([learnerId, successRate(sort: Desc)])
+  @@map("learner_intervention_history")
+}
+
+// =============================================================================
+// AI Content Generation Logs
+// =============================================================================
+
+model AiGenerationLog {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  generationType  String    @map("generation_type")
+  requestPayload  Json      @map("request_payload")
+  responsePayload Json?     @map("response_payload")
+  provider        String
+  model           String
+  tokensInput     Int       @default(0) @map("tokens_input")
+  tokensOutput    Int       @default(0) @map("tokens_output")
+  tokensTotal     Int       @default(0) @map("tokens_total")
+  costUsd         Decimal   @default(0) @map("cost_usd") @db.Decimal(10, 6)
+  latencyMs       Int       @default(0) @map("latency_ms")
+  cached          Boolean   @default(false)
+  status          String    @default("pending") // pending, completed, failed, cancelled
+  errorMessage    String?   @map("error_message")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+
+  lessons   AiGeneratedLesson[]
+  questions AiGeneratedQuestion[]
+  feedback  AiFeedback[]
+
+  @@index([tenantId, userId, createdAt(sort: Desc)])
+  @@index([generationType, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("ai_generation_log")
+}
+
+// =============================================================================
+// AI Generated Lessons
+// =============================================================================
+
+model AiGeneratedLesson {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  createdBy         String    @map("created_by") @db.Uuid
+  generationLogId   String?   @map("generation_log_id") @db.Uuid
+  title             String
+  subject           String
+  topic             String
+  gradeLevel        String    @map("grade_level")
+  objectives        Json      @default("[]")
+  blocks            Json      @default("[]")
+  vocabulary        Json      @default("[]")
+  assessmentQuestions Json    @default("[]") @map("assessment_questions")
+  standards         Json      @default("[]")
+  generationParams  Json      @default("{}") @map("generation_params")
+  version           Int       @default(1)
+  parentVersionId   String?   @map("parent_version_id") @db.Uuid
+  status            String    @default("draft") // draft, published, archived
+  modelUsed         String    @map("model_used")
+  tokensUsed        Int       @default(0) @map("tokens_used")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  publishedAt       DateTime? @map("published_at") @db.Timestamptz
+
+  generationLog AiGenerationLog?    @relation(fields: [generationLogId], references: [id])
+  parentVersion AiGeneratedLesson?  @relation("LessonVersions", fields: [parentVersionId], references: [id])
+  childVersions AiGeneratedLesson[] @relation("LessonVersions")
+  questions     AiGeneratedQuestion[]
+
+  @@index([tenantId, createdBy, createdAt(sort: Desc)])
+  @@index([subject, topic])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("ai_generated_lessons")
+}
+
+// =============================================================================
+// AI Generated Questions
+// =============================================================================
+
+model AiGeneratedQuestion {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  createdBy       String   @map("created_by") @db.Uuid
+  generationLogId String?  @map("generation_log_id") @db.Uuid
+  lessonId        String?  @map("lesson_id") @db.Uuid
+  questionType    String   @map("question_type")
+  questionText    String   @map("question_text")
+  options         Json?
+  correctAnswer   String   @map("correct_answer")
+  explanation     String?
+  hints           Json     @default("[]")
+  subject         String
+  topic           String
+  skillId         String?  @map("skill_id")
+  bloomsLevel     String   @map("blooms_level")
+  difficulty      Int      @default(3)
+  standards       Json     @default("[]")
+  tags            Json     @default("[]")
+  useCount        Int      @default(0) @map("use_count")
+  avgScore        Decimal? @map("avg_score") @db.Decimal(5, 4)
+  modelUsed       String   @map("model_used")
+  tokensUsed      Int      @default(0) @map("tokens_used")
+  status          String   @default("active") // active, archived, flagged
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  generationLog AiGenerationLog?   @relation(fields: [generationLogId], references: [id])
+  lesson        AiGeneratedLesson? @relation(fields: [lessonId], references: [id])
+  feedback      AiFeedback[]
+
+  @@index([tenantId, createdBy, createdAt(sort: Desc)])
+  @@index([lessonId])
+  @@index([questionType])
+  @@index([subject, difficulty, bloomsLevel])
+  @@index([skillId])
+  @@map("ai_generated_questions")
+}
+
+// =============================================================================
+// AI Feedback
+// =============================================================================
+
+model AiFeedback {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  studentId            String    @map("student_id") @db.Uuid
+  gradedByUserId       String?   @map("graded_by_user_id") @db.Uuid
+  generationLogId      String?   @map("generation_log_id") @db.Uuid
+  assignmentId         String?   @map("assignment_id") @db.Uuid
+  questionId           String?   @map("question_id") @db.Uuid
+  submissionType       String    @map("submission_type")
+  submissionContent    String    @map("submission_content")
+  overallScore         Decimal?  @map("overall_score") @db.Decimal(5, 2)
+  rubricScores         Json      @default("{}") @map("rubric_scores")
+  feedbackText         String    @map("feedback_text")
+  strengths            Json      @default("[]")
+  improvements         Json      @default("[]")
+  suggestions          Json      @default("[]")
+  grammarScore         Decimal?  @map("grammar_score") @db.Decimal(5, 2)
+  structureScore       Decimal?  @map("structure_score") @db.Decimal(5, 2)
+  contentScore         Decimal?  @map("content_score") @db.Decimal(5, 2)
+  modelUsed            String    @map("model_used")
+  tokensUsed           Int       @default(0) @map("tokens_used")
+  confidence           Decimal   @default(0.8) @db.Decimal(3, 2)
+  needsHumanReview     Boolean   @default(false) @map("needs_human_review")
+  humanReviewed        Boolean   @default(false) @map("human_reviewed")
+  humanAdjustedScore   Decimal?  @map("human_adjusted_score") @db.Decimal(5, 2)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  reviewedAt           DateTime? @map("reviewed_at") @db.Timestamptz
+
+  generationLog AiGenerationLog?     @relation(fields: [generationLogId], references: [id])
+  question      AiGeneratedQuestion? @relation(fields: [questionId], references: [id])
+
+  @@index([tenantId, studentId, createdAt(sort: Desc)])
+  @@index([assignmentId])
+  @@index([needsHumanReview, humanReviewed])
+  @@map("ai_feedback")
+}
+
+// =============================================================================
+// Learner Memories (Vector Memory Store)
+// =============================================================================
+
+model LearnerMemory {
+  id             String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String                      @map("tenant_id") @db.Uuid
+  learnerId      String                      @map("learner_id") @db.Uuid
+  type           String                      // EPISODIC, SEMANTIC, PROCEDURAL, WORKING
+  content        String
+  summary        String?
+  embedding      Unsupported("vector(1536)")?
+  metadata       Json                        @default("{}")
+  importance     Decimal                     @default(0.5) @db.Decimal(3, 2)
+  accessCount    Int                         @default(0) @map("access_count")
+  lastAccessedAt DateTime                    @default(now()) @map("last_accessed_at") @db.Timestamptz
+  createdAt      DateTime                    @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt      DateTime?                   @map("expires_at") @db.Timestamptz
+
+  @@index([tenantId, learnerId])
+  @@index([type])
+  @@index([importance(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("learner_memories")
+}
+
+// =============================================================================
+// Learner Autonomy Settings
+// =============================================================================
+
+model LearnerAutonomySetting {
+  tenantId           String   @map("tenant_id") @db.Uuid
+  learnerId          String   @map("learner_id") @db.Uuid
+  level              String   @default("SUGGESTION") // NONE, SUGGESTION, SUPERVISED, SEMI_AUTONOMOUS, AUTONOMOUS
+  categoryOverrides  Json     @default("{}") @map("category_overrides")
+  riskThresholds     Json     @default("{\"autoApproveMaxRisk\": \"LOW\", \"requireTeacherApprovalRisk\": \"HIGH\"}") @map("risk_thresholds")
+  cooldowns          Json     @default("{\"sameActionCooldownMs\": 60000, \"maxActionsPerHour\": 20}")
+  restrictions       Json     @default("{\"blockedActions\": [\"COMMUNICATION\"], \"requireParentApproval\": true}")
+  configuredBy       String   @map("configured_by")
+  configuredAt       DateTime @default(now()) @map("configured_at") @db.Timestamptz
+  approvedBy         String?  @map("approved_by")
+  approvedAt         DateTime? @map("approved_at") @db.Timestamptz
+
+  @@id([tenantId, learnerId])
+  @@map("learner_autonomy_settings")
+}
+
+// =============================================================================
+// Autonomous Decisions
+// =============================================================================
+
+model AutonomousDecision {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  learnerId            String    @map("learner_id") @db.Uuid
+  agentType            String    @map("agent_type")
+  category             String    // CONTENT_SELECTION, DIFFICULTY_ADJUSTMENT, etc.
+  action               Json
+  rationale            String
+  expectedOutcome      String    @map("expected_outcome")
+  riskLevel            String    @map("risk_level") // LOW, MEDIUM, HIGH, CRITICAL
+  riskFactors          Json      @default("[]") @map("risk_factors")
+  riskMitigations      Json      @default("[]") @map("risk_mitigations")
+  reversible           Boolean   @default(true)
+  reversalAction       Json?     @map("reversal_action")
+  context              Json
+  status               String    @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED, EXECUTED, FAILED, EXPIRED, REVERSED
+  approvalRequiredFrom String?   @map("approval_required_from") // TEACHER, PARENT
+  rejectionReason      String?   @map("rejection_reason")
+  executedAt           DateTime? @map("executed_at") @db.Timestamptz
+  executedBy           String?   @map("executed_by")
+  reversedBy           String?   @map("reversed_by")
+  reversedAt           DateTime? @map("reversed_at") @db.Timestamptz
+  error                String?
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt            DateTime  @map("expires_at") @db.Timestamptz
+
+  auditLog AutonomousDecisionAudit[]
+
+  @@index([tenantId, learnerId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt(sort: Desc)])
+  @@map("autonomous_decisions")
+}
+
+// =============================================================================
+// Autonomous Decision Audit
+// =============================================================================
+
+model AutonomousDecisionAudit {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  decisionId  String   @map("decision_id") @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  learnerId   String   @map("learner_id") @db.Uuid
+  action      String
+  result      Json?
+  performedBy String?  @map("performed_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  decision AutonomousDecision @relation(fields: [decisionId], references: [id])
+
+  @@index([decisionId])
+  @@index([tenantId, learnerId])
+  @@map("autonomous_decision_audit")
+}
+
+// =============================================================================
+// Agent Messages
+// =============================================================================
+
+model AgentMessage {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  sessionId        String    @map("session_id") @db.Uuid
+  fromAgent        String    @map("from_agent")
+  toAgent          String    @map("to_agent")
+  messageType      String    @map("message_type") // REQUEST, RESPONSE, HANDOFF, NOTIFY, QUERY, CONFLICT, ESCALATE
+  payload          Json
+  correlationId    String    @map("correlation_id") @db.Uuid
+  replyToMessageId String?   @map("reply_to_message_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  replyToMessage AgentMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id])
+  replies        AgentMessage[] @relation("MessageReplies")
+
+  @@index([sessionId, createdAt])
+  @@index([correlationId])
+  @@index([fromAgent, toAgent])
+  @@map("agent_messages")
+}
+
+// =============================================================================
+// Agent Orchestrations
+// =============================================================================
+
+model AgentOrchestration {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  learnerId       String?  @map("learner_id") @db.Uuid
+  sessionId       String   @map("session_id") @db.Uuid
+  userInput       String   @map("user_input")
+  routingDecision Json     @map("routing_decision")
+  agentResults    Json     @default("[]") @map("agent_results")
+  finalResponse   String?  @map("final_response")
+  recommendations Json?    @default("[]")
+  success         Boolean
+  error           String?
+  durationMs      Int      @map("duration_ms")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([sessionId])
+  @@index([tenantId, learnerId])
+  @@index([createdAt(sort: Desc)])
+  @@map("agent_orchestrations")
+}
+
+// =============================================================================
+// React Traces
+// =============================================================================
+
+model ReactTrace {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  learnerId         String?  @map("learner_id") @db.Uuid
+  sessionId         String   @map("session_id") @db.Uuid
+  requestId         String   @map("request_id") @db.Uuid
+  agentType         String   @map("agent_type")
+  userInput         String   @map("user_input")
+  steps             Json     @default("[]")
+  finalAnswer       String?  @map("final_answer")
+  terminationReason String   @map("termination_reason") // COMPLETED, MAX_ITERATIONS, MAX_TIME, ERROR, NO_ACTION, USER_ABORT
+  totalIterations   Int      @map("total_iterations")
+  totalDurationMs   Int      @map("total_duration_ms")
+  totalTokensUsed   Int      @map("total_tokens_used")
+  success           Boolean
+  error             String?
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([sessionId])
+  @@index([tenantId, learnerId])
+  @@index([agentType])
+  @@index([createdAt(sort: Desc)])
+  @@map("react_traces")
+}
+
+// =============================================================================
+// Self-Learning: Tracked AI Actions
+// =============================================================================
+
+model TrackedAiAction {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  learnerId           String    @map("learner_id") @db.Uuid
+  agentType           String    @map("agent_type")
+  actionType          String    @map("action_type")
+  actionCategory      String    @map("action_category")
+  inputContext        Json      @default("{}") @map("input_context")
+  recommendation      Json
+  confidence          Decimal   @db.Decimal(3, 2)
+  reasoning           String?
+  wasExecuted         Boolean   @default(false) @map("was_executed")
+  executionResult     Json?     @map("execution_result")
+  executionError      String?   @map("execution_error")
+  feedbackReceived    Boolean   @default(false) @map("feedback_received")
+  wasAccepted         Boolean?  @map("was_accepted")
+  userRating          Int?      @map("user_rating")
+  userModification    Json?     @map("user_modification")
+  feedbackText        String?   @map("feedback_text")
+  outcomeMeasured     Boolean   @default(false) @map("outcome_measured")
+  measuredImpact      Json?     @map("measured_impact")
+  sessionId           String?   @map("session_id") @db.Uuid
+  promptTemplateId    String?   @map("prompt_template_id") @db.Uuid
+  experimentVariantId String?   @map("experiment_variant_id") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  feedbackAt          DateTime? @map("feedback_at") @db.Timestamptz
+  outcomeAt           DateTime? @map("outcome_at") @db.Timestamptz
+
+  modelUsage FineTunedModelUsage[]
+
+  @@index([learnerId])
+  @@index([agentType])
+  @@index([actionCategory])
+  @@index([createdAt(sort: Desc)])
+  @@index([feedbackReceived, wasAccepted])
+  @@map("tracked_ai_actions")
+}
+
+// =============================================================================
+// Prompt Templates
+// =============================================================================
+
+model PromptTemplate {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  category     String
+  agentType    String?   @map("agent_type")
+  template     String
+  variables    Json      @default("[]")
+  version      Int       @default(1)
+  parentVersionId String? @map("parent_version_id") @db.Uuid
+  isActive     Boolean   @default(true) @map("is_active")
+  isDefault    Boolean   @default(false) @map("is_default")
+  totalUses    Int       @default(0) @map("total_uses")
+  successRate  Decimal?  @map("success_rate") @db.Decimal(5, 4)
+  avgRating    Decimal?  @map("avg_rating") @db.Decimal(3, 2)
+  avgLatencyMs Int?      @map("avg_latency_ms")
+  createdBy    String?   @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  suggestions PromptSuggestion[]
+
+  @@unique([name, version])
+  @@index([category])
+  @@index([agentType])
+  @@index([isActive, isDefault])
+  @@map("prompt_templates")
+}
+
+// =============================================================================
+// Prompt Experiments
+// =============================================================================
+
+model PromptExperiment {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                    String
+  description             String?
+  status                  String    @default("draft") // draft, running, paused, completed, cancelled
+  hypothesis              String?
+  targetAgentType         String?   @map("target_agent_type")
+  targetCategory          String?   @map("target_category")
+  trafficPercentage       Decimal   @default(100.0) @map("traffic_percentage") @db.Decimal(5, 2)
+  variants                Json      @default("[]")
+  minSampleSize           Int       @default(100) @map("min_sample_size")
+  confidenceLevel         Decimal   @default(0.95) @map("confidence_level") @db.Decimal(3, 2)
+  winnerVariantId         String?   @map("winner_variant_id") @db.Uuid
+  statisticalSignificance Decimal?  @map("statistical_significance") @db.Decimal(5, 4)
+  startedAt               DateTime? @map("started_at") @db.Timestamptz
+  endedAt                 DateTime? @map("ended_at") @db.Timestamptz
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  suggestions PromptSuggestion[]
+
+  @@index([status])
+  @@index([targetAgentType])
+  @@map("prompt_experiments")
+}
+
+// =============================================================================
+// Prompt Suggestions
+// =============================================================================
+
+model PromptSuggestion {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  templateId          String    @map("template_id") @db.Uuid
+  suggestionType      String    @map("suggestion_type")
+  originalText        String    @map("original_text")
+  suggestedText       String    @map("suggested_text")
+  reasoning           String
+  confidence          Decimal   @db.Decimal(3, 2)
+  expectedImprovement Decimal?  @map("expected_improvement") @db.Decimal(5, 4)
+  status              String    @default("pending") // pending, accepted, rejected, testing
+  reviewedBy          String?   @map("reviewed_by")
+  reviewedAt          DateTime? @map("reviewed_at") @db.Timestamptz
+  testExperimentId    String?   @map("test_experiment_id") @db.Uuid
+  actualImprovement   Decimal?  @map("actual_improvement") @db.Decimal(5, 4)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  template       PromptTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  testExperiment PromptExperiment? @relation(fields: [testExperimentId], references: [id])
+
+  @@index([templateId])
+  @@index([status])
+  @@map("prompt_suggestions")
+}
+
+// =============================================================================
+// Learning Signals
+// =============================================================================
+
+model LearningSignal {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  signalType   String    @map("signal_type")
+  sourceType   String    @map("source_type")
+  sourceId     String    @map("source_id")
+  learnerId    String?   @map("learner_id") @db.Uuid
+  agentType    String    @map("agent_type")
+  actionType   String    @map("action_type")
+  context      Json      @default("{}")
+  signalValue  Decimal   @map("signal_value") @db.Decimal(5, 4)
+  confidence   Decimal   @db.Decimal(3, 2)
+  processed    Boolean   @default(false)
+  processedAt  DateTime? @map("processed_at") @db.Timestamptz
+  aggregateId  String?   @map("aggregate_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([signalType])
+  @@index([agentType])
+  @@index([learnerId])
+  @@index([processed, createdAt(sort: Desc)])
+  @@map("learning_signals")
+}
+
+// =============================================================================
+// Fine-Tuning Jobs
+// =============================================================================
+
+model FineTuningJob {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                String    // openai, anthropic
+  providerJobId           String?   @map("provider_job_id")
+  baseModel               String    @map("base_model")
+  fineTunedModel          String?   @map("fine_tuned_model")
+  status                  String    @default("pending") // pending, validating, queued, running, succeeded, failed, cancelled
+  trainingFileId          String?   @map("training_file_id")
+  validationFileId        String?   @map("validation_file_id")
+  trainingExampleCount    Int       @default(0) @map("training_example_count")
+  validationExampleCount  Int       @default(0) @map("validation_example_count")
+  hyperparameters         Json      @default("{}")
+  metrics                 Json?
+  error                   String?
+  metadata                Json      @default("{}")
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  startedAt               DateTime? @map("started_at") @db.Timestamptz
+  completedAt             DateTime? @map("completed_at") @db.Timestamptz
+
+  fineTunedModels FineTunedModel[]
+
+  @@index([status])
+  @@index([provider])
+  @@index([createdAt(sort: Desc)])
+  @@map("fine_tuning_jobs")
+}
+
+// =============================================================================
+// Fine-Tuned Models
+// =============================================================================
+
+model FineTunedModel {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider         String
+  providerModelId  String    @map("provider_model_id")
+  baseModel        String    @map("base_model")
+  displayName      String    @map("display_name")
+  description      String?
+  status           String    @default("active") // active, deprecated, deleted
+  jobId            String    @map("job_id") @db.Uuid
+  trainingExamples Int       @map("training_examples")
+  metrics          Json?
+  deployedAt       DateTime? @map("deployed_at") @db.Timestamptz
+  metadata         Json      @default("{}")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  job                  FineTuningJob             @relation(fields: [jobId], references: [id])
+  usage                FineTunedModelUsage[]
+  comparisonExperiments ModelComparisonExperiment[]
+
+  @@unique([providerModelId])
+  @@index([status])
+  @@index([provider])
+  @@index([jobId])
+  @@map("fine_tuned_models")
+}
+
+// =============================================================================
+// Fine-Tuned Model Usage
+// =============================================================================
+
+model FineTunedModelUsage {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  modelId      String    @map("model_id") @db.Uuid
+  actionId     String?   @map("action_id") @db.Uuid
+  requestType  String    @map("request_type")
+  agentType    String?   @map("agent_type")
+  latencyMs    Int?      @map("latency_ms")
+  tokensUsed   Int?      @map("tokens_used")
+  wasSuccessful Boolean? @map("was_successful")
+  userRating   Int?      @map("user_rating")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  model  FineTunedModel   @relation(fields: [modelId], references: [id])
+  action TrackedAiAction? @relation(fields: [actionId], references: [id])
+
+  @@index([modelId])
+  @@index([createdAt(sort: Desc)])
+  @@index([actionId])
+  @@map("fine_tuned_model_usage")
+}
+
+// =============================================================================
+// Model Comparison Experiments
+// =============================================================================
+
+model ModelComparisonExperiment {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String
+  description              String?
+  status                   String    @default("draft") // draft, running, paused, completed, cancelled
+  baselineModel            String    @map("baseline_model")
+  challengerModelId        String?   @map("challenger_model_id") @db.Uuid
+  challengerTrafficPercent Decimal   @default(50.0) @map("challenger_traffic_percent") @db.Decimal(5, 2)
+  targetAgentTypes         String[]  @default([]) @map("target_agent_types")
+  targetRequestTypes       String[]  @default([]) @map("target_request_types")
+  minSamplesPerVariant     Int       @default(100) @map("min_samples_per_variant")
+  baselineMetrics          Json?     @map("baseline_metrics")
+  challengerMetrics        Json?     @map("challenger_metrics")
+  winner                   String?
+  statisticalSignificance  Decimal?  @map("statistical_significance") @db.Decimal(5, 4)
+  startedAt                DateTime? @map("started_at") @db.Timestamptz
+  endedAt                  DateTime? @map("ended_at") @db.Timestamptz
+  createdAt                DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  challengerModel FineTunedModel? @relation(fields: [challengerModelId], references: [id])
+
+  @@index([status])
+  @@index([challengerModelId])
+  @@map("model_comparison_experiments")
+}
+
+// =============================================================================
+// Federated Learning: Tenant Config
+// =============================================================================
+
+model TenantFederatedConfig {
+  tenantId              String   @id @map("tenant_id") @db.Uuid
+  enabled               Boolean  @default(false)
+  autoParticipate       Boolean  @default(false) @map("auto_participate")
+  privacyLevel          String   @default("standard") @map("privacy_level") // standard, enhanced, maximum
+  maxPrivacyBudget      Decimal  @default(100.0) @map("max_privacy_budget") @db.Decimal(10, 4)
+  currentPrivacyBudget  Decimal  @default(0) @map("current_privacy_budget") @db.Decimal(10, 4)
+  sharePatterns         Boolean  @default(true) @map("share_patterns")
+  shareEffectiveness    Boolean  @default(true) @map("share_effectiveness")
+  shareEmbeddings       Boolean  @default(false) @map("share_embeddings")
+  enabledModelTypes     String[] @default(["prompt_effectiveness", "pattern_weights"]) @map("enabled_model_types")
+  minLocalExamples      Int      @default(100) @map("min_local_examples")
+  autoApplyUpdates      Boolean  @default(false) @map("auto_apply_updates")
+  requireApproval       Boolean  @default(true) @map("require_approval")
+  tenantType            String?  @map("tenant_type")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([enabled, autoParticipate])
+  @@map("tenant_federated_config")
+}
+
+// =============================================================================
+// Federated Rounds
+// =============================================================================
+
+model FederatedRound {
+  roundId              String    @id @map("round_id") @db.Uuid
+  modelType            String    @map("model_type")
+  status               String    @default("initializing") // initializing, collecting, aggregating, distributing, completed, failed
+  config               Json
+  eligibleTenants      String[]  @default([]) @map("eligible_tenants") @db.Uuid
+  participatingTenants String[]  @default([]) @map("participating_tenants") @db.Uuid
+  contributionCount    Int       @default(0) @map("contribution_count")
+  distributedCount     Int       @default(0) @map("distributed_count")
+  errors               Json      @default("[]")
+  startedAt            DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  collectionDeadline   DateTime? @map("collection_deadline") @db.Timestamptz
+  completedAt          DateTime? @map("completed_at") @db.Timestamptz
+
+  contributions   FederatedContribution[]
+  federatedModels FederatedModel[]
+  tenantModels    TenantModel[]
+  pendingUpdates  PendingModelUpdate[]
+
+  @@index([status])
+  @@index([modelType])
+  @@index([startedAt(sort: Desc)])
+  @@map("federated_rounds")
+}
+
+// =============================================================================
+// Federated Contributions
+// =============================================================================
+
+model FederatedContribution {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roundId        String   @map("round_id") @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  gradients      Json
+  sampleWeight   Int      @map("sample_weight")
+  noiseScale     Decimal  @map("noise_scale") @db.Decimal(10, 6)
+  privacyEpsilon Decimal  @map("privacy_epsilon") @db.Decimal(10, 6)
+  localMetrics   Json     @map("local_metrics")
+  computedAt     DateTime @map("computed_at") @db.Timestamptz
+  receivedAt     DateTime @default(now()) @map("received_at") @db.Timestamptz
+
+  round FederatedRound @relation(fields: [roundId], references: [roundId], onDelete: Cascade)
+
+  @@unique([roundId, tenantId])
+  @@index([roundId])
+  @@index([tenantId])
+  @@map("federated_contributions")
+}
+
+// =============================================================================
+// Federated Models
+// =============================================================================
+
+model FederatedModel {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roundId             String    @map("round_id") @db.Uuid
+  modelType           String    @map("model_type")
+  version             Int
+  weights             Json
+  contributingTenants Int       @map("contributing_tenants")
+  totalSamples        Int       @map("total_samples")
+  privacyEpsilon      Decimal   @map("privacy_epsilon") @db.Decimal(10, 6)
+  metrics             Json
+  isActive            Boolean   @default(true) @map("is_active")
+  deprecatedAt        DateTime? @map("deprecated_at") @db.Timestamptz
+  aggregatedAt        DateTime  @default(now()) @map("aggregated_at") @db.Timestamptz
+
+  round FederatedRound @relation(fields: [roundId], references: [roundId])
+
+  @@index([modelType])
+  @@index([modelType, version(sort: Desc)])
+  @@index([roundId])
+  @@index([isActive, modelType])
+  @@map("federated_models")
+}
+
+// =============================================================================
+// Tenant Models
+// =============================================================================
+
+model TenantModel {
+  tenantId        String   @map("tenant_id") @db.Uuid
+  modelType       String   @map("model_type")
+  weights         Json
+  version         Int      @default(1)
+  sourceRoundId   String?  @map("source_round_id") @db.Uuid
+  locallyTrained  Boolean  @default(false) @map("locally_trained")
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  sourceRound FederatedRound? @relation(fields: [sourceRoundId], references: [roundId])
+
+  @@id([tenantId, modelType])
+  @@index([modelType, version(sort: Desc)])
+  @@map("tenant_models")
+}
+
+// =============================================================================
+// Pending Model Updates
+// =============================================================================
+
+model PendingModelUpdate {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  modelType     String    @map("model_type")
+  weights       Json
+  sourceRoundId String?   @map("source_round_id") @db.Uuid
+  status        String    @default("pending") // pending, approved, rejected
+  reviewedBy    String?   @map("reviewed_by")
+  reviewedAt    DateTime? @map("reviewed_at") @db.Timestamptz
+  reviewNotes   String?   @map("review_notes")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  sourceRound FederatedRound? @relation(fields: [sourceRoundId], references: [roundId])
+
+  @@unique([tenantId, modelType, sourceRoundId])
+  @@index([tenantId, status])
+  @@map("pending_model_updates")
+}

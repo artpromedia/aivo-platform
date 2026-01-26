@@ -1,0 +1,235 @@
+// Translation Service Prisma Schema
+// Full translation management system with memory and glossary
+// Converted from SQL migrations 0001
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Translations
+// =============================================================================
+
+model Translation {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  key             String
+  namespace       String    @default("common")
+  sourceLocale    String    @map("source_locale")
+  targetLocale    String    @map("target_locale")
+  sourceText      String    @map("source_text")
+  translatedText  String    @map("translated_text")
+  status          String    @default("DRAFT") // DRAFT, PENDING_REVIEW, APPROVED, PUBLISHED
+  qualityScore    Decimal?  @map("quality_score") @db.Decimal(3, 2)
+  provider        String?   // AI, HUMAN, IMPORTED
+  model           String?
+  reviewedBy      String?   @map("reviewed_by") @db.Uuid
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz
+  version         Int       @default(1)
+  context         String?
+  notes           String?
+  metadataJson    Json      @default("{}") @map("metadata_json")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  history TranslationHistory[]
+
+  @@unique([tenantId, key, namespace, targetLocale], map: "uq_translation_key_locale")
+  @@index([tenantId, namespace])
+  @@index([tenantId, targetLocale])
+  @@index([status])
+  @@index([tenantId, sourceLocale, targetLocale])
+  @@map("translations")
+}
+
+// =============================================================================
+// Translation History
+// =============================================================================
+
+model TranslationHistory {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  translationId   String   @map("translation_id") @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  previousText    String   @map("previous_text")
+  newText         String   @map("new_text")
+  changeReason    String?  @map("change_reason")
+  changedBy       String?  @map("changed_by") @db.Uuid
+  version         Int
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  translation Translation @relation(fields: [translationId], references: [id], onDelete: Cascade)
+
+  @@index([translationId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("translation_history")
+}
+
+// =============================================================================
+// Translation Memory
+// =============================================================================
+
+model TranslationMemory {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  sourceLocale    String   @map("source_locale")
+  targetLocale    String   @map("target_locale")
+  sourceSegment   String   @map("source_segment")
+  targetSegment   String   @map("target_segment")
+  context         String?
+  domain          String?
+  qualityScore    Decimal  @default(1.0) @map("quality_score") @db.Decimal(3, 2)
+  usageCount      Int      @default(0) @map("usage_count")
+  lastUsedAt      DateTime? @map("last_used_at") @db.Timestamptz
+  source          String   @default("HUMAN") // HUMAN, AI, IMPORTED
+  createdBy       String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([tenantId, sourceLocale, targetLocale])
+  @@index([tenantId, domain])
+  @@index([qualityScore(sort: Desc)])
+  @@map("translation_memory")
+}
+
+// =============================================================================
+// Glossary Terms
+// =============================================================================
+
+model GlossaryTerm {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  term            String
+  definition      String?
+  context         String?
+  domain          String?
+  isApproved      Boolean  @default(false) @map("is_approved")
+  caseSensitive   Boolean  @default(false) @map("case_sensitive")
+  createdBy       String?  @map("created_by") @db.Uuid
+  approvedBy      String?  @map("approved_by") @db.Uuid
+  approvedAt      DateTime? @map("approved_at") @db.Timestamptz
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  translations GlossaryTranslation[]
+
+  @@unique([tenantId, term, domain], map: "uq_glossary_term_domain")
+  @@index([tenantId])
+  @@index([tenantId, domain])
+  @@index([isApproved])
+  @@map("glossary_terms")
+}
+
+// =============================================================================
+// Glossary Translations
+// =============================================================================
+
+model GlossaryTranslation {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  termId          String   @map("term_id") @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  locale          String
+  translation     String
+  isApproved      Boolean  @default(false) @map("is_approved")
+  approvedBy      String?  @map("approved_by") @db.Uuid
+  approvedAt      DateTime? @map("approved_at") @db.Timestamptz
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  term GlossaryTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([termId, locale], map: "uq_glossary_translation_locale")
+  @@index([tenantId, locale])
+  @@map("glossary_translations")
+}
+
+// =============================================================================
+// Translation Requests
+// =============================================================================
+
+model TranslationRequest {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  name            String
+  description     String?
+  sourceLocale    String    @map("source_locale")
+  targetLocales   String[]  @default([]) @map("target_locales")
+  status          String    @default("DRAFT") // DRAFT, SUBMITTED, IN_PROGRESS, REVIEW, COMPLETED, CANCELLED
+  priority        String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  dueDate         DateTime? @map("due_date") @db.Timestamptz
+  submittedAt     DateTime? @map("submitted_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+  requestedBy     String    @map("requested_by") @db.Uuid
+  assignedTo      String?   @map("assigned_to") @db.Uuid
+  wordCount       Int       @default(0) @map("word_count")
+  estimatedCost   Decimal?  @map("estimated_cost") @db.Decimal(10, 2)
+  actualCost      Decimal?  @map("actual_cost") @db.Decimal(10, 2)
+  metadataJson    Json      @default("{}") @map("metadata_json")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  entries TranslationRequestEntry[]
+
+  @@index([tenantId, status])
+  @@index([requestedBy])
+  @@index([assignedTo])
+  @@index([status, dueDate])
+  @@map("translation_requests")
+}
+
+// =============================================================================
+// Translation Request Entries
+// =============================================================================
+
+model TranslationRequestEntry {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId       String   @map("request_id") @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  key             String
+  namespace       String   @default("common")
+  sourceText      String   @map("source_text")
+  context         String?
+  maxLength       Int?     @map("max_length")
+  priority        Int      @default(0)
+  wordCount       Int      @default(0) @map("word_count")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  request      TranslationRequest             @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  translations TranslationRequestTranslation[]
+
+  @@index([requestId])
+  @@map("translation_request_entries")
+}
+
+// =============================================================================
+// Translation Request Translations
+// =============================================================================
+
+model TranslationRequestTranslation {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entryId         String    @map("entry_id") @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  targetLocale    String    @map("target_locale")
+  translatedText  String?   @map("translated_text")
+  status          String    @default("PENDING") // PENDING, TRANSLATED, REVIEWED, APPROVED, REJECTED
+  qualityScore    Decimal?  @map("quality_score") @db.Decimal(3, 2)
+  translatedBy    String?   @map("translated_by") @db.Uuid
+  translatedAt    DateTime? @map("translated_at") @db.Timestamptz
+  reviewedBy      String?   @map("reviewed_by") @db.Uuid
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz
+  reviewNotes     String?   @map("review_notes")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  entry TranslationRequestEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, targetLocale], map: "uq_entry_locale")
+  @@index([tenantId, status])
+  @@index([targetLocale])
+  @@map("translation_request_translations")
+}

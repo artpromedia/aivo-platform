@@ -1,0 +1,109 @@
+// DSR (Data Subject Request) Service Prisma Schema
+// GDPR Article 17 compliant data request handling
+// Converted from SQL migrations 0001-0003
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// DSR Requests
+// =============================================================================
+
+model DsrRequest {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  requestType       String    @map("request_type") // ACCESS, DELETE, RECTIFY, PORTABILITY, RESTRICT
+  status            String    @default("PENDING") // PENDING, VERIFIED, IN_PROGRESS, COMPLETED, REJECTED, CANCELLED
+  requesterId       String    @map("requester_id") @db.Uuid
+  requesterEmail    String    @map("requester_email")
+  requesterRole     String    @map("requester_role") // PARENT, LEARNER, ADMIN
+  subjectId         String    @map("subject_id") @db.Uuid
+  subjectType       String    @map("subject_type") // LEARNER, PARENT, TEACHER
+  relationship      String?   // SELF, PARENT, GUARDIAN, ADMIN
+  verificationMethod String?  @map("verification_method")
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz
+  verifiedBy        String?   @map("verified_by") @db.Uuid
+  assignedTo        String?   @map("assigned_to") @db.Uuid
+  priority          String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  dueDate           DateTime  @map("due_date") @db.Timestamptz
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz
+  completedBy       String?   @map("completed_by") @db.Uuid
+  rejectionReason   String?   @map("rejection_reason")
+  notes             String?
+  metadataJson      Json      @default("{}") @map("metadata_json")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  jobs         DsrJob[]
+  artifacts    DsrExportArtifact[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, subjectId])
+  @@index([status, dueDate])
+  @@index([createdAt(sort: Desc)])
+  @@map("dsr_requests")
+}
+
+// =============================================================================
+// DSR Jobs
+// =============================================================================
+
+model DsrJob {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId       String    @map("request_id") @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  serviceName     String    @map("service_name")
+  jobType         String    @map("job_type") // EXPORT, DELETE, ANONYMIZE, RECTIFY
+  status          String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, SKIPPED
+  progress        Int       @default(0)
+  itemsProcessed  Int       @default(0) @map("items_processed")
+  itemsTotal      Int       @default(0) @map("items_total")
+  startedAt       DateTime? @map("started_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+  error           String?
+  resultSummary   Json?     @map("result_summary")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  request DsrRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([tenantId, status])
+  @@index([serviceName, status])
+  @@map("dsr_jobs")
+}
+
+// =============================================================================
+// DSR Export Artifacts
+// =============================================================================
+
+model DsrExportArtifact {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestId        String    @map("request_id") @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  serviceName      String    @map("service_name")
+  artifactType     String    @map("artifact_type") // JSON, CSV, PDF, ARCHIVE
+  fileName         String    @map("file_name")
+  filePath         String?   @map("file_path")
+  storageUrl       String?   @map("storage_url")
+  fileSizeBytes    BigInt    @default(0) @map("file_size_bytes")
+  checksum         String?
+  encryptionKey    String?   @map("encryption_key")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz
+  downloadedAt     DateTime? @map("downloaded_at") @db.Timestamptz
+  downloadCount    Int       @default(0) @map("download_count")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  request DsrRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("dsr_export_artifacts")
+}

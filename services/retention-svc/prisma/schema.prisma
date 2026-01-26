@@ -1,0 +1,72 @@
+// Retention Service Prisma Schema
+// Configurable data retention policies with job tracking
+// Converted from SQL migrations 0001-0002
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Retention Policies
+// =============================================================================
+
+model RetentionPolicy {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String?   @map("tenant_id") @db.Uuid
+  resourceType      String    @map("resource_type") // LEARNER_DATA, ACTIVITY_LOGS, AI_GENERATIONS, ANALYTICS, AUDIT_LOGS
+  retentionDays     Int       @map("retention_days")
+  actionType        String    @default("DELETE") @map("action_type") // DELETE, ANONYMIZE, ARCHIVE
+  description       String?
+  isActive          Boolean   @default(true) @map("is_active")
+  isDefault         Boolean   @default(false) @map("is_default")
+  schedulePattern   String    @default("0 2 * * *") @map("schedule_pattern") // Cron pattern
+  lastRunAt         DateTime? @map("last_run_at") @db.Timestamptz
+  nextRunAt         DateTime? @map("next_run_at") @db.Timestamptz
+  createdBy         String?   @map("created_by") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  jobRuns RetentionJobRun[]
+
+  @@unique([tenantId, resourceType], map: "uq_retention_policy_tenant_resource")
+  @@index([isActive, nextRunAt])
+  @@index([resourceType])
+  @@map("retention_policies")
+}
+
+// =============================================================================
+// Retention Job Runs
+// =============================================================================
+
+model RetentionJobRun {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId        String    @map("policy_id") @db.Uuid
+  tenantId        String?   @map("tenant_id") @db.Uuid
+  status          String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+  startedAt       DateTime? @map("started_at") @db.Timestamptz
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz
+  itemsProcessed  Int       @default(0) @map("items_processed")
+  itemsDeleted    Int       @default(0) @map("items_deleted")
+  itemsAnonymized Int       @default(0) @map("items_anonymized")
+  itemsArchived   Int       @default(0) @map("items_archived")
+  itemsFailed     Int       @default(0) @map("items_failed")
+  bytesFreed      BigInt    @default(0) @map("bytes_freed")
+  durationMs      Int?      @map("duration_ms")
+  error           String?
+  resultSummary   Json?     @map("result_summary")
+  triggeredBy     String    @default("SCHEDULER") @map("triggered_by") // SCHEDULER, MANUAL, API
+  triggeredByUser String?   @map("triggered_by_user") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  policy RetentionPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+  @@index([tenantId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("retention_job_runs")
+}
