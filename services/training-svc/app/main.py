@@ -62,6 +62,12 @@ try:
 except ImportError:
     LoRAFineTuner = None
 
+# Import Curriculum Embeddings
+try:
+    from app.models.curriculum_embeddings import CurriculumEmbeddings
+except ImportError:
+    CurriculumEmbeddings = None
+
 # Import API routes
 try:
     from app.api.routes import router as training_api_router
@@ -179,6 +185,22 @@ async def lifespan(_app: FastAPI):
             _app.state.lora_fine_tuner = None
     else:
         _app.state.lora_fine_tuner = None
+    
+    # Initialize Curriculum Embeddings for semantic matching
+    if CurriculumEmbeddings:
+        try:
+            embedding_model = os.getenv("CURRICULUM_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+            embedding_device = os.getenv("CURRICULUM_EMBEDDING_DEVICE", "cpu")
+            _app.state.curriculum_embeddings = CurriculumEmbeddings(
+                model_name=embedding_model,
+                device=embedding_device,
+            )
+            logger.info(f"Curriculum Embeddings initialized with {embedding_model} on {embedding_device}")
+        except Exception as e:
+            logger.warning(f"Curriculum Embeddings initialization failed: {e}")
+            _app.state.curriculum_embeddings = None
+    else:
+        _app.state.curriculum_embeddings = None
     
     yield
     

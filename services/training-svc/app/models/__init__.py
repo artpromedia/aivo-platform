@@ -9,6 +9,13 @@ from .learner_model import (
     InteractionHistory,
     BaseBrainModel,
 )
+from .curriculum_embeddings import (
+    CurriculumEmbeddings,
+    Skill,
+    Content,
+    Standard,
+    SearchResult,
+)
 
 __all__ = [
     # BKT
@@ -32,4 +39,10 @@ __all__ = [
     "LearnerProfile",
     "InteractionHistory",
     "BaseBrainModel",
+    # Curriculum Embeddings
+    "CurriculumEmbeddings",
+    "Skill",
+    "Content",
+    "Standard",
+    "SearchResult",
 ]

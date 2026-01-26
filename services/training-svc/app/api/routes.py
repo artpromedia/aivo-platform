@@ -184,6 +184,87 @@ class LoRACompareRequest(BaseModel):
 
 
 # ============================================================================
+# Curriculum Embeddings Request/Response Models
+# ============================================================================
+
+class SkillRequest(BaseModel):
+    """Request to add a skill"""
+    skill_id: str = Field(..., description="Unique skill identifier")
+    name: str = Field(..., description="Skill name")
+    description: str = Field(..., description="Skill description")
+    domain: str = Field(..., description="Domain (math, reading, science, etc.)")
+    grade_band: str = Field(..., description="Grade band (K-2, 3-5, 6-8, 9-12)")
+    standard_codes: List[str] = Field(default_factory=list, description="Standard codes")
+    prerequisites: List[str] = Field(default_factory=list, description="Prerequisite skill IDs")
+    keywords: List[str] = Field(default_factory=list, description="Keywords for matching")
+
+
+class ContentRequest(BaseModel):
+    """Request to add content"""
+    content_id: str = Field(..., description="Unique content identifier")
+    title: str = Field(..., description="Content title")
+    description: str = Field(..., description="Content description")
+    content_type: str = Field(..., description="Type (video, activity, assessment, etc.)")
+    difficulty: float = Field(..., ge=0.0, le=1.0, description="Difficulty 0-1")
+    skill_ids: List[str] = Field(default_factory=list, description="Skills covered")
+    duration_minutes: Optional[int] = Field(None, description="Duration in minutes")
+    grade_level: Optional[int] = Field(None, ge=1, le=12, description="Grade level")
+
+
+class StandardRequest(BaseModel):
+    """Request to add an educational standard"""
+    standard_code: str = Field(..., description="Standard code (e.g., CCSS.MATH.5.NF.A.1)")
+    description: str = Field(..., description="Standard description")
+    domain: str = Field(..., description="Domain")
+    grade_level: str = Field(..., description="Grade level")
+    subject: str = Field(..., description="Subject")
+    parent_standard: Optional[str] = Field(None, description="Parent standard code")
+
+
+class SemanticSearchRequest(BaseModel):
+    """Request for semantic search"""
+    query: str = Field(..., description="Natural language query")
+    search_type: str = Field("skills", description="skills, content, standards, or all")
+    n: int = Field(10, ge=1, le=100, description="Number of results")
+    filters: Optional[Dict[str, Any]] = Field(None, description="Optional filters")
+
+
+class SimilarSkillsRequest(BaseModel):
+    """Request for similar skills"""
+    skill_id: str = Field(..., description="Source skill ID")
+    n: int = Field(5, ge=1, le=50, description="Number of results")
+    domain_filter: Optional[str] = Field(None, description="Filter by domain")
+    grade_band_filter: Optional[str] = Field(None, description="Filter by grade band")
+
+
+class ContentRecommendationRequest(BaseModel):
+    """Request for content recommendations"""
+    skill_id: str = Field(..., description="Target skill ID")
+    n: int = Field(10, ge=1, le=50, description="Number of results")
+    difficulty_min: Optional[float] = Field(None, ge=0, le=1, description="Min difficulty")
+    difficulty_max: Optional[float] = Field(None, ge=0, le=1, description="Max difficulty")
+    content_type: Optional[str] = Field(None, description="Filter by content type")
+
+
+class LearningPathRequest(BaseModel):
+    """Request for learning path"""
+    target_skill_id: str = Field(..., description="Goal skill ID")
+    mastered_skills: List[str] = Field(default_factory=list, description="Already mastered skills")
+
+
+class LearnerContentRecommendationRequest(BaseModel):
+    """Request for learner-specific content recommendations"""
+    skill_masteries: Dict[str, float] = Field(..., description="Skill ID -> mastery (0-1)")
+    n: int = Field(10, ge=1, le=50, description="Number of results")
+
+
+class SkillClusterRequest(BaseModel):
+    """Request for skill clustering"""
+    n_clusters: int = Field(10, ge=2, le=50, description="Number of clusters")
+    method: str = Field("kmeans", description="kmeans or agglomerative")
+
+
+# ============================================================================
 # Model Accessors
 # ============================================================================
 
@@ -233,6 +314,14 @@ def get_lora_fine_tuner(request: Request):
     if tuner is None:
         raise HTTPException(status_code=503, detail="LoRA fine-tuner not initialized")
     return tuner
+
+
+def get_curriculum_embeddings(request: Request):
+    """Get curriculum embeddings from app state"""
+    embeddings = getattr(request.app.state, 'curriculum_embeddings', None)
+    if embeddings is None:
+        raise HTTPException(status_code=503, detail="Curriculum embeddings not initialized")
+    return embeddings
 
 
 # ============================================================================
@@ -1303,4 +1392,523 @@ async def lora_save_all_adapters(request: Request, output_dir: str = "models/lor
         raise
     except Exception as e:
         logger.exception(f"LoRA save all failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Curriculum Embeddings Routes
+# ============================================================================
+
+@router.post("/curriculum/skills")
+async def add_skill(request: Request, req: SkillRequest):
+    """
+    Add a skill to the curriculum embeddings
+    
+    Creates semantic embedding for the skill for similarity search and matching.
+    """
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        from app.models.curriculum_embeddings import Skill
+        
+        skill = Skill(
+            skill_id=req.skill_id,
+            name=req.name,
+            description=req.description,
+            domain=req.domain,
+            grade_band=req.grade_band,
+            standard_codes=req.standard_codes,
+            prerequisites=req.prerequisites,
+            keywords=req.keywords
+        )
+        
+        embedding = embeddings.add_skill(skill)
+        
+        return {
+            "status": "success",
+            "skill_id": req.skill_id,
+            "embedding_dim": len(embedding)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Add skill failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/skills/batch")
+async def add_skills_batch(request: Request, skills: List[SkillRequest]):
+    """Add multiple skills in a batch (more efficient)"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        from app.models.curriculum_embeddings import Skill
+        
+        skill_objects = [
+            Skill(
+                skill_id=req.skill_id,
+                name=req.name,
+                description=req.description,
+                domain=req.domain,
+                grade_band=req.grade_band,
+                standard_codes=req.standard_codes,
+                prerequisites=req.prerequisites,
+                keywords=req.keywords
+            )
+            for req in skills
+        ]
+        
+        result = embeddings.add_skills_batch(skill_objects)
+        
+        return {
+            "status": "success",
+            "skills_added": len(result),
+            "skill_ids": list(result.keys())
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Add skills batch failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/curriculum/skills/{skill_id}")
+async def get_skill(request: Request, skill_id: str):
+    """Get skill details"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        if skill_id not in embeddings.skills:
+            raise HTTPException(status_code=404, detail="Skill not found")
+        
+        skill = embeddings.skills[skill_id]
+        
+        return {
+            "skill": skill.to_dict(),
+            "prerequisites": embeddings.get_prerequisite_skills(skill_id),
+            "dependents": embeddings.get_dependent_skills(skill_id)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Get skill failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/content")
+async def add_content(request: Request, req: ContentRequest):
+    """
+    Add content to the curriculum embeddings
+    
+    Creates semantic embedding for content matching and recommendations.
+    """
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        from app.models.curriculum_embeddings import Content
+        
+        content = Content(
+            content_id=req.content_id,
+            title=req.title,
+            description=req.description,
+            content_type=req.content_type,
+            difficulty=req.difficulty,
+            skill_ids=req.skill_ids,
+            duration_minutes=req.duration_minutes,
+            grade_level=req.grade_level
+        )
+        
+        embedding = embeddings.add_content(content)
+        
+        return {
+            "status": "success",
+            "content_id": req.content_id,
+            "embedding_dim": len(embedding)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Add content failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/content/batch")
+async def add_content_batch(request: Request, contents: List[ContentRequest]):
+    """Add multiple content items in a batch"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        from app.models.curriculum_embeddings import Content
+        
+        content_objects = [
+            Content(
+                content_id=req.content_id,
+                title=req.title,
+                description=req.description,
+                content_type=req.content_type,
+                difficulty=req.difficulty,
+                skill_ids=req.skill_ids,
+                duration_minutes=req.duration_minutes,
+                grade_level=req.grade_level
+            )
+            for req in contents
+        ]
+        
+        result = embeddings.add_content_batch(content_objects)
+        
+        return {
+            "status": "success",
+            "content_added": len(result),
+            "content_ids": list(result.keys())
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Add content batch failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/curriculum/content/{content_id}")
+async def get_content(request: Request, content_id: str):
+    """Get content details"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        if content_id not in embeddings.contents:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        content = embeddings.contents[content_id]
+        
+        return content.to_dict()
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Get content failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/standards")
+async def add_standard(request: Request, req: StandardRequest):
+    """Add an educational standard"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        from app.models.curriculum_embeddings import Standard
+        
+        standard = Standard(
+            standard_code=req.standard_code,
+            description=req.description,
+            domain=req.domain,
+            grade_level=req.grade_level,
+            subject=req.subject,
+            parent_standard=req.parent_standard
+        )
+        
+        embedding = embeddings.add_standard(standard)
+        
+        return {
+            "status": "success",
+            "standard_code": req.standard_code,
+            "embedding_dim": len(embedding)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Add standard failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/search")
+async def semantic_search(request: Request, req: SemanticSearchRequest):
+    """
+    Semantic search across curriculum
+    
+    Find skills, content, or standards matching a natural language query.
+    """
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        results = embeddings.semantic_search(
+            query=req.query,
+            search_type=req.search_type,
+            n=req.n,
+            filters=req.filters
+        )
+        
+        return {
+            "query": req.query,
+            "search_type": req.search_type,
+            "results": [
+                {
+                    "item_id": r.item_id,
+                    "score": r.score,
+                    "item_type": r.item_type,
+                    "item": r.item.to_dict() if hasattr(r.item, 'to_dict') else str(r.item)
+                }
+                for r in results
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Semantic search failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/skills/similar")
+async def find_similar_skills(request: Request, req: SimilarSkillsRequest):
+    """Find skills similar to a given skill"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        similar = embeddings.find_similar_skills(
+            skill_id=req.skill_id,
+            n=req.n,
+            domain_filter=req.domain_filter,
+            grade_band_filter=req.grade_band_filter
+        )
+        
+        return {
+            "source_skill_id": req.skill_id,
+            "similar_skills": [
+                {
+                    "skill_id": skill_id,
+                    "similarity": score,
+                    "skill": embeddings.skills[skill_id].to_dict() if skill_id in embeddings.skills else None
+                }
+                for skill_id, score in similar
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Find similar skills failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/content/recommend")
+async def recommend_content_for_skill(request: Request, req: ContentRecommendationRequest):
+    """Recommend content items for a skill"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        difficulty_range = None
+        if req.difficulty_min is not None or req.difficulty_max is not None:
+            difficulty_range = (
+                req.difficulty_min or 0.0,
+                req.difficulty_max or 1.0
+            )
+        
+        recommendations = embeddings.recommend_content_for_skill(
+            skill_id=req.skill_id,
+            n=req.n,
+            difficulty_range=difficulty_range,
+            content_type_filter=req.content_type
+        )
+        
+        return {
+            "skill_id": req.skill_id,
+            "recommendations": [
+                {
+                    "content_id": content_id,
+                    "relevance": score,
+                    "content": embeddings.contents[content_id].to_dict() if content_id in embeddings.contents else None
+                }
+                for content_id, score in recommendations
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Content recommendation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/content/recommend-for-learner")
+async def recommend_content_for_learner(request: Request, req: LearnerContentRecommendationRequest):
+    """Recommend content based on learner's skill mastery profile"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        recommendations = embeddings.recommend_content_for_learner(
+            skill_masteries=req.skill_masteries,
+            n=req.n
+        )
+        
+        return {
+            "recommendations": [
+                {
+                    "content_id": content_id,
+                    "score": score,
+                    "reason": reason,
+                    "content": embeddings.contents[content_id].to_dict() if content_id in embeddings.contents else None
+                }
+                for content_id, score, reason in recommendations
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Learner content recommendation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/learning-path")
+async def get_learning_path(request: Request, req: LearningPathRequest):
+    """
+    Generate learning path to a target skill
+    
+    Uses prerequisite graph to determine optimal order.
+    """
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        path = embeddings.get_learning_path(
+            target_skill_id=req.target_skill_id,
+            mastered_skills=req.mastered_skills
+        )
+        
+        return {
+            "target_skill_id": req.target_skill_id,
+            "mastered_skills": req.mastered_skills,
+            "learning_path": path,
+            "skills_to_learn": len(path),
+            "path_details": [
+                embeddings.skills[sid].to_dict() if sid in embeddings.skills else {"skill_id": sid}
+                for sid in path
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Learning path failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/skills/clusters")
+async def build_skill_clusters(request: Request, req: SkillClusterRequest):
+    """
+    Cluster skills by semantic similarity
+    
+    Useful for curriculum analysis and skill family identification.
+    """
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        clusters = embeddings.build_skill_clusters(
+            n_clusters=req.n_clusters,
+            method=req.method
+        )
+        
+        summaries = embeddings.get_cluster_summary(clusters)
+        
+        return {
+            "n_clusters": len(clusters),
+            "method": req.method,
+            "clusters": summaries
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Skill clustering failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/curriculum/content/{content_id}/match-standards")
+async def match_content_to_standards(request: Request, content_id: str, n: int = 5):
+    """Find standards that match a piece of content"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        if content_id not in embeddings.contents:
+            raise HTTPException(status_code=404, detail="Content not found")
+        
+        matches = embeddings.match_content_to_standards(content_id, n=n)
+        
+        return {
+            "content_id": content_id,
+            "matched_standards": [
+                {
+                    "standard_code": code,
+                    "similarity": score,
+                    "standard": embeddings.standards[code].to_dict() if code in embeddings.standards else None
+                }
+                for code, score in matches
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Match standards failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/curriculum/stats")
+async def get_curriculum_stats(request: Request):
+    """Get statistics about the curriculum embeddings"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        return embeddings.get_stats()
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Curriculum stats failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/save")
+async def save_curriculum(request: Request, filepath: str = "models/curriculum_embeddings.pkl"):
+    """Save curriculum embeddings to disk"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        embeddings.save(filepath)
+        
+        return {
+            "status": "success",
+            "filepath": filepath,
+            "stats": embeddings.get_stats()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Save curriculum failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/curriculum/load")
+async def load_curriculum(request: Request, filepath: str = "models/curriculum_embeddings.pkl"):
+    """Load curriculum embeddings from disk"""
+    try:
+        embeddings = get_curriculum_embeddings(request)
+        
+        embeddings.load(filepath)
+        
+        return {
+            "status": "success",
+            "filepath": filepath,
+            "stats": embeddings.get_stats()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Load curriculum failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
