@@ -38,6 +38,21 @@
  * - POST   /content/learning-objects/:learningObjectId/resolve
  * - POST   /content/learning-objects/best-match
  * - GET    /content/accessibility-profile/schema
+ *
+ * AI-Assisted Content Authoring:
+ * - POST   /v1/content/ai/generate-draft                  Generate AI draft
+ * - GET    /v1/content/ai/drafts/:draftId                 Get draft by ID
+ * - POST   /v1/content/ai/drafts/:id/sections/:idx/regenerate  Regenerate section
+ * - POST   /v1/content/ai/drafts/:id/sections/:idx/expand Expand section
+ * - POST   /v1/content/ai/validate-alignment              Validate curriculum alignment
+ * - POST   /v1/content/ai/score-quality                   Score content quality
+ * - POST   /v1/content/ai/suggest-improvements            Suggest improvements
+ * - POST   /v1/content/ai/auto-tag                        Auto-tag content
+ * - POST   /v1/content/ai/simplify                        Simplify content
+ * - POST   /v1/content/ai/generate-assessment             Generate assessment
+ * - POST   /v1/content/ai/check-accuracy                  Check factual accuracy
+ * - POST   /v1/content/ai/analyze-bias                    Analyze content for bias
+ * - POST   /v1/content/ai/check-accessibility             Check accessibility
  */
 
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any */
@@ -50,6 +65,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { registerAuthHook } from './auth.js';
+import { aiAuthoringRoutes } from './routes/ai-authoring.routes.js';
 import { communityRoutes } from './routes/community.routes.js';
 import { contentRoutes } from './routes/content.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
@@ -94,6 +110,7 @@ async function main() {
   await fastify.register(lessonBuilderRoutes, { prefix: '/api' });
   await fastify.register(sharingRoutes, { prefix: '/api' });
   await fastify.register(communityRoutes, { prefix: '/api' });
+  await fastify.register(aiAuthoringRoutes, { prefix: '/api' });
 
   // Start server
   try {
