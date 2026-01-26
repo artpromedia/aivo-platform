@@ -444,3 +444,345 @@ class ModelStatusResponse(BaseModel):
     models: Dict[str, Dict[str, str]] = Field(
         default_factory=dict, description="Status of each model"
     )
+
+
+# =============================================================================
+# Sprint 4: Argumentation Assessment Models
+# =============================================================================
+
+
+class ArgumentComponentSchema(BaseModel):
+    """Schema for an argument component."""
+
+    component_id: str = Field(..., description="Unique component identifier")
+    component_type: str = Field(..., description="Type: claim, evidence, reasoning, etc.")
+    text: str = Field(..., description="Component text")
+    span: List[int] = Field(..., description="Start and end positions")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Detection confidence")
+    supports: Optional[str] = Field(None, description="ID of supported component")
+    attacks: Optional[str] = Field(None, description="ID of attacked component")
+    component_quality: float = Field(0.0, ge=0.0, le=1.0, description="Quality score")
+
+
+class ArgumentStructureSchema(BaseModel):
+    """Complete argument structure."""
+
+    claims: List[ArgumentComponentSchema] = Field(default_factory=list, description="Claim components")
+    major_claim: Optional[ArgumentComponentSchema] = Field(None, description="Main thesis")
+    evidence: List[ArgumentComponentSchema] = Field(default_factory=list, description="Evidence")
+    reasoning: List[ArgumentComponentSchema] = Field(default_factory=list, description="Reasoning")
+    counterarguments: List[ArgumentComponentSchema] = Field(default_factory=list, description="Counter")
+    rebuttals: List[ArgumentComponentSchema] = Field(default_factory=list, description="Rebuttals")
+    argument_graph: Dict = Field(default_factory=dict, description="Relationship graph")
+    argument_strength_score: float = Field(0.0, ge=0.0, le=1.0, description="Strength score")
+    completeness_score: float = Field(0.0, ge=0.0, le=1.0, description="Completeness")
+    missing_components: List[str] = Field(default_factory=list, description="Missing elements")
+    suggestions: List[str] = Field(default_factory=list, description="Improvement suggestions")
+
+
+class ArgumentativeAssessmentRequest(BaseModel):
+    """Request for argumentative essay assessment."""
+
+    text: str = Field(..., min_length=50, max_length=10000, description="Essay text")
+    prompt: str = Field(..., description="Writing prompt")
+    expected_position: Optional[str] = Field(None, description="Expected stance for debate topics")
+    grade_level: Optional[int] = Field(None, ge=1, le=12, description="Student grade level")
+
+    @field_validator("text")
+    @classmethod
+    def validate_text_not_empty(cls, v: str) -> str:
+        """Validate that text is not just whitespace."""
+        if not v.strip():
+            raise ValueError("Text cannot be empty or just whitespace")
+        return v.strip()
+
+
+class ArgumentativeAssessmentResponse(BaseModel):
+    """Response for argumentative essay assessment."""
+
+    assessment_id: str = Field(
+        default_factory=lambda: str(uuid4()), description="Unique assessment ID"
+    )
+    argument_structure: ArgumentStructureSchema = Field(..., description="Detected structure")
+    argument_quality_score: float = Field(..., ge=0.0, le=1.0, description="Overall quality")
+    claim_clarity: float = Field(..., ge=0.0, le=1.0, description="Claim clarity score")
+    evidence_quality: float = Field(..., ge=0.0, le=1.0, description="Evidence quality")
+    reasoning_soundness: float = Field(..., ge=0.0, le=1.0, description="Reasoning soundness")
+    counterargument_handling: float = Field(..., ge=0.0, le=1.0, description="Counter handling")
+    feedback: Optional[WritingFeedback] = Field(None, description="Generated feedback")
+    processing_time_ms: int = Field(..., description="Processing time in milliseconds")
+
+
+# =============================================================================
+# Sprint 4: Originality/Plagiarism Check Models
+# =============================================================================
+
+
+class MatchType(str, Enum):
+    """Type of plagiarism match."""
+
+    EXACT = "exact"
+    NEAR_EXACT = "near_exact"
+    PARAPHRASE = "paraphrase"
+    SEMANTIC = "semantic"
+    SELF_PLAGIARISM = "self_plagiarism"
+
+
+class MatchedSourceSchema(BaseModel):
+    """Single matched source in plagiarism check."""
+
+    source_id: str = Field(..., description="Source identifier")
+    source_title: Optional[str] = Field(None, description="Source title")
+    matched_text: str = Field(..., description="Matched text excerpt")
+    original_text: str = Field(..., description="Original source text")
+    similarity: float = Field(..., ge=0.0, le=1.0, description="Similarity score")
+    match_type: MatchType = Field(..., description="Type of match")
+    start_pos: int = Field(..., description="Start position in text")
+    end_pos: int = Field(..., description="End position in text")
+
+
+class SuspiciousPassageSchema(BaseModel):
+    """Passage flagged as potentially problematic."""
+
+    passage_text: str = Field(..., description="Suspicious text")
+    start_pos: int = Field(..., description="Start position")
+    end_pos: int = Field(..., description="End position")
+    reason: str = Field(..., description="Reason for flagging")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence level")
+    style_deviation_score: float = Field(0.0, ge=0.0, le=1.0, description="Style deviation")
+
+
+class OriginalityCheckRequest(BaseModel):
+    """Request for originality/plagiarism check."""
+
+    text: str = Field(..., min_length=50, max_length=10000, description="Text to check")
+    compare_to: Optional[List[str]] = Field(None, description="Previous submissions to compare")
+    check_internal_consistency: bool = Field(True, description="Check style consistency")
+
+    @field_validator("text")
+    @classmethod
+    def validate_text_not_empty(cls, v: str) -> str:
+        """Validate that text is not just whitespace."""
+        if not v.strip():
+            raise ValueError("Text cannot be empty or just whitespace")
+        return v.strip()
+
+
+class OriginalityCheckResponse(BaseModel):
+    """Response for originality check."""
+
+    originality_score: float = Field(..., ge=0.0, le=1.0, description="Originality score (1 = original)")
+    matched_sources: List[MatchedSourceSchema] = Field(default_factory=list, description="Matched sources")
+    style_consistency_score: float = Field(..., ge=0.0, le=1.0, description="Style consistency")
+    suspicious_passages: List[SuspiciousPassageSchema] = Field(default_factory=list, description="Flagged passages")
+    self_similarity_matrix: Optional[List[List[float]]] = Field(None, description="Paragraph similarity")
+    total_matched_words: int = Field(0, description="Total matched word count")
+    total_words: int = Field(0, description="Total word count")
+    fingerprint_hash: str = Field("", description="Document fingerprint")
+    verdict: str = Field(..., description="Human-readable verdict")
+    processing_time_ms: int = Field(..., description="Processing time in milliseconds")
+
+
+# =============================================================================
+# Sprint 4: Developmental Norms Assessment Models
+# =============================================================================
+
+
+class TraitDevelopmentSchema(BaseModel):
+    """Assessment of a single trait against norms."""
+
+    trait: str = Field(..., description="Trait name")
+    current_level: str = Field(..., description="Current development level")
+    expected_level: str = Field(..., description="Expected level for grade")
+    on_track: bool = Field(..., description="Whether student is on track")
+    grade_level_gap: int = Field(..., description="Gap from expected (+/- grades)")
+    evidence: List[str] = Field(default_factory=list, description="Evidence from text")
+    strengths: List[str] = Field(default_factory=list, description="Identified strengths")
+    growth_areas: List[str] = Field(default_factory=list, description="Areas to develop")
+
+
+class DevelopmentalAssessRequest(BaseModel):
+    """Request for developmental norms assessment."""
+
+    text: str = Field(..., min_length=50, max_length=10000, description="Student writing")
+    stated_grade: int = Field(..., ge=1, le=12, description="Student's grade level")
+    prompt: Optional[str] = Field(None, description="Writing prompt")
+
+    @field_validator("text")
+    @classmethod
+    def validate_text_not_empty(cls, v: str) -> str:
+        """Validate that text is not just whitespace."""
+        if not v.strip():
+            raise ValueError("Text cannot be empty or just whitespace")
+        return v.strip()
+
+
+class DevelopmentalAssessResponse(BaseModel):
+    """Response for developmental norms assessment."""
+
+    target_grade: int = Field(..., description="Target grade level")
+    assessed_grade_level: int = Field(..., description="Estimated writing grade level")
+    grade_level_gap: int = Field(..., description="Gap from target")
+    by_trait: Dict[str, TraitDevelopmentSchema] = Field(
+        default_factory=dict, description="Assessment by trait"
+    )
+    strengths_for_grade: List[str] = Field(default_factory=list, description="Grade-level strengths")
+    growth_areas: List[str] = Field(default_factory=list, description="Areas for growth")
+    next_milestone: str = Field(..., description="Next developmental milestone")
+    overall_development_level: str = Field(..., description="Overall level description")
+    percentile_estimate: int = Field(..., ge=0, le=100, description="Estimated percentile")
+    recommendations: List[str] = Field(default_factory=list, description="Recommendations")
+    processing_time_ms: int = Field(..., description="Processing time in milliseconds")
+
+
+# =============================================================================
+# Sprint 4: Rubric Mapping Models
+# =============================================================================
+
+
+class RubricType(str, Enum):
+    """Rubric type classifications."""
+
+    ANALYTIC = "analytic"
+    HOLISTIC = "holistic"
+    SINGLE_POINT = "single_point"
+
+
+class RubricLevelSchema(BaseModel):
+    """Single level within a rubric criterion."""
+
+    level: int = Field(..., description="Level number")
+    label: str = Field(..., description="Level label")
+    description: str = Field(..., description="Level description")
+
+
+class RubricCriterionSchema(BaseModel):
+    """Single rubric criterion."""
+
+    name: str = Field(..., description="Criterion name")
+    description: str = Field("", description="Criterion description")
+    weight: float = Field(1.0, ge=0.0, le=10.0, description="Weighting factor")
+    levels: Dict[str, str] = Field(default_factory=dict, description="Level descriptions")
+
+
+class RubricSchema(BaseModel):
+    """Complete rubric definition."""
+
+    rubric_id: str = Field(..., description="Rubric identifier")
+    name: str = Field(..., description="Rubric name")
+    rubric_type: RubricType = Field(RubricType.ANALYTIC, description="Rubric type")
+    criteria: List[RubricCriterionSchema] = Field(default_factory=list, description="Criteria")
+    scale: List[str] = Field(
+        default_factory=lambda: ["Emerging", "Developing", "Proficient", "Advanced"],
+        description="Scale labels"
+    )
+
+
+class CriterionScoreSchema(BaseModel):
+    """Score for a single criterion."""
+
+    criterion: str = Field(..., description="Criterion name")
+    level: int = Field(..., description="Achieved level")
+    level_name: str = Field(..., description="Level name")
+    evidence: List[str] = Field(default_factory=list, description="Supporting evidence")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence level")
+
+
+class RubricMapRequest(BaseModel):
+    """Request to map assessment to rubric."""
+
+    assessment_id: str = Field(..., description="ID of previous full assessment")
+    rubric: RubricSchema = Field(..., description="Rubric to apply")
+
+
+class RubricMapResponse(BaseModel):
+    """Response for rubric mapping."""
+
+    rubric_id: str = Field(..., description="Applied rubric ID")
+    criterion_scores: Dict[str, CriterionScoreSchema] = Field(
+        default_factory=dict, description="Scores by criterion"
+    )
+    total_score: float = Field(..., description="Total weighted score")
+    total_possible: float = Field(..., description="Maximum possible score")
+    percentage: float = Field(..., ge=0.0, le=100.0, description="Percentage score")
+    letter_grade: Optional[str] = Field(None, description="Letter grade if applicable")
+    processing_time_ms: int = Field(..., description="Processing time in milliseconds")
+
+
+class RubricTemplateResponse(BaseModel):
+    """Response listing available rubric templates."""
+
+    templates: List[Dict] = Field(default_factory=list, description="Available templates")
+
+
+# =============================================================================
+# Sprint 4: Grading Engine Integration Models
+# =============================================================================
+
+
+class GradingCompleteEvent(BaseModel):
+    """Event payload when grading engine completes."""
+
+    submission_id: str = Field(..., description="Submission identifier")
+    submission_text: str = Field(..., description="Submitted text")
+    grading_result: Dict = Field(default_factory=dict, description="Grading engine result")
+    student_id: Optional[str] = Field(None, description="Student identifier")
+    assignment_id: Optional[str] = Field(None, description="Assignment identifier")
+    timestamp: str = Field(..., description="ISO timestamp")
+
+
+class EnhancedGradingResult(BaseModel):
+    """Enhanced grading result with writing analysis."""
+
+    submission_id: str = Field(..., description="Submission identifier")
+    original_grade: Dict = Field(default_factory=dict, description="Original grading result")
+    writing_assessment: Optional[Dict] = Field(None, description="Full writing assessment")
+    trait_breakdown: Dict[str, float] = Field(default_factory=dict, description="Trait scores")
+    readability_metrics: Dict[str, float] = Field(default_factory=dict, description="Readability")
+    coherence_score: float = Field(0.0, ge=0.0, le=1.0, description="Coherence score")
+    grammar_summary: Dict = Field(default_factory=dict, description="Grammar summary")
+    feedback: Optional[WritingFeedback] = Field(None, description="Generated feedback")
+    enhancement_timestamp: str = Field(..., description="Enhancement timestamp")
+
+
+# =============================================================================
+# Sprint 4: Student Profile Models
+# =============================================================================
+
+
+class StudentProfileSchema(BaseModel):
+    """Student profile for personalized feedback."""
+
+    student_id: str = Field(..., description="Unique student identifier")
+    grade_level: int = Field(..., ge=1, le=12, description="Student grade level")
+    previous_scores: List[float] = Field(default_factory=list, description="Previous assessment scores")
+    known_strengths: List[str] = Field(default_factory=list, description="Known writing strengths")
+    known_weaknesses: List[str] = Field(default_factory=list, description="Known areas for improvement")
+    learning_goals: List[str] = Field(default_factory=list, description="Current learning goals")
+    feedback_preferences: Dict[str, str] = Field(
+        default_factory=dict, description="Feedback preferences"
+    )
+
+
+class FeedbackConfigSchema(BaseModel):
+    """Configuration for feedback generation."""
+
+    tone: str = Field("encouraging", description="Feedback tone")
+    detail_level: str = Field("moderate", description="Detail level")
+    focus_traits: List[str] = Field(default_factory=list, description="Traits to focus on")
+    max_suggestions: int = Field(5, ge=1, le=20, description="Maximum suggestions")
+    grade_level: int = Field(6, ge=1, le=12, description="Target grade level")
+    include_examples: bool = Field(True, description="Include text examples")
+    praise_to_critique_ratio: float = Field(2.0, ge=0.5, le=5.0, description="Praise ratio")
+    include_growth_mindset: bool = Field(True, description="Include growth mindset messages")
+    use_llm: bool = Field(False, description="Use LLM for enhanced feedback")
+
+
+class EnhancedFeedbackRequest(BaseModel):
+    """Request for enhanced feedback generation."""
+
+    assessment_id: str = Field(..., description="Reference to previous assessment")
+    student_profile: Optional[StudentProfileSchema] = Field(None, description="Student profile")
+    feedback_config: FeedbackConfigSchema = Field(
+        default_factory=FeedbackConfigSchema, description="Feedback configuration"
+    )

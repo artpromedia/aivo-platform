@@ -865,3 +865,522 @@ async def generate_feedback(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Feedback generation failed: {str(e)}",
         )
+
+
+# =============================================================================
+# Sprint 4: Argumentative Assessment Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/assess/argumentative",
+    response_model="ArgumentativeAssessmentResponse",
+    summary="Assess argumentative essay",
+    description="Specialized assessment for argumentative/persuasive essays.",
+)
+async def assess_argumentative(
+    request: "ArgumentativeAssessmentRequest",
+    settings: Settings = Depends(get_settings),
+    feedback_generator: FeedbackGenerator = Depends(get_feedback_generator),
+) -> "ArgumentativeAssessmentResponse":
+    """Assess argumentative essay structure and quality."""
+    from app.models.argumentation_detector import ArgumentationDetector
+    from app.schemas.requests import (
+        ArgumentativeAssessmentRequest,
+        ArgumentativeAssessmentResponse,
+        ArgumentComponentSchema,
+        ArgumentStructureSchema,
+        FeedbackPoint as FeedbackPointSchema,
+        Suggestion as SuggestionSchema,
+        WritingFeedback as WritingFeedbackSchema,
+    )
+
+    start_time = time.time()
+    assessment_id = str(uuid4())
+
+    try:
+        # Validate text
+        if len(request.text) < settings.MIN_TEXT_LENGTH:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Text must be at least {settings.MIN_TEXT_LENGTH} characters.",
+            )
+
+        # Initialize detector and analyze
+        detector = ArgumentationDetector()
+        structure = detector.detect_arguments(request.text)
+
+        # Evaluate quality metrics
+        quality_metrics = detector.evaluate_argument_quality(structure)
+
+        # Convert to schema
+        def convert_component(comp):
+            if comp is None:
+                return None
+            return ArgumentComponentSchema(
+                component_id=comp.component_id,
+                component_type=comp.component_type.value,
+                text=comp.text,
+                span=list(comp.span),
+                confidence=comp.confidence,
+                supports=comp.supports,
+                attacks=comp.attacks,
+                component_quality=comp.component_quality,
+            )
+
+        structure_schema = ArgumentStructureSchema(
+            claims=[convert_component(c) for c in structure.claims],
+            major_claim=convert_component(structure.major_claim),
+            evidence=[convert_component(e) for e in structure.evidence],
+            reasoning=[convert_component(r) for r in structure.reasoning],
+            counterarguments=[convert_component(ca) for ca in structure.counterarguments],
+            rebuttals=[convert_component(rb) for rb in structure.rebuttals],
+            argument_graph=structure.argument_graph,
+            argument_strength_score=structure.argument_strength_score,
+            completeness_score=structure.completeness_score,
+            missing_components=structure.missing_components,
+            suggestions=structure.suggestions,
+        )
+
+        # Generate feedback
+        assessment_results = {
+            "scores": {"overall": quality_metrics["overall_strength"] * 100},
+            "argumentation": {
+                "argument_strength_score": quality_metrics["overall_strength"],
+                "missing_components": structure.missing_components,
+                "suggestions": structure.suggestions,
+            },
+        }
+
+        feedback_result = feedback_generator.generate(
+            assessment_results,
+            feedback_style="encouraging",
+            grade_level=request.grade_level,
+        )
+
+        feedback = WritingFeedbackSchema(
+            summary=feedback_result.summary,
+            strengths=[
+                FeedbackPointSchema(
+                    area=s.area,
+                    description=s.description,
+                    example_from_text=s.example_from_text,
+                )
+                for s in feedback_result.strengths
+            ],
+            areas_for_improvement=[
+                FeedbackPointSchema(
+                    area=a.area,
+                    description=a.description,
+                    example_from_text=a.example_from_text,
+                )
+                for a in feedback_result.areas_for_improvement
+            ],
+            specific_suggestions=[
+                SuggestionSchema(
+                    category=s.category,
+                    original_text=s.original_text,
+                    suggestion=s.suggestion,
+                    explanation=s.explanation,
+                )
+                for s in feedback_result.specific_suggestions
+            ],
+            next_steps=feedback_result.next_steps,
+        )
+
+        processing_time = int((time.time() - start_time) * 1000)
+
+        return ArgumentativeAssessmentResponse(
+            assessment_id=assessment_id,
+            argument_structure=structure_schema,
+            argument_quality_score=quality_metrics["overall_strength"],
+            claim_clarity=quality_metrics["claim_clarity"],
+            evidence_quality=quality_metrics["evidence_quality"],
+            reasoning_soundness=quality_metrics["reasoning_soundness"],
+            counterargument_handling=quality_metrics["counterargument_handling"],
+            feedback=feedback,
+            processing_time_ms=processing_time,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Argumentative assessment failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Argumentative assessment failed: {str(e)}",
+        )
+
+
+# =============================================================================
+# Sprint 4: Originality Check Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/originality/check",
+    response_model="OriginalityCheckResponse",
+    summary="Check originality",
+    description="Check text for originality and potential plagiarism.",
+)
+async def check_originality(
+    request: "OriginalityCheckRequest",
+    settings: Settings = Depends(get_settings),
+) -> "OriginalityCheckResponse":
+    """Check text originality and detect plagiarism."""
+    from app.models.plagiarism_detector import PlagiarismDetector
+    from app.schemas.requests import (
+        MatchedSourceSchema,
+        MatchType,
+        OriginalityCheckRequest,
+        OriginalityCheckResponse,
+        SuspiciousPassageSchema,
+    )
+
+    start_time = time.time()
+
+    try:
+        # Validate text
+        if len(request.text) < settings.MIN_TEXT_LENGTH:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Text must be at least {settings.MIN_TEXT_LENGTH} characters.",
+            )
+
+        # Initialize detector
+        detector = PlagiarismDetector()
+
+        # Check originality
+        report = detector.check_originality(
+            request.text,
+            reference_corpus=request.compare_to,
+            check_internal_consistency=request.check_internal_consistency,
+        )
+
+        # Get detailed analysis
+        analysis = detector.get_detailed_analysis(report)
+
+        # Convert to schema
+        matched_sources = [
+            MatchedSourceSchema(
+                source_id=ms.source_id,
+                source_title=ms.source_title,
+                matched_text=ms.matched_text,
+                original_text=ms.original_text,
+                similarity=ms.similarity,
+                match_type=MatchType(ms.match_type.value),
+                start_pos=ms.start_pos,
+                end_pos=ms.end_pos,
+            )
+            for ms in report.matched_sources
+        ]
+
+        suspicious_passages = [
+            SuspiciousPassageSchema(
+                passage_text=sp.passage_text,
+                start_pos=sp.start_pos,
+                end_pos=sp.end_pos,
+                reason=sp.reason,
+                confidence=sp.confidence,
+                style_deviation_score=sp.style_deviation_score,
+            )
+            for sp in report.suspicious_passages
+        ]
+
+        processing_time = int((time.time() - start_time) * 1000)
+
+        return OriginalityCheckResponse(
+            originality_score=report.originality_score,
+            matched_sources=matched_sources,
+            style_consistency_score=report.style_consistency_score,
+            suspicious_passages=suspicious_passages,
+            self_similarity_matrix=report.self_similarity_matrix,
+            total_matched_words=report.total_matched_words,
+            total_words=report.total_words,
+            fingerprint_hash=report.fingerprint_hash,
+            verdict=analysis["summary"]["verdict"],
+            processing_time_ms=processing_time,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Originality check failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Originality check failed: {str(e)}",
+        )
+
+
+# =============================================================================
+# Sprint 4: Developmental Norms Assessment Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/developmental/assess",
+    response_model="DevelopmentalAssessResponse",
+    summary="Assess against developmental norms",
+    description="Compare writing against grade-level developmental norms.",
+)
+async def assess_developmental(
+    request: "DevelopmentalAssessRequest",
+    settings: Settings = Depends(get_settings),
+) -> "DevelopmentalAssessResponse":
+    """Assess writing against grade-appropriate developmental norms."""
+    from app.models.developmental_norms import DevelopmentalNorms
+    from app.schemas.requests import (
+        DevelopmentalAssessRequest,
+        DevelopmentalAssessResponse,
+        TraitDevelopmentSchema,
+    )
+
+    start_time = time.time()
+
+    try:
+        # Validate text
+        if len(request.text) < settings.MIN_TEXT_LENGTH:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Text must be at least {settings.MIN_TEXT_LENGTH} characters.",
+            )
+
+        # Initialize norms analyzer
+        norms = DevelopmentalNorms()
+
+        # Assess against norms
+        report = norms.assess_against_norms(
+            request.text,
+            grade=request.stated_grade,
+            prompt=request.prompt,
+        )
+
+        # Convert trait assessments to schema
+        by_trait = {}
+        for trait_name, trait_dev in report.by_trait.items():
+            by_trait[trait_name] = TraitDevelopmentSchema(
+                trait=trait_dev.trait,
+                current_level=trait_dev.current_level,
+                expected_level=trait_dev.expected_level,
+                on_track=trait_dev.on_track,
+                grade_level_gap=trait_dev.grade_level_gap,
+                evidence=trait_dev.evidence,
+                strengths=trait_dev.strengths,
+                growth_areas=trait_dev.growth_areas,
+            )
+
+        processing_time = int((time.time() - start_time) * 1000)
+
+        return DevelopmentalAssessResponse(
+            target_grade=report.target_grade,
+            assessed_grade_level=report.assessed_grade_level,
+            grade_level_gap=report.grade_level_gap,
+            by_trait=by_trait,
+            strengths_for_grade=report.strengths_for_grade,
+            growth_areas=report.growth_areas,
+            next_milestone=report.next_milestone,
+            overall_development_level=report.overall_development_level,
+            percentile_estimate=report.percentile_estimate,
+            recommendations=report.recommendations,
+            processing_time_ms=processing_time,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Developmental assessment failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Developmental assessment failed: {str(e)}",
+        )
+
+
+# =============================================================================
+# Sprint 4: Rubric Mapping Endpoints
+# =============================================================================
+
+
+@router.post(
+    "/rubric/map",
+    response_model="RubricMapResponse",
+    summary="Map assessment to rubric",
+    description="Map a previous assessment to a custom rubric.",
+)
+async def map_to_rubric(
+    request: "RubricMapRequest",
+    rubric_mapper: RubricMapper = Depends(get_rubric_mapper),
+) -> "RubricMapResponse":
+    """Map assessment scores to a custom rubric."""
+    from app.schemas.requests import (
+        CriterionScoreSchema,
+        RubricMapRequest,
+        RubricMapResponse,
+    )
+
+    start_time = time.time()
+
+    try:
+        # Get cached assessment
+        cached = _assessment_cache.get(request.assessment_id)
+        if not cached:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assessment {request.assessment_id} not found.",
+            )
+
+        # Extract trait scores from cached assessment
+        trait_scores_obj = cached.get("scores")
+        if not trait_scores_obj:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cached assessment does not contain trait scores.",
+            )
+
+        # Convert to dict for mapping
+        trait_scores = {}
+        if hasattr(trait_scores_obj, "traits"):
+            for name, ts in trait_scores_obj.traits.items():
+                trait_scores[name] = ts.score
+
+        # Map to rubric
+        result = rubric_mapper.map_scores(trait_scores, request.rubric.rubric_id)
+
+        # Convert to schema
+        criterion_scores = {}
+        for score in result.scores:
+            criterion_scores[score.criterion] = CriterionScoreSchema(
+                criterion=score.criterion,
+                level=score.level,
+                level_name=score.level_label,
+                evidence=[],
+                confidence=0.8,
+            )
+
+        # Get letter grade
+        letter_grade = rubric_mapper.get_grade_from_percentage(result.percentage)
+
+        processing_time = int((time.time() - start_time) * 1000)
+
+        return RubricMapResponse(
+            rubric_id=result.rubric_id,
+            criterion_scores=criterion_scores,
+            total_score=result.total_score,
+            total_possible=result.max_score,
+            percentage=result.percentage,
+            letter_grade=letter_grade,
+            processing_time_ms=processing_time,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Rubric mapping failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Rubric mapping failed: {str(e)}",
+        )
+
+
+@router.get(
+    "/rubric/templates",
+    response_model="RubricTemplateResponse",
+    summary="Get rubric templates",
+    description="List available rubric templates.",
+)
+async def get_rubric_templates(
+    rubric_mapper: RubricMapper = Depends(get_rubric_mapper),
+) -> "RubricTemplateResponse":
+    """Get available rubric templates."""
+    from app.schemas.requests import RubricTemplateResponse
+
+    templates = rubric_mapper.list_rubrics()
+
+    return RubricTemplateResponse(templates=templates)
+
+
+# =============================================================================
+# Sprint 4: Grading Engine Integration Endpoint
+# =============================================================================
+
+
+@router.post(
+    "/webhook/grading-complete",
+    response_model="EnhancedGradingResult",
+    summary="Handle grading completion",
+    description="Webhook to enhance grading with writing analysis.",
+)
+async def on_grading_complete(
+    event: "GradingCompleteEvent",
+    settings: Settings = Depends(get_settings),
+) -> "EnhancedGradingResult":
+    """Handle grading completion and enhance with writing analysis."""
+    from datetime import datetime
+
+    from app.schemas.requests import (
+        EnhancedGradingResult,
+        GradingCompleteEvent,
+    )
+    from app.services.grading_integration import GradingIntegrationService
+
+    try:
+        # Initialize integration service
+        integration = GradingIntegrationService(
+            grading_engine_url=settings.GRADING_ENGINE_URL,
+        )
+
+        # Define assessment function
+        async def assess_func(text: str):
+            # Re-use existing assess_full logic
+            essay_scorer = get_essay_scorer()
+            coherence_analyzer = get_coherence_analyzer()
+            grammar_checker = get_grammar_checker()
+            style_analyzer = get_style_analyzer()
+            readability_profiler = get_readability_profiler()
+
+            holistic_score = essay_scorer.score_holistic(text, None)
+            trait_scores = essay_scorer.score_traits(text, None)
+            coherence_result = coherence_analyzer.analyze(text)
+            grammar_report = grammar_checker.check(text)
+            style_report = style_analyzer.analyze_style(text)
+            readability_profile = readability_profiler.profile(text)
+
+            return {
+                "holistic_score": holistic_score,
+                "trait_scores": trait_scores,
+                "coherence_analysis": coherence_result,
+                "grammar_report": grammar_report,
+                "style_report": style_report,
+                "readability_profile": readability_profile,
+            }
+
+        # Handle the event
+        enhanced = await integration.handle_grading_complete_event(
+            {
+                "submission_id": event.submission_id,
+                "submission_text": event.submission_text,
+                "grading_result": event.grading_result,
+            },
+            assess_func,
+        )
+
+        return EnhancedGradingResult(
+            submission_id=enhanced.get("submission_id", ""),
+            original_grade=enhanced.get("original_grade", {}),
+            writing_assessment=enhanced.get("writing_assessment"),
+            trait_breakdown=enhanced.get("trait_breakdown", {}),
+            readability_metrics=enhanced.get("readability_metrics", {}),
+            coherence_score=enhanced.get("coherence_score", 0.0),
+            grammar_summary=enhanced.get("grammar_summary", {}),
+            feedback=None,
+            enhancement_timestamp=enhanced.get(
+                "enhancement_timestamp",
+                datetime.utcnow().isoformat()
+            ),
+        )
+
+    except Exception as e:
+        logger.error(f"Grading webhook failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Grading enhancement failed: {str(e)}",
+        )
