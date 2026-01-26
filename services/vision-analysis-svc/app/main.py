@@ -7,8 +7,11 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes import router as vision_router, init_components, get_components
+from app.core.config import get_settings
 
 # Configure logging
 logging.basicConfig(
@@ -17,60 +20,74 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Service instances (initialized on startup)
-handwriting_model = None
-equation_detector = None
-diagram_analyzer = None
-drawing_assessor = None
-attention_tracker = None
+# Settings instance
+settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
-    global handwriting_model, equation_detector, diagram_analyzer
-    global drawing_assessor, attention_tracker
-    
     logger.info("Initializing Vision Analysis Service...")
-    
-    # TODO: Initialize models on startup
-    # handwriting_model = HandwritingRecognition()
-    # equation_detector = MathEquationDetector()
-    # diagram_analyzer = DiagramAnalyzer()
-    # drawing_assessor = DrawingAssessment()
-    # attention_tracker = AttentionTracker()
-    
-    logger.info("Vision Analysis Service initialized")
+
+    # Initialize all model components
+    try:
+        init_components(settings)
+        logger.info("Vision Analysis Service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize components: {e}")
+        # Continue anyway - components will be initialized lazily on first use
+
     yield
-    
+
     logger.info("Shutting down Vision Analysis Service...")
 
 
 app = FastAPI(
-    title="Vision Analysis Service",
+    title=settings.PROJECT_NAME,
     description="""
 AI-powered computer vision for educational content analysis.
 
 ## Features
 
-- **Handwriting Recognition**: OCR for handwritten text and math
-- **Math Equation Detection**: Parse equations to LaTeX
-- **Diagram Analysis**: Understand charts, graphs, and diagrams
-- **Drawing Assessment**: Evaluate student artwork
-- **Attention Tracking**: Monitor engagement via webcam (privacy-first)
+- **Handwriting Recognition**: OCR for handwritten text using TrOCR and EasyOCR
+- **Math Equation Detection**: Parse equations to LaTeX using pix2tex
+- **Diagram Analysis**: Understand charts, graphs, flowcharts, and diagrams
+- **Document Scanning**: Enhance and correct document photos
+- **Multimodal Fusion**: Combine vision and text analysis for comprehensive understanding
+
+## API Endpoints
+
+### OCR
+- `POST /api/v1/ocr/handwriting` - Recognize handwritten text from base64 image
+- `POST /api/v1/ocr/handwriting/upload` - Recognize handwritten text from uploaded file
+
+### Math Recognition
+- `POST /api/v1/math/recognize` - Convert math equation image to LaTeX
+
+### Diagram Analysis
+- `POST /api/v1/diagram/analyze` - Analyze charts, graphs, and diagrams
+
+### Document Scanning
+- `POST /api/v1/document/scan` - Enhance and correct document photos
+
+### Combined Analysis
+- `POST /api/v1/analyze/homework` - Analyze homework images (OCR + math + diagrams)
     """,
-    version="0.1.0",
+    version=settings.VERSION,
     lifespan=lifespan,
 )
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include vision API routes
+app.include_router(vision_router, prefix="/api/v1")
 
 
 # =============================================================================
@@ -82,148 +99,64 @@ async def health() -> Dict[str, Any]:
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "service": "vision-analysis-svc",
-        "version": "0.1.0",
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
     }
 
 
 @app.get("/health/ready")
 async def readiness() -> Dict[str, Any]:
     """Readiness check endpoint."""
+    components = get_components()
+
+    models_loaded = {
+        "handwriting": components.get("handwriting_recognizer") is not None,
+        "math_equation": components.get("math_detector") is not None,
+        "diagram": components.get("diagram_analyzer") is not None,
+        "document_scanner": components.get("document_scanner") is not None,
+        "image_preprocessor": components.get("image_preprocessor") is not None,
+        "multimodal_fusion": components.get("multimodal_fusion") is not None,
+    }
+
+    all_loaded = all(models_loaded.values())
+
     return {
-        "status": "ready",
-        "models_loaded": {
-            "handwriting": handwriting_model is not None,
-            "equation": equation_detector is not None,
-            "diagram": diagram_analyzer is not None,
-            "drawing": drawing_assessor is not None,
-            "attention": attention_tracker is not None,
-        },
+        "status": "ready" if all_loaded else "partial",
+        "models_loaded": models_loaded,
     }
 
 
-# =============================================================================
-# Handwriting Recognition Endpoints
-# =============================================================================
-
-@app.post("/api/v1/handwriting/recognize")
-async def recognize_handwriting(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Recognize handwritten text from an image.
-    
-    Returns extracted text with confidence scores.
-    """
-    # TODO: Implement handwriting recognition
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/health/live")
+async def liveness() -> Dict[str, str]:
+    """Liveness check endpoint."""
+    return {"status": "alive"}
 
 
-@app.post("/api/v1/handwriting/recognize-math")
-async def recognize_handwritten_math(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Recognize handwritten mathematical expressions.
-    
-    Returns LaTeX representation of the math.
-    """
-    # TODO: Implement math handwriting recognition
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/metrics")
+async def metrics() -> Dict[str, Any]:
+    """Basic metrics endpoint."""
+    components = get_components()
 
-
-# =============================================================================
-# Math Equation Detection Endpoints
-# =============================================================================
-
-@app.post("/api/v1/equations/detect")
-async def detect_equations(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Detect and extract mathematical equations from an image.
-    
-    Returns list of detected equations with LaTeX and bounding boxes.
-    """
-    # TODO: Implement equation detection
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-@app.post("/api/v1/equations/solve")
-async def solve_equation(latex: str) -> Dict[str, Any]:
-    """
-    Solve a mathematical equation given in LaTeX format.
-    
-    Returns step-by-step solution.
-    """
-    # TODO: Implement equation solving
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-# =============================================================================
-# Diagram Analysis Endpoints
-# =============================================================================
-
-@app.post("/api/v1/diagrams/analyze")
-async def analyze_diagram(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Analyze a diagram, chart, or graph.
-    
-    Returns structured understanding of the visual.
-    """
-    # TODO: Implement diagram analysis
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-@app.post("/api/v1/diagrams/extract-data")
-async def extract_chart_data(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Extract data points from a chart or graph image.
-    
-    Returns structured data representation.
-    """
-    # TODO: Implement data extraction
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-# =============================================================================
-# Drawing Assessment Endpoints
-# =============================================================================
-
-@app.post("/api/v1/drawings/assess")
-async def assess_drawing(
-    file: UploadFile = File(...),
-    rubric_id: str = None,
-) -> Dict[str, Any]:
-    """
-    Assess a student drawing against criteria.
-    
-    Returns scores and feedback.
-    """
-    # TODO: Implement drawing assessment
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-# =============================================================================
-# Attention Tracking Endpoints
-# =============================================================================
-
-@app.post("/api/v1/attention/analyze-frame")
-async def analyze_attention_frame(file: UploadFile = File(...)) -> Dict[str, Any]:
-    """
-    Analyze a single frame for attention/engagement signals.
-    
-    Privacy-first: No faces stored, only attention metrics returned.
-    """
-    # TODO: Implement attention analysis
-    raise HTTPException(status_code=501, detail="Not implemented yet")
-
-
-@app.post("/api/v1/attention/session-summary")
-async def get_attention_summary(session_id: str) -> Dict[str, Any]:
-    """
-    Get attention summary for a learning session.
-    
-    Returns engagement metrics over time.
-    """
-    # TODO: Implement session summary
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    return {
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
+        "device": settings.DEVICE,
+        "components_initialized": len([c for c in components.values() if c is not None]),
+        "total_components": 6,
+        "settings": {
+            "trocr_model": settings.TROCR_MODEL,
+            "latex_ocr_model": settings.LATEX_OCR_MODEL,
+            "max_image_size": settings.MAX_IMAGE_SIZE,
+            "confidence_threshold": settings.CONFIDENCE_THRESHOLD,
+        }
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app,
+        host=settings.HOST,
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+    )

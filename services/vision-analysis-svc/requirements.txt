@@ -1,28 +1,42 @@
 # Vision Analysis Service Dependencies
-# Core
+
+# Core Framework
 fastapi>=0.104.0
-uvicorn>=0.24.0
+uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
+pydantic-settings>=2.1.0
 python-multipart>=0.0.6
 
 # Computer Vision
 opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
+pillow>=10.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+
+# Deep Learning
 torch>=2.1.0
 torchvision>=0.16.0
-pillow>=10.0.0
+transformers>=4.35.0
 
-# OCR & Handwriting
+# OCR & Handwriting Recognition
 easyocr>=1.7.0
 pytesseract>=0.3.10
 
-# Math Equation Recognition
+# Math Equation Recognition (LaTeX OCR)
 pix2tex>=0.1.0
 
-# Face/Gaze Detection (for engagement)
-mediapipe>=0.10.0
-dlib>=19.24.0
-
 # Utilities
-numpy>=1.24.0
-structlog>=23.2.0
 httpx>=0.25.0
+structlog>=23.2.0
+aiofiles>=23.2.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Development
+black>=23.11.0
+isort>=5.12.0
+mypy>=1.7.0
