@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
     && python -m spacy download en_core_web_sm \
-    && python -m nltk.downloader punkt averaged_perceptron_tagger
+    && python -m nltk.downloader punkt averaged_perceptron_tagger wordnet stopwords
 
 # Copy application code
 COPY . .
