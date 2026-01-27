@@ -13,7 +13,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "useUnknownInCatchVariables": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
@@ -26,7 +26,12 @@
     "declaration": false,
     "incremental": true,
     "paths": {
-      "@aivo/*": ["./libs/*/src", "./services/*/src", "./apps/*/src"]
+      "@aivo/*": [
+        "./libs/*/src",
+        "./packages/*/src",
+        "./services/*/src",
+        "./apps/*/src"
+      ]
     },
     "types": ["node"]
   }

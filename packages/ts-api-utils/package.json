@@ -10,6 +10,50 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./audit": {
+      "import": "./dist/audit.js",
+      "types": "./dist/audit.d.ts"
+    },
+    "./dataloader": {
+      "import": "./dist/dataloader.js",
+      "types": "./dist/dataloader.d.ts"
+    },
+    "./dataloader-factory": {
+      "import": "./dist/dataloader-factory.js",
+      "types": "./dist/dataloader-factory.d.ts"
+    },
+    "./env-validation": {
+      "import": "./dist/env-validation.js",
+      "types": "./dist/env-validation.d.ts"
+    },
+    "./fastify-helpers": {
+      "import": "./dist/fastify-helpers.js",
+      "types": "./dist/fastify-helpers.d.ts"
+    },
+    "./logger": {
+      "import": "./dist/logger.js",
+      "types": "./dist/logger.d.ts"
+    },
+    "./mock-mode": {
+      "import": "./dist/mock-mode.js",
+      "types": "./dist/mock-mode.d.ts"
+    },
+    "./random": {
+      "import": "./dist/random.js",
+      "types": "./dist/random.d.ts"
+    },
+    "./rate-limit": {
+      "import": "./dist/rate-limit.js",
+      "types": "./dist/rate-limit.d.ts"
+    },
+    "./service-urls": {
+      "import": "./dist/service-urls.js",
+      "types": "./dist/service-urls.d.ts"
+    },
+    "./soft-delete": {
+      "import": "./dist/soft-delete.js",
+      "types": "./dist/soft-delete.d.ts"
     }
   },
   "scripts": {
