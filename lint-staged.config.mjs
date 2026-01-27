@@ -29,12 +29,29 @@ const checkNoMockData = (files) => {
   return 'exit 0';
 };
 
+// Filter out files from directories that ESLint should ignore
+const filterIgnoredFiles = (files) => {
+  const ignoredPatterns = [
+    /[/\\]\.venv[/\\]/,
+    /[/\\]node_modules[/\\]/,
+    /[/\\]\.next[/\\]/,
+    /[/\\]dist[/\\]/,
+    /[/\\]build[/\\]/,
+    /[/\\]coverage[/\\]/,
+  ];
+  return files.filter(file => !ignoredPatterns.some(pattern => pattern.test(file)));
+};
+
 export default {
-  "*.{ts,tsx,js,jsx}": (files) => [
-    checkNoMockData(files),
-    "eslint --fix --no-warn-ignored",
-    "prettier --write"
-  ],
+  "*.{ts,tsx,js,jsx}": (files) => {
+    const filteredFiles = filterIgnoredFiles(files);
+    if (filteredFiles.length === 0) return [];
+    return [
+      checkNoMockData(filteredFiles),
+      `eslint --fix --no-warn-ignored ${filteredFiles.join(' ')}`,
+      `prettier --write ${filteredFiles.join(' ')}`
+    ];
+  },
   "*.{json,md,mdx,css,scss,html}": [
     "prettier --write"
   ]
