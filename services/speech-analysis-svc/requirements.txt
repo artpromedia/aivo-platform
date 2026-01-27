@@ -8,9 +8,9 @@ pydantic==2.9.0
 python-multipart>=0.0.6
 
 # Audio Processing
-torch==2.1.0
-torchaudio==2.1.0
-librosa==0.10.1
+torch>=2.2.0
+torchaudio>=2.2.0
+librosa>=0.10.1
 soundfile==0.12.1
 pydub>=0.25.1
 
