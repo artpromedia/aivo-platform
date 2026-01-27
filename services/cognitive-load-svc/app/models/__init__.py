@@ -43,6 +43,26 @@ from app.models.load_estimator import (
     CognitiveLoadEstimate,
     LoadLevel,
 )
+from app.models.complexity_analyzer import (
+    ComplexityAnalyzer,
+    ComplexityAnalyzerConfig,
+    ComplexityAnalysis,
+    ElementInteractivityResult,
+)
+from app.models.mental_model_assessor import (
+    MentalModelAssessor,
+    MentalModelAssessorConfig,
+    MentalModelAssessment,
+    Misconception,
+    DevelopmentTrajectory,
+)
+from app.models.pacing_optimizer import (
+    PacingOptimizer,
+    PacingOptimizerConfig,
+    PacingRecommendation,
+    ContentSchedule,
+    ContentItem,
+)
 
 __all__ = [
     # Intrinsic Load Analyzer
@@ -82,4 +102,21 @@ __all__ = [
     "LoadEstimatorConfig",
     "CognitiveLoadEstimate",
     "LoadLevel",
+    # Complexity Analyzer
+    "ComplexityAnalyzer",
+    "ComplexityAnalyzerConfig",
+    "ComplexityAnalysis",
+    "ElementInteractivityResult",
+    # Mental Model Assessor
+    "MentalModelAssessor",
+    "MentalModelAssessorConfig",
+    "MentalModelAssessment",
+    "Misconception",
+    "DevelopmentTrajectory",
+    # Pacing Optimizer
+    "PacingOptimizer",
+    "PacingOptimizerConfig",
+    "PacingRecommendation",
+    "ContentSchedule",
+    "ContentItem",
 ]

@@ -7,14 +7,48 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from app.models.state_encoder import StateEncoder
+from app.models.action_selector import ActionSelector
+from app.models.reward_model import RewardModel
+from app.models.policy_learner import PolicyLearner
+from app.services.experience_buffer import ExperienceBuffer
+from app.services.policy_evaluator import PolicyEvaluator
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Global instances
+state_encoder: Optional[StateEncoder] = None
+action_selector: Optional[ActionSelector] = None
+reward_model: Optional[RewardModel] = None
+policy_learner: Optional[PolicyLearner] = None
+experience_buffer: Optional[ExperienceBuffer] = None
+policy_evaluator: Optional[PolicyEvaluator] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global state_encoder, action_selector, reward_model, policy_learner
+    global experience_buffer, policy_evaluator
+
     logger.info("Initializing RL Tutoring Service...")
+
+    # Initialize all components
+    state_encoder = StateEncoder(state_dim=64)
+    action_selector = ActionSelector()
+    reward_model = RewardModel()
+    policy_learner = PolicyLearner(
+        algorithm="q_learning",
+        state_dim=64,
+        action_dim=len(action_selector.ACTION_TYPES)
+    )
+    experience_buffer = ExperienceBuffer(capacity=10000)
+    policy_evaluator = PolicyEvaluator()
+
+    logger.info("All RL components initialized successfully")
+
     yield
+
     logger.info("Shutting down RL Tutoring Service...")
 
 
@@ -30,7 +64,7 @@ Reinforcement learning for adaptive tutoring decisions.
 - **Reward Modeling**: Model learning outcomes as rewards
 - **Strategy Optimization**: Continuously improve tutoring
     """,
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -49,10 +83,14 @@ class LearnerState(BaseModel):
     recent_performance: List[float]
     engagement_level: float
     time_in_session: float
+    current_content_id: Optional[str] = None
+    available_content: List[str] = []
+    previous_content_ids: List[str] = []
+    hints_given: int = 0
 
 
-class TutoringAction(BaseModel):
-    action_type: str  # hint, question, explanation, practice, review
+class TutoringActionResponse(BaseModel):
+    action_type: str
     content_id: Optional[str] = None
     difficulty: float
     parameters: Dict[str, Any] = {}
@@ -60,37 +98,241 @@ class TutoringAction(BaseModel):
 
 class RewardSignal(BaseModel):
     learner_id: str
-    action_taken: TutoringAction
+    session_id: Optional[str] = None
+    state: Dict[str, Any]
+    action_taken: Dict[str, Any]
     outcome: Dict[str, float]  # correctness, time, engagement
+    next_state: Optional[Dict[str, Any]] = None
+    done: bool = False
 
 
 @app.get("/health")
 async def health() -> Dict[str, Any]:
-    return {"status": "healthy", "service": "rl-tutoring-svc"}
+    return {
+        "status": "healthy",
+        "service": "rl-tutoring-svc",
+        "components": {
+            "state_encoder": state_encoder is not None,
+            "action_selector": action_selector is not None,
+            "reward_model": reward_model is not None,
+            "policy_learner": policy_learner is not None,
+            "experience_buffer": experience_buffer is not None,
+            "policy_evaluator": policy_evaluator is not None,
+        }
+    }
+
+
+@app.get("/health/ready")
+async def health_ready() -> Dict[str, Any]:
+    all_ready = all([
+        state_encoder is not None,
+        action_selector is not None,
+        reward_model is not None,
+        policy_learner is not None,
+        experience_buffer is not None,
+        policy_evaluator is not None,
+    ])
+    return {
+        "status": "ready" if all_ready else "not_ready",
+        "service": "rl-tutoring-svc"
+    }
 
 
 @app.post("/api/v1/action/select")
 async def select_action(state: LearnerState) -> Dict[str, Any]:
     """Select optimal tutoring action for current state."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    if policy_learner is None or action_selector is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    logger.info(f"Selecting action for learner {state.learner_id}")
+
+    # Convert state to dict for processing
+    state_dict = state.model_dump()
+
+    # Get action from policy
+    action_idx, confidence = policy_learner.predict_with_confidence(state_dict)
+
+    # Convert to tutoring action with context
+    context = {
+        "engagement_level": state.engagement_level,
+        "current_mastery": sum(state.knowledge_state.values()) / len(state.knowledge_state) if state.knowledge_state else 0.5,
+        "recent_performance": state.recent_performance,
+        "current_content_id": state.current_content_id,
+        "available_content": state.available_content,
+        "previous_content_ids": state.previous_content_ids,
+        "hints_given": state.hints_given,
+    }
+
+    action = action_selector.select(action_idx, context)
+
+    return {
+        "status": "success",
+        "learner_id": state.learner_id,
+        "action": {
+            "action_type": action.action_type,
+            "action_id": action.action_id,
+            "content_id": action.content_id,
+            "parameters": action.parameters,
+        },
+        "confidence": confidence,
+        "q_values": policy_learner.get_action_values(state_dict),
+        "policy_version": f"trained_{policy_learner.training_steps}",
+    }
 
 
 @app.post("/api/v1/reward/record")
 async def record_reward(reward: RewardSignal) -> Dict[str, Any]:
     """Record reward signal for policy update."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    if reward_model is None or experience_buffer is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    logger.info(f"Recording reward for learner {reward.learner_id}")
+
+    # Compute reward components
+    reward_components = reward_model.compute(
+        state=reward.state,
+        action=reward.action_taken,
+        outcome=reward.outcome,
+    )
+
+    # Get action index
+    action_type = reward.action_taken.get("action_type", "explanation")
+    action_idx = action_selector.get_action_index(action_type) if action_selector else 0
+
+    # Store experience
+    next_state = reward.next_state if reward.next_state else reward.state
+    experience_buffer.add(
+        state=reward.state,
+        action=action_idx,
+        reward=reward_components.total,
+        next_state=next_state,
+        done=reward.done,
+    )
+
+    return {
+        "status": "success",
+        "recorded": True,
+        "learner_id": reward.learner_id,
+        "reward_components": {
+            "learning_gain": reward_components.learning_gain,
+            "engagement": reward_components.engagement,
+            "efficiency": reward_components.efficiency,
+            "total": reward_components.total,
+        },
+        "buffer_size": len(experience_buffer),
+    }
 
 
 @app.post("/api/v1/policy/update")
-async def update_policy(batch_size: int = 32) -> Dict[str, Any]:
+async def update_policy(batch_size: int = 32, epochs: int = 10) -> Dict[str, Any]:
     """Trigger policy update from collected experiences."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    if policy_learner is None or experience_buffer is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    buffer_size = len(experience_buffer)
+    if buffer_size < batch_size:
+        return {
+            "status": "skipped",
+            "message": f"Not enough experiences in buffer ({buffer_size} < {batch_size})",
+            "updated": False,
+            "buffer_size": buffer_size,
+        }
+
+    logger.info(f"Updating policy with batch_size={batch_size}, epochs={epochs}")
+
+    # Sample experiences and train
+    experiences = experience_buffer.sample(batch_size)
+    prev_steps = policy_learner.training_steps
+
+    policy_learner.train(experiences, epochs=epochs)
+
+    return {
+        "status": "success",
+        "updated": True,
+        "batch_size": batch_size,
+        "epochs": epochs,
+        "training_steps": policy_learner.training_steps,
+        "steps_this_update": policy_learner.training_steps - prev_steps,
+        "buffer_size": buffer_size,
+        "policy_stats": policy_learner.get_statistics(),
+    }
 
 
 @app.get("/api/v1/policy/evaluate")
 async def evaluate_policy(num_episodes: int = 100) -> Dict[str, Any]:
     """Evaluate current policy performance."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    if policy_learner is None or policy_evaluator is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    logger.info(f"Evaluating policy over {num_episodes} episodes")
+
+    # Get experience data if available
+    experience_data = None
+    if experience_buffer and len(experience_buffer) > 0:
+        experience_data = experience_buffer.get_all()
+
+    metrics = policy_evaluator.evaluate(
+        policy=policy_learner,
+        num_episodes=num_episodes,
+        experience_data=experience_data,
+    )
+
+    return {
+        "status": "success",
+        "metrics": {
+            "average_reward": metrics.average_reward,
+            "learning_gain": metrics.learning_gain,
+            "completion_rate": metrics.completion_rate,
+            "engagement_score": metrics.engagement_score,
+            "episodes_evaluated": metrics.episodes_evaluated,
+        },
+        "policy_version": f"trained_{policy_learner.training_steps}",
+        "policy_stats": policy_learner.get_statistics(),
+    }
+
+
+@app.get("/api/v1/buffer/stats")
+async def get_buffer_stats() -> Dict[str, Any]:
+    """Get experience buffer statistics."""
+    if experience_buffer is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    return {
+        "status": "success",
+        "buffer_stats": experience_buffer.get_statistics(),
+    }
+
+
+@app.post("/api/v1/policy/save")
+async def save_policy(path: str = "/tmp/rl_policy.json") -> Dict[str, Any]:
+    """Save current policy to file."""
+    if policy_learner is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    policy_learner.save(path)
+    return {
+        "status": "success",
+        "saved_to": path,
+        "training_steps": policy_learner.training_steps,
+    }
+
+
+@app.post("/api/v1/policy/load")
+async def load_policy(path: str = "/tmp/rl_policy.json") -> Dict[str, Any]:
+    """Load policy from file."""
+    if policy_learner is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    success = policy_learner.load(path)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Policy file not found: {path}")
+
+    return {
+        "status": "success",
+        "loaded_from": path,
+        "training_steps": policy_learner.training_steps,
+        "policy_stats": policy_learner.get_statistics(),
+    }
 
 
 if __name__ == "__main__":
