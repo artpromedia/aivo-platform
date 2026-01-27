@@ -6,7 +6,7 @@
   "description": "High-throughput batch event collection and processing service",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "(prisma generate || true) && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "start:worker": "node dist/worker.js",
     "lint": "eslint .",

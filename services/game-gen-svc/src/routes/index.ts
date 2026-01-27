@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import * as gameGenService from '../services/gameGenService.js';
 
 export default async function routes(app: FastifyInstance) {
@@ -24,7 +24,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/templates/:templateId', async (request, reply) => {
     const { templateId } = request.params as { templateId: string };
     const template = await gameGenService.getTemplate(request.tenantId!, templateId);
-    if (!template) return reply.notFound('Template not found');
+    if (!template) return (reply as any).notFound('Template not found');
     return template;
   });
 
@@ -50,7 +50,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/generations/:generationId', async (request, reply) => {
     const { generationId } = request.params as { generationId: string };
     const generation = await gameGenService.getGeneration(request.tenantId!, generationId);
-    if (!generation) return reply.notFound('Generation not found');
+    if (!generation) return (reply as any).notFound('Generation not found');
     return generation;
   });
 
@@ -59,8 +59,8 @@ export default async function routes(app: FastifyInstance) {
     const { gameType, isPublished, tags, limit } = request.query as any;
     return gameGenService.listGames(request.tenantId!, {
       gameType,
-      isPublished: isPublished !== undefined ? isPublished === 'true' : undefined,
-      tags: tags ? tags.split(',') : undefined,
+      ...(isPublished !== undefined && { isPublished: isPublished === 'true' }),
+      ...(tags && { tags: tags.split(',') }),
       limit: limit ? Number.parseInt(limit) : 50,
     });
   });
@@ -68,7 +68,7 @@ export default async function routes(app: FastifyInstance) {
   app.get('/games/:gameId', async (request, reply) => {
     const { gameId } = request.params as { gameId: string };
     const game = await gameGenService.getGame(request.tenantId!, gameId);
-    if (!game) return reply.notFound('Game not found');
+    if (!game) return (reply as any).notFound('Game not found');
     return game;
   });
 

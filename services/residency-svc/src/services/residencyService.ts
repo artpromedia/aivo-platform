@@ -148,7 +148,7 @@ export async function getTargetRegion(tenantId: string, dataType: string, servic
       // Check if rule matches
       const matchesDataType = rule.dataTypes.length === 0 || rule.dataTypes.includes(dataType);
       const matchesService = !serviceName || rule.servicePatterns.length === 0 ||
-        rule.servicePatterns.some((p) => new RegExp(p.replace('*', '.*')).test(serviceName));
+        rule.servicePatterns.some((p: string) => new RegExp(p.replace('*', '.*')).test(serviceName));
 
       if (matchesDataType && matchesService && rule.targetRegions.length > 0) {
         return rule.targetRegions[0] ?? null;
@@ -396,11 +396,11 @@ export async function getDashboard(tenantId: string) {
   ]);
 
   const regions = await prisma.region.findMany({ where: { isActive: true }, select: { id: true, displayName: true } });
-  const regionMap = new Map(regions.map((r) => [r.id, r.displayName]));
+  const regionMap = new Map(regions.map((r: { id: string; displayName: string }) => [r.id, r.displayName]));
 
   return {
     totalDataLocations,
-    locationsByRegion: locationsByRegion.map((l) => ({ region: regionMap.get(l.regionId) || l.regionId, count: l._count.regionId })),
+    locationsByRegion: locationsByRegion.map((l: { regionId: string; _count: { regionId: number } }) => ({ region: regionMap.get(l.regionId) || l.regionId, count: l._count.regionId })),
     pendingTransfers,
     recentViolations,
     activePolicies: policies,

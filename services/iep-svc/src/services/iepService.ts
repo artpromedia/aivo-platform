@@ -531,7 +531,7 @@ export async function getDashboard(tenantId: string) {
   return {
     totalStudents,
     activeIEPs,
-    byStatus: Object.fromEntries(statusCounts.map((s) => [s.status, s._count.status])),
+    byStatus: Object.fromEntries(statusCounts.map((s: { status: string; _count: { status: number } }) => [s.status, s._count.status])),
     upcomingMeetings,
     openComplianceAlerts: complianceAlerts,
   };

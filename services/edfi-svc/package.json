@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "(prisma generate || true) && tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",

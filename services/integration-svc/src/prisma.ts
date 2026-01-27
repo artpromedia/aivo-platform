@@ -25,11 +25,11 @@ export type {
   WebhookDelivery,
   ApiKey,
   ExternalLearningEvent,
-  GoogleClassroomConnection,
-  ClassroomAssignment,
-  ClassroomSubmission,
-  ClassroomEnrollment,
-  ClassroomSyncLog,
+  GoogleClassroomCredential,
+  GoogleClassroomAssignment,
+  GoogleClassroomSubmission,
+  Enrollment,
+  GoogleClassroomSyncLog,
 } from '../generated/prisma-client/index.js';
 
 // Re-export enums

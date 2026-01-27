@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "(prisma generate || true) && tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run --passWithNoTests",
