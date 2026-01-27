@@ -201,9 +201,9 @@ export function getSystemDefaultRoutine(type: RoutineType): SessionRoutineData {
 }
 
 /**
- * Get all system default routines
+ * Get all system default routines as a keyed object
  */
-export function getAllSystemDefaultRoutines(): SessionRoutineData[] {
+export function getAllSystemDefaultRoutines(): Record<RoutineType, SessionRoutineData> {
   const types: RoutineType[] = [
     'WELCOME',
     'CHECKIN',
@@ -215,7 +215,11 @@ export function getAllSystemDefaultRoutines(): SessionRoutineData[] {
     'CALMING',
   ];
 
-  return types.map(getSystemDefaultRoutine);
+  const result = {} as Record<RoutineType, SessionRoutineData>;
+  for (const type of types) {
+    result[type] = getSystemDefaultRoutine(type);
+  }
+  return result;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -231,6 +235,8 @@ export interface RoutineTemplate {
   type: RoutineType;
   ageRange?: { min: number; max: number };
   steps: RoutineStep[];
+  /** Whether this is the default template for this type */
+  isDefault?: boolean;
 }
 
 /**
@@ -244,6 +250,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         description: 'Quick wave and preview for older learners',
         type: 'WELCOME',
         ageRange: { min: 10, max: 18 },
+        isDefault: true,
         steps: [
           {
             id: 'sw1',
@@ -289,6 +296,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Emoji Check-In',
         description: 'Simple emoji-based mood check',
         type: 'CHECKIN',
+        isDefault: true,
         steps: [
           {
             id: 'eci1',
@@ -324,6 +332,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Quick Breath',
         description: 'Single breath between activities',
         type: 'TRANSITION',
+        isDefault: true,
         steps: [
           {
             id: 'qb1',
@@ -343,6 +352,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Movement Break',
         description: 'Active break with stretches',
         type: 'BREAK',
+        isDefault: true,
         steps: [
           {
             id: 'mb1',
@@ -387,6 +397,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Ready Check',
         description: 'Confirm readiness to continue',
         type: 'RETURN',
+        isDefault: true,
         steps: [
           {
             id: 'rc1',
@@ -406,6 +417,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Celebration Goodbye',
         description: 'End with celebration',
         type: 'GOODBYE',
+        isDefault: true,
         steps: [
           {
             id: 'cg1',
@@ -434,6 +446,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Star Celebration',
         description: 'Celebrate achievements with stars',
         type: 'CELEBRATION',
+        isDefault: true,
         steps: [
           {
             id: 'sc1',
@@ -453,6 +466,7 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
         name: 'Deep Breathing',
         description: 'Extended breathing exercise',
         type: 'CALMING',
+        isDefault: true,
         steps: [
           {
             id: 'db1',
@@ -518,6 +532,9 @@ export function getRoutineTemplates(type: RoutineType): RoutineTemplate[] {
 // ROUTINE VALIDATION
 // ══════════════════════════════════════════════════════════════════════════════
 
+/** Maximum number of steps allowed in a routine */
+const MAX_ROUTINE_STEPS = 10;
+
 /**
  * Validate routine steps
  */
@@ -526,6 +543,10 @@ export function validateRoutineSteps(steps: RoutineStep[]): { valid: boolean; er
 
   if (steps.length === 0) {
     errors.push('Routine must have at least one step');
+  }
+
+  if (steps.length > MAX_ROUTINE_STEPS) {
+    errors.push(`Routine cannot have more than ${MAX_ROUTINE_STEPS} steps`);
   }
 
   for (let i = 0; i < steps.length; i++) {
@@ -585,22 +606,71 @@ export interface RoutineDisplayInfo {
   icon: string;
   color: string;
   label: string;
+  description: string;
 }
+
+/** Default display info for unknown routine types */
+const DEFAULT_DISPLAY_INFO: RoutineDisplayInfo = {
+  icon: 'star',
+  color: '#9E9E9E',
+  label: 'Routine',
+  description: 'A session routine',
+};
 
 /**
  * Get routine display info
  */
 export function getRoutineDisplayInfo(type: RoutineType): RoutineDisplayInfo {
-  const info: Record<RoutineType, { icon: string; color: string; label: string }> = {
-    WELCOME: { icon: 'waving_hand', color: '#4CAF50', label: 'Welcome' },
-    CHECKIN: { icon: 'mood', color: '#2196F3', label: 'Check-In' },
-    TRANSITION: { icon: 'swap_horiz', color: '#9E9E9E', label: 'Transition' },
-    BREAK: { icon: 'self_improvement', color: '#8BC34A', label: 'Break' },
-    RETURN: { icon: 'replay', color: '#03A9F4', label: 'Return' },
-    GOODBYE: { icon: 'celebration', color: '#FFD700', label: 'Goodbye' },
-    CELEBRATION: { icon: 'star', color: '#FFC107', label: 'Celebration' },
-    CALMING: { icon: 'spa', color: '#7986CB', label: 'Calming' },
+  const info: Record<RoutineType, RoutineDisplayInfo> = {
+    WELCOME: {
+      icon: 'waving_hand',
+      color: '#4CAF50',
+      label: 'Welcome',
+      description: 'Start the session with a friendly greeting',
+    },
+    CHECKIN: {
+      icon: 'mood',
+      color: '#2196F3',
+      label: 'Check-In',
+      description: 'Check in with how the learner is feeling',
+    },
+    TRANSITION: {
+      icon: 'swap_horiz',
+      color: '#9E9E9E',
+      label: 'Transition',
+      description: 'Smooth transition between activities',
+    },
+    BREAK: {
+      icon: 'self_improvement',
+      color: '#8BC34A',
+      label: 'Break',
+      description: 'Take a break to rest and recharge',
+    },
+    RETURN: {
+      icon: 'replay',
+      color: '#03A9F4',
+      label: 'Return',
+      description: 'Return from break and get ready to continue',
+    },
+    GOODBYE: {
+      icon: 'celebration',
+      color: '#FFD700',
+      label: 'Goodbye',
+      description: 'End the session with a positive farewell',
+    },
+    CELEBRATION: {
+      icon: 'star',
+      color: '#FFC107',
+      label: 'Celebration',
+      description: 'Celebrate achievements and progress',
+    },
+    CALMING: {
+      icon: 'spa',
+      color: '#7986CB',
+      label: 'Calming',
+      description: 'Calming exercises for emotional regulation',
+    },
   };
 
-  return info[type];
+  return info[type] ?? DEFAULT_DISPLAY_INFO;
 }

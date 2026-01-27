@@ -4,62 +4,102 @@
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
-import { SsoService } from '../src/lib/sso/service.js';
+import { SsoService, SsoError } from '../src/lib/sso/service.js';
 import type { SsoUserInfo, IdpConfigRecord } from '../src/lib/sso/types.js';
+import { prisma } from '../src/prisma.js';
 
-// Mock Prisma client
-const mockPrismaClient = {
-  idpConfig: {
-    findFirst: vi.fn(),
-    findUnique: vi.fn(),
-    update: vi.fn(),
+// Mock Prisma
+vi.mock('../src/prisma.js', () => ({
+  prisma: {
+    tenant: {
+      findUnique: vi.fn(),
+    },
+    idpConfig: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
+    user: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    ssoAttempt: {
+      create: vi.fn(),
+    },
   },
-  idpRoleMapping: {
-    findMany: vi.fn(),
-  },
-  user: {
-    findFirst: vi.fn(),
-    findUnique: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-  },
-  ssoAuditLog: {
-    create: vi.fn(),
-  },
-};
+}));
 
-// Mock SAML service
-const mockSamlService = {
-  generateAuthnRequest: vi.fn(),
-  validateResponse: vi.fn(),
-  generateSpMetadata: vi.fn(),
-};
+// Mock state management
+vi.mock('../src/lib/sso/state.js', () => ({
+  generateSsoState: vi.fn().mockResolvedValue('mock-state-token'),
+  validateSsoState: vi.fn().mockResolvedValue({
+    tenantId: 'tenant-1',
+    idpConfigId: 'idp-1',
+    protocol: 'OIDC',
+    redirectUri: 'https://app.example.com/callback',
+    clientType: 'web',
+    nonce: 'mock-nonce',
+    initiatedAt: Date.now(),
+  }),
+  peekSsoState: vi.fn().mockResolvedValue({
+    tenantId: 'tenant-1',
+    idpConfigId: 'idp-1',
+    protocol: 'OIDC',
+    redirectUri: 'https://app.example.com/callback',
+    clientType: 'web',
+    nonce: 'mock-nonce',
+    initiatedAt: Date.now(),
+  }),
+  SsoStateError: class SsoStateError extends Error {
+    constructor(public readonly code: string, message: string) {
+      super(message);
+      this.name = 'SsoStateError';
+    }
+  },
+}));
 
-// Mock OIDC service
-const mockOidcService = {
-  generateAuthorizationUrl: vi.fn(),
-  exchangeCodeForTokens: vi.fn(),
-  getUserInfo: vi.fn(),
-};
+// Mock redirect validator
+vi.mock('../src/lib/sso/redirect-validator.js', () => ({
+  validateRedirectUri: vi.fn().mockResolvedValue({ valid: true }),
+}));
+
+// Mock PKCE
+vi.mock('../src/lib/sso/pkce.js', () => ({
+  generatePKCE: vi.fn().mockReturnValue({
+    codeVerifier: 'mock-verifier',
+    codeChallenge: 'mock-challenge',
+    codeChallengeMethod: 'S256',
+  }),
+}));
 
 describe('SsoService', () => {
   let service: SsoService;
+  const mockPrisma = prisma as unknown as {
+    tenant: { findUnique: Mock };
+    idpConfig: { findFirst: Mock; findUnique: Mock; findMany: Mock };
+    user: { findFirst: Mock; create: Mock; update: Mock };
+    ssoAttempt: { create: Mock };
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // @ts-expect-error - Mocking partial implementation
     service = new SsoService({
-      prisma: mockPrismaClient as any,
-      saml: mockSamlService as any,
-      oidc: mockOidcService as any,
       baseUrl: 'https://auth.aivo.education',
-      stateSecret: 'test-secret-key-at-least-32-characters',
+      spEntityId: 'https://aivo.education/sp',
     });
   });
 
-  describe('initiateSSO', () => {
-    const mockOidcConfig: IdpConfigRecord = {
+  describe('initiateSso', () => {
+    const mockTenant = {
+      id: 'tenant-1',
+      slug: 'test-tenant',
+      name: 'Test Tenant',
+      ssoEnabled: true,
+    };
+
+    const mockOidcConfig = {
       id: 'idp-1',
       tenantId: 'tenant-1',
       protocol: 'OIDC',
@@ -67,11 +107,12 @@ describe('SsoService', () => {
       issuer: 'https://idp.example.com',
       enabled: true,
       clientId: 'client-123',
-      clientSecret: 'secret-456',
+      clientSecretRef: 'secret-ref',
       jwksUri: 'https://idp.example.com/.well-known/jwks.json',
       authorizationEndpoint: 'https://idp.example.com/authorize',
       tokenEndpoint: 'https://idp.example.com/token',
-      userInfoEndpoint: 'https://idp.example.com/userinfo',
+      userinfoEndpoint: 'https://idp.example.com/userinfo',
+      scopes: ['openid', 'profile', 'email'],
       emailClaim: 'email',
       nameClaim: 'name',
       firstNameClaim: 'given_name',
@@ -81,15 +122,11 @@ describe('SsoService', () => {
       autoProvisionUsers: true,
       defaultRole: 'TEACHER',
       allowedUserTypes: ['TEACHER', 'DISTRICT_ADMIN'],
-      ssoUrl: null,
-      sloUrl: null,
-      x509Certificate: null,
-      metadataXml: null,
       roleMapping: {},
       loginHintTemplate: null,
     };
 
-    const mockSamlConfig: IdpConfigRecord = {
+    const mockSamlConfig = {
       id: 'idp-2',
       tenantId: 'tenant-1',
       protocol: 'SAML',
@@ -109,291 +146,124 @@ describe('SsoService', () => {
       autoProvisionUsers: true,
       defaultRole: 'TEACHER',
       allowedUserTypes: ['TEACHER'],
-      clientId: null,
-      clientSecret: null,
-      jwksUri: null,
-      authorizationEndpoint: null,
-      tokenEndpoint: null,
-      userInfoEndpoint: null,
       roleMapping: {},
       loginHintTemplate: null,
     };
 
-    it('should return error when IdP config not found', async () => {
-      mockPrismaClient.idpConfig.findFirst.mockResolvedValue(null);
+    it('should throw error when tenant not found', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(null);
 
-      const result = await service.initiateSSO('nonexistent-tenant', {});
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe('IDP_NOT_FOUND');
-      }
+      await expect(
+        service.initiateSso({
+          tenantSlug: 'nonexistent-tenant',
+          redirectUri: 'https://app.example.com/callback',
+          clientType: 'web',
+        })
+      ).rejects.toThrow(SsoError);
     });
 
-    it('should return error when IdP is disabled', async () => {
-      mockPrismaClient.idpConfig.findFirst.mockResolvedValue({
+    it('should throw error when SSO is not enabled for tenant', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue({
+        ...mockTenant,
+        ssoEnabled: false,
+      });
+
+      await expect(
+        service.initiateSso({
+          tenantSlug: 'test-tenant',
+          redirectUri: 'https://app.example.com/callback',
+          clientType: 'web',
+        })
+      ).rejects.toThrow(SsoError);
+    });
+
+    it('should throw error when IdP config not found', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      mockPrisma.idpConfig.findFirst.mockResolvedValue(null);
+      mockPrisma.idpConfig.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.initiateSso({
+          tenantSlug: 'test-tenant',
+          redirectUri: 'https://app.example.com/callback',
+          clientType: 'web',
+        })
+      ).rejects.toThrow(SsoError);
+    });
+
+    it('should throw error when IdP is disabled', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      mockPrisma.idpConfig.findFirst.mockResolvedValue({
         ...mockOidcConfig,
         enabled: false,
       });
+      mockPrisma.idpConfig.findMany.mockResolvedValue([{
+        ...mockOidcConfig,
+        enabled: false,
+      }]);
 
-      const result = await service.initiateSSO('test-tenant', {});
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe('IDP_DISABLED');
-      }
-    });
-
-    it('should generate OIDC authorization URL for OIDC IdP', async () => {
-      mockPrismaClient.idpConfig.findFirst.mockResolvedValue(mockOidcConfig);
-      mockOidcService.generateAuthorizationUrl.mockReturnValue({
-        url: 'https://idp.example.com/authorize?client_id=client-123&state=xyz',
-        state: 'xyz',
-        codeVerifier: 'verifier-123',
-      });
-
-      const result = await service.initiateSSO('test-tenant', {});
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.redirectUrl).toContain('https://idp.example.com/authorize');
-      }
-      expect(mockOidcService.generateAuthorizationUrl).toHaveBeenCalled();
-    });
-
-    it('should generate SAML AuthnRequest for SAML IdP', async () => {
-      mockPrismaClient.idpConfig.findFirst.mockResolvedValue(mockSamlConfig);
-      mockSamlService.generateAuthnRequest.mockResolvedValue({
-        url: 'https://idp.example.com/saml/sso?SAMLRequest=...',
-        requestId: '_abc123',
-      });
-
-      const result = await service.initiateSSO('test-tenant', {});
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.redirectUrl).toContain('https://idp.example.com/saml');
-      }
-      expect(mockSamlService.generateAuthnRequest).toHaveBeenCalled();
-    });
-
-    it('should include login hint when email is provided', async () => {
-      mockPrismaClient.idpConfig.findFirst.mockResolvedValue(mockOidcConfig);
-      mockOidcService.generateAuthorizationUrl.mockReturnValue({
-        url: 'https://idp.example.com/authorize?login_hint=user@example.com',
-        state: 'xyz',
-        codeVerifier: 'verifier-123',
-      });
-
-      const result = await service.initiateSSO('test-tenant', {
-        loginHint: 'user@example.com',
-      });
-
-      expect(result.success).toBe(true);
-      expect(mockOidcService.generateAuthorizationUrl).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          loginHint: 'user@example.com',
+      await expect(
+        service.initiateSso({
+          tenantSlug: 'test-tenant',
+          redirectUri: 'https://app.example.com/callback',
+          clientType: 'web',
         })
-      );
+      ).rejects.toThrow(SsoError);
+    });
+
+    it('should return redirect URL for OIDC IdP', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      mockPrisma.idpConfig.findFirst.mockResolvedValue(mockOidcConfig);
+      mockPrisma.idpConfig.findMany.mockResolvedValue([mockOidcConfig]);
+
+      const result = await service.initiateSso({
+        tenantSlug: 'test-tenant',
+        redirectUri: 'https://app.example.com/callback',
+        clientType: 'web',
+      });
+
+      expect(result.redirectUrl).toBeDefined();
+      expect(result.state).toBe('mock-state-token');
+    });
+
+    it('should return redirect URL for SAML IdP', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      mockPrisma.idpConfig.findFirst.mockResolvedValue(mockSamlConfig);
+      mockPrisma.idpConfig.findMany.mockResolvedValue([mockSamlConfig]);
+
+      const result = await service.initiateSso({
+        tenantSlug: 'test-tenant',
+        protocol: 'SAML',
+        redirectUri: 'https://app.example.com/callback',
+        clientType: 'web',
+      });
+
+      expect(result.redirectUrl).toBeDefined();
+      expect(result.state).toBe('mock-state-token');
+    });
+
+    it('should pass login hint to the SSO flow', async () => {
+      mockPrisma.tenant.findUnique.mockResolvedValue(mockTenant);
+      mockPrisma.idpConfig.findFirst.mockResolvedValue(mockOidcConfig);
+      mockPrisma.idpConfig.findMany.mockResolvedValue([mockOidcConfig]);
+
+      const result = await service.initiateSso({
+        tenantSlug: 'test-tenant',
+        loginHint: 'user@example.com',
+        redirectUri: 'https://app.example.com/callback',
+        clientType: 'web',
+      });
+
+      expect(result.redirectUrl).toBeDefined();
     });
   });
 
-  describe('mapRoles', () => {
-    const mockUserInfo: SsoUserInfo = {
-      email: 'teacher@school.edu',
-      externalId: 'ext-123',
-      name: 'Test Teacher',
-      firstName: 'Test',
-      lastName: 'Teacher',
-      roles: ['Teachers', 'Staff'],
-    };
+  describe('getSpMetadata', () => {
+    it('should return SAML SP metadata', () => {
+      const metadata = service.getSpMetadata('test-tenant');
 
-    it('should map roles based on IdP role mapping', async () => {
-      mockPrismaClient.idpRoleMapping.findMany.mockResolvedValue([
-        { idpRole: 'Teachers', aivoRole: 'TEACHER' },
-        { idpRole: 'Administrators', aivoRole: 'DISTRICT_ADMIN' },
-      ]);
-
-      const roles = await service.mapRoles('idp-1', mockUserInfo.roles || []);
-
-      expect(roles).toContain('TEACHER');
-      expect(roles).not.toContain('DISTRICT_ADMIN');
-    });
-
-    it('should return default role when no mappings match', async () => {
-      mockPrismaClient.idpRoleMapping.findMany.mockResolvedValue([
-        { idpRole: 'Administrators', aivoRole: 'DISTRICT_ADMIN' },
-      ]);
-
-      const roles = await service.mapRoles('idp-1', ['UnknownRole'], 'TEACHER');
-
-      expect(roles).toContain('TEACHER');
-    });
-
-    it('should deduplicate roles', async () => {
-      mockPrismaClient.idpRoleMapping.findMany.mockResolvedValue([
-        { idpRole: 'Teachers', aivoRole: 'TEACHER' },
-        { idpRole: 'Staff', aivoRole: 'TEACHER' },
-      ]);
-
-      const roles = await service.mapRoles('idp-1', ['Teachers', 'Staff']);
-
-      expect(roles).toHaveLength(1);
-      expect(roles).toContain('TEACHER');
-    });
-  });
-
-  describe('findOrCreateUser', () => {
-    const mockUserInfo: SsoUserInfo = {
-      email: 'teacher@school.edu',
-      externalId: 'ext-123',
-      name: 'Test Teacher',
-      firstName: 'Test',
-      lastName: 'Teacher',
-      roles: ['Teachers'],
-    };
-
-    it('should return existing user when found by email', async () => {
-      const existingUser = {
-        id: 'user-1',
-        email: 'teacher@school.edu',
-        tenantId: 'tenant-1',
-        externalId: null,
-      };
-
-      mockPrismaClient.user.findFirst.mockResolvedValue(existingUser);
-      mockPrismaClient.user.update.mockResolvedValue({
-        ...existingUser,
-        externalId: 'ext-123',
-      });
-
-      const result = await service.findOrCreateUser(
-        'tenant-1',
-        'idp-1',
-        mockUserInfo,
-        true,
-        'TEACHER'
-      );
-
-      expect(result).not.toBeNull();
-      expect(result?.id).toBe('user-1');
-      // Should update external ID
-      expect(mockPrismaClient.user.update).toHaveBeenCalled();
-    });
-
-    it('should return existing user when found by external ID', async () => {
-      const existingUser = {
-        id: 'user-1',
-        email: 'teacher@school.edu',
-        tenantId: 'tenant-1',
-        externalId: 'ext-123',
-      };
-
-      // First call (by email) returns null
-      mockPrismaClient.user.findFirst
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(existingUser);
-
-      const result = await service.findOrCreateUser(
-        'tenant-1',
-        'idp-1',
-        mockUserInfo,
-        true,
-        'TEACHER'
-      );
-
-      expect(result).not.toBeNull();
-      expect(result?.id).toBe('user-1');
-    });
-
-    it('should create new user when auto-provisioning is enabled', async () => {
-      mockPrismaClient.user.findFirst.mockResolvedValue(null);
-      mockPrismaClient.idpRoleMapping.findMany.mockResolvedValue([
-        { idpRole: 'Teachers', aivoRole: 'TEACHER' },
-      ]);
-
-      const newUser = {
-        id: 'user-new',
-        email: 'teacher@school.edu',
-        tenantId: 'tenant-1',
-        externalId: 'ext-123',
-        firstName: 'Test',
-        lastName: 'Teacher',
-        role: 'TEACHER',
-      };
-      mockPrismaClient.user.create.mockResolvedValue(newUser);
-
-      const result = await service.findOrCreateUser(
-        'tenant-1',
-        'idp-1',
-        mockUserInfo,
-        true,
-        'TEACHER'
-      );
-
-      expect(result).not.toBeNull();
-      expect(mockPrismaClient.user.create).toHaveBeenCalled();
-    });
-
-    it('should return null when user not found and auto-provisioning is disabled', async () => {
-      mockPrismaClient.user.findFirst.mockResolvedValue(null);
-
-      const result = await service.findOrCreateUser(
-        'tenant-1',
-        'idp-1',
-        mockUserInfo,
-        false,
-        'TEACHER'
-      );
-
-      expect(result).toBeNull();
-      expect(mockPrismaClient.user.create).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('createAuditLog', () => {
-    it('should create audit log entry', async () => {
-      await service.createAuditLog({
-        tenantId: 'tenant-1',
-        idpConfigId: 'idp-1',
-        action: 'SSO_LOGIN',
-        userId: 'user-1',
-        success: true,
-        ipAddress: '192.168.1.1',
-        userAgent: 'Mozilla/5.0',
-      });
-
-      expect(mockPrismaClient.ssoAuditLog.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          tenantId: 'tenant-1',
-          idpConfigId: 'idp-1',
-          action: 'SSO_LOGIN',
-          userId: 'user-1',
-          success: true,
-        }),
-      });
-    });
-
-    it('should include error details on failure', async () => {
-      await service.createAuditLog({
-        tenantId: 'tenant-1',
-        idpConfigId: 'idp-1',
-        action: 'SSO_LOGIN',
-        userId: null,
-        success: false,
-        errorCode: 'INVALID_TOKEN',
-        errorMessage: 'Token signature verification failed',
-        ipAddress: '192.168.1.1',
-      });
-
-      expect(mockPrismaClient.ssoAuditLog.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          success: false,
-          errorCode: 'INVALID_TOKEN',
-          errorMessage: 'Token signature verification failed',
-        }),
-      });
+      expect(metadata).toContain('EntityDescriptor');
+      expect(metadata).toContain('SPSSODescriptor');
     });
   });
 });

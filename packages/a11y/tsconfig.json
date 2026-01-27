@@ -21,7 +21,8 @@
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     "incremental": false,
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "types": []
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]

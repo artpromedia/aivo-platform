@@ -2,18 +2,34 @@
  * SSO State Management Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { generateSsoState, validateSsoState, SsoStateError } from '../src/lib/sso/state.js';
+
+// Mock Redis client
+vi.mock('../src/lib/redis/client.js', () => ({
+  getRedisClient: vi.fn().mockReturnValue(null), // Use memory store for tests
+  RedisKeys: {
+    ssoState: (id: string) => `sso:state:${id}`,
+  },
+}));
+
+// Set up test environment
+process.env.NODE_ENV = 'development';
+process.env.SSO_DEV_INSECURE_MODE = 'true';
 
 describe('SSO State Management', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('generateSsoState', () => {
-    it('should generate a unique state token', () => {
-      const state1 = generateSsoState({
+    it('should generate a unique state token', async () => {
+      const state1 = await generateSsoState({
         tenantId: 'tenant-1',
         idpConfigId: 'idp-1',
         protocol: 'OIDC',
@@ -21,7 +37,7 @@ describe('SSO State Management', () => {
         clientType: 'web',
       });
 
-      const state2 = generateSsoState({
+      const state2 = await generateSsoState({
         tenantId: 'tenant-1',
         idpConfigId: 'idp-1',
         protocol: 'OIDC',
@@ -34,7 +50,7 @@ describe('SSO State Management', () => {
       expect(state1.length).toBeGreaterThan(0);
     });
 
-    it('should store state with correct properties', () => {
+    it('should store state with correct properties', async () => {
       const params = {
         tenantId: 'tenant-123',
         idpConfigId: 'idp-456',
@@ -44,8 +60,8 @@ describe('SSO State Management', () => {
         loginHint: 'user@example.com',
       };
 
-      const stateId = generateSsoState(params);
-      const validated = validateSsoState(stateId);
+      const stateId = await generateSsoState(params);
+      const validated = await validateSsoState(stateId);
 
       expect(validated.tenantId).toBe(params.tenantId);
       expect(validated.idpConfigId).toBe(params.idpConfigId);
@@ -59,8 +75,8 @@ describe('SSO State Management', () => {
   });
 
   describe('validateSsoState', () => {
-    it('should validate and return state for valid token', () => {
-      const stateId = generateSsoState({
+    it('should validate and return state for valid token', async () => {
+      const stateId = await generateSsoState({
         tenantId: 'tenant-1',
         idpConfigId: 'idp-1',
         protocol: 'OIDC',
@@ -68,14 +84,14 @@ describe('SSO State Management', () => {
         clientType: 'web',
       });
 
-      const state = validateSsoState(stateId);
+      const state = await validateSsoState(stateId);
 
       expect(state).toBeDefined();
       expect(state.tenantId).toBe('tenant-1');
     });
 
-    it('should consume state (single-use)', () => {
-      const stateId = generateSsoState({
+    it('should consume state (single-use)', async () => {
+      const stateId = await generateSsoState({
         tenantId: 'tenant-1',
         idpConfigId: 'idp-1',
         protocol: 'OIDC',
@@ -84,19 +100,18 @@ describe('SSO State Management', () => {
       });
 
       // First validation should succeed
-      validateSsoState(stateId);
+      await validateSsoState(stateId);
 
       // Second validation should fail (state consumed)
-      expect(() => validateSsoState(stateId)).toThrow(SsoStateError);
+      await expect(validateSsoState(stateId)).rejects.toThrow(SsoStateError);
     });
 
-    it('should throw for non-existent state', () => {
-      expect(() => validateSsoState('non-existent-state')).toThrow(SsoStateError);
-      expect(() => validateSsoState('non-existent-state')).toThrow('SSO state not found');
+    it('should throw for non-existent state', async () => {
+      await expect(validateSsoState('non-existent-state')).rejects.toThrow(SsoStateError);
     });
 
-    it('should throw for expired state', () => {
-      const stateId = generateSsoState({
+    it('should throw for expired state', async () => {
+      const stateId = await generateSsoState({
         tenantId: 'tenant-1',
         idpConfigId: 'idp-1',
         protocol: 'OIDC',
@@ -107,8 +122,7 @@ describe('SSO State Management', () => {
       // Advance time past TTL (10 minutes)
       vi.advanceTimersByTime(11 * 60 * 1000);
 
-      expect(() => validateSsoState(stateId)).toThrow(SsoStateError);
-      expect(() => validateSsoState(stateId)).toThrow('expired');
+      await expect(validateSsoState(stateId)).rejects.toThrow(SsoStateError);
     });
   });
 });

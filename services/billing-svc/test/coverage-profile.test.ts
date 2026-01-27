@@ -10,7 +10,7 @@ import {
   computeFeaturePayer,
   computeEffectiveModules,
   createEmptyCoverageProfile,
-  FeatureKeyValues,
+  CoverageCoverageFeatureKeyValues,
   FeaturePayerValues,
   findOverlappingFeatures,
   profileToSummary,
@@ -151,7 +151,7 @@ describe('Coverage Profile Helper Functions', () => {
         null
       );
 
-      expect(profile.upsellOpportunities.length).toBe(Object.values(FeatureKeyValues).length);
+      expect(profile.upsellOpportunities.length).toBe(Object.values(CoverageFeatureKeyValues).length);
     });
   });
 
@@ -340,7 +340,7 @@ describe('Coverage Scenarios', () => {
       const effective = computeEffectiveModules(districtModules, parentModules);
 
       // Features that should be upsell opportunities
-      const allFeatures = Object.values(FeatureKeyValues);
+      const allFeatures = Object.values(CoverageFeatureKeyValues);
       const upsellOpportunities = allFeatures.filter((feature) => !effective.has(feature));
 
       expect(upsellOpportunities).toContain('MODULE_SCIENCE');
