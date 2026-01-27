@@ -1,106 +1,182 @@
-"""Cognitive Load Service - FastAPI Application"""
+"""
+Cognitive Load Service - FastAPI Application
+
+Provides REST endpoints for adaptive cognitive load management:
+- Real-time load estimation
+- Content complexity analysis
+- Working memory modeling
+- Overload prediction
+- Scaffolding generation
+- Pacing optimization
+"""
+
 import logging
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 
-logging.basicConfig(level=logging.INFO)
+from app.api.routes import router as cognitive_router, init_components, get_components
+from app.core.config import get_settings
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
+
+# Settings instance
+settings = get_settings()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Application lifespan manager."""
     logger.info("Initializing Cognitive Load Service...")
+
+    # Initialize all model components
+    try:
+        init_components(settings)
+        logger.info("Cognitive Load Service initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize components: {e}")
+        # Continue anyway - components will be initialized lazily on first use
+
     yield
+
     logger.info("Shutting down Cognitive Load Service...")
 
 
 app = FastAPI(
-    title="Cognitive Load Service",
+    title=settings.PROJECT_NAME,
     description="""
-Adaptive cognitive load management for personalized learning.
+AI-powered cognitive load management for personalized learning.
 
 ## Features
 
-- **Load Estimation**: Real-time cognitive load estimation
-- **Content Analysis**: Analyze content complexity
-- **Adaptive Pacing**: Adjust content delivery based on load
-- **Mental Model Assessment**: Evaluate learner mental models
+- **Load Estimation**: Real-time cognitive load estimation from behavioral signals
+- **Content Analysis**: Analyze intrinsic complexity of educational content
+- **Working Memory**: Model learner working memory capacity and usage
+- **Overload Prediction**: Proactive warning system for cognitive overload
+- **Scaffolding**: Adaptive support recommendations based on load
+- **Pacing**: Optimize content delivery based on cognitive state
+
+## API Endpoints
+
+### Cognitive Load Estimation
+- `POST /api/v1/load/estimate` - Estimate cognitive load from interaction data
+- `GET /api/v1/load/history/{learner_id}` - Get load history for a learner
+
+### Content Complexity
+- `POST /api/v1/content/complexity` - Analyze content complexity
+- `POST /api/v1/content/element-interactivity` - Analyze element interactivity
+
+### Extraneous Load
+- `POST /api/v1/extraneous/detect` - Detect extraneous load from UI
+
+### Working Memory
+- `POST /api/v1/memory/estimate` - Estimate working memory load
+- `GET /api/v1/memory/snapshot/{learner_id}` - Get memory snapshot
+
+### Overload Prediction
+- `POST /api/v1/overload/predict` - Predict cognitive overload
+- `POST /api/v1/overload/trend` - Analyze load trend
+- `GET /api/v1/overload/warnings/{learner_id}` - Get early warnings
+
+### Scaffolding
+- `POST /api/v1/scaffolding/generate` - Generate scaffolding recommendations
+- `POST /api/v1/scaffolding/hint` - Generate progressive hints
+
+### Pacing
+- `POST /api/v1/pacing/recommend` - Recommend content pacing
+
+### Adaptation
+- `POST /api/v1/adaptation/recommend` - Get adaptation recommendations
+
+### Session Management
+- `POST /api/v1/session/start` - Start tracking session
+- `POST /api/v1/session/{session_id}/update` - Update session
+- `GET /api/v1/session/{session_id}/summary` - Get session summary
+- `DELETE /api/v1/session/{session_id}` - End session
     """,
-    version="0.1.0",
+    version=settings.VERSION,
     lifespan=lifespan,
 )
 
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
-
-class InteractionData(BaseModel):
-    learner_id: str
-    response_times: List[float] = []
-    error_rates: List[float] = []
-    interaction_patterns: Dict[str, Any] = {}
+# Include cognitive load API routes
+app.include_router(cognitive_router, prefix="/api/v1")
 
 
-class ContentAnalysisRequest(BaseModel):
-    content: str
-    content_type: str = "text"
-    domain: Optional[str] = None
-
-
-class CognitiveLoadEstimate(BaseModel):
-    intrinsic_load: float
-    extraneous_load: float
-    germane_load: float
-    total_load: float
-    recommendation: str
+# =============================================================================
+# Health Endpoints
+# =============================================================================
 
 
 @app.get("/health")
 async def health() -> Dict[str, Any]:
-    return {"status": "healthy", "service": "cognitive-load-svc"}
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
+    }
 
 
-@app.post("/api/v1/load/estimate")
-async def estimate_load(data: InteractionData) -> Dict[str, Any]:
-    """Estimate current cognitive load from interaction data."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/health/ready")
+async def readiness() -> Dict[str, Any]:
+    """Readiness check endpoint."""
+    components = get_components()
+
+    all_loaded = all(components.values())
+
+    return {
+        "status": "ready" if all_loaded else "partial",
+        "components_loaded": components,
+    }
 
 
-@app.post("/api/v1/content/complexity")
-async def analyze_complexity(request: ContentAnalysisRequest) -> Dict[str, Any]:
-    """Analyze cognitive complexity of content."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/health/live")
+async def liveness() -> Dict[str, str]:
+    """Liveness check endpoint."""
+    return {"status": "alive"}
 
 
-@app.post("/api/v1/pacing/recommend")
-async def recommend_pacing(
-    learner_id: str,
-    current_load: float,
-    upcoming_content_ids: List[str],
-) -> Dict[str, Any]:
-    """Recommend optimal content pacing."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@app.get("/metrics")
+async def metrics() -> Dict[str, Any]:
+    """Basic metrics endpoint."""
+    components = get_components()
 
-
-@app.post("/api/v1/mental-model/assess")
-async def assess_mental_model(
-    learner_id: str,
-    concept: str,
-    responses: List[Dict[str, Any]],
-) -> Dict[str, Any]:
-    """Assess learner's mental model of a concept."""
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    return {
+        "service": settings.SERVICE_NAME,
+        "version": settings.VERSION,
+        "components_initialized": sum(1 for v in components.values() if v),
+        "total_components": len(components),
+        "settings": {
+            "low_load_threshold": settings.LOW_LOAD_THRESHOLD,
+            "optimal_load_threshold": settings.OPTIMAL_LOAD_THRESHOLD,
+            "high_load_threshold": settings.HIGH_LOAD_THRESHOLD,
+            "default_wm_capacity": settings.DEFAULT_WM_CAPACITY,
+            "prediction_window_seconds": settings.PREDICTION_WINDOW_SECONDS,
+        }
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app,
+        host=settings.HOST,
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
