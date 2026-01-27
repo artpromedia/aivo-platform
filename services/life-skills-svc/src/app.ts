@@ -82,7 +82,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   if (config.nodeEnv === 'production') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await app.register(rateLimit as any, FastifyRateLimitPresets.strict);
+    await app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('life-skills-svc'));
   }
 
   // ════════════════════════════════════════════════════════════════════════════

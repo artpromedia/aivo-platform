@@ -16,7 +16,8 @@ export function createApp() {
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(helmet as any);
-  app.register(sensible);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(sensible as any);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(rateLimit as any, FastifyRateLimitPresets.internalApi('orchestrator-svc'));
   app.get('/health', async () => ({ status: 'healthy', service: 'orchestrator-svc' }));

@@ -17,8 +17,9 @@ export function createApp() {
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(helmet as any);
-  app.register(sensible);
-  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(sensible as any);
+
   // Rate limiting for social-emotional learning service
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('sel-svc'));

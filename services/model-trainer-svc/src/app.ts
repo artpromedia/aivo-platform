@@ -17,8 +17,9 @@ export function createApp() {
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(helmet as any);
-  app.register(sensible);
-  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app.register(sensible as any);
+
   // Rate limiting for AI/ML training service (expensive operations)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(rateLimit as any, FastifyRateLimitPresets.aiService('model-trainer-svc'));
