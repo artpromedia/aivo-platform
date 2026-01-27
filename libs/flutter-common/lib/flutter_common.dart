@@ -76,3 +76,6 @@ export 'deep_linking/deep_linking.dart';
 
 // Mock guard utility for safe mock mode
 export 'utils/mock_guard.dart';
+
+// Feature flags for parity rollout
+export 'features/features.dart';

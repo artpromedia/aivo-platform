@@ -151,6 +151,21 @@ class EnvironmentConfig {
   /// Whether to use mock reading tools service.
   static bool get useReadingMock => useMockServices;
 
+  /// Whether to use mock SEL service.
+  static bool get useSELMock => useMockServices;
+
+  /// Whether to use mock social stories service.
+  static bool get useSocialStoriesMock => useMockServices;
+
+  /// Whether to use mock motor skills service.
+  static bool get useMotorSkillsMock => useMockServices;
+
+  /// Whether to use mock study skills service.
+  static bool get useStudySkillsMock => useMockServices;
+
+  /// Whether to use mock visual learning service.
+  static bool get useVisualLearningMock => useMockServices;
+
   // ══════════════════════════════════════════════════════════════════════════
   // API BASE URLS
   // ══════════════════════════════════════════════════════════════════════════
@@ -231,6 +246,36 @@ class EnvironmentConfig {
   static const String gamificationBaseUrl = String.fromEnvironment(
     'GAMIFICATION_BASE_URL',
     defaultValue: 'http://localhost:4035',
+  );
+
+  /// SEL (Social-Emotional Learning) service base URL.
+  static const String selBaseUrl = String.fromEnvironment(
+    'SEL_BASE_URL',
+    defaultValue: 'http://localhost:4036',
+  );
+
+  /// Social Stories service base URL.
+  static const String socialStoriesBaseUrl = String.fromEnvironment(
+    'SOCIAL_STORIES_BASE_URL',
+    defaultValue: 'http://localhost:4037',
+  );
+
+  /// Motor Skills service base URL.
+  static const String motorSkillsBaseUrl = String.fromEnvironment(
+    'MOTOR_SKILLS_BASE_URL',
+    defaultValue: 'http://localhost:4038',
+  );
+
+  /// Study Skills service base URL.
+  static const String studySkillsBaseUrl = String.fromEnvironment(
+    'STUDY_SKILLS_BASE_URL',
+    defaultValue: 'http://localhost:4039',
+  );
+
+  /// Visual Learning service base URL.
+  static const String visualLearningBaseUrl = String.fromEnvironment(
+    'VISUAL_LEARNING_BASE_URL',
+    defaultValue: 'http://localhost:4040',
   );
 
   // ══════════════════════════════════════════════════════════════════════════

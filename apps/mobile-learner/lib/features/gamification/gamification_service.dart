@@ -371,6 +371,36 @@ class GamificationService {
     return teams.map((e) => Team.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Create a new team
+  Future<Team> createTeam({
+    required String name,
+    String? description,
+    required TeamType type,
+    bool isPublic = true,
+    int maxMembers = 20,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/gamification/teams'),
+      headers: {..._headers, 'x-student-id': studentId},
+      body: json.encode({
+        'name': name,
+        'description': description ?? '',
+        'type': type.name,
+        'isPublic': isPublic,
+        'maxMembers': maxMembers,
+        'creatorId': studentId,
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final data = json.decode(response.body);
+      throw GamificationException(data['error'] ?? 'Failed to create team');
+    }
+
+    final data = json.decode(response.body);
+    return Team.fromJson(data['data'] ?? data);
+  }
+
   /// Join a team
   Future<bool> joinTeam(String teamId) async {
     final response = await http.post(

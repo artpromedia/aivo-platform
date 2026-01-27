@@ -1,0 +1,1633 @@
+openapi: 3.1.0
+info:
+  title: AIVO Parity Features API
+  description: API contracts for web-mobile parity features
+  version: 1.0.0
+  contact:
+    name: AIVO Platform Team
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  - name: SEL
+    description: Social-Emotional Learning endpoints
+  - name: Social Stories
+    description: Social Stories for skill building
+  - name: Executive Function
+    description: Executive function tools and exercises
+  - name: Motor Skills
+    description: Fine and gross motor skills exercises
+  - name: Study Skills
+    description: Study techniques and tools
+  - name: Visual Learning
+    description: Visual learning aids and organizers
+  - name: Teams
+    description: Team collaboration features
+
+paths:
+  # ============================================================================
+  # SEL Endpoints
+  # ============================================================================
+  /sel/check-ins:
+    get:
+      tags: [SEL]
+      summary: Get mood check-ins history
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of check-ins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MoodCheckIn'
+    post:
+      tags: [SEL]
+      summary: Create a new mood check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMoodCheckIn'
+      responses:
+        '201':
+          description: Check-in created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoodCheckIn'
+
+  /sel/coping-strategies:
+    get:
+      tags: [SEL]
+      summary: Get available coping strategies
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: emotion
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [breathing, grounding, movement, social, creative, cognitive]
+      responses:
+        '200':
+          description: List of coping strategies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CopingStrategy'
+
+  /sel/coping-strategies/{strategyId}/use:
+    post:
+      tags: [SEL]
+      summary: Log usage of a coping strategy
+      parameters:
+        - name: strategyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId:
+                  type: string
+                effectiveness:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Usage logged
+
+  /sel/mindfulness:
+    get:
+      tags: [SEL]
+      summary: Get mindfulness exercises
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [breathing, meditation, body-scan, visualization]
+        - name: duration
+          in: query
+          schema:
+            type: integer
+            description: Duration in seconds
+      responses:
+        '200':
+          description: List of exercises
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MindfulnessExercise'
+
+  /sel/social-scenarios:
+    get:
+      tags: [SEL]
+      summary: Get social scenario practice exercises
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialScenario'
+
+  /sel/feelings-journal:
+    get:
+      tags: [SEL]
+      summary: Get feelings journal entries
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Journal entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JournalEntry'
+    post:
+      tags: [SEL]
+      summary: Create journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJournalEntry'
+      responses:
+        '201':
+          description: Entry created
+
+  # ============================================================================
+  # Social Stories Endpoints
+  # ============================================================================
+  /social-stories:
+    get:
+      tags: [Social Stories]
+      summary: Get social stories
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [daily_routines, social_interactions, emotional_regulation, safety, transitions, new_experiences]
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced]
+      responses:
+        '200':
+          description: List of stories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialStory'
+
+  /social-stories/{storyId}:
+    get:
+      tags: [Social Stories]
+      summary: Get story details
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Story details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialStoryDetails'
+
+  /social-stories/{storyId}/progress:
+    get:
+      tags: [Social Stories]
+      summary: Get student progress on a story
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoryProgress'
+    post:
+      tags: [Social Stories]
+      summary: Update progress on a story
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId:
+                  type: string
+                currentPage:
+                  type: integer
+                completed:
+                  type: boolean
+                comprehensionScore:
+                  type: number
+      responses:
+        '200':
+          description: Progress updated
+
+  /social-stories/recommendations:
+    get:
+      tags: [Social Stories]
+      summary: Get personalized story recommendations
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Recommended stories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SocialStory'
+
+  # ============================================================================
+  # Executive Function Endpoints
+  # ============================================================================
+  /executive-function/tasks:
+    get:
+      tags: [Executive Function]
+      summary: Get student tasks
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+      responses:
+        '200':
+          description: Tasks list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EFTask'
+    post:
+      tags: [Executive Function]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEFTask'
+      responses:
+        '201':
+          description: Task created
+
+  /executive-function/tasks/{taskId}/breakdown:
+    post:
+      tags: [Executive Function]
+      summary: AI-assisted task breakdown
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task broken down into subtasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subtasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubTask'
+
+  /executive-function/priority-matrix:
+    get:
+      tags: [Executive Function]
+      summary: Get priority matrix data
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Priority matrix
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorityMatrix'
+
+  /executive-function/working-memory/games:
+    get:
+      tags: [Executive Function]
+      summary: Get working memory games
+      parameters:
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+      responses:
+        '200':
+          description: Games list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemoryGame'
+
+  /executive-function/analytics:
+    get:
+      tags: [Executive Function]
+      summary: Get EF analytics dashboard data
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter]
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EFAnalytics'
+
+  # ============================================================================
+  # Motor Skills Endpoints
+  # ============================================================================
+  /motor-skills/fine-motor:
+    get:
+      tags: [Motor Skills]
+      summary: Get fine motor exercises
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [tracing, drawing, typing, cutting, manipulation]
+      responses:
+        '200':
+          description: Exercises list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FineMotorExercise'
+
+  /motor-skills/gross-motor:
+    get:
+      tags: [Motor Skills]
+      summary: Get gross motor activities
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [movement_breaks, coordination, balance, strength]
+      responses:
+        '200':
+          description: Activities list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GrossMotorActivity'
+
+  /motor-skills/sessions:
+    post:
+      tags: [Motor Skills]
+      summary: Start a motor skills session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId:
+                  type: string
+                exerciseId:
+                  type: string
+                type:
+                  type: string
+                  enum: [fine, gross]
+      responses:
+        '201':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotorSession'
+
+  /motor-skills/sessions/{sessionId}:
+    patch:
+      tags: [Motor Skills]
+      summary: Update session with results
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                completed:
+                  type: boolean
+                score:
+                  type: number
+                duration:
+                  type: integer
+                metrics:
+                  type: object
+      responses:
+        '200':
+          description: Session updated
+
+  /motor-skills/progress:
+    get:
+      tags: [Motor Skills]
+      summary: Get motor skills progress
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MotorProgress'
+
+  # ============================================================================
+  # Study Skills Endpoints
+  # ============================================================================
+  /study-skills/notes:
+    get:
+      tags: [Study Skills]
+      summary: Get student notes
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: template
+          in: query
+          schema:
+            type: string
+            enum: [cornell, outline, mind_map, free_form]
+      responses:
+        '200':
+          description: Notes list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StudyNote'
+    post:
+      tags: [Study Skills]
+      summary: Create a note
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStudyNote'
+      responses:
+        '201':
+          description: Note created
+
+  /study-skills/flashcards:
+    get:
+      tags: [Study Skills]
+      summary: Get flashcard sets
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Flashcard sets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FlashcardSet'
+    post:
+      tags: [Study Skills]
+      summary: Create flashcard set
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFlashcardSet'
+      responses:
+        '201':
+          description: Set created
+
+  /study-skills/flashcards/{setId}/review:
+    post:
+      tags: [Study Skills]
+      summary: Submit review results for spaced repetition
+      parameters:
+        - name: setId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentId:
+                  type: string
+                cardId:
+                  type: string
+                quality:
+                  type: integer
+                  minimum: 0
+                  maximum: 5
+                  description: SM-2 quality rating
+      responses:
+        '200':
+          description: Review recorded
+
+  /study-skills/study-schedule:
+    get:
+      tags: [Study Skills]
+      summary: Get study schedule
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySchedule'
+    post:
+      tags: [Study Skills]
+      summary: Create study session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStudySession'
+      responses:
+        '201':
+          description: Session created
+
+  # ============================================================================
+  # Visual Learning Endpoints
+  # ============================================================================
+  /visual-learning/mind-maps:
+    get:
+      tags: [Visual Learning]
+      summary: Get mind maps
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+      responses:
+        '200':
+          description: Mind maps
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MindMap'
+    post:
+      tags: [Visual Learning]
+      summary: Create mind map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMindMap'
+      responses:
+        '201':
+          description: Created
+
+  /visual-learning/diagrams:
+    get:
+      tags: [Visual Learning]
+      summary: Get diagrams (venn, flowchart, concept map)
+      parameters:
+        - $ref: '#/components/parameters/studentId'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [venn, flowchart, concept_map, timeline]
+      responses:
+        '200':
+          description: Diagrams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Diagram'
+    post:
+      tags: [Visual Learning]
+      summary: Create diagram
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiagram'
+      responses:
+        '201':
+          description: Created
+
+  /visual-learning/export:
+    post:
+      tags: [Visual Learning]
+      summary: Export visual to image/PDF
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemId:
+                  type: string
+                itemType:
+                  type: string
+                  enum: [mind_map, diagram]
+                format:
+                  type: string
+                  enum: [png, pdf, svg]
+      responses:
+        '200':
+          description: Export URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  # ============================================================================
+  # Teams Endpoints (Enhanced)
+  # ============================================================================
+  /teams:
+    get:
+      tags: [Teams]
+      summary: Search teams
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [classroom, school, cross_school]
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Teams list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Team'
+    post:
+      tags: [Teams]
+      summary: Create a team
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeam'
+      responses:
+        '201':
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+
+  /teams/{teamId}:
+    get:
+      tags: [Teams]
+      summary: Get team details
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamDetails'
+
+  /teams/{teamId}/join:
+    post:
+      tags: [Teams]
+      summary: Join a team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Joined successfully
+
+  /teams/{teamId}/leave:
+    post:
+      tags: [Teams]
+      summary: Leave a team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Left successfully
+
+  /teams/{teamId}/challenges:
+    get:
+      tags: [Teams]
+      summary: Get team challenges
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenges list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamChallenge'
+
+  /teams/{teamId}/leaderboard:
+    get:
+      tags: [Teams]
+      summary: Get team internal leaderboard
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+
+components:
+  parameters:
+    studentId:
+      name: studentId
+      in: query
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    # SEL Schemas
+    MoodCheckIn:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        mood:
+          type: string
+          enum: [great, good, okay, sad, angry, anxious, tired]
+        intensity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        triggers:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateMoodCheckIn:
+      type: object
+      required: [studentId, mood]
+      properties:
+        studentId:
+          type: string
+        mood:
+          type: string
+        intensity:
+          type: integer
+        triggers:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    CopingStrategy:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        steps:
+          type: array
+          items:
+            type: string
+        duration:
+          type: integer
+        imageUrl:
+          type: string
+        audioUrl:
+          type: string
+
+    MindfulnessExercise:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        duration:
+          type: integer
+        instructions:
+          type: array
+          items:
+            type: string
+        audioUrl:
+          type: string
+        animationData:
+          type: object
+
+    SocialScenario:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+              isCorrect:
+                type: boolean
+              feedback:
+                type: string
+
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        content:
+          type: string
+        mood:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateJournalEntry:
+      type: object
+      required: [studentId, content]
+      properties:
+        studentId:
+          type: string
+        content:
+          type: string
+        mood:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    # Social Stories Schemas
+    SocialStory:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+        thumbnailUrl:
+          type: string
+        pageCount:
+          type: integer
+        estimatedDuration:
+          type: integer
+
+    SocialStoryDetails:
+      allOf:
+        - $ref: '#/components/schemas/SocialStory'
+        - type: object
+          properties:
+            pages:
+              type: array
+              items:
+                type: object
+                properties:
+                  pageNumber:
+                    type: integer
+                  text:
+                    type: string
+                  imageUrl:
+                    type: string
+                  audioUrl:
+                    type: string
+                  questions:
+                    type: array
+                    items:
+                      type: object
+
+    StoryProgress:
+      type: object
+      properties:
+        storyId:
+          type: string
+        studentId:
+          type: string
+        currentPage:
+          type: integer
+        completed:
+          type: boolean
+        comprehensionScore:
+          type: number
+        lastAccessedAt:
+          type: string
+          format: date-time
+
+    # Executive Function Schemas
+    EFTask:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+          enum: [urgent_important, not_urgent_important, urgent_not_important, not_urgent_not_important]
+        dueDate:
+          type: string
+          format: date-time
+        estimatedMinutes:
+          type: integer
+        subtasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubTask'
+
+    CreateEFTask:
+      type: object
+      required: [studentId, title]
+      properties:
+        studentId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        estimatedMinutes:
+          type: integer
+
+    SubTask:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        completed:
+          type: boolean
+        order:
+          type: integer
+
+    PriorityMatrix:
+      type: object
+      properties:
+        urgentImportant:
+          type: array
+          items:
+            $ref: '#/components/schemas/EFTask'
+        notUrgentImportant:
+          type: array
+          items:
+            $ref: '#/components/schemas/EFTask'
+        urgentNotImportant:
+          type: array
+          items:
+            $ref: '#/components/schemas/EFTask'
+        notUrgentNotImportant:
+          type: array
+          items:
+            $ref: '#/components/schemas/EFTask'
+
+    MemoryGame:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        difficulty:
+          type: string
+        instructions:
+          type: string
+        config:
+          type: object
+
+    EFAnalytics:
+      type: object
+      properties:
+        taskCompletionRate:
+          type: number
+        averageTimeEstimationAccuracy:
+          type: number
+        streakDays:
+          type: integer
+        skillLevels:
+          type: object
+          properties:
+            planning:
+              type: number
+            organization:
+              type: number
+            timeManagement:
+              type: number
+            workingMemory:
+              type: number
+            cognitiveFlexibility:
+              type: number
+
+    # Motor Skills Schemas
+    FineMotorExercise:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        difficulty:
+          type: string
+        instructions:
+          type: string
+        targetAreas:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+
+    GrossMotorActivity:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        duration:
+          type: integer
+        videoUrl:
+          type: string
+        instructions:
+          type: array
+          items:
+            type: string
+
+    MotorSession:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        exerciseId:
+          type: string
+        type:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        score:
+          type: number
+        duration:
+          type: integer
+
+    MotorProgress:
+      type: object
+      properties:
+        studentId:
+          type: string
+        fineMotor:
+          type: object
+          properties:
+            level:
+              type: integer
+            sessionsCompleted:
+              type: integer
+            averageScore:
+              type: number
+        grossMotor:
+          type: object
+          properties:
+            level:
+              type: integer
+            sessionsCompleted:
+              type: integer
+            averageScore:
+              type: number
+
+    # Study Skills Schemas
+    StudyNote:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        title:
+          type: string
+        template:
+          type: string
+        content:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateStudyNote:
+      type: object
+      required: [studentId, title, template]
+      properties:
+        studentId:
+          type: string
+        title:
+          type: string
+        template:
+          type: string
+        content:
+          type: object
+
+    FlashcardSet:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        cardCount:
+          type: integer
+        dueForReview:
+          type: integer
+        lastStudied:
+          type: string
+          format: date-time
+
+    CreateFlashcardSet:
+      type: object
+      required: [studentId, title, cards]
+      properties:
+        studentId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        cards:
+          type: array
+          items:
+            type: object
+            properties:
+              front:
+                type: string
+              back:
+                type: string
+
+    StudySchedule:
+      type: object
+      properties:
+        studentId:
+          type: string
+        sessions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              subject:
+                type: string
+              startTime:
+                type: string
+                format: date-time
+              duration:
+                type: integer
+              completed:
+                type: boolean
+
+    CreateStudySession:
+      type: object
+      required: [studentId, subject, startTime, duration]
+      properties:
+        studentId:
+          type: string
+        subject:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+
+    # Visual Learning Schemas
+    MindMap:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        title:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+              x:
+                type: number
+              y:
+                type: number
+              parentId:
+                type: string
+              color:
+                type: string
+
+    CreateMindMap:
+      type: object
+      required: [studentId, title]
+      properties:
+        studentId:
+          type: string
+        title:
+          type: string
+        centralTopic:
+          type: string
+
+    Diagram:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        data:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateDiagram:
+      type: object
+      required: [studentId, title, type]
+      properties:
+        studentId:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        data:
+          type: object
+
+    # Teams Schemas
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        memberCount:
+          type: integer
+        maxMembers:
+          type: integer
+        totalXp:
+          type: integer
+        level:
+          type: integer
+        rank:
+          type: integer
+        isPublic:
+          type: boolean
+
+    TeamDetails:
+      allOf:
+        - $ref: '#/components/schemas/Team'
+        - type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/TeamMember'
+            competitions:
+              type: array
+              items:
+                type: object
+
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: string
+        studentId:
+          type: string
+        displayName:
+          type: string
+        role:
+          type: string
+          enum: [owner, captain, member]
+        contributedXp:
+          type: integer
+        weeklyContribution:
+          type: integer
+        joinedAt:
+          type: string
+          format: date-time
+
+    CreateTeam:
+      type: object
+      required: [name, creatorId]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        isPublic:
+          type: boolean
+        maxMembers:
+          type: integer
+        creatorId:
+          type: string
+
+    TeamChallenge:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        targetValue:
+          type: integer
+        currentValue:
+          type: integer
+        reward:
+          type: object
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time

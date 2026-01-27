@@ -6,6 +6,7 @@ import '../config/environment.dart';
 import '../features/gamification/gamification_models.dart';
 import '../features/gamification/gamification_service.dart';
 import '../pin/pin_storage.dart';
+import 'team_search_screen.dart';
 
 /// Teams Screen
 ///
@@ -175,7 +176,15 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen>
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                // TODO: Navigate to team search/create
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TeamSearchScreen(
+                      learnerId: widget.learnerId,
+                      onTeamJoined: _loadData,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(Icons.search),
               label: const Text('Find a Team'),
