@@ -96,108 +96,33 @@ export interface AssessmentState {
   result: AssessmentResult | null;
 }
 
-// Stub questions for different subjects (fallback if API fails)
-const STUB_QUESTIONS: Record<string, AssessmentQuestion[]> = {
-  math: [
-    {
-      id: 'math-1',
-      type: 'multiple-choice',
-      subject: 'math',
-      skillCode: 'MATH_NUMBER_SENSE',
-      difficulty: 2,
-      content: {
-        question: 'What is 7 + 5?',
-        options: ['10', '11', '12', '13'],
-        correctAnswer: 2,
-        explanation: '7 + 5 = 12',
-      },
-    },
-    {
-      id: 'math-2',
-      type: 'multiple-choice',
-      subject: 'math',
-      skillCode: 'MATH_OPERATIONS',
-      difficulty: 2,
-      content: {
-        question: 'What is 15 - 8?',
-        options: ['5', '6', '7', '8'],
-        correctAnswer: 2,
-        explanation: '15 - 8 = 7',
-      },
-    },
-    {
-      id: 'math-3',
-      type: 'multiple-choice',
-      subject: 'math',
-      skillCode: 'MATH_FRACTIONS',
-      difficulty: 3,
-      content: {
-        question: 'What is half of 10?',
-        options: ['3', '4', '5', '6'],
-        correctAnswer: 2,
-        explanation: 'Half of 10 is 10 / 2 = 5',
-      },
-    },
-  ],
-  reading: [
-    {
-      id: 'reading-1',
-      type: 'multiple-choice',
-      subject: 'reading',
-      skillCode: 'ELA_VOCABULARY',
-      difficulty: 2,
-      content: {
-        question: 'What does "happy" mean?',
-        options: ['Sad', 'Joyful', 'Angry', 'Tired'],
-        correctAnswer: 1,
-        explanation: '"Happy" means feeling joy or pleasure',
-      },
-    },
-    {
-      id: 'reading-2',
-      type: 'multiple-choice',
-      subject: 'reading',
-      skillCode: 'ELA_COMPREHENSION',
-      difficulty: 2,
-      content: {
-        question: 'Which word rhymes with "cat"?',
-        options: ['Dog', 'Hat', 'Bird', 'Fish'],
-        correctAnswer: 1,
-        explanation: '"Cat" and "Hat" both end with "-at"',
-      },
-    },
-  ],
-  science: [
-    {
-      id: 'science-1',
-      type: 'multiple-choice',
-      subject: 'science',
-      skillCode: 'SCI_LIFE',
-      difficulty: 2,
-      content: {
-        question: 'What do plants need to grow?',
-        options: ['Only water', 'Sunlight, water, and air', 'Only sunlight', 'Only soil'],
-        correctAnswer: 1,
-        explanation: 'Plants need sunlight, water, and air (carbon dioxide) to grow through photosynthesis',
-      },
-    },
-  ],
-  writing: [
-    {
-      id: 'writing-1',
-      type: 'multiple-choice',
-      subject: 'writing',
-      skillCode: 'WRITING_GRAMMAR',
-      difficulty: 2,
-      content: {
-        question: 'Which punctuation ends a question?',
-        options: ['.', '!', '?', ','],
-        correctAnswer: 2,
-        explanation: 'Questions end with a question mark (?)',
-      },
-    },
-  ],
-};
+/**
+ * Helper to track assessment service errors for monitoring
+ */
+function trackAssessmentError(
+  reason: string,
+  details: Record<string, unknown>
+): void {
+  // Log error for monitoring
+  console.error('[Assessment] Service error:', { reason, ...details });
+
+  // Report to analytics if available
+  if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
+    try {
+      (
+        (window as Record<string, unknown>).analytics as {
+          track: (event: string, data: Record<string, unknown>) => void;
+        }
+      ).track('assessment_service_error', {
+        reason,
+        ...details,
+        timestamp: new Date().toISOString(),
+      });
+    } catch {
+      // Analytics not available
+    }
+  }
+}
 
 export function useAssessmentEngine() {
   const [assessmentState, setAssessmentState] = useState<AssessmentState>({
@@ -213,121 +138,54 @@ export function useAssessmentEngine() {
       setAssessmentState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        // Try to fetch questions from API
         const response = await fetch('/api/assessment/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(options),
         });
 
-        if (response.ok) {
-          const session = await response.json();
+        if (!response.ok) {
+          const errorMessage = `Assessment service returned status ${response.status}`;
+          trackAssessmentError('api_response_not_ok', {
+            status: response.status,
+            subjects: options.subjects,
+            type: options.type,
+          });
+
           setAssessmentState((prev) => ({
             ...prev,
-            session,
-            currentQuestion: session.questions[0] || null,
             isLoading: false,
+            error: 'Unable to start assessment. Please try again later.',
           }));
-          return session;
+
+          throw new Error(errorMessage);
         }
 
-        // Fallback to stub questions - log warning for monitoring
-        console.warn(
-          '[Assessment] API response not OK, falling back to stub questions. ' +
-          'This should be investigated if occurring in production. ' +
-          `Status: ${response.status}, Subjects: ${options.subjects.join(', ')}`
-        );
-
-        // Report to analytics if available
-        if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
-          try {
-            ((window as Record<string, unknown>).analytics as { track: (event: string, data: Record<string, unknown>) => void })
-              .track('assessment_stub_fallback', {
-                reason: 'api_response_not_ok',
-                status: response.status,
-                subjects: options.subjects,
-                type: options.type,
-              });
-          } catch {
-            // Analytics not available
-          }
-        }
-
-        const questions = options.subjects.flatMap(
-          (subject) => STUB_QUESTIONS[subject] || []
-        );
-
-        const session: AssessmentSession = {
-          id: `session-${Date.now()}`,
-          type: options.type,
-          learnerId: options.learnerId || 'anonymous',
-          subjects: options.subjects,
-          startedAt: new Date().toISOString(),
-          estimated_questions: questions.length,
-          currentQuestionIndex: 0,
-          questions,
-          answers: [],
-          status: 'in_progress',
-        };
-
+        const session = await response.json();
         setAssessmentState((prev) => ({
           ...prev,
           session,
-          currentQuestion: questions[0] || null,
+          currentQuestion: session.questions[0] || null,
           isLoading: false,
+          error: null,
         }));
-
         return session;
       } catch (error) {
-        // Log error with context for monitoring
-        console.error('[Assessment] Error starting assessment:', error);
-        console.warn(
-          '[Assessment] Falling back to stub questions due to API error. ' +
-          'This indicates assessment service unavailability and should be monitored. ' +
-          `Subjects: ${options.subjects.join(', ')}`
-        );
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-        // Report to analytics if available
-        if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
-          try {
-            ((window as Record<string, unknown>).analytics as { track: (event: string, data: Record<string, unknown>) => void })
-              .track('assessment_stub_fallback', {
-                reason: 'api_error',
-                error: error instanceof Error ? error.message : 'Unknown error',
-                subjects: options.subjects,
-                type: options.type,
-              });
-          } catch {
-            // Analytics not available
-          }
-        }
-
-        // Use stub questions as fallback
-        const questions = options.subjects.flatMap(
-          (subject) => STUB_QUESTIONS[subject] || []
-        );
-
-        const session: AssessmentSession = {
-          id: `session-${Date.now()}`,
-          type: options.type,
-          learnerId: options.learnerId || 'anonymous',
+        trackAssessmentError('api_error', {
+          error: errorMessage,
           subjects: options.subjects,
-          startedAt: new Date().toISOString(),
-          estimated_questions: questions.length,
-          currentQuestionIndex: 0,
-          questions,
-          answers: [],
-          status: 'in_progress',
-        };
+          type: options.type,
+        });
 
         setAssessmentState((prev) => ({
           ...prev,
-          session,
-          currentQuestion: questions[0] || null,
           isLoading: false,
+          error: 'Unable to connect to assessment service. Please check your connection and try again.',
         }));
 
-        return session;
+        throw error;
       }
     },
     []
@@ -393,9 +251,9 @@ export function useAssessmentEngine() {
           : null,
       }));
 
-      // Try to submit to API
+      // Submit to API
       try {
-        await fetch('/api/assessment/answer', {
+        const response = await fetch('/api/assessment/answer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -405,8 +263,20 @@ export function useAssessmentEngine() {
             latencyMs: answerRecord.latencyMs,
           }),
         });
+
+        if (!response.ok) {
+          trackAssessmentError('answer_submit_failed', {
+            status: response.status,
+            sessionId,
+            questionId,
+          });
+        }
       } catch (error) {
-        console.error('Error submitting answer:', error);
+        trackAssessmentError('answer_submit_error', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          sessionId,
+          questionId,
+        });
       }
 
       return {
@@ -424,117 +294,58 @@ export function useAssessmentEngine() {
         throw new Error('Invalid session');
       }
 
-      setAssessmentState((prev) => ({ ...prev, isLoading: true }));
+      setAssessmentState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        // Try to get results from API
         const response = await fetch('/api/assessment/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId }),
         });
 
-        if (response.ok) {
-          const result = await response.json();
+        if (!response.ok) {
+          const errorMessage = `Assessment completion returned status ${response.status}`;
+          trackAssessmentError('complete_api_not_ok', {
+            status: response.status,
+            sessionId,
+          });
+
           setAssessmentState((prev) => ({
             ...prev,
-            session: prev.session
-              ? { ...prev.session, status: 'completed' }
-              : null,
-            result,
             isLoading: false,
+            error: 'Unable to complete assessment. Please try again.',
           }));
-          return result;
+
+          throw new Error(errorMessage);
         }
+
+        const result = await response.json();
+        setAssessmentState((prev) => ({
+          ...prev,
+          session: prev.session
+            ? { ...prev.session, status: 'completed' }
+            : null,
+          result,
+          isLoading: false,
+          error: null,
+        }));
+        return result;
       } catch (error) {
-        console.error('Error completing assessment:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        trackAssessmentError('complete_api_error', {
+          error: errorMessage,
+          sessionId,
+        });
+
+        setAssessmentState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: 'Unable to complete assessment. Please check your connection and try again.',
+        }));
+
+        throw error;
       }
-
-      // Calculate results locally as fallback
-      const subjectScores: Record<string, SubjectScore> = {};
-
-      session.subjects.forEach((subject) => {
-        const subjectQuestions = session.questions.filter(
-          (q) => q.subject === subject
-        );
-        const subjectAnswers = session.answers.filter((a) =>
-          subjectQuestions.some((q) => q.id === a.questionId)
-        );
-
-        const correctAnswers = subjectAnswers.filter((a) => a.isCorrect).length;
-        const score =
-          subjectAnswers.length > 0
-            ? (correctAnswers / subjectAnswers.length) * 100
-            : 0;
-
-        subjectScores[subject] = {
-          subject,
-          score,
-          questionsAnswered: subjectAnswers.length,
-          correctAnswers,
-          averageLatency:
-            subjectAnswers.reduce((sum, a) => sum + a.latencyMs, 0) /
-            subjectAnswers.length || 0,
-          proficiencyLevel:
-            score >= 90
-              ? 'advanced'
-              : score >= 70
-                ? 'proficient'
-                : score >= 50
-                  ? 'developing'
-                  : 'emerging',
-        };
-      });
-
-      const overallScore =
-        Object.values(subjectScores).reduce((sum, s) => sum + s.score, 0) /
-        Object.keys(subjectScores).length || 0;
-
-      const result: AssessmentResult = {
-        sessionId,
-        overall_score: Math.round(overallScore),
-        subject_scores: subjectScores,
-        insights: {
-          strengths: Object.values(subjectScores)
-            .filter((s) => s.score >= 70)
-            .map((s) => ({
-              skill: s.subject,
-              subject: s.subject,
-              level: s.score,
-              description: `Strong performance in ${s.subject}`,
-            })),
-          growth_areas: Object.values(subjectScores)
-            .filter((s) => s.score < 70)
-            .map((s) => ({
-              skill: s.subject,
-              subject: s.subject,
-              level: s.score,
-              description: `Room for growth in ${s.subject}`,
-            })),
-          recommended_path: Object.values(subjectScores)
-            .sort((a, b) => a.score - b.score)
-            .slice(0, 3)
-            .map((s) => ({
-              subject: s.subject,
-              skill: s.subject,
-              priority:
-                s.score < 50 ? 'high' : s.score < 70 ? 'medium' : 'low',
-              reason: `Focus on improving ${s.subject} skills`,
-            })),
-          learning_style: 'visual',
-          estimated_grade_level: 'Grade 3-4',
-        },
-        completedAt: new Date().toISOString(),
-      };
-
-      setAssessmentState((prev) => ({
-        ...prev,
-        session: prev.session ? { ...prev.session, status: 'completed' } : null,
-        result,
-        isLoading: false,
-      }));
-
-      return result;
     },
     [assessmentState]
   );
@@ -546,13 +357,23 @@ export function useAssessmentEngine() {
     }));
 
     try {
-      await fetch('/api/assessment/pause', {
+      const response = await fetch('/api/assessment/pause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId }),
       });
+
+      if (!response.ok) {
+        trackAssessmentError('pause_api_not_ok', {
+          status: response.status,
+          sessionId,
+        });
+      }
     } catch (error) {
-      console.error('Error pausing assessment:', error);
+      trackAssessmentError('pause_api_error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        sessionId,
+      });
     }
   }, []);
 
@@ -563,6 +384,10 @@ export function useAssessmentEngine() {
     }));
   }, []);
 
+  const clearError = useCallback(() => {
+    setAssessmentState((prev) => ({ ...prev, error: null }));
+  }, []);
+
   return {
     startAssessment,
     getNextQuestion,
@@ -570,6 +395,7 @@ export function useAssessmentEngine() {
     completeAssessment,
     pauseAssessment,
     resumeAssessment,
+    clearError,
     assessmentState,
   };
 }
