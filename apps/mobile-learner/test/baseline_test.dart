@@ -22,7 +22,7 @@ void main() {
       expect(controller.state.isComplete, isFalse);
       expect(controller.state.isOnBreak, isFalse);
     });
-
+ 
     test('checkBaselineStatus loads profile', () async {
       await controller.checkBaselineStatus('learner-test-1');
 

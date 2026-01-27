@@ -7,12 +7,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
 const isDev = process.env.NODE_ENV === 'development';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get('auth-token')?.value || request.headers.get('Authorization')?.replace('Bearer ', '');
 
     // Try to call parent-svc
@@ -25,27 +27,34 @@ export async function GET(request: NextRequest) {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()) as { students?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>;
+          const studentArray = Array.isArray(data) ? data : (data.students ?? []);
           // Transform to enhanced format
-          const children = (data.students || data || []).map((student: Record<string, unknown>) => ({
-            id: student.id,
-            name: `${student.givenName || student.firstName || ''} ${student.familyName || student.lastName || ''}`.trim(),
-            firstName: student.givenName || student.firstName || '',
-            lastName: student.familyName || student.lastName || '',
-            grade: student.grade || '2',
-            avatar: student.photoUrl || null,
-            subjects: ['Math', 'ELA', 'Science'],
-            lastActive: new Date().toISOString(),
-            currentStreak: 5,
-            todayProgress: {
-              minutesLearned: 15,
-              lessonsCompleted: 2,
-            },
-            status: 'offline',
-          }));
+          const children = studentArray.map((student: Record<string, unknown>) => {
+            const givenName = typeof student.givenName === 'string' ? student.givenName : '';
+            const firstName = typeof student.firstName === 'string' ? student.firstName : '';
+            const familyName = typeof student.familyName === 'string' ? student.familyName : '';
+            const lastName = typeof student.lastName === 'string' ? student.lastName : '';
+            return {
+              id: student.id,
+              name: `${givenName || firstName} ${familyName || lastName}`.trim(),
+              firstName: givenName || firstName,
+              lastName: familyName || lastName,
+              grade: student.grade ?? '2',
+              avatar: student.photoUrl ?? null,
+              subjects: ['Math', 'ELA', 'Science'],
+              lastActive: new Date().toISOString(),
+              currentStreak: 5,
+              todayProgress: {
+                minutesLearned: 15,
+                lessonsCompleted: 2,
+              },
+              status: 'offline',
+            };
+          });
           return NextResponse.json({ children });
         }
-      } catch (error) {
+      } catch {
         console.log('[Children API] Parent service unavailable, using mock data');
       }
     }

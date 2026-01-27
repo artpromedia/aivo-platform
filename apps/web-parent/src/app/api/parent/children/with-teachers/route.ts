@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 const isDev = process.env.NODE_ENV === 'development';
 
 export async function GET(request: NextRequest) {
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-    const data = await response.json();
+    const data: unknown = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Failed to fetch children with teachers:', error);

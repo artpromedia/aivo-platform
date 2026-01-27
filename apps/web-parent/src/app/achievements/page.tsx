@@ -29,7 +29,7 @@ import React, { useState } from 'react';
 
 import { QueryErrorDisplay } from '@/components/error-boundary';
 import { AchievementsPageSkeleton } from '@/components/skeletons';
-import { useAchievements } from '@/hooks';
+import { useAchievements, useSelectedChild } from '@/hooks';
 
 interface Achievement {
   id: string;
@@ -40,7 +40,7 @@ interface Achievement {
   earnedAt?: string;
   progress?: number;
   total?: number;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
 }
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -89,8 +89,8 @@ export default function AchievementsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
-  // TODO: Get from auth context or URL params
-  const studentId = 'student-1';
+  // Get selected child from parent profile
+  const { selectedChildId: studentId, selectedChild: _selectedChild, isLoading: _profileLoading } = useSelectedChild();
 
   const { data: achievements = [], isLoading, error, refetch } = useAchievements(studentId);
 
@@ -260,8 +260,8 @@ function AchievementCard({
     <button
       onClick={onClick}
       className={`text-left p-6 rounded-xl border-2 transition-all hover:shadow-md ${
-        rarityColors[achievement.rarity]
-      } ${isEarned ? rarityGlow[achievement.rarity] : ''} ${isLocked ? 'opacity-60' : ''}`}
+        rarityColors[achievement.rarity ?? 'common']
+      } ${isEarned ? rarityGlow[achievement.rarity ?? 'common'] : ''} ${isLocked ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start gap-4">
         {/* Icon */}
@@ -289,7 +289,7 @@ function AchievementCard({
                       : 'bg-gray-200 text-gray-700'
               }`}
             >
-              {achievement.rarity}
+              {achievement.rarity ?? 'common'}
             </span>
           </div>
           <h3 className="font-semibold text-gray-900">{achievement.title}</h3>
@@ -375,7 +375,7 @@ function AchievementModal({
                     : 'bg-gray-200 text-gray-700'
             }`}
           >
-            {achievement.rarity.toUpperCase()}
+            {(achievement.rarity ?? 'common').toUpperCase()}
           </span>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{achievement.title}</h2>

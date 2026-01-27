@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 const isDev = process.env.NODE_ENV === 'development';
 
 export async function GET(request: NextRequest) {
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-    const data = await response.json();
+    const data: unknown = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Failed to fetch settings:', error);
@@ -59,17 +62,17 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   // In development, return success
   if (isDev) {
-    const body = await request.json();
+    const body: unknown = await request.json();
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully',
-      ...body,
+      ...(body as object),
     });
   }
 
   // In production, proxy to parent-svc
   try {
-    const body = await request.json();
+    const body: unknown = await request.json();
     const response = await fetch(
       `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/parent/settings`,
       {
@@ -81,7 +84,7 @@ export async function PUT(request: NextRequest) {
         body: JSON.stringify(body),
       }
     );
-    const data = await response.json();
+    const data: unknown = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Failed to update settings:', error);

@@ -152,7 +152,7 @@ export default function DashboardPage() {
       name: child.name,
       firstName: child.firstName,
       lastName: child.lastName,
-      gradeLevel: child.gradeLevel,
+      gradeLevel: child.grade,
       avatar: child.avatar,
       subjects: child.subjects,
       lastActive: child.lastActive,

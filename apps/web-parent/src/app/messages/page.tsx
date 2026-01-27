@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSession } from 'next-auth/react';
 
 import {
   useMessaging,
@@ -65,9 +66,10 @@ export default function MessagesPage() {
     playSound: true,
   });
 
-  // TODO: Replace with actual auth context
-  const userId = 'current-user';
-  const authToken = 'mock-token';
+  // Get user ID and auth token from session
+  const { data: session } = useSession();
+  const userId = (session?.user as { id?: string })?.id || '';
+  const authToken = (session as { accessToken?: string })?.accessToken || '';
 
   // Use the combined messaging hook with WebSocket
   const messaging = useMessaging({
@@ -410,7 +412,7 @@ export default function MessagesPage() {
                                 conversation.unreadCount > 0 ? 'text-gray-800' : 'text-gray-500'
                               }`}
                             >
-                              {conversation.lastMessage}
+                              {conversation.lastMessage.content}
                             </p>
                           )}
                           {conversation.unreadCount > 0 && (
@@ -636,7 +638,7 @@ export default function MessagesPage() {
                             />
                           </div>
                           <span>
-                            {typingIndicators.map((t) => t.participantName ?? 'Someone').join(', ')}{' '}
+                            {typingIndicators.map((t) => t.userName ?? 'Someone').join(', ')}{' '}
                             {typingIndicators.length === 1 ? 'is' : 'are'} typing...
                           </span>
                         </div>
@@ -661,7 +663,7 @@ export default function MessagesPage() {
                           setMessageInput(e.target.value);
                           // Send typing indicator
                           if (selectedConversationId) {
-                            messaging.sendTypingIndicator(selectedConversationId);
+                            messaging.sendTypingIndicator(selectedConversationId, true);
                           }
                         }}
                         onKeyDown={handleKeyDown}
@@ -719,11 +721,9 @@ export default function MessagesPage() {
           }}
           onSend={async (data) => {
             const result = await messaging.createConversation({
-              participantIds: [data.teacherId],
-              studentContext: {
-                studentId: data.childId,
-                studentName: '', // Will be resolved by API
-              },
+              recipientId: data.teacherId,
+              recipientType: 'teacher',
+              studentId: data.childId,
               subject: data.subject,
               initialMessage: data.content,
             });

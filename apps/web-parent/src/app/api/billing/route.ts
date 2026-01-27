@@ -1,6 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/billing
  *
@@ -20,11 +22,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
+    const data = (await response.json()) as { error?: { code: string; message: string } };
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.error || { code: 'FETCH_FAILED', message: 'Failed to fetch billing data' } },
+        { error: data.error ?? { code: 'FETCH_FAILED', message: 'Failed to fetch billing data' } },
         { status: response.status }
       );
     }

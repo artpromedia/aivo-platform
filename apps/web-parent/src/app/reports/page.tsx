@@ -38,6 +38,7 @@ import {
   useChildrenEnhanced,
 } from '@/hooks';
 import { isDevMode } from '@/lib/api/client';
+import { adaptProgressReport, isApiProgressReport } from '@/lib/adapters/progress-report.adapter';
 
 // Child selector component for reports
 interface ChildSelectorProps {
@@ -193,8 +194,8 @@ export default function ReportsPage() {
       name: child.name,
       firstName: child.firstName,
       lastName: child.lastName,
-      grade: child.gradeLevel,
-      gradeLevel: child.gradeLevel,
+      grade: child.grade,
+      gradeLevel: child.grade,
       avatar: child.avatar,
     })) ||
     profile?.students?.map((s) => ({
@@ -308,7 +309,7 @@ export default function ReportsPage() {
                   childName={selectedChild?.name || ''}
                   dateRange={dateRange}
                   onExport={handleExportPDF}
-                  isExporting={generatePDF.isPending || pdfExport.isPending}
+                  isExporting={pdfExport.isPending}
                 />
               </div>
             )}
@@ -413,23 +414,32 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Detailed Tab - Original report sections */}
+        {/* Detailed Tab - Using adapter to transform API data to component format */}
         {activeTab === 'detailed' && !isAnyLoading && reportData && (
           <div className="space-y-8">
-            {/* Detailed Progress */}
-            <DetailedProgressReport data={reportData.progress} childName={selectedChild?.name} />
-
-            {/* Assessment History */}
-            <AssessmentHistory data={reportData.assessments} />
-
-            {/* Strength & Weakness Analysis */}
-            <StrengthWeaknessAnalysis data={reportData.analysis} />
-
-            {/* Time on Task */}
-            <TimeOnTaskReport data={reportData.timeOnTask} />
-
-            {/* Subject Mastery */}
-            <SubjectMasteryReport data={reportData.mastery} />
+            {isApiProgressReport(reportData) ? (
+              // Transform API ProgressReport to component ProgressReportData
+              (() => {
+                const adaptedData = adaptProgressReport(reportData);
+                return (
+                  <>
+                    <DetailedProgressReport data={adaptedData.progress} />
+                    <AssessmentHistory data={adaptedData.assessments} />
+                    <StrengthWeaknessAnalysis data={adaptedData.analysis} />
+                    <TimeOnTaskReport data={adaptedData.timeOnTask} />
+                    <SubjectMasteryReport data={adaptedData.mastery} />
+                  </>
+                );
+              })()
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">Report Data Unavailable</h2>
+                <p className="text-gray-500">
+                  Unable to load detailed report data. Please try refreshing.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

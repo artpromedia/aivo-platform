@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthStatus;
 
-import '../accessibility/accessibility_utils.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
 import '../baseline/baseline_controller.dart';

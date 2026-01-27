@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
  *
  * Allows parents to create an account and start their free trial.
  */
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const source = searchParams.get('source') || 'direct';
@@ -84,11 +84,11 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Registration failed');
+        const data = (await response.json()) as { message?: string };
+        throw new Error(data.message ?? 'Registration failed');
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { accessToken?: string };
 
       // Store tokens if provided
       if (data.accessToken) {
@@ -364,5 +364,29 @@ export default function RegisterPage() {
         </ul>
       </div>
     </div>
+  );
+}
+
+function RegisterFallback() {
+  return (
+    <div className="rounded-2xl bg-white p-8 shadow-xl">
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+        <p className="mt-2 text-gray-600">Loading...</p>
+      </div>
+      <div className="animate-pulse space-y-4">
+        <div className="h-12 rounded-lg bg-gray-200" />
+        <div className="h-12 rounded-lg bg-gray-200" />
+        <div className="h-12 rounded-lg bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterFallback />}>
+      <RegisterContent />
+    </Suspense>
   );
 }

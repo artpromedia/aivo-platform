@@ -9,7 +9,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { User, ChevronDown, Shield, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -145,7 +145,7 @@ export default function ParentalControlsPage() {
     error: profileError,
     refetch: refetchProfile,
   } = useParentProfile();
-  const children = profile?.students ?? [];
+  const children = useMemo(() => profile?.students ?? [], [profile?.students]);
 
   // Auto-select first child
   useEffect(() => {
@@ -155,12 +155,11 @@ export default function ParentalControlsPage() {
   }, [children, selectedChild]);
 
   // Fetch controls for selected child
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const {
     data: controls,
     isLoading: controlsLoading,
-    error: controlsError,
-    refetch: refetchControls,
+    error: _controlsError,
+    refetch: _refetchControls,
   } = useParentalControls(selectedChild?.id ?? null);
 
   // Save controls mutation
@@ -169,10 +168,6 @@ export default function ParentalControlsPage() {
   // PIN verification for sensitive sections
   const { data: pinStatus } = usePinStatus();
   const pinVerification = usePinVerification();
-  const [pendingSave, setPendingSave] = useState<{
-    section: string;
-    settings: unknown;
-  } | null>(null);
 
   // Sections that require PIN verification
   const SENSITIVE_SECTIONS = ['screenTime', 'contentFilter', 'safety'];
@@ -181,16 +176,21 @@ export default function ParentalControlsPage() {
     if (!selectedChild) return;
 
     // Check if PIN is required for this section
-    const isPinRequired = pinStatus?.hasPin && SENSITIVE_SECTIONS.includes(section);
+    const isPinRequired = pinStatus?.enabled && SENSITIVE_SECTIONS.includes(section);
 
-    if (isPinRequired && !pinVerification.isVerified) {
-      // Store pending save and open PIN dialog
-      setPendingSave({ section, settings });
-      pinVerification.open();
+    if (isPinRequired) {
+      // Request PIN verification before save
+      pinVerification.requestVerification(
+        `Update ${section}`,
+        `Updating parental control settings for ${section}`,
+        async () => {
+          await performSave(section, settings);
+        }
+      );
       return;
     }
 
-    // Proceed with save
+    // No PIN required, proceed with save
     await performSave(section, settings);
   };
 
@@ -205,15 +205,6 @@ export default function ParentalControlsPage() {
       });
     } finally {
       setSavingSection(null);
-    }
-  };
-
-  // Handle successful PIN verification
-  const handlePinVerified = async (token: string) => {
-    pinVerification.verify(token);
-    if (pendingSave) {
-      await performSave(pendingSave.section, pendingSave.settings);
-      setPendingSave(null);
     }
   };
 
@@ -461,10 +452,10 @@ export default function ParentalControlsPage() {
       {/* PIN Verification Dialog */}
       <PinVerificationDialog
         isOpen={pinVerification.isOpen}
-        onClose={pinVerification.close}
-        onVerified={handlePinVerified}
-        title="Verify PIN"
-        description="Enter your 4-digit PIN to modify parental control settings"
+        action={pinVerification.action}
+        actionDescription={pinVerification.actionDescription}
+        onClose={pinVerification.onClose}
+        onVerified={pinVerification.onVerified}
       />
     </main>
   );

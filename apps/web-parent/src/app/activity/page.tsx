@@ -19,39 +19,59 @@ import {
   Clock,
   Star,
   Search,
+  Gamepad2,
+  Target,
+  Play,
+  Trophy,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { QueryErrorDisplay } from '@/components/error-boundary';
 import { ActivityPageSkeleton } from '@/components/skeletons';
-import { useActivities } from '@/hooks';
+import { useActivities, useSelectedChild } from '@/hooks';
+import type { TimelineActivity } from '@/lib/api/parent.api';
 
-interface Activity {
-  id: string;
-  type: 'lesson' | 'quiz' | 'assignment' | 'achievement';
-  title: string;
-  subject: string;
-  score?: number;
-  completedAt: string;
-  duration?: number;
+// Map timeline types to display categories
+type DisplayCategory = 'lesson' | 'quiz' | 'achievement' | 'other';
+
+function getDisplayCategory(type: TimelineActivity['type']): DisplayCategory {
+  switch (type) {
+    case 'lesson_started':
+    case 'lesson_completed':
+      return 'lesson';
+    case 'quiz_completed':
+    case 'assessment_completed':
+      return 'quiz';
+    case 'achievement_earned':
+    case 'milestone_reached':
+      return 'achievement';
+    case 'game_played':
+    case 'practice_session':
+    default:
+      return 'other';
+  }
 }
 
-const activityIcons = {
-  lesson: BookOpen,
-  quiz: FileText,
-  assignment: CheckCircle,
-  achievement: Award,
+const activityIcons: Record<TimelineActivity['type'], typeof BookOpen> = {
+  lesson_started: Play,
+  lesson_completed: BookOpen,
+  quiz_completed: FileText,
+  achievement_earned: Award,
+  milestone_reached: Trophy,
+  game_played: Gamepad2,
+  practice_session: Target,
+  assessment_completed: CheckCircle,
 };
 
-const activityColors = {
+const activityColors: Record<DisplayCategory, { bg: string; text: string; border: string }> = {
   lesson: { bg: 'bg-blue-100', text: 'text-blue-600', border: 'border-blue-200' },
   quiz: { bg: 'bg-purple-100', text: 'text-purple-600', border: 'border-purple-200' },
-  assignment: { bg: 'bg-green-100', text: 'text-green-600', border: 'border-green-200' },
   achievement: { bg: 'bg-yellow-100', text: 'text-yellow-600', border: 'border-yellow-200' },
+  other: { bg: 'bg-green-100', text: 'text-green-600', border: 'border-green-200' },
 };
 
-type FilterType = 'all' | 'lesson' | 'quiz' | 'assignment' | 'achievement';
+type FilterType = 'all' | 'lesson' | 'quiz' | 'achievement' | 'other';
 type DateRange = '7days' | '30days' | 'all';
 
 export default function ActivityPage() {
@@ -60,8 +80,8 @@ export default function ActivityPage() {
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [dateRange, setDateRange] = useState<DateRange>('7days');
 
-  // TODO: Get from auth context or URL params
-  const studentId = 'student-1';
+  // Get selected child from parent profile
+  const { selectedChildId: studentId, isLoading: _profileLoading } = useSelectedChild();
 
   const { data: activities = [], isLoading, error, refetch } = useActivities(studentId);
 
@@ -71,12 +91,12 @@ export default function ActivityPage() {
     if (searchQuery && !activity.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-    // Type filter
-    if (filterType !== 'all' && activity.type !== filterType) {
+    // Type filter - compare display category, not raw type
+    if (filterType !== 'all' && getDisplayCategory(activity.type) !== filterType) {
       return false;
     }
     // Date range
-    const activityDate = new Date(activity.completedAt);
+    const activityDate = new Date(activity.timestamp);
     const now = new Date();
     if (dateRange === '7days' && activityDate < subDays(now, 7)) {
       return false;
@@ -88,9 +108,9 @@ export default function ActivityPage() {
   });
 
   // Group by date
-  const groupedActivities = filteredActivities.reduce<Record<string, Activity[]>>(
+  const groupedActivities = filteredActivities.reduce<Record<string, TimelineActivity[]>>(
     (groups, activity) => {
-      const date = format(new Date(activity.completedAt), 'yyyy-MM-dd');
+      const date = format(new Date(activity.timestamp), 'yyyy-MM-dd');
       if (!groups[date]) {
         groups[date] = [];
       }
@@ -102,7 +122,9 @@ export default function ActivityPage() {
 
   // Stats
   const totalActivities = activities.length;
-  const totalLessons = activities.filter((a) => a.type === 'lesson').length;
+  const totalLessons = activities.filter(
+    (a) => a.type === 'lesson_started' || a.type === 'lesson_completed'
+  ).length;
   const avgScore =
     activities.filter((a) => a.score !== undefined).length > 0
       ? Math.round(
@@ -194,7 +216,7 @@ export default function ActivityPage() {
 
             {/* Type Filter */}
             <div className="flex gap-2 flex-wrap">
-              {(['all', 'lesson', 'quiz', 'assignment', 'achievement'] as FilterType[]).map(
+              {(['all', 'lesson', 'quiz', 'achievement', 'other'] as FilterType[]).map(
                 (type) => (
                   <button
                     key={type}
@@ -266,9 +288,16 @@ export default function ActivityPage() {
   );
 }
 
-function ActivityCard({ activity }: { readonly activity: Activity }) {
+function ActivityCard({ activity }: { readonly activity: TimelineActivity }) {
   const Icon = activityIcons[activity.type];
-  const colors = activityColors[activity.type];
+  const displayCategory = getDisplayCategory(activity.type);
+  const colors = activityColors[displayCategory];
+
+  // Format type for display
+  const displayType = activity.type
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -283,13 +312,13 @@ function ActivityCard({ activity }: { readonly activity: Activity }) {
             <span
               className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors.bg} ${colors.text}`}
             >
-              {activity.type.charAt(0).toUpperCase() + activity.type.slice(1)}
+              {displayType}
             </span>
-            <span className="text-xs text-gray-500">{activity.subject}</span>
+            {activity.subject && <span className="text-xs text-gray-500">{activity.subject}</span>}
           </div>
           <p className="font-medium text-gray-900 truncate">{activity.title}</p>
           <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-            <span>{format(new Date(activity.completedAt), 'h:mm a')}</span>
+            <span>{format(new Date(activity.timestamp), 'h:mm a')}</span>
             {activity.duration && <span>{activity.duration} min</span>}
           </div>
         </div>

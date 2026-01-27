@@ -289,7 +289,7 @@ function ActivityFilters({
 /**
  * Main Timeline View Component
  */
-export function TimelineView({ timeline, onDateSelect }: TimelineViewProps) {
+export function TimelineView({ timeline }: TimelineViewProps) {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [selectedTypes, setSelectedTypes] = useState<Set<ActivityType>>(
     new Set(['lesson', 'quiz', 'assignment', 'achievement', 'practice'] as ActivityType[])

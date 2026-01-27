@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { ArrowLeft, CheckCircle, XCircle, Loader2 } from 'lucide-react';
@@ -34,7 +34,7 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY)
   : null;
 
-export default function BillingPage() {
+function BillingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export default function BillingPage() {
     try {
       await cancelSubscription.mutateAsync({});
       setSuccessMessage('Your subscription has been canceled. You will have access until the end of your billing period.');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to cancel subscription. Please try again.');
     }
   };
@@ -99,7 +99,7 @@ export default function BillingPage() {
     try {
       await resumeSubscription.mutateAsync();
       setSuccessMessage('Your subscription has been resumed!');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to resume subscription. Please try again.');
     }
   };
@@ -123,7 +123,7 @@ export default function BillingPage() {
         // In development without Stripe, just show success
         setSuccessMessage('Plan change initiated (dev mode)');
       }
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to start checkout. Please try again.');
     }
   };
@@ -132,7 +132,7 @@ export default function BillingPage() {
     try {
       await manageSeats.mutateAsync(changes);
       setSuccessMessage('Seats updated successfully!');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to update seats. Please try again.');
     }
   };
@@ -140,7 +140,7 @@ export default function BillingPage() {
   const handleDownloadInvoice = async (invoiceId: string, description: string) => {
     try {
       await downloadInvoice.mutateAsync({ invoiceId, invoiceDescription: description });
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to download invoice. Please try again.');
     }
   };
@@ -149,7 +149,7 @@ export default function BillingPage() {
     try {
       await removePaymentMethod.mutateAsync(id);
       setSuccessMessage('Payment method removed');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to remove payment method');
     }
   };
@@ -158,7 +158,7 @@ export default function BillingPage() {
     try {
       await setDefaultPaymentMethod.mutateAsync(id);
       setSuccessMessage('Default payment method updated');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to update default payment method');
     }
   };
@@ -167,7 +167,7 @@ export default function BillingPage() {
     try {
       const { url } = await createBillingPortal.mutateAsync();
       window.open(url, '_blank');
-    } catch (error) {
+    } catch {
       setErrorMessage('Failed to open billing portal');
     }
   };
@@ -276,5 +276,29 @@ export default function BillingPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function BillingFallback() {
+  return (
+    <main id="main-content" className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Billing & Subscription</h1>
+          <p className="text-gray-600 mt-1">Loading...</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<BillingFallback />}>
+      <BillingContent />
+    </Suspense>
   );
 }

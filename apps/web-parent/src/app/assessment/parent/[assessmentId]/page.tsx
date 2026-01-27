@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface ParentAssessmentQuestion {
@@ -17,11 +17,6 @@ interface ParentAssessmentQuestion {
   helpText?: string;
 }
 
-interface ParentAssessmentProps {
-  assessmentId: string;
-  profileId: string;
-}
-
 const CATEGORY_INFO = {
   learning_style: { title: 'Learning Style', icon: '🎓', description: 'How your child learns best' },
   strengths: { title: 'Strengths', icon: '💪', description: 'Your child\'s talents and abilities' },
@@ -31,8 +26,12 @@ const CATEGORY_INFO = {
   social_emotional: { title: 'Social-Emotional', icon: '🤝', description: 'Confidence and resilience' },
 };
 
-export default function ParentAssessmentPage({ assessmentId, profileId }: Readonly<ParentAssessmentProps>) {
+export default function ParentAssessmentPage() {
   const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const assessmentId = params.assessmentId as string;
+  const _profileId = searchParams.get('profileId') ?? '';
   const [questions, setQuestions] = useState<ParentAssessmentQuestion[]>([]);
   const [responses, setResponses] = useState<Record<string, unknown>>({});
   const [currentCategory, setCurrentCategory] = useState(0);
@@ -48,17 +47,19 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Readon
   const progress = ((currentCategory + 1) / totalCategories) * 100;
 
   useEffect(() => {
-    loadAssessment();
+    void loadAssessment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessmentId]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
     if (status === 'IN_PROGRESS') {
       const interval = setInterval(() => {
-        saveProgress();
+        void saveProgress();
       }, 30000);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, responses]);
 
   async function loadAssessment() {
@@ -72,8 +73,16 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Readon
         throw new Error('Failed to load assessment');
       }
 
-      const assessment = await assessmentRes.json();
-      const questionsData = await questionsRes.json();
+      interface AssessmentResponse {
+        status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+        responses?: Record<string, unknown>;
+      }
+      interface QuestionsResponse {
+        questions: ParentAssessmentQuestion[];
+      }
+
+      const assessment = (await assessmentRes.json()) as AssessmentResponse;
+      const questionsData = (await questionsRes.json()) as QuestionsResponse;
 
       setStatus(assessment.status);
       setQuestions(questionsData.questions);
@@ -118,8 +127,8 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Readon
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to submit assessment');
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? 'Failed to submit assessment');
       }
 
       setStatus('COMPLETED');
@@ -139,7 +148,7 @@ export default function ParentAssessmentPage({ assessmentId, profileId }: Readon
   function handleNext() {
     if (currentCategory < totalCategories - 1) {
       setCurrentCategory(prev => prev + 1);
-      saveProgress();
+      void saveProgress();
     }
   }
 

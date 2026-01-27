@@ -8,11 +8,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const isDev = process.env.NODE_ENV === 'development';
+
+interface JwtPayload {
+  sub?: string;
+  id?: string;
+  email?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  givenName?: string;
+  familyName?: string;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get('auth-token')?.value || 
                   cookieStore.get('parent-token')?.value ||
                   request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -22,7 +35,7 @@ export async function GET(request: NextRequest) {
         // Parse the token (JWT has 3 parts separated by .)
         const parts = token.split('.');
         if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8')) as JwtPayload;
           
           return NextResponse.json({
             user: {

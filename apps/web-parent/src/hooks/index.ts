@@ -181,3 +181,6 @@ export {
   useUpdateBillingPeriod,
   useApplyCoupon,
 } from './use-billing';
+
+// Selected Child Hook
+export { useSelectedChild } from './use-selected-child';

@@ -108,6 +108,7 @@ export interface Achievement {
   description: string;
   icon: string;
   category: 'learning' | 'streak' | 'mastery' | 'engagement' | 'special';
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
   earnedAt?: string;
   progress?: number;
   total?: number;

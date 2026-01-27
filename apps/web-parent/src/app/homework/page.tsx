@@ -28,7 +28,7 @@ import React, { useState } from 'react';
 
 import { QueryErrorDisplay } from '@/components/error-boundary';
 import { HomeworkPageSkeleton } from '@/components/skeletons';
-import { useHomeworkSessions } from '@/hooks';
+import { useHomeworkSessions, useSelectedChild } from '@/hooks';
 import type { HomeworkSession } from '@/lib/api/parent.api';
 
 const subjectIcons: Record<string, React.ReactNode> = {
@@ -54,8 +54,8 @@ export default function HomeworkPage() {
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [selectedSession, setSelectedSession] = useState<HomeworkSession | null>(null);
 
-  // TODO: Get from auth context or URL params
-  const studentId = 'student-1';
+  // Get selected child from parent profile
+  const { selectedChildId: studentId, isLoading: _profileLoading } = useSelectedChild();
 
   const { data: sessions = [], isLoading, error, refetch } = useHomeworkSessions(studentId);
 

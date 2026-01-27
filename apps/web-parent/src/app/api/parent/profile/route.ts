@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -15,7 +17,7 @@ const isDev = process.env.NODE_ENV === 'development';
  */
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get('auth-token')?.value || request.headers.get('Authorization')?.replace('Bearer ', '');
 
     // Try to call parent-svc
@@ -28,10 +30,10 @@ export async function GET(request: NextRequest) {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data: unknown = await response.json();
           return NextResponse.json(data);
         }
-      } catch (error) {
+      } catch {
         console.log('[Profile API] Parent service unavailable, using mock data');
       }
     }
@@ -78,9 +80,9 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get('auth-token')?.value || request.headers.get('Authorization')?.replace('Bearer ', '');
-    const body = await request.json();
+    const body: unknown = await request.json();
 
     if (token) {
       try {
@@ -94,10 +96,10 @@ export async function PUT(request: NextRequest) {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data: unknown = await response.json();
           return NextResponse.json(data);
         }
-      } catch (error) {
+      } catch {
         console.log('[Profile API] Parent service unavailable');
       }
     }
@@ -105,7 +107,7 @@ export async function PUT(request: NextRequest) {
     // Return mock success in development
     if (isDev) {
       return NextResponse.json({
-        ...body,
+        ...(body as object),
         id: 'parent_demo_123',
         updatedAt: new Date().toISOString(),
       });
