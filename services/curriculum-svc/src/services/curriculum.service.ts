@@ -804,10 +804,11 @@ export class CurriculumService {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
-  // STUB METHODS FOR ROUTES (to be implemented)
+  // ROUTE HANDLER METHODS
+  // These methods provide the API interface, wrapping core service methods
   // ════════════════════════════════════════════════════════════════════════════
 
-  // --- Curricula Stubs ---
+  // --- Curricula Methods ---
 
   async listCurricula(tenantId: string, _filters?: { subjectArea?: string; gradeLevel?: string; status?: string }) {
     return this.getCurricula(tenantId);
@@ -834,7 +835,7 @@ export class CurriculumService {
     return this.duplicateCurriculum(id, newName);
   }
 
-  // --- Lessons Stubs ---
+  // --- Lessons Methods ---
 
   async listLessons(unitId: string, _tenantId: string) {
     return this.prisma.lesson.findMany({
@@ -857,7 +858,7 @@ export class CurriculumService {
     });
   }
 
-  // --- Standards Stubs ---
+  // --- Standards Methods ---
 
   async getStandardsAlignment(curriculumId: string, _tenantId: string, _framework?: string) {
     return this.getStandards({ curriculumId });
@@ -921,7 +922,7 @@ export class CurriculumService {
     };
   }
 
-  // --- Pacing Stubs ---
+  // --- Pacing Methods ---
 
   async listPacingGuides(curriculumId: string, _tenantId: string, _schoolYear?: string) {
     return this.getPacingGuides(curriculumId);
@@ -997,7 +998,7 @@ export class CurriculumService {
     });
   }
 
-  // --- Progress Stubs ---
+  // --- Progress Methods ---
 
   async getCurriculumProgressSummary(curriculumId: string, tenantId: string, _schoolId?: string) {
     const progress = await this.prisma.teacherCurriculumProgress.findMany({

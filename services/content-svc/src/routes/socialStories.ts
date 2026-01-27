@@ -11,7 +11,7 @@ import { z } from 'zod';
 import type { SocialStoryCategory, LearningObjectGradeBand } from '../prisma-types.js';
 import type { StoryTriggerType } from '../social-stories/types.js';
 import * as socialStoryService from '../social-stories/social-story.service.js';
-// import { seedBuiltInStories } from '../social-stories/story-templates.js'; // TODO: Implement story templates
+import { seedBuiltInStories } from '../social-stories/story-templates.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -929,13 +929,23 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         return reply.status(403).send({ error: 'Insufficient permissions' });
       }
 
-      // TODO: Implement story templates seeding
-      // const result = await seedBuiltInStories(socialStoryService.createStory);
+      try {
+        const result = await seedBuiltInStories(socialStoryService.createStory);
 
-      return reply.send({
-        message: 'Story templates seeding not yet implemented',
-        // ...result,
-      });
+        return reply.send({
+          message: 'Built-in story templates seeded successfully',
+          created: result.created,
+          skipped: result.skipped,
+          errors: result.errors,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        request.log.error({ error }, 'Failed to seed built-in stories');
+        return reply.status(500).send({
+          error: 'Failed to seed built-in stories',
+          details: errorMessage,
+        });
+      }
     }
   );
 }

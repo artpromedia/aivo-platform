@@ -18,6 +18,49 @@ import PDFDocument from 'pdfkit';
 // Type alias for PDFKit document
 type PDFDoc = InstanceType<typeof PDFDocument>;
 
+// ─── Report Metrics ───────────────────────────────────────────────────────────
+// Reports-specific metrics for observability
+
+interface ReportMetricsConfig {
+  generatedTotal: { inc: (labels?: Record<string, string>) => void };
+  generationDuration: { observe: (labels: Record<string, string>, value: number) => void };
+  failedTotal: { inc: (labels?: Record<string, string>) => void };
+  emailsSentTotal: { inc: (labels?: Record<string, string>) => void };
+  sizeBytes: { observe: (labels: Record<string, string>, value: number) => void };
+}
+
+/**
+ * Report metrics singleton
+ * In production, replace with proper prom-client metrics from @aivo/ts-observability
+ */
+export const reportMetrics: ReportMetricsConfig = {
+  generatedTotal: {
+    inc: (labels?: Record<string, string>) => {
+      logger.debug({ metric: 'report_generated_total', labels }, 'Report generated');
+    },
+  },
+  generationDuration: {
+    observe: (labels: Record<string, string>, value: number) => {
+      logger.debug({ metric: 'report_generation_duration_seconds', labels, value }, 'Report generation duration');
+    },
+  },
+  failedTotal: {
+    inc: (labels?: Record<string, string>) => {
+      logger.debug({ metric: 'report_failed_total', labels }, 'Report generation failed');
+    },
+  },
+  emailsSentTotal: {
+    inc: (labels?: Record<string, string>) => {
+      logger.debug({ metric: 'report_emails_sent_total', labels }, 'Report email sent');
+    },
+  },
+  sizeBytes: {
+    observe: (labels: Record<string, string>, value: number) => {
+      logger.debug({ metric: 'report_size_bytes', labels, value }, 'Report size');
+    },
+  },
+};
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type ReportFormat = 'pdf' | 'excel' | 'csv' | 'html' | 'json';
@@ -428,15 +471,18 @@ export class ReportService {
 
       await this.saveReportRequest(request);
 
-      // TODO: Add reports-specific metrics to ts-observability when report metrics are defined
-      // metrics.http.requestDuration.observe(...) - use proper structured metrics
+      // Record report metrics
+      const durationMs = Date.now() - startTime;
+      reportMetrics.generatedTotal.inc({ type, format, tenant_id: tenantId });
+      reportMetrics.generationDuration.observe({ type, format }, durationMs / 1000);
+      reportMetrics.sizeBytes.observe({ type, format }, content.length);
 
       logger.info({
         reportId,
         type,
         format,
         size: content.length,
-        durationMs: Date.now() - startTime,
+        durationMs,
       }, 'Report generated successfully');
 
       return request;
@@ -444,6 +490,9 @@ export class ReportService {
       request.status = 'failed';
       request.error = error instanceof Error ? error.message : 'Unknown error';
       await this.saveReportRequest(request);
+
+      // Record failure metrics
+      reportMetrics.failedTotal.inc({ type, format, tenant_id: tenantId });
 
       logger.error({ error, reportId, type, format }, 'Report generation failed');
       throw error;
@@ -1282,7 +1331,9 @@ export class ReportService {
 
         await this.ses.send(command);
 
-        // TODO: Add reports-specific metrics when defined
+        // Record email sent metric
+        reportMetrics.emailsSentTotal.inc({ type: report.type, tenant_id: report.tenantId });
+
         logger.info({
           reportId: report.id,
           recipient: recipient.email,

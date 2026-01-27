@@ -68,23 +68,80 @@ export interface Lesson {
   updatedAt: string;
 }
 
+// Content service base URL - defaults to local development
+const CONTENT_SERVICE_URL = process.env.NEXT_PUBLIC_CONTENT_SERVICE_URL || '/api/content';
+
+/**
+ * Helper function to make API requests to the content service
+ */
+async function contentFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${CONTENT_SERVICE_URL}${path}`;
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`Content API error: ${response.status} - ${errorText}`);
+  }
+
+  return response.json();
+}
+
 export const contentApi = {
   async getLessons(): Promise<Lesson[]> {
-    return [];
+    try {
+      return await contentFetch<Lesson[]>('/lessons');
+    } catch (error) {
+      console.error('Failed to fetch lessons:', error);
+      return [];
+    }
   },
-  async getLesson(_id: string): Promise<Lesson | null> {
-    return null;
+
+  async getLesson(id: string): Promise<Lesson | null> {
+    try {
+      return await contentFetch<Lesson>(`/lessons/${id}`);
+    } catch (error) {
+      console.error(`Failed to fetch lesson ${id}:`, error);
+      return null;
+    }
   },
-  async getLessonVersion(_lessonId: string, _versionId: string): Promise<LessonVersion | null> {
-    return null;
+
+  async getLessonVersion(lessonId: string, versionId: string): Promise<LessonVersion | null> {
+    try {
+      return await contentFetch<LessonVersion>(`/lessons/${lessonId}/versions/${versionId}`);
+    } catch (error) {
+      console.error(`Failed to fetch lesson version ${lessonId}/${versionId}:`, error);
+      return null;
+    }
   },
-  async getLessonVersions(_lessonId: string): Promise<LessonVersion[]> {
-    return [];
+
+  async getLessonVersions(lessonId: string): Promise<LessonVersion[]> {
+    try {
+      return await contentFetch<LessonVersion[]>(`/lessons/${lessonId}/versions`);
+    } catch (error) {
+      console.error(`Failed to fetch lesson versions for ${lessonId}:`, error);
+      return [];
+    }
   },
-  async createLessonVersion(_lessonId: string, _data: Partial<LessonVersion>): Promise<LessonVersion> {
-    throw new Error('Not implemented');
+
+  async createLessonVersion(lessonId: string, data: Partial<LessonVersion>): Promise<LessonVersion> {
+    return await contentFetch<LessonVersion>(`/lessons/${lessonId}/versions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
-  async restoreVersion(_lessonId: string, _versionId: string): Promise<void> {
-    throw new Error('Not implemented');
+
+  async restoreVersion(lessonId: string, versionId: string): Promise<void> {
+    await contentFetch<void>(`/lessons/${lessonId}/versions/${versionId}/restore`, {
+      method: 'POST',
+    });
   },
 };

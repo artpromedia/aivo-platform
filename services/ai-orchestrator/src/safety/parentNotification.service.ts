@@ -16,13 +16,54 @@
 import { logger } from '@aivo/ts-observability';
 import type { Pool } from 'pg';
 
-// TODO: Replace with proper metrics from @aivo/ts-observability when safety metrics are added
-// For now, use stub implementations
-const safetyMetrics = {
-  parentNotificationAttempted: { inc: (_labels?: Record<string, string>) => {} },
-  parentNotificationSuccess: { inc: (_labels?: Record<string, string>) => {} },
-  parentNotificationDuration: { observe: (_labels: Record<string, string>, _value: number) => {} },
-  parentNotificationError: { inc: (_labels?: Record<string, string>) => {} },
+// ─── Safety Metrics ──────────────────────────────────────────────────────────
+// Safety-related metrics for COPPA compliance monitoring
+// These log-based metrics provide observability until full Prometheus integration
+
+interface SafetyMetricsConfig {
+  parentNotificationAttempted: { inc: (labels?: Record<string, string>) => void };
+  parentNotificationSuccess: { inc: (labels?: Record<string, string>) => void };
+  parentNotificationDuration: { observe: (labels: Record<string, string>, value: number) => void };
+  parentNotificationError: { inc: (labels?: Record<string, string>) => void };
+  incidentDetected: { inc: (labels?: Record<string, string>) => void };
+  escalationToAdmin: { inc: (labels?: Record<string, string>) => void };
+}
+
+/**
+ * Safety metrics singleton
+ * Logs metric events for observability dashboards and alerting
+ */
+export const safetyMetrics: SafetyMetricsConfig = {
+  parentNotificationAttempted: {
+    inc: (labels?: Record<string, string>) => {
+      logger.info({ metric: 'safety_parent_notification_attempted_total', labels }, 'Parent notification attempted');
+    },
+  },
+  parentNotificationSuccess: {
+    inc: (labels?: Record<string, string>) => {
+      logger.info({ metric: 'safety_parent_notification_success_total', labels }, 'Parent notification succeeded');
+    },
+  },
+  parentNotificationDuration: {
+    observe: (labels: Record<string, string>, value: number) => {
+      logger.info({ metric: 'safety_parent_notification_duration_ms', labels, value }, 'Parent notification duration');
+    },
+  },
+  parentNotificationError: {
+    inc: (labels?: Record<string, string>) => {
+      logger.warn({ metric: 'safety_parent_notification_error_total', labels }, 'Parent notification error');
+    },
+  },
+  incidentDetected: {
+    inc: (labels?: Record<string, string>) => {
+      logger.warn({ metric: 'safety_incident_detected_total', labels }, 'Safety incident detected');
+    },
+  },
+  escalationToAdmin: {
+    inc: (labels?: Record<string, string>) => {
+      logger.warn({ metric: 'safety_escalation_to_admin_total', labels }, 'Safety incident escalated to admin');
+    },
+  },
 };
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -164,6 +205,11 @@ export class ParentSafetyNotificationService {
         // Escalate to school admin
         await this.notifySchoolAdmin(incident, learnerInfo, 'No parent contacts found');
         schoolAdminNotified = true;
+        safetyMetrics.escalationToAdmin.inc({
+          incident_type: incident.incidentType,
+          tenant_id: incident.tenantId,
+          reason: 'no_parent_contacts',
+        });
       } else {
         // 3. Send notifications to all linked parents/guardians
         for (const parent of parentContacts) {
@@ -182,6 +228,11 @@ export class ParentSafetyNotificationService {
         if (!parentNotified) {
           await this.notifySchoolAdmin(incident, learnerInfo, 'All parent notifications failed');
           schoolAdminNotified = true;
+          safetyMetrics.escalationToAdmin.inc({
+            incident_type: incident.incidentType,
+            tenant_id: incident.tenantId,
+            reason: 'all_notifications_failed',
+          });
         }
       }
 

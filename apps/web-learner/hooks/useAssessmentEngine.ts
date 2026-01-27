@@ -231,7 +231,28 @@ export function useAssessmentEngine() {
           return session;
         }
 
-        // Fallback to stub questions
+        // Fallback to stub questions - log warning for monitoring
+        console.warn(
+          '[Assessment] API response not OK, falling back to stub questions. ' +
+          'This should be investigated if occurring in production. ' +
+          `Status: ${response.status}, Subjects: ${options.subjects.join(', ')}`
+        );
+
+        // Report to analytics if available
+        if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
+          try {
+            ((window as Record<string, unknown>).analytics as { track: (event: string, data: Record<string, unknown>) => void })
+              .track('assessment_stub_fallback', {
+                reason: 'api_response_not_ok',
+                status: response.status,
+                subjects: options.subjects,
+                type: options.type,
+              });
+          } catch {
+            // Analytics not available
+          }
+        }
+
         const questions = options.subjects.flatMap(
           (subject) => STUB_QUESTIONS[subject] || []
         );
@@ -258,7 +279,28 @@ export function useAssessmentEngine() {
 
         return session;
       } catch (error) {
-        console.error('Error starting assessment:', error);
+        // Log error with context for monitoring
+        console.error('[Assessment] Error starting assessment:', error);
+        console.warn(
+          '[Assessment] Falling back to stub questions due to API error. ' +
+          'This indicates assessment service unavailability and should be monitored. ' +
+          `Subjects: ${options.subjects.join(', ')}`
+        );
+
+        // Report to analytics if available
+        if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
+          try {
+            ((window as Record<string, unknown>).analytics as { track: (event: string, data: Record<string, unknown>) => void })
+              .track('assessment_stub_fallback', {
+                reason: 'api_error',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                subjects: options.subjects,
+                type: options.type,
+              });
+          } catch {
+            // Analytics not available
+          }
+        }
 
         // Use stub questions as fallback
         const questions = options.subjects.flatMap(

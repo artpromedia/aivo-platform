@@ -439,6 +439,7 @@ export async function planRoutes(fastify: FastifyInstance) {
         masteryLevel: unknown;
         practiceCount: number;
         correctStreak: number;
+        skill: { id: string };
       }
 
       // Calculate average mastery for the scope
@@ -449,19 +450,45 @@ export async function planRoutes(fastify: FastifyInstance) {
           0
         ) / skillStates.length;
 
-      // Stub: Recent performance (in production, query activity logs)
-      // For MVP, use practice count and correct streak as proxy
-      const totalPractice = skillStates.reduce(
-        (sum: number, ss: SkillStateRecord) => sum + ss.practiceCount,
-        0
-      );
-      const avgCorrectStreak =
-        skillStates.reduce((sum: number, ss: SkillStateRecord) => sum + ss.correctStreak, 0) /
-        skillStates.length;
+      // Query recent practice outcomes for accurate performance data
+      // Look at the last 30 days of practice for the relevant skills
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Estimate correct rate from streak (simplified)
-      const estimatedCorrectRate =
-        totalPractice > 0 ? Math.min(0.95, 0.5 + avgCorrectStreak * 0.1) : undefined;
+      const skillIds = skillStates.map((ss) => ss.skill.id);
+
+      const recentOutcomes = await prisma.practiceOutcome.findMany({
+        where: {
+          bktSkillState: {
+            virtualBrainId: virtualBrain.id,
+            skillId: { in: skillIds },
+          },
+          createdAt: { gte: thirtyDaysAgo },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100, // Limit to recent 100 outcomes for efficiency
+      });
+
+      // Calculate actual correct rate from recent practice outcomes
+      let correctRate: number | undefined;
+      if (recentOutcomes.length > 0) {
+        const correctCount = recentOutcomes.filter((o) => o.isCorrect).length;
+        correctRate = correctCount / recentOutcomes.length;
+      } else {
+        // Fall back to skill state data if no recent practice outcomes
+        const totalPractice = skillStates.reduce(
+          (sum: number, ss: SkillStateRecord) => sum + ss.practiceCount,
+          0
+        );
+        const avgCorrectStreak =
+          skillStates.reduce((sum: number, ss: SkillStateRecord) => sum + ss.correctStreak, 0) /
+          skillStates.length;
+
+        // Estimate correct rate from streak if no practice outcomes
+        correctRate = totalPractice > 0 ? Math.min(0.95, 0.5 + avgCorrectStreak * 0.1) : undefined;
+      }
+
+      const estimatedCorrectRate = correctRate;
 
       const { recommendation, suggestedLevel, reason } = calculateDifficultyRecommendation(
         avgMastery,

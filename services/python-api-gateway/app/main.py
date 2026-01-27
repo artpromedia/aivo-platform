@@ -73,9 +73,9 @@ uploads_dir.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
-# Include API routers - will be added during migration
-# from app.api.v1 import api_router
-# app.include_router(api_router, prefix=settings.API_V1_STR)
+# Include API routers
+from app.api.v1 import api_router
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

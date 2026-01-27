@@ -41,11 +41,9 @@ app.add_middleware(
 )
 
 
-# Include routers - will be added during migration
-# from app.api.v1 import generate, brain, adapt
-# app.include_router(generate.router, prefix=f"{settings.API_V1_STR}/generate")
-# app.include_router(brain.router, prefix=f"{settings.API_V1_STR}/brain")
-# app.include_router(adapt.router, prefix=f"{settings.API_V1_STR}/adapt")
+# Include API routers
+from app.api.v1 import api_router
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
