@@ -5,6 +5,7 @@ import { cn } from '@aivo/ui-web';
 
 import type { GameConfig, GameResult } from './types';
 import { GameSelector } from './GameSelector';
+import type { GameDefinition } from '../../lib/games/game-types';
 import { GameResults } from './GameResults';
 import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
 import type { GradeBand } from './games-api';
@@ -68,8 +69,8 @@ export function GameContainer({
 
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<'easy' | 'medium' | 'hard'>('medium');
 
-  const handleSelectGame = (gameId: string) => {
-    actions.selectGame(gameId);
+  const handleSelectGame = (game: GameDefinition) => {
+    actions.selectGame(game.id);
   };
 
   const handleStartGame = () => {

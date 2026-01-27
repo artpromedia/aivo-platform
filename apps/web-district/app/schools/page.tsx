@@ -15,7 +15,7 @@ const statusTone: Record<string, 'success' | 'warning' | 'neutral'> = {
 };
 
 export default function SchoolsPage() {
-  const { theme, labels } = useGradeTheme();
+  const { themeId, themeLabels } = useGradeTheme();
 
   return (
     <section className="space-y-5">
@@ -31,7 +31,7 @@ export default function SchoolsPage() {
 
       <Card
         title="School roster"
-        subtitle={`Theme: ${labels[theme] ?? theme}`}
+        subtitle={`Theme: ${themeLabels[themeId] ?? themeId}`}
         action={<Button variant="ghost">Export</Button>}
       >
         <div className="overflow-x-auto">

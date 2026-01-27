@@ -30,10 +30,12 @@ export interface ReportParams {
 export interface ReportResult {
   id: string;
   type: ReportType;
+  title?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   fileUrl?: string;
   htmlContent?: string;
   data?: Record<string, unknown>;
+  createdAt?: Date;
   generatedAt?: Date;
   expiresAt?: Date;
   error?: string;
