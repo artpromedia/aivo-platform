@@ -5,8 +5,8 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
-import { PrismaClient } from '../src/generated/prisma-client/index.js';
-import { registerEnhancedAuthRoutes } from '../src/routes/auth.enhanced.js';
+import { PrismaClient } from '../../generated/prisma-client/index.js';
+import { registerEnhancedAuthRoutes } from '../../src/routes/auth.enhanced.js';
 import { generateKeyPairSync, randomUUID } from 'crypto';
 import Redis from 'ioredis-mock';
 

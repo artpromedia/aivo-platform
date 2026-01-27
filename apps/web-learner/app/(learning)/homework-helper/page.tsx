@@ -18,7 +18,7 @@ export default async function HomeworkHelperPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 p-6">
-      <HomeworkHelperContainer learnerId={session.user.id} />
+      <HomeworkHelperContainer learnerId={session.learnerId ?? session.userId} />
     </main>
   );
 }

@@ -18,9 +18,9 @@ export async function createWorkflow(tenantId: string, data: {
     data: {
       tenantId,
       name: data.name,
-      description: data.description,
+      ...(data.description !== undefined && { description: data.description }),
       entityType: data.entityType,
-      triggerCondition: data.triggerCondition,
+      ...(data.triggerCondition !== undefined && { triggerCondition: data.triggerCondition }),
       createdBy: data.createdBy,
       status: 'DRAFT',
     },
@@ -39,12 +39,12 @@ export async function listWorkflows(tenantId: string, filters?: {
   entityType?: string;
   status?: WorkflowStatus;
 }) {
+  const where: Record<string, unknown> = { tenantId };
+  if (filters?.entityType) where.entityType = filters.entityType;
+  if (filters?.status) where.status = filters.status;
+  
   return prisma.approvalWorkflow.findMany({
-    where: {
-      tenantId,
-      ...(filters?.entityType && { entityType: filters.entityType }),
-      ...(filters?.status && { status: filters.status }),
-    },
+    where,
     include: { steps: { orderBy: { order: 'asc' } } },
     orderBy: { updatedAt: 'desc' },
   });
@@ -110,12 +110,12 @@ export async function addStep(tenantId: string, workflowId: string, data: {
       type: data.type || 'SINGLE_APPROVER',
       approverType: data.approverType,
       approverIds: data.approverIds,
-      approverExpression: data.approverExpression,
-      quorumCount: data.quorumCount,
-      timeoutHours: data.timeoutHours,
+      ...(data.approverExpression !== undefined && { approverExpression: data.approverExpression }),
+      ...(data.quorumCount !== undefined && { quorumCount: data.quorumCount }),
+      ...(data.timeoutHours !== undefined && { timeoutHours: data.timeoutHours }),
       escalationType: data.escalationType || 'NOTIFY_ONLY',
       escalateTo: data.escalateTo || [],
-      conditions: data.conditions,
+      ...(data.conditions !== undefined && { conditions: data.conditions }),
     },
   });
 }
@@ -172,19 +172,21 @@ export async function createRequest(tenantId: string, data: {
       workflowId: data.workflowId,
       entityType: data.entityType,
       entityId: data.entityId,
-      entityData: data.entityData,
+      ...(data.entityData !== undefined && { entityData: data.entityData }),
       title: data.title,
-      description: data.description,
+      ...(data.description !== undefined && { description: data.description }),
       priority: data.priority || 0,
       requestedBy: data.requestedBy,
-      expiresAt: data.expiresAt,
-      metadata: data.metadata,
+      ...(data.expiresAt !== undefined && { expiresAt: data.expiresAt }),
+      ...(data.metadata !== undefined && { metadata: data.metadata }),
       currentStepOrder: 1,
     },
   });
 
   // Create first step instance
   const firstStep = workflow.steps[0];
+  if (!firstStep) throw new Error('Workflow has no steps');
+  
   const assignedTo = await resolveApprovers(tenantId, firstStep, data.entityData);
 
   await prisma.stepInstance.create({
@@ -324,7 +326,7 @@ export async function makeDecision(tenantId: string, requestId: string, data: {
       stepInstanceId: currentStepInstance.id,
       decidedBy: data.decidedBy,
       decision: data.decision,
-      comment: data.comment,
+      ...(data.comment !== undefined && { comment: data.comment }),
       attachments: data.attachments || [],
     },
   });

@@ -19,6 +19,11 @@ export interface DashboardStats {
   pendingGrades: number;
   unreadMessages: number;
   upcomingDeadlines: number;
+  // Dashboard page additional fields
+  averageProgress?: number;
+  activeStudents?: number;
+  assignmentsThisWeek?: number;
+  completionRate?: number;
 }
 
 export interface WeeklyProgress {

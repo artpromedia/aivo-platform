@@ -109,6 +109,47 @@ export interface ClassAnalytics {
   standardsMastery: StandardMastery[];
   engagementMetrics: EngagementMetrics;
   trends: GradeTrend[];
+  // Dashboard-specific properties
+  totalStudents?: number;
+  averageProgress?: number;
+  averageMastery?: number;
+  activeStudents?: number;
+  atRiskStudents?: number;
+  assignmentsThisWeek?: number;
+  completionRate?: number;
+  recentActivity?: Array<{
+    id: string;
+    studentName: string;
+    action: string;
+    timestamp: string;
+    details?: string;
+  }>;
+  upcomingLessons?: Array<{
+    id: string;
+    title: string;
+    date: string;
+    subject?: string;
+  }>;
+  interventionAlerts?: Array<{
+    id: string;
+    studentId: string;
+    studentName: string;
+    type: string;
+    severity: 'low' | 'medium' | 'high';
+    message: string;
+    createdAt: string;
+  }>;
+  classPerformance?: Array<{
+    subject: string;
+    averageScore: number;
+    trend: 'up' | 'down' | 'stable';
+  }>;
+  upcomingEvents?: Array<{
+    id: string;
+    title: string;
+    date: string;
+    type: string;
+  }>;
 }
 
 export interface StandardMastery {

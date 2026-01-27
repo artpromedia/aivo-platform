@@ -573,7 +573,7 @@ describe('ApprovalService', () => {
 
   describe('isEscalationNeeded', () => {
     it('should return false if no timeout configured', () => {
-      const step = createMockStep({ timeoutHours: undefined });
+      const step = createMockStep({});  // No timeoutHours means undefined
       expect(service.isEscalationNeeded(step, new Date())).toBe(false);
     });
 

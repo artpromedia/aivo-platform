@@ -78,7 +78,7 @@ export function LearnerProfileClient({
   const baseUrl = `/classrooms/${classroomId}/learner/${learnerId}`;
 
   return (
-    <GradeThemeProvider initialGrade={learner.grade ?? undefined}>
+    <GradeThemeProvider {...(learner.grade !== undefined && learner.grade !== null && { gradeNumber: learner.grade })}>
       <LearnerProfileProvider
         value={{
           learner,

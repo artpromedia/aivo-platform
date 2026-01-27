@@ -447,7 +447,7 @@ export function SchoolHierarchy({
                       key={school.id}
                       school={school}
                       onSelect={() => onSchoolSelect?.(school)}
-                      getStatusIcon={getStatusIcon}
+                      _getStatusIcon={getStatusIcon}
                       getStatusBadge={getStatusBadge}
                       getTrendIcon={getTrendIcon}
                     />
@@ -456,7 +456,7 @@ export function SchoolHierarchy({
                       key={school.id}
                       school={school}
                       onSelect={() => onSchoolSelect?.(school)}
-                      getStatusIcon={getStatusIcon}
+                      _getStatusIcon={getStatusIcon}
                       getStatusBadge={getStatusBadge}
                       getTrendIcon={getTrendIcon}
                     />

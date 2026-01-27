@@ -75,7 +75,7 @@ function NetworkStatusWrapper({ children }: Readonly<{ children: ReactNode }>) {
  */
 export function RootProviders({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <ErrorBoundary fallback={<PageErrorFallback />}>
+    <ErrorBoundary fallback={({ error, resetError }) => <PageErrorFallback error={error} resetError={resetError} />}>
       <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
     </ErrorBoundary>
   );

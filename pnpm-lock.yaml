@@ -406,6 +406,9 @@ importers:
       '@aivo/ts-rbac':
         specifier: workspace:*
         version: link:../../libs/ts-rbac
+      '@aivo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@aivo/ui-web':
         specifier: workspace:*
         version: link:../../libs/ui-web
@@ -613,6 +616,9 @@ importers:
       '@aivo/ts-types':
         specifier: workspace:*
         version: link:../../libs/ts-types
+      '@aivo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@aivo/ui-web':
         specifier: workspace:*
         version: link:../../libs/ui-web
@@ -722,6 +728,9 @@ importers:
       '@aivo/ts-rbac':
         specifier: workspace:*
         version: link:../../libs/ts-rbac
+      '@aivo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@aivo/ui-web':
         specifier: workspace:*
         version: link:../../libs/ui-web
@@ -789,6 +798,9 @@ importers:
       '@aivo/ts-types':
         specifier: workspace:*
         version: link:../../libs/ts-types
+      '@aivo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@aivo/ui-web':
         specifier: workspace:*
         version: link:../../libs/ui-web

@@ -120,9 +120,9 @@ export function Providers({ children, initialAuth }: ProvidersProps) {
   };
 
   return (
-    <ErrorBoundary fallback={<PageErrorFallback />}>
+    <ErrorBoundary fallback={({ error, resetError }) => <PageErrorFallback error={error} resetError={resetError} />}>
       <AuthProvider initialAuth={initialAuth || defaultAuth}>
-        <GradeThemeProvider initialTheme="navigator">
+        <GradeThemeProvider gradeLevel="HS">
           <AccessibilityProvider>
             <WebPushProvider
               vapidPublicKey={VAPID_PUBLIC_KEY}

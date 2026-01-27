@@ -13,6 +13,7 @@
   "dependencies": {
     "@aivo/caching": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ui": "workspace:*",
     "@aivo/ui-web": "workspace:*",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

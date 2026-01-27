@@ -84,11 +84,9 @@ const nextConfig = {
   // WEBPACK OPTIMIZATION
   // ============================================================================
   webpack: (config, { isServer }) => {
-    // Tree shake lodash properly
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      lodash: 'lodash-es',
-    };
+    // Note: Do NOT alias lodash to lodash-es here
+    // recharts imports lodash/isFunction, lodash/range which need regular lodash
+    // Tree-shaking for lodash is handled by optimizePackageImports
 
     // Split chunks more aggressively for better caching
     if (!isServer) {

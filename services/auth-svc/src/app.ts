@@ -13,7 +13,8 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // CORS configuration for local development
-  void app.register(cors, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  void app.register(cors as any, {
     origin: [
       'http://localhost:3000',
       'http://localhost:3004',

@@ -1,5 +1,8 @@
 /**
  * SSO State Management Tests
+ *
+ * Environment variables are configured in test/setup.ts which runs
+ * before this file is loaded.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -13,11 +16,6 @@ vi.mock('../src/lib/redis/client.js', () => ({
     ssoState: (id: string) => `sso:state:${id}`,
   },
 }));
-
-// Set up test environment
-process.env.NODE_ENV = 'development';
-process.env.SSO_DEV_INSECURE_MODE = 'true';
-process.env.SSO_STATE_ENCRYPTION_KEY = 'test-encryption-key-must-be-at-least-32-characters-long';
 
 describe('SSO State Management', () => {
   beforeEach(() => {

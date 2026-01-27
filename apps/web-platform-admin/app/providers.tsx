@@ -64,7 +64,7 @@ export function AuthProvider({
   const value = useMemo(() => ({ ...state, logout }), [state, logout]);
 
   return (
-    <ErrorBoundary fallback={<PageErrorFallback />}>
+    <ErrorBoundary fallback={({ error, resetError }) => <PageErrorFallback error={error} resetError={resetError} />}>
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
           <NetworkStatusWrapper>

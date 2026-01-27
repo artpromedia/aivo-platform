@@ -78,7 +78,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ErrorBoundary fallback={<PageErrorFallback />}>
+    <ErrorBoundary fallback={({ error, resetError }) => <PageErrorFallback error={error} resetError={resetError} />}>
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
           <ErrorReportingInitializer>
