@@ -4,27 +4,42 @@
 
 import { z } from 'zod';
 
-// Enums
+// Enums (matching Prisma schema)
 export const ActivityType = z.enum([
-  'BREATHING',
-  'MEDITATION',
-  'JOURNALING',
-  'MOVEMENT',
-  'SOCIAL',
-  'CREATIVE',
-  'REFLECTION',
+  'LESSON',
   'GAME',
+  'DISCUSSION',
+  'JOURNALING',
+  'MINDFULNESS',
+  'ROLE_PLAY',
   'VIDEO',
   'READING',
+  'GROUP_ACTIVITY',
+  'SELF_REFLECTION',
+  'SOCIAL_SCENARIO',
+  'REGULATION_STRATEGY',
+  'BREATHING_EXERCISE',
 ]);
 
-export const HelpfulnessRating = z.enum(['NOT_HELPFUL', 'SOMEWHAT_HELPFUL', 'HELPFUL', 'VERY_HELPFUL']);
+export const DifficultyLevel = z.enum(['EASY', 'MEDIUM', 'CHALLENGING']);
+
+export const HelpfulnessRating = z.enum([
+  'NOT_HELPFUL',
+  'SOMEWHAT_HELPFUL',
+  'HELPFUL',
+  'VERY_HELPFUL',
+]);
 
 // Query schemas
 export const listActivitiesQuerySchema = z.object({
   competencyId: z.string().uuid().optional(),
   activityType: ActivityType.optional(),
+  type: z.string().optional(), // Mobile compatibility: maps to activityType
   gradeLevel: z.coerce.number().int().min(0).max(12).optional(),
+  category: z.string().optional(), // Filter by category
+  difficulty: DifficultyLevel.optional(), // Filter by difficulty
+  subtype: z.string().optional(), // Mobile: filter by subtype (e.g., breathing, guided)
+  maxDuration: z.coerce.number().int().min(1).optional(), // Max duration in minutes
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

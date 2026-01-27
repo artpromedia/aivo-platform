@@ -18,44 +18,44 @@ datasource db {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model SELFramework {
-  id            String    @id @default(uuid())
-  tenantId      String
+  id       String @id @default(uuid())
+  tenantId String
 
-  name          String    // CASEL, state-specific, etc.
-  description   String?   @db.Text
-  version       String?
+  name        String // CASEL, state-specific, etc.
+  description String? @db.Text
+  version     String?
 
-  isDefault     Boolean   @default(false)
-  isActive      Boolean   @default(true)
+  isDefault Boolean @default(false)
+  isActive  Boolean @default(true)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  competencies  Competency[]
+  competencies Competency[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
 }
 
 model Competency {
-  id            String       @id @default(uuid())
-  frameworkId   String
-  framework     SELFramework @relation(fields: [frameworkId], references: [id])
+  id          String       @id @default(uuid())
+  frameworkId String
+  framework   SELFramework @relation(fields: [frameworkId], references: [id])
 
-  code          String       // SA, SM, SOC, REL, RDM
-  name          String       // Self-Awareness, Self-Management, etc.
-  description   String?      @db.Text
-  color         String?      // UI color coding
+  code        String // SA, SM, SOC, REL, RDM
+  name        String // Self-Awareness, Self-Management, etc.
+  description String? @db.Text
+  color       String? // UI color coding
 
-  sortOrder     Int          @default(0)
+  sortOrder Int @default(0)
 
-  createdAt     DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  skills        SELSkill[]
+  skills          SELSkill[]
   assessmentItems AssessmentItem[]
-  activities    Activity[]
+  activities      Activity[]
   progressRecords ProgressRecord[]
 
   @@unique([frameworkId, code])
@@ -63,18 +63,18 @@ model Competency {
 }
 
 model SELSkill {
-  id            String     @id @default(uuid())
-  competencyId  String
-  competency    Competency @relation(fields: [competencyId], references: [id])
+  id           String     @id @default(uuid())
+  competencyId String
+  competency   Competency @relation(fields: [competencyId], references: [id])
 
-  name          String
-  description   String?    @db.Text
-  indicators    String[]   // Observable behaviors
+  name        String
+  description String?  @db.Text
+  indicators  String[] // Observable behaviors
 
-  gradeRangeStart Int?     // Grade level appropriateness
+  gradeRangeStart Int? // Grade level appropriateness
   gradeRangeEnd   Int?
 
-  sortOrder     Int        @default(0)
+  sortOrder Int @default(0)
 
   @@index([competencyId])
 }
@@ -84,45 +84,47 @@ model SELSkill {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model StudentSELProfile {
-  id              String    @id @default(uuid())
-  tenantId        String
-  studentId       String    // External student ID
+  id        String @id @default(uuid())
+  tenantId  String
+  studentId String // External student ID
 
   // Baseline scores (1-5 scale or percentile)
-  selfAwarenessScore     Float?
-  selfManagementScore    Float?
-  socialAwarenessScore   Float?
-  relationshipScore      Float?
-  decisionMakingScore    Float?
+  selfAwarenessScore   Float?
+  selfManagementScore  Float?
+  socialAwarenessScore Float?
+  relationshipScore    Float?
+  decisionMakingScore  Float?
 
   // Risk indicators
-  riskLevel             RiskLevel @default(LOW)
-  riskFactors           String[]
-  protectiveFactors     String[]
+  riskLevel         RiskLevel @default(LOW)
+  riskFactors       String[]
+  protectiveFactors String[]
 
   // Preferences
-  preferredCheckInTime  String?
-  preferredActivities   String[]
-  communicationStyle    String?
+  preferredCheckInTime String?
+  preferredActivities  String[]
+  communicationStyle   String?
 
   // Notes
-  strengths             String?   @db.Text
-  growthAreas           String?   @db.Text
-  supportStrategies     String?   @db.Text
+  strengths         String? @db.Text
+  growthAreas       String? @db.Text
+  supportStrategies String? @db.Text
 
-  lastAssessmentAt      DateTime?
-  lastCheckInAt         DateTime?
+  lastAssessmentAt DateTime?
+  lastCheckInAt    DateTime?
 
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  assessments           Assessment[]
-  checkIns              CheckIn[]
-  interventions         Intervention[]
-  progressRecords       ProgressRecord[]
-  activityCompletions   ActivityCompletion[]
-  goals                 SELGoal[]
+  assessments         Assessment[]
+  checkIns            CheckIn[]
+  interventions       Intervention[]
+  progressRecords     ProgressRecord[]
+  activityCompletions ActivityCompletion[]
+  goals               SELGoal[]
+  journalEntries      JournalEntry[]       @relation("ProfileJournalEntries")
+  activityFavorites   ActivityFavorite[]   @relation("ProfileFavorites")
 
   @@unique([tenantId, studentId])
   @@index([tenantId, riskLevel])
@@ -140,12 +142,12 @@ enum RiskLevel {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model AssessmentTemplate {
-  id              String    @id @default(uuid())
-  tenantId        String
+  id       String @id @default(uuid())
+  tenantId String
 
-  name            String
-  description     String?   @db.Text
-  assessmentType  AssessmentType
+  name           String
+  description    String?        @db.Text
+  assessmentType AssessmentType
 
   // Target
   gradeRangeStart Int?
@@ -153,16 +155,16 @@ model AssessmentTemplate {
 
   // Timing
   estimatedMinutes Int?
-  isAnonymous     Boolean   @default(false)
+  isAnonymous      Boolean @default(false)
 
-  isActive        Boolean   @default(true)
+  isActive Boolean @default(true)
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  items           AssessmentItem[]
-  assessments     Assessment[]
+  items       AssessmentItem[]
+  assessments Assessment[]
 
   @@index([tenantId, assessmentType])
 }
@@ -178,23 +180,23 @@ enum AssessmentType {
 }
 
 model AssessmentItem {
-  id              String             @id @default(uuid())
-  templateId      String
-  template        AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  id         String             @id @default(uuid())
+  templateId String
+  template   AssessmentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  competencyId    String?
-  competency      Competency?        @relation(fields: [competencyId], references: [id])
+  competencyId String?
+  competency   Competency? @relation(fields: [competencyId], references: [id])
 
-  itemNumber      Int
-  questionText    String             @db.Text
-  questionType    QuestionType
+  itemNumber   Int
+  questionText String       @db.Text
+  questionType QuestionType
 
   // Response options for scale/choice questions
-  options         Json?
+  options Json?
 
   // Scoring
-  maxScore        Int                @default(5)
-  reverseScored   Boolean            @default(false)
+  maxScore      Int     @default(5)
+  reverseScored Boolean @default(false)
 
   @@unique([templateId, itemNumber])
   @@index([templateId])
@@ -210,37 +212,37 @@ enum QuestionType {
 }
 
 model Assessment {
-  id              String             @id @default(uuid())
-  tenantId        String
+  id               String             @id @default(uuid())
+  tenantId         String
   studentProfileId String
-  studentProfile  StudentSELProfile  @relation(fields: [studentProfileId], references: [id])
-  templateId      String
-  template        AssessmentTemplate @relation(fields: [templateId], references: [id])
+  studentProfile   StudentSELProfile  @relation(fields: [studentProfileId], references: [id])
+  templateId       String
+  template         AssessmentTemplate @relation(fields: [templateId], references: [id])
 
   // Administration
-  administeredBy  String?
-  administeredAt  DateTime           @default(now())
-  completedAt     DateTime?
+  administeredBy String?
+  administeredAt DateTime  @default(now())
+  completedAt    DateTime?
 
   // Context
-  administrationContext String?      // Classroom, counselor office, etc.
+  administrationContext String? // Classroom, counselor office, etc.
 
   // Status
-  status          AssessmentStatus   @default(IN_PROGRESS)
+  status AssessmentStatus @default(IN_PROGRESS)
 
   // Scores (computed)
-  totalScore      Float?
-  percentileRank  Int?
-  competencyScores Json?             // { competencyId: score }
+  totalScore       Float?
+  percentileRank   Int?
+  competencyScores Json? // { competencyId: score }
 
   // Interpretation
-  interpretation  String?            @db.Text
-  recommendations String?            @db.Text
+  interpretation  String? @db.Text
+  recommendations String? @db.Text
 
-  createdAt       DateTime           @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  responses       AssessmentResponse[]
+  responses AssessmentResponse[]
 
   @@index([tenantId, studentProfileId])
   @@index([tenantId, status])
@@ -255,15 +257,15 @@ enum AssessmentStatus {
 }
 
 model AssessmentResponse {
-  id              String      @id @default(uuid())
-  assessmentId    String
-  assessment      Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  id           String     @id @default(uuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
-  itemNumber      Int
-  response        String      // Could be numeric or text
-  score           Float?
+  itemNumber Int
+  response   String // Could be numeric or text
+  score      Float?
 
-  responseTime    Int?        // Seconds to respond
+  responseTime Int? // Seconds to respond
 
   @@unique([assessmentId, itemNumber])
   @@index([assessmentId])
@@ -274,40 +276,40 @@ model AssessmentResponse {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model CheckIn {
-  id              String            @id @default(uuid())
-  tenantId        String
+  id               String            @id @default(uuid())
+  tenantId         String
   studentProfileId String
-  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+  studentProfile   StudentSELProfile @relation(fields: [studentProfileId], references: [id])
 
-  checkInType     CheckInType       @default(MOOD)
-  checkInTime     DateTime          @default(now())
+  checkInType CheckInType @default(MOOD)
+  checkInTime DateTime    @default(now())
 
   // Mood/Emotion
-  moodRating      Int?              // 1-5 scale
-  moodEmoji       String?           // Emoji representation
-  emotions        String[]          // Selected emotions
-  energyLevel     Int?              // 1-5 scale
+  moodRating  Int? // 1-5 scale
+  moodEmoji   String? // Emoji representation
+  emotions    String[] // Selected emotions
+  energyLevel Int? // 1-5 scale
 
   // Context
-  context         String?           // Before class, lunch, etc.
-  location        String?
-  trigger         String?           // What influenced mood
+  context  String? // Before class, lunch, etc.
+  location String?
+  trigger  String? // What influenced mood
 
   // Reflection
-  reflection      String?           @db.Text
-  gratitude       String?
-  goal            String?
+  reflection String? @db.Text
+  gratitude  String?
+  goal       String?
 
   // Flags
-  needsSupport    Boolean           @default(false)
-  followUpNeeded  Boolean           @default(false)
-  followUpBy      String?
-  followedUpAt    DateTime?
-  followUpNotes   String?           @db.Text
+  needsSupport   Boolean   @default(false)
+  followUpNeeded Boolean   @default(false)
+  followUpBy     String?
+  followedUpAt   DateTime?
+  followUpNotes  String?   @db.Text
 
-  isPrivate       Boolean           @default(false)
+  isPrivate Boolean @default(false)
 
-  createdAt       DateTime          @default(now())
+  createdAt DateTime @default(now())
 
   @@index([tenantId, studentProfileId])
   @@index([tenantId, checkInTime])
@@ -328,41 +330,44 @@ enum CheckInType {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model Activity {
-  id              String     @id @default(uuid())
-  tenantId        String
+  id       String @id @default(uuid())
+  tenantId String
 
-  competencyId    String?
-  competency      Competency? @relation(fields: [competencyId], references: [id])
+  competencyId String?
+  competency   Competency? @relation(fields: [competencyId], references: [id])
 
-  name            String
-  description     String     @db.Text
-  activityType    ActivityType
+  name         String
+  description  String       @db.Text
+  activityType ActivityType
 
   // Content
-  instructions    String?    @db.Text
-  materials       String[]
-  duration        Int?       // Minutes
+  instructions String?  @db.Text
+  materials    String[]
+  duration     Int? // Minutes
+  content      Json? // Structured content (e.g., scenario choices for SOCIAL_SCENARIO)
 
   // Target audience
   gradeRangeStart Int?
   gradeRangeEnd   Int?
-  groupSize       String?    // Individual, small group, whole class
+  groupSize       String? // Individual, small group, whole class
 
   // Media
-  mediaUrl        String?
-  thumbnailUrl    String?
+  mediaUrl     String?
+  thumbnailUrl String?
 
   // Categorization
-  tags            String[]
-  difficulty      Difficulty @default(MEDIUM)
+  tags       String[]
+  difficulty Difficulty @default(MEDIUM)
+  category   String? // Sub-categorization for regulation strategies
 
-  isActive        Boolean    @default(true)
+  isActive Boolean @default(true)
 
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  completions     ActivityCompletion[]
+  completions ActivityCompletion[]
+  favorites   ActivityFavorite[]
 
   @@index([tenantId, activityType])
   @@index([tenantId, competencyId])
@@ -379,6 +384,9 @@ enum ActivityType {
   READING
   GROUP_ACTIVITY
   SELF_REFLECTION
+  SOCIAL_SCENARIO
+  REGULATION_STRATEGY
+  BREATHING_EXERCISE
 }
 
 enum Difficulty {
@@ -388,26 +396,69 @@ enum Difficulty {
 }
 
 model ActivityCompletion {
-  id              String            @id @default(uuid())
-  activityId      String
-  activity        Activity          @relation(fields: [activityId], references: [id])
+  id               String            @id @default(uuid())
+  activityId       String
+  activity         Activity          @relation(fields: [activityId], references: [id])
   studentProfileId String
-  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+  studentProfile   StudentSELProfile @relation(fields: [studentProfileId], references: [id])
 
-  completedAt     DateTime          @default(now())
-  duration        Int?              // Actual minutes spent
+  completedAt DateTime @default(now())
+  duration    Int? // Actual minutes spent
 
   // Feedback
-  rating          Int?              // 1-5 stars
-  reflection      String?           @db.Text
-  helpfulness     Int?              // 1-5
+  rating      Int? // 1-5 stars
+  reflection  String? @db.Text
+  helpfulness Int? // 1-5
 
   // Context
-  assignedBy      String?
-  context         String?           // Class, independent, counselor
+  assignedBy String?
+  context    String? // Class, independent, counselor
 
   @@index([activityId])
   @@index([studentProfileId])
+}
+
+model ActivityFavorite {
+  id               String            @id @default(uuid())
+  studentProfileId String
+  studentProfile   StudentSELProfile @relation("ProfileFavorites", fields: [studentProfileId], references: [id], onDelete: Cascade)
+  activityId       String
+  activity         Activity          @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentProfileId, activityId])
+  @@index([studentProfileId])
+  @@index([activityId])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// JOURNAL ENTRIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+model JournalEntry {
+  id               String            @id @default(uuid())
+  tenantId         String
+  studentProfileId String
+  studentProfile   StudentSELProfile @relation("ProfileJournalEntries", fields: [studentProfileId], references: [id], onDelete: Cascade)
+
+  // Content
+  content String   @db.Text
+  mood    String? // Optional mood at time of journaling
+  tags    String[]
+
+  // Privacy
+  isPrivate  Boolean  @default(true) // Only visible to student by default
+  sharedWith String[] // User IDs who can view (counselor, teacher)
+
+  // Media
+  attachmentUrls String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, studentProfileId])
+  @@index([studentProfileId, createdAt])
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -415,46 +466,46 @@ model ActivityCompletion {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model Intervention {
-  id                String            @id @default(uuid())
-  tenantId          String
-  studentProfileId  String
-  studentProfile    StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+  id               String            @id @default(uuid())
+  tenantId         String
+  studentProfileId String
+  studentProfile   StudentSELProfile @relation(fields: [studentProfileId], references: [id])
 
-  name              String
-  description       String?           @db.Text
-  interventionType  InterventionType
+  name             String
+  description      String?          @db.Text
+  interventionType InterventionType
 
   // Target competencies
   targetCompetencies String[]
 
   // Plan
-  strategies        String[]
-  frequency         String?           // Daily, weekly, etc.
-  duration          String?           // 6 weeks, semester, etc.
-  startDate         DateTime
-  endDate           DateTime?
+  strategies String[]
+  frequency  String? // Daily, weekly, etc.
+  duration   String? // 6 weeks, semester, etc.
+  startDate  DateTime
+  endDate    DateTime?
 
   // Team
-  interventionist   String            // Primary person responsible
-  supportTeam       String[]
+  interventionist String // Primary person responsible
+  supportTeam     String[]
 
   // Status
-  status            InterventionStatus @default(PLANNED)
+  status InterventionStatus @default(PLANNED)
 
   // Outcomes
-  baselineData      Json?
-  goalData          Json?
-  outcomeData       Json?
-  effectiveness     Int?              // 1-5 rating
+  baselineData  Json?
+  goalData      Json?
+  outcomeData   Json?
+  effectiveness Int? // 1-5 rating
 
-  notes             String?           @db.Text
+  notes String? @db.Text
 
-  createdBy         String
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  logs              InterventionLog[]
+  logs InterventionLog[]
 
   @@index([tenantId, studentProfileId])
   @@index([tenantId, status])
@@ -480,21 +531,21 @@ enum InterventionStatus {
 }
 
 model InterventionLog {
-  id              String       @id @default(uuid())
-  interventionId  String
-  intervention    Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  interventionId String
+  intervention   Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
 
-  logDate         DateTime     @default(now())
-  duration        Int?         // Minutes
+  logDate  DateTime @default(now())
+  duration Int? // Minutes
 
   activitiesCompleted String[]
   studentResponse     String?  @db.Text
   progressNotes       String?  @db.Text
 
-  dataPoints          Json?    // Quantitative progress data
+  dataPoints Json? // Quantitative progress data
 
-  loggedBy        String
-  createdAt       DateTime     @default(now())
+  loggedBy  String
+  createdAt DateTime @default(now())
 
   @@index([interventionId, logDate])
 }
@@ -504,28 +555,28 @@ model InterventionLog {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model ProgressRecord {
-  id              String            @id @default(uuid())
-  tenantId        String
+  id               String            @id @default(uuid())
+  tenantId         String
   studentProfileId String
-  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+  studentProfile   StudentSELProfile @relation(fields: [studentProfileId], references: [id])
 
-  competencyId    String
-  competency      Competency        @relation(fields: [competencyId], references: [id])
+  competencyId String
+  competency   Competency @relation(fields: [competencyId], references: [id])
 
-  recordDate      DateTime          @default(now())
-  recordPeriod    String            // Week 1, Month 1, Q1, etc.
+  recordDate   DateTime @default(now())
+  recordPeriod String // Week 1, Month 1, Q1, etc.
 
   // Scores
-  score           Float             // Current score
-  previousScore   Float?            // Previous period score
-  targetScore     Float?
+  score         Float // Current score
+  previousScore Float? // Previous period score
+  targetScore   Float?
 
   // Qualitative
-  progressLevel   ProgressLevel
-  observations    String?           @db.Text
-  evidence        String[]
+  progressLevel ProgressLevel
+  observations  String?       @db.Text
+  evidence      String[]
 
-  recordedBy      String
+  recordedBy String
 
   @@index([tenantId, studentProfileId])
   @@index([competencyId])
@@ -541,25 +592,25 @@ enum ProgressLevel {
 }
 
 model SELGoal {
-  id              String            @id @default(uuid())
+  id               String            @id @default(uuid())
   studentProfileId String
-  studentProfile  StudentSELProfile @relation(fields: [studentProfileId], references: [id])
+  studentProfile   StudentSELProfile @relation(fields: [studentProfileId], references: [id])
 
-  title           String
-  description     String            @db.Text
-  competencyArea  String
+  title          String
+  description    String @db.Text
+  competencyArea String
 
-  targetDate      DateTime?
-  status          GoalStatus        @default(ACTIVE)
+  targetDate DateTime?
+  status     GoalStatus @default(ACTIVE)
 
-  milestones      Json?             // Array of milestones with completion status
+  milestones Json? // Array of milestones with completion status
 
   completedAt     DateTime?
-  completionNotes String?           @db.Text
+  completionNotes String?   @db.Text
 
-  createdBy       String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([studentProfileId])
 }
@@ -575,39 +626,39 @@ enum GoalStatus {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model ClassClimate {
-  id              String    @id @default(uuid())
-  tenantId        String
+  id       String @id @default(uuid())
+  tenantId String
 
-  classId         String    // External class identifier
-  className       String
-  teacherId       String?
-  teacherName     String?
+  classId     String // External class identifier
+  className   String
+  teacherId   String?
+  teacherName String?
 
-  recordDate      DateTime
-  recordPeriod    String    // Week, month, etc.
+  recordDate   DateTime
+  recordPeriod String // Week, month, etc.
 
   // Climate scores (1-5)
-  safetyScore         Float?
-  belongingScore      Float?
-  engagementScore     Float?
-  respectScore        Float?
-  collaborationScore  Float?
+  safetyScore        Float?
+  belongingScore     Float?
+  engagementScore    Float?
+  respectScore       Float?
+  collaborationScore Float?
 
   // Overall
   overallClimateScore Float?
 
   // Context
-  studentCount        Int?
-  responseCount       Int?
-  responseRate        Float?
+  studentCount  Int?
+  responseCount Int?
+  responseRate  Float?
 
   // Observations
-  strengths           String[]
-  concerns            String[]
-  recommendations     String?   @db.Text
+  strengths       String[]
+  concerns        String[]
+  recommendations String?  @db.Text
 
-  recordedBy          String
-  createdAt           DateTime  @default(now())
+  recordedBy String
+  createdAt  DateTime @default(now())
 
   @@index([tenantId, classId])
   @@index([tenantId, recordDate])
@@ -618,32 +669,32 @@ model ClassClimate {
 // ══════════════════════════════════════════════════════════════════════════════
 
 model SELAlert {
-  id              String      @id @default(uuid())
-  tenantId        String
+  id       String @id @default(uuid())
+  tenantId String
 
   studentProfileId String?
-  studentId       String?
+  studentId        String?
 
-  alertType       SELAlertType
-  severity        AlertSeverity
+  alertType SELAlertType
+  severity  AlertSeverity
 
-  title           String
-  description     String      @db.Text
+  title       String
+  description String @db.Text
 
   // Trigger data
-  triggerData     Json?
+  triggerData Json?
 
-  status          AlertStatus @default(NEW)
-  assignedTo      String?
+  status     AlertStatus @default(NEW)
+  assignedTo String?
 
-  acknowledgedAt  DateTime?
-  acknowledgedBy  String?
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
 
-  resolvedAt      DateTime?
-  resolvedBy      String?
-  resolution      String?     @db.Text
+  resolvedAt DateTime?
+  resolvedBy String?
+  resolution String?   @db.Text
 
-  createdAt       DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   @@index([tenantId, status])
   @@index([tenantId, alertType])

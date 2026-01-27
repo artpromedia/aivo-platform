@@ -2,8 +2,9 @@
  * AIVO SEL Service - Core SEL Service
  */
 
-import { prisma } from '../prisma.js';
 import { startOfWeek, endOfWeek, subDays } from 'date-fns';
+
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // STUDENT PROFILES
@@ -59,7 +60,10 @@ export async function listStudentProfiles(tenantId: string, query: any) {
     prisma.studentSELProfile.count({ where }),
   ]);
 
-  return { data: profiles, pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } };
+  return {
+    data: profiles,
+    pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) },
+  };
 }
 
 export async function updateStudentProfile(tenantId: string, profileId: string, input: any) {
@@ -119,12 +123,14 @@ export async function getCheckIns(tenantId: string, profileId: string, options: 
   const where: any = {
     tenantId,
     studentProfileId: profileId,
-    ...(fromDate || toDate ? {
-      checkInTime: {
-        ...(fromDate && { gte: new Date(fromDate) }),
-        ...(toDate && { lte: new Date(toDate) }),
-      },
-    } : {}),
+    ...(fromDate || toDate
+      ? {
+          checkInTime: {
+            ...(fromDate && { gte: new Date(fromDate) }),
+            ...(toDate && { lte: new Date(toDate) }),
+          },
+        }
+      : {}),
   };
 
   const skip = (page - 1) * pageSize;
@@ -134,14 +140,22 @@ export async function getCheckIns(tenantId: string, profileId: string, options: 
     prisma.checkIn.count({ where }),
   ]);
 
-  return { data: checkIns, pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } };
+  return {
+    data: checkIns,
+    pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) },
+  };
 }
 
-export async function getMoodTrends(tenantId: string, profileId: string, days: number = 30) {
+export async function getMoodTrends(tenantId: string, profileId: string, days = 30) {
   const since = subDays(new Date(), days);
 
   const checkIns = await prisma.checkIn.findMany({
-    where: { tenantId, studentProfileId: profileId, checkInTime: { gte: since }, moodRating: { not: null } },
+    where: {
+      tenantId,
+      studentProfileId: profileId,
+      checkInTime: { gte: since },
+      moodRating: { not: null },
+    },
     orderBy: { checkInTime: 'asc' },
     select: { checkInTime: true, moodRating: true, energyLevel: true, emotions: true },
   });
@@ -152,7 +166,10 @@ export async function getMoodTrends(tenantId: string, profileId: string, days: n
   let count = 0;
 
   for (const checkIn of checkIns) {
-    if (checkIn.moodRating) { moodSum += checkIn.moodRating; count++; }
+    if (checkIn.moodRating) {
+      moodSum += checkIn.moodRating;
+      count++;
+    }
     if (checkIn.energyLevel) energySum += checkIn.energyLevel;
     for (const emotion of checkIn.emotions) {
       emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
@@ -164,8 +181,14 @@ export async function getMoodTrends(tenantId: string, profileId: string, days: n
     totalCheckIns: checkIns.length,
     averageMood: count > 0 ? Math.round((moodSum / count) * 100) / 100 : null,
     averageEnergy: count > 0 ? Math.round((energySum / count) * 100) / 100 : null,
-    topEmotions: Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]).slice(0, 5),
-    dataPoints: checkIns.map((c) => ({ date: c.checkInTime, mood: c.moodRating, energy: c.energyLevel })),
+    topEmotions: Object.entries(emotionCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5),
+    dataPoints: checkIns.map((c) => ({
+      date: c.checkInTime,
+      mood: c.moodRating,
+      energy: c.energyLevel,
+    })),
   };
 }
 
@@ -186,7 +209,12 @@ export async function createAssessment(tenantId: string, profileId: string, inpu
   });
 }
 
-export async function submitAssessmentResponse(assessmentId: string, itemNumber: number, response: string, responseTime?: number) {
+export async function submitAssessmentResponse(
+  assessmentId: string,
+  itemNumber: number,
+  response: string,
+  responseTime?: number
+) {
   const item = await prisma.assessmentItem.findFirst({
     where: { template: { assessments: { some: { id: assessmentId } } }, itemNumber },
   });
@@ -198,7 +226,13 @@ export async function submitAssessmentResponse(assessmentId: string, itemNumber:
 
   return prisma.assessmentResponse.upsert({
     where: { assessmentId_itemNumber: { assessmentId, itemNumber } },
-    create: { assessmentId, itemNumber, response, score: score ?? null, responseTime: responseTime ?? null },
+    create: {
+      assessmentId,
+      itemNumber,
+      response,
+      score: score ?? null,
+      responseTime: responseTime ?? null,
+    },
     update: { response, score: score ?? null, responseTime: responseTime ?? null },
   });
 }
@@ -206,7 +240,10 @@ export async function submitAssessmentResponse(assessmentId: string, itemNumber:
 export async function completeAssessment(assessmentId: string) {
   const assessment = await prisma.assessment.findUnique({
     where: { id: assessmentId },
-    include: { responses: true, template: { include: { items: { include: { competency: true } } } } },
+    include: {
+      responses: true,
+      template: { include: { items: { include: { competency: true } } } },
+    },
   });
 
   if (!assessment) throw new Error('Assessment not found');
@@ -254,13 +291,29 @@ export async function completeAssessment(assessmentId: string) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export async function listActivities(tenantId: string, query: any) {
-  const { competencyId, activityType, gradeLevel, page = 1, pageSize = 20 } = query;
+  const {
+    competencyId,
+    activityType,
+    gradeLevel,
+    type,
+    category,
+    difficulty,
+    subtype,
+    maxDuration,
+    page = 1,
+    pageSize = 20,
+  } = query;
 
   const where: any = {
     tenantId,
     isActive: true,
     ...(competencyId && { competencyId }),
     ...(activityType && { activityType }),
+    ...(type && { activityType: type }),
+    ...(category && { category }),
+    ...(difficulty && { difficulty }),
+    ...(subtype && { subtype }),
+    ...(maxDuration && { duration: { lte: maxDuration } }),
     ...(gradeLevel && {
       gradeRangeStart: { lte: gradeLevel },
       gradeRangeEnd: { gte: gradeLevel },
@@ -270,11 +323,46 @@ export async function listActivities(tenantId: string, query: any) {
   const skip = (page - 1) * pageSize;
 
   const [activities, totalItems] = await Promise.all([
-    prisma.activity.findMany({ where, orderBy: { name: 'asc' }, skip, take: pageSize, include: { competency: true } }),
+    prisma.activity.findMany({
+      where,
+      orderBy: { name: 'asc' },
+      skip,
+      take: pageSize,
+      include: { competency: true },
+    }),
     prisma.activity.count({ where }),
   ]);
 
-  return { data: activities, pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } };
+  return {
+    data: activities,
+    pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) },
+  };
+}
+
+export async function getActivity(tenantId: string, activityId: string) {
+  return prisma.activity.findFirst({
+    where: { id: activityId, tenantId },
+    include: { competency: true },
+  });
+}
+
+export async function toggleActivityFavorite(
+  profileId: string,
+  activityId: string,
+  favorite: boolean
+) {
+  // Use upsert to create or update the favorite relationship
+  if (favorite) {
+    await prisma.activityFavorite.upsert({
+      where: { studentProfileId_activityId: { studentProfileId: profileId, activityId } },
+      create: { studentProfileId: profileId, activityId },
+      update: {},
+    });
+  } else {
+    await prisma.activityFavorite.deleteMany({
+      where: { studentProfileId: profileId, activityId },
+    });
+  }
 }
 
 export async function recordActivityCompletion(profileId: string, activityId: string, input: any) {
@@ -296,7 +384,12 @@ export async function recordActivityCompletion(profileId: string, activityId: st
 // INTERVENTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function createIntervention(tenantId: string, profileId: string, userId: string, input: any) {
+export async function createIntervention(
+  tenantId: string,
+  profileId: string,
+  userId: string,
+  input: any
+) {
   return prisma.intervention.create({
     data: {
       tenantId,
@@ -365,11 +458,19 @@ export async function getAlerts(tenantId: string, options: any = {}) {
   const skip = (page - 1) * pageSize;
 
   const [alerts, totalItems] = await Promise.all([
-    prisma.sELAlert.findMany({ where, orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }], skip, take: pageSize }),
+    prisma.sELAlert.findMany({
+      where,
+      orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
+      skip,
+      take: pageSize,
+    }),
     prisma.sELAlert.count({ where }),
   ]);
 
-  return { data: alerts, pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) } };
+  return {
+    data: alerts,
+    pagination: { page, pageSize, totalItems, totalPages: Math.ceil(totalItems / pageSize) },
+  };
 }
 
 export async function acknowledgeAlert(alertId: string, userId: string) {
@@ -404,7 +505,11 @@ export async function getDashboard(tenantId: string) {
     recentCheckIns,
   ] = await Promise.all([
     prisma.studentSELProfile.count({ where: { tenantId } }),
-    prisma.studentSELProfile.groupBy({ by: ['riskLevel'], where: { tenantId }, _count: { riskLevel: true } }),
+    prisma.studentSELProfile.groupBy({
+      by: ['riskLevel'],
+      where: { tenantId },
+      _count: { riskLevel: true },
+    }),
     prisma.checkIn.count({ where: { tenantId, checkInTime: { gte: weekStart, lte: weekEnd } } }),
     prisma.intervention.count({ where: { tenantId, status: 'ACTIVE' } }),
     prisma.sELAlert.count({ where: { tenantId, status: { in: ['NEW', 'ACKNOWLEDGED'] } } }),
@@ -412,7 +517,13 @@ export async function getDashboard(tenantId: string) {
       where: { tenantId, checkInTime: { gte: subDays(today, 1) } },
       orderBy: { checkInTime: 'desc' },
       take: 10,
-      select: { id: true, studentProfileId: true, moodRating: true, checkInTime: true, needsSupport: true },
+      select: {
+        id: true,
+        studentProfileId: true,
+        moodRating: true,
+        checkInTime: true,
+        needsSupport: true,
+      },
     }),
   ]);
 
@@ -423,5 +534,168 @@ export async function getDashboard(tenantId: string) {
     activeInterventions,
     openAlerts,
     recentCheckIns,
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOBILE COMPATIBILITY - JOURNAL
+// ══════════════════════════════════════════════════════════════════════════════
+
+export async function getJournalEntries(
+  tenantId: string,
+  learnerId: string,
+  options: { limit?: number } = {}
+) {
+  const { limit = 20 } = options;
+
+  return prisma.journalEntry.findMany({
+    where: { tenantId, studentProfileId: learnerId },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
+}
+
+export async function createJournalEntry(
+  tenantId: string,
+  learnerId: string,
+  input: { content: string; mood?: string; tags?: string[] }
+) {
+  return prisma.journalEntry.create({
+    data: {
+      tenantId,
+      studentProfileId: learnerId,
+      content: input.content,
+      mood: input.mood,
+      tags: input.tags || [],
+    },
+  });
+}
+
+export async function deleteJournalEntry(entryId: string) {
+  return prisma.journalEntry.delete({
+    where: { id: entryId },
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOBILE COMPATIBILITY - PROGRESS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export async function getLearnerProgress(tenantId: string, learnerId: string) {
+  const thirtyDaysAgo = subDays(new Date(), 30);
+
+  const [profile, checkInCount, activityCount, recentMoods, streakData] = await Promise.all([
+    prisma.studentSELProfile.findFirst({
+      where: { tenantId, studentId: learnerId },
+      select: { riskLevel: true, lastCheckInAt: true, preferredActivities: true },
+    }),
+    prisma.checkIn.count({
+      where: { tenantId, studentProfileId: learnerId, checkInTime: { gte: thirtyDaysAgo } },
+    }),
+    prisma.activityCompletion.count({
+      where: { studentProfileId: learnerId, completedAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.checkIn.findMany({
+      where: {
+        tenantId,
+        studentProfileId: learnerId,
+        checkInTime: { gte: thirtyDaysAgo },
+        moodRating: { not: null },
+      },
+      orderBy: { checkInTime: 'desc' },
+      take: 7,
+      select: { moodRating: true, checkInTime: true },
+    }),
+    // Calculate streak - consecutive days with check-ins
+    prisma.checkIn.findMany({
+      where: { tenantId, studentProfileId: learnerId },
+      orderBy: { checkInTime: 'desc' },
+      take: 30,
+      select: { checkInTime: true },
+    }),
+  ]);
+
+  // Calculate current streak
+  let currentStreak = 0;
+  if (streakData.length > 0) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dates = streakData.map((c) => {
+      const d = new Date(c.checkInTime);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    });
+
+    const uniqueDates = [...new Set(dates)].sort((a, b) => b - a);
+
+    for (let i = 0; i < uniqueDates.length; i++) {
+      const expectedDate = today.getTime() - i * 24 * 60 * 60 * 1000;
+      if (uniqueDates[i] === expectedDate) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Calculate average mood
+  const avgMood =
+    recentMoods.length > 0
+      ? Math.round(
+          (recentMoods.reduce((sum, c) => sum + (c.moodRating || 0), 0) / recentMoods.length) * 10
+        ) / 10
+      : null;
+
+  return {
+    learnerId,
+    checkInsLast30Days: checkInCount,
+    activitiesLast30Days: activityCount,
+    currentStreak,
+    averageMoodLast7Days: avgMood,
+    riskLevel: profile?.riskLevel || 'LOW',
+    lastCheckIn: profile?.lastCheckInAt,
+    moodTrend: recentMoods.map((m) => ({ date: m.checkInTime, mood: m.moodRating })),
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MOBILE COMPATIBILITY - SOCIAL SCENARIOS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export async function submitScenarioResponse(
+  learnerId: string,
+  scenarioId: string,
+  choiceId: string
+) {
+  // Find the scenario (activity) and its choices
+  const scenario = await prisma.activity.findUnique({
+    where: { id: scenarioId },
+  });
+
+  if (!scenario) {
+    throw new Error('Scenario not found');
+  }
+
+  // Parse the scenario content to find the correct choice and feedback
+  const scenarioContent = scenario.content as {
+    choices?: { id: string; text: string; isCorrect?: boolean; feedback?: string }[];
+  } | null;
+  const choices = scenarioContent?.choices || [];
+  const selectedChoice = choices.find((c) => c.id === choiceId);
+
+  // Record the completion
+  await prisma.activityCompletion.create({
+    data: {
+      studentProfileId: learnerId,
+      activityId: scenarioId,
+      reflection: JSON.stringify({ choiceId, choice: selectedChoice }),
+    },
+  });
+
+  return {
+    isCorrect: selectedChoice?.isCorrect ?? false,
+    feedback: selectedChoice?.feedback || 'Thank you for your response!',
+    correctChoiceId: choices.find((c) => c.isCorrect)?.id,
   };
 }
