@@ -25,7 +25,7 @@ export function useFocusWithin<T extends HTMLElement>(
   const [isFocusWithin, setIsFocusWithin] = useState(false);
 
   const handleFocus = useCallback(
-    (e: React.FocusEvent) => {
+    (_e: React.FocusEvent) => {
       // Only trigger if this is the first focus within
       if (!isFocusWithin) {
         setIsFocusWithin(true);

@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useEffect, useId } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 import type { Politeness } from '../types';
 
@@ -6,7 +6,7 @@ export interface LiveRegionProps {
   children?: React.ReactNode;
   'aria-live'?: Politeness;
   'aria-atomic'?: boolean;
-  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all';
+  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all' | 'additions text';
   role?: 'status' | 'alert' | 'log' | 'timer' | 'marquee';
   visuallyHidden?: boolean;
   className?: string;
@@ -65,7 +65,7 @@ export const LiveRegion = forwardRef<HTMLDivElement, LiveRegionProps>(
         role={role}
         aria-live={ariaLive}
         aria-atomic={ariaAtomic}
-        aria-relevant={ariaRelevant}
+        aria-relevant={ariaRelevant as React.AriaAttributes['aria-relevant']}
         className={className}
         style={visuallyHiddenStyles}
       >

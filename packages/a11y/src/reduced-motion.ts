@@ -86,7 +86,7 @@ export function getMotionSafeTransition(transition: string): string {
     // Replace duration with 0ms
     return transition.replace(
       /(\d+(\.\d+)?)(ms|s)/g,
-      (_, value, decimal, unit) => `0${unit}`
+      (_, _value, _decimal, unit) => `0${unit}`
     );
   }
   return transition;

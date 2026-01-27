@@ -167,11 +167,18 @@ export class RedisStateStore implements IStateStore {
     const execResults = await pipeline.exec();
 
     for (let i = 0; i < keys.length; i++) {
-      const [err, data] = execResults[i];
+      const execResult = execResults?.[i];
+      const key = keys[i];
+      if (!key) continue;
+      if (!execResult) {
+        results.set(key, null);
+        continue;
+      }
+      const [err, data] = execResult;
       if (err || !data) {
-        results.set(keys[i], null);
+        results.set(key, null);
       } else {
-        results.set(keys[i], this.deserialize(data as string));
+        results.set(key, this.deserialize(data as string));
       }
     }
 

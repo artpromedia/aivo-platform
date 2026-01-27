@@ -163,9 +163,11 @@ export class AgentRunner {
     const queueIndex = this.runQueue.findIndex(r => r.id === runId);
     if (queueIndex !== -1) {
       const run = this.runQueue[queueIndex];
-      run.status = 'cancelled';
-      this.runQueue.splice(queueIndex, 1);
-      return true;
+      if (run) {
+        run.status = 'cancelled';
+        this.runQueue.splice(queueIndex, 1);
+        return true;
+      }
     }
 
     // Check active runs

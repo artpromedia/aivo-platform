@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useEffect, useCallback } from 'react';
+import { forwardRef, useCallback } from 'react';
 
 interface FocusGuardProps {
   onFocus: () => void;

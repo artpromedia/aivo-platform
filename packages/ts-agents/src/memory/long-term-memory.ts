@@ -181,22 +181,24 @@ export class LongTermMemory {
     const processed = new Set<string>();
 
     for (let i = 0; i < memories.length; i++) {
-      if (processed.has(memories[i].id)) continue;
+      const memoryI = memories[i];
+      if (!memoryI || processed.has(memoryI.id)) continue;
 
-      const similar: MemoryEntry[] = [memories[i]];
+      const similar: MemoryEntry[] = [memoryI];
 
       for (let j = i + 1; j < memories.length; j++) {
-        if (processed.has(memories[j].id)) continue;
+        const memoryJ = memories[j];
+        if (!memoryJ || processed.has(memoryJ.id)) continue;
 
         // Check if memories are similar
         const similarity = this.calculateTextSimilarity(
-          memories[i].textContent,
-          memories[j].textContent
+          memoryI.textContent,
+          memoryJ.textContent
         );
 
         if (similarity > 0.8) {
-          similar.push(memories[j]);
-          processed.add(memories[j].id);
+          similar.push(memoryJ);
+          processed.add(memoryJ.id);
         }
       }
 
@@ -213,7 +215,7 @@ export class LongTermMemory {
         }
       }
 
-      processed.add(memories[i].id);
+      processed.add(memoryI.id);
     }
 
     // Delete merged memories
@@ -363,9 +365,11 @@ export class LongTermMemory {
     let normB = 0;
 
     for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+      const aVal = a[i] ?? 0;
+      const bVal = b[i] ?? 0;
+      dotProduct += aVal * bVal;
+      normA += aVal * aVal;
+      normB += bVal * bVal;
     }
 
     const denominator = Math.sqrt(normA) * Math.sqrt(normB);
@@ -383,6 +387,10 @@ export class LongTermMemory {
     // Use the most important memory as base
     const sorted = [...memories].sort((a, b) => b.importance - a.importance);
     const base = sorted[0];
+
+    if (!base) {
+      throw new Error('Cannot merge empty memories array');
+    }
 
     // Combine content
     const combinedContent = memories.map(m => m.content);
@@ -415,18 +423,22 @@ export class LongTermMemory {
    * Average multiple embeddings
    */
   private averageEmbeddings(embeddings: number[][]): number[] {
-    const dimensions = embeddings[0].length;
-    const result = new Array(dimensions).fill(0);
+    const firstEmbedding = embeddings[0];
+    if (!firstEmbedding) {
+      return [];
+    }
+    const dimensions = firstEmbedding.length;
+    const result = new Array(dimensions).fill(0) as number[];
 
     for (const embedding of embeddings) {
       for (let i = 0; i < dimensions; i++) {
-        result[i] += embedding[i];
+        result[i] = (result[i] ?? 0) + (embedding[i] ?? 0);
       }
     }
 
     const count = embeddings.length;
     for (let i = 0; i < dimensions; i++) {
-      result[i] /= count;
+      result[i] = (result[i] ?? 0) / count;
     }
 
     return result;
@@ -458,7 +470,10 @@ export class LongTermMemory {
     // Remove lowest scoring memories
     const toRemove = this.memories.size - this.config.maxMemories;
     for (let i = 0; i < toRemove; i++) {
-      this.memories.delete(scored[i].id);
+      const entry = scored[i];
+      if (entry) {
+        this.memories.delete(entry.id);
+      }
     }
   }
 }

@@ -336,7 +336,7 @@ export class MemoryManager {
   /**
    * Get the working memory instance
    */
-  getWorkingMemory(): WorkingMemory {
+  getWorkingMemoryInstance(): WorkingMemory {
     return this.working;
   }
 

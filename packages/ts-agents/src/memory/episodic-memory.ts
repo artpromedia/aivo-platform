@@ -133,9 +133,11 @@ export class EpisodicMemory {
       );
       const oldest = sortedByTime[0];
       const newest = sortedByTime[sortedByTime.length - 1];
-      summaryParts.push(
-        `Time range: ${new Date(oldest.timestamp).toISOString()} to ${new Date(newest.timestamp).toISOString()}`
-      );
+      if (oldest && newest) {
+        summaryParts.push(
+          `Time range: ${new Date(oldest.timestamp).toISOString()} to ${new Date(newest.timestamp).toISOString()}`
+        );
+      }
     }
 
     return summaryParts.join('. ');

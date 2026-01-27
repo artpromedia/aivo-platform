@@ -120,6 +120,7 @@ export function AchievementBadge({
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [unlocked, animate]);
 
   const getStyleClasses = () => {

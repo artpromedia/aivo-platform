@@ -255,8 +255,9 @@ export function useTypeAhead<T>(
         getLabel(item).toLowerCase().startsWith(bufferRef.current)
       );
 
-      if (matchIndex >= 0) {
-        onSelect?.(items[matchIndex], matchIndex);
+      const matchedItem = items[matchIndex];
+      if (matchIndex >= 0 && matchedItem !== undefined) {
+        onSelect?.(matchedItem, matchIndex);
       }
 
       // Clear buffer after timeout

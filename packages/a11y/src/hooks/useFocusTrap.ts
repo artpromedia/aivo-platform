@@ -36,15 +36,17 @@ export function useFocusTrap<T extends HTMLElement>(
       return;
     }
 
-    trapRef.current = createFocusTrap(containerRef.current, {
-      initialFocus,
+    const trapOptions: Parameters<typeof createFocusTrap>[1] = {
       returnFocusOnDeactivate,
       escapeDeactivates,
       clickOutsideDeactivates,
-      preventScroll,
-      onActivate,
-      onDeactivate,
-    });
+    };
+    if (initialFocus !== undefined) trapOptions.initialFocus = initialFocus;
+    if (preventScroll !== undefined) trapOptions.preventScroll = preventScroll;
+    if (onActivate !== undefined) trapOptions.onActivate = onActivate;
+    if (onDeactivate !== undefined) trapOptions.onDeactivate = onDeactivate;
+
+    trapRef.current = createFocusTrap(containerRef.current, trapOptions);
 
     trapRef.current.activate();
 

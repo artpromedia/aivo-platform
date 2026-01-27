@@ -8,8 +8,6 @@ import React, {
   useMemo,
 } from 'react';
 
-import { KeyboardPatterns } from '../keyboard-navigation';
-
 export interface SelectOption {
   value: string;
   label: string;
@@ -96,10 +94,6 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
       [options, currentValue]
     );
 
-    const enabledOptions = useMemo(
-      () => options.filter((opt) => !opt.disabled),
-      [options]
-    );
 
     // Update internal state when controlled value changes
     useEffect(() => {
@@ -164,7 +158,8 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
           let index = start;
           for (let i = 0; i < options.length; i++) {
             index = (index + direction + options.length) % options.length;
-            if (!options[index].disabled) return index;
+            const opt = options[index];
+            if (opt && !opt.disabled) return index;
           }
           return start;
         };
@@ -190,14 +185,16 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
           },
           Enter: () => {
             e.preventDefault();
-            if (activeIndex >= 0 && !options[activeIndex].disabled) {
-              handleSelect(options[activeIndex].value);
+            const activeOpt = options[activeIndex];
+            if (activeIndex >= 0 && activeOpt && !activeOpt.disabled) {
+              handleSelect(activeOpt.value);
             }
           },
           ' ': () => {
             e.preventDefault();
-            if (activeIndex >= 0 && !options[activeIndex].disabled) {
-              handleSelect(options[activeIndex].value);
+            const activeOpt = options[activeIndex];
+            if (activeIndex >= 0 && activeOpt && !activeOpt.disabled) {
+              handleSelect(activeOpt.value);
             }
           },
           Escape: () => {
@@ -209,8 +206,9 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
           },
         };
 
-        if (actions[e.key]) {
-          actions[e.key]();
+        const action = actions[e.key];
+        if (action) {
+          action();
         } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
           // Type-ahead search
           clearTimeout(typeAheadTimeout.current);

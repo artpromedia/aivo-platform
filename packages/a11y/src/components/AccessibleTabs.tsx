@@ -5,12 +5,7 @@ import React, {
   useRef,
   useId,
   useEffect,
-  Children,
-  isValidElement,
-  cloneElement,
 } from 'react';
-
-import { KeyboardPatterns } from '../keyboard-navigation';
 
 export interface Tab {
   id: string;
@@ -106,10 +101,11 @@ export const AccessibleTabs = forwardRef<HTMLDivElement, AccessibleTabsProps>(
     const focusTab = useCallback(
       (index: number) => {
         const ref = tabRefs.current[index];
-        if (ref) {
+        const tab = tabs[index];
+        if (ref && tab) {
           ref.focus();
           if (activationMode === 'automatic') {
-            handleTabChange(tabs[index].id);
+            handleTabChange(tab.id);
           }
         }
       },
@@ -123,7 +119,8 @@ export const AccessibleTabs = forwardRef<HTMLDivElement, AccessibleTabsProps>(
 
         for (let i = 0; i < totalTabs; i++) {
           index = (index + direction + totalTabs) % totalTabs;
-          if (!tabs[index].disabled) {
+          const tab = tabs[index];
+          if (tab && !tab.disabled) {
             return index;
           }
         }

@@ -97,7 +97,7 @@ export class TutorAgent extends Agent {
   /**
    * Override run to inject tutor-specific context
    */
-  async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
+  override async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
     // Inject student profile and teaching context into metadata
     const enrichedContext: AgentContext = {
       ...context,
@@ -120,7 +120,7 @@ export class TutorAgent extends Agent {
   /**
    * Lifecycle hook - on start
    */
-  protected async onStart(context: AgentContext): Promise<void> {
+  protected override async onStart(context: AgentContext): Promise<void> {
     // Load any previous session data for this student
     const memories = await this.recall(`student:${context.userId}`, 'long-term');
     if (memories.length > 0) {
@@ -137,7 +137,7 @@ export class TutorAgent extends Agent {
   /**
    * Lifecycle hook - on complete
    */
-  protected async onComplete(output: AgentOutput): Promise<void> {
+  protected override async onComplete(_output: AgentOutput): Promise<void> {
     // Save student profile if updated
     if (this.studentProfile) {
       await this.remember(

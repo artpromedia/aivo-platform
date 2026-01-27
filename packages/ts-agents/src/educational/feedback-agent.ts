@@ -273,7 +273,7 @@ export class FeedbackAgent extends Agent {
   /**
    * Override run to inject feedback context
    */
-  async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
+  override async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
     const enrichedContext: AgentContext = {
       ...context,
       metadata: {

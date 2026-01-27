@@ -47,10 +47,10 @@ export function getThemeById(id: GradeLevel): GradeTheme {
 /**
  * Deep merge two objects
  */
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
-  const result = { ...target };
+function deepMerge<T>(target: T, source: Partial<T>): T {
+  const result = { ...target } as T;
 
-  for (const key of Object.keys(source) as Array<keyof T>) {
+  for (const key of Object.keys(source as object) as Array<keyof T>) {
     const sourceValue = source[key];
     const targetValue = target[key];
 
@@ -63,12 +63,12 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
       targetValue !== null &&
       !Array.isArray(targetValue)
     ) {
-      result[key] = deepMerge(
+      (result as Record<string, unknown>)[key as string] = deepMerge(
         targetValue as Record<string, unknown>,
-        sourceValue as Record<string, unknown>
-      ) as T[keyof T];
+        sourceValue as Partial<Record<string, unknown>>
+      );
     } else if (sourceValue !== undefined) {
-      result[key] = sourceValue as T[keyof T];
+      (result as Record<string, unknown>)[key as string] = sourceValue;
     }
   }
 
@@ -366,13 +366,20 @@ export function verifyThemeAccessibility(theme: GradeTheme): {
 export const generateCSSVariables = genCSSVars;
 
 /**
+ * Deep partial type for theme overrides
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+/**
  * Merge custom overrides into a theme
  */
 export function mergeThemeOverrides(
   theme: GradeTheme,
-  overrides: Partial<GradeTheme>
+  overrides: DeepPartial<GradeTheme>
 ): GradeTheme {
-  return deepMerge(theme, overrides);
+  return deepMerge(theme, overrides as Partial<GradeTheme>);
 }
 
 /**

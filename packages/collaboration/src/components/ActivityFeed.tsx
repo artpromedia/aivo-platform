@@ -98,7 +98,7 @@ const ActivityItemComponent: React.FC<{
   onRead: () => void;
   onClick?: () => void;
 }> = ({ activity, onRead, onClick }) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
 
   // Mark as read when visible
   useEffect(() => {
@@ -200,7 +200,7 @@ const ActivityItemComponent: React.FC<{
       };
 
   return (
-    <WrapperElement ref={ref as React.Ref<HTMLButtonElement & HTMLElement>} {...wrapperProps}>
+    <WrapperElement ref={ref as React.RefObject<HTMLButtonElement> & React.RefObject<HTMLElement>} {...wrapperProps}>
       {activity.actorAvatarUrl ? (
         <div style={avatarStyle}>
           <img

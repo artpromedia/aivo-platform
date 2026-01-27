@@ -54,12 +54,14 @@ class Histogram {
 
     const sorted = [...this.values].sort((a, b) => a - b);
     const sum = sorted.reduce((a, b) => a + b, 0);
+    const firstVal = sorted[0] ?? 0;
+    const lastVal = sorted[sorted.length - 1] ?? 0;
 
     return {
       count: sorted.length,
       sum,
-      min: sorted[0],
-      max: sorted[sorted.length - 1],
+      min: firstVal,
+      max: lastVal,
       avg: sum / sorted.length,
       p50: this.percentile(sorted, 50),
       p90: this.percentile(sorted, 90),
@@ -69,7 +71,7 @@ class Histogram {
 
   private percentile(sorted: number[], p: number): number {
     const index = Math.ceil((p / 100) * sorted.length) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? 0;
   }
 
   reset(): void {

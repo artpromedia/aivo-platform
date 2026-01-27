@@ -18,11 +18,6 @@ const visuallyHiddenStyles: React.CSSProperties = {
   width: '1px',
 };
 
-const focusableStyles: React.CSSProperties = {
-  ...visuallyHiddenStyles,
-  // When focused, remove visually hidden styles
-};
-
 /**
  * Visually hides content while keeping it accessible to screen readers
  *

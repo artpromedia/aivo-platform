@@ -114,8 +114,9 @@ export class MessageHistory {
    */
   getLastByRole(role: MessageRole): Message | undefined {
     for (let i = this.messages.length - 1; i >= 0; i--) {
-      if (this.messages[i].role === role) {
-        return this.messages[i];
+      const message = this.messages[i];
+      if (message && message.role === role) {
+        return message;
       }
     }
     return undefined;

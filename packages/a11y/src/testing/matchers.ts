@@ -1,5 +1,3 @@
-import type { Result, NodeResult } from 'axe-core';
-
 import { runAxeTest, formatViolation, type AxeConfig } from './axe-runner';
 
 export interface A11yMatcherResult {
@@ -260,15 +258,17 @@ export const a11yMatchers = {
   },
 };
 
+// Declare expect as global (provided by test framework at runtime)
+declare const expect: { extend?: (matchers: Record<string, unknown>) => void } | undefined;
+
 /**
  * Setup custom matchers for testing framework
  * Works with Vitest/Jest
  */
 export function setupA11yMatchers(): void {
   // For Vitest/Jest - expect should be available globally from the test framework
-   
-  if (typeof expect !== 'undefined' && typeof (expect as { extend?: unknown }).extend === 'function') {
-    (expect as { extend: (matchers: typeof a11yMatchers) => void }).extend(a11yMatchers);
+  if (typeof expect !== 'undefined' && typeof expect.extend === 'function') {
+    expect.extend(a11yMatchers);
   }
 }
 

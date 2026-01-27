@@ -247,7 +247,7 @@ export class AnthropicAdapter extends ModelAdapter {
     return tools.map(tool => ({
       name: tool.name,
       description: tool.description,
-      input_schema: tool.parameters as Record<string, unknown>,
+      input_schema: tool.parameters as unknown as Record<string, unknown>,
     }));
   }
 

@@ -300,7 +300,7 @@ export class OpenAIAdapter extends ModelAdapter {
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: tool.parameters as Record<string, unknown>,
+        parameters: tool.parameters as unknown as Record<string, unknown>,
       },
     }));
   }

@@ -76,8 +76,8 @@ const CATEGORIES: GameCategory[] = ['All', 'Math', 'Reading', 'Science', 'Focus'
  */
 export function GamePicker({
   focusState,
-  theme = 'K5',
-  previousGames = [],
+  theme: _theme = 'K5',
+  previousGames: _previousGames = [],
   games = DEFAULT_GAMES,
   onGameSelected,
   onCancel,

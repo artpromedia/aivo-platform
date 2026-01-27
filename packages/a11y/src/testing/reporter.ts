@@ -1,5 +1,3 @@
-import type { Result, NodeResult } from 'axe-core';
-
 import type { AxeTestResult } from './axe-runner';
 
 export interface A11yViolationReport {

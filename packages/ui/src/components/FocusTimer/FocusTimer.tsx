@@ -14,7 +14,7 @@ import type { FocusMode, TimerState, FocusBreak } from '../../types';
  * distraction tracking, and break activities.
  */
 export function FocusTimer({
-  learnerId,
+  learnerId: _learnerId,
   activeSession,
   preferences,
   onSessionUpdate,

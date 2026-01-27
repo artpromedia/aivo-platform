@@ -277,7 +277,7 @@ export const chatRoutes: FastifyPluginAsync = async (app, _opts) => {
             stop: body.options?.stop,
             tools: body.options?.tools,
             toolChoice: body.options?.toolChoice,
-            responseFormat: body.options?.responseFormat,
+            responseFormat: body.options?.responseFormat as { type: 'text' | 'json_object' } | undefined,
             metadata: {
               tenantId: body.tenantId,
               correlationId: request.headers['x-correlation-id'] as string,

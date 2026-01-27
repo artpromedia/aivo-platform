@@ -230,14 +230,15 @@ export function useFormValidation() {
   const announceValidationResult = useCallback(
     (errors: Record<string, string>) => {
       const errorList = Object.values(errors).filter(Boolean);
+      const firstError = errorList[0];
 
       if (errorList.length === 0) {
         announceSuccess('Form is valid');
-      } else if (errorList.length === 1) {
-        announceError(errorList[0]);
-      } else {
+      } else if (errorList.length === 1 && firstError) {
+        announceError(firstError);
+      } else if (firstError) {
         announceError(
-          `${errorList.length} validation errors. First error: ${errorList[0]}`
+          `${errorList.length} validation errors. First error: ${firstError}`
         );
       }
     },

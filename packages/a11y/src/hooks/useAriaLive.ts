@@ -18,11 +18,14 @@ export function useAriaLive(regionName: string, options: UseAriaLiveOptions = {}
 
   useEffect(() => {
     if (!isInitialized.current) {
-      getLiveRegionManager().createRegion(regionName, {
+      const config: Parameters<ReturnType<typeof getLiveRegionManager>['createRegion']>[1] = {
         politeness,
         atomic,
-        relevant,
-      });
+      };
+      if (relevant !== undefined) {
+        config.relevant = relevant;
+      }
+      getLiveRegionManager().createRegion(regionName, config);
       isInitialized.current = true;
     }
   }, [regionName, politeness, atomic, relevant]);

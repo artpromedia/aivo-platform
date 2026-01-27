@@ -100,6 +100,7 @@ export const AccessibleDialog = forwardRef<HTMLDivElement, AccessibleDialogProps
         };
       } else {
         setMounted(false);
+        return undefined;
       }
     }, [open, returnFocusOnClose]);
 
@@ -107,10 +108,10 @@ export const AccessibleDialog = forwardRef<HTMLDivElement, AccessibleDialogProps
     useEffect(() => {
       if (mounted && dialogRef.current) {
         focusTrapRef.current = createFocusTrap(dialogRef.current, {
-          onEscape: closeOnEscape ? onClose : undefined,
-          onClickOutside: closeOnOutsideClick ? onClose : undefined,
-          autoFocus: true,
-          initialFocus: initialFocusRef?.current || undefined,
+          escapeDeactivates: closeOnEscape,
+          clickOutsideDeactivates: closeOnOutsideClick,
+          initialFocus: initialFocusRef?.current ?? null,
+          onDeactivate: onClose,
         });
 
         focusTrapRef.current.activate();
@@ -122,6 +123,7 @@ export const AccessibleDialog = forwardRef<HTMLDivElement, AccessibleDialogProps
           }
         };
       }
+      return undefined;
     }, [mounted, closeOnEscape, closeOnOutsideClick, onClose, initialFocusRef, returnFocusOnClose]);
 
     // Handle escape key

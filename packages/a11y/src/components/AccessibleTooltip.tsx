@@ -105,30 +105,30 @@ export const AccessibleTooltip = forwardRef<HTMLDivElement, AccessibleTooltipPro
 
     // Clone child to add event handlers and ref
     const trigger = isValidElement(children)
-      ? cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement>>, {
+      ? cloneElement(children, {
           ref: triggerRef,
-          onMouseEnter: (e: React.MouseEvent) => {
+          onMouseEnter: (e: React.MouseEvent<HTMLElement>) => {
             show();
             (children.props as React.HTMLAttributes<HTMLElement>).onMouseEnter?.(e);
           },
-          onMouseLeave: (e: React.MouseEvent) => {
+          onMouseLeave: (e: React.MouseEvent<HTMLElement>) => {
             hide();
             (children.props as React.HTMLAttributes<HTMLElement>).onMouseLeave?.(e);
           },
-          onFocus: (e: React.FocusEvent) => {
+          onFocus: (e: React.FocusEvent<HTMLElement>) => {
             show();
             (children.props as React.HTMLAttributes<HTMLElement>).onFocus?.(e);
           },
-          onBlur: (e: React.FocusEvent) => {
+          onBlur: (e: React.FocusEvent<HTMLElement>) => {
             hide();
             (children.props as React.HTMLAttributes<HTMLElement>).onBlur?.(e);
           },
-          onKeyDown: (e: React.KeyboardEvent) => {
+          onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
             handleKeyDown(e);
             (children.props as React.HTMLAttributes<HTMLElement>).onKeyDown?.(e);
           },
           'aria-describedby': isVisible ? tooltipId : undefined,
-        })
+        } as React.Attributes & Record<string, unknown>)
       : children;
 
     return (

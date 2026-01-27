@@ -50,7 +50,7 @@ export function parseColor(color: string): RGB | null {
 
   // Handle rgb/rgba
   const rgbMatch = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(trimmed);
-  if (rgbMatch) {
+  if (rgbMatch && rgbMatch[1] && rgbMatch[2] && rgbMatch[3]) {
     return {
       r: Number.parseInt(rgbMatch[1], 10),
       g: Number.parseInt(rgbMatch[2], 10),
@@ -60,7 +60,7 @@ export function parseColor(color: string): RGB | null {
 
   // Handle hsl/hsla
   const hslMatch = /hsla?\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/.exec(trimmed);
-  if (hslMatch) {
+  if (hslMatch && hslMatch[1] && hslMatch[2] && hslMatch[3]) {
     return hslToRgb({
       h: Number.parseInt(hslMatch[1], 10),
       s: Number.parseInt(hslMatch[2], 10),
@@ -85,9 +85,12 @@ export function hexToRgb(hex: string): RGB | null {
 
   // Handle 3-digit hex
   if (cleanHex.length === 3) {
-    const r = Number.parseInt(cleanHex[0] + cleanHex[0], 16);
-    const g = Number.parseInt(cleanHex[1] + cleanHex[1], 16);
-    const b = Number.parseInt(cleanHex[2] + cleanHex[2], 16);
+    const c0 = cleanHex[0] ?? '0';
+    const c1 = cleanHex[1] ?? '0';
+    const c2 = cleanHex[2] ?? '0';
+    const r = Number.parseInt(c0 + c0, 16);
+    const g = Number.parseInt(c1 + c1, 16);
+    const b = Number.parseInt(c2 + c2, 16);
     return { r, g, b };
   }
 
@@ -195,12 +198,15 @@ export function hslToRgb(hsl: HSL): RGB {
  * https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
  */
 export function getRelativeLuminance(rgb: RGB): number {
-  const [r, g, b] = [rgb.r, rgb.g, rgb.b].map((c) => {
+  const mapped = [rgb.r, rgb.g, rgb.b].map((c) => {
     const srgb = c / 255;
     return srgb <= 0.03928
       ? srgb / 12.92
       : Math.pow((srgb + 0.055) / 1.055, 2.4);
   });
+  const r = mapped[0] ?? 0;
+  const g = mapped[1] ?? 0;
+  const b = mapped[2] ?? 0;
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
