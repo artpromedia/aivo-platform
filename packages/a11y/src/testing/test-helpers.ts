@@ -1,4 +1,4 @@
-import { FOCUSABLE_SELECTOR, isFocusable, getFocusableElements } from '../focus-management';
+import { getFocusableElements } from '../focus-management';
 
 import { runAxeTest, type AxeConfig, type AxeTestResult } from './axe-runner';
 

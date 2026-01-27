@@ -39,7 +39,7 @@ export function StreakDisplay({
         {days.map((day, i) => {
           const isCompleted = i < streak % 7;
           const isToday = i === adjustedTodayIndex;
-          const isFuture = i > adjustedTodayIndex;
+          // Future days are calculated but used implicitly via !isCompleted && !isToday
 
           return (
             <div key={`${day}-${i}`} className="flex flex-col items-center gap-1">

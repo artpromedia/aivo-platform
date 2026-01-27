@@ -103,32 +103,36 @@ export const AccessibleTooltip = forwardRef<HTMLDivElement, AccessibleTooltipPro
       };
     }, []);
 
-    // Clone child to add event handlers and ref
+    // Clone child to add event handlers
+    const childProps = children.props as Record<string, unknown>;
     const trigger = isValidElement(children)
-      ? cloneElement(children as React.ReactElement<React.HTMLAttributes<HTMLElement>>, {
-          ref: triggerRef,
-          onMouseEnter: (e: React.MouseEvent) => {
-            show();
-            (children.props as React.HTMLAttributes<HTMLElement>).onMouseEnter?.(e);
-          },
-          onMouseLeave: (e: React.MouseEvent) => {
-            hide();
-            (children.props as React.HTMLAttributes<HTMLElement>).onMouseLeave?.(e);
-          },
-          onFocus: (e: React.FocusEvent) => {
-            show();
-            (children.props as React.HTMLAttributes<HTMLElement>).onFocus?.(e);
-          },
-          onBlur: (e: React.FocusEvent) => {
-            hide();
-            (children.props as React.HTMLAttributes<HTMLElement>).onBlur?.(e);
-          },
-          onKeyDown: (e: React.KeyboardEvent) => {
-            handleKeyDown(e);
-            (children.props as React.HTMLAttributes<HTMLElement>).onKeyDown?.(e);
-          },
-          'aria-describedby': isVisible ? tooltipId : undefined,
-        })
+      ? cloneElement(
+          children as React.ReactElement<Record<string, unknown>>,
+          {
+            ref: triggerRef as React.Ref<unknown>,
+            onMouseEnter: (e: React.MouseEvent<Element>) => {
+              show();
+              (childProps.onMouseEnter as ((e: React.MouseEvent<Element>) => void) | undefined)?.(e);
+            },
+            onMouseLeave: (e: React.MouseEvent<Element>) => {
+              hide();
+              (childProps.onMouseLeave as ((e: React.MouseEvent<Element>) => void) | undefined)?.(e);
+            },
+            onFocus: (e: React.FocusEvent<Element>) => {
+              show();
+              (childProps.onFocus as ((e: React.FocusEvent<Element>) => void) | undefined)?.(e);
+            },
+            onBlur: (e: React.FocusEvent<Element>) => {
+              hide();
+              (childProps.onBlur as ((e: React.FocusEvent<Element>) => void) | undefined)?.(e);
+            },
+            onKeyDown: (e: React.KeyboardEvent<Element>) => {
+              handleKeyDown(e as React.KeyboardEvent<HTMLElement>);
+              (childProps.onKeyDown as ((e: React.KeyboardEvent<Element>) => void) | undefined)?.(e);
+            },
+            'aria-describedby': isVisible ? tooltipId : undefined,
+          }
+        )
       : children;
 
     return (

@@ -120,38 +120,37 @@ export function AchievementBadge({
       const timer = setTimeout(() => setShowCelebration(false), 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [unlocked, animate]);
 
-  const getStyleClasses = () => {
-    switch (style) {
-      case 'playful':
-        return cn(
-          'rounded-[var(--radius-card,24px)]',
-          'border-4',
-          rarityStyle.border,
-          unlocked ? rarityStyle.bg : 'bg-surface-muted/50',
-          unlocked && rarity !== 'common' && rarityStyle.glow,
-          animate && unlocked && 'hover:scale-[var(--hover-scale,1.1)]',
-          animate && 'active:scale-[var(--press-scale,0.95)]'
-        );
-      case 'badge':
-        return cn(
-          'rounded-full',
-          'border-2',
-          rarityStyle.border,
-          unlocked ? rarityStyle.bg : 'bg-surface-muted/50',
-          unlocked && rarity !== 'common' && rarityStyle.glow
-        );
-      case 'minimal':
-        return cn(
-          'rounded-[var(--radius-button,8px)]',
-          'border',
-          unlocked ? 'border-border' : 'border-border-muted',
-          unlocked ? 'bg-surface' : 'bg-surface-muted/30'
-        );
-      default:
-        return '';
+  const getStyleClasses = (): string => {
+    if (style === 'playful') {
+      return cn(
+        'rounded-[var(--radius-card,24px)]',
+        'border-4',
+        rarityStyle.border,
+        unlocked ? rarityStyle.bg : 'bg-surface-muted/50',
+        unlocked && rarity !== 'common' && rarityStyle.glow,
+        animate && unlocked && 'hover:scale-[var(--hover-scale,1.1)]',
+        animate && 'active:scale-[var(--press-scale,0.95)]'
+      );
     }
+    if (style === 'badge') {
+      return cn(
+        'rounded-full',
+        'border-2',
+        rarityStyle.border,
+        unlocked ? rarityStyle.bg : 'bg-surface-muted/50',
+        unlocked && rarity !== 'common' && rarityStyle.glow
+      );
+    }
+    // minimal or default
+    return cn(
+      'rounded-[var(--radius-button,8px)]',
+      'border',
+      unlocked ? 'border-border' : 'border-border-muted',
+      unlocked ? 'bg-surface' : 'bg-surface-muted/30'
+    );
   };
 
   return (

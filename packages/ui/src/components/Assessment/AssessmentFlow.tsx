@@ -1,10 +1,8 @@
 'use client';
 
 import { cn } from '../../utils';
-import { AssessmentCard } from './AssessmentCard';
 import { QuestionRenderer } from './QuestionRenderer';
 import { GameBreak } from './GameBreak';
-import { ProgressIndicator } from './ProgressIndicator';
 import type { AssessmentFlowProps } from './types';
 
 // Game break activities
@@ -30,10 +28,10 @@ export function AssessmentFlow({
   questions = [],
   isLoading = false,
   onAnswer,
-  onPhaseChange,
+  onPhaseChange: _onPhaseChange,
   onStartDomain,
   onSkipBreak,
-  progress,
+  progress: _progress,
   className,
 }: AssessmentFlowProps) {
   const currentDomain = domains[currentDomainIndex];

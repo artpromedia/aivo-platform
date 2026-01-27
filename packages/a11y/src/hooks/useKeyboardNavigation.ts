@@ -256,7 +256,10 @@ export function useTypeAhead<T>(
       );
 
       if (matchIndex >= 0) {
-        onSelect?.(items[matchIndex], matchIndex);
+        const matchedItem = items[matchIndex];
+        if (matchedItem !== undefined) {
+          onSelect?.(matchedItem, matchIndex);
+        }
       }
 
       // Clear buffer after timeout

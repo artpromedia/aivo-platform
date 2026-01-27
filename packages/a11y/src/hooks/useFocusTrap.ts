@@ -37,13 +37,13 @@ export function useFocusTrap<T extends HTMLElement>(
     }
 
     trapRef.current = createFocusTrap(containerRef.current, {
-      initialFocus,
+      initialFocus: initialFocus ?? null,
       returnFocusOnDeactivate,
       escapeDeactivates,
       clickOutsideDeactivates,
-      preventScroll,
-      onActivate,
-      onDeactivate,
+      preventScroll: preventScroll ?? false,
+      ...(onActivate && { onActivate }),
+      ...(onDeactivate && { onDeactivate }),
     });
 
     trapRef.current.activate();

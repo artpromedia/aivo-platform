@@ -47,10 +47,10 @@ export function getThemeById(id: GradeLevel): GradeTheme {
 /**
  * Deep merge two objects
  */
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
-  const result = { ...target };
+function deepMerge<T>(target: T, source: Partial<T>): T {
+  const result = { ...target } as T;
 
-  for (const key of Object.keys(source) as Array<keyof T>) {
+  for (const key of Object.keys(source as object) as Array<keyof T>) {
     const sourceValue = source[key];
     const targetValue = target[key];
 
@@ -65,7 +65,7 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
     ) {
       result[key] = deepMerge(
         targetValue as Record<string, unknown>,
-        sourceValue as Record<string, unknown>
+        sourceValue as Partial<Record<string, unknown>>
       ) as T[keyof T];
     } else if (sourceValue !== undefined) {
       result[key] = sourceValue as T[keyof T];

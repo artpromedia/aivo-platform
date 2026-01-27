@@ -1,5 +1,3 @@
-import type { Result, NodeResult } from 'axe-core';
-
 import { runAxeTest, formatViolation, type AxeConfig } from './axe-runner';
 
 export interface A11yMatcherResult {
@@ -266,9 +264,10 @@ export const a11yMatchers = {
  */
 export function setupA11yMatchers(): void {
   // For Vitest/Jest - expect should be available globally from the test framework
-   
-  if (typeof expect !== 'undefined' && typeof (expect as { extend?: unknown }).extend === 'function') {
-    (expect as { extend: (matchers: typeof a11yMatchers) => void }).extend(a11yMatchers);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globalExpect = (globalThis as any).expect;
+  if (typeof globalExpect !== 'undefined' && typeof globalExpect.extend === 'function') {
+    globalExpect.extend(a11yMatchers);
   }
 }
 

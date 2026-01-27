@@ -234,10 +234,10 @@ export function useFormValidation() {
       if (errorList.length === 0) {
         announceSuccess('Form is valid');
       } else if (errorList.length === 1) {
-        announceError(errorList[0]);
+        announceError(errorList[0] ?? 'Validation error');
       } else {
         announceError(
-          `${errorList.length} validation errors. First error: ${errorList[0]}`
+          `${errorList.length} validation errors. First error: ${errorList[0] ?? 'Unknown error'}`
         );
       }
     },

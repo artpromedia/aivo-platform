@@ -21,7 +21,7 @@ export function useAriaLive(regionName: string, options: UseAriaLiveOptions = {}
       getLiveRegionManager().createRegion(regionName, {
         politeness,
         atomic,
-        relevant,
+        ...(relevant && { relevant }),
       });
       isInitialized.current = true;
     }

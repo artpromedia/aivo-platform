@@ -165,7 +165,7 @@ describe('Sensory Profile Integration', () => {
         colors: {
           primary: '#FF0000',
         },
-      };
+      } as unknown as Partial<typeof MSTheme>;
       const merged = mergeThemeOverrides(MSTheme, overrides);
 
       expect(merged.colors.primary).toBe('#FF0000');
@@ -178,7 +178,7 @@ describe('Sensory Profile Integration', () => {
         typography: {
           baseFontSize: '20px',
         },
-      };
+      } as unknown as Partial<typeof K5Theme>;
       const merged = mergeThemeOverrides(K5Theme, overrides);
 
       expect(merged.typography.baseFontSize).toBe('20px');

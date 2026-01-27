@@ -67,11 +67,8 @@ export function Card({
         // Theme-aware transitions
         'transition-all duration-[var(--animation-duration,150ms)] ease-[var(--animation-easing)]',
         // Interactive hover effects
-        interactive && [
-          'cursor-pointer',
-          'hover:scale-[var(--hover-scale,1.02)]',
-          'active:scale-[var(--press-scale,0.98)]',
-        ],
+        interactive &&
+          'cursor-pointer hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]',
         // Variant styles
         variantClasses[variant],
         className
@@ -117,7 +114,7 @@ export function Card({
       <div
         className={cn(
           'p-[var(--padding-card,16px)]',
-          (title || subtitle || icon) && 'pt-[var(--space-3,12px)]'
+          Boolean(title || subtitle || icon) && 'pt-[var(--space-3,12px)]'
         )}
       >
         {children}

@@ -128,15 +128,15 @@ export function getNextFocusable(
   const currentIndex = elements.indexOf(currentElement);
 
   if (currentIndex === -1) {
-    return elements[0] || null;
+    return elements[0] ?? null;
   }
 
   const nextIndex = currentIndex + 1;
   if (nextIndex >= elements.length) {
-    return wrap ? elements[0] : null;
+    return wrap ? (elements[0] ?? null) : null;
   }
 
-  return elements[nextIndex];
+  return elements[nextIndex] ?? null;
 }
 
 /**
@@ -151,15 +151,15 @@ export function getPreviousFocusable(
   const currentIndex = elements.indexOf(currentElement);
 
   if (currentIndex === -1) {
-    return elements[elements.length - 1] || null;
+    return elements[elements.length - 1] ?? null;
   }
 
   const prevIndex = currentIndex - 1;
   if (prevIndex < 0) {
-    return wrap ? elements[elements.length - 1] : null;
+    return wrap ? (elements[elements.length - 1] ?? null) : null;
   }
 
-  return elements[prevIndex];
+  return elements[prevIndex] ?? null;
 }
 
 /**

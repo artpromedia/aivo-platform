@@ -89,8 +89,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           variantClasses[variant],
           sizeClasses[inputSize],
           // Padding adjustments for icons
-          leftElement && 'pl-10',
-          rightElement && 'pr-10',
+          Boolean(leftElement) && 'pl-10',
+          Boolean(rightElement) && 'pr-10',
           className
         )}
         {...props}

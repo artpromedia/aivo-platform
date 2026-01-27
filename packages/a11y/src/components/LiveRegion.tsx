@@ -1,12 +1,14 @@
-import React, { forwardRef, useRef, useEffect, useId } from 'react';
+import React, { forwardRef, useId } from 'react';
 
 import type { Politeness } from '../types';
+
+type AriaRelevant = 'additions' | 'removals' | 'text' | 'all' | 'additions text' | 'additions removals' | 'removals additions' | 'removals text' | 'text additions' | 'text removals';
 
 export interface LiveRegionProps {
   children?: React.ReactNode;
   'aria-live'?: Politeness;
   'aria-atomic'?: boolean;
-  'aria-relevant'?: 'additions' | 'removals' | 'text' | 'all';
+  'aria-relevant'?: AriaRelevant;
   role?: 'status' | 'alert' | 'log' | 'timer' | 'marquee';
   visuallyHidden?: boolean;
   className?: string;

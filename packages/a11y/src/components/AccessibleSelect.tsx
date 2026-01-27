@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from 'react';
 
-import { KeyboardPatterns } from '../keyboard-navigation';
+// KeyboardPatterns imported but may be used in future enhancements
 
 export interface SelectOption {
   value: string;
@@ -96,11 +96,6 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
       [options, currentValue]
     );
 
-    const enabledOptions = useMemo(
-      () => options.filter((opt) => !opt.disabled),
-      [options]
-    );
-
     // Update internal state when controlled value changes
     useEffect(() => {
       if (value !== undefined) {
@@ -164,7 +159,8 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
           let index = start;
           for (let i = 0; i < options.length; i++) {
             index = (index + direction + options.length) % options.length;
-            if (!options[index].disabled) return index;
+            const option = options[index];
+            if (option && !option.disabled) return index;
           }
           return start;
         };
@@ -190,14 +186,16 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
           },
           Enter: () => {
             e.preventDefault();
-            if (activeIndex >= 0 && !options[activeIndex].disabled) {
-              handleSelect(options[activeIndex].value);
+            const activeOption = options[activeIndex];
+            if (activeIndex >= 0 && activeOption && !activeOption.disabled) {
+              handleSelect(activeOption.value);
             }
           },
           ' ': () => {
             e.preventDefault();
-            if (activeIndex >= 0 && !options[activeIndex].disabled) {
-              handleSelect(options[activeIndex].value);
+            const activeOption = options[activeIndex];
+            if (activeIndex >= 0 && activeOption && !activeOption.disabled) {
+              handleSelect(activeOption.value);
             }
           },
           Escape: () => {
@@ -210,7 +208,10 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
         };
 
         if (actions[e.key]) {
-          actions[e.key]();
+          const action = actions[e.key];
+          if (action) {
+            action();
+          }
         } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
           // Type-ahead search
           clearTimeout(typeAheadTimeout.current);

@@ -271,10 +271,13 @@ class ApprovalService {
     if (!workflow) throw new Error('Workflow not found');
 
     // Record the decision
+    const currentStep = workflow.steps[request.currentStepOrder - 1];
+    if (!currentStep) throw new Error('Current step not found');
+    
     await this.prisma.decision.create({
       data: {
         requestId,
-        stepId: workflow.steps[request.currentStepOrder - 1].id,
+        stepId: currentStep.id,
         decision: data.decision,
         decidedBy: data.decidedBy,
         comments: data.comments,

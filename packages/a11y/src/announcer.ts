@@ -171,10 +171,10 @@ class ScreenReaderAnnouncer {
     if (errors.length === 0) {
       this.announceSuccess('Form is valid');
     } else if (errors.length === 1) {
-      this.announceError(errors[0]);
+      this.announceError(errors[0] ?? 'Validation error');
     } else {
       this.announceError(
-        `${errors.length} errors found. ${errors[0]}. Use Tab to navigate to each error.`
+        `${errors.length} errors found. ${errors[0] ?? 'Error'}. Use Tab to navigate to each error.`
       );
     }
   }

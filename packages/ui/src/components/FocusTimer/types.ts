@@ -1,4 +1,4 @@
-import type { FocusMode, FocusSession, FocusPreferences, TimerState } from '../../types';
+import type { FocusMode, FocusSession, FocusPreferences } from '../../types';
 
 export interface FocusTimerProps {
   /** Learner ID for session tracking */

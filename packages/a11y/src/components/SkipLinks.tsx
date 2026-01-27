@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, forwardRef } from 'react';
+import { useEffect, useRef, forwardRef } from 'react';
 
 import { DEFAULT_SKIP_LINKS, skipLinksCSS } from '../skip-links';
 import type { SkipLink } from '../types';
@@ -51,7 +51,7 @@ export const SkipLinks = forwardRef<HTMLDivElement, SkipLinksProps>(
         {links.map((link, index) => (
           <a
             key={index}
-            href={link.href}
+            href={`#${link.id}`}
             className={linkClassName || 'a11y-skip-link'}
           >
             {link.label}

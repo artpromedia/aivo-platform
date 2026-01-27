@@ -151,7 +151,7 @@ export async function getTargetRegion(tenantId: string, dataType: string, servic
         rule.servicePatterns.some((p) => new RegExp(p.replace('*', '.*')).test(serviceName));
 
       if (matchesDataType && matchesService && rule.targetRegions.length > 0) {
-        return rule.targetRegions[0];
+        return rule.targetRegions[0] ?? null;
       }
     }
 
@@ -249,9 +249,9 @@ export async function requestTransfer(tenantId: string, userId: string, input: a
       transferMechanism: input.transferMechanism,
       consentObtained: input.consentObtained ?? false,
       consentRecordId: input.consentRecordId,
-      consentDate: input.consentDate ? new Date(input.consentDate) : undefined,
+      ...(input.consentDate && { consentDate: new Date(input.consentDate) }),
       approvalRequired,
-      approvalStatus: approvalRequired ? 'PENDING' : undefined,
+      ...(approvalRequired && { approvalStatus: 'PENDING' as const }),
       status: approvalRequired ? 'PENDING' : 'APPROVED',
       requestedBy: userId,
     },
@@ -270,7 +270,7 @@ export async function approveTransfer(tenantId: string, transferId: string, user
       approvalStatus: approved ? 'APPROVED' : 'REJECTED',
       approvedBy: userId,
       approvedAt: new Date(),
-      approvalNotes: notes,
+      ...(notes && { approvalNotes: notes }),
       status: approved ? 'APPROVED' : 'CANCELLED',
     },
   });

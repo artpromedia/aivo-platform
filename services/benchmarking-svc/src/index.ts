@@ -15,7 +15,6 @@ import Fastify from 'fastify';
 import pino from 'pino';
 
 import { registerBenchmarkingRoutes } from './api/routes.js';
-import { prisma } from './prisma.js';
 
 const logger = pino({
   level: process.env.LOG_LEVEL ?? 'info',
