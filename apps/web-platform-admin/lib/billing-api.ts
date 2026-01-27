@@ -5,13 +5,17 @@
  * Server-side only (uses internal service URLs).
  */
 
-// Service URL - required in production
+// Service URL - required in production runtime
 const BILLING_SVC_URL = (() => {
   const url = process.env.BILLING_SVC_URL;
-  if (!url && process.env.NODE_ENV === 'production') {
+  if (url) return url;
+  // During Next.js build phase (static generation), use fallback to allow build to complete
+  const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
+  if (isNextBuild) return 'http://localhost:4005';
+  if (process.env.NODE_ENV === 'production') {
     throw new Error('BILLING_SVC_URL environment variable is required in production');
   }
-  return url ?? 'http://localhost:4005';
+  return 'http://localhost:4005';
 })();
 
 // ══════════════════════════════════════════════════════════════════════════════

@@ -23,6 +23,9 @@ function getServiceUrls(): ServiceConfig {
   const requireEnv = (name: string, devDefault: string): string => {
     const value = process.env[name];
     if (value) return value;
+    // During Next.js build phase (static generation), use fallback to allow build to complete
+    const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
+    if (isNextBuild) return devDefault;
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`${name} environment variable is required in production`);
     }

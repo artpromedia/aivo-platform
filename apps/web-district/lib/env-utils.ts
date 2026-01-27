@@ -2,17 +2,20 @@
  * Environment URL Utilities
  *
  * Production-safe helpers for handling service URLs.
- * Ensures localhost fallbacks are NEVER used in production.
+ * Ensures localhost fallbacks are NEVER used in production runtime.
  */
 
 /**
  * Gets an environment URL with production safety checks.
  *
- * In production:
+ * In production runtime:
  * - Throws an error if the environment variable is not set
  *
  * In development/test:
  * - Falls back to the provided localhost URL for convenience
+ *
+ * During Next.js build (static generation):
+ * - Uses fallback to allow build to complete (pages using API should be dynamic anyway)
  *
  * @param envVar The environment variable name
  * @param devFallback The localhost URL to use in development
@@ -29,7 +32,14 @@ export function getServiceUrl(
     return value;
   }
 
-  // In production, require the env var to be set
+  // During Next.js build phase (static generation), use fallback to allow build to complete
+  // Pages that actually need API data should use 'force-dynamic' or client-side fetching
+  const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
+  if (isNextBuild) {
+    return devFallback;
+  }
+
+  // In production runtime, require the env var to be set
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
       `[${serviceName}] Missing required environment variable: ${envVar}. ` +

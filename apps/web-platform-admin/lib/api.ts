@@ -29,10 +29,13 @@ import type {
 // CONFIG
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Service URLs - required in production
+// Service URLs - required in production runtime
 function requireEnvInProduction(varName: string, devDefault: string): string {
   const value = process.env[varName];
   if (value) return value;
+  // During Next.js build phase (static generation), use fallback to allow build to complete
+  const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
+  if (isNextBuild) return devDefault;
   if (process.env.NODE_ENV === 'production') {
     throw new Error(`${varName} environment variable is required in production`);
   }

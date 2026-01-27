@@ -8,12 +8,15 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Gets an environment URL, with production safety checks.
  *
- * In production:
+ * In production runtime:
  * - If required=true and env var is not set, throws an error
  * - If required=false and env var is not set, returns empty string (caller should handle)
  *
  * In development/test:
  * - Falls back to the provided localhost URL for convenience
+ *
+ * During Next.js build (static generation):
+ * - Uses fallback to allow build to complete (pages using API should be dynamic anyway)
  *
  * @param envVar The environment variable name (e.g., 'NEXT_PUBLIC_API_URL')
  * @param devFallback The localhost URL to use in development
@@ -31,7 +34,14 @@ export function getEnvUrl(
     return value;
   }
 
-  // In production, enforce that required env vars are set
+  // During Next.js build phase (static generation), use fallback to allow build to complete
+  // Pages that actually need API data should use 'force-dynamic' or client-side fetching
+  const isNextBuild = process.env.NEXT_PHASE === 'phase-production-build';
+  if (isNextBuild) {
+    return devFallback;
+  }
+
+  // In production runtime, enforce that required env vars are set
   if (process.env.NODE_ENV === 'production') {
     if (required) {
       throw new Error(
