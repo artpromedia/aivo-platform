@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   response.cookies.set('aivo_access_token', token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: (process.env.NODE_ENV as string) === 'production',
     path: '/',
     maxAge: 60 * 60 * 24, // 24 hours
   });

@@ -83,7 +83,8 @@ export function createLazyComponent<P extends object = object>(
   return function LazyWrapper(props: P): React.JSX.Element {
     return (
       <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
-        <LazyComponent {...(props as React.ComponentProps<typeof LazyComponent>)} />
+        {/* @ts-expect-error - Complex generic prop spreading */}
+        <LazyComponent {...props} />
       </Suspense>
     );
   };

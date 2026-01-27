@@ -7,8 +7,6 @@ import type { GameConfig, GameResult } from './types';
 import type { GameDefinition } from '../../lib/games/game-types';
 import { getMockGames } from '../../lib/games/game-api';
 import { GameSelector } from './GameSelector';
-import type { GameDefinition } from '../../lib/games/game-types';
-import { GameResults } from './GameResults';
 import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
 import type { GradeBand } from './games-api';
 
@@ -206,18 +204,41 @@ export function GameContainer({
         if (!state.result || !state.selectedGame) {
           return null;
         }
+        const { metrics, xpEarned, coinsEarned } = state.result;
         return (
-          <GameResults
-            result={state.result}
-            gameId={state.selectedGame}
-            gameTitle={GAME_TITLES[state.selectedGame] || 'Game'}
-            onPlayAgain={handlePlayAgain}
-            onReturn={handleReturn}
-            onRate={(helpful) => {
-              console.log('Game rated:', helpful);
-              // Could call api.rateGame here
-            }}
-          />
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
+            <div className="text-5xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">
+              {GAME_TITLES[state.selectedGame] || 'Game'} Complete!
+            </h2>
+            <div className="grid grid-cols-2 gap-4 my-6">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-blue-600">{metrics.score}</div>
+                <div className="text-sm text-blue-800">Score</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3">
+                <div className="text-2xl font-bold text-green-600">+{xpEarned} XP</div>
+                <div className="text-sm text-green-800">Earned</div>
+              </div>
+            </div>
+            {coinsEarned > 0 && (
+              <p className="text-amber-600 font-medium mb-4">🪙 +{coinsEarned} coins</p>
+            )}
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={handlePlayAgain}
+                className="rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+              >
+                Play Again
+              </button>
+              <button
+                onClick={handleReturn}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
+              >
+                Return
+              </button>
+            </div>
+          </div>
         );
 
       case 'error':
