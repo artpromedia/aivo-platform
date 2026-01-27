@@ -4,6 +4,8 @@ import * as React from 'react';
 import { cn } from '@aivo/ui-web';
 
 import type { GameConfig, GameResult } from './types';
+import type { GameDefinition } from '../../lib/games/game-types';
+import { getMockGames } from '../../lib/games/game-api';
 import { GameSelector } from './GameSelector';
 import { GameResults } from './GameResults';
 import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
@@ -68,8 +70,8 @@ export function GameContainer({
 
   const [selectedDifficulty, setSelectedDifficulty] = React.useState<'easy' | 'medium' | 'hard'>('medium');
 
-  const handleSelectGame = (gameId: string) => {
-    actions.selectGame(gameId);
+  const handleSelectGame = (game: GameDefinition) => {
+    actions.selectGame(game.id);
   };
 
   const handleStartGame = () => {
@@ -105,10 +107,9 @@ export function GameContainer({
       case 'selecting':
         return (
           <GameSelector
-            gradeBand={gradeBand}
+            games={getMockGames()}
+            recommendedGameIds={Array.from(favorites)}
             onSelectGame={handleSelectGame}
-            favorites={Array.from(favorites)}
-            recentlyPlayed={recentGames}
           />
         );
 
