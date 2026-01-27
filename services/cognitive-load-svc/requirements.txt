@@ -1,21 +1,29 @@
 # Cognitive Load Service Dependencies
+
+# FastAPI framework
 fastapi>=0.104.0
 uvicorn>=0.24.0
 pydantic>=2.5.0
+pydantic-settings>=2.1.0
 
-# Biometric/Signal Processing
+# Biometric/Signal Processing (optional - for advanced features)
 scipy>=1.11.0
-heartpy>=1.2.3
-neurokit2>=0.2.0
+# heartpy>=1.2.3  # Uncomment for heart rate analysis
+# neurokit2>=0.2.0  # Uncomment for advanced biometric processing
 
 # Text Analysis
 textstat>=0.7.3
 spacy>=3.7.0
-transformers>=4.35.0
-torch>=2.1.0
+# transformers>=4.35.0  # Uncomment for advanced NLP
+# torch>=2.1.0  # Uncomment for ML models
 
 # Utilities
 numpy>=1.24.0
 pandas>=2.1.0
 structlog>=23.2.0
 httpx>=0.25.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0

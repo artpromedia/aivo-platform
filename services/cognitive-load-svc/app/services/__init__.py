@@ -1,5 +1,7 @@
-"""Cognitive Load Services"""
+"""
+Services module for Cognitive Load Service.
 
-from .adaptation_engine import AdaptationEngine
+Services handle integration with external systems.
+"""
 
-__all__ = ["AdaptationEngine"]
+__all__ = []
