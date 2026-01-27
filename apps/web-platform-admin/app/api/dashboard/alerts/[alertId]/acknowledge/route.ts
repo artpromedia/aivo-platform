@@ -20,7 +20,7 @@ export async function POST(
     const { note } = body;
 
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
-    const alert = await acknowledgeAlert(alertId, { note }, accessToken);
+    const alert = await acknowledgeAlert(accessToken, alertId, note);
 
     return NextResponse.json(alert);
   } catch (error) {

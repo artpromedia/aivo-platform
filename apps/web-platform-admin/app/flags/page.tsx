@@ -7,12 +7,13 @@ export default function FlagsPage() {
   const { data: flagsData, isLoading, error } = useFeatureFlags();
   const updateFlagMutation = useUpdateFeatureFlag();
 
-  const flags = flagsData?.items ?? [];
+  const flags = flagsData ?? [];
 
   const handleToggleFlag = (flag: FeatureFlag) => {
+    const isRunning = flag.status === 'RUNNING';
     updateFlagMutation.mutate({
-      key: flag.key,
-      data: { enabled: !flag.enabled },
+      id: flag.id,
+      enabled: !isRunning,
     });
   };
 
@@ -48,12 +49,12 @@ export default function FlagsPage() {
                   <td className="px-4 py-3 text-sm">
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        flag.enabled
+                        flag.status === 'RUNNING'
                           ? 'bg-emerald-100 text-emerald-700'
                           : 'bg-slate-100 text-slate-700'
                       }`}
                     >
-                      {flag.enabled ? 'On' : 'Off'}
+                      {flag.status === 'RUNNING' ? 'On' : 'Off'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">
@@ -63,14 +64,14 @@ export default function FlagsPage() {
                       }}
                       disabled={updateFlagMutation.isPending}
                       className={`text-sm font-medium ${
-                        flag.enabled
+                        flag.status === 'RUNNING'
                           ? 'text-red-600 hover:text-red-700'
                           : 'text-green-600 hover:text-green-700'
                       } disabled:opacity-50`}
                     >
                       {updateFlagMutation.isPending
                         ? 'Updating...'
-                        : flag.enabled
+                        : flag.status === 'RUNNING'
                           ? 'Disable'
                           : 'Enable'}
                     </button>

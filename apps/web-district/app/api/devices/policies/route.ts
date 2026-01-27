@@ -1,6 +1,12 @@
-import { CachePresets } from '@aivo/caching';
 import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
+
+// Cache control presets (inlined to avoid build issues with @aivo/caching)
+const CachePresets = {
+  publicMedium: {
+    'Cache-Control': 'public, max-age=300, stale-while-revalidate=120',
+  },
+} as const;
 
 const DEVICE_MGMT_SVC_URL = process.env.DEVICE_MGMT_SVC_URL ?? 'http://localhost:3010';
 

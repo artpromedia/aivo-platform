@@ -12,6 +12,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "types": ["@testing-library/jest-dom"],
     "plugins": [
       {
         "name": "next"
@@ -29,5 +30,5 @@
     "vitest.config.ts",
     "vitest.setup.ts"
   ],
-  "exclude": ["node_modules", ".next", "dist", "build"]
+  "exclude": ["node_modules", ".next", "dist", "build", "vitest.config.ts"]
 }

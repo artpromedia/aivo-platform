@@ -7,7 +7,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import { billingApi, type AuditFilters } from '@/lib/api/billing.api';
+import { billingApi, type VaultAuditFilters } from '@/lib/api/billing.api';
 import { requirePlatformAdmin } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
 
     const searchParams = request.nextUrl.searchParams;
-    const filters: AuditFilters = {};
+    const filters: VaultAuditFilters = {};
 
     const action = searchParams.get('action');
     const licenseId = searchParams.get('licenseId');
@@ -28,9 +28,7 @@ export async function GET(request: NextRequest) {
 
     if (action) filters.action = action;
     if (licenseId) filters.licenseId = licenseId;
-    if (actorId) filters.actorId = actorId;
-    if (startDate) filters.startDate = startDate;
-    if (endDate) filters.endDate = endDate;
+    if (actorId) filters.performedBy = actorId;
     if (limit) filters.limit = parseInt(limit);
     if (offset) filters.offset = parseInt(offset);
 

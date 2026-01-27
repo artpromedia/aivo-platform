@@ -297,11 +297,13 @@ export function clearCSSVariables(): void {
 
   for (let i = 0; i < style.length; i++) {
     const prop = style[i];
-    if (prop.startsWith('--color-') || prop.startsWith('--font-') || prop.startsWith('--space-') ||
-        prop.startsWith('--radius-') || prop.startsWith('--animation-') || prop.startsWith('--shadow-') ||
-        prop.startsWith('--padding-') || prop.startsWith('--line-height-') || prop.startsWith('--icon-') ||
-        prop.startsWith('--theme-') || prop.startsWith('--touch-') || prop.startsWith('--hover-') ||
-        prop.startsWith('--press-') || prop.startsWith('--letter-') || prop.startsWith('--spacing-')) {
+    if (prop && (
+      prop.startsWith('--color-') || prop.startsWith('--font-') || prop.startsWith('--space-') ||
+      prop.startsWith('--radius-') || prop.startsWith('--animation-') || prop.startsWith('--shadow-') ||
+      prop.startsWith('--padding-') || prop.startsWith('--line-height-') || prop.startsWith('--icon-') ||
+      prop.startsWith('--theme-') || prop.startsWith('--touch-') || prop.startsWith('--hover-') ||
+      prop.startsWith('--press-') || prop.startsWith('--letter-') || prop.startsWith('--spacing-')
+    )) {
       toRemove.push(prop);
     }
   }

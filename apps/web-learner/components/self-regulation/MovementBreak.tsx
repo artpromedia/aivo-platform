@@ -259,7 +259,7 @@ export function MovementBreak({
   // ============================================================================
 
   if (phase === 'rest') {
-    const nextMovement = movements[currentIndex + 1];
+    const nextMovementData = movements[currentIndex + 1];
 
     return (
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 max-w-md mx-auto text-center">
@@ -272,16 +272,16 @@ export function MovementBreak({
         </p>
 
         {/* Next movement preview */}
-        {nextMovement && (
+        {nextMovementData && (
           <div className="p-4 bg-white rounded-lg mb-6">
             <p className="text-sm text-slate-500 mb-2">Up next:</p>
             <div className="flex items-center justify-center gap-3">
               <span className="text-3xl">
-                {MOVEMENT_EMOJIS[nextMovement.id] || '🏃'}
+                {MOVEMENT_EMOJIS[nextMovementData.id] || '🏃'}
               </span>
               <div className="text-left">
-                <p className="font-medium text-slate-900">{nextMovement.name}</p>
-                <p className="text-sm text-slate-600">{nextMovement.durationSeconds}s</p>
+                <p className="font-medium text-slate-900">{nextMovementData.name}</p>
+                <p className="text-sm text-slate-600">{nextMovementData.durationSeconds}s</p>
               </div>
             </div>
           </div>
@@ -295,7 +295,7 @@ export function MovementBreak({
             Skip
           </button>
           <button
-            onClick={nextMovement ? nextMovement : onComplete}
+            onClick={nextMovementData ? nextMovement : onComplete}
             className="flex-1 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600"
           >
             {gradeBand === 'K5' ? 'Go!' : 'Continue'}

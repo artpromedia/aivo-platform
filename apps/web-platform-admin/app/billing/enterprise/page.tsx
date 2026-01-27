@@ -82,8 +82,8 @@ export default function EnterpriseSalesPage() {
     error: pipelineError,
   } = useSalesPipeline();
 
-  const customers = customersData?.items ?? [];
-  const deals = dealsData?.items ?? [];
+  const customers = customersData?.data ?? [];
+  const deals = dealsData?.data ?? [];
   const analytics: PipelineAnalytics = pipelineData ?? {
     dealsByStatus: [],
     totals: { pipelineValueCents: 0, wonValueCents: 0, activeArrCents: 0 },

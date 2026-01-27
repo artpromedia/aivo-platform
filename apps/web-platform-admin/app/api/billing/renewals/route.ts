@@ -7,8 +7,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import { billingApi, type RenewalFilters } from '@/lib/api/billing.api';
+import { billingApi, type RenewalFilters, type RenewalStatus } from '@/lib/api/billing.api';
 import { requirePlatformAdmin } from '@/lib/auth';
+
+const validRenewalStatuses: RenewalStatus[] = ['SCHEDULED', 'DUE', 'IN_PROGRESS', 'COMPLETED', 'NOT_RENEWING', 'CHURNED'];
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +28,9 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
 
-    if (status) filters.status = status as RenewalFilters['status'];
+    if (status && validRenewalStatuses.includes(status as RenewalStatus)) {
+      filters.status = status as RenewalStatus;
+    }
     if (tenantId) filters.tenantId = tenantId;
     if (dueBefore) filters.dueBefore = dueBefore;
     if (dueAfter) filters.dueAfter = dueAfter;

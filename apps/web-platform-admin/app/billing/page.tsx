@@ -67,9 +67,9 @@ export default function BillingDashboardPage() {
   const rejectPOMutation = useRejectPO();
   const processRenewalMutation = useProcessRenewal();
 
-  const quotes = quotesData?.items ?? [];
-  const pos = posData?.items ?? [];
-  const renewals = renewalsData?.items ?? [];
+  const quotes = quotesData?.data ?? [];
+  const pos = posData?.data ?? [];
+  const renewals = renewalsData?.data ?? [];
 
   // Calculate stats from real data
   const activeQuotes = quotes.filter((q: Quote) => ['DRAFT', 'SENT'].includes(q.status)).length;
@@ -154,7 +154,7 @@ export default function BillingDashboardPage() {
         <div className="rounded-lg border bg-white p-4">
           <div className="text-sm text-slate-600">Total Pipeline</div>
           <div className="text-2xl font-bold text-green-600">
-            {formatCurrency(summaryData?.totalPipelineCents ?? totalPipeline)}
+            {formatCurrency(summaryData?.totalPipelineValueCents ?? totalPipeline)}
           </div>
           <div className="text-xs text-slate-500">Accepted quotes</div>
         </div>
@@ -312,7 +312,7 @@ export default function BillingDashboardPage() {
                           <>
                             <button
                               onClick={() => {
-                                approvePOMutation.mutate(po.id);
+                                approvePOMutation.mutate({ id: po.id });
                               }}
                               disabled={approvePOMutation.isPending}
                               className="text-sm text-green-600 hover:underline disabled:opacity-50"
@@ -321,7 +321,7 @@ export default function BillingDashboardPage() {
                             </button>
                             <button
                               onClick={() => {
-                                rejectPOMutation.mutate({ id: po.id, reason: 'Rejected by admin' });
+                                rejectPOMutation.mutate({ id: po.id, data: { reviewNotes: 'Rejected by admin' } });
                               }}
                               disabled={rejectPOMutation.isPending}
                               className="text-sm text-red-600 hover:underline disabled:opacity-50"

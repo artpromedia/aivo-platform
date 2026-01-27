@@ -130,7 +130,7 @@ describe('Authoring API Client', () => {
 
       expect(fetch).toHaveBeenCalled();
       expect(result.data).toHaveLength(1);
-      expect(result.data[0].title).toBe('Test LO');
+      expect(result.data[0]?.title).toBe('Test LO');
     });
 
     it('throws error on failed request', async () => {
@@ -207,7 +207,7 @@ describe('Authoring API Client', () => {
           method: 'PATCH',
         })
       );
-      expect(result.contentJson.passageText).toBe('Updated text');
+      expect(result.contentJson?.passageText).toBe('Updated text');
     });
   });
 

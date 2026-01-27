@@ -230,6 +230,7 @@ export function OfflineBanner({
         clearTimeout(timer);
       };
     }
+    return undefined;
   }, [isOnline, wasOffline]);
 
   if (isDismissed) {

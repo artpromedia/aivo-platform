@@ -16,11 +16,12 @@ export async function GET(request: NextRequest) {
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
 
     const searchParams = request.nextUrl.searchParams;
-    const months = searchParams.get('months');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
-    const response = await billingApi.getMRRHistory(months ? parseInt(months) : undefined, {
-      accessToken,
-    });
+    const range = startDate && endDate ? { startDate, endDate } : undefined;
+
+    const response = await billingApi.getMRRHistory(range, { accessToken });
     return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch MRR history:', error);

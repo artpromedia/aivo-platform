@@ -32,7 +32,7 @@ export interface LearningCardProps {
   /** Lesson data */
   lesson: LearningLesson;
   /** Callback when clicked */
-  onClick?: (lessonId: string, courseId: string) => void;
+  onClick?: ((lessonId: string, courseId: string) => void) | undefined;
   /** Additional CSS classes */
   className?: string;
 }

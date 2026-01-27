@@ -80,7 +80,7 @@ describe('AdaptiveConditionBuilder', () => {
   let AdaptiveConditionBuilder: any;
 
   beforeEach(async () => {
-    const module = await import('../../components/builder/AdaptiveConditionBuilder');
+    const module = await import('../AdaptiveConditionBuilder');
     AdaptiveConditionBuilder = module.AdaptiveConditionBuilder;
   });
 
@@ -151,7 +151,7 @@ describe('SortableBlock', () => {
   let SortableBlock: any;
 
   beforeEach(async () => {
-    const module = await import('../../components/builder/SortableBlock');
+    const module = await import('../SortableBlock');
     SortableBlock = module.SortableBlock;
   });
 
@@ -334,7 +334,7 @@ describe('PreviewModal', () => {
   let PreviewModal: any;
 
   beforeEach(async () => {
-    const module = await import('../../components/builder/PreviewModal');
+    const module = await import('../PreviewModal');
     PreviewModal = module.PreviewModal;
   });
 
@@ -501,7 +501,7 @@ describe('VersionHistoryPanel', () => {
       },
     }));
 
-    const module = await import('../../components/builder/VersionHistoryPanel');
+    const module = await import('../VersionHistoryPanel');
     VersionHistoryPanel = module.VersionHistoryPanel;
   });
 

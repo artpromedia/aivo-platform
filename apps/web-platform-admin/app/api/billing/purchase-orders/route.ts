@@ -7,8 +7,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import { billingApi, type POFilters } from '@/lib/api/billing.api';
+import { billingApi, type POFilters, type POStatus } from '@/lib/api/billing.api';
 import { requirePlatformAdmin } from '@/lib/auth';
+
+const validPOStatuses: POStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'CLOSED', 'CANCELLED'];
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +27,9 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
 
-    if (status) filters.status = status as POFilters['status'];
+    if (status && validPOStatuses.includes(status as POStatus)) {
+      filters.status = status as POStatus;
+    }
     if (tenantId) filters.tenantId = tenantId;
     if (billingAccountId) filters.billingAccountId = billingAccountId;
     if (search) filters.search = search;

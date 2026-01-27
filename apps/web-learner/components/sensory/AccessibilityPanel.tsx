@@ -227,7 +227,7 @@ export function AccessibilityPanel({
 
     if (setting.options) {
       const option = setting.options.find(opt => opt.value === value)
-      return option?.label || value
+      return option?.label || String(value)
     }
 
     return String(value)

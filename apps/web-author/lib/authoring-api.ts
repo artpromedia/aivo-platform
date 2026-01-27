@@ -19,6 +19,9 @@ import type {
   VersionTransition,
 } from './types';
 
+// Re-export types for convenience
+export type { PaginatedResponse } from './types';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════════════════════════

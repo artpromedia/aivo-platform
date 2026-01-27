@@ -89,7 +89,7 @@ export default function LicenseVaultPage() {
     isLoading: licensesLoading,
     error: licensesError,
   } = useVaultLicenses({});
-  const { data: codesData, isLoading: codesLoading, error: codesError } = useVaultCodes({});
+  const { data: codesData, isLoading: codesLoading, error: codesError } = useVaultCodes();
   const { data: auditData, isLoading: auditLoading, error: auditError } = useVaultAuditLogs({});
 
   // Mutations
@@ -98,9 +98,9 @@ export default function LicenseVaultPage() {
   const revokeLicenseMutation = useRevokeLicense();
   const revokeCodeMutation = useRevokeCode();
 
-  const licenses = licensesData?.items ?? [];
-  const codes = codesData?.items ?? [];
-  const auditLogs = auditData?.items ?? [];
+  const licenses = licensesData?.data ?? [];
+  const codes = codesData ?? [];
+  const auditLogs = auditData?.data ?? [];
 
   // Filter licenses
   const filteredLicenses = licenses.filter((license: VaultLicense) => {

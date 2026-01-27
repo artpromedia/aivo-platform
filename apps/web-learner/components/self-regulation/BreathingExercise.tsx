@@ -93,10 +93,10 @@ export function BreathingExercise({
   const getNextPhase = useCallback((): { phase: BreathPhase; duration: number } | null => {
     const p = selectedPattern;
     const phases: Array<{ phase: BreathPhase; duration: number }> = [
-      { phase: 'inhale', duration: p.inhaleSeconds },
-      { phase: 'holdIn', duration: p.holdInSeconds },
-      { phase: 'exhale', duration: p.exhaleSeconds },
-      { phase: 'holdOut', duration: p.holdOutSeconds },
+      { phase: 'inhale' as const, duration: p.inhaleSeconds },
+      { phase: 'holdIn' as const, duration: p.holdInSeconds },
+      { phase: 'exhale' as const, duration: p.exhaleSeconds },
+      { phase: 'holdOut' as const, duration: p.holdOutSeconds },
     ].filter((item) => item.duration > 0);
 
     const currentIndex = phases.findIndex((item) => item.phase === currentPhase);
