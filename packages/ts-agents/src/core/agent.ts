@@ -8,19 +8,16 @@ import type {
   AgentContext,
   AgentInput,
   AgentOutput,
-  AgentState,
   AgentEventHandler,
   AgentEvent,
   AgentEventType,
   Memory,
   MemoryType,
-  Tool,
   ToolResult,
   Message,
   ToolCall,
-  AgentInputSchema,
-  AgentContextSchema,
 } from './types';
+import { AgentInputSchema, AgentContextSchema } from './types';
 import type { StateManager } from '../state/state-manager';
 import type { MemoryManager } from '../memory/memory-manager';
 import type { ToolRegistry } from '../tools/tool-registry';
@@ -104,7 +101,7 @@ export abstract class Agent {
       await this.conversationManager.addMessage(userMessage);
 
       // Recall relevant memories
-      const memories = await this.memoryManager.recall(validatedInput.message, {
+      await this.memoryManager.recall(validatedInput.message, {
         limit: 10,
       });
       const memoryContext = await this.memoryManager.getRelevantContext(
@@ -165,15 +162,18 @@ export abstract class Agent {
 
           // Add tool results as messages
           for (let i = 0; i < response.toolCalls.length; i++) {
-            const toolMessage: Message = {
-              id: uuid(),
-              role: 'tool',
-              content: JSON.stringify(toolResults[i]),
-              name: response.toolCalls[i].name,
-              toolCallId: response.toolCalls[i].id,
-              timestamp: new Date(),
-            };
-            await this.conversationManager.addMessage(toolMessage);
+            const toolCall = response.toolCalls[i];
+            if (toolCall) {
+              const toolMessage: Message = {
+                id: uuid(),
+                role: 'tool',
+                content: JSON.stringify(toolResults[i]),
+                name: toolCall.name,
+                toolCallId: toolCall.id,
+                timestamp: new Date(),
+              };
+              await this.conversationManager.addMessage(toolMessage);
+            }
           }
 
           // Continue loop to get final response
@@ -273,7 +273,7 @@ export abstract class Agent {
    */
   protected async executeToolCalls(
     toolCalls: ToolCall[],
-    context: AgentContext
+    _context: AgentContext
   ): Promise<ToolResult[]> {
     const results: ToolResult[] = [];
 

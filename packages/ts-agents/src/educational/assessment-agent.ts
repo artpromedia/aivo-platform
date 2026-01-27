@@ -155,8 +155,11 @@ export class AssessmentAgent extends Agent {
       if (!topicScores[question.topic]) {
         topicScores[question.topic] = { score: 0, max: 0 };
       }
-      topicScores[question.topic].score += score;
-      topicScores[question.topic].max += question.points;
+      const topicScore = topicScores[question.topic];
+      if (topicScore) {
+        topicScore.score += score;
+        topicScore.max += question.points;
+      }
 
       // Track skill scores
       for (const skill of question.skills) {
@@ -227,7 +230,7 @@ export class AssessmentAgent extends Agent {
   /**
    * Override run to inject assessment context
    */
-  async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
+  override async run(input: AgentInput, context: AgentContext): Promise<AgentOutput> {
     const enrichedContext: AgentContext = {
       ...context,
       metadata: {

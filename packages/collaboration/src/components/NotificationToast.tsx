@@ -602,23 +602,26 @@ export function useRealtimeNotifications(socket: unknown) {
       off: (event: string, handler: (data: unknown) => void) => void;
     };
 
-    const handleChatMessage = (data: {
-      sender: { name: string; avatar?: string };
-      content: string;
-    }) => {
-      message(data.sender, data.content);
+    const handleChatMessage = (data: unknown) => {
+      const typedData = data as {
+        sender: { name: string; avatar?: string };
+        content: string;
+      };
+      message(typedData.sender, typedData.content);
     };
 
-    const handleActivity = (data: { title: string; message?: string }) => {
-      activity(data.title, { message: data.message });
+    const handleActivity = (data: unknown) => {
+      const typedData = data as { title: string; message?: string };
+      activity(typedData.title, { message: typedData.message });
     };
 
-    const handleNotification = (data: {
-      title: string;
-      message?: string;
-      type?: NotificationType;
-    }) => {
-      notify(data.title, { message: data.message, type: data.type || 'info' });
+    const handleNotification = (data: unknown) => {
+      const typedData = data as {
+        title: string;
+        message?: string;
+        type?: NotificationType;
+      };
+      notify(typedData.title, { message: typedData.message, type: typedData.type || 'info' });
     };
 
     sock.on('chat:message', handleChatMessage);

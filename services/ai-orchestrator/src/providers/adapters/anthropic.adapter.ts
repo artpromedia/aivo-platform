@@ -218,7 +218,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
 
     try {
       const anthropicRequest = this.transformRequest(request);
-      const response = await this.client.messages.create(anthropicRequest);
+      const response = await this.client.messages.create(anthropicRequest) as Anthropic.Message;
 
       const result = this.transformResponse(response);
       this.recordMetrics(startTime, result, request);

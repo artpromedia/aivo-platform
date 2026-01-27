@@ -17,7 +17,7 @@ interface UseActivityOptions {
   socket: Socket | null;
   userId: string;
   scopes: ActivityScope[];
-  scopeIds?: Record<ActivityScope, string>;
+  scopeIds?: Partial<Record<ActivityScope, string>>;
   types?: ActivityType[];
   pageSize?: number;
 }

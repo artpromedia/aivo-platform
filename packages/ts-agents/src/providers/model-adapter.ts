@@ -131,6 +131,12 @@ export class MockModelAdapter extends ModelAdapter {
 
     const response = this.responses[this.currentIndex];
     this.currentIndex = (this.currentIndex + 1) % this.responses.length;
+    if (!response) {
+      return {
+        message: 'Mock response (fallback)',
+        finishReason: 'stop',
+      };
+    }
     return response;
   }
 

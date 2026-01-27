@@ -150,6 +150,7 @@ export class ContextWindowManager {
 
     for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
       const msg = nonSystemMessages[i];
+      if (!msg) continue;
       const msgTokens = this.countMessageTokens(msg);
 
       if (currentTokens + msgTokens > availableTokens) {

@@ -293,6 +293,7 @@ function tokenize(expr: string): string[] {
 
   for (let i = 0; i < expr.length; i++) {
     const char = expr[i];
+    if (!char) continue;
 
     if (/\d|\./.test(char)) {
       current += char;
@@ -302,7 +303,8 @@ function tokenize(expr: string): string[] {
         current = '';
       }
       // Handle negative numbers
-      if (char === '-' && (tokens.length === 0 || /[+\-*/^(]/.test(tokens[tokens.length - 1]))) {
+      const lastToken = tokens[tokens.length - 1] ?? '';
+      if (char === '-' && (tokens.length === 0 || /[+\-*/^(]/.test(lastToken))) {
         current = '-';
       } else {
         tokens.push(char);
@@ -340,19 +342,24 @@ function shuntingYard(tokens: string[]): string[] {
     if (/^-?\d+\.?\d*$/.test(token)) {
       output.push(token);
     } else if (token in precedence) {
+      let topOp = operators[operators.length - 1];
       while (
         operators.length > 0 &&
-        operators[operators.length - 1] !== '(' &&
-        precedence[operators[operators.length - 1]] >= precedence[token]
+        topOp !== '(' &&
+        topOp !== undefined &&
+        (precedence[topOp] ?? 0) >= (precedence[token] ?? 0)
       ) {
-        output.push(operators.pop()!);
+        const popped = operators.pop();
+        if (popped) output.push(popped);
+        topOp = operators[operators.length - 1];
       }
       operators.push(token);
     } else if (token === '(') {
       operators.push(token);
     } else if (token === ')') {
       while (operators.length > 0 && operators[operators.length - 1] !== '(') {
-        output.push(operators.pop()!);
+        const popped = operators.pop();
+        if (popped) output.push(popped);
       }
       operators.pop(); // Remove '('
     }
@@ -397,7 +404,7 @@ function evaluateRPN(tokens: string[]): number {
     }
   }
 
-  return stack[0];
+  return stack[0] ?? 0;
 }
 
 /**

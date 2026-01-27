@@ -194,7 +194,7 @@ export class ToolExecutor {
       const readyToExecute: typeof calls = [];
 
       // Find calls with all dependencies satisfied
-      for (const [id, callInfo] of pending) {
+      for (const [_id, callInfo] of pending) {
         const deps = callInfo.dependsOn || [];
         if (deps.every(dep => completed.has(dep))) {
           readyToExecute.push(callInfo);

@@ -197,7 +197,8 @@ export class StateSerializer {
     const bytes = Buffer.from(data, 'base64');
     const result: string[] = [];
     for (let i = 0; i < bytes.length; i++) {
-      result.push(String.fromCharCode(bytes[i] ^ key.charCodeAt(i % key.length)));
+      const byte = bytes[i] ?? 0;
+      result.push(String.fromCharCode(byte ^ key.charCodeAt(i % key.length)));
     }
     return result.join('');
   }

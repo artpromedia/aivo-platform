@@ -196,12 +196,14 @@ export class ConversationManager {
 
     // Extract key user questions
     const userMessages = messages.filter(m => m.role === 'user');
-    if (userMessages.length > 0) {
-      const firstQuestion = userMessages[0].content.slice(0, 100);
+    const firstUserMessage = userMessages[0];
+    if (firstUserMessage) {
+      const firstQuestion = firstUserMessage.content.slice(0, 100);
       summaryParts.push(`Started with: "${firstQuestion}..."`);
 
-      if (userMessages.length > 1) {
-        const lastQuestion = userMessages[userMessages.length - 1].content.slice(0, 100);
+      const lastUserMessage = userMessages[userMessages.length - 1];
+      if (userMessages.length > 1 && lastUserMessage) {
+        const lastQuestion = lastUserMessage.content.slice(0, 100);
         summaryParts.push(`Most recent query: "${lastQuestion}..."`);
       }
     }
@@ -321,6 +323,7 @@ export class ConversationManager {
 
     for (let i = messages.length - 1; i >= 0 && turnCount < n; i--) {
       const msg = messages[i];
+      if (!msg) continue;
       turns.unshift(msg);
 
       if (msg.role === 'user') {
