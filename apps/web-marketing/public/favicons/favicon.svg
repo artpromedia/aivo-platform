@@ -1,16 +1,31 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="32" height="32" rx="8" fill="#7C3AED"/>
-  
-  <!-- Brain Icon (simplified for small size) -->
-  <g stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(4, 4)">
-    <path d="M12 2 C7 2, 3 6, 3 12 C3 18, 7 22, 12 22 C17 22, 21 18, 21 12 C21 6, 17 2, 12 2Z"/>
-    <path d="M12 2 L12 22"/>
-    <path d="M9 5 C7 7, 6 10, 7 12"/>
-    <path d="M5 8 C4 11, 4 14, 5 17"/>
-    <path d="M8 11 C6 13, 6 16, 8 18"/>
-    <path d="M15 5 C17 7, 18 10, 17 12"/>
-    <path d="M19 8 C20 11, 20 14, 19 17"/>
-    <path d="M16 11 C18 13, 18 16, 16 18"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #915ee3;
+      }
+
+      .cls-2 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="18.5" y1="10.29" x2="24.68" y2="24.46" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#35cbda"/>
+      <stop offset="1" stop-color="#1d95b1"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="5.77" y1="10.16" x2="17.66" y2="28.24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9666e3"/>
+      <stop offset="1" stop-color="#8143e1"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path class="cls-3" d="M20.22,26.27h-3.57v-14.18c0-1.2.97-2.18,2.18-2.18h6.91c1.2,0,2.18.97,2.18,2.18v6.49c0,4.25-3.44,7.69-7.69,7.69Z"/>
+    <path class="cls-2" d="M18.42,26.64l-2.39,5.36-2.55-5.73h-1.7c-4.25,0-7.69-3.44-7.69-7.69v-6.49c0-1.2.97-2.18,2.18-2.18h6.91c1.2,0,2.18.97,2.18,2.18v8.63l.67-1.59,2.42,5.77c.23.56.23,1.18-.02,1.73Z"/>
   </g>
+  <path class="cls-1" d="M20.23,4.23c0,2.33-1.89,4.23-4.23,4.23s-4.23-1.89-4.23-4.23S13.67,0,16,0s4.23,1.89,4.23,4.23Z"/>
 </svg>
