@@ -6,7 +6,7 @@ fastapi==0.115.0
 uvicorn[standard]==0.32.0
 
 # Data validation
-pydantic==2.9.0
+pydantic>=2.9.2
 pydantic-settings==2.5.0
 
 # Redis async client

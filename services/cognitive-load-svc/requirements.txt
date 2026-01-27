@@ -6,16 +6,16 @@ uvicorn>=0.24.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
-# Biometric/Signal Processing (optional - for advanced features)
-scipy>=1.11.0
-# heartpy>=1.2.3  # Uncomment for heart rate analysis
-# neurokit2>=0.2.0  # Uncomment for advanced biometric processing
+# Biometric/Signal Processing
+scipy>=1.12.0
+heartpy>=1.2.3
+neurokit2>=0.2.0
 
 # Text Analysis
 textstat>=0.7.3
 spacy>=3.7.0
-# transformers>=4.35.0  # Uncomment for advanced NLP
-# torch>=2.1.0  # Uncomment for ML models
+transformers>=4.40.0
+torch>=2.2.0
 
 # Utilities
 numpy>=1.24.0
