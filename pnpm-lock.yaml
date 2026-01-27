@@ -288,6 +288,9 @@ importers:
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@testing-library/user-event':
+        specifier: ^14.5.2
+        version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/node':
         specifier: ^22.7.5
         version: 22.19.1
@@ -501,6 +504,9 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@testing-library/jest-dom':
+        specifier: ^6.6.3
+        version: 6.9.1
       '@testing-library/react':
         specifier: ^16.3.1
         version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -522,6 +528,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.22(postcss@8.5.6)
+      jsdom:
+        specifier: ^26.0.0
+        version: 26.1.0
       postcss:
         specifier: ^8.5.4
         version: 8.5.6
@@ -707,6 +716,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.22(postcss@8.5.6)
+      jsdom:
+        specifier: ^26.0.0
+        version: 26.1.0
       postcss:
         specifier: ^8.4.49
         version: 8.5.6

@@ -19,6 +19,7 @@ export default [
       "**/generated/**",
       "**/*.bak/**",
       "**/*.bak",
+      "**/.venv/**",
       "libs/billing-access/**",
       "libs/billing-common/**",
       "libs/ts-rbac/src/**/*.js",
