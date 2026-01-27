@@ -14,7 +14,7 @@ export async function GET() {
     const session = await requirePlatformAdmin();
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
 
-    const response = await billingApi.getRevenueMetrics({ accessToken });
+    const response = await billingApi.getRevenueMetrics(undefined, { accessToken });
     return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch revenue metrics:', error);

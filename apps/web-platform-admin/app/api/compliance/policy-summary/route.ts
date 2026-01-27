@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 
-import { CachePresets } from '@aivo/caching';
-
 import { getActivePolicySummary } from '../../../../lib/compliance-api';
 import { requirePlatformAdmin } from '../../../../lib/auth';
+
+// Cache control presets (inlined to avoid build issues with @aivo/caching)
+const CachePresets = {
+  privateMedium: {
+    'Cache-Control': 'private, max-age=300, stale-while-revalidate=60',
+  },
+} as const;
 
 export async function GET() {
   try {

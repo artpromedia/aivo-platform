@@ -98,7 +98,7 @@ export default function PilotsPage() {
   const convertPilotMutation = useConvertPilot();
   const cancelPilotMutation = useCancelPilot();
 
-  const pilots = pilotsData?.items ?? [];
+  const pilots = pilotsData?.data ?? [];
   const stats: PilotStats | null = statsData ?? null;
   const isLoading = pilotsLoading || statsLoading;
 
@@ -152,13 +152,13 @@ export default function PilotsPage() {
   const handleExtendPilot = async (pilotId: string) => {
     const days = prompt('Enter number of days to extend:');
     if (days && !Number.isNaN(Number(days))) {
-      extendPilotMutation.mutate({ id: pilotId, days: Number(days) });
+      extendPilotMutation.mutate({ id: pilotId, data: { additionalDays: Number(days) } });
     }
   };
 
   const handleConvertPilot = async (pilotId: string) => {
     if (confirm('Convert this pilot to a paid contract? This action cannot be undone.')) {
-      convertPilotMutation.mutate(pilotId);
+      convertPilotMutation.mutate({ id: pilotId });
     }
   };
 

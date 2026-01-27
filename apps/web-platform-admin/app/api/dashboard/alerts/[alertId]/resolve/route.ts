@@ -20,7 +20,7 @@ export async function POST(
     const { resolution } = body;
 
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
-    const alert = await resolveAlert(alertId, { resolution }, accessToken);
+    const alert = await resolveAlert(accessToken, alertId, resolution);
 
     return NextResponse.json(alert);
   } catch (error) {

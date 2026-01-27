@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="en" data-grade-theme="navigator">
       <body className="min-h-screen bg-background text-text antialiased">
         <RootProviders>
-          <GradeThemeProvider initialTheme="navigator">
+          <GradeThemeProvider gradeLevel="MS">
             <AccessibilityProvider>
               <AuthProvider initialAuth={initialAuth}>
                 <EducatorModeProvider>

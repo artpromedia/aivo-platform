@@ -221,9 +221,9 @@ function parseColor(color: string): { r: number; g: number; b: number } | null {
     const hex = color.slice(1);
     if (hex.length === 3) {
       return {
-        r: Number.parseInt(hex[0] + hex[0], 16),
-        g: Number.parseInt(hex[1] + hex[1], 16),
-        b: Number.parseInt(hex[2] + hex[2], 16),
+        r: Number.parseInt(hex[0]! + hex[0]!, 16),
+        g: Number.parseInt(hex[1]! + hex[1]!, 16),
+        b: Number.parseInt(hex[2]! + hex[2]!, 16),
       };
     }
     if (hex.length === 6) {
@@ -237,7 +237,7 @@ function parseColor(color: string): { r: number; g: number; b: number } | null {
 
   // Handle rgb/rgba
   const rgbMatch = /rgba?\((\d+),\s*(\d+),\s*(\d+)/i.exec(color);
-  if (rgbMatch) {
+  if (rgbMatch && rgbMatch[1] && rgbMatch[2] && rgbMatch[3]) {
     return {
       r: Number.parseInt(rgbMatch[1], 10),
       g: Number.parseInt(rgbMatch[2], 10),

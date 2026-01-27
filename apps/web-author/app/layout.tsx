@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" data-grade-theme="G6_8">
       <body className="min-h-screen bg-background text-text antialiased">
-        <GradeThemeProvider initialTheme="navigator">
+        <GradeThemeProvider gradeLevel="MS">
           <AccessibilityProvider>
             <AuthProvider initialAuth={initialAuth}>
               <ToastProvider>

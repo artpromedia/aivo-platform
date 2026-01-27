@@ -16,7 +16,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
     const { id } = await params;
 
-    const response = await billingApi.revokeCode(id, { accessToken });
+    const body = await request.json().catch(() => ({})) as { reason?: string };
+    const reason = body.reason || 'Revoked by admin';
+
+    const response = await billingApi.revokeCode(id, reason, { accessToken });
     return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to revoke code:', error);

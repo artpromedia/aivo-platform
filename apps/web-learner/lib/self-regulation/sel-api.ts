@@ -276,11 +276,12 @@ function getLocalRecommendations(
     progressive: { name: 'Progressive Relaxation', description: 'Relax your body one part at a time' },
   };
 
-  const recommendedTypes = currentMood && moodActivities[currentMood.toLowerCase()]
-    ? moodActivities[currentMood.toLowerCase()]
-    : ['breathing', 'grounding', 'movement'];
+  const defaultTypes: ActivityType[] = ['breathing', 'grounding', 'movement'];
+  const recommendedTypes: ActivityType[] = currentMood && moodActivities[currentMood.toLowerCase()]
+    ? moodActivities[currentMood.toLowerCase()]!
+    : defaultTypes;
 
-  return recommendedTypes.slice(0, limit).map((type, index) => ({
+  return recommendedTypes.slice(0, limit).map((type: ActivityType, index) => ({
     activity: {
       id: `local-${type}`,
       name: activityInfo[type].name,

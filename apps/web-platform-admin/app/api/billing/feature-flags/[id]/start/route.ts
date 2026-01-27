@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
     const { id } = await params;
 
-    const response = await billingApi.startExperiment(id, { accessToken });
+    const response = await billingApi.startFeatureFlag(id, { accessToken });
     return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to start experiment:', error);

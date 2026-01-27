@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, useReducer, type ReactNode } from 'react';
 
 import type {
   FocusLossReason,
@@ -242,10 +242,7 @@ interface FocusProviderProps {
 
 export function FocusProvider({ children, initialConfig }: FocusProviderProps) {
   const [state, dispatch] = useReducer(focusReducer, initialState);
-  const [config, setConfigState] = useReducer(
-    (_: FocusSessionConfig | null, newConfig: FocusSessionConfig) => newConfig,
-    initialConfig ?? null
-  );
+  const [config, setConfigState] = useState<FocusSessionConfig | null>(initialConfig ?? null);
 
   const actions = useMemo(
     () => ({

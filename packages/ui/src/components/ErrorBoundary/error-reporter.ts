@@ -13,9 +13,9 @@
 
 export interface ErrorContext {
   /** Component stack from React error boundary */
-  componentStack?: string;
+  componentStack?: string | undefined;
   /** Name of the error boundary that caught this error */
-  boundaryName?: string;
+  boundaryName?: string | undefined;
   /** Additional tags for categorization */
   tags?: Record<string, string>;
   /** Extra context data */

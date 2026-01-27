@@ -108,7 +108,7 @@ export function AssessmentFlow({
   }
 
   // Render questions
-  if (phase === 'domain_questions' && currentQuestion) {
+  if (phase === 'domain_questions' && currentQuestion && currentDomain) {
     return (
       <div className={cn('mx-auto max-w-xl', className)}>
         <QuestionRenderer
@@ -123,7 +123,7 @@ export function AssessmentFlow({
   }
 
   // Render game break
-  if (phase === 'game_break') {
+  if (phase === 'game_break' && currentBreak) {
     const remainingDomains = domains.length - currentDomainIndex - 1;
     return (
       <div className={cn('mx-auto max-w-xl', className)}>
