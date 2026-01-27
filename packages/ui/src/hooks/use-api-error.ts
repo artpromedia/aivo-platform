@@ -9,10 +9,14 @@
  * Sprint 4.2: Comprehensive Error Boundaries
  */
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useRef } from 'react';
 
 import { reportError, addBreadcrumb } from '../components/ErrorBoundary';
+
+// Router interface for dependency injection (avoids direct next/navigation import)
+interface RouterLike {
+  push: (path: string) => void;
+}
 
 // =============================================================================
 // Types
@@ -44,6 +48,8 @@ export interface UseApiErrorOptions {
   loginPath?: string;
   /** Whether to report errors */
   reportErrors?: boolean;
+  /** Router instance (for navigation on auth errors) */
+  router?: RouterLike;
 }
 
 export interface UseApiErrorReturn {
@@ -91,9 +97,9 @@ export function useApiError(
     onForbidden,
     loginPath = '/login',
     reportErrors = true,
+    router,
   } = options;
 
-  const router = useRouter();
   const lastErrorRef = useRef<string | null>(null);
   const lastErrorTimeRef = useRef<number>(0);
 
@@ -201,7 +207,7 @@ export function useApiError(
           case 401:
             if (onUnauthorized) {
               onUnauthorized();
-            } else {
+            } else if (router) {
               // Default: redirect to login
               router.push(loginPath);
             }
