@@ -134,7 +134,18 @@ const icons = {
   ),
 };
 
-interface CollaborativeEditorProps {
+/**
+ * Information about a collaborator in the editor
+ */
+export interface CollaboratorInfo {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  color: string;
+}
+
+export interface CollaborativeEditorProps {
   documentId: string;
   roomId: string;
   currentUserId: string;

@@ -45,7 +45,7 @@ export interface CommentPosition {
   elementId?: string;
 }
 
-interface CommentThreadProps {
+export interface CommentThreadProps {
   comments: Comment[];
   currentUserId: string;
   onAddComment: (content: string, parentId?: string) => void;

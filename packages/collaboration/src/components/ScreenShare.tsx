@@ -20,7 +20,7 @@ export interface ScreenShareUser {
   avatarUrl?: string;
 }
 
-interface ScreenShareProps {
+export interface ScreenShareProps {
   roomId: string;
   currentUserId: string;
   currentUserName: string;
@@ -31,6 +31,12 @@ interface ScreenShareProps {
   onViewerLeave?: (userId: string) => void;
   socket?: unknown; // Socket.io socket for signaling
 }
+
+/** Quality settings for screen sharing */
+export type ShareQuality = 'low' | 'medium' | 'high' | 'auto';
+
+/** State of the screen share */
+export type ShareState = 'idle' | 'requesting' | 'sharing' | 'viewing' | 'error';
 
 type ShareStatus = 'idle' | 'requesting' | 'sharing' | 'viewing' | 'error';
 

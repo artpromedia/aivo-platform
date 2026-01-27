@@ -1,4 +1,4 @@
-import type { AxeResults, Result, NodeResult, RunOptions, Spec } from 'axe-core';
+import type { AxeResults, Result, NodeResult, RunOptions } from 'axe-core';
 
 export interface AxeConfig {
   rules?: Record<string, { enabled: boolean }>;

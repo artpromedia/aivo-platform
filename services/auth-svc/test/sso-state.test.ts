@@ -17,6 +17,7 @@ vi.mock('../src/lib/redis/client.js', () => ({
 // Set up test environment
 process.env.NODE_ENV = 'development';
 process.env.SSO_DEV_INSECURE_MODE = 'true';
+process.env.SSO_STATE_ENCRYPTION_KEY = 'test-encryption-key-must-be-at-least-32-characters-long';
 
 describe('SSO State Management', () => {
   beforeEach(() => {

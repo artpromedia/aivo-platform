@@ -75,9 +75,16 @@ vi.mock('../src/prisma.js', () => ({
 // Test Fixtures
 // ============================================================================
 
+// Use valid UUIDs for schema validation
+const TEST_BILLING_ACCOUNT_ID = '550e8400-e29b-41d4-a716-446655440000';
+const TEST_INVOICE_ID = '550e8400-e29b-41d4-a716-446655440001';
+const TEST_SUBSCRIPTION_ID = '550e8400-e29b-41d4-a716-446655440002';
+const TEST_TENANT_ID = '550e8400-e29b-41d4-a716-446655440003';
+const TEST_EVENT_ID = '550e8400-e29b-41d4-a716-446655440004';
+
 const mockBillingAccount = {
-  id: 'ba-123',
-  tenantId: 'tenant-123',
+  id: TEST_BILLING_ACCOUNT_ID,
+  tenantId: TEST_TENANT_ID,
   accountType: BillingAccountType.PARENT_CONSUMER,
   displayName: 'Test Family',
   billingEmail: 'test@example.com',
@@ -86,14 +93,14 @@ const mockBillingAccount = {
   createdAt: new Date('2024-01-15'),
   subscriptions: [
     {
-      id: 'sub-1',
+      id: TEST_SUBSCRIPTION_ID,
       status: SubscriptionStatus.ACTIVE,
       currentPeriodEnd: new Date('2025-01-15'),
     },
   ],
   invoices: [
     {
-      id: 'inv-1',
+      id: TEST_INVOICE_ID,
       status: InvoiceStatus.PAID,
       amountDueCents: 2999,
       amountPaidCents: 2999,
@@ -103,10 +110,10 @@ const mockBillingAccount = {
 };
 
 const mockInvoice = {
-  id: 'inv-123',
+  id: TEST_INVOICE_ID,
   invoiceNumber: 'INV-2024-00001',
   providerInvoiceId: 'in_test123',
-  billingAccountId: 'ba-123',
+  billingAccountId: TEST_BILLING_ACCOUNT_ID,
   status: InvoiceStatus.OPEN,
   amountDueCents: 2999,
   amountPaidCents: 0,
@@ -118,13 +125,13 @@ const mockInvoice = {
   paidAt: null,
   metadataJson: null,
   billingAccount: {
-    id: 'ba-123',
+    id: TEST_BILLING_ACCOUNT_ID,
     displayName: 'Test Family',
     accountType: BillingAccountType.PARENT_CONSUMER,
   },
   lineItems: [
     {
-      id: 'li-1',
+      id: '550e8400-e29b-41d4-a716-446655440005',
       description: 'Monthly Subscription',
       amountCents: 2999,
       quantity: 1,
@@ -133,13 +140,13 @@ const mockInvoice = {
 };
 
 const mockPaymentEvent = {
-  id: 'event-123',
+  id: TEST_EVENT_ID,
   provider: PaymentProvider.STRIPE,
   eventType: 'invoice.paid',
   providerEventId: 'evt_test123',
-  billingAccountId: 'ba-123',
+  billingAccountId: TEST_BILLING_ACCOUNT_ID,
   subscriptionId: null,
-  invoiceId: 'inv-123',
+  invoiceId: TEST_INVOICE_ID,
   processedAt: new Date(),
   error: null,
   createdAt: new Date(),
@@ -312,7 +319,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/invoices?billingAccountId=ba-123',
+        url: `/invoices?billingAccountId=${TEST_BILLING_ACCOUNT_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -325,7 +332,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/invoices/inv-123',
+        url: `/invoices/${TEST_INVOICE_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -338,7 +345,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/invoices/inv-nonexistent',
+        url: '/invoices/550e8400-e29b-41d4-a716-000000000000',
       });
 
       expect(response.statusCode).toBe(404);
@@ -355,7 +362,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/invoices/inv-123/void',
+        url: `/invoices/${TEST_INVOICE_ID}/void`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -371,7 +378,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/invoices/inv-123/void',
+        url: `/invoices/${TEST_INVOICE_ID}/void`,
       });
 
       expect(response.statusCode).toBe(400);
@@ -383,7 +390,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'POST',
-        url: '/invoices/inv-nonexistent/void',
+        url: '/invoices/550e8400-e29b-41d4-a716-000000000000/void',
       });
 
       expect(response.statusCode).toBe(404);
@@ -437,7 +444,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/payment-events/event-123',
+        url: `/payment-events/${TEST_EVENT_ID}`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -451,7 +458,7 @@ describe('FinOps Routes', () => {
 
       const response = await app.inject({
         method: 'GET',
-        url: '/payment-events/event-nonexistent',
+        url: '/payment-events/550e8400-e29b-41d4-a716-000000000001',
       });
 
       expect(response.statusCode).toBe(404);
