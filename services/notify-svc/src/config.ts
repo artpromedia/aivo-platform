@@ -6,6 +6,9 @@ export const config = {
   host: process.env.HOST ?? '0.0.0.0',
   nodeEnv: process.env.NODE_ENV ?? 'development',
   databaseUrl: process.env.DATABASE_URL ?? '',
+
+  // Application URL for links in notifications
+  appUrl: process.env.APP_URL ?? process.env.BASE_URL ?? 'https://app.aivo.io',
   
   // NATS
   nats: {

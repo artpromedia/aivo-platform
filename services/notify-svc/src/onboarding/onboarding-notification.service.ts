@@ -138,6 +138,7 @@ export async function notifyParentBaselineComplete(
         to: payload.parentPhone,
         body: smsBody,
         tenantId: payload.tenantId,
+        type: 'TRANSACTIONAL',
       });
       smsSent = true;
 
@@ -247,6 +248,7 @@ export async function notifyParentLearnerAppDownload(
         to: payload.parentPhone,
         body: smsBody,
         tenantId: payload.tenantId,
+        type: 'TRANSACTIONAL',
       });
       smsSent = true;
 

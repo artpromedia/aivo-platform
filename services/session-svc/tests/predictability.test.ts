@@ -174,7 +174,7 @@ describe('Session Structure', () => {
       expect(progress.completed).toBe(2);
       expect(progress.total).toBe(4);
       expect(progress.percentage).toBe(50);
-      expect(progress.remainingMinutes).toBe(25); // current + upcoming
+      expect(progress.remainingMinutes).toBe(15); // current + upcoming (10 + 5)
       expect(progress.currentItem?.id).toBe('3');
     });
   });
@@ -382,8 +382,8 @@ describe('Routine Manager', () => {
   describe('validateRoutineSteps', () => {
     it('should validate valid steps', () => {
       const steps = [
-        { type: 'greeting', durationSeconds: 10 },
-        { type: 'breathing', durationSeconds: 20 },
+        { id: '1', type: 'greeting', title: 'Welcome', instruction: 'Say hello', durationSeconds: 10 },
+        { id: '2', type: 'breathing', title: 'Breathe', instruction: 'Take a deep breath', durationSeconds: 20 },
       ];
       const result = validateRoutineSteps(steps);
       expect(result.valid).toBe(true);

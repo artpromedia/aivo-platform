@@ -159,6 +159,7 @@ export interface ParentNotificationPreferencesData {
   id: string;
   parentId: string;
   learnerId: string;
+  learnerName?: string;
   tenantId: string;
 
   // Global settings

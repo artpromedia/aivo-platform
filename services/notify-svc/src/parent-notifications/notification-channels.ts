@@ -134,7 +134,7 @@ export class PushChannel implements NotificationChannel {
           notificationId: content.notificationId ?? '',
           ...(content.deepLink ? { deepLink: content.deepLink } : {}),
         },
-        sound: content.urgency === 'critical' ? 'urgent.wav' : 'default',
+        sound: content.urgency === 'CRITICAL' ? 'urgent.wav' : 'default',
         channelId: this.getAndroidChannelId(content.urgency),
       };
 

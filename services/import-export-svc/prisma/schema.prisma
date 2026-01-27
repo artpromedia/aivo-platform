@@ -393,3 +393,144 @@ model ContentMappingRule {
   @@index([sourceFormat, sourceType])
   @@map("content_mapping_rules")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTENT MODELS (for export functionality)
+// These models represent content from content-svc that can be exported
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Lesson {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  title       String
+  name        String?
+  description String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  blocks      ContentBlock[]
+  metadata    ContentMetadata?
+  course      Course?   @relation(fields: [courseId], references: [id])
+  courseId    String?   @map("course_id")
+
+  @@index([tenantId])
+  @@map("lessons")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  title       String
+  name        String?
+  description String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lessons     Lesson[]
+  metadata    ContentMetadata?
+
+  @@index([tenantId])
+  @@map("courses")
+}
+
+model Assessment {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  title       String
+  name        String?
+  description String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  questions   Question[]
+  metadata    ContentMetadata?
+
+  @@index([tenantId])
+  @@map("assessments")
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  assessmentId  String?  @map("assessment_id")
+  type          String   // multiple_choice, true_false, fill_blank, etc.
+  content       Json
+  options       Json?
+  answer        Json?
+  points        Int      @default(1)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  assessment    Assessment? @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([assessmentId])
+  @@map("questions")
+}
+
+model ContentBlock {
+  id        String   @id @default(uuid())
+  lessonId  String   @map("lesson_id")
+  type      String   // text, image, video, audio, interactive, etc.
+  content   Json
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("content_blocks")
+}
+
+model ContentMetadata {
+  id            String      @id @default(uuid())
+  lessonId      String?     @unique @map("lesson_id")
+  courseId      String?     @unique @map("course_id")
+  assessmentId  String?     @unique @map("assessment_id")
+  keywords      String[]    @default([])
+  standards     Json        @default("[]")
+  accessibility Json        @default("{}")
+  lom           Json        @default("{}") // Learning Object Metadata (IEEE LOM)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  lesson        Lesson?     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course        Course?     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assessment    Assessment? @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("content_metadata")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// xAPI STATE (for tracking learner state across sessions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model XapiState {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  agentId       String   @map("agent_id")
+  activityId    String   @map("activity_id")
+  stateId       String   @map("state_id")
+  registration  String?
+  content       Json
+  contentType   String   @default("application/json") @map("content_type")
+  etag          String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, agentId, activityId, stateId, registration])
+  @@index([tenantId])
+  @@index([agentId, activityId])
+  @@map("xapi_states")
+}

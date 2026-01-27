@@ -54,6 +54,10 @@ export interface SendEmailOptions {
   html?: string;
   template?: string;
   templateData?: Record<string, unknown>;
+  /** Template context for Handlebars templates */
+  context?: Record<string, unknown>;
+  /** Tenant ID for multi-tenant support */
+  tenantId?: string;
   attachments?: EmailAttachment[];
   priority?: 'high' | 'normal' | 'low';
   category?: string;

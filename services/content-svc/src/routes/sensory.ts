@@ -153,7 +153,6 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post('/sensory-metadata', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = CreateSensoryMetadataSchema.parse(request.body);
-    // @ts-expect-error - Type mismatch between schema and generated types
     const metadata = await sensoryMetadataService.createSensoryMetadata(body);
     return reply.status(201).send(metadata);
   });
@@ -404,7 +403,6 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post('/sensory-incidents', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = CreateIncidentSchema.parse(request.body);
-    // @ts-expect-error - Type mismatch between schema and generated types
     const incident = await sensoryIncidentService.createSensoryIncident({
       ...body,
       triggerTimestamp: body.triggerTimestamp ? new Date(body.triggerTimestamp) : undefined,
@@ -493,7 +491,6 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
     '/sensory-incidents/:id/resolve',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const body = ResolveIncidentSchema.parse(request.body);
-      // @ts-expect-error - Type mismatch between schema and generated types
       const incident = await sensoryIncidentService.resolveIncident(request.params.id, {
         ...body,
         actionsTaken: body.actionsTaken?.map((a) => ({

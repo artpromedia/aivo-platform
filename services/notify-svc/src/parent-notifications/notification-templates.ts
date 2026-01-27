@@ -59,11 +59,10 @@ const templates: Record<
           ? `${data.learnerName} is currently feeling ${state.toLowerCase()}. The system is providing calming activities.`
           : `${data.learnerName} is feeling ${state.toLowerCase()} during their learning session.`,
         richContent: {
-          emotionalState: {
-            current: data.state as string,
-            previous: data.previousState as string | undefined,
+          emotionalContext: {
+            state: data.state as string,
             intensity,
-            trend: data.trend as string | undefined,
+            trend: (data.trend as string) ?? 'stable',
           },
         },
         deepLink: `aivo://learner/${data.learnerId}/emotional-state`,
@@ -74,15 +73,11 @@ const templates: Record<
       title: `⚠️ ${data.learnerName} shows signs of distress`,
       body: `${data.learnerName} may be approaching a meltdown. Consider checking in or providing a break.`,
       richContent: {
-        emotionalState: {
-          current: 'meltdown_risk',
+        emotionalContext: {
+          state: 'meltdown_risk',
           intensity: (data.intensity as number) ?? 9,
           trend: 'declining',
         },
-        actionButtons: [
-          { label: 'Call School', action: 'call_school' },
-          { label: 'View Details', action: 'view_details' },
-        ],
       },
       deepLink: `aivo://learner/${data.learnerId}/emotional-state`,
     }),
@@ -91,9 +86,9 @@ const templates: Record<
       title: `✨ ${data.learnerName} is recovering`,
       body: `${data.learnerName} is starting to feel calmer after a difficult moment.`,
       richContent: {
-        emotionalState: {
-          current: data.state as string,
-          previous: data.previousState as string | undefined,
+        emotionalContext: {
+          state: (data.state as string) ?? 'recovering',
+          intensity: (data.intensity as number) ?? 3,
           trend: 'improving',
         },
       },
