@@ -13,16 +13,33 @@ export async function GET(request: NextRequest) {
     const session = await requirePlatformAdmin();
 
     const searchParams = request.nextUrl.searchParams;
-    const filters = {
-      serviceId: searchParams.get('serviceId') || undefined,
-      severity: searchParams.get('severity') as 'warning' | 'critical' | undefined,
-      resolved: searchParams.get('resolved') === 'true' ? true : searchParams.get('resolved') === 'false' ? false : undefined,
-      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : undefined,
-      pageSize: searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')!) : undefined,
-    };
+    const severityParam = searchParams.get('severity');
+    const serviceIdParam = searchParams.get('serviceId');
+    const resolvedParam = searchParams.get('resolved');
+
+    const filters: {
+      serviceId?: string;
+      severity?: 'critical' | 'major' | 'minor';
+      resolved?: boolean;
+    } = {};
+
+    if (serviceIdParam) {
+      filters.serviceId = serviceIdParam;
+    }
+    if (severityParam === 'critical' || severityParam === 'major' || severityParam === 'minor') {
+      filters.severity = severityParam;
+    }
+    if (resolvedParam === 'true') {
+      filters.resolved = true;
+    } else if (resolvedParam === 'false') {
+      filters.resolved = false;
+    }
+
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
+    const pageSize = searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')!) : undefined;
 
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
-    const incidents = await listHealthIncidents(filters, accessToken);
+    const incidents = await listHealthIncidents(accessToken, filters, page, pageSize);
 
     return NextResponse.json(incidents);
   } catch (error) {

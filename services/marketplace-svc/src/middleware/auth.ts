@@ -87,7 +87,10 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   done();
 };
 
-export const authMiddleware = fp(authPlugin);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const authMiddleware = fp(authPlugin as any, {
+  name: 'auth-middleware',
+});
 
 /**
  * Extract user ID from request - uses JWT subject claim

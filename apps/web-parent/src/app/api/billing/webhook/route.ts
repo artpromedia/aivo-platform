@@ -53,9 +53,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Required for Stripe webhooks - don't parse the body as JSON
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

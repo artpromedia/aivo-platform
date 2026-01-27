@@ -13,10 +13,14 @@ export async function GET(request: NextRequest) {
     const session = await requirePlatformAdmin();
 
     const searchParams = request.nextUrl.searchParams;
-    const period = searchParams.get('period') as 'day' | 'week' | 'month' || 'month';
+    const periodParam = searchParams.get('period');
+    const period: 'day' | 'week' | 'month' =
+      periodParam === 'day' || periodParam === 'week' || periodParam === 'month'
+        ? periodParam
+        : 'month';
 
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
-    const costs = await getCostBreakdown(period, accessToken);
+    const costs = await getCostBreakdown(accessToken, period);
 
     return NextResponse.json(costs);
   } catch (error) {

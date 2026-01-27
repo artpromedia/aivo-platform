@@ -26,7 +26,7 @@ import type { AIProvider as APIProvider } from '@/lib/api/orchestration.api';
 interface DisplayProvider {
   id: string;
   name: string;
-  status: 'active' | 'standby' | 'degraded' | 'offline';
+  status: 'active' | 'standby' | 'degraded' | 'offline' | 'maintenance';
   requestsToday: number;
   costToday: number;
   avgLatency: number;
@@ -44,10 +44,10 @@ function toDisplayProvider(provider: APIProvider): DisplayProvider {
     status: provider.status,
     requestsToday: provider.requestsToday,
     costToday: provider.costToday,
-    avgLatency: provider.avgLatencyMs,
+    avgLatency: provider.avgLatency,
     errorRate: provider.errorRate,
     isPrimary: provider.isPrimary,
-    models: provider.supportedModels || [],
+    models: provider.models?.map(m => m.name) || [],
     lastHealthCheck: provider.lastHealthCheck,
   };
 }
@@ -85,7 +85,7 @@ export function AIOrchestrationPanel() {
   const handleSwitchPrimary = (providerId: string) => {
     const providerName = providers.find(p => p.id === providerId)?.name;
     if (confirm(`Switch primary AI provider to ${providerName}?`)) {
-      switchPrimaryMutation.mutate({ providerId: providerId as 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'META' });
+      switchPrimaryMutation.mutate({ providerId: providerId as 'openai' | 'anthropic' | 'google' | 'meta' | 'cohere' | 'azure' });
     }
   };
 
@@ -95,6 +95,7 @@ export function AIOrchestrationPanel() {
       case 'standby': return 'bg-blue-100 text-blue-700';
       case 'degraded': return 'bg-amber-100 text-amber-700';
       case 'offline': return 'bg-red-100 text-red-700';
+      case 'maintenance': return 'bg-purple-100 text-purple-700';
     }
   };
 
@@ -104,6 +105,7 @@ export function AIOrchestrationPanel() {
       case 'standby': return 'bg-blue-500';
       case 'degraded': return 'bg-amber-500 animate-pulse';
       case 'offline': return 'bg-red-500';
+      case 'maintenance': return 'bg-purple-500';
     }
   };
 

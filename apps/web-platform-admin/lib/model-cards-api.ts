@@ -95,7 +95,8 @@ export async function listModelCards(accessToken: string): Promise<{
     throw new Error(`Failed to fetch model cards: ${res.status}`);
   }
 
-  return (await res.json()) as { modelCards: ModelCard[] };
+  const data = (await res.json()) as { modelCards: ModelCardSummary[]; total?: number };
+  return { modelCards: data.modelCards, total: data.total ?? data.modelCards.length };
 }
 
 /**

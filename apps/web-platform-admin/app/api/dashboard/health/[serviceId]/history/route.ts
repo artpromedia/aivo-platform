@@ -17,10 +17,14 @@ export async function GET(
     const { serviceId } = await params;
 
     const searchParams = request.nextUrl.searchParams;
-    const period = searchParams.get('period') as 'hour' | 'day' | 'week' | 'month' || 'day';
+    const periodParam = searchParams.get('period');
+    const period: 'hour' | 'day' | 'week' | 'month' =
+      periodParam === 'hour' || periodParam === 'day' || periodParam === 'week' || periodParam === 'month'
+        ? periodParam
+        : 'day';
 
     const accessToken = (session as { accessToken?: string })?.accessToken || '';
-    const history = await getServiceHealthHistory(serviceId, period, accessToken);
+    const history = await getServiceHealthHistory(accessToken, serviceId, period);
 
     return NextResponse.json(history);
   } catch (error) {

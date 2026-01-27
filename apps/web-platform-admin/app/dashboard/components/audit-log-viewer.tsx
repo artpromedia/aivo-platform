@@ -33,21 +33,32 @@ interface DisplayAuditLog {
 
 // Transform API log to display log
 function toDisplayLog(log: APIAuditLogEntry): DisplayAuditLog {
+  const actor: DisplayAuditLog['actor'] = {
+    id: log.actor.id,
+    name: log.actor.name,
+    role: log.actor.role,
+  };
+  if (log.actor.tenantName) {
+    actor.tenant = log.actor.tenantName;
+  }
+
+  // Map API status to display status
+  const statusMap: Record<string, AuditStatus> = {
+    success: 'success',
+    failure: 'failure',
+    warning: 'warning',
+  };
+
   return {
     id: log.id,
     timestamp: log.timestamp,
-    actor: {
-      id: log.actor.id,
-      name: log.actor.name,
-      role: log.actor.role,
-      tenant: log.actor.tenantName,
-    },
+    actor,
     action: log.action,
     category: (log.category as AuditCategory) || 'data',
-    resource: `${log.resourceType}: ${log.resourceId}`,
+    resource: `${log.resourceType}: ${log.resourceId || ''}`,
     details: log.details || '',
-    ipAddress: log.metadata?.ipAddress || 'Unknown',
-    status: log.severity === 'critical' ? 'failure' : log.severity === 'warning' ? 'warning' : 'success',
+    ipAddress: log.ipAddress || 'Unknown',
+    status: statusMap[log.status] || 'success',
   };
 }
 

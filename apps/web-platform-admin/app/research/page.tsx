@@ -350,7 +350,7 @@ export default function ResearchExportsPage() {
   const [anonymityResult, setAnonymityResult] = useState<AnonymityCheckResult | null>(null);
   const [checking, setChecking] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<unknown>(null);
+  const [exportResult, setExportResult] = useState<Record<string, unknown> | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -419,7 +419,7 @@ export default function ResearchExportsPage() {
         researcherAffiliation: affiliation || undefined,
         format,
       });
-      setExportResult(result);
+      setExportResult(result as Record<string, unknown>);
       void loadData(); // Refresh audit log
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Export failed');
