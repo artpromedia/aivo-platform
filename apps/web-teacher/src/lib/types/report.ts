@@ -35,6 +35,7 @@ export interface ReportResult {
   fileUrl?: string;
   htmlContent?: string;
   data?: Record<string, unknown>;
+  createdAt?: Date;
   generatedAt?: Date;
   createdAt?: Date;
   expiresAt?: Date;

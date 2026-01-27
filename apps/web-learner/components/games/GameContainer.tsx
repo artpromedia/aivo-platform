@@ -7,6 +7,7 @@ import type { GameConfig, GameResult } from './types';
 import type { GameDefinition } from '../../lib/games/game-types';
 import { getMockGames } from '../../lib/games/game-api';
 import { GameSelector } from './GameSelector';
+import type { GameDefinition } from '../../lib/games/game-types';
 import { GameResults } from './GameResults';
 import { useGameSession, useGameFavorites, useRecentlyPlayed } from './useGameSession';
 import type { GradeBand } from './games-api';
