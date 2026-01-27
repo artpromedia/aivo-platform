@@ -68,13 +68,17 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     const user = request.user as { sub: string; tenantId: string; roles?: string[] };
     const query = listAuditSchema.parse(request.query);
 
-    // Only admins can view audit logs
     const isAdmin = user.roles?.includes('district_admin') || user.roles?.includes('platform_admin');
-    if (!isAdmin) {
-      return reply.status(403).send({ error: 'Only admins can view audit logs' });
-    }
 
+    // When projectId is provided, allow project members in addition to admins
     if (query.projectId) {
+      const isMember = await isProjectMember(query.projectId, user.sub, user.tenantId);
+      if (!isAdmin && !isMember) {
+        return reply.status(403).send({
+          error: 'Access denied. Only admins or project members can view this project\'s audit logs.'
+        });
+      }
+
       const result = await getProjectAuditLogs(query.projectId, user.tenantId, {
         action: query.action?.split(','),
         startDate: query.startDate ? new Date(query.startDate) : undefined,
@@ -83,6 +87,11 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
         offset: query.offset,
       });
       return reply.send(result);
+    }
+
+    // For general audit logs (no projectId), only admins allowed
+    if (!isAdmin) {
+      return reply.status(403).send({ error: 'Only admins can view audit logs' });
     }
 
     // Get all export-related audit logs

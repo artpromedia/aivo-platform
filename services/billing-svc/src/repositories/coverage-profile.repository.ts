@@ -256,7 +256,11 @@ export class CoverageProfileRepository {
     }
 
     // Get subscriptions that are linked to learners in this tenant
-    const subscriptions = await prisma.subscription.findMany({
+    // Security note: tenantLearnerIds is pre-filtered by tenantId above,
+    // so all subscriptions returned here are for learners in the requested tenant
+    const tenantLearnerIdSet = new Set(tenantLearnerIds);
+
+    const subscriptions = await this.prisma.subscription.findMany({
       where: {
         status: { in: ['ACTIVE', 'IN_TRIAL'] },
         currentPeriodEnd: { gte: now },
@@ -315,6 +319,13 @@ export class CoverageProfileRepository {
         sub.subscriptionItems[0]?.learnerId ??
         ((sub.metadataJson as Record<string, unknown> | null)?.linkedLearnerId as string | null);
 
+      // Defense in depth: validate that the linked learner belongs to the requested tenant
+      if (linkedLearnerId && !tenantLearnerIdSet.has(linkedLearnerId)) {
+        // Skip this subscription if it's linked to a learner not in the tenant
+        // This should never happen due to the query filter, but we check anyway
+        return null;
+      }
+
       return {
         subscriptionId: sub.id,
         billingAccountId: sub.billingAccount.id,
@@ -328,7 +339,7 @@ export class CoverageProfileRepository {
         periodEnd: sub.currentPeriodEnd,
         metadataJson: sub.metadataJson,
       };
-    });
+    }).filter((sub): sub is ParentSubscriptionData => sub !== null);
   }
 
   /**
