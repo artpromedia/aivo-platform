@@ -39,7 +39,7 @@ on:
 
 env:
   SERVICE_PATH: services/auth-svc
-  NODE_VERSION: '20'
+  NODE_VERSION: '20.19.4'
 
 jobs:
   # ════════════════════════════════════════════════════════════════════════════

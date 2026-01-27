@@ -38,7 +38,7 @@ on:
           - secrets
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '20.19.4'
   PNPM_VERSION: '8'
 
 jobs:

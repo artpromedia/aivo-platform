@@ -34,7 +34,7 @@ on:
         type: string
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9'
   REGISTRY: gcr.io
   PROJECT_ID: aivo-platform
