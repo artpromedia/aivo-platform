@@ -107,3 +107,90 @@ model DsrExportArtifact {
   @@index([expiresAt])
   @@map("dsr_export_artifacts")
 }
+
+// =============================================================================
+// Data Exports (GDPR Data Subject Access Requests)
+// =============================================================================
+
+model DataExport {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  dsrRequestId         String?   @map("dsr_request_id") @db.Uuid
+  
+  // Subject Information
+  subjectId            String    @map("subject_id") @db.Uuid
+  subjectType          String    @map("subject_type") // LEARNER, PARENT, TEACHER, ADMIN
+  
+  // Export Configuration
+  format               String    // JSON, CSV, PDF, XML
+  categories           Json      @default("[]") // Array of data categories
+  dateRangeFrom        DateTime? @map("date_range_from") @db.Timestamptz
+  dateRangeTo          DateTime? @map("date_range_to") @db.Timestamptz
+  includeMetadata      Boolean   @default(true) @map("include_metadata")
+  encryptExport        Boolean   @default(false) @map("encrypt_export")
+  encryptionKeyId      String?   @map("encryption_key_id")
+  
+  // Processing Status
+  status               String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, EXPIRED
+  progress             Int       @default(0)
+  startedAt            DateTime? @map("started_at") @db.Timestamptz
+  completedAt          DateTime? @map("completed_at") @db.Timestamptz
+  failedAt             DateTime? @map("failed_at") @db.Timestamptz
+  failureReason        String?   @map("failure_reason")
+  
+  // Output
+  outputPath           String?   @map("output_path")
+  outputSize           BigInt?   @map("output_size")
+  checksum             String?
+  downloadUrl          String?   @map("download_url")
+  downloadExpiresAt    DateTime? @map("download_expires_at") @db.Timestamptz
+  downloadCount        Int       @default(0) @map("download_count")
+  
+  // Audit
+  requestedByUserId    String    @map("requested_by_user_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  jobs                 ExportJob[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, subjectId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("data_exports")
+}
+
+// =============================================================================
+// Export Jobs (Background processing queue)
+// =============================================================================
+
+model ExportJob {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exportId         String    @map("export_id") @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  
+  status           String    @default("QUEUED") // QUEUED, PROCESSING, COMPLETED, FAILED, CANCELLED
+  priority         String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  
+  // Processing
+  workerId         String?   @map("worker_id")
+  startedAt        DateTime? @map("started_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  
+  // Retry Logic
+  retryCount       Int       @default(0) @map("retry_count")
+  maxRetries       Int       @default(3) @map("max_retries")
+  lastError        String?   @map("last_error")
+  nextRetryAt      DateTime? @map("next_retry_at") @db.Timestamptz
+  
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  export           DataExport @relation(fields: [exportId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority])
+  @@index([exportId])
+  @@index([tenantId])
+  @@map("export_jobs")
+}

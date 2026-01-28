@@ -14,17 +14,34 @@ to minimize database load impact on user experience.
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import logging
+import uuid
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from sqlalchemy import select, delete, func, and_
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.student_risk_model import StudentRiskModel, RiskLevel
 from ..services.bias_detection import BiasDetectionService
 from ..services.intervention_recommender import InterventionRecommenderService
 from ..services.notification_service import NotificationService
 from ..config import settings
+from ..database import get_session
+from ..database.models import (
+    Tenant,
+    Student,
+    RiskPrediction,
+    StaffAssignment,
+    User,
+    JobExecution,
+    MonitoringAlert as MonitoringAlertModel,
+    RiskLevelEnum,
+    RiskTrendEnum,
+    JobStatusEnum,
+    AlertSeverityEnum,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -388,70 +405,413 @@ class PredictionScheduler:
         except Exception as e:
             logger.exception(f"Model monitoring failed: {e}")
     
-    # Database helper methods (placeholders - implement with actual ORM)
+    # Database helper methods - fully implemented with SQLAlchemy
     
-    def _get_active_tenants(self) -> list[dict]:
-        """Get list of active tenants"""
-        # Placeholder - query tenants table
-        return []
+    async def _get_active_tenants(self) -> List[Dict[str, Any]]:
+        """
+        Get list of active tenants from database.
+        
+        Returns:
+            List of tenant dictionaries with id, name, timezone, settings
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(Tenant)
+                .where(Tenant.is_active == True)
+                .order_by(Tenant.name)
+            )
+            tenants = result.scalars().all()
+            
+            return [
+                {
+                    "id": str(tenant.id),
+                    "name": tenant.name,
+                    "timezone": tenant.timezone,
+                    "settings": tenant.settings or {},
+                }
+                for tenant in tenants
+            ]
     
-    def _get_active_students(
+    async def _get_active_students(
         self,
-        _tenant_id: str,
-        _limit: int,
-        _offset: int,
-    ) -> list[dict]:
-        """Get active students for a tenant with pagination"""
-        # Placeholder - query students
-        return []
+        tenant_id: str,
+        limit: int,
+        offset: int,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get active students for a tenant with pagination.
+        
+        Args:
+            tenant_id: Tenant UUID
+            limit: Maximum number of students to return
+            offset: Number of students to skip
+        
+        Returns:
+            List of student dictionaries with id, name, grade_level, profile_data
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(Student)
+                .where(
+                    and_(
+                        Student.tenant_id == tenant_id,
+                        Student.is_active == True
+                    )
+                )
+                .order_by(Student.id)
+                .limit(limit)
+                .offset(offset)
+            )
+            students = result.scalars().all()
+            
+            return [
+                {
+                    "id": str(student.id),
+                    "name": student.name,
+                    "grade_level": student.grade_level,
+                    "profile_data": student.profile_data or {},
+                }
+                for student in students
+            ]
     
-    def _store_prediction(self, _tenant_id: str, _prediction) -> None:
-        """Store a risk prediction"""
-        # Placeholder - insert into risk_predictions
-        pass
+    async def _store_prediction(self, tenant_id: str, prediction) -> None:
+        """
+        Store a risk prediction to database.
+        
+        Args:
+            tenant_id: Tenant UUID
+            prediction: Risk prediction object from model
+        """
+        async with get_session() as session:
+            # Convert risk level enum
+            risk_level_map = {
+                RiskLevel.LOW: RiskLevelEnum.LOW,
+                RiskLevel.MODERATE: RiskLevelEnum.MODERATE,
+                RiskLevel.HIGH: RiskLevelEnum.HIGH,
+                RiskLevel.CRITICAL: RiskLevelEnum.CRITICAL,
+            }
+            
+            # Convert trend if available
+            trend_value = RiskTrendEnum.STABLE
+            if hasattr(prediction, 'risk_trend') and prediction.risk_trend:
+                trend_str = prediction.risk_trend.value.lower()
+                if trend_str == 'improving':
+                    trend_value = RiskTrendEnum.IMPROVING
+                elif trend_str == 'declining':
+                    trend_value = RiskTrendEnum.DECLINING
+            
+            # Build risk factors JSON
+            risk_factors = []
+            if hasattr(prediction, 'top_risk_factors'):
+                risk_factors = [
+                    {
+                        "name": factor.name if hasattr(factor, 'name') else str(factor),
+                        "description": factor.description if hasattr(factor, 'description') else "",
+                        "weight": factor.weight if hasattr(factor, 'weight') else 0.0,
+                    }
+                    for factor in prediction.top_risk_factors
+                ]
+            
+            db_prediction = RiskPrediction(
+                id=str(uuid.uuid4()),
+                tenant_id=tenant_id,
+                student_id=str(prediction.student_id),
+                risk_score=float(prediction.risk_score),
+                risk_level=risk_level_map.get(prediction.risk_level, RiskLevelEnum.LOW),
+                risk_trend=trend_value,
+                confidence=getattr(prediction, 'confidence', None),
+                risk_factors=risk_factors,
+                feature_values=getattr(prediction, 'feature_values', {}),
+                model_version=getattr(prediction, 'model_version', 'v1'),
+                prediction_latency_ms=getattr(prediction, 'latency_ms', None),
+                predicted_at=datetime.now(timezone.utc),
+            )
+            
+            session.add(db_prediction)
+            await session.commit()
+            
+            logger.debug(f"Stored prediction for student {prediction.student_id}")
     
-    def _get_student_staff(self, _student_id: str) -> list[dict]:
-        """Get teachers and counselors for a student"""
-        # Placeholder - query enrollments and staff
-        return []
+    async def _get_student_staff(self, student_id: str) -> List[Dict[str, Any]]:
+        """
+        Get teachers and counselors assigned to a student.
+        
+        Args:
+            student_id: Student UUID
+        
+        Returns:
+            List of staff dictionaries with id, name, email, role
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User, StaffAssignment)
+                .join(
+                    StaffAssignment,
+                    User.id == StaffAssignment.user_id
+                )
+                .where(
+                    and_(
+                        StaffAssignment.student_id == student_id,
+                        StaffAssignment.end_date.is_(None),  # Active assignments only
+                        User.is_active == True
+                    )
+                )
+            )
+            rows = result.all()
+            
+            return [
+                {
+                    "id": str(user.id),
+                    "name": user.name,
+                    "email": user.email,
+                    "role": user.role,
+                    "is_primary": assignment.is_primary,
+                    "assignment_type": assignment.assignment_type,
+                }
+                for user, assignment in rows
+            ]
     
-    def _get_ml_team_and_admins(self, _tenant_id: str) -> list[dict]:
-        """Get ML team and tenant admins"""
-        # Placeholder - query users with admin/ml roles
-        return []
+    async def _get_ml_team_and_admins(self, tenant_id: str) -> List[Dict[str, Any]]:
+        """
+        Get ML team members and tenant admins for bias alerts.
+        
+        Args:
+            tenant_id: Tenant UUID
+        
+        Returns:
+            List of user dictionaries with id, name, email, role
+        """
+        async with get_session() as session:
+            result = await session.execute(
+                select(User)
+                .where(
+                    and_(
+                        User.tenant_id == tenant_id,
+                        User.is_active == True,
+                        User.role.in_(["admin", "ml_team", "data_scientist"])
+                    )
+                )
+            )
+            users = result.scalars().all()
+            
+            return [
+                {
+                    "id": str(user.id),
+                    "name": user.name,
+                    "email": user.email,
+                    "role": user.role,
+                }
+                for user in users
+            ]
     
-    def _delete_old_predictions(self, _cutoff_date: datetime) -> int:
-        """Delete predictions older than cutoff"""
-        # Placeholder - delete from risk_predictions
-        return 0
+    async def _delete_old_predictions(self, cutoff_date: datetime) -> int:
+        """
+        Delete predictions older than cutoff date.
+        
+        Keeps the most recent prediction per student to maintain history.
+        
+        Args:
+            cutoff_date: Delete predictions before this date
+        
+        Returns:
+            Number of deleted predictions
+        """
+        async with get_session() as session:
+            # First, identify the most recent prediction per student to keep
+            # Using a subquery to get the latest prediction ID per student
+            latest_subquery = (
+                select(
+                    RiskPrediction.student_id,
+                    func.max(RiskPrediction.predicted_at).label('max_date')
+                )
+                .group_by(RiskPrediction.student_id)
+                .subquery()
+            )
+            
+            # Get IDs of predictions to keep
+            keep_ids_query = (
+                select(RiskPrediction.id)
+                .join(
+                    latest_subquery,
+                    and_(
+                        RiskPrediction.student_id == latest_subquery.c.student_id,
+                        RiskPrediction.predicted_at == latest_subquery.c.max_date
+                    )
+                )
+            )
+            keep_result = await session.execute(keep_ids_query)
+            keep_ids = {row[0] for row in keep_result.all()}
+            
+            # Delete old predictions that aren't the most recent per student
+            delete_stmt = (
+                delete(RiskPrediction)
+                .where(
+                    and_(
+                        RiskPrediction.predicted_at < cutoff_date,
+                        RiskPrediction.id.notin_(keep_ids) if keep_ids else True
+                    )
+                )
+            )
+            
+            result = await session.execute(delete_stmt)
+            await session.commit()
+            
+            deleted_count = result.rowcount
+            logger.info(f"Deleted {deleted_count} old predictions")
+            return deleted_count
     
-    def _get_recent_prediction_stats(self) -> dict:
-        """Get statistics on recent predictions"""
-        # Placeholder - aggregate recent predictions
-        return {
-            "total": 0,
-            "critical_rate": 0.0,
-            "high_rate": 0.0,
-            "moderate_rate": 0.0,
-            "low_rate": 0.0,
-        }
+    async def _get_recent_prediction_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics on recent predictions (last 24 hours).
+        
+        Returns:
+            Dictionary with prediction statistics including:
+            - total: Total predictions
+            - critical_rate: Percentage of critical predictions
+            - high_rate: Percentage of high predictions
+            - moderate_rate: Percentage of moderate predictions
+            - low_rate: Percentage of low predictions
+            - avg_score: Average risk score
+            - avg_score_change: Average change from previous predictions
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        
+        async with get_session() as session:
+            # Get total count
+            total_result = await session.execute(
+                select(func.count(RiskPrediction.id))
+                .where(RiskPrediction.predicted_at >= cutoff)
+            )
+            total = total_result.scalar() or 0
+            
+            if total == 0:
+                return {
+                    "total": 0,
+                    "critical_rate": 0.0,
+                    "high_rate": 0.0,
+                    "moderate_rate": 0.0,
+                    "low_rate": 0.0,
+                    "avg_score": 0.0,
+                    "avg_score_change": 0.0,
+                }
+            
+            # Get counts by risk level
+            level_counts = {}
+            for level in RiskLevelEnum:
+                count_result = await session.execute(
+                    select(func.count(RiskPrediction.id))
+                    .where(
+                        and_(
+                            RiskPrediction.predicted_at >= cutoff,
+                            RiskPrediction.risk_level == level
+                        )
+                    )
+                )
+                level_counts[level.value] = count_result.scalar() or 0
+            
+            # Get average score
+            avg_result = await session.execute(
+                select(func.avg(RiskPrediction.risk_score))
+                .where(RiskPrediction.predicted_at >= cutoff)
+            )
+            avg_score = avg_result.scalar() or 0.0
+            
+            # Calculate score change (compare to 24-48 hours ago)
+            prev_cutoff = cutoff - timedelta(hours=24)
+            prev_avg_result = await session.execute(
+                select(func.avg(RiskPrediction.risk_score))
+                .where(
+                    and_(
+                        RiskPrediction.predicted_at >= prev_cutoff,
+                        RiskPrediction.predicted_at < cutoff
+                    )
+                )
+            )
+            prev_avg = prev_avg_result.scalar() or avg_score
+            avg_score_change = abs(avg_score - prev_avg) if prev_avg else 0.0
+            
+            return {
+                "total": total,
+                "critical_rate": level_counts.get("critical", 0) / total,
+                "high_rate": level_counts.get("high", 0) / total,
+                "moderate_rate": level_counts.get("moderate", 0) / total,
+                "low_rate": level_counts.get("low", 0) / total,
+                "avg_score": float(avg_score),
+                "avg_score_change": float(avg_score_change),
+            }
     
-    def _record_job_metrics(
+    async def _record_job_metrics(
         self,
-        _job_name: str,
-        _metrics: dict,
+        job_name: str,
+        metrics: Dict[str, Any],
     ) -> None:
-        """Record job execution metrics"""
-        # Placeholder - log to metrics system
-        pass
+        """
+        Record job execution metrics to database.
+        
+        Args:
+            job_name: Name of the job
+            metrics: Dictionary of metrics to record
+        """
+        async with get_session() as session:
+            job_execution = JobExecution(
+                id=str(uuid.uuid4()),
+                job_name=job_name,
+                job_type="prediction",
+                status=JobStatusEnum.COMPLETED if metrics.get("success", True) else JobStatusEnum.FAILED,
+                started_at=datetime.now(timezone.utc) - timedelta(seconds=metrics.get("duration_seconds", 0)),
+                completed_at=datetime.now(timezone.utc),
+                duration_seconds=metrics.get("duration_seconds"),
+                records_processed=metrics.get("predictions", 0) or metrics.get("students", 0),
+                errors_count=1 if not metrics.get("success", True) else 0,
+                metrics=metrics,
+                error_details=metrics.get("error") if not metrics.get("success", True) else None,
+            )
+            
+            session.add(job_execution)
+            await session.commit()
+            
+            logger.info(f"Recorded metrics for job {job_name}")
 
-    def _send_monitoring_alert(
+    async def _send_monitoring_alert(
         self,
-        _issues: list[str],
+        issues: List[str],
     ) -> None:
-        """Send monitoring alert to ML team"""
-        # Placeholder - send alert
-        pass
+        """
+        Send monitoring alert to ML team about model health issues.
+        
+        Args:
+            issues: List of issue descriptions
+        """
+        async with get_session() as session:
+            alert = MonitoringAlertModel(
+                id=str(uuid.uuid4()),
+                tenant_id=None,  # System-wide alert
+                alert_type="model_monitoring",
+                severity=AlertSeverityEnum.WARNING,
+                title="Model Health Issues Detected",
+                description="\n".join(f"• {issue}" for issue in issues),
+                is_resolved=False,
+                metadata={
+                    "issues": issues,
+                    "check_time": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+            
+            session.add(alert)
+            await session.commit()
+            
+            logger.warning(f"Created monitoring alert for {len(issues)} issues")
+            
+            # Also attempt to notify via notification service
+            try:
+                await self.notification_service.send_system_alert(
+                    tenant_id=None,
+                    recipients=[],  # Will use system default recipients
+                    message=f"Model Monitoring Alert:\n" + "\n".join(f"• {issue}" for issue in issues),
+                    alert_type="model_health",
+                )
+            except Exception as e:
+                logger.error(f"Failed to send notification: {e}")
 
 
 # Convenience function to run predictions manually

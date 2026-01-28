@@ -15,12 +15,16 @@ Key responsibilities:
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 import logging
 import json
+import uuid
+import asyncio
 
 import numpy as np
 from scipy import stats
+from sqlalchemy import select, func, and_, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -603,59 +607,364 @@ class ModelMonitoringService:
                 message=f"Feature store error: {str(e)}",
             )
     
-    # Database helpers (placeholders)
+    # Database helpers - fully implemented with SQLAlchemy
     
-    def _get_recent_prediction_data(
+    async def _get_recent_prediction_data(
         self,
-        _tenant_id: Optional[str],
-        _start_date: datetime,
-        _end_date: datetime,
-    ) -> Optional[dict]:
-        """Get recent prediction data for drift analysis"""
-        return None
+        tenant_id: Optional[str],
+        start_date: datetime,
+        end_date: datetime,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get recent prediction data for drift analysis.
+        
+        Args:
+            tenant_id: Optional tenant filter
+            start_date: Start of time range
+            end_date: End of time range
+        
+        Returns:
+            Dictionary with 'predictions' array and 'features' dict of arrays
+        """
+        from ..database import get_session
+        from ..database.models import RiskPrediction
+        
+        async with get_session() as session:
+            query = select(RiskPrediction).where(
+                and_(
+                    RiskPrediction.predicted_at >= start_date,
+                    RiskPrediction.predicted_at <= end_date
+                )
+            )
+            
+            if tenant_id:
+                query = query.where(RiskPrediction.tenant_id == tenant_id)
+            
+            result = await session.execute(query.limit(10000))
+            predictions = result.scalars().all()
+            
+            if not predictions:
+                return None
+            
+            # Extract prediction scores
+            pred_scores = np.array([p.risk_score for p in predictions])
+            
+            # Extract features from stored feature_values
+            features: Dict[str, List[float]] = {}
+            for pred in predictions:
+                if pred.feature_values:
+                    for key, value in pred.feature_values.items():
+                        if key not in features:
+                            features[key] = []
+                        if isinstance(value, (int, float)):
+                            features[key].append(float(value))
+            
+            # Convert to numpy arrays
+            feature_arrays = {
+                k: np.array(v) for k, v in features.items() if len(v) > 0
+            }
+            
+            return {
+                "predictions": pred_scores,
+                "features": feature_arrays,
+                "count": len(predictions),
+            }
 
-    def _get_baseline_data(self, _tenant_id: Optional[str]) -> Optional[dict]:
-        """Get baseline data from model training"""
-        return None
+    async def _get_baseline_data(self, tenant_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        Get baseline data from model training period.
+        
+        Args:
+            tenant_id: Optional tenant filter
+        
+        Returns:
+            Dictionary with baseline 'predictions' and 'features'
+        """
+        from ..database import get_session
+        from ..database.models import FeatureBaseline, RiskPrediction
+        
+        async with get_session() as session:
+            # Get feature baselines
+            query = select(FeatureBaseline)
+            if tenant_id:
+                query = query.where(FeatureBaseline.tenant_id == tenant_id)
+            else:
+                query = query.where(FeatureBaseline.tenant_id.is_(None))
+            
+            result = await session.execute(query)
+            baselines = result.scalars().all()
+            
+            features = {}
+            for baseline in baselines:
+                if baseline.distribution_data and 'values' in baseline.distribution_data:
+                    features[baseline.feature_name] = np.array(
+                        baseline.distribution_data['values']
+                    )
+            
+            # Get historical predictions for baseline (60-90 days ago)
+            end_date = datetime.now(timezone.utc) - timedelta(days=60)
+            start_date = end_date - timedelta(days=30)
+            
+            pred_query = select(RiskPrediction.risk_score).where(
+                and_(
+                    RiskPrediction.predicted_at >= start_date,
+                    RiskPrediction.predicted_at <= end_date
+                )
+            )
+            if tenant_id:
+                pred_query = pred_query.where(RiskPrediction.tenant_id == tenant_id)
+            
+            pred_result = await session.execute(pred_query.limit(10000))
+            pred_scores = [row[0] for row in pred_result.all()]
+            
+            if not pred_scores and not features:
+                return None
+            
+            return {
+                "predictions": np.array(pred_scores) if pred_scores else np.array([]),
+                "features": features,
+            }
 
-    def _get_predictions_in_range(
+    async def _get_predictions_in_range(
         self,
-        _tenant_id: Optional[str],
-        _start_date: datetime,
-        _end_date: datetime,
-    ) -> list[dict]:
-        """Get predictions in date range"""
-        return []
+        tenant_id: Optional[str],
+        start_date: datetime,
+        end_date: datetime,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get predictions in date range.
+        
+        Args:
+            tenant_id: Optional tenant filter
+            start_date: Start of time range
+            end_date: End of time range
+        
+        Returns:
+            List of prediction dictionaries
+        """
+        from ..database import get_session
+        from ..database.models import RiskPrediction
+        
+        async with get_session() as session:
+            query = select(RiskPrediction).where(
+                and_(
+                    RiskPrediction.predicted_at >= start_date,
+                    RiskPrediction.predicted_at <= end_date
+                )
+            )
+            
+            if tenant_id:
+                query = query.where(RiskPrediction.tenant_id == tenant_id)
+            
+            result = await session.execute(query.order_by(RiskPrediction.predicted_at.desc()))
+            predictions = result.scalars().all()
+            
+            return [
+                {
+                    "id": str(pred.id),
+                    "student_id": str(pred.student_id),
+                    "risk_score": pred.risk_score,
+                    "risk_level": pred.risk_level.value if pred.risk_level else "low",
+                    "risk_trend": pred.risk_trend.value if pred.risk_trend else "stable",
+                    "confidence": pred.confidence,
+                    "predicted_at": pred.predicted_at.isoformat(),
+                }
+                for pred in predictions
+            ]
 
-    def _get_predictions_with_outcomes(
+    async def _get_predictions_with_outcomes(
         self,
-        _tenant_id: Optional[str],
-        _start_date: datetime,
-        _end_date: datetime,
-        return []
+        tenant_id: Optional[str],
+        start_date: datetime,
+        end_date: datetime,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get predictions with their actual outcomes for performance evaluation.
+        
+        Args:
+            tenant_id: Optional tenant filter
+            start_date: Start of time range
+            end_date: End of time range
+        
+        Returns:
+            List of dictionaries with prediction and outcome data
+        """
+        from ..database import get_session
+        from ..database.models import RiskPrediction, PredictionOutcome
+        
+        async with get_session() as session:
+            query = (
+                select(RiskPrediction, PredictionOutcome)
+                .join(
+                    PredictionOutcome,
+                    RiskPrediction.id == PredictionOutcome.prediction_id
+                )
+                .where(
+                    and_(
+                        RiskPrediction.predicted_at >= start_date,
+                        RiskPrediction.predicted_at <= end_date
+                    )
+                )
+            )
+            
+            if tenant_id:
+                query = query.where(RiskPrediction.tenant_id == tenant_id)
+            
+            result = await session.execute(query)
+            rows = result.all()
+            
+            return [
+                {
+                    "prediction_id": str(pred.id),
+                    "student_id": str(pred.student_id),
+                    "predicted_risk": pred.risk_score,
+                    "actual_outcome": outcome.actual_outcome,
+                    "days_after_prediction": outcome.days_after_prediction,
+                }
+                for pred, outcome in rows
+            ]
     
-    def _count_recent_predictions(
+    async def _count_recent_predictions(
         self,
-        _hours: int,
+        hours: int,
     ) -> int:
-        """Count predictions in recent hours"""
-        return 0
+        """
+        Count predictions in recent hours.
+        
+        Args:
+            hours: Number of hours to look back
+        
+        Returns:
+            Count of predictions
+        """
+        from ..database import get_session
+        from ..database.models import RiskPrediction
+        
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        
+        async with get_session() as session:
+            result = await session.execute(
+                select(func.count(RiskPrediction.id))
+                .where(RiskPrediction.predicted_at >= cutoff)
+            )
+            return result.scalar() or 0
 
-    def _store_drift_report(
+    async def _store_drift_report(
         self,
-        _report: DriftReport,
+        report: DriftReport,
     ) -> None:
-        """Store drift report"""
-        pass
+        """
+        Store drift report to database.
+        
+        Args:
+            report: DriftReport dataclass to persist
+        """
+        from ..database import get_session
+        from ..database.models import DriftReport as DriftReportModel
+        
+        async with get_session() as session:
+            db_report = DriftReportModel(
+                id=report.report_id,
+                tenant_id=None,  # Can be extended to support tenant-specific reports
+                report_type="drift_analysis",
+                period_start=report.period_start,
+                period_end=report.period_end,
+                overall_drift_score=max(report.feature_drift_score, report.prediction_drift_score),
+                feature_drift_score=report.feature_drift_score,
+                prediction_drift_score=report.prediction_drift_score,
+                drift_details=report.feature_drift_details,
+                recommendations=report.recommendations,
+                requires_attention=report.requires_attention,
+                alert_count=len(report.alerts),
+            )
+            
+            session.add(db_report)
+            await session.commit()
+            
+            logger.info(f"Stored drift report {report.report_id}")
 
-    def _store_performance_metrics(
+    async def _store_performance_metrics(
         self,
-        _metrics: dict,
+        metrics: Dict[str, Any],
     ) -> None:
-        """Store performance metrics"""
-        pass
+        """
+        Store performance metrics to database.
+        
+        Args:
+            metrics: Dictionary of performance metrics
+        """
+        from ..database import get_session
+        from ..database.models import ModelMetric
+        
+        async with get_session() as session:
+            # Store each metric as a separate record
+            metric_names = ["accuracy", "precision", "recall", "auc_roc"]
+            
+            for name in metric_names:
+                if name in metrics:
+                    threshold = {
+                        "accuracy": 0.80,
+                        "precision": 0.70,
+                        "recall": 0.75,
+                        "auc_roc": 0.70,
+                    }.get(name, 0.70)
+                    
+                    db_metric = ModelMetric(
+                        id=str(uuid.uuid4()),
+                        tenant_id=None,  # Global metrics
+                        metric_name=name,
+                        metric_type="performance",
+                        value=metrics[name],
+                        threshold=threshold,
+                        is_above_threshold=metrics[name] >= threshold,
+                        details={"sample_size": metrics.get("sample_size", 0)},
+                        period_start=datetime.fromisoformat(metrics.get("period_start", datetime.now(timezone.utc).isoformat())),
+                        period_end=datetime.fromisoformat(metrics.get("period_end", datetime.now(timezone.utc).isoformat())),
+                    )
+                    session.add(db_metric)
+            
+            await session.commit()
+            logger.info("Stored performance metrics")
 
-    def _send_alert(
+    async def _send_alert(
         self,
-        _alert: MonitoringAlert,
-        pass
+        alert: MonitoringAlert,
+    ) -> None:
+        """
+        Store and send a monitoring alert.
+        
+        Args:
+            alert: MonitoringAlert dataclass to send
+        """
+        from ..database import get_session
+        from ..database.models import MonitoringAlert as MonitoringAlertModel, AlertSeverityEnum
+        
+        # Map severity
+        severity_map = {
+            AlertSeverity.INFO: AlertSeverityEnum.INFO,
+            AlertSeverity.WARNING: AlertSeverityEnum.WARNING,
+            AlertSeverity.ERROR: AlertSeverityEnum.ERROR,
+            AlertSeverity.CRITICAL: AlertSeverityEnum.CRITICAL,
+        }
+        
+        async with get_session() as session:
+            db_alert = MonitoringAlertModel(
+                id=alert.alert_id,
+                tenant_id=alert.affected_tenants[0] if alert.affected_tenants else None,
+                alert_type=alert.metric_type.value,
+                severity=severity_map.get(alert.severity, AlertSeverityEnum.WARNING),
+                title=alert.title,
+                description=alert.description,
+                metric_value=alert.metric_value,
+                threshold=alert.threshold,
+                is_resolved=False,
+                metadata={
+                    "recommended_action": alert.recommended_action,
+                    **alert.metadata,
+                },
+            )
+            
+            session.add(db_alert)
+            await session.commit()
+            
+            logger.warning(f"Alert created: {alert.title} (severity: {alert.severity.value})")

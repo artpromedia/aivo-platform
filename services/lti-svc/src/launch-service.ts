@@ -21,6 +21,9 @@ import {
 import { LtiUserService, type LtiUserContext, type ResolvedUser } from './lti-user-service.js';
 import type { LtiIdTokenPayload } from './types.js';
 import { LtiUserRole, LtiLaunchStatus, LTI_CLAIMS } from './types.js';
+import { getStateStore, type OidcState } from './state-store.js';
+
+export type { OidcState } from './state-store.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -56,14 +59,66 @@ const SYSTEM_USER_ID = getSystemUserId();
 /**
  * Validate that the system service account exists and is properly configured.
  * Called during service initialization to fail fast if account is missing.
+ * In production, validates against auth-svc API.
  */
 async function validateSystemServiceAccount(prisma: PrismaClient): Promise<void> {
   const systemUserId = getSystemUserId();
+  const authServiceUrl = process.env.AUTH_SERVICE_URL;
+  const nodeEnv = process.env.NODE_ENV || 'development';
 
+  if (nodeEnv === 'production' && authServiceUrl) {
+    // In production, validate against auth-svc API
+    try {
+      const response = await fetch(`${authServiceUrl}/internal/users/${systemUserId}`, {
+        method: 'GET',
+        headers: {
+          'X-Internal-Service': 'lti-svc',
+          'X-Internal-API-Key': process.env.INTERNAL_API_KEY || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `[LTI] CRITICAL: System service account ${systemUserId} not found in auth-svc. ` +
+          `Ensure the account is properly seeded. See: services/auth-svc/prisma/seed.ts`
+        );
+      }
+
+      const user = await response.json() as { id: string; status: string; roles?: { role: string }[] };
+      
+      if (user.status !== 'ACTIVE') {
+        throw new Error(
+          `[LTI] CRITICAL: System service account ${systemUserId} is not active (status: ${user.status})`
+        );
+      }
+
+      // Verify the account has SUPPORT role
+      const hasServiceRole = user.roles?.some((r) => r.role === 'SUPPORT' || r.role === 'PLATFORM_ADMIN');
+      if (!hasServiceRole) {
+        console.warn(
+          `[LTI] WARNING: System service account ${systemUserId} does not have SUPPORT role. ` +
+          `Some operations may fail.`
+        );
+      }
+
+      console.log(`[LTI] System service account ${systemUserId} validated via auth-svc successfully.`);
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('[LTI] CRITICAL')) {
+        throw error;
+      }
+      // If auth-svc is unreachable, fall back to local validation
+      console.warn(`[LTI] Could not validate service account via auth-svc, falling back to local check: ${error}`);
+      await validateServiceAccountLocally(prisma, systemUserId);
+    }
+  } else {
+    // Development/local: validate locally via database
+    await validateServiceAccountLocally(prisma, systemUserId);
+  }
+}
+
+async function validateServiceAccountLocally(prisma: PrismaClient, systemUserId: string): Promise<void> {
   // Check if the system user exists via a lookup table or by verifying
-  // the account was seeded properly. In production, this would call auth-svc.
-  // For now, we validate by checking if LTI links created by this user exist
-  // or by trusting the seeded data with a warning log.
+  // the account was seeded properly.
   const existingLink = await prisma.ltiLink.findFirst({
     where: { createdByUserId: systemUserId },
     select: { id: true },
@@ -95,13 +150,6 @@ export interface LaunchServiceConfig {
   authServiceUrl?: string;
 }
 
-export interface OidcState {
-  toolId: string;
-  nonce: string;
-  targetLinkUri: string;
-  createdAt: Date;
-}
-
 export interface LaunchResult {
   launchId: string;
   status: LtiLaunchStatus;
@@ -109,25 +157,6 @@ export interface LaunchResult {
   aivoSessionId?: string;
   userRole: LtiUserRole;
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// IN-MEMORY STATE STORE (replace with Redis in production)
-// ══════════════════════════════════════════════════════════════════════════════
-
-const stateStore = new Map<string, OidcState>();
-const STATE_TTL = 10 * 60 * 1000; // 10 minutes
-
-function cleanExpiredStates() {
-  const now = Date.now();
-  for (const [state, data] of stateStore.entries()) {
-    if (now - data.createdAt.getTime() > STATE_TTL) {
-      stateStore.delete(state);
-    }
-  }
-}
-
-// Clean up every 5 minutes
-setInterval(cleanExpiredStates, 5 * 60 * 1000);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LAUNCH SERVICE
@@ -205,8 +234,9 @@ export class LaunchService {
       redirectUri
     );
 
-    // Store state for validation on callback
-    stateStore.set(state, {
+    // Store state for validation on callback using the state store
+    const stateStore = getStateStore();
+    await stateStore.set(state, {
       toolId: tool.id,
       nonce,
       targetLinkUri: params.target_link_uri,
@@ -228,13 +258,14 @@ export class LaunchService {
     state?: string;
   }): Promise<LaunchResult> {
     // Validate state if provided
+    const stateStore = getStateStore();
     let storedState: OidcState | undefined;
     if (params.state) {
-      storedState = stateStore.get(params.state);
+      storedState = await stateStore.get(params.state) ?? undefined;
       if (!storedState) {
         throw new LtiError('Invalid or expired state', 'INVALID_STATE', 401);
       }
-      stateStore.delete(params.state);
+      await stateStore.delete(params.state);
     }
 
     // Decode token header to get issuer (for tool lookup)

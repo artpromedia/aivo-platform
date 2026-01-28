@@ -33,6 +33,7 @@ import type { FastifyBaseLogger } from 'fastify';
 
 import { getDbClient, type DbClient } from './db.js';
 import * as metrics from './metrics.js';
+import { SubscriptionStatus, type Subscription } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -476,15 +477,225 @@ export async function reconcileSubscription(
   localSubscriptionId: string,
   log: FastifyBaseLogger
 ): Promise<ReconciliationResult | null> {
-  // This would:
-  // 1. Get local subscription from DB
-  // 2. Get Stripe subscription
-  // 3. Compare statuses, dates, amounts
-  // 4. Return discrepancy report
+  const db: DbClient = getDbClient();
 
   log.debug({ localSubscriptionId }, 'Reconciling subscription');
 
-  return null; // Placeholder
+  try {
+    // 1. Get local subscription from DB
+    const localSubscription = await db.getSubscription(localSubscriptionId);
+    if (!localSubscription) {
+      log.warn({ localSubscriptionId }, 'Local subscription not found during reconciliation');
+      return null;
+    }
+
+    const stripeSubscriptionId = localSubscription.providerSubscriptionId;
+    if (!stripeSubscriptionId) {
+      log.warn({ localSubscriptionId }, 'No Stripe subscription ID linked to local subscription');
+      return {
+        localSubscriptionId,
+        stripeSubscriptionId: '',
+        localStatus: localSubscription.status,
+        stripeStatus: 'UNKNOWN',
+        isConsistent: false,
+        discrepancy: 'No Stripe subscription ID linked',
+      };
+    }
+
+    // 2. Get Stripe subscription
+    const { getSubscription: getStripeSubscription } = await import('./stripe.js');
+    const stripeSubscription = await getStripeSubscription(stripeSubscriptionId);
+
+    if (!stripeSubscription) {
+      log.warn({ stripeSubscriptionId }, 'Stripe subscription not found');
+      return {
+        localSubscriptionId,
+        stripeSubscriptionId,
+        localStatus: localSubscription.status,
+        stripeStatus: 'DELETED',
+        isConsistent: false,
+        discrepancy: 'Stripe subscription no longer exists',
+      };
+    }
+
+    // 3. Map Stripe status to local status format
+    const stripeStatusMap: Record<string, string> = {
+      active: 'ACTIVE',
+      past_due: 'PAST_DUE',
+      unpaid: 'UNPAID',
+      canceled: 'CANCELED',
+      incomplete: 'INCOMPLETE',
+      incomplete_expired: 'INCOMPLETE_EXPIRED',
+      trialing: 'TRIALING',
+      paused: 'PAUSED',
+    };
+    const mappedStripeStatus = stripeStatusMap[stripeSubscription.status] || stripeSubscription.status.toUpperCase();
+
+    // 4. Compare statuses - cast mapped status to SubscriptionStatus for type-safe comparison
+    const statusMatch = localSubscription.status === (mappedStripeStatus as SubscriptionStatus);
+
+    // 5. Compare period dates
+    const stripeCurrentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    const localPeriodEnd = localSubscription.currentPeriodEnd;
+    const periodMatch = Math.abs(stripeCurrentPeriodEnd.getTime() - localPeriodEnd.getTime()) < 60000; // 1 minute tolerance
+
+    // 6. Build discrepancy details
+    const discrepancies: string[] = [];
+    if (!statusMatch) {
+      discrepancies.push(`Status mismatch: local=${localSubscription.status}, stripe=${mappedStripeStatus}`);
+    }
+    if (!periodMatch) {
+      discrepancies.push(`Period end mismatch: local=${localPeriodEnd.toISOString()}, stripe=${stripeCurrentPeriodEnd.toISOString()}`);
+    }
+
+    const isConsistent = statusMatch && periodMatch;
+
+    if (!isConsistent) {
+      log.warn(
+        {
+          localSubscriptionId,
+          stripeSubscriptionId,
+          discrepancies,
+        },
+        'Subscription reconciliation found discrepancies'
+      );
+      metrics.recordReconciliationMismatch('subscription');
+    }
+
+    return {
+      localSubscriptionId,
+      stripeSubscriptionId,
+      localStatus: localSubscription.status,
+      stripeStatus: mappedStripeStatus,
+      isConsistent,
+      discrepancy: discrepancies.length > 0 ? discrepancies.join('; ') : undefined,
+    };
+  } catch (error) {
+    log.error(
+      {
+        localSubscriptionId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Error during subscription reconciliation'
+    );
+    return null;
+  }
+}
+
+/**
+ * Get all subscriptions due for dunning processing
+ *
+ * Returns subscriptions that are:
+ * - In PAST_DUE status
+ * - Past the grace period (Day 7+)
+ */
+export async function getSubscriptionsDueForDunning(): Promise<Subscription[]> {
+  const db: DbClient = getDbClient();
+  
+  try {
+    // Get all subscriptions in PAST_DUE status
+    const tenantsWithActiveSubscriptions = await db.getTenantsWithActiveSubscriptions();
+    const subscriptionsDue: Subscription[] = [];
+
+    for (const tenant of tenantsWithActiveSubscriptions) {
+      const subscriptions = await db.getActiveSubscriptionsForTenant(tenant.id);
+      
+      for (const subscription of subscriptions) {
+        // Check if subscription is past due and past grace period
+        if (subscription.status === SubscriptionStatus.PAST_DUE) {
+          // Grace period is typically 7 days after becoming past_due
+          const gracePeriodDays = 7;
+          const gracePeriodEnd = new Date(subscription.currentPeriodEnd);
+          gracePeriodEnd.setDate(gracePeriodEnd.getDate() + gracePeriodDays);
+
+          if (new Date() > gracePeriodEnd) {
+            subscriptionsDue.push(subscription);
+          }
+        }
+      }
+    }
+
+    return subscriptionsDue;
+  } catch (error) {
+    console.error('[Dunning] Failed to get subscriptions due for dunning:', error);
+    return [];
+  }
+}
+
+/**
+ * Run daily reconciliation job
+ *
+ * Compares all active subscriptions with Stripe state and reports discrepancies.
+ * Should be scheduled via cron job or external scheduler.
+ */
+export async function runDailyReconciliation(log: FastifyBaseLogger): Promise<{
+  reconciled: number;
+  mismatches: ReconciliationResult[];
+  errors: number;
+}> {
+  const db: DbClient = getDbClient();
+  
+  log.info('Starting daily reconciliation job');
+
+  const mismatches: ReconciliationResult[] = [];
+  let reconciled = 0;
+  let errors = 0;
+
+  try {
+    // Get all tenants with active subscriptions
+    const tenants = await db.getTenantsWithActiveSubscriptions();
+
+    for (const tenant of tenants) {
+      const subscriptions = await db.getActiveSubscriptionsForTenant(tenant.id);
+
+      for (const subscription of subscriptions) {
+        try {
+          const result = await reconcileSubscription(subscription.id, log);
+          
+          if (result) {
+            reconciled++;
+            if (!result.isConsistent) {
+              mismatches.push(result);
+            }
+          } else {
+            errors++;
+          }
+        } catch (error) {
+          errors++;
+          log.error(
+            {
+              subscriptionId: subscription.id,
+              error: error instanceof Error ? error.message : String(error),
+            },
+            'Error reconciling subscription'
+          );
+        }
+      }
+    }
+
+    log.info(
+      {
+        reconciled,
+        mismatches: mismatches.length,
+        errors,
+      },
+      'Daily reconciliation job completed'
+    );
+
+    // Record metrics
+    metrics.recordReconciliationRun(reconciled, mismatches.length, errors);
+
+    return { reconciled, mismatches, errors };
+  } catch (error) {
+    log.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'Daily reconciliation job failed'
+    );
+
+    return { reconciled, mismatches, errors: errors + 1 };
+  }
 }
 
 /**

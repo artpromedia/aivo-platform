@@ -26,10 +26,10 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   serviceName: 'community-svc',
 
-  // Database
+  // Database - No default in production, development only uses localhost without credentials
   databaseUrl: requireEnv(
     'DATABASE_URL',
-    'postgresql://aivo:aivo_dev_password@localhost:5432/aivo_community'
+    'postgresql://localhost:5432/aivo_community_dev'
   ),
 
   // Logging

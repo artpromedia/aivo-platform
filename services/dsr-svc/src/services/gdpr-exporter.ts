@@ -5,8 +5,12 @@
  * in compliance with GDPR Art. 15 and Art. 20, LGPD Art. 18, CCPA §1798.100.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { createHash, createCipheriv, randomBytes } from 'crypto';
 import { Transform, PassThrough } from 'stream';
+
+import type { Pool } from 'pg';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 /* ==========================================================================
@@ -602,69 +606,238 @@ export interface ExportRouteHandlers {
   getDataSources: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 }
 
+/**
+ * Create export route handlers with database connection.
+ * This factory injects the database pool into the handlers.
+ */
+export function createExportHandlers(pool: Pool): ExportRouteHandlers {
+  return {
+    async createExport(request, reply) {
+      const body = request.body as Record<string, unknown>;
+      const tenantId = (request as any).tenantId || 'default';
+      const userId = (request as any).userId || 'system';
+
+      const validation = validateExportRequest(body);
+      if (!validation.valid) {
+        return reply.status(400).send({ errors: validation.errors });
+      }
+
+      const dsrRequestId = body.dsrRequestId as string | undefined;
+
+      // Create the export record in database
+      const { rows: exportRows } = await pool.query(
+        `INSERT INTO data_exports (
+          tenant_id, dsr_request_id, subject_id, subject_type, format,
+          categories, date_range_from, date_range_to, include_metadata,
+          encrypt_export, status, progress, requested_by_user_id
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'PENDING', 0, $11)
+        RETURNING id, status, created_at`,
+        [
+          tenantId,
+          dsrRequestId || null,
+          validation.request!.subjectId,
+          validation.request!.subjectType,
+          validation.request!.format,
+          JSON.stringify(validation.request!.categories),
+          validation.request!.dateRange?.from || null,
+          validation.request!.dateRange?.to || null,
+          validation.request!.includeMetadata,
+          validation.request!.encryptExport,
+          userId,
+        ]
+      );
+
+      const exportRecord = exportRows[0];
+
+      // Queue the export job for async processing
+      await pool.query(
+        `INSERT INTO export_jobs (export_id, tenant_id, status, priority)
+         VALUES ($1, $2, 'QUEUED', 'NORMAL')`,
+        [exportRecord.id, tenantId]
+      );
+
+      reply.status(202).send({
+        id: exportRecord.id,
+        status: exportRecord.status,
+        message: 'Export request accepted and queued for processing',
+        estimatedCompletionTime: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes estimate
+      });
+    },
+
+    async getExport(request, reply) {
+      const { id } = request.params as { id: string };
+      const tenantId = (request as any).tenantId || 'default';
+
+      const { rows } = await pool.query(
+        `SELECT id, tenant_id, dsr_request_id, subject_id, subject_type, format,
+                categories, status, progress, output_path, output_size,
+                checksum, download_url, download_expires_at,
+                created_at, updated_at, completed_at, failure_reason
+         FROM data_exports
+         WHERE id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+
+      if (rows.length === 0) {
+        return reply.status(404).send({ error: 'Export not found' });
+      }
+
+      const exportRecord = rows[0];
+      reply.send({
+        id: exportRecord.id,
+        status: exportRecord.status,
+        progress: exportRecord.progress,
+        format: exportRecord.format,
+        categories: exportRecord.categories,
+        outputSize: exportRecord.output_size,
+        downloadUrl: exportRecord.download_url,
+        downloadExpiresAt: exportRecord.download_expires_at,
+        createdAt: exportRecord.created_at,
+        completedAt: exportRecord.completed_at,
+        failureReason: exportRecord.failure_reason,
+      });
+    },
+
+    async downloadExport(request, reply) {
+      const { id } = request.params as { id: string };
+      const tenantId = (request as any).tenantId || 'default';
+
+      const { rows } = await pool.query(
+        `SELECT id, status, output_path, format, download_expires_at
+         FROM data_exports
+         WHERE id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+
+      if (rows.length === 0) {
+        return reply.status(404).send({ error: 'Export not found' });
+      }
+
+      const exportRecord = rows[0];
+
+      if (exportRecord.status !== 'COMPLETED') {
+        return reply.status(400).send({ 
+          error: 'Export not ready', 
+          status: exportRecord.status 
+        });
+      }
+
+      if (exportRecord.download_expires_at && new Date(exportRecord.download_expires_at) < new Date()) {
+        return reply.status(410).send({ error: 'Export download has expired' });
+      }
+
+      if (!exportRecord.output_path || !fs.existsSync(exportRecord.output_path)) {
+        return reply.status(404).send({ error: 'Export file not found' });
+      }
+
+      // Increment download counter
+      await pool.query(
+        `UPDATE data_exports SET download_count = COALESCE(download_count, 0) + 1 WHERE id = $1`,
+        [id]
+      );
+
+      const fileStream = fs.createReadStream(exportRecord.output_path);
+      const fileName = path.basename(exportRecord.output_path);
+
+      reply
+        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Type', getContentType(exportRecord.format))
+        .send(fileStream);
+    },
+
+    async listExports(request, reply) {
+      const { subjectId, limit = '50', offset = '0' } = request.query as { 
+        subjectId?: string; 
+        limit?: string;
+        offset?: string;
+      };
+      const tenantId = (request as any).tenantId || 'default';
+
+      let query = `
+        SELECT id, tenant_id, subject_id, subject_type, format, categories,
+               status, progress, created_at, completed_at
+        FROM data_exports
+        WHERE tenant_id = $1
+      `;
+      const params: (string | number)[] = [tenantId];
+      let paramIndex = 2;
+
+      if (subjectId) {
+        query += ` AND subject_id = $${paramIndex}`;
+        params.push(subjectId);
+        paramIndex++;
+      }
+
+      query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      params.push(parseInt(limit, 10), parseInt(offset, 10));
+
+      const { rows } = await pool.query(query, params);
+
+      // Get total count
+      let countQuery = `SELECT COUNT(*) FROM data_exports WHERE tenant_id = $1`;
+      const countParams: string[] = [tenantId];
+      if (subjectId) {
+        countQuery += ` AND subject_id = $2`;
+        countParams.push(subjectId);
+      }
+      const { rows: countRows } = await pool.query(countQuery, countParams);
+
+      reply.send({ 
+        exports: rows.map(r => ({
+          id: r.id,
+          subjectId: r.subject_id,
+          subjectType: r.subject_type,
+          format: r.format,
+          categories: r.categories,
+          status: r.status,
+          progress: r.progress,
+          createdAt: r.created_at,
+          completedAt: r.completed_at,
+        })),
+        total: parseInt(countRows[0].count, 10),
+      });
+    },
+
+    async getDataSources(_request, reply) {
+      reply.send({
+        sources: DATA_SOURCES.map((s) => ({
+          name: s.name,
+          categories: s.categories,
+          description: s.description,
+          retentionDays: s.retentionDays,
+        })),
+      });
+    },
+  };
+}
+
+function getContentType(format: string): string {
+  switch (format) {
+    case 'JSON': return 'application/json';
+    case 'CSV': return 'text/csv';
+    case 'PDF': return 'application/pdf';
+    case 'XML': return 'application/xml';
+    default: return 'application/octet-stream';
+  }
+}
+
+// Legacy export handlers (without database - for backward compatibility)
 export const exportHandlers: ExportRouteHandlers = {
   async createExport(request, reply) {
-    const body = request.body as Record<string, unknown>;
-    const tenantId = (request as any).tenantId || 'default';
-
-    const validation = validateExportRequest(body);
-    if (!validation.valid) {
-      return reply.status(400).send({ errors: validation.errors });
-    }
-
-    const exportRequest: DataExportRequest = {
-      id: `EXP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      tenantId,
-      dsrRequestId: body.dsrRequestId as string | undefined,
-      ...validation.request!,
-      status: 'PENDING',
-      progress: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as DataExportRequest;
-
-    // TODO: Queue for async processing
-    // await queue.add('data-export', exportRequest);
-
-    reply.status(202).send({
-      id: exportRequest.id,
-      status: exportRequest.status,
-      message: 'Export request accepted and queued for processing',
-      estimatedCompletionTime: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes estimate
+    reply.status(501).send({ 
+      error: 'Export handlers require database connection. Use createExportHandlers(pool) factory.' 
     });
   },
-
-  async getExport(request, reply) {
-    const { id } = request.params as { id: string };
-
-    // TODO: Fetch from database
-    // const exportRecord = await prisma.dataExport.findUnique({ where: { id } });
-
-    reply.status(404).send({ error: 'Export not found' });
+  async getExport(_request, reply) {
+    reply.status(501).send({ error: 'Use createExportHandlers(pool) factory.' });
   },
-
-  async downloadExport(request, reply) {
-    const { id } = request.params as { id: string };
-
-    // TODO: Fetch and stream from storage
-    // const exportRecord = await prisma.dataExport.findUnique({ where: { id } });
-
-    reply.status(404).send({ error: 'Export not found' });
+  async downloadExport(_request, reply) {
+    reply.status(501).send({ error: 'Use createExportHandlers(pool) factory.' });
   },
-
-  async listExports(request, reply) {
-    const { subjectId } = request.query as { subjectId?: string };
-    const tenantId = (request as any).tenantId || 'default';
-
-    // TODO: Fetch from database
-    // const exports = await prisma.dataExport.findMany({
-    //   where: { tenantId, subjectId },
-    //   orderBy: { createdAt: 'desc' },
-    // });
-
-    reply.send({ exports: [], total: 0 });
+  async listExports(_request, reply) {
+    reply.status(501).send({ error: 'Use createExportHandlers(pool) factory.' });
   },
-
   async getDataSources(_request, reply) {
     reply.send({
       sources: DATA_SOURCES.map((s) => ({

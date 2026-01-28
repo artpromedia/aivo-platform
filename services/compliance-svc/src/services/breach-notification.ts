@@ -6,7 +6,6 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { randomUUID } from 'crypto';
 
 /* ==========================================================================
    Type Definitions
@@ -625,8 +624,12 @@ export function renderTemplate(
   // Simple template rendering (in production, use Handlebars or similar)
   for (const [key, value] of Object.entries(data)) {
     const placeholder = new RegExp(`{{${key}}}`, 'g');
-    subject = subject.replace(placeholder, String(value));
-    body = body.replace(placeholder, String(value));
+    // Handle different value types - objects need JSON stringification
+    const stringValue = typeof value === 'object' && value !== null 
+      ? JSON.stringify(value) 
+      : String(value as string | number | boolean);
+    subject = subject.replace(placeholder, stringValue);
+    body = body.replace(placeholder, stringValue);
   }
 
   // Handle arrays (simple implementation)
@@ -635,7 +638,11 @@ export function renderTemplate(
     if (!Array.isArray(array)) return '';
     return array.map((item, index) => {
       let rendered = itemTemplate;
-      rendered = rendered.replace(/{{this}}/g, String(item));
+      // Handle object items with JSON stringify, primitives with String()
+      const itemString = typeof item === 'object' && item !== null
+        ? JSON.stringify(item)
+        : String(item as string | number | boolean);
+      rendered = rendered.replace(/{{this}}/g, itemString);
       rendered = rendered.replace(/{{@last}}/g, String(index === array.length - 1));
       return rendered;
     }).join('');
@@ -661,7 +668,7 @@ export function renderTemplate(
  * Perform comprehensive breach assessment
  */
 export function assessBreach(breach: DataBreach): BreachAssessment {
-  const { severity, score, factors } = calculateSeverity(breach);
+  const { severity, score: _score, factors } = calculateSeverity(breach);
   const jurisdictionRequirements = getJurisdictionRequirements(breach.affectedRegions);
 
   // Determine notification requirements
@@ -728,17 +735,13 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/breaches', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = request.body as Record<string, unknown>;
     const tenantId = (request as any).tenantId || 'default';
+    const userId = (request as any).userId;
 
-    const breach: DataBreach = {
-      id: `BRH-${randomUUID().slice(0, 8).toUpperCase()}`,
-      tenantId,
+    // Calculate severity from input
+    const breachInput = {
       title: body.title as string,
       description: body.description as string,
       type: (body.type as BreachType) || 'CONFIDENTIALITY',
-      severity: 'MEDIUM', // Will be calculated
-      status: 'DETECTED',
-      discoveredAt: new Date(),
-      occurredAt: body.occurredAt ? new Date(body.occurredAt as string) : undefined,
       affectedSystems: (body.affectedSystems as string[]) || [],
       affectedDataCategories: (body.affectedDataCategories as string[]) || [],
       affectedSubjectCount: (body.affectedSubjectCount as number) || 0,
@@ -748,84 +751,288 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
       wasExfiltrated: (body.wasExfiltrated as boolean) || false,
       wasExploited: (body.wasExploited as boolean) || false,
       riskToSubjects: (body.riskToSubjects as string) || '',
-      riskLevel: 'POSSIBLE',
       potentialHarm: (body.potentialHarm as string[]) || [],
-      notifyAuthority: false,
-      authorityJurisdictions: [],
-      notifySubjects: false,
       containmentMeasures: (body.containmentMeasures as string) || '',
       remediationPlan: (body.remediationPlan as string) || '',
       preventionMeasures: (body.preventionMeasures as string) || '',
-      reportedBy: (body.reportedBy as string) || 'UNKNOWN',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
 
     // Calculate severity
-    const { severity } = calculateSeverity(breach);
-    breach.severity = severity;
+    const { severity } = calculateSeverity(breachInput as any);
 
-    // Perform assessment
-    const assessment = assessBreach(breach);
+    // Perform assessment for notification requirements
+    const tempBreach = {
+      ...breachInput,
+      severity,
+      status: 'DETECTED' as const,
+      discoveredAt: new Date(),
+      notifyAuthority: false,
+      authorityJurisdictions: [] as string[],
+      notifySubjects: false,
+      riskLevel: 'POSSIBLE' as const,
+    };
+    const assessment = assessBreach(tempBreach as any);
 
-    // Update breach with assessment results
-    breach.notifyAuthority = assessment.authorityNotificationRequired;
-    breach.notifySubjects = assessment.subjectNotificationRequired;
+    // Import prisma client
+    const { prisma } = await import('../prisma.js');
 
-    if (assessment.authorityNotificationRequired) {
-      breach.authorityNotificationDeadline = new Date(
-        Date.now() + assessment.authorityDeadlineHours * 60 * 60 * 1000
-      );
-      breach.authorityJurisdictions = assessment.jurisdictionRequirements.map((r) => r.jurisdiction);
-    }
+    // Create breach record in database
+    const breach = await prisma.dataBreach.create({
+      data: {
+        tenantId,
+        title: breachInput.title,
+        description: breachInput.description,
+        severity: severity as any,
+        status: 'DETECTED',
+        detectedAt: new Date(),
+        occurredAt: body.occurredAt ? new Date(body.occurredAt as string) : null,
+        affectedDataTypes: breachInput.affectedDataCategories,
+        affectedRecordsCount: breachInput.affectedSubjectCount,
+        affectedUsersCount: breachInput.affectedSubjectCount,
+        affectedUserCategories: breachInput.affectedSubjectTypes,
+        rootCause: body.rootCause as string || null,
+        attackVector: body.attackVector as string || null,
+        impactDescription: breachInput.riskToSubjects,
+        notifyAuthority: assessment.authorityNotificationRequired,
+        authorityNotificationDeadline: assessment.authorityNotificationRequired 
+          ? new Date(Date.now() + assessment.authorityDeadlineHours * 60 * 60 * 1000)
+          : null,
+        authorityJurisdictions: assessment.jurisdictionRequirements.map((r) => r.jurisdiction),
+        notifySubjects: assessment.subjectNotificationRequired,
+        remediationSteps: breachInput.remediationPlan ? [breachInput.remediationPlan] : [],
+        reportedByUserId: userId || null,
+      },
+    });
 
-    // TODO: Persist to database
-    // await prisma.dataBreach.create({ data: breach });
+    // Create audit log entry
+    await prisma.breachAuditLog.create({
+      data: {
+        breachId: breach.id,
+        tenantId,
+        action: 'CREATED',
+        performedBy: userId || null,
+        newValue: { title: breach.title, severity: breach.severity },
+      },
+    });
 
     reply.status(201).send({
-      breach,
+      breach: {
+        id: breach.id,
+        tenantId: breach.tenantId,
+        title: breach.title,
+        description: breach.description,
+        severity: breach.severity,
+        status: breach.status,
+        detectedAt: breach.detectedAt,
+        notifyAuthority: breach.notifyAuthority,
+        authorityNotificationDeadline: breach.authorityNotificationDeadline,
+        authorityJurisdictions: breach.authorityJurisdictions,
+        notifySubjects: breach.notifySubjects,
+        createdAt: breach.createdAt,
+      },
       assessment,
     });
+  });
+
+  // List breaches with pagination
+  fastify.get('/breaches', async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = request.query as Record<string, unknown>;
+    const tenantId = (request as any).tenantId || 'default';
+    
+    const page = parseInt(query.page as string) || 1;
+    const limit = Math.min(parseInt(query.limit as string) || 20, 100);
+    const offset = (page - 1) * limit;
+    const status = query.status as string;
+    const severity = query.severity as string;
+
+    const { prisma } = await import('../prisma.js');
+
+    const where: any = { tenantId };
+    if (status) where.status = status;
+    if (severity) where.severity = severity;
+
+    const [breaches, total] = await Promise.all([
+      prisma.dataBreach.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          severity: true,
+          status: true,
+          detectedAt: true,
+          affectedRecordsCount: true,
+          notifyAuthority: true,
+          authorityNotificationDeadline: true,
+          notifySubjects: true,
+          createdAt: true,
+        },
+      }),
+      prisma.dataBreach.count({ where }),
+    ]);
+
+    reply.send({
+      breaches,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  });
+
+  // Get single breach by ID
+  fastify.get('/breaches/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const tenantId = (request as any).tenantId || 'default';
+
+    const { prisma } = await import('../prisma.js');
+
+    const breach = await prisma.dataBreach.findFirst({
+      where: { id, tenantId },
+      include: {
+        notifications: {
+          select: {
+            id: true,
+            notificationType: true,
+            recipientType: true,
+            status: true,
+            sentAt: true,
+            createdAt: true,
+          },
+        },
+        auditLogs: {
+          orderBy: { timestamp: 'desc' },
+          take: 20,
+        },
+      },
+    });
+
+    if (!breach) {
+      return reply.status(404).send({ error: 'Breach not found' });
+    }
+
+    reply.send(breach);
   });
 
   // Get breach assessment
   fastify.get('/breaches/:id/assessment', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
+    const tenantId = (request as any).tenantId || 'default';
 
-    // TODO: Fetch from database
-    // const breach = await prisma.dataBreach.findUnique({ where: { id } });
+    const { prisma } = await import('../prisma.js');
 
-    // For now, return mock
-    reply.status(404).send({ error: 'Breach not found' });
+    const breach = await prisma.dataBreach.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!breach) {
+      return reply.status(404).send({ error: 'Breach not found' });
+    }
+
+    // Build breach object for assessment
+    const breachForAssessment = {
+      affectedSubjectCount: breach.affectedUsersCount || 0,
+      affectedDataCategories: breach.affectedDataTypes as string[] || [],
+      affectedRegions: breach.authorityJurisdictions as string[] || [],
+      wasEncrypted: false,
+      wasExfiltrated: false,
+      wasExploited: false,
+    };
+
+    const assessment = assessBreach(breachForAssessment as any);
+
+    reply.send({
+      breachId: breach.id,
+      severity: breach.severity,
+      status: breach.status,
+      assessment,
+    });
   });
 
   // Generate notification
   fastify.post('/breaches/:id/notifications', async (request: FastifyRequest, reply: FastifyReply) => {
     const { id } = request.params as { id: string };
     const body = request.body as Record<string, unknown>;
+    const tenantId = (request as any).tenantId || 'default';
+    const userId = (request as any).userId;
 
     const type = body.type as 'AUTHORITY' | 'SUBJECT';
     const language = (body.language as string) || 'en';
+    const recipientType = body.recipientType as string || (type === 'AUTHORITY' ? 'AUTHORITY' : 'INDIVIDUAL');
+    const recipientEmail = body.recipientEmail as string || null;
+    const recipientName = body.recipientName as string || null;
+    const jurisdiction = body.jurisdiction as string || null;
 
     const template = getNotificationTemplate(type, language);
     if (!template) {
       return reply.status(400).send({ error: 'Template not found' });
     }
 
-    // TODO: Fetch breach and render template
-    // const breach = await prisma.dataBreach.findUnique({ where: { id } });
+    const { prisma } = await import('../prisma.js');
 
-    const notification = {
-      id: `NTF-${randomUUID().slice(0, 8).toUpperCase()}`,
-      breachId: id,
-      templateId: template.id,
-      type,
+    // Fetch breach from database
+    const breach = await prisma.dataBreach.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!breach) {
+      return reply.status(404).send({ error: 'Breach not found' });
+    }
+
+    // Render template with breach data
+    const renderedContent = template.content
+      .replace(/\{\{breachTitle\}\}/g, breach.title)
+      .replace(/\{\{breachDescription\}\}/g, breach.description || '')
+      .replace(/\{\{detectedAt\}\}/g, breach.detectedAt?.toISOString() || '')
+      .replace(/\{\{affectedRecordsCount\}\}/g, String(breach.affectedRecordsCount || 0))
+      .replace(/\{\{organizationName\}\}/g, 'AIVO Learning Platform')
+      .replace(/\{\{contactEmail\}\}/g, 'privacy@aivo.edu');
+
+    // Create notification record
+    const notification = await prisma.breachNotification.create({
+      data: {
+        breachId: breach.id,
+        tenantId,
+        recipientType,
+        recipientEmail,
+        recipientName,
+        recipientJurisdiction: jurisdiction,
+        notificationType: type,
+        templateId: template.id,
+        subject: template.subject.replace(/\{\{breachTitle\}\}/g, breach.title),
+        content: renderedContent,
+        status: 'PENDING',
+        scheduledAt: body.scheduledAt ? new Date(body.scheduledAt as string) : null,
+      },
+    });
+
+    // Create audit log entry
+    await prisma.breachAuditLog.create({
+      data: {
+        breachId: breach.id,
+        tenantId,
+        action: 'NOTIFICATION_CREATED',
+        performedBy: userId || null,
+        newValue: { notificationId: notification.id, type, recipientType },
+      },
+    });
+
+    reply.status(201).send({
+      id: notification.id,
+      breachId: notification.breachId,
+      templateId: notification.templateId,
+      type: notification.notificationType,
       language,
-      status: 'PENDING',
-      createdAt: new Date(),
-    };
-
-    reply.status(201).send(notification);
+      recipientType: notification.recipientType,
+      recipientEmail: notification.recipientEmail,
+      status: notification.status,
+      subject: notification.subject,
+      createdAt: notification.createdAt,
+    });
   });
 
   // Get jurisdiction requirements

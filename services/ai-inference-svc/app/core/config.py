@@ -2,8 +2,19 @@
 Configuration settings for AI Inference Service.
 """
 
-from typing import List
+import os
+from typing import List, Optional
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
+
+
+def _get_database_url() -> str:
+    """Get database URL, requiring it in production."""
+    url = os.environ.get("DATABASE_URL")
+    env = os.environ.get("ENVIRONMENT", "development")
+    if not url and env == "production":
+        raise EnvironmentError("DATABASE_URL is required in production")
+    return url or "postgresql+asyncpg://localhost:5432/ai_inference_dev"
 
 
 class Settings(BaseSettings):
@@ -13,6 +24,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "AI Inference Service"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"
 
     # Server
     HOST: str = "0.0.0.0"
@@ -22,8 +34,8 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = ["*"]
 
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://user:pass@localhost:5432/ai_inference"
+    # Database - MUST be set via environment variable in production
+    DATABASE_URL: str = _get_database_url()
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

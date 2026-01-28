@@ -117,4 +117,24 @@ abstract class ApiEndpoints {
   // Subscription endpoints
   static const String subscription = '/subscription';
   static const String modules = '/subscription/modules';
+
+  // Progress Report endpoints
+  static const String progressReportSummary = '/progress/{learnerId}/summary';
+  static const String progressReportActivities = '/progress/{learnerId}/activities';
+  static const String progressReportSkills = '/progress/{learnerId}/skills';
+  static const String progressReportWeekly = '/progress/{learnerId}/weekly';
+  static const String progressReportLinkedLearners = '/progress/linked-learners';
+
+  // Messaging endpoints (new parent-teacher messaging)
+  static const String messagingConversations = '/messaging/conversations';
+  static const String messagingMessages = '/messaging/conversations/{conversationId}/messages';
+  static const String messagingUnreadCount = '/messaging/unread-count';
+  static const String messagingAttachments = '/messaging/attachments';
+
+  // Gamification endpoints
+  static const String gamificationProfile = '/gamification/{learnerId}/profile';
+  static const String gamificationBadges = '/gamification/{learnerId}/badges';
+  static const String gamificationAllBadges = '/gamification/badges';
+  static const String gamificationLeaderboard = '/gamification/leaderboard';
+  static const String gamificationRewards = '/gamification/rewards';
 }

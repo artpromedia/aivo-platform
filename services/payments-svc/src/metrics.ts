@@ -408,6 +408,37 @@ export function recordDunningAction(action: string, tenantType: string): void {
   registry.increment(dunningEventsTotal, { stage: action, tenant_type: tenantType });
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// RECONCILIATION METRICS
+// ──────────────────────────────────────────────────────────────────────────────
+
+const reconciliationMismatchTotal = registry.createCounter(
+  'billing_reconciliation_mismatch_total',
+  'Total count of reconciliation mismatches found',
+  ['resource_type']
+);
+
+const reconciliationRunTotal = registry.createCounter(
+  'billing_reconciliation_run_total',
+  'Total count of reconciliation runs with results',
+  ['result']
+);
+
+/**
+ * Record a reconciliation mismatch
+ */
+export function recordReconciliationMismatch(resourceType: string): void {
+  registry.increment(reconciliationMismatchTotal, { resource_type: resourceType });
+}
+
+/**
+ * Record reconciliation run results
+ */
+export function recordReconciliationRun(reconciled: number, mismatches: number, errors: number): void {
+  registry.increment(reconciliationRunTotal, { result: 'reconciled' }, reconciled);
+  registry.increment(reconciliationRunTotal, { result: 'mismatch' }, mismatches);
+  registry.increment(reconciliationRunTotal, { result: 'error' }, errors);
+}
 /**
  * Record an entitlement mismatch for a specific tenant
  */

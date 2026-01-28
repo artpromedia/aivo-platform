@@ -641,3 +641,145 @@ model ComplianceAlert {
   @@index([tenantId, alertType])
   @@index([tenantId, createdAt])
 }
+
+// =============================================================================
+// DATA BREACH MANAGEMENT (GDPR Art. 33-34, FERPA, COPPA)
+// =============================================================================
+
+/// Severity level for data breaches
+enum BreachSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Status of a data breach
+enum BreachStatus {
+  DETECTED
+  INVESTIGATING
+  CONTAINED
+  REMEDIATED
+  CLOSED
+}
+
+/// Data breach record for compliance tracking
+model DataBreach {
+  id                          String         @id @default(uuid()) @db.Uuid
+  tenantId                    String         @db.Uuid
+  
+  // Breach identification
+  title                       String
+  description                 String
+  severity                    BreachSeverity
+  status                      BreachStatus   @default(DETECTED)
+  
+  // When breach occurred/discovered
+  detectedAt                  DateTime       @default(now())
+  occurredAt                  DateTime?
+  containedAt                 DateTime?
+  resolvedAt                  DateTime?
+  
+  // Affected data
+  affectedDataTypes           Json           @default("[]") // Array of data types: ["PERSONAL", "EDUCATIONAL", "FINANCIAL"]
+  affectedRecordsCount        Int?
+  affectedUsersCount          Int?
+  affectedUserCategories      Json           @default("[]") // ["STUDENT", "PARENT", "TEACHER"]
+  
+  // Root cause & impact
+  rootCause                   String?
+  attackVector                String?        // "PHISHING", "MALWARE", "INSIDER", "MISCONFIGURATION", etc.
+  impactDescription           String?
+  
+  // Regulatory notifications
+  notifyAuthority             Boolean        @default(false)
+  authorityNotificationDeadline DateTime?
+  authorityNotifiedAt         DateTime?
+  authorityJurisdictions      Json           @default("[]") // Array of jurisdiction codes
+  authorityReferenceNumber    String?
+  
+  notifySubjects              Boolean        @default(false)
+  subjectNotificationDeadline DateTime?
+  subjectsNotifiedAt          DateTime?
+  subjectNotificationMethod   String?        // "EMAIL", "LETTER", "WEBSITE", "ALL"
+  
+  // Remediation
+  remediationSteps            Json           @default("[]") // Array of remediation actions
+  lessonsLearned              String?
+  
+  // Audit trail
+  reportedByUserId            String?        @db.Uuid
+  assignedToUserId            String?        @db.Uuid
+  
+  createdAt                   DateTime       @default(now())
+  updatedAt                   DateTime       @updatedAt
+  
+  // Relations
+  notifications               BreachNotification[]
+  auditLog                    BreachAuditLog[]
+  
+  @@index([tenantId, status])
+  @@index([tenantId, severity])
+  @@index([detectedAt(sort: Desc)])
+  @@index([tenantId, notifyAuthority, authorityNotifiedAt])
+}
+
+/// Notifications sent for a data breach
+model BreachNotification {
+  id               String    @id @default(uuid()) @db.Uuid
+  breachId         String    @db.Uuid
+  tenantId         String    @db.Uuid
+  
+  // Notification details
+  notificationType String    // "AUTHORITY", "SUBJECT", "INTERNAL"
+  templateId       String?
+  language         String    @default("en")
+  
+  // Recipient
+  recipientType    String?   // "DPA", "INDIVIDUAL", "CLASS_ACTION"
+  recipientEmail   String?
+  recipientName    String?
+  recipientAddress String?
+  
+  // Content
+  subject          String?
+  body             String?
+  
+  // Status
+  status           String    @default("PENDING") // "PENDING", "SENT", "DELIVERED", "FAILED"
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  failureReason    String?
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  breach           DataBreach @relation(fields: [breachId], references: [id], onDelete: Cascade)
+  
+  @@index([breachId])
+  @@index([tenantId, status])
+  @@index([tenantId, notificationType])
+}
+
+/// Audit log for breach-related actions
+model BreachAuditLog {
+  id            String    @id @default(uuid()) @db.Uuid
+  breachId      String    @db.Uuid
+  tenantId      String    @db.Uuid
+  
+  action        String    // "CREATED", "UPDATED", "STATUS_CHANGED", "NOTIFICATION_SENT", etc.
+  performedBy   String?   @db.Uuid
+  ipAddress     String?
+  userAgent     String?
+  
+  previousValue Json?
+  newValue      Json?
+  notes         String?
+  
+  createdAt     DateTime  @default(now())
+  
+  breach        DataBreach @relation(fields: [breachId], references: [id], onDelete: Cascade)
+  
+  @@index([breachId])
+  @@index([tenantId, createdAt])
+}
