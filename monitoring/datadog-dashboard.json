@@ -1,0 +1,727 @@
+{
+  "title": "AIVO Production Dashboard",
+  "description": "Comprehensive production monitoring for AIVO platform",
+  "layout_type": "ordered",
+  "is_read_only": false,
+  "notify_list": [],
+  "template_variables": [
+    {
+      "name": "environment",
+      "default": "production",
+      "prefix": "env"
+    },
+    {
+      "name": "service",
+      "default": "*",
+      "prefix": "service"
+    }
+  ],
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "System Overview",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Request Rate",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:http.requests{$environment,$service}.as_count()",
+                  "aggregator": "avg"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Error Rate",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:http.errors{$environment,$service}.as_count() / sum:http.requests{$environment,$service}.as_count() * 100",
+                  "aggregator": "avg",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 1,
+                      "palette": "red_on_white"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 0.5,
+                      "palette": "yellow_on_white"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 0.5,
+                      "palette": "green_on_white"
+                    }
+                  ]
+                }
+              ],
+              "autoscale": false,
+              "custom_unit": "%",
+              "precision": 2
+            }
+          },
+          {
+            "definition": {
+              "title": "Active Users",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:active.users{$environment}",
+                  "aggregator": "last"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Uptime",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "avg:system.uptime{$environment,$service}",
+                  "aggregator": "avg"
+                }
+              ],
+              "autoscale": true,
+              "custom_unit": "s",
+              "precision": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Response Times",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "P50 Response Time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value", "sum"],
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:http.response_time.p50{$environment,$service} by {service}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "dog_classic",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "scale": "linear",
+                "label": "milliseconds",
+                "min": "auto",
+                "max": "auto"
+              },
+              "markers": [
+                {
+                  "value": "y = 100",
+                  "display_type": "warning dashed",
+                  "label": "P50 Target: 100ms"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "P95 Response Time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value", "sum"],
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:http.response_time.p95{$environment,$service} by {service}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "scale": "linear",
+                "label": "milliseconds",
+                "min": "auto",
+                "max": "auto"
+              },
+              "markers": [
+                {
+                  "value": "y = 200",
+                  "display_type": "error dashed",
+                  "label": "P95 Target: 200ms"
+                },
+                {
+                  "value": "y = 150",
+                  "display_type": "warning dashed",
+                  "label": "P95 Warning: 150ms"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "P99 Response Time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "legend_columns": ["avg", "min", "max", "value", "sum"],
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:http.response_time.p99{$environment,$service} by {service}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "scale": "linear",
+                "label": "milliseconds",
+                "min": "auto",
+                "max": "auto"
+              },
+              "markers": [
+                {
+                  "value": "y = 500",
+                  "display_type": "error dashed",
+                  "label": "P99 Target: 500ms"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Database Performance",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Database Connection Pool Usage",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:postgresql.connections.active{$environment}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "dog_classic",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                },
+                {
+                  "q": "avg:postgresql.connections.idle{$environment}",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "scale": "linear",
+                "label": "connections"
+              },
+              "markers": [
+                {
+                  "value": "y = 45",
+                  "display_type": "error dashed",
+                  "label": "Pool Limit: 50"
+                },
+                {
+                  "value": "y = 40",
+                  "display_type": "warning dashed",
+                  "label": "Warning: 80%"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Database Query Time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:postgresql.query_time.avg{$environment}",
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "milliseconds"
+              },
+              "markers": [
+                {
+                  "value": "y = 200",
+                  "display_type": "warning dashed",
+                  "label": "Slow Query: 200ms"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Slow Queries Count",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:postgresql.slow_queries{$environment}.as_count()",
+                  "aggregator": "sum",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 10,
+                      "palette": "red_on_white"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 5,
+                      "palette": "yellow_on_white"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 5,
+                      "palette": "green_on_white"
+                    }
+                  ]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Cache Performance",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Cache Hit Rate",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "sum:redis.hits{$environment}.as_count() / (sum:redis.hits{$environment}.as_count() + sum:redis.misses{$environment}.as_count()) * 100",
+                  "aggregator": "avg",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">=",
+                      "value": 70,
+                      "palette": "green_on_white"
+                    },
+                    {
+                      "comparator": ">=",
+                      "value": 60,
+                      "palette": "yellow_on_white"
+                    },
+                    {
+                      "comparator": "<",
+                      "value": 60,
+                      "palette": "red_on_white"
+                    }
+                  ]
+                }
+              ],
+              "autoscale": false,
+              "custom_unit": "%",
+              "precision": 1
+            }
+          },
+          {
+            "definition": {
+              "title": "Cache Hit/Miss Rate",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:redis.hits{$environment}.as_rate()",
+                  "display_type": "area",
+                  "style": {
+                    "palette": "green"
+                  }
+                },
+                {
+                  "q": "sum:redis.misses{$environment}.as_rate()",
+                  "display_type": "area",
+                  "style": {
+                    "palette": "red"
+                  }
+                }
+              ],
+              "yaxis": {
+                "label": "operations/sec"
+              }
+            }
+          },
+          {
+            "definition": {
+              "title": "Redis Memory Usage",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:redis.memory.used{$environment}",
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "bytes"
+              },
+              "markers": [
+                {
+                  "value": "y = 3758096384",
+                  "display_type": "error dashed",
+                  "label": "Limit: 3.5GB"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Trust Score Performance",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Trust Score Calculation Time (P95)",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "query_value",
+              "requests": [
+                {
+                  "q": "avg:trust_score.calculation_time.p95{$environment}",
+                  "aggregator": "avg",
+                  "conditional_formats": [
+                    {
+                      "comparator": "<=",
+                      "value": 900,
+                      "palette": "green_on_white"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 900,
+                      "palette": "red_on_white"
+                    }
+                  ]
+                }
+              ],
+              "autoscale": true,
+              "custom_unit": "ms",
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Trust Score Calculation Time",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:trust_score.calculation_time.p50{$environment}",
+                  "display_type": "line"
+                },
+                {
+                  "q": "avg:trust_score.calculation_time.p95{$environment}",
+                  "display_type": "line"
+                },
+                {
+                  "q": "avg:trust_score.calculation_time.p99{$environment}",
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "milliseconds"
+              },
+              "markers": [
+                {
+                  "value": "y = 900",
+                  "display_type": "error dashed",
+                  "label": "P95 Target: 900ms"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Service Call Failures",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:trust_score.service_calls.failures{$environment} by {service}",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "failures"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Resource Utilization",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "CPU Usage",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:system.cpu.usage{$environment,$service} by {service}",
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "percent",
+                "max": "100"
+              },
+              "markers": [
+                {
+                  "value": "y = 90",
+                  "display_type": "error dashed",
+                  "label": "Critical: 90%"
+                },
+                {
+                  "value": "y = 80",
+                  "display_type": "warning dashed",
+                  "label": "Warning: 80%"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Memory Usage",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:system.memory.usage{$environment,$service} by {service}",
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": {
+                "label": "percent",
+                "max": "100"
+              },
+              "markers": [
+                {
+                  "value": "y = 90",
+                  "display_type": "error dashed",
+                  "label": "Critical: 90%"
+                },
+                {
+                  "value": "y = 80",
+                  "display_type": "warning dashed",
+                  "label": "Warning: 80%"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Network I/O",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:system.network.bytes_rcvd{$environment,$service}.as_rate()",
+                  "display_type": "area"
+                },
+                {
+                  "q": "avg:system.network.bytes_sent{$environment,$service}.as_rate()",
+                  "display_type": "area"
+                }
+              ],
+              "yaxis": {
+                "label": "bytes/sec"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "Error Tracking",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Error Rate by Service",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:http.errors{$environment} by {service}.as_rate()",
+                  "display_type": "bars"
+                }
+              ],
+              "yaxis": {
+                "label": "errors/sec"
+              }
+            }
+          },
+          {
+            "definition": {
+              "title": "Error Rate by Status Code",
+              "title_size": "16",
+              "title_align": "left",
+              "show_legend": true,
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:http.errors{$environment} by {status_code}.as_rate()",
+                  "display_type": "area"
+                }
+              ],
+              "yaxis": {
+                "label": "errors/sec"
+              }
+            }
+          },
+          {
+            "definition": {
+              "title": "Top 10 Error Messages",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "toplist",
+              "requests": [
+                {
+                  "q": "top(sum:error.count{$environment} by {error_message}.as_count(), 10, 'sum', 'desc')"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "SLO Tracking",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Availability SLO (99.9%)",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "slo",
+              "slo_id": "availability-slo"
+            }
+          },
+          {
+            "definition": {
+              "title": "P95 Response Time SLO (<200ms)",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "slo",
+              "slo_id": "p95-response-time-slo"
+            }
+          },
+          {
+            "definition": {
+              "title": "Error Rate SLO (<0.5%)",
+              "title_size": "16",
+              "title_align": "left",
+              "type": "slo",
+              "slo_id": "error-rate-slo"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

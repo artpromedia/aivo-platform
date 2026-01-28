@@ -23,7 +23,54 @@ export function createApp() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('sel-svc'));
   
-  app.get('/health', async () => ({ status: 'healthy', service: 'sel-svc' }));
+  app.get('/health', async () => {
+    const startTime = Date.now();
+    let dbStatus = 'healthy';
+    let dbLatencyMs = 0;
+    let dbError: string | undefined;
+
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as health_check`;
+      dbLatencyMs = Date.now() - startTime;
+      if (dbLatencyMs > 1000) {
+        dbStatus = 'unhealthy';
+      } else if (dbLatencyMs > 500) {
+        dbStatus = 'degraded';
+      }
+    } catch (error) {
+      dbStatus = 'unhealthy';
+      dbLatencyMs = Date.now() - startTime;
+      dbError = error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    return {
+      status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
+      service: 'sel-svc',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        error: dbError,
+      },
+    };
+  });
+
+  app.get('/ready', async (_request, reply) => {
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as ready_check`;
+      return reply.send({ status: 'ready', service: 'sel-svc' });
+    } catch (error) {
+      return reply.status(503).send({
+        status: 'not ready',
+        service: 'sel-svc',
+        error: error instanceof Error ? error.message : 'Database unavailable',
+      });
+    }
+  });
   app.register(async (protectedApp) => {
     protectedApp.addHook('preHandler', authenticate);
     protectedApp.register(routes);

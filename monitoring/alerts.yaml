@@ -1,0 +1,379 @@
+# AIVO Production Alert Configuration
+# 
+# This file defines all monitoring alerts for the AIVO platform.
+# Alerts are grouped by severity: critical (PagerDuty) and warning (Slack).
+
+# =============================================================================
+# CRITICAL ALERTS (PagerDuty - Immediate Response Required)
+# =============================================================================
+
+critical_alerts:
+  # High Error Rate Alert
+  - name: "High Error Rate"
+    description: "Error rate exceeds 1% - indicates serious production issues"
+    query: "avg(last_5m):sum:http.errors{env:production}.as_count() / sum:http.requests{env:production}.as_count() * 100 > 1"
+    severity: critical
+    thresholds:
+      critical: 1.0  # 1% error rate
+      warning: 0.5   # 0.5% error rate
+    evaluation_delay: 60  # seconds
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: Error rate is {{value}}% (threshold: 1%)
+        
+        This indicates a serious production issue requiring immediate attention.
+        
+        Investigation steps:
+        1. Check error logs in Datadog
+        2. Identify failing endpoints
+        3. Review recent deployments
+        4. Check service health
+        
+        Runbook: https://docs.aivo.app/runbooks/high-error-rate
+
+  # P95 Response Time High
+  - name: "P95 Response Time Critical"
+    description: "P95 response time exceeds 300ms - performance severely degraded"
+    query: "avg(last_10m):avg:http.response_time.p95{env:production} > 300"
+    severity: critical
+    thresholds:
+      critical: 300  # milliseconds
+      warning: 200   # milliseconds
+    evaluation_delay: 60
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: P95 response time is {{value}}ms (threshold: 300ms)
+        
+        System performance is severely degraded.
+        
+        Investigation steps:
+        1. Check database connection pool
+        2. Check cache hit rates
+        3. Review slow query logs
+        4. Check resource utilization
+        
+        Runbook: https://docs.aivo.app/runbooks/performance-degradation
+
+  # Database Connection Pool Exhausted
+  - name: "Database Connection Pool Exhausted"
+    description: "Database connection pool usage exceeds 90%"
+    query: "avg(last_5m):avg:postgresql.connections.active{env:production} > 45"
+    severity: critical
+    thresholds:
+      critical: 45  # 90% of 50 connection pool
+      warning: 40   # 80% of 50 connection pool
+    evaluation_delay: 60
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: Database connection pool at {{value}}/50 connections (90%)
+        
+        Pool exhaustion imminent. May cause connection timeouts.
+        
+        Investigation steps:
+        1. Check for connection leaks
+        2. Review slow queries holding connections
+        3. Check for deadlocks
+        4. Consider scaling pool size
+        
+        Runbook: https://docs.aivo.app/runbooks/database-pool-exhaustion
+
+  # Service Down
+  - name: "Service Health Check Failed"
+    description: "Service health check endpoint returning non-200 status"
+    query: "avg(last_2m):avg:service.health_check{env:production} < 1"
+    severity: critical
+    thresholds:
+      critical: 1  # health check failed
+    evaluation_delay: 30
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: Service {{service.name}} health check failing
+        
+        Service may be down or degraded.
+        
+        Investigation steps:
+        1. Check service logs
+        2. Check database connectivity
+        3. Check Redis connectivity
+        4. Review recent deployments
+        5. Check resource utilization
+        
+        Runbook: https://docs.aivo.app/runbooks/service-down
+
+  # Memory Usage Critical
+  - name: "Memory Usage Critical"
+    description: "Service memory usage exceeds 90%"
+    query: "avg(last_5m):avg:system.memory.usage{env:production} by {service} > 90"
+    severity: critical
+    thresholds:
+      critical: 90  # percent
+      warning: 80   # percent
+    evaluation_delay: 60
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: {{service.name}} memory usage at {{value}}%
+        
+        Service may crash due to OOM (Out Of Memory).
+        
+        Investigation steps:
+        1. Check for memory leaks
+        2. Review memory profiling
+        3. Check for large object retention
+        4. Consider restarting service
+        5. Consider scaling up memory
+        
+        Runbook: https://docs.aivo.app/runbooks/high-memory-usage
+
+  # Redis Connection Failed
+  - name: "Redis Connection Failed"
+    description: "Unable to connect to Redis cache"
+    query: "avg(last_2m):avg:redis.connection.active{env:production} < 1"
+    severity: critical
+    thresholds:
+      critical: 1  # connection failed
+    evaluation_delay: 30
+    notification:
+      channels:
+        - pagerduty
+        - slack: "#production-alerts"
+      message: |
+        🚨 CRITICAL: Redis connection failed
+        
+        Cache unavailable. Performance will degrade significantly.
+        
+        Investigation steps:
+        1. Check Redis service status
+        2. Check network connectivity
+        3. Check Redis logs
+        4. Check Redis memory usage
+        5. Consider failover to replica
+        
+        Runbook: https://docs.aivo.app/runbooks/redis-down
+
+# =============================================================================
+# WARNING ALERTS (Slack - Monitoring Required)
+# =============================================================================
+
+warning_alerts:
+  # Cache Hit Rate Low
+  - name: "Cache Hit Rate Low"
+    description: "Redis cache hit rate below 60%"
+    query: "avg(last_15m):sum:redis.hits{env:production}.as_count() / (sum:redis.hits{env:production}.as_count() + sum:redis.misses{env:production}.as_count()) * 100 < 60"
+    severity: warning
+    thresholds:
+      warning: 60  # percent
+      info: 70     # percent
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: Cache hit rate at {{value}}% (target: >70%)
+        
+        Cache effectiveness is low. Database load may increase.
+        
+        Investigation steps:
+        1. Check cache TTLs
+        2. Review cache key patterns
+        3. Check for cache evictions
+        4. Consider warming cache
+        5. Review caching strategy
+        
+        Runbook: https://docs.aivo.app/runbooks/low-cache-hit-rate
+
+  # P95 Response Time Elevated
+  - name: "P95 Response Time Elevated"
+    description: "P95 response time exceeds 200ms but below critical threshold"
+    query: "avg(last_15m):avg:http.response_time.p95{env:production} > 200"
+    severity: warning
+    thresholds:
+      warning: 200  # milliseconds
+      critical: 300 # milliseconds
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: P95 response time at {{value}}ms (target: <200ms)
+        
+        Performance is degrading. Monitor closely.
+        
+        Investigation steps:
+        1. Check slow query logs
+        2. Review cache hit rates
+        3. Check database connection pool
+        4. Review recent code changes
+
+  # Trust Score Calculation Slow
+  - name: "Trust Score Calculation Slow"
+    description: "Trust score P95 calculation time exceeds 900ms"
+    query: "avg(last_10m):avg:trust_score.calculation_time.p95{env:production} > 900"
+    severity: warning
+    thresholds:
+      warning: 900   # milliseconds
+      critical: 1500 # milliseconds
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: Trust score calculation at {{value}}ms (target: <900ms)
+        
+        Trust score performance degrading.
+        
+        Investigation steps:
+        1. Check service call response times
+        2. Review parallelization working
+        3. Check for service failures
+        4. Review cache effectiveness
+
+  # Slow Queries Detected
+  - name: "Slow Queries Detected"
+    description: "Multiple slow database queries detected (>200ms)"
+    query: "avg(last_10m):sum:postgresql.slow_queries{env:production}.as_count() > 5"
+    severity: warning
+    thresholds:
+      warning: 5   # slow queries
+      critical: 10 # slow queries
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: {{value}} slow queries detected (>200ms)
+        
+        Database performance may be degrading.
+        
+        Investigation steps:
+        1. Check pg_stat_statements for slow queries
+        2. Review missing indexes
+        3. Check for table bloat
+        4. Consider query optimization
+
+  # High CPU Usage
+  - name: "High CPU Usage"
+    description: "Service CPU usage exceeds 80%"
+    query: "avg(last_10m):avg:system.cpu.usage{env:production} by {service} > 80"
+    severity: warning
+    thresholds:
+      warning: 80  # percent
+      critical: 90 # percent
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: {{service.name}} CPU usage at {{value}}%
+        
+        CPU usage high. Monitor for potential bottleneck.
+        
+        Investigation steps:
+        1. Check for CPU-intensive operations
+        2. Review performance profiling
+        3. Consider horizontal scaling
+        4. Review recent code changes
+
+  # Redis Memory High
+  - name: "Redis Memory Usage High"
+    description: "Redis memory usage exceeds 80%"
+    query: "avg(last_10m):avg:redis.memory.used{env:production} / avg:redis.memory.maxmemory{env:production} * 100 > 80"
+    severity: warning
+    thresholds:
+      warning: 80  # percent
+      critical: 90 # percent
+    evaluation_delay: 120
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: Redis memory at {{value}}% of limit
+        
+        Cache may start evicting keys soon.
+        
+        Investigation steps:
+        1. Check for memory leaks
+        2. Review cache key TTLs
+        3. Check for large cached objects
+        4. Consider scaling Redis memory
+        5. Review eviction policy
+
+  # Deployment in Progress
+  - name: "Deployment Monitoring"
+    description: "Monitor error rate during deployment"
+    query: "avg(last_2m):sum:http.errors{env:production,deployment:in_progress}.as_count() / sum:http.requests{env:production,deployment:in_progress}.as_count() * 100 > 0.5"
+    severity: warning
+    thresholds:
+      warning: 0.5  # percent
+      critical: 2.0 # percent
+    evaluation_delay: 30
+    notification:
+      channels:
+        - slack: "#production-deployments"
+      message: |
+        ⚠️  DEPLOYMENT: Error rate at {{value}}% during deployment
+        
+        Monitor closely. Consider rollback if exceeds 2%.
+
+# =============================================================================
+# COMPOSITE ALERTS
+# =============================================================================
+
+composite_alerts:
+  # System Health Degraded
+  - name: "System Health Degraded"
+    description: "Multiple warning indicators detected"
+    query: |
+      (avg:http.response_time.p95{env:production} > 200) &&
+      (sum:http.errors{env:production}.as_count() / sum:http.requests{env:production}.as_count() > 0.005) &&
+      (avg:postgresql.connections.active{env:production} > 40)
+    severity: warning
+    notification:
+      channels:
+        - slack: "#production-monitoring"
+      message: |
+        ⚠️  WARNING: System health degraded
+        
+        Multiple indicators showing degradation:
+        - High response times
+        - Elevated error rate
+        - High database connections
+        
+        Investigate holistically for systemic issues.
+
+# =============================================================================
+# ALERT CONFIGURATION NOTES
+# =============================================================================
+
+# Severity Levels:
+# - critical: Requires immediate response, pages on-call engineer
+# - warning: Requires monitoring, sends Slack notification
+# - info: Informational only, logged but no notification
+
+# Evaluation Delays:
+# - Use longer delays (120s+) for warning alerts to reduce noise
+# - Use shorter delays (30-60s) for critical alerts for fast response
+
+# Notification Channels:
+# - pagerduty: Pages on-call engineer (critical only)
+# - slack: "#production-alerts" for critical, "#production-monitoring" for warnings
+
+# Alert Maintenance:
+# - Review alert thresholds monthly
+# - Adjust based on actual production behavior
+# - Remove noisy alerts
+# - Add alerts for new critical metrics

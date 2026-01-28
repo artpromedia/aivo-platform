@@ -36,7 +36,8 @@ export interface GatewayEnvConfig {
   FLUTTERWAVE_ENCRYPTION_KEY?: string;
   FLUTTERWAVE_WEBHOOK_SECRET_HASH?: string;
 
-  // M-Pesa (East Africa)
+  // M-Pesa (East Africa) - DISABLED until production-ready
+  ENABLE_MPESA?: string; // Set to 'true' when credentials, persistent storage, and tests are ready
   MPESA_CONSUMER_KEY?: string;
   MPESA_CONSUMER_SECRET?: string;
   MPESA_SHORT_CODE?: string;
@@ -124,8 +125,9 @@ export function initializeGatewaysFromEnv(env: GatewayEnvConfig = process.env): 
     console.log('[Billing] Flutterwave gateway configured (Pan-Africa)');
   }
 
-  // M-Pesa (East Africa)
-  if (env.MPESA_CONSUMER_KEY && env.MPESA_CONSUMER_SECRET && env.MPESA_SHORT_CODE && env.MPESA_PASS_KEY) {
+  // M-Pesa (East Africa) - Feature-flagged: DISABLED by default
+  // Enable when: persistent storage implemented, production credentials configured, tests added
+  if (env.ENABLE_MPESA === 'true' && env.MPESA_CONSUMER_KEY && env.MPESA_CONSUMER_SECRET && env.MPESA_SHORT_CODE && env.MPESA_PASS_KEY) {
     config.mpesa = {
       consumerKey: env.MPESA_CONSUMER_KEY,
       consumerSecret: env.MPESA_CONSUMER_SECRET,
@@ -137,6 +139,8 @@ export function initializeGatewaysFromEnv(env: GatewayEnvConfig = process.env): 
       securityCredential: env.MPESA_SECURITY_CREDENTIAL,
     };
     console.log('[Billing] M-Pesa gateway configured (East Africa)');
+  } else if (env.ENABLE_MPESA === 'true') {
+    console.warn('[Billing] M-Pesa ENABLE_MPESA=true but missing required credentials');
   }
 
   // PayU (Multi-region)

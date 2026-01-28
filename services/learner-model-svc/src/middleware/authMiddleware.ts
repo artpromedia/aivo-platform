@@ -15,17 +15,8 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
         try {
           (request as FastifyRequest & { user?: unknown }).user = JSON.parse(testUserHeader);
         } catch {
-          // Fall through to default test user
+          // Invalid test header - let auth fail naturally
         }
-      }
-
-      // Always provide a user in test runs so routes can execute
-      if (!(request as FastifyRequest & { user?: unknown }).user) {
-        (request as FastifyRequest & { user?: unknown }).user = {
-          sub: 'test-user',
-          tenantId: '11111111-1111-1111-1111-111111111111',
-          role: 'service',
-        };
       }
       return;
     }

@@ -1,6 +1,37 @@
 /**
  * M-Pesa Payment Gateway Implementation
  * 
+ * ⚠️ PRODUCTION STATUS: DISABLED (requires completion)
+ * 
+ * This implementation is ~90% complete but requires production hardening:
+ * 
+ * BLOCKERS FOR PRODUCTION:
+ * 1. Transaction Storage: Currently uses in-memory Map (line 93)
+ *    → Replace with Redis or PostgreSQL for persistence and scalability
+ * 
+ * 2. Credentials: Environment variables defined but values not configured
+ *    → Obtain Safaricom production credentials (consumer key, secret, short code, passkey)
+ *    → Configure ENABLE_MPESA=true in production environment
+ * 
+ * 3. Testing: No integration tests exist
+ *    → Add STK Push flow tests (sandbox)
+ *    → Test webhook callback handling
+ *    → Test refund/reversal operations
+ *    → Test error scenarios (timeout, cancellation, insufficient funds)
+ * 
+ * 4. Monitoring: Missing transaction monitoring and alerting
+ *    → Add metrics for success/failure rates
+ *    → Add alerts for high failure rates
+ *    → Add latency tracking
+ * 
+ * ENABLEMENT PROCESS:
+ * 1. Set ENABLE_MPESA=true in environment
+ * 2. Configure all MPESA_* environment variables
+ * 3. Replace transactionStore Map with persistent storage
+ * 4. Add integration tests and run against sandbox
+ * 5. Update COUNTRY_GATEWAY_MAP: KE → MPESA (gateway.factory.ts line 113)
+ * 6. Deploy and monitor
+ * 
  * M-Pesa is the leading mobile money platform in East Africa with support for:
  * - M-Pesa Express (STK Push) - Customer initiates from phone
  * - C2B (Customer to Business) - Customer sends to paybill/till

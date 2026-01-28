@@ -74,19 +74,14 @@ function getUserFromRequest(
           const parsed = JSON.parse(testUserHeader) as JwtUser;
           return {
             sub: parsed.sub,
-            tenantId: parsed.tenantId ?? parsed.tenant_id ?? '11111111-1111-1111-1111-111111111111',
+            tenantId: parsed.tenantId ?? parsed.tenant_id ?? '',
             role: parsed.role,
           };
         } catch {
-          // Fall through to default test user
+          // Invalid test header
+          return null;
         }
       }
-
-      return {
-        sub: 'test-user',
-        tenantId: '11111111-1111-1111-1111-111111111111',
-        role: 'service',
-      };
     }
 
     return null;

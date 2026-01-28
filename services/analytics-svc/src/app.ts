@@ -19,6 +19,7 @@ import eventsRoutes from './routes/events.routes.js';
 import { experimentAnalyticsRoutes } from './routes/experimentAnalytics.js';
 import { explanationRoutes } from './routes/explanationRoutes.js';
 import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
+import { mobileAnalyticsRoutes } from './routes/mobileAnalytics.js';
 import { modelCardsRoutes } from './routes/modelCardsRoutes.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
 import { researchExportRoutes } from './routes/researchExports.js';
@@ -42,10 +43,55 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Health check (unauthenticated)
-  app.get('/health', async () => ({ status: 'ok', service: 'analytics-svc' }));
+  app.get('/health', async () => {
+    const startTime = Date.now();
+    let dbStatus = 'healthy';
+    let dbLatencyMs = 0;
+    let dbError: string | undefined;
+
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as health_check`;
+      dbLatencyMs = Date.now() - startTime;
+      if (dbLatencyMs > 1000) {
+        dbStatus = 'unhealthy';
+      } else if (dbLatencyMs > 500) {
+        dbStatus = 'degraded';
+      }
+    } catch (error) {
+      dbStatus = 'unhealthy';
+      dbLatencyMs = Date.now() - startTime;
+      dbError = error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    return {
+      status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
+      service: 'analytics-svc',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        error: dbError,
+      },
+    };
+  });
 
   // Readiness check (unauthenticated)
-  app.get('/ready', async () => ({ status: 'ok', service: 'analytics-svc' }));
+  app.get('/ready', async (_request, reply) => {
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as ready_check`;
+      return reply.send({ status: 'ready', service: 'analytics-svc' });
+    } catch (error) {
+      return reply.status(503).send({
+        status: 'not ready',
+        service: 'analytics-svc',
+        error: error instanceof Error ? error.message : 'Database unavailable',
+      });
+    }
+  });
 
   // JWT auth for all other routes
   await app.register(asPlugin(authMiddleware));
@@ -55,6 +101,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register analytics routes under /analytics prefix
   await app.register(learnerAnalyticsRoutes, { prefix: '/analytics' });
+  await app.register(mobileAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(parentAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(teacherAnalyticsRoutes, { prefix: '/analytics' });
   await app.register(classroomAnalyticsRoutes, { prefix: '/analytics' });

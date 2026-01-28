@@ -19,6 +19,7 @@ import {
   competitionRoutes,
   internalRoutes,
 } from './routes/index.js';
+import mobileGamificationRoutes from './routes/mobileGamification.routes.js';
 import { authMiddleware } from './middleware/auth.js';
 
 const app: Application = express();
@@ -61,21 +62,52 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // HEALTH CHECK (unauthenticated)
 // ============================================================================
 
-app.get('/health', (_req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
+  const startTime = Date.now();
+  let dbStatus = 'healthy';
+  let dbLatencyMs = 0;
+  let dbError: string | undefined;
+
+  try {
+    const { prisma } = await import('./prisma.js');
+    await prisma.$queryRaw`SELECT 1 as health_check`;
+    dbLatencyMs = Date.now() - startTime;
+    if (dbLatencyMs > 1000) {
+      dbStatus = 'unhealthy';
+    } else if (dbLatencyMs > 500) {
+      dbStatus = 'degraded';
+    }
+  } catch (error) {
+    dbStatus = 'unhealthy';
+    dbLatencyMs = Date.now() - startTime;
+    dbError = error instanceof Error ? error.message : 'Unknown error';
+  }
+
   res.json({
-    status: 'healthy',
+    status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
     service: 'gamification-svc',
+    version: '1.0.0',
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: {
+      status: dbStatus,
+      latencyMs: dbLatencyMs,
+      error: dbError,
+    },
   });
 });
 
 app.get('/ready', async (_req: Request, res: Response) => {
   try {
     const { prisma } = await import('./prisma.js');
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: 'ready' });
-  } catch {
-    res.status(503).json({ status: 'not ready' });
+    await prisma.$queryRaw`SELECT 1 as ready_check`;
+    res.json({ status: 'ready', service: 'gamification-svc' });
+  } catch (error) {
+    res.status(503).json({
+      status: 'not ready',
+      service: 'gamification-svc',
+      error: error instanceof Error ? error.message : 'Database unavailable',
+    });
   }
 });
 
@@ -101,6 +133,9 @@ apiRouter.use('/teams', teamRoutes);
 apiRouter.use('/competitions', competitionRoutes);
 
 app.use('/api/gamification', apiRouter);
+
+// Register mobile gamification routes (direct paths matching Flutter client expectations)
+app.use('/gamification', mobileGamificationRoutes);
 
 // ============================================================================
 // INTERNAL ROUTES (DSR Compliance)

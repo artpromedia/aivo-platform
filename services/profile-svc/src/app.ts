@@ -73,15 +73,57 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Health check endpoints
   // ────────────────────────────────────────────────────────────────────────────
   app.get('/health', async () => {
-    return { status: 'healthy', service: 'profile-svc' };
+    const startTime = Date.now();
+    let dbStatus = 'healthy';
+    let dbLatencyMs = 0;
+    let dbError: string | undefined;
+
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as health_check`;
+      dbLatencyMs = Date.now() - startTime;
+      if (dbLatencyMs > 1000) {
+        dbStatus = 'unhealthy';
+      } else if (dbLatencyMs > 500) {
+        dbStatus = 'degraded';
+      }
+    } catch (error) {
+      dbStatus = 'unhealthy';
+      dbLatencyMs = Date.now() - startTime;
+      dbError = error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    return {
+      status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
+      service: 'profile-svc',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        error: dbError,
+      },
+    };
   });
 
-  app.get('/ready', async () => {
-    return {
-      status: 'ready',
-      service: 'profile-svc',
-      nats: natsPublisher.isReady() ? 'connected' : 'disconnected',
-    };
+  app.get('/ready', async (_request, reply) => {
+    try {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$queryRaw`SELECT 1 as ready_check`;
+      return reply.send({
+        status: 'ready',
+        service: 'profile-svc',
+        nats: natsPublisher.isReady() ? 'connected' : 'disconnected',
+      });
+    } catch (error) {
+      return reply.status(503).send({
+        status: 'not ready',
+        service: 'profile-svc',
+        nats: natsPublisher.isReady() ? 'connected' : 'disconnected',
+        error: error instanceof Error ? error.message : 'Database unavailable',
+      });
+    }
   });
 
   // ────────────────────────────────────────────────────────────────────────────

@@ -7,7 +7,9 @@ import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
+import { prisma } from './prisma.js';
 import { registerConversationRoutes, registerMessageRoutes, registerThreadRoutes } from './routes/index.js';
+import { registerMobileMessagingRoutes } from './routes/mobileMessaging.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -28,12 +30,53 @@ export async function buildApp(): Promise<FastifyInstance> {
   // HEALTH CHECK
   // ════════════════════════════════════════════════════════════════════════════
 
-  app.get('/health', async () => ({
-    status: 'ok',
-    service: 'messaging-svc',
-    version: '0.1.0',
-    timestamp: new Date().toISOString(),
-  }));
+  app.get('/health', async () => {
+    const startTime = Date.now();
+    let dbStatus = 'healthy';
+    let dbLatencyMs = 0;
+    let dbError: string | undefined;
+
+    try {
+      await prisma.$queryRaw`SELECT 1 as health_check`;
+      dbLatencyMs = Date.now() - startTime;
+      if (dbLatencyMs > 1000) {
+        dbStatus = 'unhealthy';
+      } else if (dbLatencyMs > 500) {
+        dbStatus = 'degraded';
+      }
+    } catch (error) {
+      dbStatus = 'unhealthy';
+      dbLatencyMs = Date.now() - startTime;
+      dbError = error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    return {
+      status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
+      service: 'messaging-svc',
+      version: '0.2.0',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        error: dbError,
+      },
+    };
+  });
+
+  // Readiness check (Kubernetes/healthcheck probes)
+  app.get('/ready', async (_request, reply) => {
+    try {
+      await prisma.$queryRaw`SELECT 1 as ready_check`;
+      return reply.send({ status: 'ready', service: 'messaging-svc' });
+    } catch (error) {
+      return reply.status(503).send({
+        status: 'not ready',
+        service: 'messaging-svc',
+        error: error instanceof Error ? error.message : 'Database unavailable',
+      });
+    }
+  });
 
   // ════════════════════════════════════════════════════════════════════════════
   // ERROR HANDLER
@@ -89,6 +132,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerConversationRoutes(app);
   await registerMessageRoutes(app);
   await registerThreadRoutes(app);
+
+  // Register mobile-specific messaging routes
+  await registerMobileMessagingRoutes(app);
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT

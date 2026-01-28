@@ -1,0 +1,564 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Model Monitoring Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// Production ML model monitoring: predictions, metrics, drift, feature importance
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Prediction outcome status
+enum PredictionStatus {
+  SUCCESS       // Prediction completed successfully
+  ERROR         // Prediction failed
+  TIMEOUT       // Prediction timed out
+  RATE_LIMITED  // Rate limit exceeded
+}
+
+/// Feedback type for predictions
+enum FeedbackType {
+  THUMBS_UP
+  THUMBS_DOWN
+  RATING        // 1-5 star rating
+  CORRECT       // Explicit correctness feedback
+  INCORRECT
+  CUSTOM
+}
+
+/// Alert severity levels
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+/// Alert status
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+  SUPPRESSED
+}
+
+/// Data drift severity
+enum DriftSeverity {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PREDICTION LOGGING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Individual model prediction in production
+model Prediction {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Model identification
+  modelId         String            @db.Uuid    // From model-registry-svc
+  modelVersionId  String            @db.Uuid    // Specific version
+  deploymentId    String?           @db.Uuid    // Which deployment made this prediction
+
+  // Request context
+  requestId       String            @unique     // Tracing ID
+  userId          String?           @db.Uuid    // Who requested the prediction
+  sessionId       String?                       // User session
+  clientIp        String?                       // Client IP address
+  userAgent       String?                       // User agent string
+  environment     String            @default("production") // dev, staging, prod
+
+  // Input/Output
+  input           Json                          // Model input data
+  output          Json                          // Model prediction output
+  inputHash       String                        // Hash of input for deduplication
+  
+  // Feature values (denormalized for faster queries)
+  features        Json?                         // Feature name -> value mapping
+  
+  // Prediction details
+  predictionType  String                        // classification, regression, generation, etc.
+  predictedClass  String?                       // For classification
+  confidence      Float?                        // Confidence score (0-1)
+  probability     Float?                        // Probability for classification
+  topKPredictions Json?                         // Top-K predictions with scores
+
+  // Performance
+  latencyMs       Int                           // Prediction latency
+  tokensUsed      Int?                          // For LLM models
+  status          PredictionStatus              @default(SUCCESS)
+  errorMessage    String?                       // Error details if failed
+  errorCode       String?                       // Error classification code
+
+  // Ground truth (if available)
+  groundTruth     Json?                         // Actual label/value
+  isCorrect       Boolean?                      // Was prediction correct?
+  errorValue      Float?                        // Prediction error (for regression)
+
+  // User feedback
+  feedback        PredictionFeedback[]
+  
+  // Metadata
+  metadata        Json?                         // Additional custom metadata
+  tags            String[]                      @default([])
+
+  // Timestamps
+  predictedAt     DateTime          @default(now())
+  feedbackReceivedAt DateTime?                  // When ground truth was received
+
+  @@index([tenantId, modelId, predictedAt(sort: Desc)])
+  @@index([tenantId, modelVersionId, predictedAt(sort: Desc)])
+  @@index([tenantId, deploymentId, predictedAt(sort: Desc)])
+  @@index([requestId])
+  @@index([inputHash, modelVersionId])
+  @@index([predictedAt(sort: Desc)])
+  @@index([userId, predictedAt(sort: Desc)])
+  @@index([isCorrect])
+  @@index([status])
+}
+
+/// User feedback on predictions
+model PredictionFeedback {
+  id              String            @id @default(uuid()) @db.Uuid
+  predictionId    String            @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Feedback details
+  feedbackType    FeedbackType
+  rating          Int?                          // 1-5 rating if applicable
+  isCorrect       Boolean?                      // Explicit correctness
+  correctValue    Json?                         // What the correct value should be
+  comment         String?                       // User comment
+  
+  // Context
+  userId          String?           @db.Uuid    // Who provided feedback
+  source          String            @default("user") // user, system, expert, etc.
+  
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  
+  // Relations
+  prediction      Prediction        @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([feedbackType])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PERFORMANCE METRICS OVER TIME
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Time-series model performance metrics
+model ModelPerformanceMetric {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Model identification
+  modelId         String            @db.Uuid
+  modelVersionId  String            @db.Uuid
+  deploymentId    String?           @db.Uuid
+
+  // Time window
+  windowStart     DateTime                      // Start of measurement window
+  windowEnd       DateTime                      // End of measurement window
+  windowDuration  Int                           // Duration in seconds
+  granularity     String            @default("hour") // hour, day, week, month
+
+  // Aggregate metrics
+  totalPredictions Int              @default(0)
+  successfulPredictions Int          @default(0)
+  failedPredictions Int              @default(0)
+  timeoutPredictions Int             @default(0)
+
+  // Performance metrics
+  accuracy        Float?                        // Classification accuracy
+  precision       Float?                        // Precision
+  recall          Float?                        // Recall
+  f1Score         Float?                        // F1 score
+  auc             Float?                        // AUC-ROC
+  mae             Float?                        // Mean absolute error (regression)
+  mse             Float?                        // Mean squared error
+  rmse            Float?                        // Root mean squared error
+  r2Score         Float?                        // R² score
+
+  // Latency metrics
+  avgLatencyMs    Float?
+  p50LatencyMs    Float?
+  p95LatencyMs    Float?
+  p99LatencyMs    Float?
+  maxLatencyMs    Int?
+
+  // Confidence metrics
+  avgConfidence   Float?
+  lowConfidenceCount Int            @default(0) // Predictions below threshold
+
+  // Token usage (for LLMs)
+  totalTokens     BigInt?
+  avgTokensPerPrediction Float?
+
+  // User feedback metrics
+  feedbackCount   Int               @default(0)
+  positiveCount   Int               @default(0)
+  negativeCount   Int               @default(0)
+  avgRating       Float?
+
+  // Custom metrics
+  customMetrics   Json?                         // Additional metrics as key-value
+
+  // Metadata
+  environment     String            @default("production")
+  metadata        Json?
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+
+  @@unique([tenantId, modelVersionId, windowStart, granularity])
+  @@index([tenantId, modelId, windowStart(sort: Desc)])
+  @@index([tenantId, modelVersionId, windowStart(sort: Desc)])
+  @@index([deploymentId, windowStart(sort: Desc)])
+  @@index([windowStart(sort: Desc)])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURE IMPORTANCE & EXPLAINABILITY
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Feature importance tracking over time
+model FeatureImportance {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Model identification
+  modelId         String            @db.Uuid
+  modelVersionId  String            @db.Uuid
+
+  // Feature details
+  featureName     String                        // Name of the feature
+  importance      Float                         // Importance score (0-1 or normalized)
+  importanceType  String                        // shap, lime, permutation, etc.
+  rank            Int                           // Rank by importance (1 = most important)
+
+  // Statistics
+  sampleSize      Int                           // Number of predictions analyzed
+  meanValue       Float?                        // Mean feature value
+  stdDev          Float?                        // Standard deviation
+  minValue        Float?
+  maxValue        Float?
+
+  // Time window
+  windowStart     DateTime
+  windowEnd       DateTime
+
+  // Metadata
+  metadata        Json?
+  
+  // Timestamps
+  calculatedAt    DateTime          @default(now())
+
+  @@unique([tenantId, modelVersionId, featureName, windowStart])
+  @@index([tenantId, modelVersionId, calculatedAt(sort: Desc)])
+  @@index([modelVersionId, rank])
+  @@index([featureName])
+}
+
+/// Per-prediction feature contributions (SHAP values, etc.)
+model PredictionExplanation {
+  id              String            @id @default(uuid()) @db.Uuid
+  predictionId    String            @db.Uuid @unique
+  tenantId        String            @db.Uuid
+
+  // Explanation method
+  method          String                        // shap, lime, attention, gradcam, etc.
+
+  // Feature contributions
+  featureContributions Json                     // { featureName: contribution }
+  
+  // Top contributing features
+  topFeatures     Json                          // [{ name, value, contribution }]
+
+  // Base value and prediction
+  baseValue       Float?                        // Model's base prediction
+  predictionValue Float                         // Final prediction
+  
+  // Confidence in explanation
+  explanationScore Float?                       // Quality/confidence of explanation
+
+  // Visualization data
+  visualizationData Json?                       // Data for plotting
+
+  // Metadata
+  metadata        Json?
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+
+  @@index([predictionId])
+  @@index([tenantId, createdAt(sort: Desc)])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA DRIFT DETECTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Input data distribution drift monitoring
+model DataDriftReport {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Model identification
+  modelId         String            @db.Uuid
+  modelVersionId  String            @db.Uuid
+
+  // Time windows
+  referenceStart  DateTime                      // Reference period start (e.g., training data)
+  referenceEnd    DateTime                      // Reference period end
+  currentStart    DateTime                      // Current period start
+  currentEnd      DateTime                      // Current period end
+
+  // Overall drift
+  overallDriftScore Float                       // Aggregate drift score (0-1)
+  driftSeverity   DriftSeverity
+  driftDetected   Boolean           @default(false)
+
+  // Statistical tests
+  pValue          Float?                        // Statistical significance
+  testMethod      String                        // ks_test, chi2, jensen_shannon, etc.
+
+  // Per-feature drift
+  featureDrift    Json                          // { featureName: { score, pValue, severity } }
+
+  // Distribution stats
+  referenceStats  Json                          // Statistics from reference period
+  currentStats    Json                          // Statistics from current period
+
+  // Recommendations
+  recommendations String[]          @default([]) // Suggested actions
+  requiresRetraining Boolean        @default(false)
+
+  // Sample sizes
+  referenceSamples Int
+  currentSamples  Int
+
+  // Metadata
+  metadata        Json?
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+
+  @@index([tenantId, modelVersionId, createdAt(sort: Desc)])
+  @@index([modelVersionId, driftDetected])
+  @@index([driftSeverity])
+  @@index([currentStart(sort: Desc)])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ALERTING & MONITORING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Alert configuration rules
+model AlertRule {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Rule identification
+  name            String
+  description     String?
+
+  // Scope
+  modelId         String?           @db.Uuid     // Specific model or null for all
+  modelVersionId  String?           @db.Uuid     // Specific version or null
+  deploymentId    String?           @db.Uuid     // Specific deployment
+
+  // Condition
+  metricName      String                        // accuracy, latency_p99, error_rate, etc.
+  operator        String                        // gt, lt, gte, lte, eq
+  threshold       Float                         // Threshold value
+  windowDuration  Int                           // Time window in seconds
+  minSamples      Int               @default(10) // Minimum samples before alerting
+
+  // Severity
+  severity        AlertSeverity     @default(WARNING)
+
+  // Notification
+  notifyChannels  String[]                      // slack, email, webhook, pagerduty
+  webhookUrl      String?
+  emailRecipients String[]          @default([])
+  slackChannel    String?
+
+  // Status
+  isEnabled       Boolean           @default(true)
+  suppressUntil   DateTime?                     // Temporary suppression
+
+  // Metadata
+  tags            String[]          @default([])
+  metadata        Json?
+
+  // Timestamps
+  createdBy       String            @db.Uuid
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  alerts          Alert[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isEnabled])
+  @@index([modelId])
+  @@index([modelVersionId])
+}
+
+/// Triggered alerts
+model Alert {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+  ruleId          String            @db.Uuid
+
+  // Alert details
+  severity        AlertSeverity
+  message         String
+  metricName      String
+  currentValue    Float
+  thresholdValue  Float
+
+  // Context
+  modelId         String            @db.Uuid
+  modelVersionId  String?           @db.Uuid
+  deploymentId    String?           @db.Uuid
+  windowStart     DateTime
+  windowEnd       DateTime
+  sampleCount     Int
+
+  // Status
+  status          AlertStatus       @default(ACTIVE)
+  acknowledgedBy  String?           @db.Uuid
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  resolutionNotes String?
+
+  // Notification
+  notificationsSent String[]        @default([]) // List of channels notified
+  notificationError String?
+
+  // Metadata
+  metadata        Json?
+
+  // Timestamps
+  triggeredAt     DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  rule            AlertRule         @relation(fields: [ruleId], references: [id])
+
+  @@index([tenantId, status, triggeredAt(sort: Desc)])
+  @@index([ruleId, triggeredAt(sort: Desc)])
+  @@index([modelId, status])
+  @@index([severity, status])
+  @@index([triggeredAt(sort: Desc)])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// A/B TESTING & EXPERIMENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// A/B test configuration for model variants
+model ABTest {
+  id              String            @id @default(uuid()) @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Test identification
+  name            String
+  description     String?
+  hypothesis      String?
+
+  // Status
+  status          String            @default("draft") // draft, running, paused, completed
+  startedAt       DateTime?
+  endedAt         DateTime?
+
+  // Traffic allocation
+  trafficSplit    Json                          // { variantId: percentage }
+  
+  // Variants
+  variants        ABTestVariant[]
+
+  // Success metrics
+  primaryMetric   String                        // Metric to optimize
+  secondaryMetrics String[]         @default([])
+  successCriteria Json?                         // Conditions for statistical significance
+
+  // Statistical settings
+  confidenceLevel Float             @default(0.95)
+  minSampleSize   Int               @default(1000)
+
+  // Metadata
+  tags            String[]          @default([])
+  metadata        Json?
+
+  // Timestamps
+  createdBy       String            @db.Uuid
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId, status])
+}
+
+/// Individual variant in an A/B test
+model ABTestVariant {
+  id              String            @id @default(uuid()) @db.Uuid
+  testId          String            @db.Uuid
+  tenantId        String            @db.Uuid
+
+  // Variant identification
+  name            String                        // control, variant_a, variant_b, etc.
+  description     String?
+  isControl       Boolean           @default(false)
+
+  // Model assignment
+  modelVersionId  String            @db.Uuid
+  deploymentId    String?           @db.Uuid
+
+  // Traffic
+  trafficPercent  Float                         // 0-100
+  
+  // Results (computed)
+  sampleSize      Int               @default(0)
+  conversionRate  Float?
+  avgMetricValue  Float?
+  metricStdDev    Float?
+  
+  // Statistical significance
+  isSignificant   Boolean           @default(false)
+  pValue          Float?
+  confidenceInterval Json?                      // { lower, upper }
+
+  // Metadata
+  metadata        Json?
+
+  // Timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  test            ABTest            @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, name])
+  @@index([testId])
+  @@index([modelVersionId])
+}

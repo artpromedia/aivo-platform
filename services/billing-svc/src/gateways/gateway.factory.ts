@@ -110,8 +110,8 @@ const COUNTRY_GATEWAY_MAP: Record<string, PaymentGatewayType> = {
   GH: PaymentGatewayType.PAYSTACK, // Ghana
   ZA: PaymentGatewayType.PAYSTACK, // South Africa
 
-  // East Africa - M-Pesa (primary) or Flutterwave
-  KE: PaymentGatewayType.MPESA, // Kenya (M-Pesa dominant)
+  // East Africa - Flutterwave (M-Pesa disabled until production-ready)
+  KE: PaymentGatewayType.FLUTTERWAVE, // Kenya (M-Pesa available but needs production hardening)
   TZ: PaymentGatewayType.FLUTTERWAVE, // Tanzania
   UG: PaymentGatewayType.FLUTTERWAVE, // Uganda
   RW: PaymentGatewayType.FLUTTERWAVE, // Rwanda

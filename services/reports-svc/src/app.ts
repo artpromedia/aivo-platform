@@ -17,6 +17,7 @@ const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPlugi
 import { authMiddleware } from './middleware/auth.js';
 import { classroomReportRoutes } from './routes/classroomReport.js';
 import { parentReportRoutes } from './routes/parentReport.js';
+import { mobileProgressReportRoutes } from './routes/mobileProgressReport.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const isDevelopment = config.nodeEnv !== 'production';
@@ -45,6 +46,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Register report routes under /reports prefix
   await app.register(parentReportRoutes, { prefix: '/reports' });
   await app.register(classroomReportRoutes, { prefix: '/reports' });
+
+  // Register mobile progress report routes under /progress prefix
+  await app.register(mobileProgressReportRoutes, { prefix: '/progress' });
 
   return app;
 }
