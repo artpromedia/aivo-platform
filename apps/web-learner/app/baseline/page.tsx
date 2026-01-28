@@ -20,7 +20,7 @@ export default function BaselineIntroPage() {
       id: 'not-a-test',
       emoji: '🎯',
       title: "It's Not a Test!",
-      description: "There are no wrong answers. We just want to learn how you think best!",
+      description: 'There are no wrong answers. We just want to learn how you think best!',
     },
     {
       id: 'fun-activities',
@@ -32,7 +32,7 @@ export default function BaselineIntroPage() {
       id: 'take-time',
       emoji: '⏱️',
       title: 'Take Your Time',
-      description: "About 15-20 minutes. You can take breaks if you need them!",
+      description: 'About 15-20 minutes. You can take breaks if you need them!',
     },
     {
       id: 'personalized',
@@ -49,11 +49,10 @@ export default function BaselineIntroPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
             <Image
-              src="/icons/aivo-appicon-explorer.svg"
+              src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={48}
+              width={140}
               height={48}
-              className="rounded-xl"
             />
           </Link>
           <div className="w-28 h-28 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 shadow-lg">
@@ -83,12 +82,8 @@ export default function BaselineIntroPage() {
                   <span className="text-2xl">{feature.emoji}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-[var(--aivo-neutral-600)]">
-                    {feature.description}
-                  </p>
+                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">{feature.title}</h3>
+                  <p className="text-sm text-[var(--aivo-neutral-600)]">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -106,15 +101,25 @@ export default function BaselineIntroPage() {
               {isStarting ? (
                 <span className="flex items-center justify-center gap-3">
                   <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Getting Ready...
                 </span>
               ) : (
-                <span className="flex items-center justify-center gap-3">
-                  Let&apos;s Go! 🎉
-                </span>
+                <span className="flex items-center justify-center gap-3">Let&apos;s Go! 🎉</span>
               )}
             </button>
           </div>

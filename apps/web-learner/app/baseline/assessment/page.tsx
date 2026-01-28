@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
+
 import { type AssessmentDomain, type AssessmentQuestion } from './types';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -63,12 +64,54 @@ const DEFAULT_CONFIG: AssessmentConfig = {
   gradeLevel: '1',
   domains: [
     { domain: 'MATH', name: 'Math', icon: '🔢', questionsPerDomain: 5, enabled: true, order: 1 },
-    { domain: 'ELA', name: 'Reading & Language', icon: '📚', questionsPerDomain: 5, enabled: true, order: 2 },
-    { domain: 'SPELLING', name: 'Spelling', icon: '✏️', questionsPerDomain: 5, enabled: true, order: 3 },
-    { domain: 'SPEECH', name: 'Speech & Language', icon: '🗣️', questionsPerDomain: 5, enabled: true, order: 4 },
-    { domain: 'CREATIVE_WRITING', name: 'Creative Writing', icon: '✨', questionsPerDomain: 5, enabled: true, order: 5 },
-    { domain: 'SEL', name: 'Social-Emotional', icon: '💚', questionsPerDomain: 5, enabled: true, order: 6 },
-    { domain: 'LIFE_SKILLS', name: 'Life Skills', icon: '🌟', questionsPerDomain: 5, enabled: true, order: 7 },
+    {
+      domain: 'ELA',
+      name: 'Reading & Language',
+      icon: '📚',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 2,
+    },
+    {
+      domain: 'SPELLING',
+      name: 'Spelling',
+      icon: '✏️',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 3,
+    },
+    {
+      domain: 'SPEECH',
+      name: 'Speech & Language',
+      icon: '🗣️',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 4,
+    },
+    {
+      domain: 'CREATIVE_WRITING',
+      name: 'Creative Writing',
+      icon: '✨',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 5,
+    },
+    {
+      domain: 'SEL',
+      name: 'Social-Emotional',
+      icon: '💚',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 6,
+    },
+    {
+      domain: 'LIFE_SKILLS',
+      name: 'Life Skills',
+      icon: '🌟',
+      questionsPerDomain: 5,
+      enabled: true,
+      order: 7,
+    },
   ],
   estimatedDurationMinutes: 35,
   questionsPerDomain: 5,
@@ -94,7 +137,7 @@ const DEFAULT_CONFIG: AssessmentConfig = {
     animationsEnabled: true,
   },
   introMessage: "Let's find out what you already know! 🚀",
-  completionMessage: "Amazing job! 🎉",
+  completionMessage: 'Amazing job! 🎉',
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -279,14 +322,14 @@ const GAME_BREAKS: GameBreak[] = [
 // ASSESSMENT PHASES
 // ══════════════════════════════════════════════════════════════════════════════
 
-type AssessmentPhase = 
+type AssessmentPhase =
   | 'loading'
-  | 'preparing'  // Pre-generating questions for all domains
-  | 'learning_style' 
+  | 'preparing' // Pre-generating questions for all domains
+  | 'learning_style'
   | 'transition_to_domains'
   | 'domain_intro'
-  | 'domain_questions' 
-  | 'game_break' 
+  | 'domain_questions'
+  | 'game_break'
   | 'completing';
 
 /**
@@ -306,35 +349,37 @@ interface PreparedDomain {
 
 export default function BaselineAssessmentPage() {
   const router = useRouter();
-  
+
   // Assessment configuration (from parent assessment)
   const [config, setConfig] = useState<AssessmentConfig>(DEFAULT_CONFIG);
   const [isConfigLoaded, setIsConfigLoaded] = useState(false);
   const [learnerName, setLearnerName] = useState<string>('');
-  
+
   // Phase management
   const [phase, setPhase] = useState<AssessmentPhase>('loading');
-  
+
   // Learning style phase state
   const [lsIndex, setLsIndex] = useState(0);
   const [lsAnswers, setLsAnswers] = useState<Record<string, string | string[]>>({});
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  
+
   // Domain assessment phase state
   const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
   const [currentQuestionInDomain, setCurrentQuestionInDomain] = useState(0);
   const [domainQuestions, setDomainQuestions] = useState<AssessmentQuestion[]>([]);
-  const [domainAnswers, setDomainAnswers] = useState<Record<string, { answer: number | string; latencyMs: number }>>({});
+  const [domainAnswers, setDomainAnswers] = useState<
+    Record<string, { answer: number | string; latencyMs: number }>
+  >({});
   const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
-  
+
   // Game break state
   const [currentBreakIndex, setCurrentBreakIndex] = useState(0);
   const [breakCountdown, setBreakCountdown] = useState(0);
-  
+
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Pre-generated questions (loaded during 'preparing' phase)
   const [preparedDomains, setPreparedDomains] = useState<PreparedDomain[]>([]);
   const [preparationProgress, setPreparationProgress] = useState(0);
@@ -350,7 +395,7 @@ export default function BaselineAssessmentPage() {
       setPhase('preparing');
       setPreparationProgress(10);
       setPreparationStatus('Loading your learning profile...');
-      
+
       try {
         // First fetch config (for UI settings)
         const configResponse = await fetch('/api/baseline/config');
@@ -365,53 +410,64 @@ export default function BaselineAssessmentPage() {
         }
         setPreparationProgress(20);
         setPreparationStatus('Understanding your learning needs...');
-        
+
         // Now call prepare endpoint to pre-generate ALL questions
         setPreparationProgress(30);
         setPreparationStatus('Creating personalized questions just for you...');
-        
+
         const prepareResponse = await fetch('/api/baseline/prepare', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
-        
+
         if (prepareResponse.ok) {
           const prepareData = await prepareResponse.json();
-          
+
           if (prepareData.success && prepareData.domains) {
             // Update config with assessment type from profile
             if (prepareData.profile?.assessmentType) {
-              setConfig(prev => ({
+              setConfig((prev) => ({
                 ...prev,
                 assessmentType: prepareData.profile.assessmentType,
                 gradeBand: prepareData.profile.gradeBand || prev.gradeBand,
               }));
             }
-            
+
             // Store pre-generated questions
-            setPreparedDomains(prepareData.domains.map((d: { domain: string; name: string; questions: AssessmentQuestion[]; source: string; generationId?: string }) => ({
-              domain: d.domain,
-              name: d.name,
-              questions: d.questions,
-              source: d.source as 'ai' | 'stub' | 'fallback',
-              generationId: d.generationId,
-            })));
-            
+            setPreparedDomains(
+              prepareData.domains.map(
+                (d: {
+                  domain: string;
+                  name: string;
+                  questions: AssessmentQuestion[];
+                  source: string;
+                  generationId?: string;
+                }) => ({
+                  domain: d.domain,
+                  name: d.name,
+                  questions: d.questions,
+                  source: d.source as 'ai' | 'stub' | 'fallback',
+                  generationId: d.generationId,
+                })
+              )
+            );
+
             if (prepareData.profile?.firstName) {
               setLearnerName(prepareData.profile.firstName);
             }
-            
+
             setIsPrepared(true);
-            console.log(`[Assessment] Pre-generated ${prepareData.totalQuestions} questions in ${prepareData.generationTimeMs}ms`);
+            console.log(
+              `[Assessment] Pre-generated ${prepareData.totalQuestions} questions in ${prepareData.generationTimeMs}ms`
+            );
           }
         }
-        
+
         setPreparationProgress(100);
-        setPreparationStatus('All set! Let\'s begin!');
-        
+        setPreparationStatus("All set! Let's begin!");
+
         // Brief pause to show completion
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
         console.log('Preparation error, using defaults:', error);
         setPreparationProgress(100);
@@ -425,129 +481,479 @@ export default function BaselineAssessmentPage() {
   }, []);
 
   // Current domain info - use config domains
-  const enabledDomains = config.domains.filter(d => d.enabled);
+  const enabledDomains = config.domains.filter((d) => d.enabled);
   const currentDomainConfig = enabledDomains[currentDomainIndex];
-  const currentDomainId = currentDomainConfig?.domain as AssessmentDomain || 'MATH';
+  const currentDomainId = (currentDomainConfig?.domain as AssessmentDomain) || 'MATH';
   const currentBreak = GAME_BREAKS[currentBreakIndex % GAME_BREAKS.length];
   const questionsPerDomain = currentDomainConfig?.questionsPerDomain || 5;
 
   // Calculate overall progress using config
   const totalDomainQuestions = enabledDomains.reduce((sum, d) => sum + d.questionsPerDomain, 0);
   const totalQuestions = LEARNING_STYLE_QUESTIONS.length + totalDomainQuestions;
-  const completedDomainQuestions = enabledDomains.slice(0, currentDomainIndex).reduce((sum, d) => sum + d.questionsPerDomain, 0);
-  const questionsCompleted = phase === 'learning_style' || phase === 'loading' || phase === 'preparing'
-    ? lsIndex 
-    : LEARNING_STYLE_QUESTIONS.length + completedDomainQuestions + currentQuestionInDomain;
+  const completedDomainQuestions = enabledDomains
+    .slice(0, currentDomainIndex)
+    .reduce((sum, d) => sum + d.questionsPerDomain, 0);
+  const questionsCompleted =
+    phase === 'learning_style' || phase === 'loading' || phase === 'preparing'
+      ? lsIndex
+      : LEARNING_STYLE_QUESTIONS.length + completedDomainQuestions + currentQuestionInDomain;
   const overallProgress = (questionsCompleted / totalQuestions) * 100;
 
   // UI adaptations based on assessment type
-  const fontSize = config.uiConfig.fontSizeMultiplier > 1 ? 'text-lg md:text-xl' : 'text-base md:text-lg';
-  const isSimplified = config.assessmentType === 'MODIFIED' || config.assessmentType === 'ALTERNATE';
+  const fontSize =
+    config.uiConfig.fontSizeMultiplier > 1 ? 'text-lg md:text-xl' : 'text-base md:text-lg';
+  const isSimplified =
+    config.assessmentType === 'MODIFIED' || config.assessmentType === 'ALTERNATE';
   const isAlternate = config.assessmentType === 'ALTERNATE';
 
   // ════════════════════════════════════════════════════════════════════════════
   // FETCH DOMAIN QUESTIONS - Use pre-generated if available
   // ════════════════════════════════════════════════════════════════════════════
 
-  const fetchDomainQuestions = useCallback(async (domain: AssessmentDomain) => {
-    setIsLoadingQuestions(true);
-    
-    try {
-      // First check if we have pre-generated questions for this domain
-      if (isPrepared && preparedDomains.length > 0) {
-        const preparedDomain = preparedDomains.find(d => d.domain === domain);
-        if (preparedDomain && preparedDomain.questions.length > 0) {
-          console.log(`[Assessment] Using pre-generated questions for ${domain} (${preparedDomain.source})`);
-          setDomainQuestions(preparedDomain.questions);
-          setIsLoadingQuestions(false);
-          setQuestionStartTime(Date.now());
-          return;
-        }
-      }
-      
-      // Fall back to fetching questions on-demand
-      console.log(`[Assessment] Fetching questions on-demand for ${domain}`);
-      const response = await fetch('/api/baseline/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          domain, 
-          count: currentDomainConfig?.questionsPerDomain || 5,
-          gradeBand: config.gradeBand,
-          assessmentType: config.assessmentType,
-          accommodations: Object.entries(config.accommodations)
-            .filter(([, v]) => v)
-            .map(([k]) => k),
-        }),
-      });
+  const fetchDomainQuestions = useCallback(
+    async (domain: AssessmentDomain) => {
+      setIsLoadingQuestions(true);
 
-      if (response.ok) {
-        const data = await response.json();
-        setDomainQuestions(data.questions);
-      } else {
-        // Fallback to stub questions if API fails
+      try {
+        // First check if we have pre-generated questions for this domain
+        if (isPrepared && preparedDomains.length > 0) {
+          const preparedDomain = preparedDomains.find((d) => d.domain === domain);
+          if (preparedDomain && preparedDomain.questions.length > 0) {
+            console.log(
+              `[Assessment] Using pre-generated questions for ${domain} (${preparedDomain.source})`
+            );
+            setDomainQuestions(preparedDomain.questions);
+            setIsLoadingQuestions(false);
+            setQuestionStartTime(Date.now());
+            return;
+          }
+        }
+
+        // Fall back to fetching questions on-demand
+        console.log(`[Assessment] Fetching questions on-demand for ${domain}`);
+        const response = await fetch('/api/baseline/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain,
+            count: currentDomainConfig?.questionsPerDomain || 5,
+            gradeBand: config.gradeBand,
+            assessmentType: config.assessmentType,
+            accommodations: Object.entries(config.accommodations)
+              .filter(([, v]) => v)
+              .map(([k]) => k),
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setDomainQuestions(data.questions);
+        } else {
+          // Fallback to stub questions if API fails
+          setDomainQuestions(generateStubQuestions(domain));
+        }
+      } catch (error) {
+        console.error('Failed to fetch questions:', error);
         setDomainQuestions(generateStubQuestions(domain));
+      } finally {
+        setIsLoadingQuestions(false);
+        setQuestionStartTime(Date.now());
       }
-    } catch (error) {
-      console.error('Failed to fetch questions:', error);
-      setDomainQuestions(generateStubQuestions(domain));
-    } finally {
-      setIsLoadingQuestions(false);
-      setQuestionStartTime(Date.now());
-    }
-  }, [config.gradeBand, config.assessmentType, config.accommodations, currentDomainConfig?.questionsPerDomain]);
+    },
+    [
+      config.gradeBand,
+      config.assessmentType,
+      config.accommodations,
+      currentDomainConfig?.questionsPerDomain,
+    ]
+  );
 
   // Generate stub questions for demo/fallback
   function generateStubQuestions(domain: AssessmentDomain): AssessmentQuestion[] {
     const stubs: Record<AssessmentDomain, AssessmentQuestion[]> = {
       MATH: [
-        { id: 'math-1', domain: 'MATH', skillCode: 'MATH_NUMBER_SENSE', questionType: 'MULTIPLE_CHOICE', questionText: 'What is 7 + 5?', options: ['10', '11', '12', '13'], difficulty: 2, questionNumber: 1 },
-        { id: 'math-2', domain: 'MATH', skillCode: 'MATH_OPERATIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'What is 15 - 8?', options: ['5', '6', '7', '8'], difficulty: 2, questionNumber: 2 },
-        { id: 'math-3', domain: 'MATH', skillCode: 'MATH_FRACTIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'What is half of 10?', options: ['3', '4', '5', '6'], difficulty: 2, questionNumber: 3 },
-        { id: 'math-4', domain: 'MATH', skillCode: 'MATH_GEOMETRY', questionType: 'MULTIPLE_CHOICE', questionText: 'How many sides does a triangle have?', options: ['2', '3', '4', '5'], difficulty: 1, questionNumber: 4 },
-        { id: 'math-5', domain: 'MATH', skillCode: 'MATH_PROBLEM_SOLVING', questionType: 'MULTIPLE_CHOICE', questionText: 'If you have 3 apples and get 4 more, how many do you have?', options: ['5', '6', '7', '8'], difficulty: 2, questionNumber: 5 },
+        {
+          id: 'math-1',
+          domain: 'MATH',
+          skillCode: 'MATH_NUMBER_SENSE',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'What is 7 + 5?',
+          options: ['10', '11', '12', '13'],
+          difficulty: 2,
+          questionNumber: 1,
+        },
+        {
+          id: 'math-2',
+          domain: 'MATH',
+          skillCode: 'MATH_OPERATIONS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'What is 15 - 8?',
+          options: ['5', '6', '7', '8'],
+          difficulty: 2,
+          questionNumber: 2,
+        },
+        {
+          id: 'math-3',
+          domain: 'MATH',
+          skillCode: 'MATH_FRACTIONS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'What is half of 10?',
+          options: ['3', '4', '5', '6'],
+          difficulty: 2,
+          questionNumber: 3,
+        },
+        {
+          id: 'math-4',
+          domain: 'MATH',
+          skillCode: 'MATH_GEOMETRY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'How many sides does a triangle have?',
+          options: ['2', '3', '4', '5'],
+          difficulty: 1,
+          questionNumber: 4,
+        },
+        {
+          id: 'math-5',
+          domain: 'MATH',
+          skillCode: 'MATH_PROBLEM_SOLVING',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'If you have 3 apples and get 4 more, how many do you have?',
+          options: ['5', '6', '7', '8'],
+          difficulty: 2,
+          questionNumber: 5,
+        },
       ],
       ELA: [
-        { id: 'ela-1', domain: 'ELA', skillCode: 'ELA_PHONEMIC_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word rhymes with "cat"?', options: ['Dog', 'Hat', 'Bird', 'Fish'], difficulty: 1, questionNumber: 1 },
-        { id: 'ela-2', domain: 'ELA', skillCode: 'ELA_VOCABULARY', questionType: 'MULTIPLE_CHOICE', questionText: 'What does "happy" mean?', options: ['Sad', 'Joyful', 'Angry', 'Tired'], difficulty: 1, questionNumber: 2 },
-        { id: 'ela-3', domain: 'ELA', skillCode: 'ELA_FLUENCY', questionType: 'MULTIPLE_CHOICE', questionText: 'Which sentence is correct?', options: ['The dog run fast.', 'The dog runs fast.', 'The dog running fast.', 'The dog runned fast.'], difficulty: 2, questionNumber: 3 },
-        { id: 'ela-4', domain: 'ELA', skillCode: 'ELA_COMPREHENSION', questionType: 'MULTIPLE_CHOICE', questionText: 'In the story "The Three Little Pigs", what did the wolf try to do?', options: ['Help build houses', 'Blow the houses down', 'Give the pigs food', 'Teach the pigs to dance'], difficulty: 2, questionNumber: 4 },
-        { id: 'ela-5', domain: 'ELA', skillCode: 'ELA_WRITING', questionType: 'MULTIPLE_CHOICE', questionText: 'Which punctuation ends a question?', options: ['.', '!', '?', ','], difficulty: 1, questionNumber: 5 },
+        {
+          id: 'ela-1',
+          domain: 'ELA',
+          skillCode: 'ELA_PHONEMIC_AWARENESS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which word rhymes with "cat"?',
+          options: ['Dog', 'Hat', 'Bird', 'Fish'],
+          difficulty: 1,
+          questionNumber: 1,
+        },
+        {
+          id: 'ela-2',
+          domain: 'ELA',
+          skillCode: 'ELA_VOCABULARY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'What does "happy" mean?',
+          options: ['Sad', 'Joyful', 'Angry', 'Tired'],
+          difficulty: 1,
+          questionNumber: 2,
+        },
+        {
+          id: 'ela-3',
+          domain: 'ELA',
+          skillCode: 'ELA_FLUENCY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which sentence is correct?',
+          options: [
+            'The dog run fast.',
+            'The dog runs fast.',
+            'The dog running fast.',
+            'The dog runned fast.',
+          ],
+          difficulty: 2,
+          questionNumber: 3,
+        },
+        {
+          id: 'ela-4',
+          domain: 'ELA',
+          skillCode: 'ELA_COMPREHENSION',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'In the story "The Three Little Pigs", what did the wolf try to do?',
+          options: [
+            'Help build houses',
+            'Blow the houses down',
+            'Give the pigs food',
+            'Teach the pigs to dance',
+          ],
+          difficulty: 2,
+          questionNumber: 4,
+        },
+        {
+          id: 'ela-5',
+          domain: 'ELA',
+          skillCode: 'ELA_WRITING',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which punctuation ends a question?',
+          options: ['.', '!', '?', ','],
+          difficulty: 1,
+          questionNumber: 5,
+        },
       ],
       SPEECH: [
-        { id: 'speech-1', domain: 'SPEECH', skillCode: 'SPEECH_ARTICULATION', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word starts with the same sound as "sun"?', options: ['Ball', 'Cat', 'Soap', 'Tree'], difficulty: 1, questionNumber: 1 },
-        { id: 'speech-2', domain: 'SPEECH', skillCode: 'SPEECH_FLUENCY', questionType: 'MULTIPLE_CHOICE', questionText: 'When speaking to a group, you should...', options: ['Whisper quietly', 'Speak clearly', 'Talk very fast', 'Look at the floor'], difficulty: 2, questionNumber: 2 },
-        { id: 'speech-3', domain: 'SPEECH', skillCode: 'SPEECH_VOICE', questionType: 'MULTIPLE_CHOICE', questionText: 'How should you speak when someone is sleeping nearby?', options: ['Very loudly', 'In a normal voice', 'Quietly', 'Not at all'], difficulty: 1, questionNumber: 3 },
-        { id: 'speech-4', domain: 'SPEECH', skillCode: 'SPEECH_LANGUAGE', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word means the same as "big"?', options: ['Small', 'Tiny', 'Large', 'Short'], difficulty: 1, questionNumber: 4 },
-        { id: 'speech-5', domain: 'SPEECH', skillCode: 'SPEECH_PRAGMATICS', questionType: 'MULTIPLE_CHOICE', questionText: 'When meeting someone new, you should...', options: ['Look away', 'Say hello', 'Stay silent', 'Run away'], difficulty: 1, questionNumber: 5 },
+        {
+          id: 'speech-1',
+          domain: 'SPEECH',
+          skillCode: 'SPEECH_ARTICULATION',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which word starts with the same sound as "sun"?',
+          options: ['Ball', 'Cat', 'Soap', 'Tree'],
+          difficulty: 1,
+          questionNumber: 1,
+        },
+        {
+          id: 'speech-2',
+          domain: 'SPEECH',
+          skillCode: 'SPEECH_FLUENCY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'When speaking to a group, you should...',
+          options: ['Whisper quietly', 'Speak clearly', 'Talk very fast', 'Look at the floor'],
+          difficulty: 2,
+          questionNumber: 2,
+        },
+        {
+          id: 'speech-3',
+          domain: 'SPEECH',
+          skillCode: 'SPEECH_VOICE',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'How should you speak when someone is sleeping nearby?',
+          options: ['Very loudly', 'In a normal voice', 'Quietly', 'Not at all'],
+          difficulty: 1,
+          questionNumber: 3,
+        },
+        {
+          id: 'speech-4',
+          domain: 'SPEECH',
+          skillCode: 'SPEECH_LANGUAGE',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which word means the same as "big"?',
+          options: ['Small', 'Tiny', 'Large', 'Short'],
+          difficulty: 1,
+          questionNumber: 4,
+        },
+        {
+          id: 'speech-5',
+          domain: 'SPEECH',
+          skillCode: 'SPEECH_PRAGMATICS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'When meeting someone new, you should...',
+          options: ['Look away', 'Say hello', 'Stay silent', 'Run away'],
+          difficulty: 1,
+          questionNumber: 5,
+        },
       ],
       SEL: [
-        { id: 'sel-1', domain: 'SEL', skillCode: 'SEL_SELF_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'When I feel angry, I...', options: ['Yell at others', 'Take deep breaths', 'Break things', 'Ignore it'], difficulty: 2, questionNumber: 1 },
-        { id: 'sel-2', domain: 'SEL', skillCode: 'SEL_SELF_MANAGEMENT', questionType: 'MULTIPLE_CHOICE', questionText: 'If homework is hard, I should...', options: ['Give up', 'Ask for help', 'Throw it away', 'Cry'], difficulty: 2, questionNumber: 2 },
-        { id: 'sel-3', domain: 'SEL', skillCode: 'SEL_SOCIAL_AWARENESS', questionType: 'MULTIPLE_CHOICE', questionText: 'If a friend looks sad, I could...', options: ['Laugh at them', 'Ask if they are okay', 'Walk away', 'Tell others'], difficulty: 1, questionNumber: 3 },
-        { id: 'sel-4', domain: 'SEL', skillCode: 'SEL_RELATIONSHIPS', questionType: 'MULTIPLE_CHOICE', questionText: 'Good friends...', options: ['Share and take turns', 'Always fight', 'Ignore each other', 'Keep secrets'], difficulty: 1, questionNumber: 4 },
-        { id: 'sel-5', domain: 'SEL', skillCode: 'SEL_DECISIONS', questionType: 'MULTIPLE_CHOICE', questionText: 'Before making a choice, I should...', options: ['Do it right away', 'Think about what might happen', 'Ask a stranger', 'Flip a coin'], difficulty: 2, questionNumber: 5 },
+        {
+          id: 'sel-1',
+          domain: 'SEL',
+          skillCode: 'SEL_SELF_AWARENESS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'When I feel angry, I...',
+          options: ['Yell at others', 'Take deep breaths', 'Break things', 'Ignore it'],
+          difficulty: 2,
+          questionNumber: 1,
+        },
+        {
+          id: 'sel-2',
+          domain: 'SEL',
+          skillCode: 'SEL_SELF_MANAGEMENT',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'If homework is hard, I should...',
+          options: ['Give up', 'Ask for help', 'Throw it away', 'Cry'],
+          difficulty: 2,
+          questionNumber: 2,
+        },
+        {
+          id: 'sel-3',
+          domain: 'SEL',
+          skillCode: 'SEL_SOCIAL_AWARENESS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'If a friend looks sad, I could...',
+          options: ['Laugh at them', 'Ask if they are okay', 'Walk away', 'Tell others'],
+          difficulty: 1,
+          questionNumber: 3,
+        },
+        {
+          id: 'sel-4',
+          domain: 'SEL',
+          skillCode: 'SEL_RELATIONSHIPS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Good friends...',
+          options: ['Share and take turns', 'Always fight', 'Ignore each other', 'Keep secrets'],
+          difficulty: 1,
+          questionNumber: 4,
+        },
+        {
+          id: 'sel-5',
+          domain: 'SEL',
+          skillCode: 'SEL_DECISIONS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Before making a choice, I should...',
+          options: [
+            'Do it right away',
+            'Think about what might happen',
+            'Ask a stranger',
+            'Flip a coin',
+          ],
+          difficulty: 2,
+          questionNumber: 5,
+        },
       ],
       SPELLING: [
-        { id: 'spell-1', domain: 'SPELLING', skillCode: 'SPELL_PATTERNS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which spelling is correct?', options: ['freind', 'friend', 'frend', 'frind'], difficulty: 2, questionNumber: 1 },
-        { id: 'spell-2', domain: 'SPELLING', skillCode: 'SPELL_PHONICS', questionType: 'MULTIPLE_CHOICE', questionText: 'How do you spell the word for a large body of water?', options: ['oshun', 'ocen', 'ocean', 'oshen'], difficulty: 2, questionNumber: 2 },
-        { id: 'spell-3', domain: 'SPELLING', skillCode: 'SPELL_RULES', questionType: 'MULTIPLE_CHOICE', questionText: 'Which is the correct plural of "cat"?', options: ['cates', 'cats', 'caties', "cat's"], difficulty: 1, questionNumber: 3 },
-        { id: 'spell-4', domain: 'SPELLING', skillCode: 'SPELL_SIGHT_WORDS', questionType: 'MULTIPLE_CHOICE', questionText: 'Which word is spelled correctly?', options: ['becuz', 'becuase', 'because', 'becouse'], difficulty: 2, questionNumber: 4 },
-        { id: 'spell-5', domain: 'SPELLING', skillCode: 'SPELL_COMPOUND', questionType: 'MULTIPLE_CHOICE', questionText: 'How do you spell "sun" + "flower"?', options: ['sunflower', 'sun flower', 'sunflawer', 'son flower'], difficulty: 2, questionNumber: 5 },
+        {
+          id: 'spell-1',
+          domain: 'SPELLING',
+          skillCode: 'SPELL_PATTERNS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which spelling is correct?',
+          options: ['freind', 'friend', 'frend', 'frind'],
+          difficulty: 2,
+          questionNumber: 1,
+        },
+        {
+          id: 'spell-2',
+          domain: 'SPELLING',
+          skillCode: 'SPELL_PHONICS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'How do you spell the word for a large body of water?',
+          options: ['oshun', 'ocen', 'ocean', 'oshen'],
+          difficulty: 2,
+          questionNumber: 2,
+        },
+        {
+          id: 'spell-3',
+          domain: 'SPELLING',
+          skillCode: 'SPELL_RULES',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which is the correct plural of "cat"?',
+          options: ['cates', 'cats', 'caties', "cat's"],
+          difficulty: 1,
+          questionNumber: 3,
+        },
+        {
+          id: 'spell-4',
+          domain: 'SPELLING',
+          skillCode: 'SPELL_SIGHT_WORDS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which word is spelled correctly?',
+          options: ['becuz', 'becuase', 'because', 'becouse'],
+          difficulty: 2,
+          questionNumber: 4,
+        },
+        {
+          id: 'spell-5',
+          domain: 'SPELLING',
+          skillCode: 'SPELL_COMPOUND',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'How do you spell "sun" + "flower"?',
+          options: ['sunflower', 'sun flower', 'sunflawer', 'son flower'],
+          difficulty: 2,
+          questionNumber: 5,
+        },
       ],
       CREATIVE_WRITING: [
-        { id: 'cw-1', domain: 'CREATIVE_WRITING', skillCode: 'CW_STORY_ELEMENTS', questionType: 'MULTIPLE_CHOICE', questionText: 'Every story needs a...', options: ['Beginning, middle, and end', 'Picture', 'Long title', 'Rhyme'], difficulty: 1, questionNumber: 1 },
-        { id: 'cw-2', domain: 'CREATIVE_WRITING', skillCode: 'CW_CHARACTER', questionType: 'MULTIPLE_CHOICE', questionText: 'A character in a story is...', options: ['The setting', 'A person or animal', 'The ending', 'The title'], difficulty: 1, questionNumber: 2 },
-        { id: 'cw-3', domain: 'CREATIVE_WRITING', skillCode: 'CW_SETTING', questionType: 'MULTIPLE_CHOICE', questionText: 'The setting tells us...', options: ['Who is in the story', 'Where and when', 'What happens last', 'The moral'], difficulty: 1, questionNumber: 3 },
-        { id: 'cw-4', domain: 'CREATIVE_WRITING', skillCode: 'CW_DESCRIPTIVE', questionType: 'MULTIPLE_CHOICE', questionText: 'Which sentence is more descriptive?', options: ['The dog ran.', 'The fluffy brown dog ran quickly.', 'Dog.', 'Running.'], difficulty: 2, questionNumber: 4 },
-        { id: 'cw-5', domain: 'CREATIVE_WRITING', skillCode: 'CW_IMAGINATION', questionType: 'MULTIPLE_CHOICE', questionText: 'In creative writing, you can...', options: ['Only write facts', 'Make up stories', 'Copy from books', 'Only use real people'], difficulty: 1, questionNumber: 5 },
+        {
+          id: 'cw-1',
+          domain: 'CREATIVE_WRITING',
+          skillCode: 'CW_STORY_ELEMENTS',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Every story needs a...',
+          options: ['Beginning, middle, and end', 'Picture', 'Long title', 'Rhyme'],
+          difficulty: 1,
+          questionNumber: 1,
+        },
+        {
+          id: 'cw-2',
+          domain: 'CREATIVE_WRITING',
+          skillCode: 'CW_CHARACTER',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'A character in a story is...',
+          options: ['The setting', 'A person or animal', 'The ending', 'The title'],
+          difficulty: 1,
+          questionNumber: 2,
+        },
+        {
+          id: 'cw-3',
+          domain: 'CREATIVE_WRITING',
+          skillCode: 'CW_SETTING',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'The setting tells us...',
+          options: ['Who is in the story', 'Where and when', 'What happens last', 'The moral'],
+          difficulty: 1,
+          questionNumber: 3,
+        },
+        {
+          id: 'cw-4',
+          domain: 'CREATIVE_WRITING',
+          skillCode: 'CW_DESCRIPTIVE',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Which sentence is more descriptive?',
+          options: ['The dog ran.', 'The fluffy brown dog ran quickly.', 'Dog.', 'Running.'],
+          difficulty: 2,
+          questionNumber: 4,
+        },
+        {
+          id: 'cw-5',
+          domain: 'CREATIVE_WRITING',
+          skillCode: 'CW_IMAGINATION',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'In creative writing, you can...',
+          options: [
+            'Only write facts',
+            'Make up stories',
+            'Copy from books',
+            'Only use real people',
+          ],
+          difficulty: 1,
+          questionNumber: 5,
+        },
       ],
       LIFE_SKILLS: [
-        { id: 'life-1', domain: 'LIFE_SKILLS', skillCode: 'LIFE_TIME', questionType: 'MULTIPLE_CHOICE', questionText: 'What time do we usually eat lunch?', options: ['Midnight', 'Around noon', '6am', '10pm'], difficulty: 1, questionNumber: 1 },
-        { id: 'life-2', domain: 'LIFE_SKILLS', skillCode: 'LIFE_MONEY', questionType: 'MULTIPLE_CHOICE', questionText: 'If something costs $3 and you have $5, how much change do you get?', options: ['$1', '$2', '$3', '$8'], difficulty: 2, questionNumber: 2 },
-        { id: 'life-3', domain: 'LIFE_SKILLS', skillCode: 'LIFE_SAFETY', questionType: 'MULTIPLE_CHOICE', questionText: 'Before crossing the street, you should...', options: ['Run quickly', 'Look both ways', 'Close your eyes', 'Skip'], difficulty: 1, questionNumber: 3 },
-        { id: 'life-4', domain: 'LIFE_SKILLS', skillCode: 'LIFE_HYGIENE', questionType: 'MULTIPLE_CHOICE', questionText: 'When should you wash your hands?', options: ['Never', 'Before eating', 'Only on Mondays', 'Once a year'], difficulty: 1, questionNumber: 4 },
-        { id: 'life-5', domain: 'LIFE_SKILLS', skillCode: 'LIFE_ORGANIZATION', questionType: 'MULTIPLE_CHOICE', questionText: 'Keeping your things organized helps you...', options: ['Lose things', 'Find things easily', 'Make a mess', 'Forget things'], difficulty: 1, questionNumber: 5 },
+        {
+          id: 'life-1',
+          domain: 'LIFE_SKILLS',
+          skillCode: 'LIFE_TIME',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'What time do we usually eat lunch?',
+          options: ['Midnight', 'Around noon', '6am', '10pm'],
+          difficulty: 1,
+          questionNumber: 1,
+        },
+        {
+          id: 'life-2',
+          domain: 'LIFE_SKILLS',
+          skillCode: 'LIFE_MONEY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'If something costs $3 and you have $5, how much change do you get?',
+          options: ['$1', '$2', '$3', '$8'],
+          difficulty: 2,
+          questionNumber: 2,
+        },
+        {
+          id: 'life-3',
+          domain: 'LIFE_SKILLS',
+          skillCode: 'LIFE_SAFETY',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Before crossing the street, you should...',
+          options: ['Run quickly', 'Look both ways', 'Close your eyes', 'Skip'],
+          difficulty: 1,
+          questionNumber: 3,
+        },
+        {
+          id: 'life-4',
+          domain: 'LIFE_SKILLS',
+          skillCode: 'LIFE_HYGIENE',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'When should you wash your hands?',
+          options: ['Never', 'Before eating', 'Only on Mondays', 'Once a year'],
+          difficulty: 1,
+          questionNumber: 4,
+        },
+        {
+          id: 'life-5',
+          domain: 'LIFE_SKILLS',
+          skillCode: 'LIFE_ORGANIZATION',
+          questionType: 'MULTIPLE_CHOICE',
+          questionText: 'Keeping your things organized helps you...',
+          options: ['Lose things', 'Find things easily', 'Make a mess', 'Forget things'],
+          difficulty: 1,
+          questionNumber: 5,
+        },
       ],
     };
     return stubs[domain] || [];
@@ -571,7 +977,7 @@ export default function BaselineAssessmentPage() {
 
   const handleLsSingleSelect = (value: string) => {
     setLsAnswers((prev) => ({ ...prev, [currentLsQuestion.id]: value }));
-    
+
     setTimeout(() => {
       if (isLastLsQuestion) {
         // Move to domain assessment phase
@@ -595,9 +1001,9 @@ export default function BaselineAssessmentPage() {
 
   const handleLsMultiSelectContinue = () => {
     if (selectedOptions.length === 0) return;
-    
+
     setLsAnswers((prev) => ({ ...prev, [currentLsQuestion.id]: selectedOptions }));
-    
+
     if (isLastLsQuestion) {
       setPhase('transition_to_domains');
     } else {
@@ -633,7 +1039,7 @@ export default function BaselineAssessmentPage() {
     if (!currentQuestion) return;
 
     const latencyMs = Date.now() - questionStartTime;
-    
+
     setDomainAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: { answer: optionIndex, latencyMs },
@@ -673,7 +1079,7 @@ export default function BaselineAssessmentPage() {
   useEffect(() => {
     if (phase === 'game_break') {
       setBreakCountdown(currentBreak.duration);
-      
+
       breakTimerRef.current = setInterval(() => {
         setBreakCountdown((prev) => {
           if (prev <= 1) {
@@ -705,7 +1111,9 @@ export default function BaselineAssessmentPage() {
   useEffect(() => {
     if (phase === 'game_break' && breakCountdown === 0) {
       const timer = setTimeout(moveToNextDomain, 500);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [phase, breakCountdown, moveToNextDomain]);
 
@@ -763,9 +1171,11 @@ export default function BaselineAssessmentPage() {
             )}
           </div>
 
-          <div className={`grid gap-3 ${currentLsQuestion.type === 'multi_select' ? 'grid-cols-2' : ''}`}>
+          <div
+            className={`grid gap-3 ${currentLsQuestion.type === 'multi_select' ? 'grid-cols-2' : ''}`}
+          >
             {currentLsQuestion.options.map((option) => {
-              const isSelected = 
+              const isSelected =
                 currentLsQuestion.type === 'multi_select'
                   ? selectedOptions.includes(option.value)
                   : lsAnswers[currentLsQuestion.id] === option.value;
@@ -781,13 +1191,16 @@ export default function BaselineAssessmentPage() {
                     }
                   }}
                   className={`p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3
-                    ${isSelected
-                      ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
-                      : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                    ${
+                      isSelected
+                        ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
+                        : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
                     }`}
                 >
                   {option.emoji && <span className="text-2xl flex-shrink-0">{option.emoji}</span>}
-                  <span className={`font-medium ${isSelected ? 'text-[var(--aivo-brand-primary)]' : 'text-[var(--aivo-brand-navy)]'}`}>
+                  <span
+                    className={`font-medium ${isSelected ? 'text-[var(--aivo-brand-primary)]' : 'text-[var(--aivo-brand-navy)]'}`}
+                  >
                     {option.label}
                   </span>
                   {isSelected && currentLsQuestion.type === 'multi_select' && (
@@ -825,8 +1238,11 @@ export default function BaselineAssessmentPage() {
               <div
                 key={idx}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  idx === lsIndex ? 'bg-[var(--aivo-brand-primary)]' : 
-                  idx < lsIndex ? 'bg-[var(--aivo-teal-400)]' : 'bg-[var(--aivo-neutral-200)]'
+                  idx === lsIndex
+                    ? 'bg-[var(--aivo-brand-primary)]'
+                    : idx < lsIndex
+                      ? 'bg-[var(--aivo-teal-400)]'
+                      : 'bg-[var(--aivo-neutral-200)]'
                 }`}
               />
             ))}
@@ -844,16 +1260,19 @@ export default function BaselineAssessmentPage() {
           <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-bounce">
             <span className="text-5xl">🎉</span>
           </div>
-          <h2 className={`font-bold text-[var(--aivo-brand-navy)] mb-4 ${isAlternate ? 'text-2xl' : 'text-3xl'}`}>
+          <h2
+            className={`font-bold text-[var(--aivo-brand-navy)] mb-4 ${isAlternate ? 'text-2xl' : 'text-3xl'}`}
+          >
             {isSimplified ? 'You did great!' : 'Great job so far!'}
           </h2>
-          <p className={`text-[var(--aivo-neutral-600)] mb-6 ${isAlternate ? 'text-xl' : 'text-lg'}`}>
-            {isAlternate 
-              ? 'Let\'s play some games!' 
-              : isSimplified 
-                ? 'Now let\'s play some fun games!'
-                : 'Now let\'s explore what you know! We\'ll play some quick games in different subjects.'
-            }
+          <p
+            className={`text-[var(--aivo-neutral-600)] mb-6 ${isAlternate ? 'text-xl' : 'text-lg'}`}
+          >
+            {isAlternate
+              ? "Let's play some games!"
+              : isSimplified
+                ? "Now let's play some fun games!"
+                : "Now let's explore what you know! We'll play some quick games in different subjects."}
           </p>
 
           {/* Caregiver notice for ALTERNATE */}
@@ -862,40 +1281,55 @@ export default function BaselineAssessmentPage() {
               👋 Helper: Please guide the learner through these activities
             </div>
           )}
-          
+
           {/* Show domain icons based on enabled domains from config */}
-          <div className={`grid gap-3 mb-8 ${
-            enabledDomains.length <= 4 
-              ? 'grid-cols-' + enabledDomains.length 
-              : 'grid-cols-4'
-          }`}>
+          <div
+            className={`grid gap-3 mb-8 ${
+              enabledDomains.length <= 4 ? 'grid-cols-' + enabledDomains.length : 'grid-cols-4'
+            }`}
+          >
             {enabledDomains.slice(0, 4).map((domain) => (
               <div key={domain.domain} className="text-center">
-                <div className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}>
+                <div
+                  className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
+                >
                   <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
                 </div>
-                <span className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}>{domain.name}</span>
+                <span
+                  className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}
+                >
+                  {domain.name}
+                </span>
               </div>
             ))}
           </div>
           {enabledDomains.length > 4 && (
-            <div className={`grid gap-3 mb-8 max-w-xs mx-auto grid-cols-${Math.min(enabledDomains.length - 4, 3)}`}>
+            <div
+              className={`grid gap-3 mb-8 max-w-xs mx-auto grid-cols-${Math.min(enabledDomains.length - 4, 3)}`}
+            >
               {enabledDomains.slice(4).map((domain) => (
                 <div key={domain.domain} className="text-center">
-                  <div className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}>
+                  <div
+                    className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
+                  >
                     <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
                   </div>
-                  <span className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}>{domain.name}</span>
+                  <span
+                    className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}
+                  >
+                    {domain.name}
+                  </span>
                 </div>
               ))}
             </div>
           )}
 
-          <p className={`text-[var(--aivo-neutral-500)] mb-6 ${isAlternate ? 'text-base' : 'text-sm'}`}>
-            {isSimplified 
-              ? 'Just try your best! 💪' 
-              : 'Don\'t worry - there are no wrong answers! Just do your best. 💪'
-            }
+          <p
+            className={`text-[var(--aivo-neutral-500)] mb-6 ${isAlternate ? 'text-base' : 'text-sm'}`}
+          >
+            {isSimplified
+              ? 'Just try your best! 💪'
+              : "Don't worry - there are no wrong answers! Just do your best. 💪"}
           </p>
 
           <button
@@ -903,7 +1337,7 @@ export default function BaselineAssessmentPage() {
             className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
               hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl py-5' : 'text-xl'}`}
           >
-            {isSimplified ? 'Let\'s Play! 🎮' : 'Let\'s Go! 🚀'}
+            {isSimplified ? "Let's Play! 🎮" : "Let's Go! 🚀"}
           </button>
         </div>
       </div>
@@ -915,64 +1349,72 @@ export default function BaselineAssessmentPage() {
     const domainInfo = {
       name: currentDomainConfig?.name || 'Questions',
       emoji: currentDomainConfig?.icon || '📝',
-      description: isSimplified 
+      description: isSimplified
         ? `Let's answer some ${currentDomainConfig?.name?.toLowerCase() || 'fun'} questions!`
         : `Let's see what you know about ${currentDomainConfig?.name?.toLowerCase() || 'this topic'}!`,
       color: 'from-purple-400 to-purple-600',
     };
-    
+
     return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="max-w-xl w-full text-center">
-        <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] ${isAlternate ? 'text-xl' : ''}`}>
-          <div className={`w-28 h-28 mx-auto bg-gradient-to-br ${domainInfo.color} rounded-full flex items-center justify-center mb-6 shadow-lg`}>
-            <span className="text-6xl">{domainInfo.emoji}</span>
-          </div>
-          <h2 className={`font-bold text-[var(--aivo-brand-navy)] mb-3 ${isAlternate ? 'text-4xl' : 'text-3xl'}`}>
-            {domainInfo.name}
-          </h2>
-          <p className={`text-[var(--aivo-neutral-600)] mb-2 ${isAlternate ? 'text-xl' : 'text-lg'}`}>
-            {domainInfo.description}
-          </p>
-          <div className="inline-block bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] px-4 py-2 rounded-full text-sm font-medium mb-6">
-            {questionsPerDomain} {isSimplified ? 'fun' : 'quick'} questions
-          </div>
-
-          {isAlternate && (
-            <p className="text-lg text-[var(--aivo-teal-500)] mb-4">
-              👋 Your helper can read these to you!
-            </p>
-          )}
-
-          <button
-            onClick={startCurrentDomain}
-            className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
-              hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl' : 'text-xl'}`}
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full text-center">
+          <div
+            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] ${isAlternate ? 'text-xl' : ''}`}
           >
-            {isSimplified ? "Let's Go! 🎉" : 'Start! ✨'}
-          </button>
-        </div>
-
-        {/* Domain progress indicator */}
-        <div className="mt-6 flex justify-center gap-2 flex-wrap">
-          {enabledDomains.map((domain, idx) => (
             <div
-              key={domain.domain}
-              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
-                idx < currentDomainIndex 
-                  ? 'bg-[var(--aivo-teal-400)] text-white' 
-                  : idx === currentDomainIndex
-                    ? 'bg-[var(--aivo-brand-primary)] text-white ring-4 ring-[var(--aivo-purple-200)]'
-                    : 'bg-white text-[var(--aivo-neutral-400)] border-2 border-[var(--aivo-neutral-200)]'
-              }`}
+              className={`w-28 h-28 mx-auto bg-gradient-to-br ${domainInfo.color} rounded-full flex items-center justify-center mb-6 shadow-lg`}
             >
-              {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.icon}</span>}
+              <span className="text-6xl">{domainInfo.emoji}</span>
             </div>
-          ))}
+            <h2
+              className={`font-bold text-[var(--aivo-brand-navy)] mb-3 ${isAlternate ? 'text-4xl' : 'text-3xl'}`}
+            >
+              {domainInfo.name}
+            </h2>
+            <p
+              className={`text-[var(--aivo-neutral-600)] mb-2 ${isAlternate ? 'text-xl' : 'text-lg'}`}
+            >
+              {domainInfo.description}
+            </p>
+            <div className="inline-block bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] px-4 py-2 rounded-full text-sm font-medium mb-6">
+              {questionsPerDomain} {isSimplified ? 'fun' : 'quick'} questions
+            </div>
+
+            {isAlternate && (
+              <p className="text-lg text-[var(--aivo-teal-500)] mb-4">
+                👋 Your helper can read these to you!
+              </p>
+            )}
+
+            <button
+              onClick={startCurrentDomain}
+              className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl' : 'text-xl'}`}
+            >
+              {isSimplified ? "Let's Go! 🎉" : 'Start! ✨'}
+            </button>
+          </div>
+
+          {/* Domain progress indicator */}
+          <div className="mt-6 flex justify-center gap-2 flex-wrap">
+            {enabledDomains.map((domain, idx) => (
+              <div
+                key={domain.domain}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                  idx < currentDomainIndex
+                    ? 'bg-[var(--aivo-teal-400)] text-white'
+                    : idx === currentDomainIndex
+                      ? 'bg-[var(--aivo-brand-primary)] text-white ring-4 ring-[var(--aivo-purple-200)]'
+                      : 'bg-white text-[var(--aivo-neutral-400)] border-2 border-[var(--aivo-neutral-200)]'
+                }`}
+              >
+                {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.icon}</span>}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   const renderDomainQuestions = () => {
@@ -997,13 +1439,20 @@ export default function BaselineAssessmentPage() {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className={`max-w-xl w-full ${isAlternate ? 'max-w-2xl' : ''}`}>
-          <div className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] 
-            ${config.uiConfig.highContrast ? 'border-4' : ''}`}>
+          <div
+            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] 
+            ${config.uiConfig.highContrast ? 'border-4' : ''}`}
+          >
             {/* Domain badge */}
             <div className="flex items-center justify-center gap-2 mb-4">
-              <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{currentDomainConfig?.icon || '📝'}</span>
-              <span className={`font-medium text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-lg' : 'text-sm'}`}>
-                {currentDomainConfig?.name || 'Questions'} • Question {currentQuestionInDomain + 1} of {questionsPerDomain}
+              <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>
+                {currentDomainConfig?.icon || '📝'}
+              </span>
+              <span
+                className={`font-medium text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-lg' : 'text-sm'}`}
+              >
+                {currentDomainConfig?.name || 'Questions'} • Question {currentQuestionInDomain + 1}{' '}
+                of {questionsPerDomain}
               </span>
             </div>
 
@@ -1015,9 +1464,11 @@ export default function BaselineAssessmentPage() {
             )}
 
             {/* Question */}
-            <h2 className={`font-bold text-[var(--aivo-brand-navy)] text-center mb-6 
+            <h2
+              className={`font-bold text-[var(--aivo-brand-navy)] text-center mb-6 
               ${isAlternate ? 'text-2xl leading-relaxed' : isSimplified ? 'text-xl' : 'text-xl'}`}
-              style={{ fontSize: `${1.25 * config.uiConfig.fontSizeMultiplier}rem` }}>
+              style={{ fontSize: `${1.25 * config.uiConfig.fontSizeMultiplier}rem` }}
+            >
               {currentQ.questionText}
             </h2>
 
@@ -1026,18 +1477,23 @@ export default function BaselineAssessmentPage() {
               {currentQ.options?.slice(0, config.uiConfig.optionCount).map((option, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleDomainAnswer(idx)}
+                  onClick={() => {
+                    handleDomainAnswer(idx);
+                  }}
                   className={`p-4 rounded-xl border-2 transition-all text-left font-medium text-[var(--aivo-brand-navy)]
-                    ${isAlternate 
-                      ? 'border-[var(--aivo-neutral-300)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-100)] p-6 text-xl' 
-                      : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)]'
+                    ${
+                      isAlternate
+                        ? 'border-[var(--aivo-neutral-300)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-100)] p-6 text-xl'
+                        : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)]'
                     }
                     ${config.uiConfig.highContrast ? 'border-3' : ''}`}
                   style={{ fontSize: `${1 * config.uiConfig.fontSizeMultiplier}rem` }}
                 >
-                  <span className={`inline-flex items-center justify-center bg-[var(--aivo-purple-100)] 
+                  <span
+                    className={`inline-flex items-center justify-center bg-[var(--aivo-purple-100)] 
                     text-[var(--aivo-brand-primary)] rounded-full mr-3 font-bold
-                    ${isAlternate ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}>
+                    ${isAlternate ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
+                  >
                     {String.fromCharCode(65 + idx)}
                   </span>
                   {option}
@@ -1048,7 +1504,9 @@ export default function BaselineAssessmentPage() {
             {/* Skip button for accommodated assessments */}
             {config.uiConfig.allowSkip && (
               <button
-                onClick={() => handleDomainAnswer(-1)} // -1 indicates skipped
+                onClick={() => {
+                  handleDomainAnswer(-1);
+                }} // -1 indicates skipped
                 className="w-full mt-4 py-2 text-[var(--aivo-neutral-500)] hover:text-[var(--aivo-brand-primary)] text-sm"
               >
                 Skip this question →
@@ -1062,8 +1520,8 @@ export default function BaselineAssessmentPage() {
               <div
                 key={idx}
                 className={`w-3 h-3 rounded-full transition-colors ${
-                  idx === currentQuestionInDomain 
-                    ? 'bg-[var(--aivo-brand-primary)]' 
+                  idx === currentQuestionInDomain
+                    ? 'bg-[var(--aivo-brand-primary)]'
                     : idx < currentQuestionInDomain
                       ? 'bg-[var(--aivo-teal-400)]'
                       : 'bg-[var(--aivo-neutral-200)]'
@@ -1086,9 +1544,7 @@ export default function BaselineAssessmentPage() {
           <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-4">
             {currentBreak.title}
           </h2>
-          <p className="text-xl text-[var(--aivo-neutral-600)] mb-6">
-            {currentBreak.instruction}
-          </p>
+          <p className="text-xl text-[var(--aivo-neutral-600)] mb-6">{currentBreak.instruction}</p>
 
           {/* Countdown circle */}
           <div className="relative w-24 h-24 mx-auto mb-6">
@@ -1129,7 +1585,8 @@ export default function BaselineAssessmentPage() {
         {/* Celebration message */}
         <div className="mt-6 bg-[var(--aivo-teal-50)] rounded-2xl p-4">
           <p className={`text-[var(--aivo-teal-700)] font-medium ${isAlternate ? 'text-lg' : ''}`}>
-            🎉 {isSimplified ? 'Yay!' : 'You completed'} {currentDomainConfig?.name}! {enabledDomains.length - currentDomainIndex - 1} more to go!
+            🎉 {isSimplified ? 'Yay!' : 'You completed'} {currentDomainConfig?.name}!{' '}
+            {enabledDomains.length - currentDomainIndex - 1} more to go!
           </p>
         </div>
       </div>
@@ -1142,16 +1599,23 @@ export default function BaselineAssessmentPage() {
         <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-pulse shadow-lg">
           <span className="text-6xl">🧠</span>
         </div>
-        <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
-          Amazing work! 🌟
-        </h2>
+        <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">Amazing work! 🌟</h2>
         <p className="text-lg text-[var(--aivo-neutral-600)]">
           Preparing your personalized learning brain...
         </p>
         <div className="mt-4 flex justify-center gap-1">
-          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+          <div
+            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            style={{ animationDelay: '0ms' }}
+          />
+          <div
+            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            style={{ animationDelay: '150ms' }}
+          />
+          <div
+            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            style={{ animationDelay: '300ms' }}
+          />
         </div>
       </div>
     </div>
@@ -1166,13 +1630,7 @@ export default function BaselineAssessmentPage() {
       {/* Header with progress */}
       <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Image
-            src="/icons/aivo-appicon-explorer.svg"
-            alt="AIVO"
-            width={40}
-            height={40}
-            className="rounded-lg"
-          />
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={100} height={32} />
           <div className="flex-1">
             <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
               <span>
@@ -1180,8 +1638,10 @@ export default function BaselineAssessmentPage() {
                 {phase === 'preparing' && 'Preparing your questions...'}
                 {phase === 'learning_style' && 'Getting to know you...'}
                 {phase === 'transition_to_domains' && 'Ready for the fun part!'}
-                {phase === 'domain_intro' && `Starting ${currentDomainConfig?.name || 'Questions'}...`}
-                {phase === 'domain_questions' && `${currentDomainConfig?.name || 'Questions'} - Q${currentQuestionInDomain + 1}/${questionsPerDomain}`}
+                {phase === 'domain_intro' &&
+                  `Starting ${currentDomainConfig?.name || 'Questions'}...`}
+                {phase === 'domain_questions' &&
+                  `${currentDomainConfig?.name || 'Questions'} - Q${currentQuestionInDomain + 1}/${questionsPerDomain}`}
                 {phase === 'game_break' && 'Break time! 🎉'}
                 {phase === 'completing' && 'Almost done!'}
               </span>
@@ -1207,11 +1667,13 @@ export default function BaselineAssessmentPage() {
             <p className="text-xl text-[var(--aivo-brand-navy)] font-medium mb-2">
               {learnerName ? `Hi ${learnerName}!` : 'Welcome!'}
             </p>
-            <p className="text-[var(--aivo-neutral-600)]">Setting up your personalized assessment...</p>
+            <p className="text-[var(--aivo-neutral-600)]">
+              Setting up your personalized assessment...
+            </p>
           </div>
         </div>
       )}
-      
+
       {/* Preparing phase - Pre-generating questions */}
       {phase === 'preparing' && (
         <div className="flex-1 flex items-center justify-center p-4">
@@ -1222,15 +1684,13 @@ export default function BaselineAssessmentPage() {
               <div className="absolute inset-2 rounded-full border-2 border-[var(--aivo-purple-300)] animate-pulse" />
               <span className="text-6xl animate-bounce">🧠</span>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-3">
               {learnerName ? `Getting ready for you, ${learnerName}!` : 'Preparing Your Assessment'}
             </h2>
-            
-            <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">
-              {preparationStatus}
-            </p>
-            
+
+            <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">{preparationStatus}</p>
+
             {/* Progress bar */}
             <div className="w-full bg-[var(--aivo-neutral-200)] rounded-full h-3 mb-4 overflow-hidden">
               <div
@@ -1238,24 +1698,27 @@ export default function BaselineAssessmentPage() {
                 style={{ width: `${preparationProgress}%` }}
               />
             </div>
-            
+
             <p className="text-sm text-[var(--aivo-neutral-500)]">
               {preparationProgress < 30 && '🔍 Analyzing your learning profile...'}
-              {preparationProgress >= 30 && preparationProgress < 70 && '✨ Creating personalized questions...'}
+              {preparationProgress >= 30 &&
+                preparationProgress < 70 &&
+                '✨ Creating personalized questions...'}
               {preparationProgress >= 70 && preparationProgress < 100 && '🎯 Almost ready...'}
               {preparationProgress >= 100 && "🚀 Let's go!"}
             </p>
-            
+
             {/* Fun facts while waiting */}
             <div className="mt-8 p-4 bg-white/50 rounded-xl border border-[var(--aivo-neutral-200)]">
               <p className="text-sm text-[var(--aivo-neutral-600)] italic">
-                💡 Did you know? Our AI creates unique questions just for you based on your grade level and learning needs!
+                💡 Did you know? Our AI creates unique questions just for you based on your grade
+                level and learning needs!
               </p>
             </div>
           </div>
         </div>
       )}
-      
+
       {phase === 'learning_style' && renderLearningStylePhase()}
       {phase === 'transition_to_domains' && renderTransitionToDomains()}
       {phase === 'domain_intro' && renderDomainIntro()}

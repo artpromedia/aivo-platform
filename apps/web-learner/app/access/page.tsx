@@ -1,27 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function AccessPage() {
   return (
     <div className="min-h-screen bg-[var(--aivo-purple-50)] flex items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
         {/* Logo */}
-        <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
-          <Image
-            src="/icons/aivo-appicon-explorer.svg"
-            alt="AIVO"
-            width={40}
-            height={40}
-            className="rounded-xl"
-          />
-          <Image
-            src="/images/aivo-logo-horizontal-purple.svg"
-            alt="AIVO"
-            width={80}
-            height={26}
-          />
+        <Link href="/" className="inline-flex items-center justify-center mb-6">
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={140} height={48} />
         </Link>
 
         {/* Fun mascot/icon area */}
@@ -42,7 +30,7 @@ export default function AccessPage() {
           <h2 className="text-xl font-semibold text-[var(--aivo-brand-navy)] mb-4">
             How do you want to get started?
           </h2>
-          
+
           <div className="space-y-4">
             {/* Parent access */}
             <a
@@ -54,8 +42,12 @@ export default function AccessPage() {
                   <span className="text-2xl">👨‍👩‍👧</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-navy)]">I&apos;m a Parent</div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">Create an account and add your children</div>
+                  <div className="font-semibold text-[var(--aivo-brand-navy)]">
+                    I&apos;m a Parent
+                  </div>
+                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                    Create an account and add your children
+                  </div>
                 </div>
               </div>
             </a>
@@ -70,8 +62,12 @@ export default function AccessPage() {
                   <span className="text-2xl">👩‍🏫</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-navy)]">I&apos;m a Teacher</div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">Set up your classroom and invite students</div>
+                  <div className="font-semibold text-[var(--aivo-brand-navy)]">
+                    I&apos;m a Teacher
+                  </div>
+                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                    Set up your classroom and invite students
+                  </div>
                 </div>
               </div>
             </a>
@@ -96,7 +92,9 @@ export default function AccessPage() {
                 </div>
                 <div className="text-left">
                   <div className="font-semibold text-[var(--aivo-brand-navy)]">I have a Code</div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">Class code or PIN from your parent</div>
+                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                    Class code or PIN from your parent
+                  </div>
                 </div>
               </div>
             </Link>
@@ -106,8 +104,8 @@ export default function AccessPage() {
         {/* Already have access */}
         <div className="text-[var(--aivo-neutral-600)]">
           <p className="mb-2">Already have access?</p>
-          <Link 
-            href="/join" 
+          <Link
+            href="/join"
             className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] font-medium"
           >
             Enter your code to start learning →

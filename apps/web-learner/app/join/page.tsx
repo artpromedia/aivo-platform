@@ -32,13 +32,13 @@ export default function JoinPage() {
     try {
       // Determine if it's a PIN (all digits) or class code (alphanumeric)
       const isPinCode = /^\d{6}$/.test(trimmedCode);
-      
+
       const response = await fetch('/api/auth/code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           code: trimmedCode,
-          type: isPinCode ? 'pin' : 'class'
+          type: isPinCode ? 'pin' : 'class',
         }),
       });
 
@@ -66,19 +66,12 @@ export default function JoinPage() {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
-            <Image
-              src="/icons/aivo-appicon-explorer.svg"
-              alt="AIVO"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
             <Image
               src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={80}
-              height={26}
+              width={140}
+              height={48}
             />
           </Link>
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-purple-400)] to-[var(--aivo-brand-primary)] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -126,8 +119,20 @@ export default function JoinPage() {
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Checking...
                 </span>

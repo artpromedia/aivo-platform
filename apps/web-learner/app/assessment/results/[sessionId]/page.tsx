@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import type { AssessmentResult } from '../../../../hooks/useAssessmentEngine';
 import {
   StrengthsChart,
   WeaknessesChart,
@@ -11,7 +13,6 @@ import {
   RecommendedPath,
   ShareResults,
 } from '../components';
-import type { AssessmentResult } from '../../../../hooks/useAssessmentEngine';
 
 // Loading spinner component
 function LoadingSpinner() {
@@ -19,13 +20,7 @@ function LoadingSpinner() {
     <div className="min-h-screen bg-gradient-to-br from-[var(--aivo-purple-50)] to-[var(--aivo-teal-50)] flex items-center justify-center">
       <div className="text-center">
         <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-4 animate-pulse">
-          <Image
-            src="/icons/aivo-appicon-explorer.svg"
-            alt="AIVO"
-            width={40}
-            height={40}
-            className="rounded-lg"
-          />
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={60} height={20} />
         </div>
         <p className="text-[var(--aivo-neutral-600)]">Loading your results...</p>
       </div>
@@ -110,7 +105,9 @@ export default function AssessmentResultsPage() {
             {error || "We couldn't find your assessment results."}
           </p>
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => {
+              router.push('/dashboard');
+            }}
             className="px-6 py-3 bg-[var(--aivo-brand-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             Go to Dashboard
@@ -296,7 +293,9 @@ export default function AssessmentResultsPage() {
           className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4"
         >
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => {
+              router.push('/dashboard');
+            }}
             className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[var(--aivo-teal-500)] to-[var(--aivo-brand-primary)]
               text-white text-xl font-bold rounded-2xl shadow-lg hover:opacity-90 transition-all
               transform hover:scale-105"
@@ -304,7 +303,9 @@ export default function AssessmentResultsPage() {
             Start Learning!
           </button>
           <button
-            onClick={() => router.push('/baseline/assessment')}
+            onClick={() => {
+              router.push('/baseline/assessment');
+            }}
             className="w-full sm:w-auto px-8 py-4 border-2 border-[var(--aivo-brand-primary)] text-[var(--aivo-brand-primary)]
               text-lg font-bold rounded-2xl hover:bg-[var(--aivo-purple-50)] transition-all"
           >

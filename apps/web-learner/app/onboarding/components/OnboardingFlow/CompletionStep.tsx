@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
 import type { OnboardingStepProps } from '../../types';
 
 const CONFETTI_COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
@@ -32,7 +33,10 @@ function Confetti() {
           animate={{ y: '100vh', rotate: particle.rotation * 3, opacity: 0 }}
           transition={{ duration: 3 + Math.random() * 2, delay: particle.delay, ease: 'linear' }}
           className="absolute w-3 h-3"
-          style={{ backgroundColor: particle.color, borderRadius: Math.random() > 0.5 ? '50%' : '0' }}
+          style={{
+            backgroundColor: particle.color,
+            borderRadius: Math.random() > 0.5 ? '50%' : '0',
+          }}
         />
       ))}
     </div>
@@ -43,8 +47,12 @@ export function CompletionStep({ data, onComplete }: OnboardingStepProps) {
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowConfetti(false), 5000);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleContinue = () => {
@@ -67,11 +75,10 @@ export function CompletionStep({ data, onComplete }: OnboardingStepProps) {
             transition={{ repeat: 2, duration: 0.5 }}
           >
             <Image
-              src="/icons/aivo-appicon-explorer.svg"
+              src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={64}
-              height={64}
-              className="rounded-xl"
+              width={80}
+              height={26}
             />
           </motion.div>
         </div>

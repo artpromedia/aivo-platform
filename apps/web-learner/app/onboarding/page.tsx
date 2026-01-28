@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import {
   WelcomeStep,
   ProfileSetupStep,
@@ -170,11 +171,10 @@ export default function OnboardingPage() {
         <div className="text-center">
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-4 animate-pulse">
             <Image
-              src="/icons/aivo-appicon-explorer.svg"
+              src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={40}
-              height={40}
-              className="rounded-lg"
+              width={60}
+              height={20}
             />
           </div>
           <p className="text-[var(--aivo-neutral-600)]">Loading...</p>
@@ -192,11 +192,10 @@ export default function OnboardingPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Image
-              src="/icons/aivo-appicon-explorer.svg"
+              src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={40}
-              height={40}
-              className="rounded-lg"
+              width={100}
+              height={32}
             />
             <div className="flex-1">
               <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
@@ -252,7 +251,9 @@ export default function OnboardingPage() {
           {ONBOARDING_STEPS.map((step, index) => (
             <button
               key={step.id}
-              onClick={() => index < currentStep && setCurrentStep(index)}
+              onClick={() => {
+                if (index < currentStep) setCurrentStep(index);
+              }}
               disabled={index > currentStep}
               className={`w-3 h-3 rounded-full transition-all ${
                 index === currentStep

@@ -1,7 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+
 import type { OnboardingStepProps } from '../../types';
 
 export function WelcomeStep({ onComplete }: OnboardingStepProps) {
@@ -14,13 +15,7 @@ export function WelcomeStep({ onComplete }: OnboardingStepProps) {
         className="mb-8"
       >
         <div className="w-40 h-40 bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center shadow-2xl">
-          <Image
-            src="/icons/aivo-appicon-explorer.svg"
-            alt="AIVO"
-            width={80}
-            height={80}
-            className="rounded-2xl"
-          />
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={100} height={32} />
         </div>
       </motion.div>
 
@@ -39,8 +34,8 @@ export function WelcomeStep({ onComplete }: OnboardingStepProps) {
         transition={{ delay: 0.5 }}
         className="text-xl text-[var(--aivo-neutral-600)] mb-8 max-w-md"
       >
-        Your personalized learning adventure starts here! Let&apos;s get to know
-        you so we can make learning just right for you.
+        Your personalized learning adventure starts here! Let&apos;s get to know you so we can make
+        learning just right for you.
       </motion.p>
 
       <motion.div
@@ -55,9 +50,7 @@ export function WelcomeStep({ onComplete }: OnboardingStepProps) {
               <span className="text-2xl">5</span>
             </div>
             <div>
-              <h3 className="font-semibold text-[var(--aivo-brand-navy)]">
-                Quick Setup
-              </h3>
+              <h3 className="font-semibold text-[var(--aivo-brand-navy)]">Quick Setup</h3>
               <p className="text-sm text-[var(--aivo-neutral-500)]">
                 Just 5 simple steps to personalize your experience
               </p>
@@ -86,7 +79,9 @@ export function WelcomeStep({ onComplete }: OnboardingStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
-        onClick={() => onComplete({})}
+        onClick={() => {
+          onComplete({});
+        }}
         className="mt-8 px-12 py-5 bg-gradient-to-r from-[var(--aivo-teal-500)] to-[var(--aivo-brand-primary)]
           text-white text-xl font-bold rounded-2xl shadow-lg hover:opacity-90 transition-all
           transform hover:scale-105"

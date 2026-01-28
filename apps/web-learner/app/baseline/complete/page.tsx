@@ -16,12 +16,21 @@ export default function BaselineCompletePage() {
     });
 
     // Stop confetti after 5 seconds
-    const timer = setTimeout(() => { setShowConfetti(false); }, 5000);
-    return () => { clearTimeout(timer); };
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 5000);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   const learningPath = [
-    { id: 'personalized', emoji: '🎯', title: 'Personalized Lessons', description: 'Just for you!' },
+    {
+      id: 'personalized',
+      emoji: '🎯',
+      title: 'Personalized Lessons',
+      description: 'Just for you!',
+    },
     { id: 'games', emoji: '🎮', title: 'Fun Games', description: 'Learn while playing' },
     { id: 'progress', emoji: '📊', title: 'Track Progress', description: 'See how far you go' },
     { id: 'rewards', emoji: '🏆', title: 'Earn Rewards', description: 'XP and achievements' },
@@ -33,11 +42,36 @@ export default function BaselineCompletePage() {
       {showConfetti && windowSize.width > 0 && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
           {/* Animated confetti pieces */}
-          <div className="absolute top-0 left-1/4 text-4xl animate-bounce" style={{ animationDelay: '0s' }}>🎉</div>
-          <div className="absolute top-0 left-1/2 text-4xl animate-bounce" style={{ animationDelay: '0.2s' }}>🎊</div>
-          <div className="absolute top-0 left-3/4 text-4xl animate-bounce" style={{ animationDelay: '0.4s' }}>🎉</div>
-          <div className="absolute top-10 left-1/3 text-3xl animate-bounce" style={{ animationDelay: '0.1s' }}>⭐</div>
-          <div className="absolute top-10 left-2/3 text-3xl animate-bounce" style={{ animationDelay: '0.3s' }}>✨</div>
+          <div
+            className="absolute top-0 left-1/4 text-4xl animate-bounce"
+            style={{ animationDelay: '0s' }}
+          >
+            🎉
+          </div>
+          <div
+            className="absolute top-0 left-1/2 text-4xl animate-bounce"
+            style={{ animationDelay: '0.2s' }}
+          >
+            🎊
+          </div>
+          <div
+            className="absolute top-0 left-3/4 text-4xl animate-bounce"
+            style={{ animationDelay: '0.4s' }}
+          >
+            🎉
+          </div>
+          <div
+            className="absolute top-10 left-1/3 text-3xl animate-bounce"
+            style={{ animationDelay: '0.1s' }}
+          >
+            ⭐
+          </div>
+          <div
+            className="absolute top-10 left-2/3 text-3xl animate-bounce"
+            style={{ animationDelay: '0.3s' }}
+          >
+            ✨
+          </div>
         </div>
       )}
 
@@ -46,19 +80,16 @@ export default function BaselineCompletePage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
             <Image
-              src="/icons/aivo-appicon-explorer.svg"
+              src="/images/aivo-logo-horizontal-purple.svg"
               alt="AIVO"
-              width={48}
+              width={140}
               height={48}
-              className="rounded-xl"
             />
           </Link>
           <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
             <span className="text-7xl">🎉</span>
           </div>
-          <h1 className="text-4xl font-bold text-[var(--aivo-brand-navy)] mb-3">
-            Awesome Job!
-          </h1>
+          <h1 className="text-4xl font-bold text-[var(--aivo-brand-navy)] mb-3">Awesome Job!</h1>
           <p className="text-xl text-[var(--aivo-neutral-600)]">
             You&apos;re all set up and ready to learn! 🚀
           </p>
@@ -80,12 +111,8 @@ export default function BaselineCompletePage() {
                   <span className="text-2xl">{item.emoji}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-[var(--aivo-neutral-600)]">
-                    {item.description}
-                  </p>
+                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">{item.title}</h3>
+                  <p className="text-sm text-[var(--aivo-neutral-600)]">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -115,8 +142,8 @@ export default function BaselineCompletePage() {
                 Your Learning Journey
               </h3>
               <p className="text-sm text-[var(--aivo-neutral-600)]">
-                AIVO will now create personalized lessons based on how you like to learn.
-                The more you practice, the smarter AIVO gets at helping you! 
+                AIVO will now create personalized lessons based on how you like to learn. The more
+                you practice, the smarter AIVO gets at helping you!
               </p>
             </div>
           </div>

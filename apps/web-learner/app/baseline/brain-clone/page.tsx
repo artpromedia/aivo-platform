@@ -8,12 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 // BRAIN CLONING VISUALIZATION & PARENT CONSENT PAGE
 // ══════════════════════════════════════════════════════════════════════════════
 
-type CloningPhase = 
-  | 'analyzing' 
-  | 'building' 
-  | 'personalizing' 
-  | 'ready' 
-  | 'consent';
+type CloningPhase = 'analyzing' | 'building' | 'personalizing' | 'ready' | 'consent';
 
 interface NeuronNode {
   id: number;
@@ -26,13 +21,13 @@ interface NeuronNode {
 
 export default function BrainClonePage() {
   const router = useRouter();
-  
+
   // Cloning phases
   const [phase, setPhase] = useState<CloningPhase>('analyzing');
   const [progress, setProgress] = useState(0);
   const [neurons, setNeurons] = useState<NeuronNode[]>([]);
   const [pulsingConnections, setPulsingConnections] = useState<number[]>([]);
-  
+
   // Consent state
   const [isParentPresent, setIsParentPresent] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -75,12 +70,12 @@ export default function BrainClonePage() {
     const generateNeurons = () => {
       const newNeurons: NeuronNode[] = [];
       const nodeCount = 20;
-      
+
       for (let i = 0; i < nodeCount; i++) {
         const angle = (i / nodeCount) * Math.PI * 2;
         const radius = 80 + Math.random() * 40;
         const connections: number[] = [];
-        
+
         // Connect to 2-3 nearby neurons
         for (let j = 0; j < 3; j++) {
           const targetIdx = (i + j + 1) % nodeCount;
@@ -88,7 +83,7 @@ export default function BrainClonePage() {
             connections.push(targetIdx);
           }
         }
-        
+
         newNeurons.push({
           id: i,
           x: 150 + Math.cos(angle) * radius,
@@ -98,7 +93,7 @@ export default function BrainClonePage() {
           connections,
         });
       }
-      
+
       // Add central neurons
       for (let i = 0; i < 5; i++) {
         const angle = (i / 5) * Math.PI * 2;
@@ -112,7 +107,7 @@ export default function BrainClonePage() {
           connections: [Math.floor(Math.random() * nodeCount)],
         });
       }
-      
+
       setNeurons(newNeurons);
     };
 
@@ -123,7 +118,7 @@ export default function BrainClonePage() {
   useEffect(() => {
     if (phase === 'analyzing' || phase === 'building' || phase === 'personalizing') {
       const interval = setInterval(() => {
-        setPulsingConnections(prev => {
+        setPulsingConnections((prev) => {
           const newPulsing = [...prev];
           // Add a new random connection
           if (Math.random() > 0.3) {
@@ -137,7 +132,9 @@ export default function BrainClonePage() {
         });
       }, 500);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [phase, neurons.length]);
 
@@ -145,7 +142,7 @@ export default function BrainClonePage() {
   useEffect(() => {
     if (phase === 'analyzing') {
       const timer = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(timer);
             setPhase('building');
@@ -154,12 +151,14 @@ export default function BrainClonePage() {
           return prev + 2;
         });
       }, 60);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+      };
     }
-    
+
     if (phase === 'building') {
       const timer = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(timer);
             setPhase('personalizing');
@@ -168,12 +167,14 @@ export default function BrainClonePage() {
           return prev + 1.5;
         });
       }, 60);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+      };
     }
-    
+
     if (phase === 'personalizing') {
       const timer = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(timer);
             setPhase('ready');
@@ -182,7 +183,9 @@ export default function BrainClonePage() {
           return prev + 2.5;
         });
       }, 60);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+      };
     }
   }, [phase]);
 
@@ -192,16 +195,18 @@ export default function BrainClonePage() {
       const timer = setTimeout(() => {
         setPhase('consent');
       }, 2000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [phase]);
 
   // Handle consent and activation
   const handleActivateBrain = async () => {
     if (!consentGiven) return;
-    
+
     setIsActivating(true);
-    
+
     try {
       // Call API to finalize brain creation
       await fetch('/api/baseline/activate-brain', {
@@ -226,14 +231,9 @@ export default function BrainClonePage() {
   const renderBrainVisualization = () => (
     <div className="relative w-[300px] h-[300px] mx-auto">
       {/* SVG Brain visualization */}
-      <svg 
-        width="300" 
-        height="300" 
-        viewBox="0 0 300 300"
-        className="absolute inset-0"
-      >
+      <svg width="300" height="300" viewBox="0 0 300 300" className="absolute inset-0">
         {/* Connections */}
-        {neurons.map((neuron) => 
+        {neurons.map((neuron) =>
           neuron.connections.map((targetId) => {
             const target = neurons[targetId];
             if (!target) return null;
@@ -253,7 +253,7 @@ export default function BrainClonePage() {
             );
           })
         )}
-        
+
         {/* Neurons */}
         {neurons.map((neuron) => {
           const isPulsing = pulsingConnections.includes(neuron.id);
@@ -269,7 +269,7 @@ export default function BrainClonePage() {
             />
           );
         })}
-        
+
         {/* Central brain glow */}
         <defs>
           <radialGradient id="brainGlow" cx="50%" cy="50%" r="50%">
@@ -285,10 +285,12 @@ export default function BrainClonePage() {
           className={phase !== 'consent' && phase !== 'ready' ? 'animate-pulse' : ''}
         />
       </svg>
-      
+
       {/* Center brain emoji */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`text-7xl ${phase !== 'consent' && phase !== 'ready' ? 'animate-bounce' : ''}`}>
+        <div
+          className={`text-7xl ${phase !== 'consent' && phase !== 'ready' ? 'animate-bounce' : ''}`}
+        >
           🧠
         </div>
       </div>
@@ -318,13 +320,14 @@ export default function BrainClonePage() {
         <span className="text-2xl">🔐</span>
         Parent Consent Required
       </h3>
-      
+
       <div className="space-y-4">
         <p className="text-[var(--aivo-neutral-600)] text-sm">
-          AIVO has created a personalized learning profile for your child based on their assessment. 
-          This &quot;learning brain&quot; will help tailor lessons to their unique needs and learning style.
+          AIVO has created a personalized learning profile for your child based on their assessment.
+          This &quot;learning brain&quot; will help tailor lessons to their unique needs and
+          learning style.
         </p>
-        
+
         <div className="bg-[var(--aivo-teal-50)] rounded-xl p-4">
           <h4 className="font-medium text-[var(--aivo-brand-navy)] mb-2">What this means:</h4>
           <ul className="text-sm text-[var(--aivo-neutral-600)] space-y-1">
@@ -340,32 +343,43 @@ export default function BrainClonePage() {
           <input
             type="checkbox"
             checked={isParentPresent}
-            onChange={(e) => setIsParentPresent(e.target.checked)}
+            onChange={(e) => {
+              setIsParentPresent(e.target.checked);
+            }}
             className="mt-1 w-5 h-5 rounded border-2 border-[var(--aivo-neutral-300)] text-[var(--aivo-brand-primary)] focus:ring-[var(--aivo-brand-primary)]"
           />
           <div>
             <p className="font-medium text-[var(--aivo-brand-navy)]">I am a parent/guardian</p>
-            <p className="text-sm text-[var(--aivo-neutral-500)]">I confirm I am the parent or legal guardian of this learner.</p>
+            <p className="text-sm text-[var(--aivo-neutral-500)]">
+              I confirm I am the parent or legal guardian of this learner.
+            </p>
           </div>
         </label>
 
         {/* Consent checkbox */}
-        <label className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-colors ${
-          isParentPresent 
-            ? 'bg-[var(--aivo-purple-50)] hover:bg-[var(--aivo-purple-100)]' 
-            : 'bg-[var(--aivo-neutral-100)] opacity-50 cursor-not-allowed'
-        }`}>
+        <label
+          className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-colors ${
+            isParentPresent
+              ? 'bg-[var(--aivo-purple-50)] hover:bg-[var(--aivo-purple-100)]'
+              : 'bg-[var(--aivo-neutral-100)] opacity-50 cursor-not-allowed'
+          }`}
+        >
           <input
             type="checkbox"
             checked={consentGiven}
-            onChange={(e) => isParentPresent && setConsentGiven(e.target.checked)}
+            onChange={(e) => {
+              if (isParentPresent) setConsentGiven(e.target.checked);
+            }}
             disabled={!isParentPresent}
             className="mt-1 w-5 h-5 rounded border-2 border-[var(--aivo-neutral-300)] text-[var(--aivo-brand-primary)] focus:ring-[var(--aivo-brand-primary)] disabled:opacity-50"
           />
           <div>
-            <p className="font-medium text-[var(--aivo-brand-navy)]">I consent to creating this learning profile</p>
+            <p className="font-medium text-[var(--aivo-brand-navy)]">
+              I consent to creating this learning profile
+            </p>
             <p className="text-sm text-[var(--aivo-neutral-500)]">
-              I understand AIVO will use assessment data to personalize my child&apos;s learning experience.
+              I understand AIVO will use assessment data to personalize my child&apos;s learning
+              experience.
             </p>
           </div>
         </label>
@@ -375,16 +389,29 @@ export default function BrainClonePage() {
           onClick={handleActivateBrain}
           disabled={!consentGiven || isActivating}
           className={`w-full py-4 px-6 text-lg font-bold rounded-xl transition-all flex items-center justify-center gap-2
-            ${consentGiven 
-              ? 'bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] text-white hover:opacity-90' 
-              : 'bg-[var(--aivo-neutral-200)] text-[var(--aivo-neutral-400)] cursor-not-allowed'
+            ${
+              consentGiven
+                ? 'bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] text-white hover:opacity-90'
+                : 'bg-[var(--aivo-neutral-200)] text-[var(--aivo-neutral-400)] cursor-not-allowed'
             }`}
         >
           {isActivating ? (
             <>
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
               Activating...
             </>
@@ -404,13 +431,7 @@ export default function BrainClonePage() {
       {/* Header */}
       <div className="bg-white shadow-sm p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-center gap-2">
-          <Image
-            src="/icons/aivo-appicon-explorer.svg"
-            alt="AIVO"
-            width={40}
-            height={40}
-            className="rounded-lg"
-          />
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={100} height={32} />
           <h1 className="text-xl font-bold text-[var(--aivo-brand-navy)]">
             Creating Your Learning Brain
           </h1>
@@ -421,9 +442,7 @@ export default function BrainClonePage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full text-center">
           {/* Brain visualization */}
-          <div className="mb-8">
-            {renderBrainVisualization()}
-          </div>
+          <div className="mb-8">{renderBrainVisualization()}</div>
 
           {/* Phase message */}
           <div className="mb-6">
@@ -431,22 +450,25 @@ export default function BrainClonePage() {
             <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
               {phaseMessages[phase].title}
             </h2>
-            <p className="text-lg text-[var(--aivo-neutral-600)]">
-              {phaseMessages[phase].message}
-            </p>
+            <p className="text-lg text-[var(--aivo-neutral-600)]">{phaseMessages[phase].message}</p>
           </div>
 
           {/* Progress bar (only during building phases) */}
-          {(phase === 'analyzing' || phase === 'building' || phase === 'personalizing') && (
-            renderProgressBar()
-          )}
+          {(phase === 'analyzing' || phase === 'building' || phase === 'personalizing') &&
+            renderProgressBar()}
 
           {/* Ready celebration */}
           {phase === 'ready' && (
             <div className="flex justify-center gap-2">
-              <div className="text-4xl animate-bounce" style={{ animationDelay: '0ms' }}>🎉</div>
-              <div className="text-4xl animate-bounce" style={{ animationDelay: '100ms' }}>🧠</div>
-              <div className="text-4xl animate-bounce" style={{ animationDelay: '200ms' }}>✨</div>
+              <div className="text-4xl animate-bounce" style={{ animationDelay: '0ms' }}>
+                🎉
+              </div>
+              <div className="text-4xl animate-bounce" style={{ animationDelay: '100ms' }}>
+                🧠
+              </div>
+              <div className="text-4xl animate-bounce" style={{ animationDelay: '200ms' }}>
+                ✨
+              </div>
             </div>
           )}
 
