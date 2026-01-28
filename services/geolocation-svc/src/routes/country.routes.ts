@@ -1,4 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+
+import type { Country, CountryCodeParams, CountryListQuery } from '../types/fastify.d';
 import { logger } from '../utils/logger';
 
 export const countryRoutes: FastifyPluginAsync = async (fastify) => {
@@ -6,16 +8,17 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/countries
    * List all active countries
    */
-  fastify.get('/', async (request: any, reply) => {
+  fastify.get<{ Querystring: CountryListQuery }>('/', async (request, reply) => {
     try {
-      const query = request.query as { region?: string };
+      const query = request.query;
       
-      let countries = await request.services.geolocation.getCountries();
+      let countries = await request.services.geolocation.getCountries() as Country[];
       
       // Filter by region if specified
       if (query.region) {
+        const regionLower = query.region.toLowerCase();
         countries = countries.filter(
-          (c: any) => c.region.toLowerCase() === query.region!.toLowerCase()
+          (c) => c.region.toLowerCase() === regionLower
         );
       }
       
@@ -26,7 +29,7 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
           total: countries.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list countries');
       return reply.status(500).send({
         success: false,
@@ -39,9 +42,9 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/countries/:code
    * Get detailed country information
    */
-  fastify.get('/:code', async (request: any, reply) => {
+  fastify.get<{ Params: CountryCodeParams }>('/:code', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const country = await request.services.geolocation.getCountry(code);
       
@@ -56,7 +59,7 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
         success: true,
         data: country,
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to get country');
       return reply.status(500).send({
         success: false,
@@ -69,9 +72,9 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/countries/:code/regions
    * List regions/subdivisions for a country
    */
-  fastify.get('/:code/regions', async (request: any, reply) => {
+  fastify.get<{ Params: CountryCodeParams }>('/:code/regions', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const regions = await request.services.prisma.region.findMany({
         where: {
@@ -88,7 +91,7 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
           total: regions.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list regions');
       return reply.status(500).send({
         success: false,
@@ -101,9 +104,9 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/countries/:code/curricula
    * List available curricula for a country
    */
-  fastify.get('/:code/curricula', async (request: any, reply) => {
+  fastify.get<{ Params: CountryCodeParams }>('/:code/curricula', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const curricula = await request.services.geolocation.getCurriculumFrameworks(code);
       
@@ -114,7 +117,7 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
           total: curricula.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list curricula');
       return reply.status(500).send({
         success: false,
@@ -127,9 +130,9 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/countries/:code/payment-providers
    * List available payment providers for a country
    */
-  fastify.get('/:code/payment-providers', async (request: any, reply) => {
+  fastify.get<{ Params: CountryCodeParams }>('/:code/payment-providers', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const providers = await request.services.prisma.paymentProviderRegion.findMany({
         where: {
@@ -146,7 +149,7 @@ export const countryRoutes: FastifyPluginAsync = async (fastify) => {
           total: providers.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list payment providers');
       return reply.status(500).send({
         success: false,

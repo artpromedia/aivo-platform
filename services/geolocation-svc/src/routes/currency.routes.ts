@@ -1,4 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+
+import type { Currency, CurrencyCodeParams, CurrencyConvertQuery, CurrencyFormatQuery } from '../types/fastify.d';
 import { logger } from '../utils/logger';
 
 export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
@@ -6,7 +8,7 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/currencies
    * List all active currencies
    */
-  fastify.get('/', async (request: any, reply) => {
+  fastify.get('/', async (request, reply) => {
     try {
       const currencies = await request.services.prisma.currency.findMany({
         where: { isActive: true },
@@ -20,7 +22,7 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
           total: currencies.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list currencies');
       return reply.status(500).send({
         success: false,
@@ -33,9 +35,9 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/currencies/:code
    * Get currency details
    */
-  fastify.get('/:code', async (request: any, reply) => {
+  fastify.get<{ Params: CurrencyCodeParams }>('/:code', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const currency = await request.services.prisma.currency.findUnique({
         where: { code: code.toUpperCase() },
@@ -52,7 +54,7 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
         success: true,
         data: currency,
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to get currency');
       return reply.status(500).send({
         success: false,
@@ -65,10 +67,10 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/currencies/:code/format
    * Get formatting rules for a currency
    */
-  fastify.get('/:code/format', async (request: any, reply) => {
+  fastify.get<{ Params: CurrencyCodeParams; Querystring: CurrencyFormatQuery }>('/:code/format', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
-      const query = request.query as { amount?: string };
+      const { code } = request.params;
+      const query = request.query;
       
       const currency = await request.services.prisma.currency.findUnique({
         where: { code: code.toUpperCase() },
@@ -102,7 +104,7 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
           },
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to get currency format');
       return reply.status(500).send({
         success: false,
@@ -115,13 +117,9 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/currencies/convert
    * Convert between currencies (using stored exchange rates)
    */
-  fastify.get('/convert', async (request: any, reply) => {
+  fastify.get<{ Querystring: CurrencyConvertQuery }>('/convert', async (request, reply) => {
     try {
-      const query = request.query as { 
-        from: string; 
-        to: string; 
-        amount: string;
-      };
+      const query = request.query;
       
       if (!query.from || !query.to || !query.amount) {
         return reply.status(400).send({
@@ -155,8 +153,10 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
       }
       
       // Convert via USD
-      const amountInUSD = amount / Number(fromCurrency.exchangeRateToUSD);
-      const convertedAmount = amountInUSD * Number(toCurrency.exchangeRateToUSD);
+      const fromRate = Number(fromCurrency.exchangeRateToUSD) || 1;
+      const toRate = Number(toCurrency.exchangeRateToUSD) || 1;
+      const amountInUSD = amount / fromRate;
+      const convertedAmount = amountInUSD * toRate;
       
       return reply.send({
         success: true,
@@ -171,11 +171,11 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
             amount: Math.round(convertedAmount * 100) / 100,
             formatted: formatCurrency(convertedAmount, toCurrency),
           },
-          exchangeRate: Number(toCurrency.exchangeRateToUSD) / Number(fromCurrency.exchangeRateToUSD),
+          exchangeRate: toRate / fromRate,
           ratesUpdatedAt: fromCurrency.exchangeRateUpdatedAt,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to convert currency');
       return reply.status(500).send({
         success: false,
@@ -188,7 +188,7 @@ export const currencyRoutes: FastifyPluginAsync = async (fastify) => {
 /**
  * Format a currency amount according to currency rules
  */
-function formatCurrency(amount: number, currency: any): string {
+function formatCurrency(amount: number, currency: Currency): string {
   // Round to appropriate decimal places
   const roundedAmount = amount.toFixed(currency.decimalDigits);
   

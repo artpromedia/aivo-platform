@@ -1,11 +1,15 @@
-import { PrismaClient } from '../../generated/prisma-client';
-import { Reader, CityResponse } from 'maxmind';
-import * as maxmind from 'maxmind';
-import * as path from 'path';
-import * as fs from 'fs';
-import { CacheService } from './cache.service';
-import { logger } from '../utils/logger';
 import { createHash } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import type { CityResponse, Reader } from 'maxmind';
+import * as maxmind from 'maxmind';
+
+import type { PrismaClient } from '../../generated/prisma-client';
+import { logger } from '../utils/logger';
+
+import type { CacheService } from './cache.service';
+
 
 export interface LocationResult {
   // Geographic
@@ -92,13 +96,14 @@ export class GeolocationService {
     if (ip && this.maxmindReader) {
       try {
         const geoResult = this.maxmindReader.get(ip);
-        if (geoResult?.country?.iso_code) {
-          countryCode = geoResult.country.iso_code;
+        const geoCountry = geoResult?.country;
+        if (geoCountry?.iso_code && geoResult) {
+          countryCode = geoCountry.iso_code;
           regionCode = geoResult.subdivisions?.[0]?.iso_code;
           city = geoResult.city?.names?.en;
           timezone = geoResult.location?.time_zone;
-          confidence = geoResult.country.confidence 
-            ? geoResult.country.confidence / 100 
+          confidence = typeof geoCountry.confidence === 'number'
+            ? geoCountry.confidence / 100 
             : 0.95;
           detectionMethod = 'ip';
         }
@@ -123,34 +128,37 @@ export class GeolocationService {
     });
     
     // Build result with country defaults
+    const regions = country?.regions;
+    const firstRegion = regions?.[0];
+    
     const result: LocationResult = {
       countryCode,
-      countryName: country?.name || countryCode,
+      countryName: country?.name ?? countryCode,
       regionCode,
-      regionName: country?.regions?.[0]?.name,
+      regionName: firstRegion?.name,
       city,
-      timezone: timezone || country?.primaryTimezone || 'UTC',
+      timezone: timezone ?? country?.primaryTimezone ?? 'UTC',
       
       // Use region override if available, else country default
-      language: country?.regions?.[0]?.defaultLanguage 
-        || country?.defaultLanguage 
-        || this.inferLanguageFromBrowser(browserLanguage)
-        || 'en',
-      currency: country?.regions?.[0]?.defaultCurrency 
-        || country?.defaultCurrency 
-        || 'USD',
-      curriculumFramework: country?.regions?.[0]?.defaultCurriculum 
-        || country?.defaultCurriculum
-        || undefined,
+      language: firstRegion?.defaultLanguage
+        ?? country?.defaultLanguage 
+        ?? this.inferLanguageFromBrowser(browserLanguage)
+        ?? 'en',
+      currency: firstRegion?.defaultCurrency
+        ?? country?.defaultCurrency 
+        ?? 'USD',
+      curriculumFramework: firstRegion?.defaultCurriculum
+        ?? country?.defaultCurriculum
+        ?? undefined,
       
       // Formatting
-      dateFormat: country?.dateFormat || 'MM/DD/YYYY',
-      timeFormat: country?.timeFormat || '12h',
+      dateFormat: country?.dateFormat ?? 'MM/DD/YYYY',
+      timeFormat: country?.timeFormat ?? '12h',
       firstDayOfWeek: country?.firstDayOfWeek ?? 0,
       
       // Metadata
-      hasLocalPayment: country?.hasLocalPayment || false,
-      complianceRequirements: country?.requiresCompliance || [],
+      hasLocalPayment: country?.hasLocalPayment ?? false,
+      complianceRequirements: country?.requiresCompliance ?? [],
       
       // Detection info
       confidence,
@@ -212,7 +220,7 @@ export class GeolocationService {
   /**
    * Get all active countries with their defaults
    */
-  async getCountries(): Promise<any[]> {
+  async getCountries() {
     return this.prisma.country.findMany({
       where: { isActive: true },
       orderBy: { name: 'asc' },
@@ -238,7 +246,7 @@ export class GeolocationService {
   /**
    * Get detailed country information
    */
-  async getCountry(code: string): Promise<any> {
+  async getCountry(code: string) {
     const country = await this.prisma.country.findUnique({
       where: { code: code.toUpperCase() },
       include: {
@@ -280,24 +288,21 @@ export class GeolocationService {
   /**
    * Get best payment provider for a country/currency combination
    */
-  async getPaymentProvider(countryCode: string, currency: string): Promise<any> {
-    const providers = await this.prisma.paymentProviderRegion.findMany({
+  async getPaymentProvider(countryCode: string, currency: string): Promise<Awaited<ReturnType<typeof this.prisma.paymentProviderRegion.findFirst>>> {
+    return this.prisma.paymentProviderRegion.findFirst({
       where: {
         countryCode: countryCode.toUpperCase(),
         supportedCurrencies: { has: currency.toUpperCase() },
         isActive: true,
       },
       orderBy: { priority: 'asc' },
-      take: 1,
     });
-    
-    return providers[0] || null;
   }
   
   /**
    * Get curriculum frameworks available for a country
    */
-  async getCurriculumFrameworks(countryCode: string): Promise<any[]> {
+  async getCurriculumFrameworks(countryCode: string) {
     return this.prisma.curriculumFramework.findMany({
       where: {
         countries: { has: countryCode.toUpperCase() },

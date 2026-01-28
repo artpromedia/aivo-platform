@@ -1,4 +1,5 @@
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
+
 import { logger } from '../utils/logger';
 
 export class CacheService {
@@ -23,7 +24,7 @@ export class CacheService {
   /**
    * Set a value in cache with optional TTL
    */
-  async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+  async set(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
     try {
       const serialized = JSON.stringify(value);
       if (ttlSeconds) {

@@ -1,4 +1,7 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+
+import type { CurriculumType, Prisma } from '../../generated/prisma-client';
+import type { CurriculumCodeParams, CurriculumListQuery } from '../types/fastify.d';
 import { logger } from '../utils/logger';
 
 export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
@@ -6,21 +9,18 @@ export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/curricula
    * List all active curriculum frameworks
    */
-  fastify.get('/', async (request: any, reply) => {
+  fastify.get<{ Querystring: CurriculumListQuery }>('/', async (request, reply) => {
     try {
-      const query = request.query as { 
-        countryCode?: string;
-        type?: string;
-      };
+      const query = request.query;
       
-      const where: any = { isActive: true };
+      const where: Prisma.CurriculumFrameworkWhereInput = { isActive: true };
       
       if (query.countryCode) {
         where.countries = { has: query.countryCode.toUpperCase() };
       }
       
       if (query.type) {
-        where.type = query.type.toUpperCase();
+        where.type = query.type.toUpperCase() as CurriculumType;
       }
       
       const curricula = await request.services.prisma.curriculumFramework.findMany({
@@ -35,7 +35,7 @@ export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
           total: curricula.length,
         },
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list curricula');
       return reply.status(500).send({
         success: false,
@@ -48,9 +48,9 @@ export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/curricula/:code
    * Get curriculum framework details
    */
-  fastify.get('/:code', async (request: any, reply) => {
+  fastify.get<{ Params: CurriculumCodeParams }>('/:code', async (request, reply) => {
     try {
-      const { code } = request.params as { code: string };
+      const { code } = request.params;
       
       const curriculum = await request.services.prisma.curriculumFramework.findUnique({
         where: { code },
@@ -67,7 +67,7 @@ export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
         success: true,
         data: curriculum,
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to get curriculum');
       return reply.status(500).send({
         success: false,
@@ -91,7 +91,7 @@ export const curriculumRoutes: FastifyPluginAsync = async (fastify) => {
           { code: 'PRIVATE', name: 'Private/Religious', description: 'Private or religious school curricula' },
         ],
       });
-    } catch (error) {
+    } catch {
       logger.error('Failed to list curriculum types');
       return reply.status(500).send({
         success: false,

@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -17,7 +17,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /health/ready
    * Readiness check - verifies all dependencies
    */
-  fastify.get('/ready', async (request: any, reply) => {
+  fastify.get('/ready', async (request, reply) => {
     const checks: Record<string, boolean> = {};
     
     // Check database

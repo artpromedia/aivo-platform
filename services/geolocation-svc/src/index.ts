@@ -1,18 +1,20 @@
 // Load environment variables
 import 'dotenv/config';
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import { PrismaClient } from '../generated/prisma-client';
+import Fastify from 'fastify';
 import Redis from 'ioredis';
-import { locationRoutes } from './routes/location.routes';
+
+import { PrismaClient } from '../generated/prisma-client';
+
 import { countryRoutes } from './routes/country.routes';
 import { currencyRoutes } from './routes/currency.routes';
 import { curriculumRoutes } from './routes/curriculum.routes';
 import { healthRoutes } from './routes/health.routes';
-import { GeolocationService } from './services/geolocation.service';
+import { locationRoutes } from './routes/location.routes';
 import { CacheService } from './services/cache.service';
+import { GeolocationService } from './services/geolocation.service';
 import { logger } from './utils/logger';
 
 // Environment configuration
@@ -40,13 +42,11 @@ const app = Fastify({
 
 // Register plugins
 async function registerPlugins() {
-  // @ts-ignore - version mismatch between fastify plugins
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
     credentials: true,
   });
 
-  // @ts-ignore - version mismatch between fastify plugins
   await app.register(helmet, {
     contentSecurityPolicy: false,
   });
@@ -56,8 +56,8 @@ async function registerPlugins() {
 async function registerRoutes() {
   // Inject services into request
   app.decorateRequest('services', null);
-  app.addHook('onRequest', async (request: any) => {
-    request.services = {
+  app.addHook('onRequest', async (request) => {
+    (request as unknown as { services: typeof request.services }).services = {
       prisma,
       geolocation: geolocationService,
       cache: cacheService,
@@ -121,7 +121,7 @@ async function main() {
   }
 }
 
-main();
+void main();
 
 // Type augmentation for Fastify
 declare module 'fastify' {

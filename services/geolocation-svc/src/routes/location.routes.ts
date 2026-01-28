@@ -1,5 +1,7 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { z } from 'zod';
+
+import type { PaymentProviderQuery } from '../types/fastify.d';
 import { logger } from '../utils/logger';
 
 // Request schemas
@@ -16,16 +18,19 @@ const ResolveCurriculumSchema = z.object({
   preferredFramework: z.string().optional(),
 });
 
+type DetectLocationBody = z.infer<typeof DetectLocationSchema>;
+type ResolveCurriculumBody = z.infer<typeof ResolveCurriculumSchema>;
+
 export const locationRoutes: FastifyPluginAsync = async (fastify) => {
   /**
    * GET /api/v1/locate
    * Auto-detect location from request IP
    */
-  fastify.get('/', async (request: any, reply) => {
+  fastify.get('/', async (request, reply) => {
     try {
       // Get client IP from various headers (proxy-aware)
       const ip = getClientIp(request);
-      const browserLanguage = request.headers['accept-language'] as string | undefined;
+      const browserLanguage = request.headers['accept-language'];
       
       logger.debug(`Detecting location for IP: ${ip}`);
       
@@ -38,7 +43,7 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
         success: true,
         data: location,
       });
-    } catch (error) {
+    } catch {
       logger.error('Location detection failed');
       return reply.status(500).send({
         success: false,
@@ -51,7 +56,7 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/locate
    * Detect location from provided data
    */
-  fastify.post('/', async (request: any, reply) => {
+  fastify.post<{ Body: DetectLocationBody }>('/', async (request, reply) => {
     try {
       const body = DetectLocationSchema.parse(request.body);
       
@@ -89,7 +94,7 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /api/v1/locate/curriculum
    * Resolve best curriculum for a user
    */
-  fastify.post('/curriculum', async (request: any, reply) => {
+  fastify.post<{ Body: ResolveCurriculumBody }>('/curriculum', async (request, reply) => {
     try {
       const body = ResolveCurriculumSchema.parse(request.body);
       
@@ -129,9 +134,9 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
    * GET /api/v1/locate/payment-provider
    * Get best payment provider for a region
    */
-  fastify.get('/payment-provider', async (request: any, reply) => {
+  fastify.get<{ Querystring: PaymentProviderQuery }>('/payment-provider', async (request, reply) => {
     try {
-      const query = request.query as { countryCode?: string; currency?: string };
+      const query = request.query;
       
       if (!query.countryCode || !query.currency) {
         return reply.status(400).send({
@@ -159,7 +164,7 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
         success: true,
         data: provider,
       });
-    } catch (error) {
+    } catch {
       logger.error('Payment provider lookup failed');
       return reply.status(500).send({
         success: false,
@@ -172,7 +177,7 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
 /**
  * Extract client IP from request, handling proxies
  */
-function getClientIp(request: any): string {
+function getClientIp(request: FastifyRequest): string {
   // Check various headers in order of preference
   const forwardedFor = request.headers['x-forwarded-for'];
   if (forwardedFor) {
@@ -194,5 +199,5 @@ function getClientIp(request: any): string {
   }
   
   // Fall back to socket IP
-  return request.ip || '127.0.0.1';
+  return request.ip;
 }
