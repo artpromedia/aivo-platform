@@ -771,6 +771,7 @@ model ContentSensoryMetadata {
   
   // Overall rating
   overallIntensityScore    Int                @default(5) @map("overall_intensity_score") // 1-10
+  overallWarningLevel      SensoryWarningLevel @default(INFO) @map("overall_warning_level")
   
   // Safety warnings
   sensoryWarnings          Json               @default("[]") @map("sensory_warnings")
