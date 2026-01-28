@@ -1,0 +1,15 @@
+{
+  "idInterpolationPattern": "[sha512:contenthash:base64:6]",
+  "extractSourceLocation": true,
+  "format": "simple",
+  "ignore": [
+    "**/*.d.ts",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "throws": true,
+  "preserveWhitespace": true,
+  "additionalFunctionNames": ["t", "trans"],
+  "additionalComponentNames": ["Trans"]
+}
