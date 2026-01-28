@@ -1,0 +1,1 @@
+export { useLocaleDetection } from './useLocaleDetection';

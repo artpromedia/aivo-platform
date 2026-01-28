@@ -48,11 +48,63 @@ model User {
   sessions                 Session[]
   passwordResetTokens      PasswordResetToken[]
   emailVerificationTokens  EmailVerificationToken[]
+  preferences              UserPreferences?
 
   @@unique([tenantId, email])
   @@unique([tenantId, externalId])
   @@index([tenantId])
   @@index([email])
+}
+
+// ============================================================================
+// USER PREFERENCES (Internationalization)
+// ============================================================================
+
+/// User locale, currency, and regional preferences
+model UserPreferences {
+  id                    String    @id @default(uuid()) @db.Uuid
+  userId                String    @unique @db.Uuid
+  tenantId              String    @db.Uuid
+  
+  // Locale preferences
+  language              String    @default("en") @db.VarChar(10)  // BCP 47: en, en-US, zh-CN, ar-SA
+  country               String?   @db.VarChar(2)                  // ISO 3166-1 alpha-2
+  timezone              String?   @db.VarChar(50)                 // IANA timezone
+  
+  // Regional preferences  
+  currency              String    @default("USD") @db.VarChar(3)  // ISO 4217
+  curriculumFramework   String?   @map("curriculum_framework")    // COMMON_CORE, CBSE, UK_NATIONAL, etc.
+  
+  // Formatting preferences
+  dateFormat            String    @default("MM/DD/YYYY") @map("date_format")
+  timeFormat            String    @default("12h") @map("time_format")         // 12h or 24h
+  firstDayOfWeek        Int       @default(0) @map("first_day_of_week")       // 0=Sunday, 1=Monday
+  numberFormat          String    @default("en-US") @map("number_format")     // Locale for number formatting
+  
+  // Auto-detection metadata
+  detectedCountry       String?   @map("detected_country") @db.VarChar(2)
+  detectedLanguage      String?   @map("detected_language") @db.VarChar(10)
+  detectedTimezone      String?   @map("detected_timezone") @db.VarChar(50)
+  detectionMethod       String?   @map("detection_method")                    // ip, browser, manual
+  detectedAt            DateTime? @map("detected_at")
+  
+  // User override flags (true = user explicitly changed from auto-detected value)
+  languageOverridden    Boolean   @default(false) @map("language_overridden")
+  countryOverridden     Boolean   @default(false) @map("country_overridden")
+  currencyOverridden    Boolean   @default(false) @map("currency_overridden")
+  curriculumOverridden  Boolean   @default(false) @map("curriculum_overridden")
+  timezoneOverridden    Boolean   @default(false) @map("timezone_overridden")
+  
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([language])
+  @@index([country])
+  @@map("user_preferences")
 }
 
 model UserRole {

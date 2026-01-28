@@ -1,0 +1,1 @@
+export { RegistrationWithLocale } from './RegistrationWithLocale';

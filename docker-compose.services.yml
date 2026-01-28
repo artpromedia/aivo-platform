@@ -263,6 +263,38 @@ services:
       - aivo-network
     restart: unless-stopped
 
+  # Geolocation Service (Internationalization)
+  geolocation-svc:
+    build:
+      context: ./services/geolocation-svc
+      dockerfile: ../../docker/Dockerfile.service
+    ports:
+      - "4090:4090"
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=4090
+      - DATABASE_URL=postgresql://aivo:aivo@postgres:5432/geolocation
+      - REDIS_URL=redis://redis:6379/8
+      - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
+      - MAXMIND_DB_PATH=/app/data/GeoLite2-City.mmdb
+      - LOG_LEVEL=info
+    volumes:
+      - ./services/geolocation-svc:/app
+      - geoip-data:/app/data
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   redis-data:
@@ -271,6 +303,7 @@ volumes:
   training-models:
   speech-models:
   recommendation-models:
+  geoip-data:
 
 networks:
   aivo-network:
