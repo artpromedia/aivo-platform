@@ -1055,3 +1055,384 @@ model LessonTemplate {
   @@map("lesson_templates")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// INTERNATIONAL CURRICULUM ALIGNMENT - Sprint 2
+// Support for multiple curriculum frameworks worldwide
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Supported curriculum frameworks worldwide
+enum CurriculumFrameworkCode {
+  // United States
+  COMMON_CORE           // Common Core State Standards
+  NGSS                  // Next Generation Science Standards
+  C3                    // College, Career, and Civic Life (Social Studies)
+  TEKS                  // Texas Essential Knowledge and Skills
+  
+  // United Kingdom
+  UK_NATIONAL_CURRICULUM    // England National Curriculum
+  CURRICULUM_FOR_EXCELLENCE // Scotland
+  CURRICULUM_WALES          // Wales
+  
+  // International
+  IB_PYP                // International Baccalaureate Primary Years
+  IB_MYP                // International Baccalaureate Middle Years
+  IB_DP                 // International Baccalaureate Diploma
+  CAMBRIDGE_PRIMARY     // Cambridge Primary
+  CAMBRIDGE_SECONDARY   // Cambridge Secondary
+  
+  // Asia Pacific
+  AUSTRALIAN_CURRICULUM // Australia
+  NEW_ZEALAND_CURRICULUM // New Zealand
+  CBSE                  // India - Central Board of Secondary Education
+  ICSE                  // India - Indian Certificate of Secondary Education
+  STATE_BOARD_INDIA     // India - Various State Boards
+  CHINA_NATIONAL_CURRICULUM // China
+  
+  // Middle East
+  UAE_MOE               // UAE Ministry of Education
+  ADEK                  // Abu Dhabi Education
+  SAUDI_MOE             // Saudi Arabia Ministry of Education
+  
+  // Africa
+  CAPS                  // South Africa - Curriculum and Assessment Policy
+  
+  // Canada
+  ONTARIO_CURRICULUM    // Ontario
+  ALBERTA_PROGRAM       // Alberta
+  BC_CURRICULUM         // British Columbia
+  QUEBEC_QEP            // Quebec Education Program
+  
+  @@map("curriculum_framework_code")
+}
+
+/// Subject area standardization across curricula
+enum StandardizedSubject {
+  // Core Academic
+  MATHEMATICS
+  ENGLISH_LANGUAGE_ARTS
+  SCIENCE
+  SOCIAL_STUDIES
+  
+  // Languages
+  WORLD_LANGUAGES
+  ENGLISH_AS_ADDITIONAL_LANGUAGE
+  
+  // Arts
+  VISUAL_ARTS
+  PERFORMING_ARTS
+  MUSIC
+  
+  // Physical & Health
+  PHYSICAL_EDUCATION
+  HEALTH_EDUCATION
+  
+  // Technology
+  COMPUTER_SCIENCE
+  DIGITAL_LITERACY
+  
+  // Social Emotional
+  SOCIAL_EMOTIONAL_LEARNING
+  
+  // Career & Life Skills
+  CAREER_EDUCATION
+  LIFE_SKILLS
+  
+  @@map("standardized_subject")
+}
+
+/// Curriculum framework definitions with metadata
+model CurriculumFramework {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  code                  CurriculumFrameworkCode  @unique
+  name                  String                   @db.VarChar(200)
+  shortName             String                   @map("short_name") @db.VarChar(50)
+  description           String?                  @db.Text
+  
+  // Geographic scope
+  countryCode           String                   @map("country_code") @db.VarChar(2)  // ISO 3166-1 alpha-2
+  regionCode            String?                  @map("region_code") @db.VarChar(10)  // State/province code
+  
+  // Grade structure
+  gradeSystem           String                   @map("grade_system") @db.VarChar(50) // e.g., "K-12", "Year 1-13"
+  minGrade              Int                      @map("min_grade")
+  maxGrade              Int                      @map("max_grade")
+  
+  // Official resources
+  officialUrl           String?                  @map("official_url") @db.VarChar(500)
+  standardsDocUrl       String?                  @map("standards_doc_url") @db.VarChar(500)
+  
+  // Status
+  isActive              Boolean                  @default(true) @map("is_active")
+  lastUpdatedVersion    String?                  @map("last_updated_version") @db.VarChar(50)
+  effectiveDate         DateTime?                @map("effective_date") @db.Date
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  gradeEquivalencies    GradeEquivalency[]
+  learningStandards     LearningStandard[]
+  subjectMappings       SubjectMapping[]
+  contentAlignments     ContentCurriculumAlignment[]
+  
+  @@index([countryCode])
+  @@index([isActive])
+  @@map("curriculum_frameworks")
+}
+
+/// Grade level equivalency mapping across curriculum frameworks
+/// Enables: US Grade 5 = UK Year 6 = AU Year 5 = IN Class 5
+model GradeEquivalency {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  frameworkId           String                   @map("framework_id") @db.Uuid
+  
+  // Local grade representation
+  gradeLevel            Int                      @map("grade_level")       // Numeric level (0=K, 1-12)
+  gradeLabel            String                   @map("grade_label") @db.VarChar(50)  // Display: "Grade 5", "Year 6", "Class 5"
+  gradeCode             String                   @map("grade_code") @db.VarChar(20)   // Standard code: "G5", "Y6", "CL5"
+  
+  // Age range for this grade
+  typicalAgeMin         Int                      @map("typical_age_min")
+  typicalAgeMax         Int                      @map("typical_age_max")
+  
+  // Standardized reference (for cross-curriculum mapping)
+  standardizedLevel     Int                      @map("standardized_level")  // 0-12 universal scale
+  
+  // Educational stage
+  educationStage        String                   @map("education_stage") @db.VarChar(50)  // PRIMARY, LOWER_SECONDARY, etc.
+  
+  // Description
+  description           String?                  @db.Text
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  framework             CurriculumFramework      @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  
+  @@unique([frameworkId, gradeLevel])
+  @@index([standardizedLevel])
+  @@index([educationStage])
+  @@map("grade_equivalencies")
+}
+
+/// Subject area mapping between curriculum frameworks and standardized subjects
+model SubjectMapping {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  frameworkId           String                   @map("framework_id") @db.Uuid
+  
+  // Standard subject
+  standardizedSubject   StandardizedSubject      @map("standardized_subject")
+  
+  // Local subject representation
+  localSubjectCode      String                   @map("local_subject_code") @db.VarChar(50)
+  localSubjectName      String                   @map("local_subject_name") @db.VarChar(200)
+  localSubjectNameNative String?                 @map("local_subject_name_native") @db.VarChar(200) // In local language
+  
+  // Grade range this subject covers
+  gradeMin              Int?                     @map("grade_min")
+  gradeMax              Int?                     @map("grade_max")
+  
+  // Whether this is a core/required subject
+  isCore                Boolean                  @default(true) @map("is_core")
+  
+  // Weighting/priority
+  priority              Int                      @default(0)
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  framework             CurriculumFramework      @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  learningStandards     LearningStandard[]
+  
+  @@unique([frameworkId, standardizedSubject])
+  @@index([standardizedSubject])
+  @@map("subject_mappings")
+}
+
+/// Learning standards from curriculum frameworks
+/// e.g., CCSS.MATH.CONTENT.3.OA.A.1
+model LearningStandard {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  frameworkId           String                   @map("framework_id") @db.Uuid
+  subjectMappingId      String?                  @map("subject_mapping_id") @db.Uuid
+  
+  // Standard identification
+  standardCode          String                   @map("standard_code") @db.VarChar(100)  // e.g., "CCSS.MATH.CONTENT.3.OA.A.1"
+  fullCode              String                   @map("full_code") @db.VarChar(200)      // Complete hierarchical code
+  
+  // Hierarchy
+  parentStandardId      String?                  @map("parent_standard_id") @db.Uuid
+  hierarchyLevel        Int                      @map("hierarchy_level")  // 0=domain, 1=cluster, 2=standard
+  hierarchyPath         String                   @map("hierarchy_path") @db.VarChar(500) // e.g., "MATH/OA/A/1"
+  
+  // Content
+  title                 String                   @db.VarChar(500)
+  description           String                   @db.Text
+  keywords              String[]                 @default([])
+  
+  // Grade/level applicability
+  gradeLevel            Int?                     @map("grade_level")
+  gradeBand             String?                  @map("grade_band") @db.VarChar(20)  // e.g., "K-2", "3-5"
+  
+  // Cross-references
+  crossCuttingConcepts  String[]                 @default([]) @map("cross_cutting_concepts")
+  relatedStandardCodes  String[]                 @default([]) @map("related_standard_codes")
+  
+  // Bloom's taxonomy level
+  cognitiveLevel        String?                  @map("cognitive_level") @db.VarChar(50)  // REMEMBER, UNDERSTAND, APPLY, etc.
+  
+  // Status
+  isActive              Boolean                  @default(true) @map("is_active")
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  framework             CurriculumFramework      @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  subjectMapping        SubjectMapping?          @relation(fields: [subjectMappingId], references: [id])
+  parentStandard        LearningStandard?        @relation("StandardHierarchy", fields: [parentStandardId], references: [id])
+  childStandards        LearningStandard[]       @relation("StandardHierarchy")
+  contentAlignments     ContentStandardAlignment[]
+  standardEquivalencies StandardEquivalency[]    @relation("SourceStandard")
+  equivalentTo          StandardEquivalency[]    @relation("TargetStandard")
+  
+  @@unique([frameworkId, standardCode])
+  @@index([frameworkId, gradeLevel])
+  @@index([frameworkId, hierarchyPath])
+  @@index([subjectMappingId])
+  @@index([parentStandardId])
+  @@index([keywords], type: Gin)
+  @@map("learning_standards")
+}
+
+/// Cross-curriculum standard equivalencies
+/// Maps equivalent standards across different frameworks
+model StandardEquivalency {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  
+  // Source standard
+  sourceStandardId      String                   @map("source_standard_id") @db.Uuid
+  
+  // Target standard (equivalent in another framework)
+  targetStandardId      String                   @map("target_standard_id") @db.Uuid
+  
+  // Relationship type
+  equivalencyType       String                   @map("equivalency_type") @db.VarChar(50)
+  // EXACT: Same learning objective
+  // PARTIAL: Overlapping but not complete
+  // BROADER: Source is more specific than target
+  // NARROWER: Source is more general than target
+  // RELATED: Conceptually related but different
+  
+  // Confidence/quality score (0-1)
+  confidenceScore       Decimal                  @map("confidence_score") @db.Decimal(3, 2)
+  
+  // Mapping notes
+  notes                 String?                  @db.Text
+  
+  // How this mapping was created
+  mappingSource         String                   @map("mapping_source") @db.VarChar(50)  // MANUAL, AI_GENERATED, OFFICIAL
+  verifiedBy            String?                  @map("verified_by") @db.Uuid  // User who verified
+  verifiedAt            DateTime?                @map("verified_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  sourceStandard        LearningStandard         @relation("SourceStandard", fields: [sourceStandardId], references: [id], onDelete: Cascade)
+  targetStandard        LearningStandard         @relation("TargetStandard", fields: [targetStandardId], references: [id], onDelete: Cascade)
+  
+  @@unique([sourceStandardId, targetStandardId])
+  @@index([sourceStandardId])
+  @@index([targetStandardId])
+  @@index([equivalencyType])
+  @@map("standard_equivalencies")
+}
+
+/// Content alignment to curriculum frameworks
+/// Links learning objects to specific curriculum frameworks
+model ContentCurriculumAlignment {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  
+  // Content reference
+  learningObjectId      String                   @map("learning_object_id") @db.Uuid
+  learningObjectVersionId String?                @map("learning_object_version_id") @db.Uuid
+  
+  // Curriculum reference
+  frameworkId           String                   @map("framework_id") @db.Uuid
+  
+  // Grade alignment
+  alignedGradeLevel     Int?                     @map("aligned_grade_level")
+  alignedGradeBand      String?                  @map("aligned_grade_band") @db.VarChar(20)
+  
+  // Alignment quality
+  alignmentScore        Decimal?                 @map("alignment_score") @db.Decimal(3, 2)  // 0-1 quality score
+  isPrimary             Boolean                  @default(false) @map("is_primary")  // Primary framework for this content
+  
+  // Status
+  isActive              Boolean                  @default(true) @map("is_active")
+  
+  // Audit
+  alignedBy             String?                  @map("aligned_by") @db.Uuid  // User who created alignment
+  verifiedBy            String?                  @map("verified_by") @db.Uuid  // User who verified
+  verifiedAt            DateTime?                @map("verified_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  framework             CurriculumFramework      @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  standardAlignments    ContentStandardAlignment[]
+  
+  @@unique([learningObjectId, frameworkId])
+  @@index([learningObjectId])
+  @@index([frameworkId])
+  @@index([alignedGradeLevel])
+  @@map("content_curriculum_alignments")
+}
+
+/// Specific standard alignments for content
+/// Links content to individual learning standards
+model ContentStandardAlignment {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  
+  // Parent alignment
+  curriculumAlignmentId String                   @map("curriculum_alignment_id") @db.Uuid
+  
+  // Standard reference
+  standardId            String                   @map("standard_id") @db.Uuid
+  
+  // Alignment details
+  alignmentStrength     String                   @map("alignment_strength") @db.VarChar(20)
+  // PRIMARY: Main standard addressed
+  // SUPPORTING: Secondary/supporting standard
+  // PREREQUISITE: Required prior knowledge
+  // EXTENSION: Goes beyond the standard
+  
+  // Coverage estimate (what % of standard this content covers)
+  coveragePercent       Int?                     @map("coverage_percent")
+  
+  // Notes on alignment
+  alignmentNotes        String?                  @map("alignment_notes") @db.Text
+  
+  // Timestamps
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime                 @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Relations
+  curriculumAlignment   ContentCurriculumAlignment @relation(fields: [curriculumAlignmentId], references: [id], onDelete: Cascade)
+  standard              LearningStandard         @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  
+  @@unique([curriculumAlignmentId, standardId])
+  @@index([standardId])
+  @@map("content_standard_alignments")
+}
+

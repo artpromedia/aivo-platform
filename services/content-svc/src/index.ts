@@ -25,6 +25,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { createContentDataLoaders, type ContentDataLoaders } from './dataloaders/index.js';
+import { curriculumRoutes } from './routes/curriculum.js';
 import { fileRoutes } from './routes/files.js';
 import { ingestionRoutes } from './routes/ingestion.js';
 import { learningObjectRoutes } from './routes/learningObjects.js';
@@ -95,6 +96,7 @@ await fastify.register(renderRoutes, { prefix: '/api' });
 await fastify.register(contentPackageRoutes, { prefix: '/api' });
 await fastify.register(fileRoutes, { prefix: '/api' });
 await fastify.register(socialStoriesRoutes, { prefix: '/api' });
+await fastify.register(curriculumRoutes, { prefix: '/api' });
 
 // Start server
 try {
