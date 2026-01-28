@@ -1,0 +1,290 @@
+// Geolocation Service Database Schema
+// Manages country, currency, and regional configuration data
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Country information with defaults and supported options
+model Country {
+  id                    String   @id @default(uuid()) @db.Uuid
+  code                  String   @unique @db.VarChar(2)  // ISO 3166-1 alpha-2
+  code3                 String   @unique @db.VarChar(3)  // ISO 3166-1 alpha-3
+  numericCode           String   @map("numeric_code") @db.VarChar(3)  // ISO 3166-1 numeric
+  name                  String
+  nativeName            String   @map("native_name")
+  
+  // Geographic classification
+  region                String   // Africa, Americas, Asia, Europe, Oceania
+  subregion             String?
+  
+  // Default locale settings
+  defaultLanguage       String   @map("default_language") @db.VarChar(10)
+  defaultCurrency       String   @map("default_currency") @db.VarChar(3)
+  defaultCurriculum     String?  @map("default_curriculum")
+  
+  // Supported options (arrays for multi-value support)
+  supportedLanguages    String[] @map("supported_languages")
+  supportedCurrencies   String[] @map("supported_currencies")
+  supportedCurricula    String[] @map("supported_curricula")
+  
+  // Timezone information
+  timezones             String[]
+  primaryTimezone       String?  @map("primary_timezone")
+  
+  // Locale formatting defaults
+  dateFormat            String   @default("MM/DD/YYYY") @map("date_format")
+  timeFormat            String   @default("12h") @map("time_format") // 12h or 24h
+  firstDayOfWeek        Int      @default(0) @map("first_day_of_week") // 0=Sunday, 1=Monday
+  
+  // Feature flags
+  isActive              Boolean  @default(true) @map("is_active")
+  hasLocalPayment       Boolean  @default(false) @map("has_local_payment")
+  requiresCompliance    String[] @map("requires_compliance") // GDPR, POPIA, LGPD, etc.
+  
+  // Phone/dial info
+  dialCode              String?  @map("dial_code")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  regions               Region[]
+  
+  @@index([region])
+  @@index([isActive])
+  @@map("countries")
+}
+
+/// Subdivisions/regions within a country (states, provinces, etc.)
+model Region {
+  id                    String   @id @default(uuid()) @db.Uuid
+  countryCode           String   @map("country_code") @db.VarChar(2)
+  code                  String   @db.VarChar(10)  // e.g., "CA" for California
+  name                  String
+  nativeName            String?  @map("native_name")
+  
+  // Regional overrides (if different from country default)
+  defaultLanguage       String?  @map("default_language") @db.VarChar(10)
+  defaultCurrency       String?  @map("default_currency") @db.VarChar(3)
+  defaultCurriculum     String?  @map("default_curriculum")
+  timezone              String?
+  
+  isActive              Boolean  @default(true) @map("is_active")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  country               Country  @relation(fields: [countryCode], references: [code], onDelete: Cascade)
+  
+  @@unique([countryCode, code])
+  @@index([countryCode])
+  @@map("regions")
+}
+
+/// Currency information with formatting and exchange rates
+model Currency {
+  id                    String   @id @default(uuid()) @db.Uuid
+  code                  String   @unique @db.VarChar(3)  // ISO 4217
+  numericCode           String?  @map("numeric_code") @db.VarChar(3)
+  name                  String
+  namePlural            String   @map("name_plural")
+  
+  // Display
+  symbol                String
+  symbolNative          String   @map("symbol_native")
+  
+  // Formatting
+  decimalDigits         Int      @default(2) @map("decimal_digits")
+  thousandsSeparator    String   @default(",") @map("thousands_separator")
+  decimalSeparator      String   @default(".") @map("decimal_separator")
+  symbolPosition        SymbolPosition @default(BEFORE) @map("symbol_position")
+  spaceBetween          Boolean  @default(false) @map("space_between") // Space between symbol and amount
+  
+  // Exchange rate tracking (updated periodically)
+  exchangeRateToUSD     Decimal  @default(1.0) @map("exchange_rate_to_usd") @db.Decimal(18, 8)
+  exchangeRateUpdatedAt DateTime? @map("exchange_rate_updated_at")
+  
+  // Status
+  isActive              Boolean  @default(true) @map("is_active")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@map("currencies")
+}
+
+enum SymbolPosition {
+  BEFORE  // $100
+  AFTER   // 100€
+  
+  @@map("symbol_position")
+}
+
+/// Language information with locale-specific formatting
+model Language {
+  id                    String   @id @default(uuid()) @db.Uuid
+  code                  String   @unique @db.VarChar(10)  // BCP 47: en, en-US, zh-CN, etc.
+  name                  String                             // English name
+  nativeName            String   @map("native_name")       // Name in native language
+  
+  // Writing direction
+  direction             TextDirection @default(LTR)
+  
+  // Script information
+  script                String?       // Latin, Arabic, Han, Devanagari, etc.
+  
+  // Plural rules (CLDR)
+  pluralCategories      String[]     @map("plural_categories") // zero, one, two, few, many, other
+  
+  // Regional variants (e.g., en has en-US, en-GB, en-AU)
+  baseLanguage          String?      @map("base_language") @db.VarChar(5) // e.g., "en" for "en-US"
+  
+  // Translation availability
+  translationCoverage   Float        @default(0) @map("translation_coverage") // 0-1 percentage
+  
+  // Status
+  isActive              Boolean      @default(true) @map("is_active")
+  isDefault             Boolean      @default(false) @map("is_default") // Default fallback language
+  
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+  
+  @@map("languages")
+}
+
+enum TextDirection {
+  LTR  // Left-to-right
+  RTL  // Right-to-left
+  
+  @@map("text_direction")
+}
+
+/// Curriculum framework information
+model CurriculumFramework {
+  id                    String   @id @default(uuid()) @db.Uuid
+  code                  String   @unique
+  name                  String
+  shortName             String?  @map("short_name")
+  
+  // Geographic scope
+  countries             String[] // Country codes where this curriculum is used
+  regions               String[] // Optional: specific regions within countries
+  
+  // Classification
+  type                  CurriculumType
+  governingBody         String?  @map("governing_body")
+  website               String?
+  
+  // Grade/level information
+  gradeLevels           Json     @map("grade_levels") // Array of grade definitions
+  ageRangeStart         Int      @map("age_range_start")
+  ageRangeEnd           Int      @map("age_range_end")
+  
+  // Academic year
+  academicYearStart     String?  @map("academic_year_start") // e.g., "September"
+  academicYearEnd       String?  @map("academic_year_end")   // e.g., "June"
+  
+  // Status
+  isActive              Boolean  @default(true) @map("is_active")
+  version               String?  // Curriculum version/year
+  effectiveDate         DateTime? @map("effective_date")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@index([countries])
+  @@map("curriculum_frameworks")
+}
+
+enum CurriculumType {
+  NATIONAL         // Country-wide national curriculum
+  STATE_PROVINCIAL // State/province specific
+  INTERNATIONAL    // International programs (IB, Cambridge)
+  PRIVATE          // Private/religious school curricula
+  
+  @@map("curriculum_type")
+}
+
+/// Payment provider availability by region
+model PaymentProviderRegion {
+  id                    String   @id @default(uuid()) @db.Uuid
+  providerCode          String   @map("provider_code")  // STRIPE, PAYSTACK, RAZORPAY, etc.
+  countryCode           String   @map("country_code") @db.VarChar(2)
+  
+  // Provider details for this region
+  supportedCurrencies   String[] @map("supported_currencies")
+  supportedMethods      String[] @map("supported_methods") // card, bank_transfer, upi, etc.
+  
+  // Priority (lower = preferred)
+  priority              Int      @default(100)
+  
+  // Status
+  isActive              Boolean  @default(true) @map("is_active")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@unique([providerCode, countryCode])
+  @@index([countryCode])
+  @@map("payment_provider_regions")
+}
+
+/// Compliance requirements by region
+model ComplianceRequirement {
+  id                    String   @id @default(uuid()) @db.Uuid
+  code                  String   @unique  // GDPR, POPIA, LGPD, DPDP, PIPL, etc.
+  name                  String
+  description           String?  @db.Text
+  
+  // Geographic scope
+  countries             String[]
+  
+  // Requirements
+  dataResidencyRequired Boolean  @default(false) @map("data_residency_required")
+  consentRequired       Boolean  @default(true) @map("consent_required")
+  deletionRequired      Boolean  @default(true) @map("deletion_required")
+  portabilityRequired   Boolean  @default(true) @map("portability_required")
+  dpoRequired           Boolean  @default(false) @map("dpo_required") // Data Protection Officer
+  
+  // Age restrictions
+  minConsentAge         Int      @default(13) @map("min_consent_age")
+  parentalConsentAge    Int      @default(18) @map("parental_consent_age")
+  
+  // Status
+  isActive              Boolean  @default(true) @map("is_active")
+  effectiveDate         DateTime @map("effective_date")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@map("compliance_requirements")
+}
+
+/// IP range to location cache (for fast lookups)
+model IpLocationCache {
+  id                    String   @id @default(uuid()) @db.Uuid
+  ipHash                String   @unique @map("ip_hash")  // Hashed IP for privacy
+  
+  // Location data
+  countryCode           String   @map("country_code") @db.VarChar(2)
+  regionCode            String?  @map("region_code") @db.VarChar(10)
+  city                  String?
+  timezone              String?
+  
+  // Confidence
+  confidence            Float    @default(0.95)
+  
+  // Cache management
+  expiresAt             DateTime @map("expires_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  
+  @@index([expiresAt])
+  @@map("ip_location_cache")
+}
