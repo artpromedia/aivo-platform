@@ -1,0 +1,354 @@
+# =============================================================================
+# AIVO Platform - Prometheus Alerting Rules
+# =============================================================================
+# Apply with: kubectl apply -f prometheus-rules.yaml
+# =============================================================================
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: aivo-platform-alerts
+  namespace: monitoring
+  labels:
+    app: prometheus
+    release: prometheus
+spec:
+  groups:
+    # ════════════════════════════════════════════════════════════════════════
+    # SERVICE AVAILABILITY ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.service.availability
+      interval: 30s
+      rules:
+        - alert: ServiceDown
+          expr: up{job=~"aivo-.*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Service {{ $labels.job }} is down"
+            description: "Service {{ $labels.job }} in namespace {{ $labels.namespace }} has been down for more than 2 minutes."
+            runbook_url: "https://docs.aivolearning.com/runbooks/service-down"
+            dashboard_url: "https://grafana.aivolearning.com/d/aivo-services"
+
+        - alert: ServiceHighRestartRate
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace=~"aivo-.*"}[1h]) > 5
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} is restarting frequently"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last hour."
+
+        - alert: ServiceNotReady
+          expr: |
+            kube_deployment_status_replicas_ready{namespace=~"aivo-.*"} / 
+            kube_deployment_spec_replicas{namespace=~"aivo-.*"} < 0.5
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Deployment {{ $labels.deployment }} has less than 50% pods ready"
+            description: "Deployment {{ $labels.deployment }} has {{ $value | humanizePercentage }} of pods ready."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # ERROR RATE ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.service.errors
+      interval: 30s
+      rules:
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"5..", namespace=~"aivo-.*"}[5m])) by (service) /
+            sum(rate(http_requests_total{namespace=~"aivo-.*"}[5m])) by (service) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "High 5xx error rate on {{ $labels.service }}"
+            description: "Service {{ $labels.service }} has a 5xx error rate of {{ $value | humanizePercentage }} (threshold: 1%)."
+            runbook_url: "https://docs.aivolearning.com/runbooks/high-error-rate"
+
+        - alert: HighClientErrorRate
+          expr: |
+            sum(rate(http_requests_total{status=~"4..", namespace=~"aivo-.*"}[5m])) by (service) /
+            sum(rate(http_requests_total{namespace=~"aivo-.*"}[5m])) by (service) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High 4xx error rate on {{ $labels.service }}"
+            description: "Service {{ $labels.service }} has a 4xx error rate of {{ $value | humanizePercentage }} (threshold: 10%)."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # LATENCY ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.service.latency
+      interval: 30s
+      rules:
+        - alert: HighP99Latency
+          expr: |
+            histogram_quantile(0.99, 
+              sum(rate(http_request_duration_seconds_bucket{namespace=~"aivo-.*"}[5m])) by (le, service)
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High P99 latency on {{ $labels.service }}"
+            description: "Service {{ $labels.service }} P99 latency is {{ $value | humanizeDuration }} (threshold: 2s)."
+
+        - alert: CriticalP99Latency
+          expr: |
+            histogram_quantile(0.99, 
+              sum(rate(http_request_duration_seconds_bucket{namespace=~"aivo-.*"}[5m])) by (le, service)
+            ) > 5
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Critical P99 latency on {{ $labels.service }}"
+            description: "Service {{ $labels.service }} P99 latency is {{ $value | humanizeDuration }} (threshold: 5s)."
+            runbook_url: "https://docs.aivolearning.com/runbooks/high-latency"
+
+    # ════════════════════════════════════════════════════════════════════════
+    # RESOURCE ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.service.resources
+      interval: 60s
+      rules:
+        - alert: HighCPUUsage
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{namespace=~"aivo-.*", container!=""}[5m])) by (pod, namespace) /
+            sum(kube_pod_container_resource_limits{resource="cpu", namespace=~"aivo-.*"}) by (pod, namespace) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High CPU usage on {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of CPU limit."
+
+        - alert: HighMemoryUsage
+          expr: |
+            sum(container_memory_working_set_bytes{namespace=~"aivo-.*", container!=""}) by (pod, namespace) /
+            sum(kube_pod_container_resource_limits{resource="memory", namespace=~"aivo-.*"}) by (pod, namespace) > 0.85
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High memory usage on {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of memory limit."
+
+        - alert: CriticalMemoryUsage
+          expr: |
+            sum(container_memory_working_set_bytes{namespace=~"aivo-.*", container!=""}) by (pod, namespace) /
+            sum(kube_pod_container_resource_limits{resource="memory", namespace=~"aivo-.*"}) by (pod, namespace) > 0.95
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Critical memory usage on {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} is using {{ $value | humanizePercentage }} of memory limit. OOMKill imminent!"
+            runbook_url: "https://docs.aivolearning.com/runbooks/oom-risk"
+
+    # ════════════════════════════════════════════════════════════════════════
+    # DATABASE ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.database
+      interval: 60s
+      rules:
+        - alert: DatabaseConnectionPoolExhausted
+          expr: |
+            pg_stat_activity_count{datname=~"aivo.*"} / 
+            pg_settings_max_connections > 0.8
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Database connection pool near exhaustion"
+            description: "Database {{ $labels.datname }} is using {{ $value | humanizePercentage }} of max connections."
+            runbook_url: "https://docs.aivolearning.com/runbooks/db-connections"
+
+        - alert: DatabaseSlowQueries
+          expr: |
+            rate(pg_stat_statements_seconds_total{datname=~"aivo.*"}[5m]) > 0.1
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Slow queries detected on {{ $labels.datname }}"
+            description: "Database {{ $labels.datname }} has slow queries averaging {{ $value | humanizeDuration }}."
+
+        - alert: DatabaseReplicationLag
+          expr: |
+            pg_replication_lag > 30
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Database replication lag detected"
+            description: "Replication lag is {{ $value | humanizeDuration }}. This may indicate a problem with the replica."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # REDIS ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.redis
+      interval: 30s
+      rules:
+        - alert: RedisHighMemoryUsage
+          expr: |
+            redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Redis memory usage high"
+            description: "Redis is using {{ $value | humanizePercentage }} of max memory."
+
+        - alert: RedisConnectionsExhausted
+          expr: |
+            redis_connected_clients / redis_config_maxclients > 0.9
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Redis connections near limit"
+            description: "Redis is using {{ $value | humanizePercentage }} of max connections."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # BILLING SERVICE ALERTS (CRITICAL)
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.billing
+      interval: 30s
+      rules:
+        - alert: BillingServiceDown
+          expr: up{job="billing-svc"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: billing
+            pagerduty: "true"
+          annotations:
+            summary: "CRITICAL: Billing service is down"
+            description: "Billing service has been down for more than 1 minute. Payment processing may be affected."
+            runbook_url: "https://docs.aivolearning.com/runbooks/billing-down"
+
+        - alert: PaymentProcessingErrors
+          expr: |
+            rate(stripe_webhook_errors_total[5m]) > 0
+          for: 2m
+          labels:
+            severity: critical
+            team: billing
+            pagerduty: "true"
+          annotations:
+            summary: "Payment processing errors detected"
+            description: "Stripe webhook errors are occurring. Check payment processing immediately."
+
+        - alert: HighPaymentLatency
+          expr: |
+            histogram_quantile(0.95, rate(payment_processing_duration_seconds_bucket[5m])) > 10
+          for: 5m
+          labels:
+            severity: warning
+            team: billing
+          annotations:
+            summary: "High payment processing latency"
+            description: "P95 payment processing latency is {{ $value | humanizeDuration }}."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # AUTH SERVICE ALERTS (CRITICAL)
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.auth
+      interval: 30s
+      rules:
+        - alert: AuthServiceDown
+          expr: up{job="auth-svc"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+            pagerduty: "true"
+          annotations:
+            summary: "CRITICAL: Auth service is down"
+            description: "Auth service has been down for more than 1 minute. Users cannot log in!"
+            runbook_url: "https://docs.aivolearning.com/runbooks/auth-down"
+
+        - alert: HighAuthFailureRate
+          expr: |
+            sum(rate(auth_login_failures_total[5m])) / 
+            sum(rate(auth_login_attempts_total[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: security
+          annotations:
+            summary: "High authentication failure rate"
+            description: "Auth failure rate is {{ $value | humanizePercentage }}. Possible attack or service issue."
+
+        - alert: JWTSigningErrors
+          expr: |
+            rate(jwt_signing_errors_total[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+            pagerduty: "true"
+          annotations:
+            summary: "JWT signing errors detected"
+            description: "JWT signing is failing. Check JWT secrets and key rotation."
+
+    # ════════════════════════════════════════════════════════════════════════
+    # AI ORCHESTRATOR ALERTS
+    # ════════════════════════════════════════════════════════════════════════
+    - name: aivo.ai
+      interval: 60s
+      rules:
+        - alert: AIServiceHighLatency
+          expr: |
+            histogram_quantile(0.95, rate(ai_inference_duration_seconds_bucket[5m])) > 30
+          for: 10m
+          labels:
+            severity: warning
+            team: ai
+          annotations:
+            summary: "AI service latency is high"
+            description: "P95 AI inference latency is {{ $value | humanizeDuration }}."
+
+        - alert: AIServiceHighCost
+          expr: |
+            sum(increase(ai_tokens_total[1h])) * 0.00002 > 100
+          for: 1h
+          labels:
+            severity: warning
+            team: ai
+          annotations:
+            summary: "High AI API cost detected"
+            description: "AI API cost in the last hour is approximately ${{ $value | humanize }}."
+
+        - alert: AIServiceRateLimited
+          expr: |
+            rate(ai_rate_limit_errors_total[5m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+            team: ai
+          annotations:
+            summary: "AI service being rate limited"
+            description: "AI service is hitting rate limits. Consider increasing quotas."

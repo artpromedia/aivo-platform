@@ -1,0 +1,746 @@
+# .github/workflows/ci-unified.yml
+# =============================================================================
+# AIVO Platform - Unified CI/CD Pipeline
+# =============================================================================
+# This is the main CI/CD pipeline for the AIVO platform. It handles:
+# - Continuous Integration (lint, test, build)
+# - Security scanning (SAST, dependency audit, container scanning)
+# - Artifact publishing (Docker images, npm packages)
+# - Deployment orchestration (staging auto-deploy, production manual)
+# =============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, release/*, hotfix/*]
+  pull_request:
+    branches: [main, develop]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Environment to deploy to'
+        required: false
+        type: choice
+        options:
+          - none
+          - staging
+          - production
+        default: none
+      skip_tests:
+        description: 'Skip tests (emergency deploys only)'
+        required: false
+        type: boolean
+        default: false
+
+# Cancel in-progress runs for the same ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Global environment variables
+env:
+  REGISTRY: gcr.io
+  PROJECT_ID: aivo-platform
+  NODE_VERSION: '20.19.4'
+  PNPM_VERSION: '9.12.0'
+  FLUTTER_VERSION: '3.22.0'
+  
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # DETECT CHANGES
+  # ════════════════════════════════════════════════════════════════════════════
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.filter.outputs.services }}
+      services_list: ${{ steps.filter.outputs.services_list }}
+      web_apps: ${{ steps.filter.outputs.web_apps }}
+      web_apps_list: ${{ steps.filter.outputs.web_apps_list }}
+      mobile_apps: ${{ steps.filter.outputs.mobile_apps }}
+      libs: ${{ steps.filter.outputs.libs }}
+      infra: ${{ steps.filter.outputs.infra }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            services:
+              - 'services/**'
+              - 'packages/**'
+              - 'libs/**'
+              - 'pnpm-lock.yaml'
+            web_apps:
+              - 'apps/web-*/**'
+              - 'apps/learner-app/**'
+              - 'libs/**'
+              - 'packages/**'
+            mobile_apps:
+              - 'apps/mobile-*/**'
+              - 'libs/flutter-common/**'
+            libs:
+              - 'libs/**'
+              - 'packages/**'
+            infra:
+              - 'infra/**'
+              - 'infrastructure/**'
+              - 'docker/**'
+            docs:
+              - 'docs/**'
+              - '*.md'
+          list-files: json
+
+      - name: Identify changed services
+        id: services-list
+        if: steps.filter.outputs.services == 'true'
+        run: |
+          # Extract unique service names from changed files
+          SERVICES=$(git diff --name-only ${{ github.event.before || 'HEAD~1' }} ${{ github.sha }} | \
+            grep '^services/' | \
+            cut -d'/' -f2 | \
+            sort -u | \
+            jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "services_list=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Identify changed web apps
+        id: web-apps-list
+        if: steps.filter.outputs.web_apps == 'true'
+        run: |
+          APPS=$(git diff --name-only ${{ github.event.before || 'HEAD~1' }} ${{ github.sha }} | \
+            grep '^apps/' | \
+            cut -d'/' -f2 | \
+            grep -E '^(web-|learner-)' | \
+            sort -u | \
+            jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "web_apps_list=$APPS" >> $GITHUB_OUTPUT
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # INSTALL DEPENDENCIES (Shared across jobs)
+  # ════════════════════════════════════════════════════════════════════════════
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        id: cache-pnpm
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Generate Prisma clients
+        run: |
+          chmod +x ./scripts/prisma-generate-all.sh
+          ./scripts/prisma-generate-all.sh
+        env:
+          PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # LINT
+  # ════════════════════════════════════════════════════════════════════════════
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm run lint
+        continue-on-error: false
+
+      - name: Run Prettier check
+        run: pnpm run format:check
+        continue-on-error: true
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TYPE CHECK
+  # ════════════════════════════════════════════════════════════════════════════
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          chmod +x ./scripts/prisma-generate-all.sh
+          ./scripts/prisma-generate-all.sh
+        env:
+          PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+
+      - name: Run TypeScript check
+        run: pnpm run typecheck
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # TEST
+  # ════════════════════════════════════════════════════════════════════════════
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: install
+    if: ${{ !inputs.skip_tests }}
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: aivo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          chmod +x ./scripts/prisma-generate-all.sh
+          ./scripts/prisma-generate-all.sh
+        env:
+          PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+
+      - name: Run unit tests
+        run: pnpm run test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD
+  # ════════════════════════════════════════════════════════════════════════════
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test]
+    if: always() && (needs.lint.result == 'success' && needs.typecheck.result == 'success' && (needs.test.result == 'success' || needs.test.result == 'skipped'))
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha_short: ${{ steps.version.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          chmod +x ./scripts/prisma-generate-all.sh
+          ./scripts/prisma-generate-all.sh
+        env:
+          PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+
+      - name: Determine version
+        id: version
+        run: |
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            VERSION="main-$SHA_SHORT"
+          elif [[ "${{ github.ref }}" == refs/heads/develop ]]; then
+            VERSION="dev-$SHA_SHORT"
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            BRANCH=$(echo "${{ github.ref }}" | sed 's|refs/heads/release/||')
+            VERSION="rc-${BRANCH}-$SHA_SHORT"
+          else
+            VERSION="pr-${{ github.event.pull_request.number || github.run_id }}-$SHA_SHORT"
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "sha_short=$SHA_SHORT" >> $GITHUB_OUTPUT
+          echo "📦 Build version: $VERSION"
+
+      - name: Build all packages
+        run: pnpm run build
+        env:
+          NEXT_PUBLIC_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ steps.version.outputs.sha_short }}
+          path: |
+            apps/*/.next
+            apps/*/dist
+            services/*/dist
+            libs/*/dist
+            packages/*/dist
+          retention-days: 7
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SECURITY SCAN
+  # ════════════════════════════════════════════════════════════════════════════
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: install
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+      - name: Run OSV Scanner
+        uses: google/osv-scanner-action@v1
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --lockfile=pnpm-lock.yaml
+            --format=sarif
+            --output=osv-results.sarif
+
+      - name: Upload OSV results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: 'osv-results.sarif'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # BUILD DOCKER IMAGES
+  # ════════════════════════════════════════════════════════════════════════════
+  docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [build, changes]
+    if: |
+      (github.ref == 'refs/heads/main' || 
+       github.ref == 'refs/heads/develop' ||
+       startsWith(github.ref, 'refs/heads/release/') ||
+       github.event_name == 'release')
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - auth-svc
+          - session-svc
+          - content-svc
+          - assessment-svc
+          - ai-orchestrator
+          - analytics-svc
+          - notify-svc
+          - messaging-svc
+          - goal-svc
+          - focus-svc
+          - billing-svc
+          - payments-svc
+          - parent-svc
+          - baseline-svc
+          - consent-svc
+          - profile-svc
+          - personalization-svc
+          - life-skills-svc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.build.outputs.version }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            VERSION=${{ needs.build.outputs.version }}
+            BUILD_SHA=${{ needs.build.outputs.sha_short }}
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.build.outputs.version }}'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
+          category: 'container-${{ matrix.service }}'
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO STAGING
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main' || inputs.deploy_environment == 'staging'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: aivo-staging
+          location: us-central1
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Deploy to staging
+        run: |
+          cd infra/k8s/overlays/staging
+          
+          # Update image tags for all services
+          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    profile-svc personalization-svc life-skills-svc)
+          
+          for svc in "${SERVICES[@]}"; do
+            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha | substring(0, 7) }}
+          done
+          
+          # Apply to cluster
+          kustomize build . | kubectl apply -f -
+          
+          # Wait for rollout
+          kubectl rollout status deployment --all -n aivo-staging --timeout=600s
+
+      - name: Run smoke tests
+        run: |
+          sleep 30
+          for svc in auth-svc content-svc session-svc; do
+            kubectl exec -n aivo-staging deploy/$svc -- curl -sf http://localhost:3000/health/ready || echo "Warning: $svc health check failed"
+          done
+        continue-on-error: true
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && '✅' || '❌' }} *Staging Deployment ${{ job.status }}*\n*Commit:* `${{ github.sha }}`\n*Actor:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO PRODUCTION
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [docker, deploy-staging]
+    if: github.event_name == 'release' || inputs.deploy_environment == 'production'
+    environment: 
+      name: production
+      url: https://app.aivolearning.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: aivo-production
+          location: us-central1
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Deploy to production
+        run: |
+          cd infra/k8s/overlays/production
+          
+          VERSION="${{ github.event.release.tag_name || github.sha }}"
+          
+          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    profile-svc personalization-svc life-skills-svc)
+          
+          for svc in "${SERVICES[@]}"; do
+            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${VERSION}
+          done
+          
+          kustomize build . | kubectl apply -f -
+          kubectl rollout status deployment --all -n aivo-prod --timeout=900s
+
+      - name: Run production health checks
+        run: |
+          sleep 60
+          for svc in auth-svc content-svc session-svc billing-svc; do
+            echo "Checking $svc..."
+            kubectl exec -n aivo-prod deploy/$svc -- curl -sf http://localhost:3000/health/ready
+          done
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '🚀' || '🔥' }} Production deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && '🚀' || '🔥' }} *Production Deployment ${{ job.status }}*\n*Version:* `${{ github.event.release.tag_name || github.sha }}`\n*Actor:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # SUMMARY
+  # ════════════════════════════════════════════════════════════════════════════
+  summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, build, security, docker, deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🚀 CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result == 'success' && '✅' || needs.lint.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type Check | ${{ needs.typecheck.result == 'success' && '✅' || needs.typecheck.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result == 'success' && '✅' || needs.test.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅' || needs.build.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result == 'success' && '✅' || needs.security.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker | ${{ needs.docker.result == 'success' && '✅' || needs.docker.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.deploy-staging.result == 'success' && '✅' || needs.deploy-staging.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.deploy-production.result == 'success' && '✅' || needs.deploy-production.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

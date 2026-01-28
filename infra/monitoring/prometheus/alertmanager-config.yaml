@@ -1,0 +1,164 @@
+# =============================================================================
+# AIVO Platform - Alertmanager Configuration
+# =============================================================================
+# Routes alerts to appropriate channels (Slack, PagerDuty, Email)
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      slack_api_url: '${SLACK_WEBHOOK_URL}'
+      pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+    # Template for alert messages
+    templates:
+      - '/etc/alertmanager/templates/*.tmpl'
+
+    # Route configuration
+    route:
+      group_by: ['alertname', 'severity', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'slack-notifications'
+      
+      routes:
+        # Critical alerts go to PagerDuty
+        - match:
+            severity: critical
+          receiver: 'pagerduty-critical'
+          group_wait: 10s
+          group_interval: 1m
+          repeat_interval: 1h
+          continue: true
+
+        # PagerDuty-flagged alerts
+        - match:
+            pagerduty: "true"
+          receiver: 'pagerduty-critical'
+          group_wait: 0s
+          repeat_interval: 30m
+          continue: true
+
+        # Billing team alerts
+        - match:
+            team: billing
+          receiver: 'slack-billing'
+          continue: true
+
+        # Security alerts
+        - match:
+            team: security
+          receiver: 'slack-security'
+          continue: true
+
+        # AI team alerts
+        - match:
+            team: ai
+          receiver: 'slack-ai'
+          continue: true
+
+        # Warning alerts go to Slack only
+        - match:
+            severity: warning
+          receiver: 'slack-warnings'
+          group_wait: 1m
+          repeat_interval: 8h
+
+    # Inhibition rules
+    inhibit_rules:
+      # If a service is down, inhibit high error rate alerts
+      - source_match:
+          alertname: 'ServiceDown'
+        target_match:
+          alertname: 'HighErrorRate'
+        equal: ['service']
+      
+      # If critical, inhibit warnings for same service
+      - source_match:
+          severity: 'critical'
+        target_match:
+          severity: 'warning'
+        equal: ['alertname', 'service']
+
+    # Receivers configuration
+    receivers:
+      - name: 'slack-notifications'
+        slack_configs:
+          - channel: '#aivo-alerts'
+            send_resolved: true
+            title: '{{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+            actions:
+              - type: button
+                text: 'Runbook 📚'
+                url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+              - type: button
+                text: 'Dashboard 📊'
+                url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+              - type: button
+                text: 'Silence 🔇'
+                url: '{{ template "slack.silence_url" . }}'
+
+      - name: 'slack-warnings'
+        slack_configs:
+          - channel: '#aivo-alerts-warnings'
+            send_resolved: true
+            title: '{{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: 'warning'
+
+      - name: 'slack-billing'
+        slack_configs:
+          - channel: '#aivo-billing-alerts'
+            send_resolved: true
+            title: '💰 {{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+
+      - name: 'slack-security'
+        slack_configs:
+          - channel: '#aivo-security-alerts'
+            send_resolved: true
+            title: '🔒 {{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+
+      - name: 'slack-ai'
+        slack_configs:
+          - channel: '#aivo-ai-alerts'
+            send_resolved: true
+            title: '🤖 {{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+
+      - name: 'pagerduty-critical'
+        pagerduty_configs:
+          - service_key: '${PAGERDUTY_SERVICE_KEY}'
+            severity: '{{ if eq .CommonLabels.severity "critical" }}critical{{ else }}error{{ end }}'
+            description: '{{ .CommonAnnotations.summary }}'
+            details:
+              firing: '{{ template "pagerduty.firing" . }}'
+              num_firing: '{{ .Alerts.Firing | len }}'
+              num_resolved: '{{ .Alerts.Resolved | len }}'
+              resolved: '{{ template "pagerduty.resolved" . }}'
+            links:
+              - href: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+                text: 'Runbook'
+              - href: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+                text: 'Dashboard'
+
+      - name: 'email-critical'
+        email_configs:
+          - to: 'oncall@aivolearning.com'
+            send_resolved: true
+            headers:
+              Subject: '{{ template "email.subject" . }}'
+            html: '{{ template "email.html" . }}'
