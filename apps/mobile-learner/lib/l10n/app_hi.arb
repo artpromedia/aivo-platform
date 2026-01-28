@@ -1,0 +1,281 @@
+{
+  "@@locale": "hi",
+  "@@last_modified": "2026-01-20",
+
+  "appTitle": "Aivo शिक्षार्थी",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "welcomeBack": "वापसी पर स्वागत है, {name}!",
+  "@welcomeBack": {
+    "description": "Welcome message with learner's name",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "अलेक्स"
+      }
+    }
+  },
+
+  "todaysPlan": "आज की योजना",
+  "@todaysPlan": {
+    "description": "Title for today's learning plan"
+  },
+
+  "activitiesRemaining": "{count, plural, =0{सब हो गया!} =1{1 गतिविधि बाकी} other{{count} गतिविधियां बाकी}}",
+  "@activitiesRemaining": {
+    "description": "Number of activities remaining today",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+
+  "startLearning": "सीखना शुरू करें",
+  "@startLearning": {
+    "description": "Button to start learning session"
+  },
+
+  "continueLearning": "सीखना जारी रखें",
+  "@continueLearning": {
+    "description": "Button to continue learning session"
+  },
+
+  "sessionComplete": "सत्र पूर्ण!",
+  "@sessionComplete": {
+    "description": "Title when session is finished"
+  },
+
+  "greatJob": "बहुत बढ़िया!",
+  "@greatJob": {
+    "description": "Congratulatory message"
+  },
+
+  "xpEarned": "+{amount} XP",
+  "@xpEarned": {
+    "description": "XP points earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "coinsEarned": "+{amount} सिक्के",
+  "@coinsEarned": {
+    "description": "Coins earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "streakDays": "{count, plural, =1{1 दिन की स्ट्रीक} other{{count} दिन की स्ट्रीक}}",
+  "@streakDays": {
+    "description": "Learning streak in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "progress": "प्रगति",
+  "@progress": {
+    "description": "Progress section title"
+  },
+
+  "goals": "लक्ष्य",
+  "@goals": {
+    "description": "Goals section title"
+  },
+
+  "rewards": "पुरस्कार",
+  "@rewards": {
+    "description": "Rewards section title"
+  },
+
+  "settings": "सेटिंग्स",
+  "@settings": {
+    "description": "Settings section title"
+  },
+
+  "profile": "प्रोफ़ाइल",
+  "@profile": {
+    "description": "Profile section title"
+  },
+
+  "focusMode": "फोकस मोड",
+  "@focusMode": {
+    "description": "Focus mode feature"
+  },
+
+  "needABreak": "ब्रेक चाहिए?",
+  "@needABreak": {
+    "description": "Question for break suggestion"
+  },
+
+  "takeBreak": "ब्रेक लें",
+  "@takeBreak": {
+    "description": "Button to take a break"
+  },
+
+  "skipBreak": "जारी रखें",
+  "@skipBreak": {
+    "description": "Button to skip break"
+  },
+
+  "homeworkHelp": "होमवर्क सहायता",
+  "@homeworkHelp": {
+    "description": "Homework helper feature"
+  },
+
+  "scanProblem": "समस्या स्कैन करें",
+  "@scanProblem": {
+    "description": "Button to scan homework problem"
+  },
+
+  "typeProblem": "समस्या टाइप करें",
+  "@typeProblem": {
+    "description": "Button to type homework problem"
+  },
+
+  "brainTraining": "मस्तिष्क प्रशिक्षण",
+  "@brainTraining": {
+    "description": "Brain training games section"
+  },
+
+  "playGames": "खेलें",
+  "@playGames": {
+    "description": "Button to play educational games"
+  },
+
+  "offline": "ऑफ़लाइन",
+  "@offline": {
+    "description": "Offline mode indicator"
+  },
+
+  "offlineMessage": "आप ऑफ़लाइन हैं। कुछ सुविधाएं उपलब्ध नहीं हो सकती हैं।",
+  "@offlineMessage": {
+    "description": "Message shown when offline"
+  },
+
+  "syncing": "सिंक हो रहा है...",
+  "@syncing": {
+    "description": "Syncing status message"
+  },
+
+  "syncComplete": "सिंक पूर्ण",
+  "@syncComplete": {
+    "description": "Sync completed message"
+  },
+
+  "errorGeneric": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "retry": "पुनः प्रयास करें",
+  "@retry": {
+    "description": "Retry button text"
+  },
+
+  "cancel": "रद्द करें",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+
+  "done": "हो गया",
+  "@done": {
+    "description": "Done button text"
+  },
+
+  "next": "अगला",
+  "@next": {
+    "description": "Next button text"
+  },
+
+  "back": "पीछे",
+  "@back": {
+    "description": "Back button text"
+  },
+
+  "submit": "जमा करें",
+  "@submit": {
+    "description": "Submit button text"
+  },
+
+  "loading": "लोड हो रहा है...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+
+  "minutes": "{count, plural, =1{1 मिनट} other{{count} मिनट}}",
+  "@minutes": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "accuracyPercent": "{percent}% सटीकता",
+  "@accuracyPercent": {
+    "description": "Accuracy percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+
+  "subject_math": "गणित",
+  "@subject_math": {
+    "description": "Math subject name"
+  },
+
+  "subject_ela": "हिंदी",
+  "@subject_ela": {
+    "description": "Hindi Language Arts subject name"
+  },
+
+  "subject_science": "विज्ञान",
+  "@subject_science": {
+    "description": "Science subject name"
+  },
+
+  "subject_socialStudies": "सामाजिक अध्ययन",
+  "@subject_socialStudies": {
+    "description": "Social Studies subject name"
+  },
+
+  "accessibilitySettings": "एक्सेसिबिलिटी सेटिंग्स",
+  "@accessibilitySettings": {
+    "description": "Accessibility settings title"
+  },
+
+  "textSize": "टेक्स्ट साइज़",
+  "@textSize": {
+    "description": "Text size setting"
+  },
+
+  "highContrast": "हाई कंट्रास्ट",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+
+  "readAloud": "ज़ोर से पढ़ें",
+  "@readAloud": {
+    "description": "Read aloud / TTS setting"
+  },
+
+  "reducedMotion": "कम गति",
+  "@reducedMotion": {
+    "description": "Reduced motion setting"
+  }
+}

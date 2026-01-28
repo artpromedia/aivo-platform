@@ -1,0 +1,281 @@
+{
+  "@@locale": "ar",
+  "@@last_modified": "2026-01-20",
+
+  "appTitle": "أيفو المتعلم",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "welcomeBack": "مرحباً بعودتك، {name}!",
+  "@welcomeBack": {
+    "description": "Welcome message with learner's name",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "أليكس"
+      }
+    }
+  },
+
+  "todaysPlan": "خطة اليوم",
+  "@todaysPlan": {
+    "description": "Title for today's learning plan"
+  },
+
+  "activitiesRemaining": "{count, plural, =0{انتهيت من كل شيء!} =1{نشاط واحد متبقي} =2{نشاطان متبقيان} few{{count} أنشطة متبقية} many{{count} نشاطاً متبقياً} other{{count} نشاط متبقي}}",
+  "@activitiesRemaining": {
+    "description": "Number of activities remaining today",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+
+  "startLearning": "ابدأ التعلم",
+  "@startLearning": {
+    "description": "Button to start learning session"
+  },
+
+  "continueLearning": "تابع التعلم",
+  "@continueLearning": {
+    "description": "Button to continue learning session"
+  },
+
+  "sessionComplete": "اكتملت الجلسة!",
+  "@sessionComplete": {
+    "description": "Title when session is finished"
+  },
+
+  "greatJob": "عمل رائع!",
+  "@greatJob": {
+    "description": "Congratulatory message"
+  },
+
+  "xpEarned": "+{amount} نقطة خبرة",
+  "@xpEarned": {
+    "description": "XP points earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "coinsEarned": "+{amount} عملة",
+  "@coinsEarned": {
+    "description": "Coins earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "streakDays": "{count, plural, =1{سلسلة يوم واحد} =2{سلسلة يومين} few{سلسلة {count} أيام} many{سلسلة {count} يوماً} other{سلسلة {count} يوم}}",
+  "@streakDays": {
+    "description": "Learning streak in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "progress": "التقدم",
+  "@progress": {
+    "description": "Progress section title"
+  },
+
+  "goals": "الأهداف",
+  "@goals": {
+    "description": "Goals section title"
+  },
+
+  "rewards": "المكافآت",
+  "@rewards": {
+    "description": "Rewards section title"
+  },
+
+  "settings": "الإعدادات",
+  "@settings": {
+    "description": "Settings section title"
+  },
+
+  "profile": "الملف الشخصي",
+  "@profile": {
+    "description": "Profile section title"
+  },
+
+  "focusMode": "وضع التركيز",
+  "@focusMode": {
+    "description": "Focus mode feature"
+  },
+
+  "needABreak": "هل تحتاج استراحة؟",
+  "@needABreak": {
+    "description": "Question for break suggestion"
+  },
+
+  "takeBreak": "خذ استراحة",
+  "@takeBreak": {
+    "description": "Button to take a break"
+  },
+
+  "skipBreak": "استمر",
+  "@skipBreak": {
+    "description": "Button to skip break"
+  },
+
+  "homeworkHelp": "مساعدة في الواجبات",
+  "@homeworkHelp": {
+    "description": "Homework helper feature"
+  },
+
+  "scanProblem": "مسح المسألة",
+  "@scanProblem": {
+    "description": "Button to scan homework problem"
+  },
+
+  "typeProblem": "كتابة المسألة",
+  "@typeProblem": {
+    "description": "Button to type homework problem"
+  },
+
+  "brainTraining": "تمارين ذهنية",
+  "@brainTraining": {
+    "description": "Brain training games section"
+  },
+
+  "playGames": "العب",
+  "@playGames": {
+    "description": "Button to play educational games"
+  },
+
+  "offline": "غير متصل",
+  "@offline": {
+    "description": "Offline mode indicator"
+  },
+
+  "offlineMessage": "أنت غير متصل بالإنترنت. بعض الميزات قد لا تكون متاحة.",
+  "@offlineMessage": {
+    "description": "Message shown when offline"
+  },
+
+  "syncing": "جاري المزامنة...",
+  "@syncing": {
+    "description": "Syncing status message"
+  },
+
+  "syncComplete": "اكتملت المزامنة",
+  "@syncComplete": {
+    "description": "Sync completed message"
+  },
+
+  "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "retry": "إعادة المحاولة",
+  "@retry": {
+    "description": "Retry button text"
+  },
+
+  "cancel": "إلغاء",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+
+  "done": "تم",
+  "@done": {
+    "description": "Done button text"
+  },
+
+  "next": "التالي",
+  "@next": {
+    "description": "Next button text"
+  },
+
+  "back": "رجوع",
+  "@back": {
+    "description": "Back button text"
+  },
+
+  "submit": "إرسال",
+  "@submit": {
+    "description": "Submit button text"
+  },
+
+  "loading": "جاري التحميل...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+
+  "minutes": "{count, plural, =1{دقيقة واحدة} =2{دقيقتان} few{{count} دقائق} many{{count} دقيقة} other{{count} دقيقة}}",
+  "@minutes": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "accuracyPercent": "دقة {percent}%",
+  "@accuracyPercent": {
+    "description": "Accuracy percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+
+  "subject_math": "الرياضيات",
+  "@subject_math": {
+    "description": "Math subject name"
+  },
+
+  "subject_ela": "اللغة العربية",
+  "@subject_ela": {
+    "description": "Arabic Language Arts subject name"
+  },
+
+  "subject_science": "العلوم",
+  "@subject_science": {
+    "description": "Science subject name"
+  },
+
+  "subject_socialStudies": "الدراسات الاجتماعية",
+  "@subject_socialStudies": {
+    "description": "Social Studies subject name"
+  },
+
+  "accessibilitySettings": "إعدادات إمكانية الوصول",
+  "@accessibilitySettings": {
+    "description": "Accessibility settings title"
+  },
+
+  "textSize": "حجم النص",
+  "@textSize": {
+    "description": "Text size setting"
+  },
+
+  "highContrast": "تباين عالي",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+
+  "readAloud": "القراءة بصوت عالٍ",
+  "@readAloud": {
+    "description": "Read aloud / TTS setting"
+  },
+
+  "reducedMotion": "تقليل الحركة",
+  "@reducedMotion": {
+    "description": "Reduced motion setting"
+  }
+}

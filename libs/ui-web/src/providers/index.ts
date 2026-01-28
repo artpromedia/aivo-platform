@@ -1,7 +1,7 @@
 /**
  * Provider Components
  *
- * React context providers for theming and accessibility.
+ * React context providers for theming, accessibility, and localization.
  */
 
 export {
@@ -15,3 +15,15 @@ export type {
   GradeThemeProviderProps,
   GradeThemeContextValue,
 } from './GradeThemeProvider';
+
+export {
+  LocaleProvider,
+  useLocale,
+  useTranslations,
+} from './LocaleProvider';
+
+export type {
+  LocaleProviderProps,
+  LocaleContextValue,
+  TranslationMessages,
+} from './LocaleProvider';

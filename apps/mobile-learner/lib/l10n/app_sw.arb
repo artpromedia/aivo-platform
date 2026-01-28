@@ -1,0 +1,281 @@
+{
+  "@@locale": "sw",
+  "@@last_modified": "2026-01-20",
+
+  "appTitle": "Aivo Mwanafunzi",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "welcomeBack": "Karibu tena, {name}!",
+  "@welcomeBack": {
+    "description": "Welcome message with learner's name",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Alex"
+      }
+    }
+  },
+
+  "todaysPlan": "Mpango wa Leo",
+  "@todaysPlan": {
+    "description": "Title for today's learning plan"
+  },
+
+  "activitiesRemaining": "{count, plural, =0{Umemaliza yote!} =1{Shughuli 1 imebaki} other{Shughuli {count} zimebaki}}",
+  "@activitiesRemaining": {
+    "description": "Number of activities remaining today",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+
+  "startLearning": "Anza Kujifunza",
+  "@startLearning": {
+    "description": "Button to start learning session"
+  },
+
+  "continueLearning": "Endelea Kujifunza",
+  "@continueLearning": {
+    "description": "Button to continue learning session"
+  },
+
+  "sessionComplete": "Kipindi Kimekamilika!",
+  "@sessionComplete": {
+    "description": "Title when session is finished"
+  },
+
+  "greatJob": "Kazi nzuri!",
+  "@greatJob": {
+    "description": "Congratulatory message"
+  },
+
+  "xpEarned": "+{amount} XP",
+  "@xpEarned": {
+    "description": "XP points earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "coinsEarned": "+{amount} sarafu",
+  "@coinsEarned": {
+    "description": "Coins earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "streakDays": "{count, plural, =1{Mfuatano wa siku 1} other{Mfuatano wa siku {count}}}",
+  "@streakDays": {
+    "description": "Learning streak in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "progress": "Maendeleo",
+  "@progress": {
+    "description": "Progress section title"
+  },
+
+  "goals": "Malengo",
+  "@goals": {
+    "description": "Goals section title"
+  },
+
+  "rewards": "Zawadi",
+  "@rewards": {
+    "description": "Rewards section title"
+  },
+
+  "settings": "Mipangilio",
+  "@settings": {
+    "description": "Settings section title"
+  },
+
+  "profile": "Wasifu",
+  "@profile": {
+    "description": "Profile section title"
+  },
+
+  "focusMode": "Hali ya Umakini",
+  "@focusMode": {
+    "description": "Focus mode feature"
+  },
+
+  "needABreak": "Unahitaji mapumziko?",
+  "@needABreak": {
+    "description": "Question for break suggestion"
+  },
+
+  "takeBreak": "Pumzika",
+  "@takeBreak": {
+    "description": "Button to take a break"
+  },
+
+  "skipBreak": "Endelea",
+  "@skipBreak": {
+    "description": "Button to skip break"
+  },
+
+  "homeworkHelp": "Msaada wa Kazi ya Nyumbani",
+  "@homeworkHelp": {
+    "description": "Homework helper feature"
+  },
+
+  "scanProblem": "Changanua Tatizo",
+  "@scanProblem": {
+    "description": "Button to scan homework problem"
+  },
+
+  "typeProblem": "Andika Tatizo",
+  "@typeProblem": {
+    "description": "Button to type homework problem"
+  },
+
+  "brainTraining": "Mazoezi ya Ubongo",
+  "@brainTraining": {
+    "description": "Brain training games section"
+  },
+
+  "playGames": "Cheza Michezo",
+  "@playGames": {
+    "description": "Button to play educational games"
+  },
+
+  "offline": "Nje ya Mtandao",
+  "@offline": {
+    "description": "Offline mode indicator"
+  },
+
+  "offlineMessage": "Uko nje ya mtandao. Baadhi ya vipengele haviwezi kupatikana.",
+  "@offlineMessage": {
+    "description": "Message shown when offline"
+  },
+
+  "syncing": "Inasawazisha...",
+  "@syncing": {
+    "description": "Syncing status message"
+  },
+
+  "syncComplete": "Usawazishaji umekamilika",
+  "@syncComplete": {
+    "description": "Sync completed message"
+  },
+
+  "errorGeneric": "Kuna tatizo limetokea. Tafadhali jaribu tena.",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "retry": "Jaribu Tena",
+  "@retry": {
+    "description": "Retry button text"
+  },
+
+  "cancel": "Ghairi",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+
+  "done": "Imekamilika",
+  "@done": {
+    "description": "Done button text"
+  },
+
+  "next": "Ifuatayo",
+  "@next": {
+    "description": "Next button text"
+  },
+
+  "back": "Nyuma",
+  "@back": {
+    "description": "Back button text"
+  },
+
+  "submit": "Wasilisha",
+  "@submit": {
+    "description": "Submit button text"
+  },
+
+  "loading": "Inapakia...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+
+  "minutes": "{count, plural, =1{Dakika 1} other{Dakika {count}}}",
+  "@minutes": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "accuracyPercent": "Usahihi wa {percent}%",
+  "@accuracyPercent": {
+    "description": "Accuracy percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+
+  "subject_math": "Hisabati",
+  "@subject_math": {
+    "description": "Math subject name"
+  },
+
+  "subject_ela": "Kiswahili",
+  "@subject_ela": {
+    "description": "Swahili Language Arts subject name"
+  },
+
+  "subject_science": "Sayansi",
+  "@subject_science": {
+    "description": "Science subject name"
+  },
+
+  "subject_socialStudies": "Maarifa ya Jamii",
+  "@subject_socialStudies": {
+    "description": "Social Studies subject name"
+  },
+
+  "accessibilitySettings": "Mipangilio ya Upatikanaji",
+  "@accessibilitySettings": {
+    "description": "Accessibility settings title"
+  },
+
+  "textSize": "Ukubwa wa Maandishi",
+  "@textSize": {
+    "description": "Text size setting"
+  },
+
+  "highContrast": "Utofautishaji wa Juu",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+
+  "readAloud": "Soma Kwa Sauti",
+  "@readAloud": {
+    "description": "Read aloud / TTS setting"
+  },
+
+  "reducedMotion": "Mwendo Uliopunguzwa",
+  "@reducedMotion": {
+    "description": "Reduced motion setting"
+  }
+}

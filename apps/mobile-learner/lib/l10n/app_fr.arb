@@ -1,0 +1,281 @@
+{
+  "@@locale": "fr",
+  "@@last_modified": "2026-01-20",
+
+  "appTitle": "Aivo Apprenant",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+
+  "welcomeBack": "Content de te revoir, {name} !",
+  "@welcomeBack": {
+    "description": "Welcome message with learner's name",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Alex"
+      }
+    }
+  },
+
+  "todaysPlan": "Plan du jour",
+  "@todaysPlan": {
+    "description": "Title for today's learning plan"
+  },
+
+  "activitiesRemaining": "{count, plural, =0{Tout est fait !} =1{1 activité restante} other{{count} activités restantes}}",
+  "@activitiesRemaining": {
+    "description": "Number of activities remaining today",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+
+  "startLearning": "Commencer à apprendre",
+  "@startLearning": {
+    "description": "Button to start learning session"
+  },
+
+  "continueLearning": "Continuer à apprendre",
+  "@continueLearning": {
+    "description": "Button to continue learning session"
+  },
+
+  "sessionComplete": "Session terminée !",
+  "@sessionComplete": {
+    "description": "Title when session is finished"
+  },
+
+  "greatJob": "Excellent travail !",
+  "@greatJob": {
+    "description": "Congratulatory message"
+  },
+
+  "xpEarned": "+{amount} XP",
+  "@xpEarned": {
+    "description": "XP points earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "coinsEarned": "+{amount} pièces",
+  "@coinsEarned": {
+    "description": "Coins earned",
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+
+  "streakDays": "{count, plural, =1{Série de 1 jour} other{Série de {count} jours}}",
+  "@streakDays": {
+    "description": "Learning streak in days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "progress": "Progression",
+  "@progress": {
+    "description": "Progress section title"
+  },
+
+  "goals": "Objectifs",
+  "@goals": {
+    "description": "Goals section title"
+  },
+
+  "rewards": "Récompenses",
+  "@rewards": {
+    "description": "Rewards section title"
+  },
+
+  "settings": "Paramètres",
+  "@settings": {
+    "description": "Settings section title"
+  },
+
+  "profile": "Profil",
+  "@profile": {
+    "description": "Profile section title"
+  },
+
+  "focusMode": "Mode concentration",
+  "@focusMode": {
+    "description": "Focus mode feature"
+  },
+
+  "needABreak": "Besoin d'une pause ?",
+  "@needABreak": {
+    "description": "Question for break suggestion"
+  },
+
+  "takeBreak": "Faire une pause",
+  "@takeBreak": {
+    "description": "Button to take a break"
+  },
+
+  "skipBreak": "Continuer",
+  "@skipBreak": {
+    "description": "Button to skip break"
+  },
+
+  "homeworkHelp": "Aide aux devoirs",
+  "@homeworkHelp": {
+    "description": "Homework helper feature"
+  },
+
+  "scanProblem": "Scanner le problème",
+  "@scanProblem": {
+    "description": "Button to scan homework problem"
+  },
+
+  "typeProblem": "Taper le problème",
+  "@typeProblem": {
+    "description": "Button to type homework problem"
+  },
+
+  "brainTraining": "Entraînement cérébral",
+  "@brainTraining": {
+    "description": "Brain training games section"
+  },
+
+  "playGames": "Jouer",
+  "@playGames": {
+    "description": "Button to play educational games"
+  },
+
+  "offline": "Hors ligne",
+  "@offline": {
+    "description": "Offline mode indicator"
+  },
+
+  "offlineMessage": "Vous êtes hors ligne. Certaines fonctionnalités peuvent ne pas être disponibles.",
+  "@offlineMessage": {
+    "description": "Message shown when offline"
+  },
+
+  "syncing": "Synchronisation...",
+  "@syncing": {
+    "description": "Syncing status message"
+  },
+
+  "syncComplete": "Synchronisation terminée",
+  "@syncComplete": {
+    "description": "Sync completed message"
+  },
+
+  "errorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+  "@errorGeneric": {
+    "description": "Generic error message"
+  },
+
+  "retry": "Réessayer",
+  "@retry": {
+    "description": "Retry button text"
+  },
+
+  "cancel": "Annuler",
+  "@cancel": {
+    "description": "Cancel button text"
+  },
+
+  "done": "Terminé",
+  "@done": {
+    "description": "Done button text"
+  },
+
+  "next": "Suivant",
+  "@next": {
+    "description": "Next button text"
+  },
+
+  "back": "Retour",
+  "@back": {
+    "description": "Back button text"
+  },
+
+  "submit": "Soumettre",
+  "@submit": {
+    "description": "Submit button text"
+  },
+
+  "loading": "Chargement...",
+  "@loading": {
+    "description": "Loading indicator text"
+  },
+
+  "minutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@minutes": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "accuracyPercent": "{percent}% de précision",
+  "@accuracyPercent": {
+    "description": "Accuracy percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+
+  "subject_math": "Mathématiques",
+  "@subject_math": {
+    "description": "Math subject name"
+  },
+
+  "subject_ela": "Français",
+  "@subject_ela": {
+    "description": "French Language Arts subject name"
+  },
+
+  "subject_science": "Sciences",
+  "@subject_science": {
+    "description": "Science subject name"
+  },
+
+  "subject_socialStudies": "Histoire-Géographie",
+  "@subject_socialStudies": {
+    "description": "Social Studies subject name"
+  },
+
+  "accessibilitySettings": "Paramètres d'accessibilité",
+  "@accessibilitySettings": {
+    "description": "Accessibility settings title"
+  },
+
+  "textSize": "Taille du texte",
+  "@textSize": {
+    "description": "Text size setting"
+  },
+
+  "highContrast": "Contraste élevé",
+  "@highContrast": {
+    "description": "High contrast mode setting"
+  },
+
+  "readAloud": "Lecture à voix haute",
+  "@readAloud": {
+    "description": "Read aloud / TTS setting"
+  },
+
+  "reducedMotion": "Mouvements réduits",
+  "@reducedMotion": {
+    "description": "Reduced motion setting"
+  }
+}

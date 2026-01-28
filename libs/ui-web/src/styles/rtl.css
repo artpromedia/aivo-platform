@@ -1,0 +1,615 @@
+/**
+ * RTL (Right-to-Left) Styles
+ *
+ * CSS utilities for RTL language support including:
+ * - Automatic layout flipping
+ * - Directional spacing and positioning
+ * - Text alignment adjustments
+ * - Component-specific RTL overrides
+ */
+
+/* ==========================================================================
+   RTL Base Styles
+   ========================================================================== */
+
+/* Document-level RTL */
+html[dir="rtl"],
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+html[dir="ltr"],
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ==========================================================================
+   Logical Properties (Modern approach - use these when possible)
+   These work automatically in RTL without additional classes
+   ========================================================================== */
+
+/* Margin utilities using logical properties */
+.ms-auto { margin-inline-start: auto; }
+.me-auto { margin-inline-end: auto; }
+.ms-0 { margin-inline-start: 0; }
+.me-0 { margin-inline-end: 0; }
+.ms-1 { margin-inline-start: 0.25rem; }
+.me-1 { margin-inline-end: 0.25rem; }
+.ms-2 { margin-inline-start: 0.5rem; }
+.me-2 { margin-inline-end: 0.5rem; }
+.ms-3 { margin-inline-start: 0.75rem; }
+.me-3 { margin-inline-end: 0.75rem; }
+.ms-4 { margin-inline-start: 1rem; }
+.me-4 { margin-inline-end: 1rem; }
+.ms-5 { margin-inline-start: 1.25rem; }
+.me-5 { margin-inline-end: 1.25rem; }
+.ms-6 { margin-inline-start: 1.5rem; }
+.me-6 { margin-inline-end: 1.5rem; }
+.ms-8 { margin-inline-start: 2rem; }
+.me-8 { margin-inline-end: 2rem; }
+
+/* Padding utilities using logical properties */
+.ps-0 { padding-inline-start: 0; }
+.pe-0 { padding-inline-end: 0; }
+.ps-1 { padding-inline-start: 0.25rem; }
+.pe-1 { padding-inline-end: 0.25rem; }
+.ps-2 { padding-inline-start: 0.5rem; }
+.pe-2 { padding-inline-end: 0.5rem; }
+.ps-3 { padding-inline-start: 0.75rem; }
+.pe-3 { padding-inline-end: 0.75rem; }
+.ps-4 { padding-inline-start: 1rem; }
+.pe-4 { padding-inline-end: 1rem; }
+.ps-5 { padding-inline-start: 1.25rem; }
+.pe-5 { padding-inline-end: 1.25rem; }
+.ps-6 { padding-inline-start: 1.5rem; }
+.pe-6 { padding-inline-end: 1.5rem; }
+.ps-8 { padding-inline-start: 2rem; }
+.pe-8 { padding-inline-end: 2rem; }
+
+/* Border utilities using logical properties */
+.border-s { border-inline-start-width: 1px; }
+.border-e { border-inline-end-width: 1px; }
+.border-s-0 { border-inline-start-width: 0; }
+.border-e-0 { border-inline-end-width: 0; }
+.border-s-2 { border-inline-start-width: 2px; }
+.border-e-2 { border-inline-end-width: 2px; }
+
+.rounded-s { border-start-start-radius: 0.25rem; border-end-start-radius: 0.25rem; }
+.rounded-e { border-start-end-radius: 0.25rem; border-end-end-radius: 0.25rem; }
+.rounded-s-lg { border-start-start-radius: 0.5rem; border-end-start-radius: 0.5rem; }
+.rounded-e-lg { border-start-end-radius: 0.5rem; border-end-end-radius: 0.5rem; }
+
+/* Positioning utilities using logical properties */
+.start-0 { inset-inline-start: 0; }
+.end-0 { inset-inline-end: 0; }
+.start-auto { inset-inline-start: auto; }
+.end-auto { inset-inline-end: auto; }
+.start-1 { inset-inline-start: 0.25rem; }
+.end-1 { inset-inline-end: 0.25rem; }
+.start-2 { inset-inline-start: 0.5rem; }
+.end-2 { inset-inline-end: 0.5rem; }
+.start-4 { inset-inline-start: 1rem; }
+.end-4 { inset-inline-end: 1rem; }
+
+/* Text alignment using logical properties */
+.text-start { text-align: start; }
+.text-end { text-align: end; }
+
+/* Float utilities using logical properties */
+.float-start { float: inline-start; }
+.float-end { float: inline-end; }
+
+/* ==========================================================================
+   RTL-Specific Overrides (for older browsers or specific cases)
+   ========================================================================== */
+
+/* Flip horizontal elements in RTL */
+[dir="rtl"] .rtl-flip,
+.rtl .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Don't flip certain elements (like flags, logos) */
+[dir="rtl"] .rtl-no-flip,
+.rtl .rtl-no-flip {
+  transform: scaleX(1) !important;
+}
+
+/* Reverse flex direction in RTL */
+[dir="rtl"] .rtl-flex-reverse,
+.rtl .rtl-flex-reverse {
+  flex-direction: row-reverse;
+}
+
+/* ==========================================================================
+   Component-Specific RTL Styles
+   ========================================================================== */
+
+/* Navigation */
+[dir="rtl"] .nav-item,
+.rtl .nav-item {
+  text-align: right;
+}
+
+[dir="rtl"] .nav-icon,
+.rtl .nav-icon {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+/* Sidebar */
+[dir="rtl"] .sidebar,
+.rtl .sidebar {
+  right: 0;
+  left: auto;
+  border-left: 1px solid var(--border-color);
+  border-right: none;
+}
+
+[dir="rtl"] .sidebar.sidebar-collapsed,
+.rtl .sidebar.sidebar-collapsed {
+  transform: translateX(100%);
+}
+
+/* Breadcrumbs */
+[dir="rtl"] .breadcrumb-separator,
+.rtl .breadcrumb-separator {
+  transform: scaleX(-1);
+}
+
+/* Progress bars */
+[dir="rtl"] .progress-bar,
+.rtl .progress-bar {
+  transform-origin: right;
+}
+
+/* Form elements */
+[dir="rtl"] .form-input,
+.rtl .form-input {
+  text-align: right;
+}
+
+[dir="rtl"] .form-label,
+.rtl .form-label {
+  text-align: right;
+}
+
+[dir="rtl"] .form-checkbox-label,
+.rtl .form-checkbox-label {
+  padding-left: 0;
+  padding-right: 1.75rem;
+}
+
+[dir="rtl"] .form-checkbox,
+.rtl .form-checkbox {
+  right: 0;
+  left: auto;
+}
+
+/* Input with icon */
+[dir="rtl"] .input-icon-start,
+.rtl .input-icon-start {
+  right: 0.75rem;
+  left: auto;
+}
+
+[dir="rtl"] .input-with-icon-start,
+.rtl .input-with-icon-start {
+  padding-right: 2.5rem;
+  padding-left: 0.75rem;
+}
+
+[dir="rtl"] .input-icon-end,
+.rtl .input-icon-end {
+  left: 0.75rem;
+  right: auto;
+}
+
+[dir="rtl"] .input-with-icon-end,
+.rtl .input-with-icon-end {
+  padding-left: 2.5rem;
+  padding-right: 0.75rem;
+}
+
+/* Buttons with icons */
+[dir="rtl"] .btn-icon-start,
+.rtl .btn-icon-start {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .btn-icon-end,
+.rtl .btn-icon-end {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Cards */
+[dir="rtl"] .card-actions,
+.rtl .card-actions {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+/* Tables */
+[dir="rtl"] table,
+.rtl table {
+  direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td,
+.rtl th,
+.rtl td {
+  text-align: right;
+}
+
+[dir="rtl"] th:first-child,
+[dir="rtl"] td:first-child,
+.rtl th:first-child,
+.rtl td:first-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+[dir="rtl"] th:last-child,
+[dir="rtl"] td:last-child,
+.rtl th:last-child,
+.rtl td:last-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+/* Lists */
+[dir="rtl"] .list-item-icon,
+.rtl .list-item-icon {
+  margin-right: 0;
+  margin-left: 0.75rem;
+}
+
+[dir="rtl"] ul,
+[dir="rtl"] ol,
+.rtl ul,
+.rtl ol {
+  padding-right: 1.5rem;
+  padding-left: 0;
+}
+
+/* Dropdowns */
+[dir="rtl"] .dropdown-menu,
+.rtl .dropdown-menu {
+  right: 0;
+  left: auto;
+  text-align: right;
+}
+
+[dir="rtl"] .dropdown-item-icon,
+.rtl .dropdown-item-icon {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+/* Modals */
+[dir="rtl"] .modal-close,
+.rtl .modal-close {
+  right: auto;
+  left: 1rem;
+}
+
+/* Tooltips */
+[dir="rtl"] .tooltip-start,
+.rtl .tooltip-start {
+  right: 100%;
+  left: auto;
+}
+
+[dir="rtl"] .tooltip-end,
+.rtl .tooltip-end {
+  left: 100%;
+  right: auto;
+}
+
+/* Alerts */
+[dir="rtl"] .alert-icon,
+.rtl .alert-icon {
+  margin-right: 0;
+  margin-left: 0.75rem;
+}
+
+[dir="rtl"] .alert-close,
+.rtl .alert-close {
+  right: auto;
+  left: 0.75rem;
+}
+
+/* Badges */
+[dir="rtl"] .badge-with-icon .badge-icon,
+.rtl .badge-with-icon .badge-icon {
+  margin-right: 0;
+  margin-left: 0.25rem;
+}
+
+/* Avatars with status */
+[dir="rtl"] .avatar-status,
+.rtl .avatar-status {
+  right: auto;
+  left: 0;
+}
+
+/* Timeline */
+[dir="rtl"] .timeline,
+.rtl .timeline {
+  padding-right: 2rem;
+  padding-left: 0;
+}
+
+[dir="rtl"] .timeline::before,
+.rtl .timeline::before {
+  right: 0.5rem;
+  left: auto;
+}
+
+[dir="rtl"] .timeline-item::before,
+.rtl .timeline-item::before {
+  right: -1.5rem;
+  left: auto;
+}
+
+/* ==========================================================================
+   Locale Switcher Styles
+   ========================================================================== */
+
+.locale-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.locale-switcher-rtl {
+  direction: rtl;
+}
+
+.locale-switcher-button,
+.locale-switcher-button-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary, #1a1a1a);
+  transition: all 0.2s ease;
+}
+
+.locale-switcher-button:hover,
+.locale-switcher-button-compact:hover {
+  background: var(--surface-tertiary, #ebebeb);
+  border-color: var(--border-hover, #bdbdbd);
+}
+
+.locale-switcher-button:focus,
+.locale-switcher-button-compact:focus {
+  outline: 2px solid var(--focus-ring, #6366f1);
+  outline-offset: 2px;
+}
+
+.locale-flag {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.locale-current {
+  font-weight: 500;
+}
+
+.locale-code {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.locale-chevron {
+  transition: transform 0.2s ease;
+}
+
+.locale-chevron-open {
+  transform: rotate(180deg);
+}
+
+.locale-dropdown,
+.locale-dropdown-compact {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 50;
+  min-width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--surface-primary, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+[dir="rtl"] .locale-dropdown,
+[dir="rtl"] .locale-dropdown-compact {
+  right: auto;
+  left: 0;
+}
+
+.locale-region-group {
+  padding: 0.25rem 0;
+}
+
+.locale-region-group:not(:last-child) {
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.locale-region-header {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  letter-spacing: 0.05em;
+}
+
+.locale-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary, #1a1a1a);
+  text-align: inherit;
+  transition: background 0.15s ease;
+}
+
+.locale-option:hover {
+  background: var(--surface-secondary, #f5f5f5);
+}
+
+.locale-option-selected {
+  background: var(--primary-50, #eef2ff);
+  color: var(--primary-700, #4338ca);
+}
+
+.locale-option-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.locale-native-name {
+  font-weight: 500;
+}
+
+.locale-english-name {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.locale-check {
+  flex-shrink: 0;
+  color: var(--primary-600, #4f46e5);
+}
+
+/* Inline variant */
+.locale-switcher-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.locale-inline-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.locale-region-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  letter-spacing: 0.05em;
+}
+
+.locale-inline-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.locale-inline-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--surface-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  color: var(--text-primary, #1a1a1a);
+  transition: all 0.15s ease;
+}
+
+.locale-inline-option:hover {
+  background: var(--surface-tertiary, #ebebeb);
+  border-color: var(--border-hover, #bdbdbd);
+}
+
+.locale-inline-selected {
+  background: var(--primary-100, #e0e7ff);
+  border-color: var(--primary-300, #a5b4fc);
+  color: var(--primary-700, #4338ca);
+}
+
+/* Compact variant */
+.locale-switcher-compact {
+  position: relative;
+  display: inline-block;
+}
+
+.locale-switcher-button-compact {
+  padding: 0.375rem 0.5rem;
+  gap: 0.25rem;
+}
+
+.locale-dropdown-compact {
+  min-width: 180px;
+}
+
+/* ==========================================================================
+   Animation utilities for RTL transitions
+   ========================================================================== */
+
+.rtl-transition {
+  transition: transform 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+}
+
+/* Slide animations */
+@keyframes slideInFromStart {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--slide-distance, 1rem)));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromEnd {
+  from {
+    opacity: 0;
+    transform: translateX(var(--slide-distance, 1rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+[dir="rtl"] .animate-slide-in-start {
+  animation: slideInFromEnd 0.3s ease;
+}
+
+[dir="ltr"] .animate-slide-in-start {
+  animation: slideInFromStart 0.3s ease;
+}
+
+[dir="rtl"] .animate-slide-in-end {
+  animation: slideInFromStart 0.3s ease;
+}
+
+[dir="ltr"] .animate-slide-in-end {
+  animation: slideInFromEnd 0.3s ease;
+}
