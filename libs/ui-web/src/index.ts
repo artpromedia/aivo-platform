@@ -19,6 +19,21 @@ export type {
   GradeThemeContextValue,
 } from './providers/GradeThemeProvider';
 
+// Localization System
+export {
+  LocaleProvider,
+  useLocale,
+  useTranslations,
+} from './providers/LocaleProvider';
+export type {
+  LocaleProviderProps,
+  LocaleContextValue,
+  TranslationMessages,
+} from './providers/LocaleProvider';
+
+export { LocaleSwitcher } from './components/locale-switcher';
+export type { LocaleSwitcherProps, LocaleSwitcherVariant } from './components/locale-switcher';
+
 // Theme Configuration
 export {
   K5Theme,
@@ -82,6 +97,41 @@ export {
 export { Badge } from './components/badge';
 export { Heading } from './components/heading';
 export { GradeThemeToggle } from './components/grade-theme-toggle';
+
+// Formatted Components (Localized display)
+export {
+  FormattedCurrency,
+  FormattedPercent,
+  FormattedCompactNumber,
+  FormattedDateTime,
+  FormattedTimeAgo,
+  FormattedOrdinal,
+  FormattedUnit,
+  FormattedRange,
+  FormattedLanguageName,
+  FormattedListItems,
+  FormattedPluralText,
+  FormattedScore,
+  FormattedDuration,
+  FormattedXP,
+} from './components/formatted';
+export type {
+  FormattedCurrencyProps,
+  FormattedPercentProps,
+  FormattedCompactNumberProps,
+  FormattedDateTimeProps,
+  FormattedTimeAgoProps,
+  FormattedOrdinalProps,
+  FormattedUnitProps,
+  FormattedRangeProps,
+  FormattedLanguageNameProps,
+  FormattedListItemsProps,
+  FormattedPluralTextProps,
+  FormattedScoreProps,
+  FormattedDurationProps,
+  FormattedXPProps,
+} from './components/formatted';
+
 export {
   Dialog,
   DialogTrigger,
@@ -217,3 +267,19 @@ export {
   WebPushManager,
   NotificationApiClient,
 } from './components/notifications';
+
+// Consent Management Components (GDPR/CCPA/LGPD)
+export {
+  ConsentProvider,
+  ConsentBanner,
+  ConsentPreferenceCenter,
+  ConsentManagerButton,
+  useConsent,
+  type ConsentState,
+  type ConsentActions,
+  type ConsentContextValue,
+  type ConsentPreferences,
+  type ConsentBannerProps,
+  type ConsentPreferenceCenterProps,
+  type ConsentManagerButtonProps,
+} from './components/consent-banner';
