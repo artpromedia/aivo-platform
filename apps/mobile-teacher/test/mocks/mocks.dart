@@ -3,7 +3,7 @@
 /// Mock implementations for testing.
 library;
 
-import 'package:flutter_common/flutter_common.dart' hide SyncStatus, SyncOperationType, SessionType;
+import 'package:flutter_common/flutter_common.dart' as fc hide SyncStatus, SyncOperationType, SessionType;
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile_teacher/models/models.dart';
@@ -16,9 +16,9 @@ import 'package:mobile_teacher/services/sync/connectivity_monitor.dart';
 // Service Mocks
 // ============================================================================
 
-class MockAivoApiClient extends Mock implements AivoApiClient {}
+class MockAivoApiClient extends Mock implements fc.AivoApiClient {}
 
-class MockOfflineDatabase extends Mock implements OfflineDatabase {}
+class MockOfflineDatabase extends Mock implements fc.OfflineDatabase {}
 
 class MockTeacherLocalDatabase extends Mock implements TeacherLocalDatabase {}
 
@@ -26,7 +26,7 @@ class MockSyncService extends Mock implements SyncService {}
 
 class MockConnectivityMonitor extends Mock implements ConnectivityMonitor {}
 
-class MockConnectivityService extends Mock implements ConnectivityService {}
+class MockConnectivityService extends Mock implements fc.ConnectivityService {}
 
 // ============================================================================
 // Repository Mocks

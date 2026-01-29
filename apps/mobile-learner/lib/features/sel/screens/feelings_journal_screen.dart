@@ -203,7 +203,7 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(bottom: 8, top: index > 0 ? 16 : 0),
+              padding: EdgeInsets.only(bottom: 8, top: index > 0 ? 16 : 0),
               child: Text(
                 dateKey,
                 style: TextStyle(
@@ -355,6 +355,7 @@ class _JournalEntryEditor extends StatefulWidget {
     required this.learnerId,
     required this.selService,
     required this.onSaved,
+    this.existingEntry,
   });
 
   @override

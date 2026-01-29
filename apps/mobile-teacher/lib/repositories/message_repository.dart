@@ -4,7 +4,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' as fc;
 
 import '../models/models.dart';
 import '../services/database/local_database.dart';
@@ -20,7 +20,7 @@ class MessageRepository {
     required this.connectivity,
   });
 
-  final AivoApiClient api;
+  final fc.AivoApiClient api;
   final TeacherLocalDatabase db;
   final SyncService sync;
   final ConnectivityMonitor connectivity;

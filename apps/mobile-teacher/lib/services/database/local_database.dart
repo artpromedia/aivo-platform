@@ -6,7 +6,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_common/flutter_common.dart' 
+import 'package:flutter_common/flutter_common.dart' as fc
     hide SyncStatus, SyncOperationType, SyncConflict, ConflictType;
 
 import '../../models/models.dart';
@@ -16,10 +16,10 @@ import '../../models/models.dart';
 /// This wraps the shared OfflineDatabase from flutter_common
 /// and adds teacher-specific data access methods.
 class TeacherLocalDatabase {
-  TeacherLocalDatabase({OfflineDatabase? database})
-      : _db = database ?? OfflineDatabase();
+  TeacherLocalDatabase({fc.OfflineDatabase? database})
+      : _db = database ?? fc.OfflineDatabase();
 
-  final OfflineDatabase _db;
+  final fc.OfflineDatabase _db;
 
   /// Close the database.
   Future<void> close() => _db.closeDatabase();
@@ -31,7 +31,7 @@ class TeacherLocalDatabase {
   /// Get all students.
   Future<List<Student>> getStudents() async {
     final learners = await _db.getAllLearners();
-    return learners.map(_learnerToStudent).toList();
+    return learners.map(_learnerToStudent).toList().cast<Student>();
   }
 
   /// Get a student by ID.
@@ -45,7 +45,7 @@ class TeacherLocalDatabase {
     // For now, return all learners. In a full implementation,
     // we'd filter by class membership.
     final learners = await _db.getAllLearners();
-    return learners.map(_learnerToStudent).toList();
+    return learners.map(_learnerToStudent).toList().cast<Student>();
   }
 
   /// Cache students.
@@ -76,7 +76,7 @@ class TeacherLocalDatabase {
     return updated;
   }
 
-  Student _learnerToStudent(OfflineLearner learner) {
+  Student _learnerToStudent(fc.OfflineLearner learner) {
     final metadata = learner.preferencesJson != null
         ? jsonDecode(learner.preferencesJson!) as Map<String, dynamic>
         : <String, dynamic>{};
@@ -103,7 +103,7 @@ class TeacherLocalDatabase {
     );
   }
 
-  OfflineLearner _studentToLearner(Student student) {
+  fc.OfflineLearner _studentToLearner(Student student) {
     final metadata = jsonEncode({
       'email': student.email,
       'classIds': student.classIds,
@@ -114,7 +114,7 @@ class TeacherLocalDatabase {
       'parentEmails': student.parentEmails,
     });
 
-    return OfflineLearner(
+    return fc.OfflineLearner(
       learnerId: student.id,
       displayName: student.fullName,
       gradeBand: _gradeToGradeBand(student.gradeLevel),
@@ -159,7 +159,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final session in sessions) {
       final jsonData = jsonEncode(session.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: session.id,
         contentType: 'session',
         subject: 'general',
@@ -193,7 +193,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final goal in goals) {
       final jsonData = jsonEncode(goal.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: goal.id,
         contentType: 'iep_goal',
         subject: 'iep',
@@ -235,7 +235,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final conv in conversations) {
       final jsonData = jsonEncode(conv.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: conv.id,
         contentType: 'conversation',
         subject: 'messaging',
@@ -256,7 +256,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final msg in messages) {
       final jsonData = jsonEncode(msg.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: msg.id,
         contentType: 'message',
         subject: 'messaging',
@@ -283,7 +283,7 @@ class TeacherLocalDatabase {
       'entityId': operation.entityId,
       'data': operation.data,
     });
-    await _db.enqueueSyncOperation(OfflineSyncQueueCompanion.insert(
+    await _db.enqueueSyncOperation(fc.OfflineSyncQueueCompanion.insert(
       operationType: operation.type.name,
       payloadJson: payload,
       createdAt: operation.createdAt.millisecondsSinceEpoch ~/ 1000,
@@ -293,7 +293,7 @@ class TeacherLocalDatabase {
   /// Get pending sync operations.
   Future<List<SyncOperation>> getPendingSyncOperations() async {
     final queue = await _db.getNextSyncOperations(limit: 100);
-    return queue.map(_queueItemToOperation).toList();
+    return queue.map(_queueItemToOperation).toList().cast<SyncOperation>();
   }
 
   /// Get pending sync count.
@@ -392,7 +392,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final assignment in assignments) {
       final jsonData = jsonEncode(assignment.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: assignment.id,
         contentType: 'assignment',
         subject: 'grades',
@@ -438,7 +438,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final submission in submissions) {
       final jsonData = jsonEncode(submission.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: submission.id,
         contentType: 'submission',
         subject: 'grades',
@@ -469,7 +469,7 @@ class TeacherLocalDatabase {
     final now = DateTime.now().millisecondsSinceEpoch;
     final expiresAt = DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch;
     final jsonData = jsonEncode(gradebook.toJson());
-    await _db.upsertContent(OfflineContent(
+    await _db.upsertContent(fc.OfflineContent(
       contentKey: 'gradebook_${gradebook.classId}',
       contentType: 'gradebook',
       subject: 'grades',
@@ -514,7 +514,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     for (final grade in grades) {
       final jsonData = jsonEncode(grade.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: 'grade_${grade.studentId}_${grade.assignmentId}',
         contentType: 'grade_entry',
         subject: 'grades',
@@ -548,7 +548,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch;
     for (final grade in grades) {
       final jsonData = jsonEncode(grade.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: 'student_grade_${grade.classId}_${grade.studentId}',
         contentType: 'student_grade',
         subject: 'grades',
@@ -582,7 +582,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch;
     for (final category in categories) {
       final jsonData = jsonEncode(category.toJson());
-      await _db.upsertContent(OfflineContent(
+      await _db.upsertContent(fc.OfflineContent(
         contentKey: category.id,
         contentType: 'category',
         subject: 'grades',
@@ -597,7 +597,7 @@ class TeacherLocalDatabase {
     }
   }
 
-  SyncOperation _queueItemToOperation(OfflineSyncQueueEntry item) {
+  SyncOperation _queueItemToOperation(fc.OfflineSyncQueueEntry item) {
     final payload = jsonDecode(item.payloadJson) as Map<String, dynamic>;
     return SyncOperation(
       id: item.id.toString(),
@@ -636,7 +636,7 @@ class TeacherLocalDatabase {
     final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
     final jsonData = jsonEncode(value);
     
-    await _db.upsertContent(OfflineContent(
+    await _db.upsertContent(fc.OfflineContent(
       contentKey: key,
       contentType: 'lms_cache',
       subject: 'google_classroom',

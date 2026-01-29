@@ -5,11 +5,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+// import 'package:integration_test/integration_test.dart';
 import 'package:mobile_learner/main.dart' as app;
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Offline Mode & Sync Integration Tests', () {
     testWidgets('download lesson for offline use', (tester) async {
@@ -120,7 +120,7 @@ void main() {
 
       // Simulate offline
       // Should show offline badge in app bar
-      final offlineBadge = find.text('Offline');
+      // final offlineBadge = find.text('Offline');
       
       // Verify either online or offline indicator present
       expect(find.byType(AppBar), findsOneWidget);

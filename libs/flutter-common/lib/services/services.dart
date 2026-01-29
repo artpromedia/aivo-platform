@@ -10,7 +10,7 @@ export 'auth_service.dart';
 export 'baseline_service.dart' hide QuestionOption;
 export 'content_service.dart' hide QuestionOption;
 export 'engagement_service.dart';
-export 'gamification_service.dart';
+export 'gamification_service.dart' hide Badge, LeaderboardEntry;
 export 'messaging_service.dart';
 export 'notification_service.dart';
 export 'profile_service.dart';
