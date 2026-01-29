@@ -277,7 +277,41 @@ class EnvironmentConfig {
     'VISUAL_LEARNING_BASE_URL',
     defaultValue: 'http://localhost:4040',
   );
+  /// Sensory service base URL.
+  static const String sensoryBaseUrl = String.fromEnvironment(
+    'SENSORY_BASE_URL',
+    defaultValue: 'https://api.aivo.app/sensory',
+  );
 
+  /// Sensory accommodations service base URL.
+  static const String sensoryAccommodationsBaseUrl = String.fromEnvironment(
+    'SENSORY_ACCOMMODATIONS_BASE_URL',
+    defaultValue: 'https://api.aivo.app/sensory-accommodations',
+  );
+
+  /// Speech therapy service base URL.
+  static const String speechTherapyBaseUrl = String.fromEnvironment(
+    'SPEECH_THERAPY_BASE_URL',
+    defaultValue: 'https://api.aivo.app/speech-therapy',
+  );
+
+  /// Accessibility settings/profile service base URL.
+  static const String profileServiceBaseUrl = String.fromEnvironment(
+    'PROFILE_SVC_BASE_URL',
+    defaultValue: 'https://api.aivo.app/profile',
+  );
+
+  /// Offline sync service base URL.
+  static const String offlineSyncBaseUrl = String.fromEnvironment(
+    'OFFLINE_SYNC_BASE_URL',
+    defaultValue: 'https://api.aivo.app/offline',
+  );
+
+  /// Content service base URL.
+  static const String contentServiceBaseUrl = String.fromEnvironment(
+    'CONTENT_BASE_URL',
+    defaultValue: 'https://api.aivo.app/content',
+  );
   // ══════════════════════════════════════════════════════════════════════════
   // VALIDATION
   // ══════════════════════════════════════════════════════════════════════════

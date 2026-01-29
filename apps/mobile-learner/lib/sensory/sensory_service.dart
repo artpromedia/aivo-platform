@@ -16,8 +16,8 @@ import 'sensory_models.dart';
 final sensoryServiceProvider = Provider<SensoryService>((ref) {
   return SensoryService(
     baseUrl: const String.fromEnvironment(
-      'CONTENT_SERVICE_URL',
-      defaultValue: 'http://localhost:4020',
+      'SENSORY_BASE_URL',
+      defaultValue: 'https://api.aivo.app/sensory',
     ),
   );
 });

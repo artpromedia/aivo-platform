@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 const _profileSvcBaseUrl = String.fromEnvironment(
   'PROFILE_SVC_BASE_URL',
-  defaultValue: 'http://localhost:4040',
+  defaultValue: 'https://api.aivo.app/profile',
 );
 
 // ══════════════════════════════════════════════════════════════════════════════

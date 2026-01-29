@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const String baseUrl = String.fromEnvironment(
   'API_URL',
-  defaultValue: 'http://localhost:4004',
+  defaultValue: 'https://api.aivo.app',
 );
 
 final dioProvider = Provider<Dio>((ref) {

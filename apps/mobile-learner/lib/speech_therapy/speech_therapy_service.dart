@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 
 import 'models.dart';
 
-const String _baseUrl = 'http://localhost:8083/api/speech';
+const String _baseUrl = 'https://api.aivo.app/speech-therapy';
 
 class SpeechTherapyService {
   final http.Client _client;

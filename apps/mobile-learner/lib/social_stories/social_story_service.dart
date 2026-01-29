@@ -16,8 +16,8 @@ import 'social_story_models.dart';
 final socialStoryServiceProvider = Provider<SocialStoryService>((ref) {
   return SocialStoryService(
     baseUrl: const String.fromEnvironment(
-      'CONTENT_SERVICE_URL',
-      defaultValue: 'http://localhost:4020',
+      'SOCIAL_STORIES_BASE_URL',
+      defaultValue: 'https://api.aivo.app/social-stories',
     ),
   );
 });

@@ -223,7 +223,11 @@ class EnvironmentConfig {
     'MESSAGING_API_URL',
     defaultValue: 'https://api.aivo.app',
   );
-
+  /// Home activities service base URL.
+  static const String homeActivitiesBaseUrl = String.fromEnvironment(
+    'HOME_ACTIVITIES_BASE_URL',
+    defaultValue: 'https://api.aivo.app/home-activities',
+  );
   // ══════════════════════════════════════════════════════════════════════════
   // VALIDATION
   // ══════════════════════════════════════════════════════════════════════════

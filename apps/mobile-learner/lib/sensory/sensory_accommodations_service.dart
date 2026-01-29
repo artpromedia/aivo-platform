@@ -9,7 +9,7 @@ class SensoryService {
   final http.Client client;
 
   SensoryService({
-    this.baseUrl = 'http://localhost:8087/api/sensory',
+    this.baseUrl = 'https://api.aivo.app/sensory-accommodations',
     http.Client? client,
   }) : client = client ?? http.Client();
 

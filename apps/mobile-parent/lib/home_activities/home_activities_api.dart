@@ -8,7 +8,7 @@ class HomeActivitiesApi {
   final http.Client client;
 
   HomeActivitiesApi({
-    this.baseUrl = 'http://localhost:8095',
+    this.baseUrl = 'https://api.aivo.app/home-activities',
     http.Client? client,
   }) : client = client ?? http.Client();
 

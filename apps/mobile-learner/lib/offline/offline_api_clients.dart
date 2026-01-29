@@ -16,22 +16,22 @@ import 'package:flutter_common/flutter_common.dart';
 
 const _learnerModelBaseUrl = String.fromEnvironment(
   'LEARNER_MODEL_BASE_URL',
-  defaultValue: 'http://localhost:4015',
+  defaultValue: 'https://api.aivo.app/learner-model',
 );
 
 const _sessionBaseUrl = String.fromEnvironment(
   'SESSION_BASE_URL',
-  defaultValue: 'http://localhost:4020',
+  defaultValue: 'https://api.aivo.app/sessions',
 );
 
 const _contentBaseUrl = String.fromEnvironment(
   'CONTENT_BASE_URL',
-  defaultValue: 'http://localhost:4030',
+  defaultValue: 'https://api.aivo.app/content',
 );
 
 const _analyticsBaseUrl = String.fromEnvironment(
   'ANALYTICS_BASE_URL',
-  defaultValue: 'http://localhost:4010',
+  defaultValue: 'https://api.aivo.app/analytics',
 );
 
 // ══════════════════════════════════════════════════════════════════════════════

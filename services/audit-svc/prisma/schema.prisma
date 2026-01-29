@@ -333,3 +333,88 @@ model AuditAlert {
   @@index([tenantId, severity])
   @@index([tenantId, createdAt])
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// SECURITY BREACH NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Security breach incidents requiring notification (GDPR Art. 33, CCPA)
+model SecurityBreach {
+  id                    String         @id @default(uuid()) @db.Uuid
+
+  tenantId              String         @db.Uuid
+
+  // Breach Details
+  breachType            String         // DATA_LEAK, UNAUTHORIZED_ACCESS, RANSOMWARE, etc.
+  severity              AuditSeverity
+  discoveredAt          DateTime       @db.Timestamptz
+  occurredAt            DateTime?      @db.Timestamptz  // When breach actually happened
+  containedAt           DateTime?      @db.Timestamptz  // When breach was contained
+
+  // Impact Assessment
+  affectedDataTypes     String[]       @default([])  // PII, PAYMENT, HEALTH, etc.
+  affectedUserCount     Int            @default(0)
+  affectedRecordCount   Int            @default(0)
+  affectedUserIds       String[]       @default([])
+
+  // Description
+  description           String
+  technicalDetails      String?
+  rootCause             String?
+  impactAssessment      Json?
+
+  // Regulatory Notifications
+  requiresNotification  Boolean        @default(true)  // Does this require regulatory notification?
+  notificationDeadline  DateTime?      @db.Timestamptz // 72 hours for GDPR
+  
+  // Supervisory Authority Notification (GDPR Art. 33)
+  regulatorNotifiedAt   DateTime?      @db.Timestamptz
+  regulatorNotifiedBy   String?        @db.Uuid
+  regulatorReference    String?
+  regulatorResponse     String?
+
+  // Data Subject Notification (GDPR Art. 34)
+  subjectsNotifiedAt    DateTime?      @db.Timestamptz
+  subjectsNotifiedBy    String?        @db.Uuid
+  notificationMethod    String?        // EMAIL, SMS, PORTAL, PUBLIC_ANNOUNCEMENT
+  notificationContent   String?
+
+  // Response & Remediation
+  responseActions       Json?          // Immediate actions taken
+  remediationPlan       Json?          // Long-term remediation steps
+  mitigationMeasures    String[]       @default([])
+  lessonsLearned        String?
+
+  // Status Tracking
+  status                String         @default("DISCOVERED")  // DISCOVERED, CONTAINED, INVESTIGATING, NOTIFIED, RESOLVED, CLOSED
+  isContained           Boolean        @default(false)
+  isResolved            Boolean        @default(false)
+  resolvedAt            DateTime?      @db.Timestamptz
+
+  // Responsibility
+  incidentOwnerId       String?        @db.Uuid
+  responseTeam          String[]       @default([])
+  
+  // Legal & Compliance
+  legalReviewRequired   Boolean        @default(false)
+  legalReviewedAt       DateTime?      @db.Timestamptz
+  legalReviewedBy       String?        @db.Uuid
+  legalOpinion          String?
+
+  // Documentation
+  attachments           Json?          // File references, evidence
+  relatedAuditLogIds    String[]       @default([])
+  externalReferences    String[]       @default([])  // External incident IDs
+
+  // Metadata
+  reportedById          String         @db.Uuid
+  metadata              Json?
+
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, severity])
+  @@index([tenantId, discoveredAt])
+  @@index([requiresNotification, regulatorNotifiedAt])
+  @@index([requiresNotification, subjectsNotifiedAt])
+}
