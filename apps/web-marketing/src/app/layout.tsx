@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/lib/auth/auth-provider';
+import { organizationSchema, platformSchema, SchemaScript } from '@/lib/schema-org';
 import './globals.css';
 
 // Fonts
@@ -29,20 +30,27 @@ export const metadata: Metadata = {
     template: '%s | AIVO Learning',
   },
   description:
-    'Revolutionary adaptive learning platform with personalized AI tutors (Virtual Brains) for neurodiverse K-12 learners. Supporting ADHD, Autism, Dyslexia, and all learning differences. FERPA & COPPA compliant.',
+    'AIVO uses Virtual Brain AI tutors to personalize K-12 education for neurodiverse learners. Features include real-time IEP tracking, adaptive lessons for ADHD, autism, and dyslexia, FERPA-compliant progress monitoring, and 24/7 AI tutoring support.',
   keywords: [
     'AIVO Learning',
+    'AI tutoring for ADHD students',
+    'autism education software',
+    'dyslexia learning platform',
     'virtual brain AI',
-    'personalized learning',
-    'neurodiverse education',
-    'ADHD learning support',
-    'autism education tools',
-    'dyslexia assistance',
-    'adaptive learning platform',
-    'IEP goal tracking',
+    'personalized learning neurodiverse',
+    'IEP goal tracking software',
     'special education technology',
-    'AI tutoring for kids',
-    'K-12 learning platform',
+    'adaptive learning platform',
+    'K-12 AI tutor',
+    'learning differences support',
+    'executive function training',
+    'multi-sensory learning',
+    'FERPA compliant education',
+    'COPPA compliant learning app',
+    'UDL learning platform',
+    'differentiated instruction software',
+    'neurodiversity education',
+    'inclusive learning technology',
   ],
   authors: [{ name: 'AIVO Learning', url: 'https://aivolearning.com' }],
   creator: 'AIVO Learning',
@@ -123,31 +131,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 
-        {/* Schema.org JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'AIVO Learning',
-              url: 'https://aivolearning.com',
-              logo: 'https://aivolearning.com/logo.png',
-              description: 'AI-powered personalized learning for neurodiverse K-12 students',
-              sameAs: [
-                'https://twitter.com/aivolearning',
-                'https://facebook.com/aivolearning',
-                'https://linkedin.com/company/aivolearning',
-              ],
-              contactPoint: {
-                '@type': 'ContactPoint',
-                telephone: '+1-800-AIVO',
-                contactType: 'customer service',
-                availableLanguage: 'English',
-              },
-            }),
-          }}
-        />
+        {/* Enhanced Schema.org JSON-LD for GEO */}
+        <SchemaScript schema={organizationSchema} />
+        <SchemaScript schema={platformSchema} />
       </head>
       <body className="min-h-screen bg-white font-sans antialiased">
         <ThemeProvider>
