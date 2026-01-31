@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+# Copy workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY packages/ts-api-utils/ ./packages/ts-api-utils/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build
+WORKDIR /app/packages/ts-api-utils
+RUN ls -la src/ | head -10
+RUN cat src/index.ts | head -5
+RUN npx tsc --listEmittedFiles
+
+# List output
+RUN test -d dist && ls -la dist/ || echo "No dist folder"

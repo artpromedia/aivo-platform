@@ -184,6 +184,7 @@ export default [
       "services/sandbox-svc/**/*.{ts,tsx}",
       "services/scorm-svc/**/*.{ts,tsx}",
       "services/session-svc/**/*.{ts,tsx}",
+      "services/sync-svc/**/*.{ts,tsx}",
       "services/writing-pad-svc/**/*.{ts,tsx}",
       "packages/i18n/**/*.{ts,tsx}",
       "packages/caching/**/*.{ts,tsx}",

@@ -153,7 +153,12 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post('/sensory-metadata', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = CreateSensoryMetadataSchema.parse(request.body);
-    const metadata = await sensoryMetadataService.createSensoryMetadata(body);
+    if (!body.learningObjectVersionId) {
+      return reply.status(400).send({ error: 'learningObjectVersionId is required' });
+    }
+    const metadata = await sensoryMetadataService.createSensoryMetadata(
+      body as { learningObjectVersionId: string } & typeof body
+    );
     return reply.status(201).send(metadata);
   });
 
@@ -403,10 +408,20 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
    */
   fastify.post('/sensory-incidents', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = CreateIncidentSchema.parse(request.body);
+    if (!body.learnerId || !body.tenantId || !body.incidentType || !body.triggerCategory) {
+      return reply
+        .status(400)
+        .send({ error: 'learnerId, tenantId, incidentType, and triggerCategory are required' });
+    }
     const incident = await sensoryIncidentService.createSensoryIncident({
       ...body,
       triggerTimestamp: body.triggerTimestamp ? new Date(body.triggerTimestamp) : undefined,
-    });
+    } as {
+      learnerId: string;
+      tenantId: string;
+      incidentType: string;
+      triggerCategory: 'audio' | 'visual' | 'motion' | 'tactile' | 'cognitive';
+    } & typeof body);
     return reply.status(201).send(incident);
   });
 
@@ -492,11 +507,16 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const body = ResolveIncidentSchema.parse(request.body);
       const incident = await sensoryIncidentService.resolveIncident(request.params.id, {
-        ...body,
+        resolvedByUserId: body.resolvedByUserId,
+        resolutionNotes: body.resolutionNotes,
         actionsTaken: body.actionsTaken?.map((a) => ({
-          ...a,
+          type: a.type,
+          description: a.description,
           performedAt: new Date(a.performedAt),
+          performedByUserId: a.performedByUserId,
         })),
+        profileUpdated: body.profileUpdated,
+        contentFlagged: body.contentFlagged,
       });
       return incident;
     }

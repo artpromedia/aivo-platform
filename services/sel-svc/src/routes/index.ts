@@ -4,6 +4,9 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+// Ensure the FastifyRequest type augmentation is imported
+import '../middleware/auth.js';
+
 import {
   // Profile schemas
   profileIdParamsSchema,
@@ -43,7 +46,7 @@ function sendValidationError(reply: FastifyReply, error: { issues: unknown[] }) 
 export default async function routes(fastify: FastifyInstance): Promise<void> {
   // Dashboard
   fastify.get('/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     return reply.send(await selService.getDashboard(tenantId));
   });
 
@@ -52,7 +55,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   // ══════════════════════════════════════════════════════════════════════════════
 
   fastify.get('/profiles', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const queryResult = listProfilesQuerySchema.safeParse(req.query);
     if (!queryResult.success) {
       return sendValidationError(reply, queryResult.error);
@@ -61,7 +64,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.post('/profiles', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const bodyResult = createProfileSchema.safeParse(req.body);
     if (!bodyResult.success) {
       return sendValidationError(reply, bodyResult.error);
@@ -71,7 +74,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.get('/profiles/:profileId', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const paramsResult = profileIdParamsSchema.safeParse(req.params);
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
@@ -82,7 +85,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.put('/profiles/:profileId', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const paramsResult = profileIdParamsSchema.safeParse(req.params);
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
@@ -106,7 +109,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.get(
     '/profiles/:profileId/check-ins',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
+      const tenantId = req.tenantId;
       const paramsResult = profileIdParamsSchema.safeParse(req.params);
       if (!paramsResult.success) {
         return sendValidationError(reply, paramsResult.error);
@@ -124,7 +127,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.post(
     '/profiles/:profileId/check-ins',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
+      const tenantId = req.tenantId;
       const paramsResult = profileIdParamsSchema.safeParse(req.params);
       if (!paramsResult.success) {
         return sendValidationError(reply, paramsResult.error);
@@ -145,7 +148,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.get(
     '/profiles/:profileId/mood-trends',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
+      const tenantId = req.tenantId;
       const paramsResult = profileIdParamsSchema.safeParse(req.params);
       if (!paramsResult.success) {
         return sendValidationError(reply, paramsResult.error);
@@ -167,7 +170,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.post(
     '/profiles/:profileId/assessments',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
+      const tenantId = req.tenantId;
       const paramsResult = profileIdParamsSchema.safeParse(req.params);
       if (!paramsResult.success) {
         return sendValidationError(reply, paramsResult.error);
@@ -224,7 +227,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   // ══════════════════════════════════════════════════════════════════════════════
 
   fastify.get('/activities', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const queryResult = listActivitiesQuerySchema.safeParse(req.query);
     if (!queryResult.success) {
       return sendValidationError(reply, queryResult.error);
@@ -260,8 +263,8 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.post(
     '/profiles/:profileId/interventions',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
-      const userId = (req as any).userId;
+      const tenantId = req.tenantId;
+      const userId = req.userId;
       const paramsResult = profileIdParamsSchema.safeParse(req.params);
       if (!paramsResult.success) {
         return sendValidationError(reply, paramsResult.error);
@@ -304,7 +307,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   // ══════════════════════════════════════════════════════════════════════════════
 
   fastify.get('/alerts', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const queryResult = getAlertsQuerySchema.safeParse(req.query);
     if (!queryResult.success) {
       return sendValidationError(reply, queryResult.error);
@@ -313,7 +316,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.post('/alerts/:alertId/acknowledge', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = (req as any).userId;
+    const userId = req.userId;
     const paramsResult = alertIdParamsSchema.safeParse(req.params);
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
@@ -323,7 +326,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   });
 
   fastify.post('/alerts/:alertId/resolve', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = (req as any).userId;
+    const userId = req.userId;
     const paramsResult = alertIdParamsSchema.safeParse(req.params);
     if (!paramsResult.success) {
       return sendValidationError(reply, paramsResult.error);
@@ -348,7 +351,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: POST /api/sel/mood-checkins -> internally routes to /profiles/:profileId/check-ins
   fastify.post('/mood-checkins', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const body = req.body as {
       learnerId?: string;
       mood?: string;
@@ -379,7 +382,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/mood-checkins?learnerId=xxx&limit=30
   fastify.get('/mood-checkins', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const query = req.query as { learnerId?: string; limit?: string };
 
     if (!query.learnerId) {
@@ -399,7 +402,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/regulation-strategies -> maps to /activities with type filter
   fastify.get('/regulation-strategies', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const query = req.query as { category?: string; difficulty?: string };
 
     const queryResult = listActivitiesQuerySchema.safeParse({
@@ -419,7 +422,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
   fastify.get(
     '/regulation-strategies/:strategyId',
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const tenantId = (req as any).tenantId;
+      const tenantId = req.tenantId;
       const params = req.params as { strategyId: string };
 
       const activity = await selService.getActivity(tenantId, params.strategyId);
@@ -479,7 +482,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/mindfulness
   fastify.get('/mindfulness', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const query = req.query as { type?: string; maxDuration?: string };
 
     const queryResult = listActivitiesQuerySchema.safeParse({
@@ -527,7 +530,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/social-scenarios
   fastify.get('/social-scenarios', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const query = req.query as { category?: string };
 
     const queryResult = listActivitiesQuerySchema.safeParse({
@@ -564,7 +567,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/journal?learnerId=xxx&limit=20
   fastify.get('/journal', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const query = req.query as { learnerId?: string; limit?: string };
 
     if (!query.learnerId) {
@@ -579,7 +582,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: POST /api/sel/journal
   fastify.post('/journal', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const body = req.body as {
       learnerId?: string;
       content?: string;
@@ -593,8 +596,8 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
     const entry = await selService.createJournalEntry(tenantId, body.learnerId, {
       content: body.content,
-      mood: body.mood,
-      tags: body.tags,
+      mood: body.mood ?? undefined,
+      tags: body.tags ?? undefined,
     });
     return reply.status(201).send({ data: entry });
   });
@@ -609,7 +612,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
 
   // Mobile: GET /api/sel/progress/:learnerId
   fastify.get('/progress/:learnerId', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (req as any).tenantId;
+    const tenantId = req.tenantId;
     const params = req.params as { learnerId: string };
 
     const progress = await selService.getLearnerProgress(tenantId, params.learnerId);

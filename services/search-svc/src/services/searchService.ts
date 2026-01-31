@@ -1,10 +1,5 @@
-import {
-  prisma,
-  Prisma,
-  IndexStatus,
-  DocumentStatus,
-  SearchEngine,
-} from '../prisma.js';
+import type { IndexStatus, SearchEngine } from '../prisma.js';
+import { prisma, Prisma } from '../prisma.js';
 
 // Index Management
 export async function createIndex(
@@ -15,22 +10,22 @@ export async function createIndex(
     engine?: SearchEngine;
     sourceType: string;
     sourceTable: string;
-    fields: Record<string, any>;
-    settings?: Record<string, any>;
-    mappings?: Record<string, any>;
+    fields: Record<string, unknown>;
+    settings?: Record<string, unknown>;
+    mappings?: Record<string, unknown>;
   }
 ) {
   return prisma.searchIndex.create({
     data: {
       tenantId,
       name: data.name,
-      description: data.description,
+      description: data.description ?? undefined,
       engine: data.engine || 'POSTGRES_FTS',
       sourceType: data.sourceType,
       sourceTable: data.sourceTable,
       fields: data.fields,
-      settings: data.settings,
-      mappings: data.mappings,
+      settings: data.settings ?? undefined,
+      mappings: data.mappings ?? undefined,
       status: 'BUILDING',
     },
   });
@@ -69,9 +64,9 @@ export async function updateIndex(
   indexId: string,
   data: {
     description?: string;
-    fields?: Record<string, any>;
-    settings?: Record<string, any>;
-    mappings?: Record<string, any>;
+    fields?: Record<string, unknown>;
+    settings?: Record<string, unknown>;
+    mappings?: Record<string, unknown>;
   }
 ) {
   return prisma.searchIndex.update({
@@ -95,8 +90,8 @@ export async function indexDocument(
   indexId: string,
   data: {
     sourceId: string;
-    content: Record<string, any>;
-    metadata?: Record<string, any>;
+    content: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   }
 ) {
   const searchVector = buildSearchVector(data.content);
@@ -110,14 +105,14 @@ export async function indexDocument(
       indexId,
       sourceId: data.sourceId,
       content: data.content,
-      metadata: data.metadata,
+      metadata: data.metadata ?? undefined,
       searchVector,
       status: 'INDEXED',
       indexedAt: new Date(),
     },
     update: {
       content: data.content,
-      metadata: data.metadata,
+      metadata: data.metadata ?? undefined,
       searchVector,
       status: 'INDEXED',
       indexedAt: new Date(),
@@ -130,8 +125,8 @@ export async function bulkIndexDocuments(
   indexId: string,
   documents: {
     sourceId: string;
-    content: Record<string, any>;
-    metadata?: Record<string, any>;
+    content: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
   }[]
 ) {
   const results = await Promise.allSettled(
@@ -168,7 +163,7 @@ export async function search(
   params: {
     indexName: string;
     query: string;
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
     page?: number;
     pageSize?: number;
     sortBy?: string;
@@ -235,7 +230,7 @@ export async function search(
       tenantId,
       indexName: params.indexName,
       query: params.query,
-      filters: params.filters,
+      filters: params.filters ?? undefined,
       resultCount: totalCount,
       latencyMs,
     },
@@ -251,7 +246,7 @@ export async function search(
       source: doc.content,
       metadata: doc.metadata,
       ...(params.highlight && {
-        highlights: generateHighlights(doc.content as Record<string, any>, searchTerms),
+        highlights: generateHighlights(doc.content as Record<string, unknown>, searchTerms),
       }),
     })
   );
@@ -317,7 +312,7 @@ export async function addBoostRule(
   data: {
     field: string;
     boostFactor: number;
-    condition?: Record<string, any>;
+    condition?: Record<string, unknown>;
   }
 ) {
   return prisma.boostRule.create({
@@ -326,7 +321,7 @@ export async function addBoostRule(
       indexId,
       field: data.field,
       boostFactor: data.boostFactor,
-      condition: data.condition,
+      condition: data.condition ?? undefined,
     },
   });
 }
@@ -339,7 +334,7 @@ export async function configureFacet(
     field: string;
     label: string;
     type?: string;
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
     sortOrder?: number;
   }
 ) {
@@ -443,7 +438,7 @@ export async function getSearchAnalytics(
 }
 
 // Helper functions
-function buildSearchVector(content: Record<string, any>): string {
+function buildSearchVector(content: Record<string, unknown>): string {
   const values: string[] = [];
   for (const value of Object.values(content)) {
     if (typeof value === 'string') {
@@ -469,7 +464,7 @@ function expandQueryWithSynonyms(
 }
 
 function generateHighlights(
-  content: Record<string, any>,
+  content: Record<string, unknown>,
   terms: string[]
 ): Record<string, string[]> {
   const highlights: Record<string, string[]> = {};
@@ -500,9 +495,9 @@ async function buildFacets(indexId: string, tenantId: string, facetFields: strin
 
     const valueCounts: Record<string, number> = {};
     for (const doc of documents) {
-      const content = doc.content as Record<string, any>;
+      const content = doc.content as Record<string, unknown>;
       const value = content[field];
-      if (value) {
+      if (value && (typeof value === 'string' || typeof value === 'number')) {
         const key = String(value);
         valueCounts[key] = (valueCounts[key] || 0) + 1;
       }

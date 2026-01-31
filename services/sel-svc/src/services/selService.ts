@@ -10,19 +10,20 @@ import { prisma } from '../prisma.js';
 // STUDENT PROFILES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function createStudentProfile(tenantId: string, input: any) {
+export async function createStudentProfile(tenantId: string, input: unknown) {
+  const data = input as Record<string, unknown>;
   return prisma.studentSELProfile.create({
     data: {
       tenantId,
-      studentId: input.studentId,
-      riskLevel: input.riskLevel || 'LOW',
-      riskFactors: input.riskFactors || [],
-      protectiveFactors: input.protectiveFactors || [],
-      preferredCheckInTime: input.preferredCheckInTime,
-      preferredActivities: input.preferredActivities || [],
-      strengths: input.strengths,
-      growthAreas: input.growthAreas,
-      supportStrategies: input.supportStrategies,
+      studentId: data.studentId as string,
+      riskLevel: (data.riskLevel as string | undefined) || 'LOW',
+      riskFactors: (data.riskFactors as string[] | undefined) || [],
+      protectiveFactors: (data.protectiveFactors as string[] | undefined) || [],
+      preferredCheckInTime: data.preferredCheckInTime as string | undefined,
+      preferredActivities: (data.preferredActivities as string[] | undefined) || [],
+      strengths: data.strengths as string | undefined,
+      growthAreas: data.growthAreas as string | undefined,
+      supportStrategies: data.supportStrategies as string | undefined,
     },
   });
 }
@@ -39,10 +40,14 @@ export async function getStudentProfile(tenantId: string, profileId: string) {
   });
 }
 
-export async function listStudentProfiles(tenantId: string, query: any) {
-  const { riskLevel, search, page = 1, pageSize = 20 } = query;
+export async function listStudentProfiles(tenantId: string, query: unknown) {
+  const params = query as Record<string, unknown>;
+  const riskLevel = params.riskLevel as string | undefined;
+  const search = params.search as string | undefined;
+  const page = (params.page as number | undefined) || 1;
+  const pageSize = (params.pageSize as number | undefined) || 20;
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     tenantId,
     ...(riskLevel && { riskLevel }),
     ...(search && { studentId: { contains: search, mode: 'insensitive' } }),
@@ -66,10 +71,10 @@ export async function listStudentProfiles(tenantId: string, query: any) {
   };
 }
 
-export async function updateStudentProfile(tenantId: string, profileId: string, input: any) {
+export async function updateStudentProfile(tenantId: string, profileId: string, input: unknown) {
   return prisma.studentSELProfile.update({
     where: { id: profileId },
-    data: input,
+    data: input as Record<string, unknown>,
   });
 }
 
@@ -77,24 +82,25 @@ export async function updateStudentProfile(tenantId: string, profileId: string, 
 // CHECK-INS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function createCheckIn(tenantId: string, profileId: string, input: any) {
+export async function createCheckIn(tenantId: string, profileId: string, input: unknown) {
+  const data = input as Record<string, unknown>;
   const checkIn = await prisma.checkIn.create({
     data: {
       tenantId,
       studentProfileId: profileId,
-      checkInType: input.checkInType || 'MOOD',
-      moodRating: input.moodRating,
-      moodEmoji: input.moodEmoji,
-      emotions: input.emotions || [],
-      energyLevel: input.energyLevel,
-      context: input.context,
-      location: input.location,
-      trigger: input.trigger,
-      reflection: input.reflection,
-      gratitude: input.gratitude,
-      goal: input.goal,
-      needsSupport: input.needsSupport || false,
-      isPrivate: input.isPrivate || false,
+      checkInType: (data.checkInType as string | undefined) || 'MOOD',
+      moodRating: data.moodRating as number | undefined,
+      moodEmoji: data.moodEmoji as string | undefined,
+      emotions: (data.emotions as string[] | undefined) || [],
+      energyLevel: data.energyLevel as number | undefined,
+      context: data.context as string | undefined,
+      location: data.location as string | undefined,
+      trigger: data.trigger as string | undefined,
+      reflection: data.reflection as string | undefined,
+      gratitude: data.gratitude as string | undefined,
+      goal: data.goal as string | undefined,
+      needsSupport: (data.needsSupport as boolean | undefined) || false,
+      isPrivate: (data.isPrivate as boolean | undefined) || false,
     },
   });
 
@@ -105,22 +111,27 @@ export async function createCheckIn(tenantId: string, profileId: string, input: 
   });
 
   // Check for alerts
-  if (input.needsSupport || (input.moodRating && input.moodRating <= 2)) {
+  if (data.needsSupport || (data.moodRating && (data.moodRating as number) <= 2)) {
+    const moodRating = data.moodRating as number | undefined;
     await createAlert(tenantId, profileId, {
-      alertType: input.needsSupport ? 'FOLLOW_UP_REQUIRED' : 'LOW_MOOD_PATTERN',
-      severity: input.moodRating === 1 ? 'HIGH' : 'MEDIUM',
-      title: input.needsSupport ? 'Student requested support' : 'Low mood check-in',
-      description: `Student reported ${input.moodRating ? `mood rating of ${input.moodRating}` : 'needing support'}`,
+      alertType: data.needsSupport ? 'FOLLOW_UP_REQUIRED' : 'LOW_MOOD_PATTERN',
+      severity: moodRating === 1 ? 'HIGH' : 'MEDIUM',
+      title: data.needsSupport ? 'Student requested support' : 'Low mood check-in',
+      description: `Student reported ${moodRating !== undefined ? `mood rating of ${moodRating}` : 'needing support'}`,
     });
   }
 
   return checkIn;
 }
 
-export async function getCheckIns(tenantId: string, profileId: string, options: any = {}) {
-  const { fromDate, toDate, page = 1, pageSize = 20 } = options;
+export async function getCheckIns(tenantId: string, profileId: string, options: unknown = {}) {
+  const params = options as Record<string, unknown>;
+  const fromDate = params.fromDate as string | undefined;
+  const toDate = params.toDate as string | undefined;
+  const page = (params.page as number | undefined) || 1;
+  const pageSize = (params.pageSize as number | undefined) || 20;
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     tenantId,
     studentProfileId: profileId,
     ...(fromDate || toDate
@@ -196,14 +207,15 @@ export async function getMoodTrends(tenantId: string, profileId: string, days = 
 // ASSESSMENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function createAssessment(tenantId: string, profileId: string, input: any) {
+export async function createAssessment(tenantId: string, profileId: string, input: unknown) {
+  const data = input as Record<string, unknown>;
   return prisma.assessment.create({
     data: {
       tenantId,
       studentProfileId: profileId,
-      templateId: input.templateId,
-      administeredBy: input.administeredBy,
-      administrationContext: input.administrationContext,
+      templateId: data.templateId as string,
+      administeredBy: data.administeredBy as string,
+      administrationContext: data.administrationContext as string | undefined,
       status: 'IN_PROGRESS',
     },
   });
@@ -262,10 +274,8 @@ export async function completeAssessment(assessmentId: string) {
           competencyScores[competencyId] = { sum: 0, count: 0 };
         }
         const entry = competencyScores[competencyId];
-        if (entry) {
-          entry.sum += response.score;
-          entry.count++;
-        }
+        entry.sum += response.score;
+        entry.count++;
       }
     }
   }
@@ -290,21 +300,20 @@ export async function completeAssessment(assessmentId: string) {
 // ACTIVITIES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function listActivities(tenantId: string, query: any) {
-  const {
-    competencyId,
-    activityType,
-    gradeLevel,
-    type,
-    category,
-    difficulty,
-    subtype,
-    maxDuration,
-    page = 1,
-    pageSize = 20,
-  } = query;
+export async function listActivities(tenantId: string, query: unknown) {
+  const params = query as Record<string, unknown>;
+  const competencyId = params.competencyId as string | undefined;
+  const activityType = params.activityType as string | undefined;
+  const gradeLevel = params.gradeLevel as number | undefined;
+  const type = params.type as string | undefined;
+  const category = params.category as string | undefined;
+  const difficulty = params.difficulty as string | undefined;
+  const subtype = params.subtype as string | undefined;
+  const maxDuration = params.maxDuration as number | undefined;
+  const page = (params.page as number | undefined) || 1;
+  const pageSize = (params.pageSize as number | undefined) || 20;
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     tenantId,
     isActive: true,
     ...(competencyId && { competencyId }),
@@ -365,17 +374,22 @@ export async function toggleActivityFavorite(
   }
 }
 
-export async function recordActivityCompletion(profileId: string, activityId: string, input: any) {
+export async function recordActivityCompletion(
+  profileId: string,
+  activityId: string,
+  input: unknown
+) {
+  const data = input as Record<string, unknown>;
   return prisma.activityCompletion.create({
     data: {
       studentProfileId: profileId,
       activityId,
-      duration: input.duration,
-      rating: input.rating,
-      reflection: input.reflection,
-      helpfulness: input.helpfulness,
-      assignedBy: input.assignedBy,
-      context: input.context,
+      duration: data.duration as number | undefined,
+      rating: data.rating as number | undefined,
+      reflection: data.reflection as string | undefined,
+      helpfulness: data.helpfulness as number | undefined,
+      assignedBy: data.assignedBy as string | undefined,
+      context: data.context as string | undefined,
     },
   });
 }
@@ -388,41 +402,43 @@ export async function createIntervention(
   tenantId: string,
   profileId: string,
   userId: string,
-  input: any
+  input: unknown
 ) {
+  const data = input as Record<string, unknown>;
   return prisma.intervention.create({
     data: {
       tenantId,
       studentProfileId: profileId,
-      name: input.name,
-      description: input.description,
-      interventionType: input.interventionType,
-      targetCompetencies: input.targetCompetencies || [],
-      strategies: input.strategies || [],
-      frequency: input.frequency,
-      duration: input.duration,
-      startDate: new Date(input.startDate),
-      endDate: input.endDate ? new Date(input.endDate) : null,
-      interventionist: input.interventionist,
-      supportTeam: input.supportTeam || [],
-      baselineData: input.baselineData,
-      goalData: input.goalData,
+      name: data.name as string,
+      description: data.description as string | undefined,
+      interventionType: data.interventionType as string,
+      targetCompetencies: (data.targetCompetencies as string[] | undefined) || [],
+      strategies: (data.strategies as string[] | undefined) || [],
+      frequency: data.frequency as string | undefined,
+      duration: data.duration as number | undefined,
+      startDate: new Date(data.startDate as string),
+      endDate: data.endDate ? new Date(data.endDate as string) : null,
+      interventionist: data.interventionist as string | undefined,
+      supportTeam: (data.supportTeam as string[] | undefined) || [],
+      baselineData: data.baselineData as Record<string, unknown> | undefined,
+      goalData: data.goalData as Record<string, unknown> | undefined,
       status: 'PLANNED',
       createdBy: userId,
     },
   });
 }
 
-export async function logInterventionSession(interventionId: string, input: any) {
+export async function logInterventionSession(interventionId: string, input: unknown) {
+  const data = input as Record<string, unknown>;
   return prisma.interventionLog.create({
     data: {
       interventionId,
-      duration: input.duration,
-      activitiesCompleted: input.activitiesCompleted || [],
-      studentResponse: input.studentResponse,
-      progressNotes: input.progressNotes,
-      dataPoints: input.dataPoints,
-      loggedBy: input.loggedBy,
+      duration: data.duration as number | undefined,
+      activitiesCompleted: (data.activitiesCompleted as string[] | undefined) || [],
+      studentResponse: data.studentResponse as string | undefined,
+      progressNotes: data.progressNotes as string | undefined,
+      dataPoints: data.dataPoints as Record<string, unknown> | undefined,
+      loggedBy: data.loggedBy as string,
     },
   });
 }
@@ -431,25 +447,30 @@ export async function logInterventionSession(interventionId: string, input: any)
 // ALERTS
 // ══════════════════════════════════════════════════════════════════════════════
 
-async function createAlert(tenantId: string, profileId: string, input: any) {
+async function createAlert(tenantId: string, profileId: string, input: unknown) {
+  const data = input as Record<string, unknown>;
   return prisma.sELAlert.create({
     data: {
       tenantId,
       studentProfileId: profileId,
-      alertType: input.alertType,
-      severity: input.severity,
-      title: input.title,
-      description: input.description,
-      triggerData: input.triggerData,
+      alertType: data.alertType as string,
+      severity: data.severity as string,
+      title: data.title as string,
+      description: data.description as string | undefined,
+      triggerData: data.triggerData as Record<string, unknown> | undefined,
       status: 'NEW',
     },
   });
 }
 
-export async function getAlerts(tenantId: string, options: any = {}) {
-  const { status, severity, page = 1, pageSize = 20 } = options;
+export async function getAlerts(tenantId: string, options: unknown = {}) {
+  const params = options as Record<string, unknown>;
+  const status = params.status as string | undefined;
+  const severity = params.severity as string | undefined;
+  const page = (params.page as number | undefined) || 1;
+  const pageSize = (params.pageSize as number | undefined) || 20;
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     tenantId,
     ...(status && { status }),
     ...(severity && { severity }),
@@ -565,8 +586,8 @@ export async function createJournalEntry(
       tenantId,
       studentProfileId: learnerId,
       content: input.content,
-      mood: input.mood,
-      tags: input.tags || [],
+      mood: input.mood ?? undefined,
+      tags: input.tags ?? [],
     },
   });
 }

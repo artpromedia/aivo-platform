@@ -51,12 +51,28 @@ export async function createSensoryIncident(
 
   return prisma.sensoryIncident.create({
     data: {
-      ...rest,
+      learnerId: rest.learnerId,
+      tenantId: rest.tenantId,
+      contentId: rest.contentId ?? undefined,
+      contentType: rest.contentType ?? undefined,
+      contentTitle: rest.contentTitle ?? undefined,
+      sessionId: rest.sessionId ?? undefined,
+      activityId: rest.activityId ?? undefined,
+      incidentType: rest.incidentType,
+      triggerCategory: rest.triggerCategory,
+      triggerDescription: rest.triggerDescription ?? undefined,
+      triggerTimestamp: rest.triggerTimestamp ?? undefined,
+      reportedByUserId: rest.reportedByUserId ?? undefined,
+      reportedByRole: rest.reportedByRole ?? undefined,
+      userDescription: rest.userDescription ?? undefined,
+      systemDetected: rest.systemDetected ?? undefined,
+      detectionMethod: rest.detectionMethod ?? undefined,
+      detectionConfidence: rest.detectionConfidence ?? undefined,
       severity: severity
         ? (severity.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL')
         : 'MEDIUM',
-      behavioralSignals: behavioralSignals ?? [],
-      actionsTaken: [],
+      behavioralSignals: (behavioralSignals ?? []) as Prisma.InputJsonValue,
+      actionsTaken: [] as Prisma.InputJsonValue,
     },
   });
 }
@@ -81,8 +97,11 @@ export async function createSystemDetectedIncident(
     severity?: 'low' | 'medium' | 'high' | 'critical';
   }
 ): Promise<PrismaSensoryIncident> {
-  const profile = await prisma.learnerSensoryProfile.findUnique({
-    where: { learnerId },
+  const profile = await prisma.learnerSensoryProfile.findFirst({
+    where: {
+      learnerId,
+      tenantId,
+    },
     select: { id: true },
   });
 
@@ -90,23 +109,23 @@ export async function createSystemDetectedIncident(
     data: {
       learnerId,
       tenantId,
-      profileId: profile?.id ?? null,
-      contentId: data.contentId ?? null,
-      contentType: data.contentType ?? null,
-      contentTitle: data.contentTitle ?? null,
-      sessionId: data.sessionId ?? null,
-      activityId: data.activityId ?? null,
+      profileId: profile?.id ?? undefined,
+      contentId: data.contentId ?? undefined,
+      contentType: data.contentType ?? undefined,
+      contentTitle: data.contentTitle ?? undefined,
+      sessionId: data.sessionId ?? undefined,
+      activityId: data.activityId ?? undefined,
       incidentType: data.incidentType,
       triggerCategory: data.triggerCategory,
       triggerTimestamp: new Date(),
       systemDetected: true,
       detectionMethod: data.detectionMethod,
       detectionConfidence: data.detectionConfidence,
-      behavioralSignals: data.behavioralSignals,
+      behavioralSignals: data.behavioralSignals as Prisma.InputJsonValue,
       severity: data.severity
         ? (data.severity.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL')
         : 'MEDIUM',
-      actionsTaken: [],
+      actionsTaken: [] as Prisma.InputJsonValue,
     },
   });
 }
@@ -265,7 +284,7 @@ export async function resolveIncident(
   const actionsTaken = [
     ...((current?.actionsTaken as unknown[]) ?? []),
     ...(input.actionsTaken ?? []),
-  ];
+  ] as Prisma.InputJsonValue;
 
   return prisma.sensoryIncident.update({
     where: { id },
@@ -273,7 +292,7 @@ export async function resolveIncident(
       status: 'RESOLVED',
       resolvedAt: new Date(),
       resolvedByUserId: input.resolvedByUserId,
-      resolutionNotes: input.resolutionNotes,
+      resolutionNotes: input.resolutionNotes ?? undefined,
       actionsTaken,
       profileUpdated: input.profileUpdated ?? false,
       contentFlagged: input.contentFlagged ?? false,
@@ -312,11 +331,19 @@ export async function addActionToIncident(
     select: { actionsTaken: true },
   });
 
-  const actionsTaken = [...((current?.actionsTaken as unknown[]) ?? []), action];
+  const actionsTaken = [
+    ...((current?.actionsTaken as unknown[]) ?? []),
+    {
+      type: action.type,
+      description: action.description,
+      performedAt: action.performedAt,
+      performedByUserId: action.performedByUserId ?? undefined,
+    },
+  ];
 
   return prisma.sensoryIncident.update({
     where: { id },
-    data: { actionsTaken: actionsTaken as unknown as Prisma.InputJsonValue },
+    data: { actionsTaken: actionsTaken as Prisma.InputJsonValue },
   });
 }
 

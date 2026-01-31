@@ -46,20 +46,41 @@ export async function createSensoryMetadata(
   return prisma.contentSensoryMetadata.create({
     data: {
       learningObjectVersionId,
+      hasAudio: rest.hasAudio ?? undefined,
+      hasSuddenSounds: rest.hasSuddenSounds ?? undefined,
+      hasBackgroundMusic: rest.hasBackgroundMusic ?? undefined,
+      audioLevel: rest.audioLevel ?? undefined,
+      peakVolume: rest.peakVolume ?? undefined,
+      canMuteAudio: rest.canMuteAudio ?? undefined,
+      hasFlashing: rest.hasFlashing ?? undefined,
+      flashFrequency: rest.flashFrequency ?? undefined,
       visualComplexity: visualComplexity
         ? (visualComplexity.toUpperCase() as 'SIMPLE' | 'MODERATE' | 'COMPLEX')
         : 'MODERATE',
+      hasVibrantColors: rest.hasVibrantColors ?? undefined,
+      contrastLevel: rest.contrastLevel ?? undefined,
+      hasAnimation: rest.hasAnimation ?? undefined,
       animationIntensity: animationIntensity
         ? (animationIntensity.toUpperCase() as 'NONE' | 'MILD' | 'MODERATE' | 'INTENSE')
         : 'NONE',
+      animationReducible: rest.animationReducible ?? undefined,
+      hasQuickMotion: rest.hasQuickMotion ?? undefined,
+      requiresFineTouchInput: rest.requiresFineTouchInput ?? undefined,
+      hasHapticFeedback: rest.hasHapticFeedback ?? undefined,
+      canDisableHaptic: rest.canDisableHaptic ?? undefined,
       cognitiveLoad: cognitiveLoad
         ? (cognitiveLoad.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH')
         : 'MEDIUM',
+      hasTimeLimits: rest.hasTimeLimits ?? undefined,
+      timeLimitsAdjustable: rest.timeLimitsAdjustable ?? undefined,
+      requiresQuickReactions: rest.requiresQuickReactions ?? undefined,
+      hasScrolling: rest.hasScrolling ?? undefined,
+      hasParallax: rest.hasParallax ?? undefined,
+      overallIntensityScore: rest.overallIntensityScore ?? undefined,
       sensoryWarnings: (sensoryWarnings ?? []) as Prisma.InputJsonValue,
       suitableForPhotosensitive,
       suitableForAudioSensitive,
       suitableForMotionSensitive,
-      ...rest,
     },
   });
 }

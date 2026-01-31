@@ -175,9 +175,9 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerFunctioningProfile.findUnique({
           where: {
-            learnerId_tenantId: {
-              learnerId,
+            tenantId_learnerId: {
               tenantId: context.tenantId,
+              learnerId,
             },
           },
         });
@@ -220,18 +220,32 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerFunctioningProfile.upsert({
           where: {
-            learnerId_tenantId: {
-              learnerId,
+            tenantId_learnerId: {
               tenantId: context.tenantId,
+              learnerId,
             },
           },
           create: {
             id: crypto.randomUUID(),
             learnerId,
             tenantId: context.tenantId,
-            ...parseResult.data,
+            functioningLevel: parseResult.data.functioningLevel,
+            determinedBy: parseResult.data.determinedBy,
+            cognitiveIndicators: parseResult.data.cognitiveIndicators ?? undefined,
+            dailyLivingSkills: parseResult.data.dailyLivingSkills ?? undefined,
+            supportNeeds: parseResult.data.supportNeeds ?? undefined,
+            assessmentNotes: parseResult.data.assessmentNotes ?? undefined,
+            createdByUserId: context.userId,
           },
-          update: parseResult.data,
+          update: {
+            functioningLevel: parseResult.data.functioningLevel,
+            determinedBy: parseResult.data.determinedBy,
+            cognitiveIndicators: parseResult.data.cognitiveIndicators ?? undefined,
+            dailyLivingSkills: parseResult.data.dailyLivingSkills ?? undefined,
+            supportNeeds: parseResult.data.supportNeeds ?? undefined,
+            assessmentNotes: parseResult.data.assessmentNotes ?? undefined,
+            updatedByUserId: context.userId,
+          },
         });
 
         console.log('[functioning-profile-routes] functioning_profile_created', {
@@ -630,7 +644,12 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       const schema = z.object({
         tenantId: z.string().uuid(),
         learnerId: z.string().uuid(),
-        assessmentType: z.enum(['STANDARD', 'STANDARD_WITH_ACCOMMODATIONS', 'MODIFIED', 'ALTERNATE']),
+        assessmentType: z.enum([
+          'STANDARD',
+          'STANDARD_WITH_ACCOMMODATIONS',
+          'MODIFIED',
+          'ALTERNATE',
+        ]),
         parentAssessmentScore: z.number().min(0).max(100).optional(),
         hasIepDocumentation: z.boolean().optional(),
         createdByUserId: z.string(),
@@ -649,7 +668,10 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         // Map AssessmentType from baseline-svc to profile-svc enum
         // Also set legacy AssessmentMode for backward compatibility
-        const legacyModeMap: Record<string, 'STANDARD' | 'MODIFIED' | 'SUPPORTED' | 'OBSERVATIONAL'> = {
+        const legacyModeMap: Record<
+          string,
+          'STANDARD' | 'MODIFIED' | 'SUPPORTED' | 'OBSERVATIONAL'
+        > = {
           STANDARD: 'STANDARD',
           STANDARD_WITH_ACCOMMODATIONS: 'STANDARD',
           MODIFIED: 'MODIFIED',
@@ -726,7 +748,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
     '/internal/learner-functioning-profile/:learnerId',
     async (request, reply: FastifyReply) => {
       const { learnerId } = request.params;
-      const tenantId = request.query.tenantId || request.headers['x-tenant-id'] as string;
+      const tenantId = request.query.tenantId || (request.headers['x-tenant-id'] as string);
 
       if (!tenantId) {
         return reply.status(400).send({ error: 'tenantId is required' });
