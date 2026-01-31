@@ -3,14 +3,14 @@
 # https://pub.dev/packages/flutter_launcher_icons
 
 flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/icons/aivo-appicon-scholar.svg"
+  android: "ic_launcher"
+  ios: false
+  image_path: "assets/icons/aivo-appicon-scholar.png"
   min_sdk_android: 21
 
   # Adaptive icon configuration (Android 8.0+)
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/icons/aivo-appicon-scholar.svg"
+  adaptive_icon_background: "#7C3AED"
+  adaptive_icon_foreground: "assets/icons/aivo-icon-purple.png"
   adaptive_icon_monochrome: "assets/icons/app_icon_monochrome.png"
 
   # Android specific
@@ -21,10 +21,10 @@ flutter_launcher_icons:
 
   # Web favicon
   web:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
-    background_color: "#FFFFFF"
-    theme_color: "#4F46E5"
+    generate: false
+    image_path: "assets/icons/aivo-appicon-scholar.png"
+    background_color: "#7C3AED"
+    theme_color: "#7C3AED"
 
   # Windows specific
   windows:

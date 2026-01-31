@@ -27,12 +27,15 @@ dependencies:
   sqflite: ^2.3.3+2
   hive_flutter: ^1.1.0
   intl: ^0.20.2
-  uni_links: ^0.5.1
+  app_links: ^6.3.3
   image_picker: ^1.0.7
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:
     path: ../../libs/flutter-notifications
+
+dependency_overrides:
+  flutter_local_notifications: ^17.2.3
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +45,27 @@ dev_dependencies:
   json_serializable: ^6.8.0
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+# Configure app launcher icons  
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: false  # Not configured yet
+  image_path: "assets/icons/aivo-appicon-scholar.png"
+  adaptive_icon_background: "#7C3AED"
+  adaptive_icon_foreground: "assets/icons/aivo-icon-purple.png"
+  monochrome_icon: false
+  
+# Configure splash screen
+flutter_native_splash:
+  color: "#7C3AED"  # AIVO brand purple
+  image: "assets/splash/splash_logo_white.png"
+  android: true
+  ios: false  # Not configured yet
+  web: false
+  android_12:
+    color: "#7C3AED"  # AIVO brand purple
+    image: "assets/splash/splash_logo_white.png"

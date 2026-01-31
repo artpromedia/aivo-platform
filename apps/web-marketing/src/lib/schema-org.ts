@@ -1,10 +1,11 @@
 /**
  * Schema.org Structured Data for GEO
- * 
+ *
  * Comprehensive structured data schemas optimized for AI search engines
  * including ChatGPT, Perplexity, Google AI Overviews, and Bing Chat.
  */
 
+import React from 'react';
 import type { Organization, Product, SoftwareApplication, FAQPage, WithContext } from 'schema-dts';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://aivolearning.com';
@@ -20,7 +21,8 @@ export const organizationSchema: WithContext<Organization> = {
   legalName: 'AIVO Learning, Inc.',
   url: BASE_URL,
   logo: `${BASE_URL}/logo.png`,
-  description: 'AI-powered personalized learning platform for neurodiverse K-12 students with ADHD, autism, dyslexia, and other learning differences. FERPA and COPPA compliant.',
+  description:
+    'AI-powered personalized learning platform for neurodiverse K-12 students with ADHD, autism, dyslexia, and other learning differences. FERPA and COPPA compliant.',
   foundingDate: '2024',
   slogan: 'Where Every Mind Thrives',
   email: 'hello@aivolearning.com',
@@ -76,7 +78,8 @@ export const platformSchema: WithContext<SoftwareApplication> = {
   name: 'AIVO Learning Platform',
   applicationCategory: 'EducationalApplication',
   operatingSystem: ['Web Browser', 'iOS', 'Android', 'Chrome OS'],
-  description: 'AI-powered adaptive learning platform with Virtual Brain tutors that personalize education for neurodiverse K-12 students including those with ADHD, autism, dyslexia, and other learning differences.',
+  description:
+    'AI-powered adaptive learning platform with Virtual Brain tutors that personalize education for neurodiverse K-12 students including those with ADHD, autism, dyslexia, and other learning differences.',
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -114,7 +117,8 @@ export const platformSchema: WithContext<SoftwareApplication> = {
     'Distraction-free focus mode',
   ],
   softwareVersion: '2.0',
-  releaseNotes: 'Enhanced AI personalization, improved accessibility features, expanded curriculum coverage',
+  releaseNotes:
+    'Enhanced AI personalization, improved accessibility features, expanded curriculum coverage',
   screenshot: `${BASE_URL}/screenshots/platform-overview.png`,
   video: `${BASE_URL}/videos/platform-demo.mp4`,
   accessibilityAPI: ['ARIA'],
@@ -141,7 +145,8 @@ export const aivoPadSchema: WithContext<Product> = {
   '@type': 'Product',
   '@id': `${BASE_URL}/aivo-pad#product`,
   name: 'AIVO Pad',
-  description: 'Purpose-built learning tablet designed specifically for neurodiverse K-12 learners with AI-powered personalization, focus mode, and distraction-free learning environment.',
+  description:
+    'Purpose-built learning tablet designed specifically for neurodiverse K-12 learners with AI-powered personalization, focus mode, and distraction-free learning environment.',
   brand: {
     '@type': 'Brand',
     name: 'AIVO Learning',
@@ -173,7 +178,9 @@ export const aivoPadSchema: WithContext<Product> = {
 /**
  * FAQ Schema Generator
  */
-export function generateFAQSchema(faqs: Array<{ question: string; answer: string }>): WithContext<FAQPage> {
+export function generateFAQSchema(
+  faqs: { question: string; answer: string }[]
+): WithContext<FAQPage> {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -221,7 +228,7 @@ export function generateEducationalMaterialSchema(material: {
 export function generateHowToSchema(guide: {
   name: string;
   description: string;
-  steps: Array<{ name: string; text: string; image?: string }>;
+  steps: { name: string; text: string; image?: string }[];
 }) {
   return {
     '@context': 'https://schema.org',
@@ -236,16 +243,4 @@ export function generateHowToSchema(guide: {
       image: step.image,
     })),
   };
-}
-
-/**
- * Render schema as JSON-LD script tag
- */
-export function SchemaScript({ schema }: { schema: object }): JSX.Element {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
 }

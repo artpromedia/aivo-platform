@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_common/flutter_common.dart';
 import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'baseline/baseline_controller.dart';
+import 'config/environment.dart';
 import 'config/startup_checks.dart';
 import 'firebase_options.dart';
 import 'focus/focus_service.dart';
@@ -348,20 +350,42 @@ Future<void> main() async {
     // Initialize environment configuration
     EnvConfig.initialize();
 
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Initialize Firebase (skip in development with mock services)
+    if (!EnvironmentConfig.useMockServices) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
 
-    // Initialize Crashlytics based on flavor config
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-      EnvConfig.flavor.crashReportingEnabled,
-    );
+        // Initialize Crashlytics based on flavor config
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          EnvConfig.flavor.crashReportingEnabled,
+        );
+      } catch (e) {
+        // In development, log Firebase errors but continue
+        if (kDebugMode) {
+          debugPrint('⚠️ Firebase initialization failed (development mode): $e');
+          debugPrint('Continuing without Firebase services...');
+        } else {
+          rethrow;
+        }
+      }
+    } else {
+      debugPrint('🧪 Skipping Firebase initialization (mock mode enabled)');
+    }
 
     // Set custom keys for crash context (COPPA compliant - no personal data)
-    await FirebaseCrashlytics.instance.setCustomKey('is_child_device', true);
-    await FirebaseCrashlytics.instance.setCustomKey('app_type', 'learner');
-    await FirebaseCrashlytics.instance.setCustomKey('environment', EnvConfig.flavor.displayName);
+    if (!EnvironmentConfig.useMockServices) {
+      try {
+        await FirebaseCrashlytics.instance.setCustomKey('is_child_device', true);
+        await FirebaseCrashlytics.instance.setCustomKey('app_type', 'learner');
+        await FirebaseCrashlytics.instance.setCustomKey('environment', EnvConfig.flavor.displayName);
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Crashlytics custom keys failed (development mode): $e');
+        }
+      }
+    }
 
     // Mark as child device for COPPA compliance
     await BackgroundHandlerConfig.setChildDevice(true);
@@ -393,6 +417,39 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
   @override
   void initState() {
     super.initState();
+    // Note: ref.listen moved to build method (Riverpod 2.x requirement)
+  }
+
+  Future<void> _preloadOfflineData(String learnerId) async {
+    final syncManager = ref.read(syncManagerProvider);
+    
+    // Preload today's plan and related content in background
+    // This is fire-and-forget - errors are logged but don't block the app
+    syncManager.preloadForToday(learnerId).catchError((error) {
+      debugPrint('Offline preload failed: $error');
+      return PreloadResult.failure(error.toString());
+    });
+  }
+
+  /// Initialize notifications with COPPA compliance
+  /// This uses parent-controlled settings for what notifications children receive
+  Future<void> _initializeNotifications() async {
+    try {
+      final notificationService = ref.read(learnerNotificationServiceProvider);
+      await notificationService.initialize();
+    } catch (e) {
+      // COPPA: Don't show notification errors to child, just log
+      debugPrint('Failed to initialize notifications: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pinState = ref.watch(pinControllerProvider);
+    final router = ref.watch(_routerProvider);
+    final theme = ref.watch(gradeThemeProvider);
+
+    // Listen to auth state changes in build method (required by Riverpod 2.x)
     ref.listen<PinAuthState>(pinControllerProvider, (previous, next) {
       // Reset on logout
       if (!next.isAuthenticated) {
@@ -438,36 +495,6 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
         }
       }
     });
-  }
-
-  Future<void> _preloadOfflineData(String learnerId) async {
-    final syncManager = ref.read(syncManagerProvider);
-    
-    // Preload today's plan and related content in background
-    // This is fire-and-forget - errors are logged but don't block the app
-    syncManager.preloadForToday(learnerId).catchError((error) {
-      debugPrint('Offline preload failed: $error');
-      return PreloadResult.failure(error.toString());
-    });
-  }
-
-  /// Initialize notifications with COPPA compliance
-  /// This uses parent-controlled settings for what notifications children receive
-  Future<void> _initializeNotifications() async {
-    try {
-      final notificationService = ref.read(learnerNotificationServiceProvider);
-      await notificationService.initialize();
-    } catch (e) {
-      // COPPA: Don't show notification errors to child, just log
-      debugPrint('Failed to initialize notifications: $e');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pinState = ref.watch(pinControllerProvider);
-    final router = ref.watch(_routerProvider);
-    final theme = ref.watch(gradeThemeProvider);
 
     if (pinState.status == PinStatus.loading) {
       return MaterialApp(

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 
 /// Deep Link Service
 ///
@@ -13,8 +13,9 @@ import 'package:uni_links/uni_links.dart';
 /// - Route mapping for various content types
 /// - Analytics tracking for link attribution
 class DeepLinkService {
-  StreamSubscription<String?>? _linkSubscription;
+  StreamSubscription<Uri>? _linkSubscription;
   bool _initialized = false;
+  final _appLinks = AppLinks();
 
   /// Supported deep link schemes
   static const String appScheme = 'aivo';
@@ -36,20 +37,18 @@ class DeepLinkService {
 
     try {
       // Handle initial link (app opened from deep link)
-      final initialLink = await getInitialLink();
-      if (initialLink != null) {
-        await _handleDeepLink(initialLink);
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        await _handleDeepLinkUri(initialUri);
       }
     } on PlatformException catch (e) {
       debugPrint('Failed to get initial link: $e');
     }
 
     // Handle links while app is running
-    _linkSubscription = linkStream.listen(
-      (String? link) async {
-        if (link != null) {
-          await _handleDeepLink(link);
-        }
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      (Uri uri) async {
+        await _handleDeepLinkUri(uri);
       },
       onError: (error) {
         debugPrint('Deep link stream error: $error');
@@ -58,11 +57,10 @@ class DeepLinkService {
   }
 
   /// Handle incoming deep link
-  Future<void> _handleDeepLink(String link) async {
-    debugPrint('Handling deep link: $link');
+  Future<void> _handleDeepLinkUri(Uri uri) async {
+    debugPrint('Handling deep link: $uri');
 
     try {
-      final uri = Uri.parse(link);
       final route = _mapUriToRoute(uri);
 
       if (route != null) {
@@ -74,6 +72,16 @@ class DeepLinkService {
       }
     } catch (e) {
       debugPrint('Failed to handle deep link: $e');
+    }
+  }
+
+  /// Handle incoming deep link (legacy string support)
+  Future<void> _handleDeepLink(String link) async {
+    try {
+      final uri = Uri.parse(link);
+      await _handleDeepLinkUri(uri);
+    } catch (e) {
+      debugPrint('Failed to parse deep link: $e');
     }
   }
 

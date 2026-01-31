@@ -12,7 +12,8 @@ export const metadata: Metadata = {
     'Comprehensive knowledge base about AIVO Learning: what we are, how we work, our technology, supported conditions, evidence base, and key differentiators.',
   openGraph: {
     title: 'AIVO Learning Knowledge Base',
-    description: 'Everything you need to know about AI-powered personalized learning for neurodiverse students',
+    description:
+      'Everything you need to know about AI-powered personalized learning for neurodiverse students',
   },
 };
 
@@ -20,7 +21,7 @@ export default function KnowledgeBase() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navigation />
-      
+
       <main className="flex-1">
         {/* Hero */}
         <section className="bg-gradient-to-b from-blue-50 to-white py-16">
@@ -31,8 +32,8 @@ export default function KnowledgeBase() {
                 Everything About AIVO Learning
               </h1>
               <p className="text-lg text-slate-600">
-                Comprehensive information about our AI-powered personalized learning platform
-                for neurodiverse K-12 students
+                Comprehensive information about our AI-powered personalized learning platform for
+                neurodiverse K-12 students
               </p>
             </div>
           </div>
@@ -52,20 +53,21 @@ export default function KnowledgeBase() {
                     <strong className="text-slate-900">AIVO Learning</strong> is an AI-powered
                     personalized learning platform specifically designed for neurodiverse K-12
                     students. We use advanced artificial intelligence to create individualized
-                    learning experiences that adapt to how each student thinks, learns, and processes
-                    information.
+                    learning experiences that adapt to how each student thinks, learns, and
+                    processes information.
                   </p>
                   <p>
-                    Our core innovation is the <strong className="text-slate-900">Virtual Brain</strong>
-                    {' '}— a personalized AI tutor that learns about each student&apos;s unique cognitive
-                    profile, learning preferences, strengths, challenges, and interests. It then uses
-                    this knowledge to deliver the right content, in the right format, at the right time,
-                    in the right way.
+                    Our core innovation is the{' '}
+                    <strong className="text-slate-900">Virtual Brain</strong> — a personalized AI
+                    tutor that learns about each student&apos;s unique cognitive profile, learning
+                    preferences, strengths, challenges, and interests. It then uses this knowledge
+                    to deliver the right content, in the right format, at the right time, in the
+                    right way.
                   </p>
                   <p>
-                    AIVO serves students with ADHD, autism, dyslexia, dyscalculia, executive function
-                    challenges, and other learning differences — as well as neurotypical students who
-                    benefit from personalized learning.
+                    AIVO serves students with ADHD, autism, dyslexia, dyscalculia, executive
+                    function challenges, and other learning differences — as well as neurotypical
+                    students who benefit from personalized learning.
                   </p>
                 </div>
               </div>
@@ -77,34 +79,38 @@ export default function KnowledgeBase() {
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h4 className="mb-2 text-lg font-semibold text-slate-900">Virtual Brain</h4>
                     <p className="text-slate-600">
-                      A personalized AI tutor that adapts to each student's unique learning profile,
-                      tracks their progress, identifies patterns, and continuously optimizes the
-                      learning experience. Think of it as a dedicated 1:1 tutor who knows exactly
-                      how your child learns best.
+                      A personalized AI tutor that adapts to each student&apos;s unique learning
+                      profile, tracks their progress, identifies patterns, and continuously
+                      optimizes the learning experience. Think of it as a dedicated 1:1 tutor who
+                      knows exactly how your child learns best.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h4 className="mb-2 text-lg font-semibold text-slate-900">Neurodiverse Learner</h4>
+                    <h4 className="mb-2 text-lg font-semibold text-slate-900">
+                      Neurodiverse Learner
+                    </h4>
                     <p className="text-slate-600">
-                      Students whose brains work differently from the &ldquo;typical&rdquo; model. This includes
-                      ADHD, autism, dyslexia, dyscalculia, and other learning differences.
-                      Neurodiversity recognizes these differences as natural human variation, not
-                      deficits.
+                      Students whose brains work differently from the &ldquo;typical&rdquo; model.
+                      This includes ADHD, autism, dyslexia, dyscalculia, and other learning
+                      differences. Neurodiversity recognizes these differences as natural human
+                      variation, not deficits.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h4 className="mb-2 text-lg font-semibold text-slate-900">Adaptive Learning</h4>
                     <p className="text-slate-600">
                       Technology that automatically adjusts difficulty, pacing, content format, and
-                      teaching approach based on student performance and preferences. AIVO&apos;s adaptive
-                      engine makes real-time decisions about what to teach next and how.
+                      teaching approach based on student performance and preferences. AIVO&apos;s
+                      adaptive engine makes real-time decisions about what to teach next and how.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h4 className="mb-2 text-lg font-semibold text-slate-900">IEP (Individualized Education Program)</h4>
+                    <h4 className="mb-2 text-lg font-semibold text-slate-900">
+                      IEP (Individualized Education Program)
+                    </h4>
                     <p className="text-slate-600">
                       A legally binding document for students receiving special education services.
                       AIVO tracks progress toward IEP goals, collects data for IEP meetings, and
@@ -120,12 +126,13 @@ export default function KnowledgeBase() {
                   <Target className="h-8 w-8 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-900">Supported Conditions</h2>
                 </div>
-                
+
                 <div className="space-y-6">
                   {[
                     {
                       name: 'ADHD (Attention-Deficit/Hyperactivity Disorder)',
-                      description: 'Challenges with attention, focus, impulse control, and executive function',
+                      description:
+                        'Challenges with attention, focus, impulse control, and executive function',
                       features: [
                         'Focus mode with distraction blocking',
                         'Micro-learning sessions (5-15 minutes)',
@@ -136,7 +143,8 @@ export default function KnowledgeBase() {
                     },
                     {
                       name: 'Autism Spectrum Disorder (ASD)',
-                      description: 'Differences in social communication, sensory processing, and routines',
+                      description:
+                        'Differences in social communication, sensory processing, and routines',
                       features: [
                         'Predictable structure and visual schedules',
                         'Clear, explicit instructions',
@@ -147,7 +155,8 @@ export default function KnowledgeBase() {
                     },
                     {
                       name: 'Dyslexia',
-                      description: 'Difficulties with reading, spelling, and phonological processing',
+                      description:
+                        'Difficulties with reading, spelling, and phonological processing',
                       features: [
                         'Text-to-speech with synchronized highlighting',
                         'Dyslexia-friendly fonts (OpenDyslexic)',
@@ -193,45 +202,54 @@ export default function KnowledgeBase() {
                   <Zap className="h-8 w-8 text-yellow-600" />
                   <h2 className="text-3xl font-bold text-slate-900">How AIVO Works</h2>
                 </div>
-                
+
                 <div className="space-y-6">
                   <div className="rounded-lg border-l-4 border-purple-600 bg-purple-50 p-6">
                     <h3 className="mb-2 text-lg font-bold text-slate-900">1. Initial Assessment</h3>
                     <p className="text-slate-600">
-                      AIVO begins with diagnostic assessments to understand the student&apos;s current
-                      knowledge, learning preferences, and cognitive profile. This takes 20-30 minutes.
+                      AIVO begins with diagnostic assessments to understand the student&apos;s
+                      current knowledge, learning preferences, and cognitive profile. This takes
+                      20-30 minutes.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border-l-4 border-purple-600 bg-purple-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">2. Virtual Brain Creation</h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">
+                      2. Virtual Brain Creation
+                    </h3>
                     <p className="text-slate-600">
                       The system creates a personalized Virtual Brain — an AI model unique to that
                       student. It incorporates assessment results, IEP goals, learning preferences,
                       and any known diagnoses.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border-l-4 border-purple-600 bg-purple-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">3. Personalized Learning Path</h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">
+                      3. Personalized Learning Path
+                    </h3>
                     <p className="text-slate-600">
                       The Virtual Brain generates a customized learning path with the right sequence
                       of topics, appropriate difficulty level, and optimal content formats (video,
                       text, interactive, etc.).
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border-l-4 border-purple-600 bg-purple-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">4. Continuous Adaptation</h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">
+                      4. Continuous Adaptation
+                    </h3>
                     <p className="text-slate-600">
-                      As the student learns, the Virtual Brain continuously refines its understanding.
-                      It adjusts difficulty, changes teaching approaches, and identifies patterns in
-                      real-time.
+                      As the student learns, the Virtual Brain continuously refines its
+                      understanding. It adjusts difficulty, changes teaching approaches, and
+                      identifies patterns in real-time.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border-l-4 border-purple-600 bg-purple-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">5. Progress Monitoring</h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">
+                      5. Progress Monitoring
+                    </h3>
                     <p className="text-slate-600">
                       Teachers and parents receive detailed insights about learning progress, skill
                       mastery, engagement patterns, and progress toward IEP goals through real-time
@@ -247,7 +265,7 @@ export default function KnowledgeBase() {
                   <Award className="h-8 w-8 text-blue-600" />
                   <h2 className="text-3xl font-bold text-slate-900">What Makes AIVO Different</h2>
                 </div>
-                
+
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="rounded-lg border bg-blue-50 p-6">
                     <h3 className="mb-2 text-lg font-bold text-slate-900">
@@ -259,32 +277,27 @@ export default function KnowledgeBase() {
                       parents, and students.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-blue-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">
-                      True Personalization
-                    </h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">True Personalization</h3>
                     <p className="text-slate-600">
                       Most platforms offer adaptive difficulty. AIVO adapts content format, pacing,
                       teaching approach, engagement strategies, and more — truly understanding how
                       each brain learns.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-blue-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">
-                      IEP Integration
-                    </h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">IEP Integration</h3>
                     <p className="text-slate-600">
                       Built-in IEP goal tracking and data collection eliminates manual tracking.
-                      Automatically aligns lessons with IEP objectives and generates progress reports.
+                      Automatically aligns lessons with IEP objectives and generates progress
+                      reports.
                     </p>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-blue-50 p-6">
-                    <h3 className="mb-2 text-lg font-bold text-slate-900">
-                      Evidence-Based Design
-                    </h3>
+                    <h3 className="mb-2 text-lg font-bold text-slate-900">Evidence-Based Design</h3>
                     <p className="text-slate-600">
                       Built on Universal Design for Learning (UDL), differentiated instruction,
                       multi-sensory learning, cognitive load theory, and spaced repetition.
@@ -299,7 +312,7 @@ export default function KnowledgeBase() {
                   <Shield className="h-8 w-8 text-green-600" />
                   <h2 className="text-3xl font-bold text-slate-900">Compliance & Standards</h2>
                 </div>
-                
+
                 <div className="grid gap-6 md:grid-cols-3">
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-slate-900">Privacy Laws</h3>
@@ -318,7 +331,7 @@ export default function KnowledgeBase() {
                       </li>
                     </ul>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-slate-900">Education Laws</h3>
                     <ul className="space-y-2">
@@ -336,7 +349,7 @@ export default function KnowledgeBase() {
                       </li>
                     </ul>
                   </div>
-                  
+
                   <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h3 className="mb-4 text-lg font-bold text-slate-900">Accessibility</h3>
                     <ul className="space-y-2">
@@ -364,9 +377,7 @@ export default function KnowledgeBase() {
         <section className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <h2 className="mb-4 text-3xl font-bold text-white">
-                Ready to see AIVO in action?
-              </h2>
+              <h2 className="mb-4 text-3xl font-bold text-white">Ready to see AIVO in action?</h2>
               <p className="mb-8 text-lg text-purple-100">
                 Schedule a personalized demo to see how AIVO can support your students
               </p>
@@ -388,7 +399,7 @@ export default function KnowledgeBase() {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

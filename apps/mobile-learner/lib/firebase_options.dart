@@ -27,22 +27,24 @@ class DefaultFirebaseOptions {
   }
 
   /// Firebase options for Android - Learner App
+  /// Using mock credentials for local development
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: '1:123456789:android:learner_app_id',
-    messagingSenderId: '123456789',
-    projectId: 'aivo-platform',
-    storageBucket: 'aivo-platform.appspot.com',
+    apiKey: 'AIzaSyDevelopmentMockKeyForLocalTestingOnly',
+    appId: '1:123456789012:android:abcdef1234567890',
+    messagingSenderId: '123456789012',
+    projectId: 'aivo-platform-dev',
+    storageBucket: 'aivo-platform-dev.appspot.com',
   );
 
   /// Firebase options for iOS - Learner App
+  /// Using mock credentials for local development
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: '1:123456789:ios:learner_app_id',
-    messagingSenderId: '123456789',
-    projectId: 'aivo-platform',
-    storageBucket: 'aivo-platform.appspot.com',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    iosBundleId: 'com.aivo.learner',
+    apiKey: 'AIzaSyDevelopmentMockKeyForIOSLocalTestingOnly',
+    appId: '1:123456789012:ios:abcdef1234567890',
+    messagingSenderId: '123456789012',
+    projectId: 'aivo-platform-dev',
+    storageBucket: 'aivo-platform-dev.appspot.com',
+    iosClientId: '123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com',
+    iosBundleId: 'com.aivo.learner.dev',
   );
 }

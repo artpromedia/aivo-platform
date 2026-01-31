@@ -26,9 +26,6 @@ output-dir: lib/l10n/generated
 # Output class name
 output-class: AppLocalizations
 
-# Supported locales
-synthetic-package: false
-
 # Make localizations nullable (returns null if locale not supported)
 nullable-getter: false
 
