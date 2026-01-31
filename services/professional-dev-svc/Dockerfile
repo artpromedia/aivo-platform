@@ -26,7 +26,7 @@ COPY services/professional-dev-svc/ ./services/professional-dev-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/professional-dev-svc"
+RUN pnpm turbo build --filter="@aivo/professional-dev-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/professional-dev-svc" --prod /deploy

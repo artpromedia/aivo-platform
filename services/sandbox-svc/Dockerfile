@@ -26,7 +26,7 @@ COPY services/sandbox-svc/ ./services/sandbox-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/sandbox-svc"
+RUN pnpm turbo build --filter="@aivo/sandbox-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/sandbox-svc" --prod /deploy

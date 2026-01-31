@@ -30,7 +30,7 @@ ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN cd services/payments-svc && npx prisma generate --schema=prisma/schema.prisma
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/payments-svc"
+RUN pnpm turbo build --filter="@aivo/payments-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/payments-svc" --prod /deploy

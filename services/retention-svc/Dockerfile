@@ -26,7 +26,7 @@ COPY services/retention-svc/ ./services/retention-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/retention-svc"
+RUN pnpm turbo build --filter="@aivo/retention-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/retention-svc" --prod /deploy

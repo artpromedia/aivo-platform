@@ -26,7 +26,7 @@ COPY services/analytics-svc/ ./services/analytics-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/analytics-svc"
+RUN pnpm turbo build --filter="@aivo/analytics-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/analytics-svc" --prod /deploy

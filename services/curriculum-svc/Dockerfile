@@ -26,7 +26,7 @@ COPY services/curriculum-svc/ ./services/curriculum-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/curriculum-svc"
+RUN pnpm turbo build --filter="@aivo/curriculum-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/curriculum-svc" --prod /deploy

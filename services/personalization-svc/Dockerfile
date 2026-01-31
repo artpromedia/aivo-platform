@@ -26,7 +26,7 @@ COPY services/personalization-svc/ ./services/personalization-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/personalization-svc"
+RUN pnpm turbo build --filter="@aivo/personalization-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/personalization-svc" --prod /deploy

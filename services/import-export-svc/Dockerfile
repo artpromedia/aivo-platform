@@ -26,7 +26,7 @@ COPY services/import-export-svc/ ./services/import-export-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/import-export-svc"
+RUN pnpm turbo build --filter="@aivo/import-export-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/import-export-svc" --prod /deploy

@@ -17,6 +17,8 @@ build
 **/generated
 .vercel
 out
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Local tooling
 .node

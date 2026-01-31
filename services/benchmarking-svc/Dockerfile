@@ -26,7 +26,7 @@ COPY services/benchmarking-svc/ ./services/benchmarking-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/benchmarking-svc"
+RUN pnpm turbo build --filter="@aivo/benchmarking-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/benchmarking-svc" --prod /deploy

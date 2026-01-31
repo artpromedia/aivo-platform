@@ -26,7 +26,7 @@ COPY services/sis-sync-svc/ ./services/sis-sync-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/sis-sync-svc"
+RUN pnpm turbo build --filter="@aivo/sis-sync-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/sis-sync-svc" --prod /deploy

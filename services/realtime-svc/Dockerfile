@@ -26,7 +26,7 @@ COPY services/realtime-svc/ ./services/realtime-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like events, ts-api-utils)
-RUN pnpm turbo build --filter="@aivo/realtime-svc"
+RUN pnpm turbo build --filter="@aivo/realtime-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/realtime-svc" --prod /deploy

@@ -26,7 +26,7 @@ COPY services/engagement-svc/ ./services/engagement-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/engagement-svc"
+RUN pnpm turbo build --filter="@aivo/engagement-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/engagement-svc" --prod /deploy

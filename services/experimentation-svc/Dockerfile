@@ -26,7 +26,7 @@ COPY services/experimentation-svc/ ./services/experimentation-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/experimentation-svc"
+RUN pnpm turbo build --filter="@aivo/experimentation-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/experimentation-svc" --prod /deploy

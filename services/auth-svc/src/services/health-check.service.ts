@@ -1,9 +1,9 @@
 /**
  * Health Check Service
- * 
+ *
  * Provides comprehensive health checking for all AIVO services.
  * Used during deployment to validate service health before traffic switching.
- * 
+ *
  * Features:
  * - Database connectivity checks
  * - Redis connectivity checks
@@ -12,9 +12,9 @@
  * - Resource utilization monitoring
  */
 
-import type { PrismaClient } from '../generated/prisma-client/index.js';
-import type { RedisClientType } from 'redis';
-import type { Logger } from './logger.service.js';
+import type { PrismaClient } from '@prisma/client';
+import type { FastifyBaseLogger } from 'fastify';
+import type { Redis } from 'ioredis';
 
 export interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -53,8 +53,8 @@ export class HealthCheckService {
 
   constructor(
     private prisma: PrismaClient,
-    private redis: RedisClientType,
-    private logger: Logger,
+    private redis: Redis,
+    private logger: FastifyBaseLogger,
     private serviceName: string
   ) {
     this.startTime = Date.now();
@@ -72,29 +72,23 @@ export class HealthCheckService {
       this.checkResources(),
     ]);
 
-    const [database, redis, dependencies, endpoints, resources] = checks.map(
-      (result) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        }
-        return {
-          status: 'fail' as const,
-          responseTime: 0,
-          message: result.reason.message,
-        };
+    const [database, redis, dependencies, endpoints, resources] = checks.map((result) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
       }
-    );
+      return {
+        status: 'fail' as const,
+        responseTime: 0,
+        message: result.reason.message,
+      };
+    });
 
     // Determine overall status
     const allChecks = [database, redis, dependencies, endpoints, resources];
     const hasFailed = allChecks.some((check) => check.status === 'fail');
     const hasWarnings = allChecks.some((check) => check.status === 'warn');
 
-    const status = hasFailed
-      ? 'unhealthy'
-      : hasWarnings
-        ? 'degraded'
-        : 'healthy';
+    const status = hasFailed ? 'unhealthy' : hasWarnings ? 'degraded' : 'healthy';
 
     return {
       status,
@@ -142,7 +136,7 @@ export class HealthCheckService {
       };
     } catch (error) {
       const responseTime = Date.now() - start;
-      this.logger.error('Database health check failed', { error });
+      this.logger.error({ error }, 'Database health check failed');
 
       return {
         status: 'fail',
@@ -167,16 +161,14 @@ export class HealthCheckService {
       }
 
       // Get Redis info
-      const info = await this.redis.info('stats');
+      const _info = await this.redis.info('stats');
       const memory = await this.redis.info('memory');
 
       const responseTime = Date.now() - start;
 
       // Parse memory usage
-      const memoryMatch = memory.match(/used_memory:(\d+)/);
-      const memoryUsedMB = memoryMatch
-        ? parseInt(memoryMatch[1]) / 1024 / 1024
-        : 0;
+      const memoryMatch = /used_memory:(\d+)/.exec(memory);
+      const memoryUsedMB = memoryMatch ? parseInt(memoryMatch[1]) / 1024 / 1024 : 0;
 
       if (responseTime > 50) {
         return {
@@ -194,7 +186,7 @@ export class HealthCheckService {
       };
     } catch (error) {
       const responseTime = Date.now() - start;
-      this.logger.error('Redis health check failed', { error });
+      this.logger.error({ error }, 'Redis health check failed');
 
       return {
         status: 'fail',
@@ -260,12 +252,12 @@ export class HealthCheckService {
         status: 'pass',
         responseTime,
         details: {
-          results: results.map((r) => r.status === 'fulfilled' ? r.value : { status: 'failed' }),
+          results: results.map((r) => (r.status === 'fulfilled' ? r.value : { status: 'failed' })),
         },
       };
     } catch (error) {
       const responseTime = Date.now() - start;
-      this.logger.error('Dependencies health check failed', { error });
+      this.logger.error({ error }, 'Dependencies health check failed');
 
       return {
         status: 'fail',
@@ -293,7 +285,7 @@ export class HealthCheckService {
       };
     } catch (error) {
       const responseTime = Date.now() - start;
-      this.logger.error('Endpoints health check failed', { error });
+      this.logger.error({ error }, 'Endpoints health check failed');
 
       return {
         status: 'fail',
@@ -312,7 +304,7 @@ export class HealthCheckService {
     try {
       // Get process CPU and memory usage
       const memoryUsage = process.memoryUsage();
-      const cpuUsage = process.cpuUsage();
+      const _cpuUsage = process.cpuUsage();
 
       const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
       const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
@@ -355,7 +347,7 @@ export class HealthCheckService {
       };
     } catch (error) {
       const responseTime = Date.now() - start;
-      this.logger.error('Resources health check failed', { error });
+      this.logger.error({ error }, 'Resources health check failed');
 
       return {
         status: 'fail',
@@ -378,9 +370,7 @@ export class HealthCheckService {
    */
   private async getDatabasePoolStats(): Promise<Record<string, any>> {
     try {
-      const result = await this.prisma.$queryRaw<
-        Array<{ total: bigint; active: bigint; idle: bigint }>
-      >`
+      const result = await this.prisma.$queryRaw<{ total: bigint; active: bigint; idle: bigint }[]>`
         SELECT 
           count(*) as total,
           count(*) FILTER (WHERE state = 'active') as active,
@@ -399,7 +389,7 @@ export class HealthCheckService {
 
       return {};
     } catch (error) {
-      this.logger.error('Failed to get database pool stats', { error });
+      this.logger.error({ error }, 'Failed to get database pool stats');
       return {};
     }
   }
@@ -440,11 +430,7 @@ export class HealthCheckService {
    * Liveness check (is service alive?)
    */
   async liveness(): Promise<boolean> {
-    try {
-      // Simple check - just return true if process is running
-      return true;
-    } catch {
-      return false;
-    }
+    // Simple check - just return true if process is running
+    return true;
   }
 }

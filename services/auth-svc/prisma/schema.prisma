@@ -31,17 +31,20 @@ enum IdpProtocol {
 }
 
 model User {
-  id            String     @id @default(uuid()) @db.Uuid
-  tenantId      String     @db.Uuid
-  email         String
-  phone         String?
-  passwordHash  String
-  externalId    String?    // IdP subject/nameId for federated users
-  status        UserStatus @default(ACTIVE)
-  emailVerified Boolean    @default(false)
-  lastLoginAt   DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                String     @id @default(uuid()) @db.Uuid
+  tenantId          String     @db.Uuid
+  email             String
+  firstName         String?
+  lastName          String?
+  phone             String?
+  passwordHash      String
+  externalId        String?    // IdP subject/nameId for federated users
+  status            UserStatus @default(ACTIVE)
+  emailVerified     Boolean    @default(false)
+  acceptedMarketing Boolean    @default(false)
+  lastLoginAt       DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
   
   // Relations
   roles                    UserRole[]

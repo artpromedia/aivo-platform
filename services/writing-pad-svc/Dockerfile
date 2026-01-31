@@ -26,7 +26,7 @@ COPY services/writing-pad-svc/ ./services/writing-pad-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/writing-pad-svc"
+RUN pnpm turbo build --filter="@aivo/writing-pad-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/writing-pad-svc" --prod /deploy

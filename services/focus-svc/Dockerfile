@@ -26,7 +26,7 @@ COPY services/focus-svc/ ./services/focus-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/focus-svc"
+RUN pnpm turbo build --filter="@aivo/focus-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/focus-svc" --prod /deploy

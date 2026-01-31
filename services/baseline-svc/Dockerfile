@@ -26,7 +26,7 @@ COPY services/baseline-svc/ ./services/baseline-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/baseline-svc"
+RUN pnpm turbo build --filter="@aivo/baseline-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/baseline-svc" --prod /deploy

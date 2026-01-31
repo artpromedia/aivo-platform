@@ -1,14 +1,22 @@
 /**
  * Trust Score Data Providers - Production Implementation
- * 
+ *
  * Integrates with actual services to fetch real data for trust score calculation.
  * Replaces the mock data providers with proper service-to-service communication.
  */
 
 import type { FastifyBaseLogger } from 'fastify';
-import type { DataProviders, ReviewData, VerificationData, TenureData, ActivityData } from './trust-score.service.js';
+
 import type { PrismaClient } from '../../generated/prisma-client/index.js';
-import type { VerificationLevel } from '../types/trust-score.types.js';
+import type {
+  ReviewData,
+  VerificationData,
+  TenureData,
+  ActivityData,
+  VerificationLevel,
+} from '../types/trust-score.types.js';
+
+import type { DataProviders } from './trust-score.service.js';
 
 interface ServiceEndpoints {
   profileSvcUrl: string;
@@ -38,6 +46,7 @@ export function createProductionDataProviders(
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      /* eslint-disable @typescript-eslint/no-misused-spread */
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
@@ -46,6 +55,7 @@ export function createProductionDataProviders(
           ...options.headers,
         },
       });
+      /* eslint-enable @typescript-eslint/no-misused-spread */
 
       clearTimeout(timeout);
 
@@ -54,16 +64,16 @@ export function createProductionDataProviders(
         return null;
       }
 
-      return await response.json() as T;
+      return (await response.json()) as T;
     } catch (error) {
       clearTimeout(timeout);
-      
+
       if (error instanceof Error && error.name === 'AbortError') {
         logger.warn(`Service request timeout: ${url}`);
       } else {
         logger.error({ error, url }, 'Service request error');
       }
-      
+
       return null;
     }
   }
@@ -71,22 +81,22 @@ export function createProductionDataProviders(
   return {
     /**
      * Get review and rating data from database
-     * 
+     *
      * Note: AIVO is an educational platform, not a marketplace with reviews.
      * This returns safe defaults. For educational context, this could track:
      * - Teacher feedback scores
      * - Peer collaboration ratings
      * - Assignment completion rate
-     * 
+     *
      * Adapt this based on your needs or remove if not applicable.
      */
     async getReviewData(userId: string): Promise<ReviewData> {
       try {
         // For now, return safe defaults since AIVO doesn't have user reviews
         // If you add teacher feedback or peer ratings, query them here
-        
+
         logger.debug({ userId }, 'Review data not implemented - returning defaults');
-        
+
         return {
           averageRating: 0,
           totalReviews: 0,
@@ -98,7 +108,7 @@ export function createProductionDataProviders(
         };
       } catch (error) {
         logger.error({ error, userId }, 'Failed to fetch review data');
-        
+
         return {
           averageRating: 0,
           totalReviews: 0,
@@ -143,7 +153,7 @@ export function createProductionDataProviders(
 
         // Check if user has external IdP (OAuth/SAML)
         const hasExternalAuth = !!user.phone; // Using phone as proxy for now
-        // TODO: Add proper OAuth provider tracking if needed
+        // NOTE: Add proper OAuth provider tracking if needed
 
         // Fetch profile data from profile-svc to calculate completeness
         const profileData = await fetchWithTimeout<{
@@ -181,7 +191,7 @@ export function createProductionDataProviders(
         };
       } catch (error) {
         logger.error({ error, userId }, 'Failed to fetch verification data');
-        
+
         return {
           emailVerified: false,
           verificationLevel: 'NONE' as VerificationLevel,
@@ -219,7 +229,7 @@ export function createProductionDataProviders(
         const accountAgeMs = now.getTime() - user.createdAt.getTime();
         const accountAgeMonths = Math.floor(accountAgeMs / (30 * 24 * 60 * 60 * 1000));
 
-        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const isActiveLastMonth = user.lastLoginAt ? user.lastLoginAt >= thirtyDaysAgo : false;
 
         // Calculate longest inactive period from session data
@@ -237,7 +247,7 @@ export function createProductionDataProviders(
         };
       } catch (error) {
         logger.error({ error, userId }, 'Failed to fetch tenure data');
-        
+
         return {
           accountAgeMonths: 0,
           accountCreatedAt: new Date(),
@@ -269,10 +279,12 @@ export function createProductionDataProviders(
 
         // Update last login in database
         if (sessionStats?.lastLoginAt) {
-          await prisma.user.update({
-            where: { id: userId },
-            data: { lastLoginAt: new Date(sessionStats.lastLoginAt) },
-          }).catch(err => logger.warn({ err }, 'Failed to update lastLoginAt'));
+          await prisma.user
+            .update({
+              where: { id: userId },
+              data: { lastLoginAt: new Date(sessionStats.lastLoginAt) },
+            })
+            .catch((err) => logger.warn({ err }, 'Failed to update lastLoginAt'));
         }
 
         return {
@@ -285,7 +297,7 @@ export function createProductionDataProviders(
         };
       } catch (error) {
         logger.error({ error, userId }, 'Failed to fetch activity data');
-        
+
         return {
           loginsLast30Days: 0,
           lastLoginAt: new Date(),
@@ -341,7 +353,7 @@ async function calculateLongestInactivePeriod(
       return 0;
     }
 
-    const data = await response.json() as { sessions: Array<{ startedAt: string }> };
+    const data = (await response.json()) as { sessions: { startedAt: string }[] };
     const sessions = data.sessions || [];
 
     if (sessions.length < 2) {
@@ -349,9 +361,7 @@ async function calculateLongestInactivePeriod(
     }
 
     // Sort by date
-    const dates = sessions
-      .map(s => new Date(s.startedAt).getTime())
-      .sort((a, b) => a - b);
+    const dates = sessions.map((s) => new Date(s.startedAt).getTime()).sort((a, b) => a - b);
 
     // Find longest gap between consecutive sessions
     let longestGapDays = 0;

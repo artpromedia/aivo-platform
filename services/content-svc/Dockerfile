@@ -26,7 +26,7 @@ COPY services/content-svc/ ./services/content-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/content-svc"
+RUN pnpm turbo build --filter="@aivo/content-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/content-svc" --prod /deploy

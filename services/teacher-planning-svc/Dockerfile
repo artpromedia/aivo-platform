@@ -26,7 +26,7 @@ COPY services/teacher-planning-svc/ ./services/teacher-planning-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/teacher-planning-svc"
+RUN pnpm turbo build --filter="@aivo/teacher-planning-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/teacher-planning-svc" --prod /deploy

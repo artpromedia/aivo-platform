@@ -26,7 +26,7 @@ COPY services/gamification-svc/ ./services/gamification-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/gamification-svc"
+RUN pnpm turbo build --filter="@aivo/gamification-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/gamification-svc" --prod /deploy

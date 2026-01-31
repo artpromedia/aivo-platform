@@ -26,7 +26,7 @@ COPY services/iep-svc/ ./services/iep-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like seed-data)
-RUN pnpm turbo build --filter="@aivo/iep-svc"
+RUN pnpm turbo build --filter="@aivo/iep-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/iep-svc" --prod /deploy

@@ -26,7 +26,7 @@ COPY services/messaging-svc/ ./services/messaging-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/messaging-svc"
+RUN pnpm turbo build --filter="@aivo/messaging-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/messaging-svc" --prod /deploy

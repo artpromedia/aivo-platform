@@ -26,7 +26,7 @@ COPY services/ai-orchestrator/ ./services/ai-orchestrator/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/ai-orchestrator"
+RUN pnpm turbo build --filter="@aivo/ai-orchestrator..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/ai-orchestrator" --prod /deploy

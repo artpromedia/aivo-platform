@@ -26,7 +26,7 @@ COPY services/coursework-ingest-svc/ ./services/coursework-ingest-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like ts-api-utils)
-RUN pnpm turbo build --filter="@aivo/coursework-ingest-svc"
+RUN pnpm turbo build --filter="@aivo/coursework-ingest-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/coursework-ingest-svc" --prod /deploy

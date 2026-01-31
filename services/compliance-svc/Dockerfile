@@ -21,7 +21,7 @@ RUN pnpm install --frozen-lockfile
 
 RUN cd services/compliance-svc && pnpm db:generate
 
-RUN pnpm turbo build --filter="@aivo/compliance-svc"
+RUN pnpm turbo build --filter="@aivo/compliance-svc..."
 
 RUN pnpm deploy --filter="@aivo/compliance-svc" --prod /deploy
 

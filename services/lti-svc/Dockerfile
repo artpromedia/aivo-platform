@@ -26,7 +26,7 @@ COPY services/lti-svc/ ./services/lti-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/lti-svc"
+RUN pnpm turbo build --filter="@aivo/lti-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/lti-svc" --prod /deploy

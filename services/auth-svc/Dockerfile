@@ -26,7 +26,7 @@ COPY services/auth-svc/ ./services/auth-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like ts-data-access and ts-rbac)
-RUN pnpm turbo build --filter="@aivo/auth-svc"
+RUN pnpm turbo build --filter="@aivo/auth-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/auth-svc" --prod /deploy

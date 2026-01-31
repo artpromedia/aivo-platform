@@ -26,7 +26,7 @@ COPY services/audit-svc/ ./services/audit-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like ts-data-access and ts-rbac)
-RUN pnpm turbo build --filter="@aivo/audit-svc"
+RUN pnpm turbo build --filter="@aivo/audit-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/audit-svc" --prod /deploy

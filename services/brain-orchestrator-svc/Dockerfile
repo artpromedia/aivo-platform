@@ -12,7 +12,7 @@ COPY libs/ ./libs/
 COPY services/brain-orchestrator-svc/ ./services/brain-orchestrator-svc/
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm turbo build --filter="@aivo/brain-orchestrator-svc"
+RUN pnpm turbo build --filter="@aivo/brain-orchestrator-svc..."
 RUN pnpm deploy --filter="@aivo/brain-orchestrator-svc" --prod /deploy
 
 # Stage 2: Runner

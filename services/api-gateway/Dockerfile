@@ -26,7 +26,7 @@ COPY services/api-gateway/ ./services/api-gateway/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/api-gateway"
+RUN pnpm turbo build --filter="@aivo/api-gateway..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/api-gateway" --prod /deploy

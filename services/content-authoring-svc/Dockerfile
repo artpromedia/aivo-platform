@@ -26,7 +26,7 @@ COPY services/content-authoring-svc/ ./services/content-authoring-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/content-authoring-svc"
+RUN pnpm turbo build --filter="@aivo/content-authoring-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/content-authoring-svc" --prod /deploy

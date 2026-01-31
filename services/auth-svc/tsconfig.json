@@ -4,11 +4,6 @@
     "ignoreDeprecations": "5.0",
     "moduleResolution": "bundler",
     "module": "ESNext",
-    "baseUrl": "../..",
-    "paths": {
-      "@aivo/ts-data-access": ["libs/ts-data-access/dist/index.d.ts"],
-      "@aivo/ts-rbac": ["libs/ts-rbac/dist/index.d.ts"]
-    },
     "rootDir": "src",
     "outDir": "dist",
     "noEmit": false,

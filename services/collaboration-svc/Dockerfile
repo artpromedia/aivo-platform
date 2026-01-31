@@ -26,7 +26,7 @@ COPY services/collaboration-svc/ ./services/collaboration-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/collaboration-svc"
+RUN pnpm turbo build --filter="@aivo/collaboration-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/collaboration-svc" --prod /deploy

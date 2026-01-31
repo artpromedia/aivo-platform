@@ -26,7 +26,7 @@ COPY services/search-svc/ ./services/search-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service (includes dependencies like ts-api-utils)
-RUN pnpm turbo build --filter="@aivo/search-svc"
+RUN pnpm turbo build --filter="@aivo/search-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/search-svc" --prod /deploy

@@ -1,6 +1,6 @@
 /**
  * Database Health Check Utilities
- * 
+ *
  * Provides comprehensive database health monitoring including:
  * - Connection pool status
  * - Query performance
@@ -32,8 +32,8 @@ export interface ServiceHealthCheck {
   version: string;
   timestamp: string;
   uptime: number;
-  database?: DatabaseHealthCheck;
-  dependencies?: Record<string, DependencyHealthCheck>;
+  database?: DatabaseHealthCheck | undefined;
+  dependencies?: Record<string, DependencyHealthCheck> | undefined;
 }
 
 export interface DependencyHealthCheck {
@@ -49,9 +49,7 @@ export interface DependencyHealthCheck {
 /**
  * Check database connectivity and performance
  */
-export async function checkDatabaseHealth(
-  prisma: PrismaClient
-): Promise<DatabaseHealthCheck> {
+export async function checkDatabaseHealth(prisma: PrismaClient): Promise<DatabaseHealthCheck> {
   const startTime = Date.now();
 
   try {
@@ -104,7 +102,9 @@ export async function checkDatabaseReadiness(
   try {
     // Use a timeout to prevent hanging
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Database readiness check timeout')), timeoutMs)
+      setTimeout(() => {
+        reject(new Error('Database readiness check timeout'));
+      }, timeoutMs)
     );
 
     const queryPromise = prisma.$queryRaw`SELECT 1 as ready_check`;
@@ -130,8 +130,6 @@ export async function createServiceHealthCheck(
   prisma?: PrismaClient,
   dependencies?: Record<string, () => Promise<DependencyHealthCheck>>
 ): Promise<ServiceHealthCheck> {
-  const startTime = Date.now();
-
   // Calculate uptime (simplified - in production, track actual service start time)
   const uptime = process.uptime();
 
@@ -202,7 +200,9 @@ export async function executeWithTimeout<T>(
   errorMessage: string
 ): Promise<T> {
   const timeoutPromise = new Promise<T>((_, reject) =>
-    setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs)
   );
 
   return Promise.race([promise, timeoutPromise]);

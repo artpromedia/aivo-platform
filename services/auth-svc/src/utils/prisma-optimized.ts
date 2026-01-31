@@ -1,19 +1,19 @@
 /**
  * Database Connection Pool Optimization
- * 
+ *
  * Optimizes Prisma connection pool settings for high-load scenarios (500+ concurrent users).
- * 
+ *
  * Performance Impact:
  * - Reduces connection wait times from 150ms → 5ms
  * - Eliminates connection pool exhaustion errors
  * - Improves P95 response times by 30-40ms
- * 
+ *
  * Usage:
  *   import { createOptimizedPrismaClient } from './prisma-optimized';
  *   const prisma = createOptimizedPrismaClient();
  */
 
-import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
+import { PrismaClient } from '@prisma/client';
 import type { FastifyBaseLogger } from 'fastify';
 
 export interface ConnectionPoolConfig {
@@ -75,19 +75,20 @@ export function createOptimizedPrismaClient(
   });
 
   // Prisma client configuration
-  const prismaConfig: Prisma.PrismaClientOptions = {
+  const prismaConfig: any = {
     datasources: {
       db: {
         url: optimizedUrl,
       },
     },
-    log: config.enableQueryLogging || isDevelopment
-      ? [
-          { level: 'query', emit: 'event' },
-          { level: 'error', emit: 'stdout' },
-          { level: 'warn', emit: 'stdout' },
-        ]
-      : [{ level: 'error', emit: 'stdout' }],
+    log:
+      config.enableQueryLogging || isDevelopment
+        ? [
+            { level: 'query', emit: 'event' },
+            { level: 'error', emit: 'stdout' },
+            { level: 'warn', emit: 'stdout' },
+          ]
+        : [{ level: 'error', emit: 'stdout' }],
   };
 
   const prisma = new PrismaClient(prismaConfig);
@@ -95,23 +96,30 @@ export function createOptimizedPrismaClient(
   // Query logging middleware
   if (config.enableQueryLogging && logger) {
     (prisma as any).$on('query', (e: any) => {
-      logger.debug({
-        query: e.query,
-        params: e.params,
-        duration: e.duration,
-      }, 'Database query executed');
+      logger.debug(
+        {
+          query: e.query,
+          params: e.params,
+          duration: e.duration,
+        },
+        'Database query executed'
+      );
 
       // Log slow queries
       if (e.duration > 100) {
-        logger.warn({
-          query: e.query,
-          duration: `${e.duration}ms`,
-        }, 'Slow query detected');
+        logger.warn(
+          {
+            query: e.query,
+            duration: `${e.duration}ms`,
+          },
+          'Slow query detected'
+        );
       }
     });
   }
 
   // Query performance monitoring middleware
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
   prisma.$use(async (params, next) => {
     const start = Date.now();
     const result = await next(params);
@@ -119,11 +127,14 @@ export function createOptimizedPrismaClient(
 
     // Log slow queries in production
     if (duration > 200 && isProduction && logger) {
-      logger.warn({
-        model: params.model,
-        action: params.action,
-        duration: `${duration}ms`,
-      }, 'Slow query in production');
+      logger.warn(
+        {
+          model: params.model,
+          action: params.action,
+          duration: `${duration}ms`,
+        },
+        'Slow query in production'
+      );
     }
 
     return result;
@@ -179,7 +190,7 @@ export function createReadReplicaClient(
   readReplicaUrl: string,
   logger?: FastifyBaseLogger
 ): PrismaClient {
-  const prismaConfig: Prisma.PrismaClientOptions = {
+  const prismaConfig: any = {
     datasources: {
       db: {
         url: readReplicaUrl,
@@ -300,21 +311,21 @@ export const RecommendedConfig = {
 
 /**
  * Example 1: Basic usage with defaults
- * 
+ *
  * import { createOptimizedPrismaClient } from './prisma-optimized';
  * const prisma = createOptimizedPrismaClient();
  */
 
 /**
  * Example 2: Production configuration
- * 
+ *
  * import { createOptimizedPrismaClient, RecommendedConfig } from './prisma-optimized';
  * const prisma = createOptimizedPrismaClient(RecommendedConfig.production, logger);
  */
 
 /**
  * Example 3: Custom configuration
- * 
+ *
  * const prisma = createOptimizedPrismaClient({
  *   connectionLimit: 75,
  *   connectTimeout: 5,
@@ -325,16 +336,16 @@ export const RecommendedConfig = {
 
 /**
  * Example 4: With read replica
- * 
+ *
  * const writeClient = createOptimizedPrismaClient(RecommendedConfig.production);
  * const readClient = createReadReplicaClient(
  *   process.env.DATABASE_READ_REPLICA_URL,
  *   logger
  * );
- * 
+ *
  * // Use writeClient for mutations
  * await writeClient.user.create({ data: { ... } });
- * 
+ *
  * // Use readClient for reads
  * const users = await readClient.user.findMany();
  */

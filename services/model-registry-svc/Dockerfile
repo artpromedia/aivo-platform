@@ -29,7 +29,7 @@ RUN pnpm install --frozen-lockfile
 RUN cd services/model-registry-svc && pnpm db:generate
 
 # Build service
-RUN pnpm turbo build --filter="@aivo/model-registry-svc"
+RUN pnpm turbo build --filter="@aivo/model-registry-svc..."
 
 # Deploy production dependencies
 RUN pnpm deploy --filter="@aivo/model-registry-svc" --prod /deploy

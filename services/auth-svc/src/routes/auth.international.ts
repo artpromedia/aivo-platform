@@ -1,6 +1,6 @@
 /**
  * Enhanced Auth Routes with Internationalization Support
- * 
+ *
  * These routes extend the base auth functionality with:
  * - User locale preferences during registration
  * - Automatic geolocation detection integration
@@ -26,25 +26,29 @@ const registerWithPreferencesBody = z.object({
   lastName: z.string().min(1),
   phone: z.string().optional(),
   role: z.enum(['learner', 'parent', 'teacher', 'admin']).default('learner'),
-  
+
   // Locale preferences
-  preferences: z.object({
-    language: z.string().min(2).max(10).default('en'),
-    country: z.string().length(2).optional(),
-    timezone: z.string().optional(),
-    currency: z.string().length(3).default('USD'),
-    curriculumFramework: z.string().optional(),
-    dateFormat: z.enum(['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY']).default('MM/DD/YYYY'),
-    timeFormat: z.enum(['12h', '24h']).default('12h'),
-    
-    // Detection metadata
-    detectedCountry: z.string().length(2).optional(),
-    detectedLanguage: z.string().optional(),
-    detectedTimezone: z.string().optional(),
-    detectionMethod: z.enum(['ip', 'browser', 'manual']).optional(),
-    detectionConfidence: z.number().min(0).max(1).optional(),
-  }).optional(),
-  
+  preferences: z
+    .object({
+      language: z.string().min(2).max(10).default('en'),
+      country: z.string().length(2).optional(),
+      timezone: z.string().optional(),
+      currency: z.string().length(3).default('USD'),
+      curriculumFramework: z.string().optional(),
+      dateFormat: z
+        .enum(['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD', 'DD.MM.YYYY'])
+        .default('MM/DD/YYYY'),
+      timeFormat: z.enum(['12h', '24h']).default('12h'),
+
+      // Detection metadata
+      detectedCountry: z.string().length(2).optional(),
+      detectedLanguage: z.string().optional(),
+      detectedTimezone: z.string().optional(),
+      detectionMethod: z.enum(['ip', 'browser', 'manual']).optional(),
+      detectionConfidence: z.number().min(0).max(1).optional(),
+    })
+    .optional(),
+
   // Marketing consent
   acceptMarketing: z.boolean().default(false),
 });
@@ -64,22 +68,27 @@ const updatePreferencesBody = z.object({
 // Map frontend role to RBAC role
 function mapRole(role: string): Role {
   switch (role) {
-    case 'learner': return Role.LEARNER;
-    case 'parent': return Role.PARENT;
-    case 'teacher': return Role.TEACHER;
-    case 'admin': return Role.ADMIN;
-    default: return Role.PARENT;
+    case 'learner':
+      return Role.LEARNER;
+    case 'parent':
+      return Role.PARENT;
+    case 'teacher':
+      return Role.TEACHER;
+    case 'admin':
+      return Role.PLATFORM_ADMIN;
+    default:
+      return Role.PARENT;
   }
 }
 
 function userResponse(
-  user: { 
-    id: string; 
-    email: string; 
+  user: {
+    id: string;
+    email: string;
     tenantId: string;
     firstName?: string | null;
     lastName?: string | null;
-  }, 
+  },
   roles: Role[],
   preferences?: {
     language: string;
@@ -98,15 +107,17 @@ function userResponse(
     firstName: user.firstName,
     lastName: user.lastName,
     roles,
-    preferences: preferences ? {
-      language: preferences.language,
-      country: preferences.country,
-      currency: preferences.currency,
-      timezone: preferences.timezone,
-      curriculumFramework: preferences.curriculumFramework,
-      dateFormat: preferences.dateFormat,
-      timeFormat: preferences.timeFormat,
-    } : null,
+    preferences: preferences
+      ? {
+          language: preferences.language,
+          country: preferences.country,
+          currency: preferences.currency,
+          timezone: preferences.timezone,
+          curriculumFramework: preferences.curriculumFramework,
+          dateFormat: preferences.dateFormat,
+          timeFormat: preferences.timeFormat,
+        }
+      : null,
   };
 }
 
@@ -118,23 +129,15 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
   fastify.post('/v2/register', { preHandler: registerRateLimiter }, async (request, reply) => {
     const parsed = registerWithPreferencesBody.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ 
+      return reply.status(400).send({
         error: 'Invalid payload',
         details: parsed.error.flatten().fieldErrors,
       });
     }
-    
-    const { 
-      email, 
-      password, 
-      firstName, 
-      lastName, 
-      phone, 
-      role, 
-      preferences,
-      acceptMarketing,
-    } = parsed.data;
-    
+
+    const { email, password, firstName, lastName, phone, role, preferences, acceptMarketing } =
+      parsed.data;
+
     const tenantId = config.consumerTenantId;
 
     // Check for existing user
@@ -160,7 +163,7 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
           status: 'ACTIVE',
           acceptedMarketing: acceptMarketing,
           roles: {
-            create: [{ role: rbacRole }],
+            create: [{ role: rbacRole as any }],
           },
         },
         include: { roles: true },
@@ -179,24 +182,24 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
             curriculumFramework: preferences.curriculumFramework,
             dateFormat: preferences.dateFormat,
             timeFormat: preferences.timeFormat,
-            
+
             // Detection metadata
             detectedCountry: preferences.detectedCountry,
             detectedLanguage: preferences.detectedLanguage,
             detectedTimezone: preferences.detectedTimezone,
             detectionMethod: preferences.detectionMethod,
             detectedAt: preferences.detectionMethod ? new Date() : null,
-            
+
             // Track if user overrode detected values
-            languageOverridden: preferences.detectedLanguage 
-              ? preferences.language !== preferences.detectedLanguage 
+            languageOverridden: preferences.detectedLanguage
+              ? preferences.language !== preferences.detectedLanguage
               : false,
-            countryOverridden: preferences.detectedCountry 
-              ? preferences.country !== preferences.detectedCountry 
+            countryOverridden: preferences.detectedCountry
+              ? preferences.country !== preferences.detectedCountry
               : false,
             currencyOverridden: false,
-            timezoneOverridden: preferences.detectedTimezone 
-              ? preferences.timezone !== preferences.detectedTimezone 
+            timezoneOverridden: preferences.detectedTimezone
+              ? preferences.timezone !== preferences.detectedTimezone
               : false,
           },
         });
@@ -205,7 +208,7 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
       // Fetch user with preferences
       return tx.user.findUniqueOrThrow({
         where: { id: newUser.id },
-        include: { 
+        include: {
           roles: true,
           preferences: true,
         },
@@ -213,17 +216,17 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
     });
 
     const roles = user.roles.map((r) => r.role as Role);
-    
+
     // Include locale info in JWT for frontend use
-    const tokenPayload = { 
-      sub: user.id, 
-      tenant_id: user.tenantId, 
+    const tokenPayload = {
+      sub: user.id,
+      tenant_id: user.tenantId,
       roles,
       locale: user.preferences?.language || 'en',
       currency: user.preferences?.currency || 'USD',
       country: user.preferences?.country || null,
     };
-    
+
     const accessToken = await signAccessToken(tokenPayload);
     const refreshToken = await signRefreshToken(tokenPayload);
 
@@ -282,14 +285,14 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
   fastify.put('/v2/me/preferences', async (request, reply) => {
     const userId = (request as any).userId;
     const tenantId = (request as any).tenantId;
-    
+
     if (!userId) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
 
     const parsed = updatePreferencesBody.safeParse(request.body);
     if (!parsed.success) {
-      return reply.status(400).send({ 
+      return reply.status(400).send({
         error: 'Invalid payload',
         details: parsed.error.flatten().fieldErrors,
       });
@@ -377,7 +380,11 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
       ],
       curriculumFrameworks: [
         { code: 'COMMON_CORE', name: 'Common Core (US)', countries: ['US'] },
-        { code: 'UK_NATIONAL_CURRICULUM', name: 'UK National Curriculum', countries: ['GB', 'NG', 'KE'] },
+        {
+          code: 'UK_NATIONAL_CURRICULUM',
+          name: 'UK National Curriculum',
+          countries: ['GB', 'NG', 'KE'],
+        },
         { code: 'CBSE', name: 'CBSE (India)', countries: ['IN', 'AE'] },
         { code: 'CAPS', name: 'CAPS (South Africa)', countries: ['ZA'] },
         { code: 'IB_PYP', name: 'IB Primary Years Programme', countries: [] },

@@ -26,7 +26,7 @@ COPY services/goal-svc/ ./services/goal-svc/
 RUN pnpm install --frozen-lockfile
 
 # Build the service
-RUN pnpm turbo build --filter="@aivo/goal-svc"
+RUN pnpm turbo build --filter="@aivo/goal-svc..."
 
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/goal-svc" --prod /deploy
