@@ -29,6 +29,8 @@
 library aivo_theme;
 
 export 'aivo_brand.dart';
+export 'aivo_icons.dart';
+export 'aivo_illustrations.dart';
 export 'aivo_motion.dart';
 export 'aivo_shadows.dart';
 export 'aivo_theme.dart';

@@ -32,6 +32,8 @@ dependencies:
   crypto: ^3.0.6
   # SVG support
   flutter_svg: ^2.0.10+1
+  # Lucide icons (matching web lucide-react)
+  lucide_icons: ^0.257.0
   # JSON serialization
   json_annotation: ^4.9.0
   # WebSocket support

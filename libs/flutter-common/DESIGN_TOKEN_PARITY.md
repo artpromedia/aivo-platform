@@ -1380,6 +1380,132 @@ All accessibility widgets include proper `Semantics` labels:
 | `high_contrast_theme.dart`      | High contrast colors and theme builder |
 | `accessibility_preview.dart`    | Interactive preview for design system  |
 
+### ✅ Icon & Illustration System - Full Parity (Sprint 12)
+
+Comprehensive icon and illustration system matching web `lucide-react` with consistent sizing, colors, and grade-band adaptations.
+
+#### Icon Library Alignment
+
+| Feature          | Flutter                    | Web               | Status         |
+| ---------------- | -------------------------- | ----------------- | -------------- |
+| Icon Package     | `lucide_icons: ^0.257.0`   | `lucide-react`    | ✅ Exact match |
+| Icon Names       | `AivoIcons.home`, etc.     | `<Home />`, etc.  | ✅ Mapped      |
+| Icon Consistency | All apps use same icon set | All apps use same | ✅ Unified     |
+
+#### Icon Sizing Standards
+
+| Size | Value | Use Case                      |
+| ---- | ----- | ----------------------------- |
+| xs   | 12px  | Inline indicators             |
+| sm   | 16px  | Badges, compact UI            |
+| md   | 20px  | Default, buttons (default)    |
+| lg   | 24px  | Navigation, prominent actions |
+| xl   | 32px  | Feature highlights            |
+| xxl  | 40px  | Empty states                  |
+| xxxl | 48px  | Hero icons                    |
+
+##### Grade Band Scaling
+
+| Grade Band      | Scale Factor | 24px Base Result |
+| --------------- | ------------ | ---------------- |
+| K-5 (Explorer)  | 1.15 (+15%)  | 27.6px           |
+| 6-8 (Navigator) | 1.05 (+5%)   | 25.2px           |
+| 9-12 (Scholar)  | 1.0 (base)   | 24px             |
+
+#### Icon Color Variants
+
+| Variant   | Light Mode                     | Dark Mode                      |
+| --------- | ------------------------------ | ------------------------------ |
+| primary   | `theme.colorScheme.primary`    | `theme.colorScheme.primary`    |
+| secondary | `colorScheme.secondary`        | `colorScheme.secondary`        |
+| muted     | `colorScheme.onSurfaceVariant` | `colorScheme.onSurfaceVariant` |
+| inverse   | `colorScheme.onPrimary`        | `colorScheme.onPrimary`        |
+| success   | `AivoBrand.success`            | `AivoBrand.success`            |
+| warning   | `AivoBrand.warning`            | `AivoBrand.warning`            |
+| error     | `colorScheme.error`            | `colorScheme.error`            |
+| info      | `AivoBrand.info`               | `AivoBrand.info`               |
+| accent    | `AivoBrand.accent`             | `AivoBrand.accent`             |
+| disabled  | `colorScheme.onSurface.38%`    | `colorScheme.onSurface.38%`    |
+
+#### Icon Button Standards
+
+| Component                | Touch Target | Icon Size | Padding |
+| ------------------------ | ------------ | --------- | ------- |
+| `AivoIconButton.sm`      | 32x32px      | 16px      | 8px     |
+| `AivoIconButton.md`      | 40x40px      | 20px      | 10px    |
+| `AivoIconButton.lg`      | 48x48px      | 24px      | 12px    |
+| `AivoFilledIconButton`   | 48x48px      | 24px      | 12px    |
+| `AivoOutlinedIconButton` | 48x48px      | 24px      | 12px    |
+
+##### Focus States
+
+| Property       | Value                                   |
+| -------------- | --------------------------------------- |
+| Focus Ring     | 2px width, primary color, 50% opacity   |
+| Ring Offset    | 2px from button edge                    |
+| Tab Navigation | Full keyboard support with visible ring |
+
+#### Icon Mappings (AivoIcons)
+
+Common icons mapped to Lucide equivalents:
+
+| Category      | Icons                                                    |
+| ------------- | -------------------------------------------------------- |
+| Navigation    | home, menu, back, forward, chevron*, close, more*        |
+| Actions       | search, filter, sort, add, edit, delete, save, share     |
+| Status        | check, checkCircle, error, warning, info, help, loading  |
+| User          | user, users, userPlus, profile, graduationCap            |
+| Communication | bell, bellOff, mail, message, messageSquare, phone       |
+| Media         | file, fileText, folder, image, music, play, pause        |
+| Education     | book, bookOpen, library, school, award, trophy, star     |
+| Progress      | brain, lightbulb, puzzle, trendingUp, barChart, activity |
+| Gamification  | coins, gem, flame, zap, rocket, sparkles, crown, medal   |
+| Interface     | eye, eyeOff, lock, unlock, bookmark, heart, thumbs\*     |
+| Device        | smartphone, tablet, monitor, wifi, wifiOff, globe        |
+| AI            | bot, cpu, wand, magic                                    |
+
+#### Illustration System
+
+##### Illustration Sizes
+
+| Size | Value | Use Case                     |
+| ---- | ----- | ---------------------------- |
+| sm   | 80px  | Inline/compact illustrations |
+| md   | 120px | Standard empty states        |
+| lg   | 180px | Prominent illustrations      |
+| xl   | 240px | Full-page states             |
+| hero | 320px | Hero/onboarding              |
+
+##### Preset Illustrations
+
+| Preset        | Icon Used    | Use Case                |
+| ------------- | ------------ | ----------------------- |
+| `emptyInbox`  | inbox        | Empty message/inbox     |
+| `noResults`   | searchX      | Search with no results  |
+| `error`       | alertCircle  | Error states            |
+| `offline`     | wifiOff      | Offline/connectivity    |
+| `success`     | checkCircle2 | Success confirmations   |
+| `emptyList`   | list         | Empty lists/tables      |
+| `learning`    | bookOpen     | Learning-related states |
+| `achievement` | trophy       | Achievement/rewards     |
+| `welcome`     | sparkles     | Welcome/onboarding      |
+
+##### Grade Band Illustration Styles
+
+| Grade Band | Style Characteristics                          |
+| ---------- | ---------------------------------------------- |
+| K-5        | Larger decorations, more playful, extra shapes |
+| 6-8        | Medium decorations, balanced style             |
+| 9-12       | Subtle decorations, professional look          |
+
+#### Files Created
+
+| File                      | Purpose                                      |
+| ------------------------- | -------------------------------------------- |
+| `aivo_icons.dart`         | Icon sizes, colors, buttons, common mappings |
+| `aivo_illustrations.dart` | SVG and icon-based illustration system       |
+| `icon_preview.dart`       | Interactive preview for design system        |
+
 ## Maintenance Guidelines
 
 1. **Always update both platforms**: When changing tokens, update both `tokens.json` and `aivo_brand.dart`
@@ -1464,3 +1590,15 @@ All accessibility widgets include proper `Semantics` labels:
 | 2026-01-31 | Implemented HighContrastUtils with WCAG contrast ratio calculation                          | Sprint 11 |
 | 2026-01-31 | Added AivoAccessibilityObserver for system preference synchronization                       | Sprint 11 |
 | 2026-01-31 | Created AccessibilityPreview widget for design system gallery                               | Sprint 11 |
+| 2026-01-31 | Audited web icon usage: all apps use lucide-react consistently                              | Sprint 12 |
+| 2026-01-31 | Added lucide_icons package for Flutter matching web lucide-react                            | Sprint 12 |
+| 2026-01-31 | Implemented AivoIconSize with xs/sm/md/lg/xl/xxl/xxxl sizes and grade-band scaling          | Sprint 12 |
+| 2026-01-31 | Created AivoIconVariant enum for semantic icon colors (primary, secondary, muted, etc.)     | Sprint 12 |
+| 2026-01-31 | Implemented AivoIcon widget with size, variant, and grade-band support                      | Sprint 12 |
+| 2026-01-31 | Added AivoIconButton variants: standard, filled, outlined with touch targets                | Sprint 12 |
+| 2026-01-31 | Created AivoIconBadge for notification indicators                                           | Sprint 12 |
+| 2026-01-31 | Implemented AivoIcons abstract class mapping common icons to Lucide equivalents             | Sprint 12 |
+| 2026-01-31 | Created aivo_illustrations.dart with SVG and icon-based illustration support                | Sprint 12 |
+| 2026-01-31 | Added AivoPresetIllustration factory for common empty states (error, offline, success)      | Sprint 12 |
+| 2026-01-31 | Implemented AivoGradeBandIllustration with adaptive visual styles per grade band            | Sprint 12 |
+| 2026-01-31 | Created IconPreview widget for design system gallery                                        | Sprint 12 |

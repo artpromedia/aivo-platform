@@ -1341,3 +1341,80 @@ class AivoColors extends ThemeExtension<AivoColors> {
         sky: AivoBrandColors.sky,
       );
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO THEME UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Utility class for theme-related context lookups.
+///
+/// Provides static methods to retrieve theme information from the widget tree.
+abstract class AivoTheme {
+  /// Gets the current [AivoGradeBand] from the nearest ancestor.
+  ///
+  /// This looks for an [AivoThemeScope] in the widget tree.
+  /// If not found, returns [AivoGradeBand.g9_12] as the default.
+  ///
+  /// Usage:
+  /// ```dart
+  /// final gradeBand = AivoTheme.gradeBandOf(context);
+  /// ```
+  static AivoGradeBand gradeBandOf(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<AivoThemeScope>();
+    return scope?.gradeBand ?? AivoGradeBand.g9_12;
+  }
+
+  /// Checks if dark mode is currently active.
+  ///
+  /// Returns true if the theme brightness is dark.
+  static bool isDarkMode(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  /// Gets the current [AivoColors] from the theme.
+  ///
+  /// Returns null if [AivoColors] extension is not present in the theme.
+  static AivoColors? colorsOf(BuildContext context) {
+    return Theme.of(context).extension<AivoColors>();
+  }
+}
+
+/// Inherited widget that provides [AivoGradeBand] to descendants.
+///
+/// Wrap your app or a subtree with this widget to make the grade band
+/// available via [AivoTheme.gradeBandOf].
+///
+/// Usage:
+/// ```dart
+/// AivoThemeScope(
+///   gradeBand: AivoGradeBand.k5,
+///   child: MyApp(),
+/// )
+/// ```
+class AivoThemeScope extends InheritedWidget {
+  const AivoThemeScope({
+    super.key,
+    required this.gradeBand,
+    required super.child,
+  });
+
+  /// The grade band to provide to descendants.
+  final AivoGradeBand gradeBand;
+
+  @override
+  bool updateShouldNotify(AivoThemeScope oldWidget) {
+    return gradeBand != oldWidget.gradeBand;
+  }
+
+  /// Gets the [AivoThemeScope] from the given context.
+  static AivoThemeScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AivoThemeScope>();
+  }
+
+  /// Gets the [AivoThemeScope] from the given context, throwing if not found.
+  static AivoThemeScope of(BuildContext context) {
+    final scope = maybeOf(context);
+    assert(scope != null, 'No AivoThemeScope found in context');
+    return scope!;
+  }
+}
