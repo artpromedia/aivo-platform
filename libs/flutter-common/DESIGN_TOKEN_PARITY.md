@@ -37,6 +37,64 @@ This document details the synchronization status between web design tokens (`lib
 | Navigator (6-8)    | All 22 color tokens | `gradeThemes.navigator.color` | ✅ Exact match |
 | Scholar (9-12)     | All 22 color tokens | `gradeThemes.scholar.color`   | ✅ Exact match |
 
+#### Scholar Dark Mode Colors (Sprint 10)
+
+Dark mode is only available for the Scholar (G9-12) theme, matching web behavior exactly.
+
+| Color Token     | Flutter                          | Web (scholarDark)           | Value                     |
+| --------------- | -------------------------------- | --------------------------- | ------------------------- |
+| Primary         | `_g9_12DarkColors.primary`       | `scholarDark.primary`       | `#A78BFA`                 |
+| Secondary       | `_g9_12DarkColors.secondary`     | `scholarDark.secondary`     | `#757593`                 |
+| Accent          | `_g9_12DarkColors.accent`        | `scholarDark.accent`        | `#7C3AED`                 |
+| Background      | `_g9_12DarkColors.background`    | `scholarDark.background`    | `#09090B`                 |
+| Surface         | `_g9_12DarkColors.surface`       | `scholarDark.surface`       | `#18181B`                 |
+| Surface Muted   | `_g9_12DarkColors.surfaceMuted`  | `scholarDark.surfaceMuted`  | `#27272A`                 |
+| Text Primary    | `_g9_12DarkColors.textPrimary`   | `scholarDark.textPrimary`   | `#FAFAFA`                 |
+| Text Secondary  | `_g9_12DarkColors.textSecondary` | `scholarDark.textSecondary` | `#A1A1AA`                 |
+| Text Muted      | `_g9_12DarkColors.textMuted`     | `scholarDark.textMuted`     | `#71717A`                 |
+| Border          | `_g9_12DarkColors.border`        | `scholarDark.border`        | `#3F3F46`                 |
+| Border Muted    | `_g9_12DarkColors.borderMuted`   | `scholarDark.borderMuted`   | `#27272A`                 |
+| Error           | `_g9_12DarkColors.error`         | `scholarDark.error`         | `#F87171`                 |
+| Success         | `_g9_12DarkColors.success`       | `scholarDark.success`       | `#34D399`                 |
+| Warning         | `_g9_12DarkColors.warning`       | `scholarDark.warning`       | `#FBBF24`                 |
+| Info            | `_g9_12DarkColors.info`          | `scholarDark.info`          | `#60A5FA`                 |
+| Focus           | `_g9_12DarkColors.focus`         | `scholarDark.focus`         | `#60A5FA`                 |
+| Focus Ring      | `_g9_12DarkColors.focusRing`     | `scholarDark.focusRing`     | `rgba(96, 165, 250, 0.5)` |
+| Backdrop        | `_g9_12DarkColors.backdrop`      | `scholarDark.backdrop`      | `rgba(0, 0, 0, 0.6)`      |
+| Text On Primary | `_g9_12DarkColors.textOnPrimary` | `scholarDark.textOnPrimary` | `#09090B`                 |
+| Text On Accent  | `_g9_12DarkColors.textOnAccent`  | `scholarDark.textOnAccent`  | `#FFFFFF`                 |
+
+##### Dark Mode Behavior
+
+| Feature           | Flutter Implementation                        | Web Implementation                       |
+| ----------------- | --------------------------------------------- | ---------------------------------------- |
+| Availability      | Scholar (G9-12) only                          | Scholar (HS) only                        |
+| System Preference | `platformDispatcher.platformBrightness`       | `matchMedia('prefers-color-scheme')`     |
+| Persistence       | `SharedPreferences` with key `aivo:dark-mode` | `localStorage` with key `aivo:dark-mode` |
+| Theme Transition  | `AnimatedTheme` with grade-band duration      | CSS transitions                          |
+
+##### Dark Mode Theme Widgets
+
+| Widget                     | Purpose                                               |
+| -------------------------- | ----------------------------------------------------- |
+| `AivoThemeTransition`      | AnimatedTheme wrapper with grade-band duration        |
+| `AivoDarkModeToggle`       | Switch widget for dark mode (hidden when not Scholar) |
+| `AivoDarkModeIconButton`   | Icon button variant of dark mode toggle               |
+| `AivoThemeSelector`        | Dropdown for grade band selection                     |
+| `AivoThemeSegmentedButton` | Segmented button for grade band selection             |
+| `AivoThemePreviewCard`     | Theme preview card with color swatches                |
+| `AivoBrightnessBuilder`    | Builder widget for light/dark variants                |
+| `AivoSystemThemeListener`  | WidgetsBindingObserver for system brightness changes  |
+
+##### Dark Mode Component Styling
+
+| Component    | Light Mode               | Dark Mode                            |
+| ------------ | ------------------------ | ------------------------------------ |
+| Cards        | Shadows for elevation    | Subtle borders (`border: #3F3F46`)   |
+| Buttons      | Standard colors          | Proper contrast with `textOnPrimary` |
+| Input Fields | Light borders            | Visible borders (`border: #3F3F46`)  |
+| Text         | Dark on light background | Light on dark background             |
+
 ### ✅ Spacing - Full Parity
 
 | Token    | Flutter             | Web             | Value |
@@ -93,13 +151,115 @@ This document details the synchronization status between web design tokens (`lib
 
 ### ✅ Shadows - Full Parity
 
-| Shadow Level | Flutter          | Web                    | Properties                                  |
-| ------------ | ---------------- | ---------------------- | ------------------------------------------- |
-| Soft         | `shadowSoft`     | `base.shadow.soft`     | color: rgba(26,26,46,0.08), y: 4, blur: 16  |
-| Raised       | `shadowRaised`   | `base.shadow.raised`   | color: rgba(26,26,46,0.12), y: 8, blur: 24  |
-| Elevated     | `shadowElevated` | `base.shadow.elevated` | color: rgba(26,26,46,0.16), y: 12, blur: 32 |
+The Flutter shadow system is implemented in `AivoShadows` utility class (`libs/flutter-common/lib/theme/aivo_shadows.dart`), providing centralized shadow management with exact parity to web tokens.
 
-### ✅ Motion/Animation - Full Parity
+#### Base Shadow Levels
+
+| Shadow Level | Flutter                | Web                    | Properties                                  |
+| ------------ | ---------------------- | ---------------------- | ------------------------------------------- |
+| Soft         | `AivoShadows.soft`     | `base.shadow.soft`     | color: rgba(26,26,46,0.08), y: 4, blur: 16  |
+| Raised       | `AivoShadows.raised`   | `base.shadow.raised`   | color: rgba(26,26,46,0.12), y: 8, blur: 24  |
+| Elevated     | `AivoShadows.elevated` | `base.shadow.elevated` | color: rgba(26,26,46,0.16), y: 12, blur: 32 |
+
+#### Hover Shadow States
+
+| Hover Level    | Flutter                     | Properties                                  |
+| -------------- | --------------------------- | ------------------------------------------- |
+| Soft Hover     | `AivoShadows.softHover`     | color: rgba(26,26,46,0.12), y: 6, blur: 20  |
+| Raised Hover   | `AivoShadows.raisedHover`   | color: rgba(26,26,46,0.16), y: 12, blur: 28 |
+| Elevated Hover | `AivoShadows.elevatedHover` | color: rgba(26,26,46,0.20), y: 16, blur: 36 |
+
+#### Dark Mode Shadows
+
+| Shadow Level  | Flutter                    | Properties                               |
+| ------------- | -------------------------- | ---------------------------------------- |
+| Soft Dark     | `AivoShadows.softDark`     | color: rgba(0,0,0,0.20), y: 4, blur: 16  |
+| Raised Dark   | `AivoShadows.raisedDark`   | color: rgba(0,0,0,0.30), y: 8, blur: 24  |
+| Elevated Dark | `AivoShadows.elevatedDark` | color: rgba(0,0,0,0.40), y: 12, blur: 32 |
+
+#### Grade-Band Card Shadows
+
+| Grade Band    | Shadow          | Flutter                            | Web Reference                              | Properties                                     |
+| ------------- | --------------- | ---------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| **Explorer**  | Card            | `AivoShadows.cardExplorer`         | `gradeThemes.explorer.cardShadow`          | color: rgba(255,107,107,0.20), y: 8, blur: 32  |
+|               | Card Hover      | `AivoShadows.cardExplorerHover`    | `gradeThemes.explorer.cardShadowHover`     | color: rgba(255,107,107,0.30), y: 12, blur: 40 |
+| **Navigator** | Card            | `AivoShadows.cardNavigator`        | `gradeThemes.navigator.cardShadow`         | color: rgba(8,145,178,0.12), y: 4, blur: 16    |
+|               | Card Hover      | `AivoShadows.cardNavigatorHover`   | `gradeThemes.navigator.cardShadowHover`    | color: rgba(8,145,178,0.18), y: 8, blur: 24    |
+| **Scholar**   | Card            | `AivoShadows.cardScholar`          | `gradeThemes.scholar.cardShadow`           | color: rgba(26,26,46,0.08), y: 2, blur: 8      |
+|               | Card Hover      | `AivoShadows.cardScholarHover`     | `gradeThemes.scholar.cardShadowHover`      | color: rgba(26,26,46,0.12), y: 4, blur: 12     |
+|               | Card Dark       | `AivoShadows.cardScholarDark`      | `gradeThemes.scholar.dark.cardShadow`      | color: rgba(0,0,0,0.30), y: 2, blur: 8         |
+|               | Card Dark Hover | `AivoShadows.cardScholarDarkHover` | `gradeThemes.scholar.dark.cardShadowHover` | color: rgba(0,0,0,0.40), y: 4, blur: 12        |
+
+#### Colored Shadows (Semantic)
+
+| Color   | Flutter               | Properties                                    |
+| ------- | --------------------- | --------------------------------------------- |
+| Primary | `AivoShadows.primary` | color: rgba(139,92,246,0.30), y: 4, blur: 16  |
+| Coral   | `AivoShadows.coral`   | color: rgba(255,107,107,0.30), y: 4, blur: 16 |
+| Teal    | `AivoShadows.teal`    | color: rgba(8,145,178,0.30), y: 4, blur: 16   |
+| Success | `AivoShadows.success` | color: rgba(16,185,129,0.30), y: 4, blur: 16  |
+| Error   | `AivoShadows.error`   | color: rgba(239,68,68,0.30), y: 4, blur: 16   |
+| Warning | `AivoShadows.warning` | color: rgba(245,158,11,0.30), y: 4, blur: 16  |
+| Info    | `AivoShadows.info`    | color: rgba(59,130,246,0.30), y: 4, blur: 16  |
+
+#### Special Effects
+
+| Effect      | Flutter                        | Usage                                            |
+| ----------- | ------------------------------ | ------------------------------------------------ |
+| Focus Ring  | `AivoShadows.focusRing(color)` | Accessibility focus indicator (0 spread, 3 blur) |
+| Glow        | `AivoShadows.glow(color)`      | Animated glow effect (0 spread, 20 blur)         |
+| Inset       | `AivoShadows.inset`            | Inner shadow for pressed/active states           |
+| Inset Input | `AivoShadows.insetInput`       | Subtle inner shadow for input fields             |
+
+#### Helper Methods
+
+| Method                          | Description                                                       |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `cardForGradeBand(band)`        | Returns appropriate card shadow for grade band                    |
+| `cardHoverForGradeBand(band)`   | Returns hover card shadow for grade band                          |
+| `forElevation(level)`           | Returns shadow for elevation level (1=soft, 2=raised, 3=elevated) |
+| `withOpacity(shadows, opacity)` | Adjusts opacity of existing shadows                               |
+| `lerp(a, b, t)`                 | Interpolates between two shadow lists for animations              |
+
+#### Usage Examples
+
+```dart
+// Basic elevation shadows
+Container(
+  decoration: BoxDecoration(
+    boxShadow: AivoShadows.soft,  // or raised, elevated
+  ),
+);
+
+// Grade-band aware card shadows
+Container(
+  decoration: BoxDecoration(
+    boxShadow: AivoShadows.cardForGradeBand(gradeBand),
+  ),
+);
+
+// Animated hover effect
+AnimatedContainer(
+  decoration: BoxDecoration(
+    boxShadow: isHovered
+      ? AivoShadows.raisedHover
+      : AivoShadows.raised,
+  ),
+);
+
+// Shadow interpolation for smooth transitions
+BoxShadow.lerpList(
+  AivoShadows.soft,
+  AivoShadows.softHover,
+  animationValue,
+);
+```
+
+### ✅ Motion/Animation System - Full Parity
+
+The Flutter animation system is implemented in `AivoMotion` utility class (`libs/flutter-common/lib/theme/aivo_motion.dart`), providing centralized motion management with exact parity to web tokens.
+
+#### Base Duration Tokens
 
 | Duration     | Flutter               | Web                                | Value |
 | ------------ | --------------------- | ---------------------------------- | ----- |
@@ -109,6 +269,117 @@ This document details the synchronization status between web design tokens (`lib
 | Reduced Fast | `durationReducedFast` | `base.motion.durationReduced.fast` | 0ms   |
 | Reduced Base | `durationReducedBase` | `base.motion.durationReduced.base` | 0ms   |
 | Reduced Slow | `durationReducedSlow` | `base.motion.durationReduced.slow` | 150ms |
+
+#### Grade-Band Duration Tokens
+
+| Grade Band    | Speed | Flutter                             | Web Reference                                  | Value |
+| ------------- | ----- | ----------------------------------- | ---------------------------------------------- | ----- |
+| **Explorer**  | Fast  | `AivoDurationConfig.explorer.fast`  | `gradeThemes.explorer.animation.durationFast`  | 150ms |
+|               | Base  | `AivoDurationConfig.explorer.base`  | `gradeThemes.explorer.animation.duration`      | 250ms |
+|               | Slow  | `AivoDurationConfig.explorer.slow`  | `gradeThemes.explorer.animation.durationSlow`  | 400ms |
+| **Navigator** | Fast  | `AivoDurationConfig.navigator.fast` | `gradeThemes.navigator.animation.durationFast` | 120ms |
+|               | Base  | `AivoDurationConfig.navigator.base` | `gradeThemes.navigator.animation.duration`     | 200ms |
+|               | Slow  | `AivoDurationConfig.navigator.slow` | `gradeThemes.navigator.animation.durationSlow` | 320ms |
+| **Scholar**   | Fast  | `AivoDurationConfig.scholar.fast`   | `gradeThemes.scholar.animation.durationFast`   | 100ms |
+|               | Base  | `AivoDurationConfig.scholar.base`   | `gradeThemes.scholar.animation.duration`       | 150ms |
+|               | Slow  | `AivoDurationConfig.scholar.slow`   | `gradeThemes.scholar.animation.durationSlow`   | 250ms |
+
+#### Easing Curves
+
+| Curve            | Flutter                      | Web Cubic-Bezier                         | Description                            |
+| ---------------- | ---------------------------- | ---------------------------------------- | -------------------------------------- |
+| Standard         | `AivoCurves.standard`        | `cubic-bezier(0.2, 0, 0, 1)`             | Material decelerate, most transitions  |
+| Emphasized       | `AivoCurves.emphasized`      | `cubic-bezier(0.3, 0, 0.2, 1)`           | Emphasized decelerate                  |
+| Bounce Explorer  | `AivoCurves.bounceExplorer`  | `cubic-bezier(0.68, -0.55, 0.265, 1.55)` | Playful overshoot for younger learners |
+| Bounce Navigator | `AivoCurves.bounceNavigator` | `cubic-bezier(0.34, 1.2, 0.64, 1)`       | Subtle bounce                          |
+| Bounce Scholar   | `AivoCurves.bounceScholar`   | `cubic-bezier(0.34, 1.1, 0.64, 1)`       | Minimal bounce                         |
+| Linear           | `AivoCurves.linear`          | `linear`                                 | Reduced motion mode                    |
+
+#### Scale Configurations (Hover/Press)
+
+| Grade Band    | State | Flutter                           | Web Reference                                | Value |
+| ------------- | ----- | --------------------------------- | -------------------------------------------- | ----- |
+| **Explorer**  | Hover | `AivoScaleConfig.explorer.hover`  | `gradeThemes.explorer.animation.hoverScale`  | 1.05  |
+|               | Press | `AivoScaleConfig.explorer.press`  | `gradeThemes.explorer.animation.pressScale`  | 0.95  |
+| **Navigator** | Hover | `AivoScaleConfig.navigator.hover` | `gradeThemes.navigator.animation.hoverScale` | 1.02  |
+|               | Press | `AivoScaleConfig.navigator.press` | `gradeThemes.navigator.animation.pressScale` | 0.98  |
+| **Scholar**   | Hover | `AivoScaleConfig.scholar.hover`   | `gradeThemes.scholar.animation.hoverScale`   | 1.01  |
+|               | Press | `AivoScaleConfig.scholar.press`   | `gradeThemes.scholar.animation.pressScale`   | 0.99  |
+
+#### Reduced Motion Support
+
+The motion system respects accessibility settings for reduced motion:
+
+| Utility                                | Description                             |
+| -------------------------------------- | --------------------------------------- |
+| `AivoReducedMotion.isEnabled(context)` | Checks `MediaQuery.disableAnimations`   |
+| `AivoDurationConfig.reduced`           | Zero-duration config for reduced motion |
+| `context.aivoReducedMotion`            | Context extension for easy access       |
+
+#### Animation Wrapper Widgets
+
+| Widget                 | Purpose                                         |
+| ---------------------- | ----------------------------------------------- |
+| `AivoAnimatedScale`    | Grade-band aware scale animations (hover/press) |
+| `AivoAnimatedOpacity`  | Grade-band aware fade animations                |
+| `AivoAnimatedSlide`    | Grade-band aware slide/translate animations     |
+| `AivoAnimatedPresence` | Combined scale + opacity for enter/exit         |
+
+#### Page Transitions
+
+| Component                    | Purpose                                          |
+| ---------------------------- | ------------------------------------------------ |
+| `AivoPageTransitionsBuilder` | Grade-band specific page route transitions       |
+| `aivoPageTransitionsTheme()` | Factory for PageTransitionsTheme with AIVO style |
+
+#### Helper Methods
+
+| Method                                  | Description                              |
+| --------------------------------------- | ---------------------------------------- |
+| `AivoDurationConfig.forGradeBand(band)` | Returns duration config for grade band   |
+| `AivoScaleConfig.forGradeBand(band)`    | Returns scale config for grade band      |
+| `AivoCurves.bounceForGradeBand(band)`   | Returns appropriate bounce curve         |
+| `AivoMotion.durationFor(context)`       | Gets duration considering reduced motion |
+| `AivoMotion.bounceFor(gradeBand)`       | Gets bounce curve for grade band         |
+
+#### Usage Examples
+
+```dart
+// Using centralized duration configs
+final config = AivoDurationConfig.forGradeBand(AivoGradeBand.k5);
+_animationController = AnimationController(
+  vsync: this,
+  duration: config.base,  // 250ms for Explorer
+);
+
+// Grade-band aware scale animation
+AivoAnimatedScale(
+  scale: _isPressed ? 0.95 : 1.0,
+  gradeBand: AivoGradeBand.k5,  // Uses bouncy Explorer curve
+  child: MyWidget(),
+)
+
+// Using bounce curves directly
+CurvedAnimation(
+  parent: _controller,
+  curve: AivoCurves.bounceForGradeBand(gradeBand),
+)
+
+// Checking reduced motion
+if (context.aivoReducedMotion) {
+  // Skip or simplify animation
+  return child;
+}
+
+// Page transitions with grade-band awareness
+MaterialApp(
+  theme: ThemeData(
+    pageTransitionsTheme: aivoPageTransitionsTheme(
+      gradeBand: AivoGradeBand.k5,
+    ),
+  ),
+)
+```
 
 ### ✅ Typography - Full Parity
 
@@ -399,6 +670,7 @@ AivoCard(
 - `CardComparisonScreen` - Interactive card comparison
 - `FormPreview` - Form component samples for each grade band
 - `FormComparisonScreen` - Interactive form components comparison
+- `NavigationPreview` - Navigation component samples for each grade band
 
 ### ✅ Form Components - Full Parity (Sprint 5)
 
@@ -541,6 +813,573 @@ Same as AivoSwitch - more playful for younger users, subtle for older.
 | Focus Ring Offset | 2px           |
 | Transition        | 150ms ease    |
 
+### ✅ Navigation Components - Full Parity (Sprint 6)
+
+Navigation components match the web navigation patterns from `libs/ui-web/src/components/layout/header.tsx`, `sidebar.tsx`, and `libs/ui-web/src/components/ui/tabs.tsx`.
+
+#### AivoAppBar
+
+Matches web `header.tsx` component (h-16 = 64px, px-6 = 24px padding, border-b).
+
+##### Variants
+
+| Variant       | Background  | Shadow | Border |
+| ------------- | ----------- | ------ | ------ |
+| `standard`    | Surface     | None   | Bottom |
+| `primary`     | Primary     | None   | None   |
+| `transparent` | Transparent | None   | None   |
+| `elevated`    | Surface     | Soft   | None   |
+
+##### Dimensions
+
+| Property       | Value      |
+| -------------- | ---------- |
+| Height         | 64px       |
+| Horizontal pad | 24px       |
+| Title font     | titleLarge |
+| Action spacing | 8px        |
+
+##### Sub-Components
+
+| Component          | Purpose                                |
+| ------------------ | -------------------------------------- |
+| `AivoBackButton`   | Standard back navigation button        |
+| `AivoAppBarAction` | Action button with grade-band sizing   |
+| `AivoSliverAppBar` | Scrolling app bar for CustomScrollView |
+| `AivoSearchAppBar` | App bar with integrated search field   |
+
+##### Grade-Band Action Button Size
+
+| Grade Band         | Touch Target | Icon Size |
+| ------------------ | ------------ | --------- |
+| Explorer (Pre-K–5) | 48px         | 28px      |
+| Navigator (6-8)    | 44px         | 24px      |
+| Scholar (9-12)     | 40px         | 22px      |
+
+#### AivoBottomNavBar
+
+Matches Material 3 bottom navigation with web-inspired styling.
+
+##### Variants
+
+| Variant    | Background | Shadow | Style          |
+| ---------- | ---------- | ------ | -------------- |
+| `standard` | Surface    | None   | Standard M3    |
+| `elevated` | Surface    | Soft   | Elevated bar   |
+| `tinted`   | Primary    | None   | Primary tinted |
+
+##### Grade-Band Heights
+
+| Grade Band         | Bar Height | Icon Size | Label Size |
+| ------------------ | ---------- | --------- | ---------- |
+| Explorer (Pre-K–5) | 80px       | 28px      | 14px       |
+| Navigator (6-8)    | 72px       | 26px      | 13px       |
+| Scholar (9-12)     | 64px       | 24px      | 12px       |
+
+##### Features
+
+- Badge support with count display
+- Active/inactive state colors
+- Label visibility modes (always, selected, never)
+- `AivoFloatingBottomNav` variant with rounded corners
+
+#### AivoDrawer
+
+Matches web `sidebar.tsx` component (w-64 = 256px, py-2 px-3 = 8px/12px item padding).
+
+##### Dimensions
+
+| Property        | Value |
+| --------------- | ----- |
+| Full Width      | 280px |
+| Mini Width      | 72px  |
+| Logo Height     | 64px  |
+| Section Padding | 12px  |
+| Item Radius     | 8px   |
+
+##### Grade-Band Item Sizing
+
+| Grade Band         | Item Height | Icon Size | Padding |
+| ------------------ | ----------- | --------- | ------- |
+| Explorer (Pre-K–5) | 52px        | 24px      | 16px    |
+| Navigator (6-8)    | 44px        | 22px      | 12px    |
+| Scholar (9-12)     | 40px        | 20px      | 12px    |
+
+##### Sub-Components
+
+| Component           | Purpose                              |
+| ------------------- | ------------------------------------ |
+| `AivoDrawerItem`    | Navigation item with badge support   |
+| `AivoDrawerProfile` | User profile section with avatar     |
+| `AivoDrawerSection` | Grouped section with optional header |
+| `AivoMiniDrawer`    | Collapsed drawer (72px width)        |
+
+##### Active State Styling
+
+| State    | Background              | Text Color |
+| -------- | ----------------------- | ---------- |
+| Active   | Primary (0.1 opacity)   | Primary    |
+| Inactive | Transparent             | onSurface  |
+| Hover    | surfaceContainerHighest | onSurface  |
+
+#### AivoTabBar
+
+Matches web `tabs.tsx` component (TabsList h-10 rounded-md, TabsTrigger px-3 py-1.5).
+
+##### Variants
+
+| Variant     | Style                           | Height |
+| ----------- | ------------------------------- | ------ |
+| `underline` | Underline indicator             | 48px   |
+| `filled`    | Filled/pill style (matches web) | 40px   |
+| `segmented` | Segment control style           | 40px   |
+
+##### Web Alignment
+
+| Web Property        | Flutter Equivalent | Value |
+| ------------------- | ------------------ | ----- |
+| TabsList h-10       | Container height   | 40px  |
+| TabsList rounded-md | BorderRadius       | 8px   |
+| TabsList bg-muted   | Background color   | muted |
+| TabsList p-1        | Padding            | 4px   |
+| TabsTrigger px-3    | Horizontal padding | 12px  |
+| TabsTrigger py-1.5  | Vertical padding   | 6px   |
+| rounded-sm          | Tab item radius    | 6px   |
+
+##### Sub-Components
+
+| Component              | Purpose                              |
+| ---------------------- | ------------------------------------ |
+| `AivoTabItem`          | Tab item with optional badge         |
+| `AivoTabBarView`       | TabBarView with grade-band animation |
+| `AivoScrollableTabBar` | Horizontal scrollable tabs           |
+| `AivoFilterChips`      | Filter chip row (choice chips)       |
+
+##### Badge Styling
+
+| Property | Value              |
+| -------- | ------------------ |
+| Size     | 18px (min)         |
+| Radius   | 999px (pill)       |
+| Color    | Primary (selected) |
+| Font     | 10px               |
+
+#### Page Transitions
+
+Grade-band aware page transition system.
+
+##### Transition Types
+
+| Type                   | Animation                       |
+| ---------------------- | ------------------------------- |
+| `fade`                 | Opacity fade                    |
+| `slideRight`           | Slide from right (standard nav) |
+| `slideUp`              | Slide from bottom (modals)      |
+| `scale`                | Scale with fade                 |
+| `sharedAxisHorizontal` | Shared axis horizontal (tabs)   |
+| `sharedAxisVertical`   | Shared axis vertical            |
+| `none`                 | No animation                    |
+
+##### Grade-Band Duration & Curves
+
+| Grade Band         | Duration | Forward Curve | Reverse Curve |
+| ------------------ | -------- | ------------- | ------------- |
+| Explorer (Pre-K–5) | 350ms    | easeOutBack   | easeInBack    |
+| Navigator (6-8)    | 300ms    | easeOutCubic  | easeInCubic   |
+| Scholar (9-12)     | 250ms    | easeOut       | easeIn        |
+
+##### Transition Classes
+
+| Class                  | Purpose                             |
+| ---------------------- | ----------------------------------- |
+| `AivoPageRoute`        | Custom PageRouteBuilder             |
+| `AivoModalRoute`       | Modal/bottom sheet style route      |
+| `AivoAnimatedSwitcher` | In-page content transitions         |
+| `AivoHero`             | Hero transitions with grade styling |
+
+##### Navigator Extension
+
+```dart
+// Easy navigation with Aivo transitions
+Navigator.of(context).pushAivo(
+  NextPage(),
+  transition: AivoTransitionType.slideRight,
+  gradeBand: AivoGradeBand.k5,
+);
+
+// Modal navigation
+Navigator.of(context).pushModalAivo(
+  ModalPage(),
+  gradeBand: AivoGradeBand.g6_8,
+);
+```
+
+##### MaterialApp Integration
+
+```dart
+MaterialApp(
+  theme: ThemeData(
+    pageTransitionsTheme: aivoPageTransitionsTheme(
+      gradeBand: AivoGradeBand.k5,
+    ),
+  ),
+);
+```
+
+### ✅ Feedback Components - Full Parity (Sprint 7)
+
+Feedback components for user notifications, loading states, and empty states.
+
+#### AivoDialog
+
+Matches web `dialog.tsx` component (bg-black/50 backdrop, max-w-lg, p-6, shadow-lg, sm:rounded-lg).
+
+##### Dialog Sizes
+
+| Size         | Width | Usage                    |
+| ------------ | ----- | ------------------------ |
+| `small`      | 300px | Simple confirmations     |
+| `medium`     | 480px | Standard dialogs         |
+| `large`      | 640px | Forms, complex content   |
+| `fullscreen` | 100%  | Mobile/immersive content |
+
+##### Grade-Band Modal Radius
+
+| Grade Band         | Radius |
+| ------------------ | ------ |
+| Explorer (Pre-K–5) | 24px   |
+| Navigator (6-8)    | 16px   |
+| Scholar (9-12)     | 12px   |
+
+##### Animation
+
+| Property | Value                   |
+| -------- | ----------------------- |
+| Type     | Fade + Scale (from 95%) |
+| Duration | Grade-band aware        |
+| Backdrop | black @ 50% opacity     |
+| Curve    | easeOutCubic            |
+
+##### Sub-Components
+
+| Component           | Purpose                                |
+| ------------------- | -------------------------------------- |
+| `AivoDialog`        | Base dialog with header/content/footer |
+| `AivoConfirmDialog` | Two-button confirmation dialog         |
+| `AivoAlertDialog`   | Single-button alert (4 variants)       |
+| `AivoBottomSheet`   | Modal bottom sheet with drag handle    |
+
+##### Alert Variants
+
+| Variant   | Icon                   | Color |
+| --------- | ---------------------- | ----- |
+| `info`    | info_outline           | Blue  |
+| `success` | check_circle_outline   | Green |
+| `warning` | warning_amber_outlined | Amber |
+| `error`   | error_outline          | Red   |
+
+#### AivoSnackbar/Toast
+
+Matches web `toast.tsx` component (4 types, fixed bottom-4 right-4, 5 second auto-remove).
+
+##### Variants
+
+| Variant   | Background     | Icon                   |
+| --------- | -------------- | ---------------------- |
+| `neutral` | inverseSurface | info_outline           |
+| `success` | success (95%)  | check_circle_outline   |
+| `warning` | warning (95%)  | warning_amber_outlined |
+| `error`   | error (95%)    | error_outline          |
+| `info`    | info (95%)     | info_outline           |
+
+##### Positioning
+
+| Position      | Alignment               |
+| ------------- | ----------------------- |
+| `bottom`      | Bottom center (default) |
+| `top`         | Top center              |
+| `bottomLeft`  | Bottom left             |
+| `bottomRight` | Bottom right            |
+| `topLeft`     | Top left                |
+| `topRight`    | Top right               |
+
+##### Animation
+
+| Property | Value                      |
+| -------- | -------------------------- |
+| Type     | Slide (from bottom or top) |
+| Duration | 250ms                      |
+| Curve    | easeOutCubic               |
+
+##### Features
+
+- Auto-dismiss (default 4 seconds)
+- Action button support
+- Close button option
+- Title + message layout
+- ScaffoldMessenger integration (`AivoSnackbar`)
+- Overlay toast system (`AivoToastController`)
+
+#### Loading States
+
+Matches web `loading-states.tsx` component (Spinner h-4/h-6/h-10, LoadingOverlay, Skeleton).
+
+##### Spinner Sizes
+
+| Size     | Dimension | Stroke Width | Web Equivalent |
+| -------- | --------- | ------------ | -------------- |
+| `small`  | 16px      | 2.0          | h-4            |
+| `medium` | 24px      | 2.5          | h-6            |
+| `large`  | 40px      | 3.0          | h-10           |
+
+##### Loading Overlay
+
+| Property  | Value            |
+| --------- | ---------------- |
+| Backdrop  | black @ 50%      |
+| Container | Surface, rounded |
+| Shadow    | 10px blur, 4px y |
+| Branding  | Optional icon    |
+
+##### Skeleton Animation
+
+| Property | Value            |
+| -------- | ---------------- |
+| Type     | Pulse (opacity)  |
+| Duration | 1500ms           |
+| Curve    | easeInOut        |
+| Opacity  | 0.3 ↔ 0.7 × 0.15 |
+
+##### Skeleton Presets
+
+| Preset                 | Description                 |
+| ---------------------- | --------------------------- |
+| `AivoSkeleton`         | Generic rectangle           |
+| `AivoSkeleton.circle`  | Circular avatar placeholder |
+| `AivoSkeleton.text`    | Text line placeholder       |
+| `AivoCardSkeleton`     | Card with image/title/desc  |
+| `AivoListItemSkeleton` | List item with avatar       |
+
+##### Progress Indicators
+
+| Type                   | Features                  |
+| ---------------------- | ------------------------- |
+| `AivoLinearProgress`   | Determinate/indeterminate |
+| `AivoCircularProgress` | With percentage display   |
+
+#### AivoAlertBanner
+
+Matches web `alert.tsx` component (rounded-lg border p-4, variants).
+
+##### Variants
+
+| Variant   | Background    | Border        | Icon Color |
+| --------- | ------------- | ------------- | ---------- |
+| `info`    | info @ 10%    | info @ 30%    | info       |
+| `success` | success @ 10% | success @ 30% | success    |
+| `warning` | warning @ 10% | warning @ 30% | warning    |
+| `error`   | error @ 10%   | error @ 30%   | error      |
+
+##### Sub-Components
+
+| Component              | Purpose                         |
+| ---------------------- | ------------------------------- |
+| `AivoAlertBanner`      | Full alert with icon/title/desc |
+| `AivoInlineAlert`      | Compact single-line alert       |
+| `AivoDismissibleAlert` | Animated dismissible alert      |
+
+##### Features
+
+- Optional description text
+- Action widget slot
+- Dismissible with animation
+- Auto-dismiss option
+
+#### AivoEmptyState
+
+Matches web `EmptyState` component (py-12 text-center, icon 4xl/6xl).
+
+##### Layout
+
+| Property   | Value                 |
+| ---------- | --------------------- |
+| Max Width  | 400px                 |
+| Vertical   | py-48 (py-24 compact) |
+| Horizontal | px-24                 |
+| Text Align | Center                |
+
+##### Icon Sizes
+
+| Grade Band         | Icon Size |
+| ------------------ | --------- |
+| Explorer (Pre-K–5) | 64px      |
+| Navigator (6-8)    | 56px      |
+| Scholar (9-12)     | 48px      |
+
+##### Preset Factories
+
+| Factory      | Icon                  | Default Title          |
+| ------------ | --------------------- | ---------------------- |
+| `noData`     | inbox_outlined        | "No data"              |
+| `noResults`  | search_off_outlined   | "No results found"     |
+| `error`      | error_outline         | "Something went wrong" |
+| `offline`    | wifi_off_outlined     | "You're offline"       |
+| `comingSoon` | construction_outlined | "Coming soon"          |
+
+##### Sub-Components
+
+| Component              | Purpose                 |
+| ---------------------- | ----------------------- |
+| `AivoEmptyState`       | Full empty state        |
+| `AivoInlineEmptyState` | Compact inline message  |
+| `AivoPlaceholder`      | Development placeholder |
+
+### ✅ Accessibility Features - Full Parity (Sprint 11)
+
+Comprehensive accessibility system matching web `AccessibilityProvider` with high contrast, dyslexia-friendly, large text, and reduced motion support.
+
+#### Accessibility State Management
+
+| Feature          | Flutter Provider                  | Web Provider            | Storage Key              |
+| ---------------- | --------------------------------- | ----------------------- | ------------------------ |
+| State Controller | `accessibilityControllerProvider` | `AccessibilityProvider` | `aivo:a11y-preferences`  |
+| High Contrast    | `highContrastProvider`            | `highContrast` state    | Persisted in preferences |
+| Dyslexia Font    | `dyslexiaFontProvider`            | `dyslexia` state        | Persisted in preferences |
+| Reduced Motion   | `reducedMotionProvider`           | `reducedMotion` state   | Persisted in preferences |
+| Large Text       | `largeTextProvider`               | (CSS scale)             | Persisted in preferences |
+| Text Scale       | `textScaleProvider`               | (CSS scale)             | Persisted in preferences |
+
+#### High Contrast Mode
+
+| Feature            | Flutter Implementation               | Web Implementation       | Value                  |
+| ------------------ | ------------------------------------ | ------------------------ | ---------------------- |
+| Border Multiplier  | `kHighContrastBorderMultiplier`      | CSS border-width doubled | 2.0x                   |
+| Focus Ring Width   | `HighContrastUtils.focusRing()`      | Focus ring width         | 3px (vs 2px normal)    |
+| Shadow Enhancement | `HighContrastUtils.enhancedShadow()` | Box-shadow enhancement   | 1.5x blur, 1.2x offset |
+
+##### Grade-Band High Contrast Colors
+
+| Grade Band | Token          | Flutter                               | Web (tokens.json)                            | Value     |
+| ---------- | -------------- | ------------------------------------- | -------------------------------------------- | --------- |
+| Explorer   | Primary        | `ExplorerHighContrastColors.primary`  | `gradeThemes.explorer.highContrast.primary`  | `#5B21B6` |
+|            | Border         | `ExplorerHighContrastColors.border`   | `gradeThemes.explorer.highContrast.border`   | `#5B21B6` |
+|            | Focus          | `ExplorerHighContrastColors.focus`    | `gradeThemes.explorer.highContrast.focus`    | `#1D4ED8` |
+| Navigator  | Primary        | `NavigatorHighContrastColors.primary` | `gradeThemes.navigator.highContrast.primary` | `#0E7490` |
+|            | Border         | `NavigatorHighContrastColors.border`  | `gradeThemes.navigator.highContrast.border`  | `#0E7490` |
+|            | Focus          | `NavigatorHighContrastColors.focus`   | `gradeThemes.navigator.highContrast.focus`   | `#1D4ED8` |
+| Scholar    | Primary        | `ScholarHighContrastColors.primary`   | `gradeThemes.scholar.highContrast.primary`   | `#09090B` |
+|            | Border         | `ScholarHighContrastColors.border`    | `gradeThemes.scholar.highContrast.border`    | `#09090B` |
+|            | Focus          | `ScholarHighContrastColors.focus`     | `gradeThemes.scholar.highContrast.focus`     | `#1D4ED8` |
+| All        | Background     | `*HighContrastColors.background`      | `*.highContrast.background`                  | `#FFFFFF` |
+| All        | Text Primary   | `*HighContrastColors.textPrimary`     | `*.highContrast.textPrimary`                 | `#09090B` |
+| All        | Text Secondary | `*HighContrastColors.textSecondary`   | `*.highContrast.textSecondary`               | `#27272A` |
+
+#### Dyslexia-Friendly Mode
+
+| Feature        | Flutter Constant/Method        | Web Token             | Value                 |
+| -------------- | ------------------------------ | --------------------- | --------------------- |
+| Font Family    | `AivoBrand.fontFamilyDyslexia` | `fontFamilyDyslexia`  | Atkinson Hyperlegible |
+| Letter Spacing | `kDyslexiaLetterSpacing`       | `0.05em`              | 0.05em equivalent     |
+| Word Spacing   | `kDyslexiaWordSpacing`         | `0.1em`               | 0.1em equivalent      |
+| Line Height    | `AivoDyslexiaText`             | Increased line-height | 1.6x (configurable)   |
+
+##### Dyslexia Text Widget
+
+| Property        | Default      | Description                |
+| --------------- | ------------ | -------------------------- |
+| `text`          | Required     | Text content to display    |
+| `style`         | bodyMedium   | Base text style to enhance |
+| `letterSpacing` | 0.05em equiv | Character spacing          |
+| `wordSpacing`   | 0.1em equiv  | Word spacing               |
+| `lineHeight`    | 1.6          | Line height multiplier     |
+
+#### Large Text Mode
+
+| Feature      | Flutter Constant  | Web Implementation  | Value |
+| ------------ | ----------------- | ------------------- | ----- |
+| Scale Factor | `kLargeTextScale` | CSS transform scale | 1.2x  |
+| Min Scale    | `kMinTextScale`   | -                   | 0.8x  |
+| Max Scale    | `kMaxTextScale`   | -                   | 2.0x  |
+
+##### Text Scale Adjustment
+
+| Widget                     | Purpose                                   |
+| -------------------------- | ----------------------------------------- |
+| `AivoTextScaleSlider`      | Slider for adjusting text scale (0.8-2.0) |
+| `AivoAccessibilityWrapper` | MediaQuery wrapper applying text scale    |
+
+#### Reduced Motion Mode
+
+| Feature            | Flutter Implementation                                  | Web Implementation                     |
+| ------------------ | ------------------------------------------------------- | -------------------------------------- |
+| System Detection   | `platformDispatcher.accessibilityFeatures.reduceMotion` | `matchMedia('prefers-reduced-motion')` |
+| Persisted Override | `SharedPreferences` toggle                              | `localStorage` toggle                  |
+| Animation Disable  | `AivoMotionSafeContainer`                               | CSS `animation: none`                  |
+
+##### Motion-Safe Widgets
+
+| Widget                    | Purpose                                          |
+| ------------------------- | ------------------------------------------------ |
+| `AivoMotionSafeContainer` | Respects reduced motion for container animations |
+| `AivoMotionSafeFade`      | Fade animation that respects reduced motion      |
+| `AivoMotionSafeScale`     | Scale animation that respects reduced motion     |
+
+#### Accessibility Settings UI
+
+| Widget                           | Purpose                                    |
+| -------------------------------- | ------------------------------------------ |
+| `AivoAccessibilityToggle`        | Settings tile with icon, title, switch     |
+| `AivoAccessibilityChip`          | Compact chip toggle                        |
+| `AivoAccessibilityQuickToggles`  | Row of all toggle chips                    |
+| `AivoAccessibilitySettingsPanel` | Complete settings panel with sections      |
+| `AivoAccessibilityBadge`         | Status badge showing enabled feature count |
+
+#### High Contrast Helpers
+
+| Widget/Method                          | Purpose                                |
+| -------------------------------------- | -------------------------------------- |
+| `AivoHighContrastBorder`               | Border widget respecting high contrast |
+| `HighContrastUtils.getContrastRatio()` | Calculate WCAG contrast ratio          |
+| `HighContrastUtils.meetsWCAGAA()`      | Check if colors meet WCAG AA (4.5:1)   |
+| `HighContrastUtils.meetsWCAGAAA()`     | Check if colors meet WCAG AAA (7:1)    |
+| `buildHighContrastTheme()`             | Build high contrast theme variant      |
+
+#### Semantic Widgets
+
+All accessibility widgets include proper `Semantics` labels:
+
+| Widget                    | Semantics                  |
+| ------------------------- | -------------------------- |
+| `AivoAccessibilityToggle` | `toggled`, `label`, `hint` |
+| `AivoAccessibilityChip`   | `selected`, `label`        |
+| `AivoHighContrastBorder`  | Container semantics        |
+| All motion-safe widgets   | Child semantics preserved  |
+
+#### System Preference Sync
+
+| Platform Feature   | Flutter Detection                         | Web Detection            |
+| ------------------ | ----------------------------------------- | ------------------------ |
+| Reduce Motion      | `accessibilityFeatures.reduceMotion`      | `prefers-reduced-motion` |
+| Disable Animations | `accessibilityFeatures.disableAnimations` | `prefers-reduced-motion` |
+| High Contrast      | `accessibilityFeatures.highContrast`      | `prefers-contrast`       |
+| Bold Text          | `accessibilityFeatures.boldText`          | -                        |
+
+##### System Observer
+
+| Component                        | Purpose                                   |
+| -------------------------------- | ----------------------------------------- |
+| `AivoAccessibilityObserver`      | WidgetsBindingObserver for system changes |
+| `_updateFromSystemPreferences()` | Sync system settings with app state       |
+
+#### Files Created
+
+| File                            | Purpose                                |
+| ------------------------------- | -------------------------------------- |
+| `accessibility_controller.dart` | State management with persistence      |
+| `accessibility_widgets.dart`    | UI components for settings             |
+| `high_contrast_theme.dart`      | High contrast colors and theme builder |
+| `accessibility_preview.dart`    | Interactive preview for design system  |
+
 ## Maintenance Guidelines
 
 1. **Always update both platforms**: When changing tokens, update both `tokens.json` and `aivo_brand.dart`
@@ -550,34 +1389,78 @@ Same as AivoSwitch - more playful for younger users, subtle for older.
 
 ## Change Log
 
-| Date       | Change                                                                                    | Author   |
-| ---------- | ----------------------------------------------------------------------------------------- | -------- |
-| 2026-01-31 | Initial parity audit and synchronization                                                  | Sprint 1 |
-| 2026-01-31 | Updated shadow tokens to use navy-based colors                                            | Sprint 1 |
-| 2026-01-31 | Aligned motion duration tokens (base: 300→250ms, slow: 500→400ms)                         | Sprint 1 |
-| 2026-01-31 | Added full typography system with grade-band specs                                        | Sprint 2 |
-| 2026-01-31 | Implemented dyslexia-friendly typography (Atkinson Hyperlegible, 0.05em/0.1em spacing)    | Sprint 2 |
-| 2026-01-31 | Added large text mode (1.2x scale multiplier)                                             | Sprint 2 |
-| 2026-01-31 | Created TypographyPreview widget for design system gallery                                | Sprint 2 |
-| 2026-01-31 | Implemented AivoButton with grade-band animations                                         | Sprint 3 |
-| 2026-01-31 | Added button variants: primary, secondary, ghost, outline, destructive, success           | Sprint 3 |
-| 2026-01-31 | Added button sizes: sm, md, lg, icon with grade-band touch targets                        | Sprint 3 |
-| 2026-01-31 | Added grade-band specific hover/press scale animations                                    | Sprint 3 |
-| 2026-01-31 | Added loading spinner and disabled states                                                 | Sprint 3 |
-| 2026-01-31 | Created ButtonPreview widget for design system gallery                                    | Sprint 3 |
-| 2026-01-31 | Implemented AivoCard with 4 variants: standard, elevated, outlined, filled                | Sprint 4 |
-| 2026-01-31 | Added grade-band specific card border radius (Explorer 20px, Navigator 12px, Scholar 8px) | Sprint 4 |
-| 2026-01-31 | Implemented interactive card mode with hover/press animations                             | Sprint 4 |
-| 2026-01-31 | Added CardHeader, CardContent, CardFooter sub-components                                  | Sprint 4 |
-| 2026-01-31 | Added CardTitle, CardDescription helper widgets                                           | Sprint 4 |
-| 2026-01-31 | Created AivoActionCard preset with action slot                                            | Sprint 4 |
-| 2026-01-31 | Created CardPreview widget for design system gallery                                      | Sprint 4 |
-| 2026-01-31 | Implemented AivoTextField with 3 variants: outlined, filled, underlined                   | Sprint 5 |
-| 2026-01-31 | Added AivoTextArea for multiline text input                                               | Sprint 5 |
-| 2026-01-31 | Implemented AivoSelect dropdown with search/filter, grade-band radius                     | Sprint 5 |
-| 2026-01-31 | Implemented AivoSwitch with track/thumb styling, grade-band animations                    | Sprint 5 |
-| 2026-01-31 | Added AivoSwitchTile for list context                                                     | Sprint 5 |
-| 2026-01-31 | Implemented AivoCheckbox with tristate, grade-band border radius                          | Sprint 5 |
-| 2026-01-31 | Added AivoCheckboxTile and AivoCheckboxGroup for list and grouped selections              | Sprint 5 |
-| 2026-01-31 | Implemented consistent focus states across all form components (2px ring, 2px offset)     | Sprint 5 |
-| 2026-01-31 | Created FormPreview widget for design system gallery                                      | Sprint 5 |
+| Date       | Change                                                                                      | Author    |
+| ---------- | ------------------------------------------------------------------------------------------- | --------- | --- | ---------- | --------------------------------------------------------------------------------- | -------- |
+| 2026-01-31 | Initial parity audit and synchronization                                                    | Sprint 1  |
+| 2026-01-31 | Updated shadow tokens to use navy-based colors                                              | Sprint 1  |
+| 2026-01-31 | Aligned motion duration tokens (base: 300→250ms, slow: 500→400ms)                           | Sprint 1  |
+| 2026-01-31 | Added full typography system with grade-band specs                                          | Sprint 2  |
+| 2026-01-31 | Implemented dyslexia-friendly typography (Atkinson Hyperlegible, 0.05em/0.1em spacing)      | Sprint 2  |
+| 2026-01-31 | Added large text mode (1.2x scale multiplier)                                               | Sprint 2  |
+| 2026-01-31 | Created TypographyPreview widget for design system gallery                                  | Sprint 2  |
+| 2026-01-31 | Implemented AivoButton with grade-band animations                                           | Sprint 3  |
+| 2026-01-31 | Added button variants: primary, secondary, ghost, outline, destructive, success             | Sprint 3  |
+| 2026-01-31 | Added button sizes: sm, md, lg, icon with grade-band touch targets                          | Sprint 3  |
+| 2026-01-31 | Added grade-band specific hover/press scale animations                                      | Sprint 3  |
+| 2026-01-31 | Added loading spinner and disabled states                                                   | Sprint 3  |
+| 2026-01-31 | Created ButtonPreview widget for design system gallery                                      | Sprint 3  |
+| 2026-01-31 | Implemented AivoCard with 4 variants: standard, elevated, outlined, filled                  | Sprint 4  |
+| 2026-01-31 | Added grade-band specific card border radius (Explorer 20px, Navigator 12px, Scholar 8px)   | Sprint 4  |
+| 2026-01-31 | Implemented interactive card mode with hover/press animations                               | Sprint 4  |
+| 2026-01-31 | Added CardHeader, CardContent, CardFooter sub-components                                    | Sprint 4  |
+| 2026-01-31 | Added CardTitle, CardDescription helper widgets                                             | Sprint 4  |
+| 2026-01-31 | Created AivoActionCard preset with action slot                                              | Sprint 4  |
+| 2026-01-31 | Created CardPreview widget for design system gallery                                        | Sprint 4  |
+| 2026-01-31 | Implemented AivoTextField with 3 variants: outlined, filled, underlined                     | Sprint 5  |
+| 2026-01-31 | Added AivoTextArea for multiline text input                                                 | Sprint 5  |
+| 2026-01-31 | Implemented AivoSelect dropdown with search/filter, grade-band radius                       | Sprint 5  |
+| 2026-01-31 | Implemented AivoSwitch with track/thumb styling, grade-band animations                      | Sprint 5  |
+| 2026-01-31 | Added AivoSwitchTile for list context                                                       | Sprint 5  |
+| 2026-01-31 | Implemented AivoCheckbox with tristate, grade-band border radius                            | Sprint 5  |
+| 2026-01-31 | Added AivoCheckboxTile and AivoCheckboxGroup for list and grouped selections                | Sprint 5  |
+| 2026-01-31 | Implemented consistent focus states across all form components (2px ring, 2px offset)       | Sprint 5  |
+| 2026-01-31 | Created FormPreview widget for design system gallery                                        | Sprint 5  |
+| 2026-01-31 | Implemented AivoAppBar with 4 variants: standard, primary, transparent, elevated            | Sprint 6  |
+| 2026-01-31 | Added AivoBackButton, AivoAppBarAction, AivoSliverAppBar, AivoSearchAppBar                  | Sprint 6  |
+| 2026-01-31 | Implemented AivoBottomNavBar with 3 variants: standard, elevated, tinted                    | Sprint 6  |
+| 2026-01-31 | Added AivoFloatingBottomNav for floating bottom navigation pattern                          | Sprint 6  |
+| 2026-01-31 | Implemented AivoDrawer matching web sidebar (280px width, sections, profile)                | Sprint 6  |
+| 2026-01-31 | Added AivoMiniDrawer (72px width) for collapsed state                                       | Sprint 6  |
+| 2026-01-31 | Implemented AivoTabBar with 3 variants: underline, filled, segmented                        | Sprint 6  |
+| 2026-01-31 | Added AivoScrollableTabBar with fade edges, AivoFilterChips for filter patterns             | Sprint 6  |
+| 2026-01-31 | Implemented page transitions: AivoPageRoute, AivoModalRoute with grade-band durations       | Sprint 6  |
+| 2026-01-31 | Added AivoAnimatedSwitcher, AivoHero for consistent in-page transitions                     | Sprint 6  |
+| 2026-01-31 | Created NavigationPreview widget for design system gallery                                  | Sprint 6  |
+| 2026-01-31 | Implemented AivoDialog with grade-band modal radius, backdrop, fade+scale animation         | Sprint 7  |
+| 2026-01-31 | Added AivoConfirmDialog, AivoAlertDialog (4 variants), AivoBottomSheet                      | Sprint 7  |
+| 2026-01-31 | Implemented AivoSnackbar/Toast with 5 variants and slide animations                         | Sprint 7  |
+| 2026-01-31 | Added AivoToastController for overlay toasts independent of ScaffoldMessenger               | Sprint 7  |
+| 2026-01-31 | Implemented AivoSpinner (3 sizes), AivoLoadingOverlay, AivoFullPageLoading                  | Sprint 7  |
+| 2026-01-31 | Added AivoSkeleton, AivoCardSkeleton, AivoListItemSkeleton matching web patterns            | Sprint 7  |
+| 2026-01-31 | Implemented AivoLinearProgress, AivoCircularProgress with percentage display                | Sprint 7  |
+| 2026-01-31 | Implemented AivoAlertBanner with 4 variants: info, success, warning, error                  | Sprint 7  |
+| 2026-01-31 | Added AivoInlineAlert for compact alerts, AivoDismissibleAlert with animation               | Sprint 7  |
+| 2026-01-31 | Implemented AivoEmptyState with preset factories (noData, noResults, error, offline)        | Sprint 7  |
+| 2026-01-31 | Added AivoInlineEmptyState, AivoPlaceholder for development placeholders                    | Sprint 7  |
+| 2026-01-31 | Created FeedbackPreview widget for design system gallery                                    | Sprint 7  |     | 2026-01-31 | Implemented comprehensive animation utilities matching web easing/duration tokens | Sprint 9 |
+| 2026-01-31 | Added AivoPageTransition with slide, fade, scale, and modal variants                        | Sprint 9  |
+| 2026-01-31 | Implemented micro-interactions: AivoAnimatedIcon, AivoPressEffect, AivoShakeEffect          | Sprint 9  |
+| 2026-01-31 | Added stagger animation helpers: AivoStaggeredList, StaggeredAnimationController            | Sprint 9  |
+| 2026-01-31 | Created AnimationPreview widget for design system gallery                                   | Sprint 9  |
+| 2026-01-31 | Aligned dark mode palette with web scholarDark tokens (colors, borders, semantic colors)    | Sprint 10 |
+| 2026-01-31 | Ensured dark mode only available for Scholar theme (G9-12) matching web behavior            | Sprint 10 |
+| 2026-01-31 | Updated dark theme components: cards with borders, buttons with contrast, visible inputs    | Sprint 10 |
+| 2026-01-31 | Implemented system preference detection and persistence (SharedPreferences)                 | Sprint 10 |
+| 2026-01-31 | Added AivoThemeTransition for smooth animated color transitions                             | Sprint 10 |
+| 2026-01-31 | Created theme widgets: AivoDarkModeToggle, AivoThemeSelector, AivoThemePreviewCard          | Sprint 10 |
+| 2026-01-31 | Created DarkModePreview widget for design system gallery                                    | Sprint 10 |
+| 2026-01-31 | Implemented AivoAccessibilityController with state persistence (SharedPreferences)          | Sprint 11 |
+| 2026-01-31 | Added high contrast mode with 2x border multiplier, grade-band colors                       | Sprint 11 |
+| 2026-01-31 | Implemented dyslexia-friendly mode (Atkinson Hyperlegible, 0.05em/0.1em spacing)            | Sprint 11 |
+| 2026-01-31 | Added large text mode with 1.2x scale multiplier, AivoTextScaleSlider                       | Sprint 11 |
+| 2026-01-31 | Implemented reduced motion mode with system preference detection                            | Sprint 11 |
+| 2026-01-31 | Added motion-safe widgets: AivoMotionSafeContainer, AivoMotionSafeFade, AivoMotionSafeScale | Sprint 11 |
+| 2026-01-31 | Created accessibility settings UI: toggles, chips, quick toggles, settings panel            | Sprint 11 |
+| 2026-01-31 | Implemented HighContrastUtils with WCAG contrast ratio calculation                          | Sprint 11 |
+| 2026-01-31 | Added AivoAccessibilityObserver for system preference synchronization                       | Sprint 11 |
+| 2026-01-31 | Created AccessibilityPreview widget for design system gallery                               | Sprint 11 |
