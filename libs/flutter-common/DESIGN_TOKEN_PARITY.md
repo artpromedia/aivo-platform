@@ -397,6 +397,149 @@ AivoCard(
 - `ButtonComparisonScreen` - Interactive button comparison
 - `CardPreview` - Card samples for each grade band
 - `CardComparisonScreen` - Interactive card comparison
+- `FormPreview` - Form component samples for each grade band
+- `FormComparisonScreen` - Interactive form components comparison
+
+### ✅ Form Components - Full Parity (Sprint 5)
+
+Form components match the web form styling from `libs/ui-web/src/components/ui/input.tsx`, `select.tsx`, `switch.tsx`, and `apps/web-teacher/src/components/ui/checkbox.tsx`.
+
+#### AivoTextField
+
+Matches web `input.tsx` component styling.
+
+##### Variants
+
+| Variant      | Description                  | Border             | Background   |
+| ------------ | ---------------------------- | ------------------ | ------------ |
+| `outlined`   | Default with border          | 1px outlineVariant | Surface      |
+| `filled`     | Filled background, no border | None               | SurfaceMuted |
+| `underlined` | Bottom border only           | Bottom 1px         | Transparent  |
+
+##### Sizes
+
+| Size | Height       | Padding     | Font Size |
+| ---- | ------------ | ----------- | --------- |
+| `sm` | 36px         | 12px / 8px  | 14px      |
+| `md` | Touch target | 16px / 12px | 16px      |
+| `lg` | 52px         | 16px / 16px | 16px      |
+
+##### Features
+
+- Leading/trailing icon support
+- Helper text with secondary color
+- Error text with error color
+- Disabled state (50% opacity)
+- Focus states with primary color ring
+- Multiline via `AivoTextArea` variant
+
+##### Grade-Band Input Radius
+
+| Grade Band         | Input Radius |
+| ------------------ | ------------ |
+| Explorer (Pre-K–5) | 12px         |
+| Navigator (6-8)    | 8px          |
+| Scholar (9-12)     | 6px          |
+
+#### AivoSelect
+
+Matches web `select.tsx` context-based dropdown pattern.
+
+##### Features
+
+- Dropdown overlay with grade-band radius
+- Search/filter functionality (optional)
+- Custom item builder support
+- Leading icon support
+- Error/helper text support
+- Disabled state
+
+##### Dropdown Styling
+
+| Property      | Value                         |
+| ------------- | ----------------------------- |
+| Max Height    | 300px                         |
+| Item Height   | 48px                          |
+| Border        | 1px outlineVariant            |
+| Shadow        | Soft shadow                   |
+| Border Radius | Grade-band input radius + 4px |
+
+#### AivoSwitch
+
+Matches web `switch.tsx` component (h-6 w-11 = 24x44px).
+
+##### Sizes
+
+| Size | Track Size | Thumb Size |
+| ---- | ---------- | ---------- |
+| `sm` | 36x20      | 16x16      |
+| `md` | 44x24      | 20x20      |
+| `lg` | 52x28      | 24x24      |
+
+##### Animation Per Grade Band
+
+| Grade Band         | Duration | Curve       |
+| ------------------ | -------- | ----------- |
+| Explorer (Pre-K–5) | 250ms    | easeOutBack |
+| Navigator (6-8)    | 200ms    | easeInOut   |
+| Scholar (9-12)     | 150ms    | easeOut     |
+
+##### Features
+
+- Label support (start or end position)
+- Subtitle text support
+- Disabled state
+- `AivoSwitchTile` for list context
+
+#### AivoCheckbox
+
+Matches web `checkbox.tsx` pattern (h-4 w-4 = 16x16px).
+
+##### Sizes
+
+| Size | Box Size | Check Icon |
+| ---- | -------- | ---------- |
+| `sm` | 16x16    | 12px       |
+| `md` | 20x20    | 16px       |
+| `lg` | 24x24    | 20px       |
+
+##### States
+
+| State           | Visual                     |
+| --------------- | -------------------------- |
+| `unchecked`     | Empty box with border      |
+| `checked`       | Filled box with checkmark  |
+| `indeterminate` | Filled box with minus/dash |
+
+##### Grade-Band Border Radius
+
+| Grade Band         | Checkbox Radius |
+| ------------------ | --------------- |
+| Explorer (Pre-K–5) | 6px             |
+| Navigator (6-8)    | 4px             |
+| Scholar (9-12)     | 3px             |
+
+##### Animation Per Grade Band
+
+Same as AivoSwitch - more playful for younger users, subtle for older.
+
+##### Features
+
+- Tristate support (null = indeterminate)
+- Label support with tappable area
+- Subtitle text support
+- Error state styling
+- `AivoCheckboxTile` for list context
+- `AivoCheckboxGroup` for grouped selections
+
+#### Focus States (All Form Components)
+
+| Property          | Value         |
+| ----------------- | ------------- |
+| Focus Ring Width  | 2px           |
+| Focus Ring Color  | theme.primary |
+| Focus Ring Offset | 2px           |
+| Transition        | 150ms ease    |
 
 ## Maintenance Guidelines
 
@@ -429,3 +572,12 @@ AivoCard(
 | 2026-01-31 | Added CardTitle, CardDescription helper widgets                                           | Sprint 4 |
 | 2026-01-31 | Created AivoActionCard preset with action slot                                            | Sprint 4 |
 | 2026-01-31 | Created CardPreview widget for design system gallery                                      | Sprint 4 |
+| 2026-01-31 | Implemented AivoTextField with 3 variants: outlined, filled, underlined                   | Sprint 5 |
+| 2026-01-31 | Added AivoTextArea for multiline text input                                               | Sprint 5 |
+| 2026-01-31 | Implemented AivoSelect dropdown with search/filter, grade-band radius                     | Sprint 5 |
+| 2026-01-31 | Implemented AivoSwitch with track/thumb styling, grade-band animations                    | Sprint 5 |
+| 2026-01-31 | Added AivoSwitchTile for list context                                                     | Sprint 5 |
+| 2026-01-31 | Implemented AivoCheckbox with tristate, grade-band border radius                          | Sprint 5 |
+| 2026-01-31 | Added AivoCheckboxTile and AivoCheckboxGroup for list and grouped selections              | Sprint 5 |
+| 2026-01-31 | Implemented consistent focus states across all form components (2px ring, 2px offset)     | Sprint 5 |
+| 2026-01-31 | Created FormPreview widget for design system gallery                                      | Sprint 5 |

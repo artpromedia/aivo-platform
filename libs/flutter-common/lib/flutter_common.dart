@@ -32,6 +32,7 @@ export 'widgets/offline_widgets.dart' hide SyncStatus, OfflineBanner;
 export 'widgets/typography_preview.dart';
 export 'widgets/button_preview.dart';
 export 'widgets/card_preview.dart';
+export 'widgets/form_preview.dart';
 
 // Services (hide conflicts with existing providers and data models)
 export 'services/services.dart' 

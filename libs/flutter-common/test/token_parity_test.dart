@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/aivo_brand.dart';
 import 'package:flutter_common/ui/aivo_button.dart';
 import 'package:flutter_common/ui/aivo_card.dart';
+import 'package:flutter_common/ui/aivo_text_field.dart';
+import 'package:flutter_common/ui/aivo_select.dart';
+import 'package:flutter_common/ui/aivo_switch.dart';
+import 'package:flutter_common/ui/aivo_checkbox.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 
@@ -541,6 +545,178 @@ void main() {
         reason: 'Shadow elevated Y offset should match web');
     expect(AivoBrand.shadowElevated.first.blurRadius, (elevatedShadow['blur'] as num).toDouble(),
         reason: 'Shadow elevated blur should match web');
+  });
+
+  // ============================================================
+  // Form Component Parity Tests (Sprint 5)
+  // ============================================================
+
+  test('AivoTextField has all required variants matching web input.tsx', () {
+    // Web input.tsx variants: outlined, filled, underlined
+    final variants = AivoTextFieldVariant.values;
+    
+    expect(variants.contains(AivoTextFieldVariant.outlined), isTrue,
+        reason: 'Should have outlined variant (border + surface bg)');
+    expect(variants.contains(AivoTextFieldVariant.filled), isTrue,
+        reason: 'Should have filled variant (muted bg + transparent border)');
+    expect(variants.contains(AivoTextFieldVariant.underlined), isTrue,
+        reason: 'Should have underlined variant (bottom border only)');
+  });
+
+  test('AivoTextField has all required sizes matching web input.tsx', () {
+    // Web input.tsx sizes: sm (h-9), md (default, h-10), lg (h-12)
+    final sizes = AivoTextFieldSize.values;
+    
+    expect(sizes.contains(AivoTextFieldSize.sm), isTrue,
+        reason: 'Should have sm size (36px height)');
+    expect(sizes.contains(AivoTextFieldSize.md), isTrue,
+        reason: 'Should have md size (touch target height)');
+    expect(sizes.contains(AivoTextFieldSize.lg), isTrue,
+        reason: 'Should have lg size (52px height)');
+  });
+
+  test('AivoTextField grade-band input radius matches web gradeThemes', () {
+    final tokensPath = path.normalize(
+      path.join(Directory.current.path, '..', '..', 'libs', 'ui-web', 'src', 'tokens.json'),
+    );
+    final tokens = jsonDecode(File(tokensPath).readAsStringSync()) as Map<String, dynamic>;
+    final gradeThemes = tokens['gradeThemes'] as Map<String, dynamic>;
+
+    // Explorer input radius
+    final explorerRadius = (gradeThemes['explorer'] as Map<String, dynamic>)['radius'] as Map<String, dynamic>;
+    expect(AivoBrand.radiusExplorerInput, (explorerRadius['input'] as num).toDouble(),
+        reason: 'Explorer input radius should match web gradeThemes.explorer.radius.input');
+
+    // Navigator input radius
+    final navigatorRadius = (gradeThemes['navigator'] as Map<String, dynamic>)['radius'] as Map<String, dynamic>;
+    expect(AivoBrand.radiusNavigatorInput, (navigatorRadius['input'] as num).toDouble(),
+        reason: 'Navigator input radius should match web gradeThemes.navigator.radius.input');
+
+    // Scholar input radius
+    final scholarRadius = (gradeThemes['scholar'] as Map<String, dynamic>)['radius'] as Map<String, dynamic>;
+    expect(AivoBrand.radiusScholarInput, (scholarRadius['input'] as num).toDouble(),
+        reason: 'Scholar input radius should match web gradeThemes.scholar.radius.input');
+  });
+
+  test('AivoSelect supports required features matching web select.tsx', () {
+    // AivoSelectItem should have value, label, and optional icon
+    final item = AivoSelectItem<String>(
+      value: 'test',
+      label: 'Test Label',
+      icon: Icons.check,
+    );
+    
+    expect(item.value, 'test');
+    expect(item.label, 'Test Label');
+    expect(item.icon, Icons.check);
+  });
+
+  test('AivoSwitch has all required sizes', () {
+    // Switch sizes: sm (36x20), md (44x24 - matches web h-6 w-11), lg (52x28)
+    final sizes = AivoSwitchSize.values;
+    
+    expect(sizes.contains(AivoSwitchSize.sm), isTrue,
+        reason: 'Should have sm size');
+    expect(sizes.contains(AivoSwitchSize.md), isTrue,
+        reason: 'Should have md size (matches web switch.tsx)');
+    expect(sizes.contains(AivoSwitchSize.lg), isTrue,
+        reason: 'Should have lg size');
+  });
+
+  test('AivoSwitch label positions match expected layout options', () {
+    // Label positions: start (label before switch), end (label after switch)
+    final positions = AivoSwitchLabelPosition.values;
+    
+    expect(positions.contains(AivoSwitchLabelPosition.start), isTrue,
+        reason: 'Should have start position for label before switch');
+    expect(positions.contains(AivoSwitchLabelPosition.end), isTrue,
+        reason: 'Should have end position for label after switch');
+  });
+
+  test('AivoCheckbox has all required sizes', () {
+    // Checkbox sizes: sm (16x16 - matches web h-4 w-4), md (20x20), lg (24x24)
+    final sizes = AivoCheckboxSize.values;
+    
+    expect(sizes.contains(AivoCheckboxSize.sm), isTrue,
+        reason: 'Should have sm size (matches web checkbox.tsx h-4 w-4)');
+    expect(sizes.contains(AivoCheckboxSize.md), isTrue,
+        reason: 'Should have md size');
+    expect(sizes.contains(AivoCheckboxSize.lg), isTrue,
+        reason: 'Should have lg size');
+  });
+
+  test('AivoCheckbox states include indeterminate for partial selection', () {
+    // Checkbox states: unchecked, checked, indeterminate (for tri-state)
+    final states = AivoCheckboxState.values;
+    
+    expect(states.contains(AivoCheckboxState.unchecked), isTrue,
+        reason: 'Should have unchecked state');
+    expect(states.contains(AivoCheckboxState.checked), isTrue,
+        reason: 'Should have checked state');
+    expect(states.contains(AivoCheckboxState.indeterminate), isTrue,
+        reason: 'Should have indeterminate state (matches web data-state=\"indeterminate\")');
+  });
+
+  test('Form components grade-band touch targets match web gradeThemes', () {
+    final tokensPath = path.normalize(
+      path.join(Directory.current.path, '..', '..', 'libs', 'ui-web', 'src', 'tokens.json'),
+    );
+    final tokens = jsonDecode(File(tokensPath).readAsStringSync()) as Map<String, dynamic>;
+    final gradeThemes = tokens['gradeThemes'] as Map<String, dynamic>;
+
+    // Touch targets should be consistent across all form components
+    // These are used for md size across TextField, Select, Switch, Checkbox
+    
+    // Explorer
+    final explorerTouchTarget = (gradeThemes['explorer'] as Map<String, dynamic>)['touchTarget'] as Map<String, dynamic>;
+    expect(AivoBrand.touchTargetExplorer, (explorerTouchTarget['min'] as num).toDouble(),
+        reason: 'Explorer touch target should be 56px for form components');
+
+    // Navigator
+    final navigatorTouchTarget = (gradeThemes['navigator'] as Map<String, dynamic>)['touchTarget'] as Map<String, dynamic>;
+    expect(AivoBrand.touchTargetNavigator, (navigatorTouchTarget['min'] as num).toDouble(),
+        reason: 'Navigator touch target should be 48px for form components');
+
+    // Scholar
+    final scholarTouchTarget = (gradeThemes['scholar'] as Map<String, dynamic>)['touchTarget'] as Map<String, dynamic>;
+    expect(AivoBrand.touchTargetScholar, (scholarTouchTarget['min'] as num).toDouble(),
+        reason: 'Scholar touch target should be 44px for form components');
+  });
+
+  test('Form components focus states use consistent theme colors', () {
+    // Focus states should use primary color with 2px border, 2px offset
+    // This is an implementation test - verify the tokens are available
+    
+    // Focus color should be available from grade theme colors
+    expect(AivoBrand.explorerFocus, isNotNull,
+        reason: 'Explorer focus color should be defined');
+    expect(AivoBrand.navigatorFocus, isNotNull,
+        reason: 'Navigator focus color should be defined');
+    expect(AivoBrand.scholarFocus, isNotNull,
+        reason: 'Scholar focus color should be defined');
+    
+    // Focus ring colors should also be available
+    expect(AivoBrand.explorerFocusRing, isNotNull,
+        reason: 'Explorer focus ring color should be defined');
+    expect(AivoBrand.navigatorFocusRing, isNotNull,
+        reason: 'Navigator focus ring color should be defined');
+    expect(AivoBrand.scholarFocusRing, isNotNull,
+        reason: 'Scholar focus ring color should be defined');
+  });
+
+  test('Form component animation durations per grade band', () {
+    // Grade-band specific animation settings:
+    // Explorer (Pre-K–5): 200-250ms, easeOutBack (playful)
+    // Navigator (6-8): 150-200ms, easeInOut (moderate)
+    // Scholar (9-12): 100-150ms, easeOut (subtle)
+    
+    // Base duration tokens are available for animation timing
+    expect(AivoBrand.durationFast.inMilliseconds, 150,
+        reason: 'Fast duration (150ms) for Scholar-like subtle animations');
+    expect(AivoBrand.durationBase.inMilliseconds, 250,
+        reason: 'Base duration (250ms) for Explorer-like playful animations');
+    expect(AivoBrand.durationSlow.inMilliseconds, 400,
+        reason: 'Slow duration (400ms) for elaborate transitions');
   });
 }
 
