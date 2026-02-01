@@ -17,6 +17,17 @@ from .models import (
 )
 from .services import AccessibilityProfileManager
 
+# Multi-provider imports for resilient AI operations
+from .core import (
+    get_config,
+    get_multi_provider_stt,
+    get_multi_provider_tts,
+    get_multi_provider_vision,
+    MultiProviderSTT,
+    MultiProviderTTS,
+    MultiProviderVision,
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -28,12 +39,18 @@ text_simplifier: Optional[TextSimplifier] = None
 reading_assistant: Optional[ReadingAssistant] = None
 profile_manager: Optional[AccessibilityProfileManager] = None
 
+# Multi-provider services for resilient operations
+multi_stt: Optional[MultiProviderSTT] = None
+multi_tts: Optional[MultiProviderTTS] = None
+multi_vision: Optional[MultiProviderVision] = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     global stt_engine, tts_engine, alt_text_generator
     global text_simplifier, reading_assistant, profile_manager
+    global multi_stt, multi_tts, multi_vision
 
     logger.info("Initializing Accessibility AI Service...")
 
@@ -44,6 +61,16 @@ async def lifespan(app: FastAPI):
     text_simplifier = TextSimplifier()
     reading_assistant = ReadingAssistant()
     profile_manager = AccessibilityProfileManager()
+
+    # Initialize multi-provider services for resilience
+    try:
+        multi_stt = get_multi_provider_stt()
+        multi_tts = get_multi_provider_tts()
+        multi_vision = get_multi_provider_vision()
+        logger.info("Multi-provider services initialized for resilient operations")
+    except Exception as e:
+        logger.warning(f"Multi-provider services initialization failed: {e}")
+        logger.warning("Falling back to single-provider mode")
 
     logger.info("All models and services initialized successfully")
 
@@ -164,7 +191,41 @@ async def health() -> Dict[str, Any]:
             "reading_assistant": reading_assistant is not None,
             "profile_manager": profile_manager is not None,
         },
+        "multi_provider": {
+            "enabled": multi_stt is not None,
+            "stt": multi_stt is not None,
+            "tts": multi_tts is not None,
+            "vision": multi_vision is not None,
+        },
     }
+
+
+@app.get("/health/providers")
+async def provider_health() -> Dict[str, Any]:
+    """
+    Detailed health status of all AI providers.
+    
+    Returns health information for each provider including:
+    - Status (healthy/degraded/unhealthy)
+    - Consecutive failures
+    - Average latency
+    - Last success/failure timestamps
+    """
+    result = {
+        "multi_provider_enabled": multi_stt is not None,
+        "providers": {},
+    }
+    
+    if multi_stt:
+        result["providers"]["stt"] = multi_stt.get_health()
+    
+    if multi_tts:
+        result["providers"]["tts"] = multi_tts.get_health()
+    
+    if multi_vision:
+        result["providers"]["vision"] = multi_vision.get_health()
+    
+    return result
 
 
 # Speech-to-Text Endpoints
@@ -734,6 +795,208 @@ async def list_available_needs() -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail="Profile manager not initialized")
 
     return {"needs": profile_manager.list_available_needs()}
+
+
+# =============================================================================
+# Multi-Provider Resilient Endpoints (v2)
+# =============================================================================
+# These endpoints use automatic failover between multiple AI providers
+# (OpenAI, Google Cloud, Azure, Anthropic, local models) to ensure
+# the service remains functional even when individual providers are unavailable.
+
+@app.post("/api/v2/stt/transcribe")
+async def transcribe_resilient(
+    audio: UploadFile = File(...),
+    language: Optional[str] = Query(None, description="Language code (auto-detect if not specified)"),
+    preferred_provider: Optional[str] = Query(None, description="Preferred provider (e.g., whisper_local, openai_api)"),
+) -> Dict[str, Any]:
+    """
+    Transcribe audio to text with automatic provider failover.
+    
+    If the primary provider fails, automatically falls back to alternative providers.
+    Supports: whisper_local, openai_api, google_cloud, azure, deepgram, assembly_ai
+    """
+    if not multi_stt:
+        raise HTTPException(status_code=503, detail="Multi-provider STT not available")
+
+    try:
+        audio_bytes = await audio.read()
+
+        if not audio_bytes:
+            raise HTTPException(status_code=400, detail="Empty audio file")
+
+        result = multi_stt.transcribe(
+            audio=audio_bytes,
+            language=language,
+            preferred_provider=preferred_provider,
+        )
+
+        return {
+            "text": result.text,
+            "confidence": result.confidence,
+            "language": result.language,
+            "duration": result.duration,
+            "provider": result.provider,
+            "words": result.words,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Multi-provider transcription error: {e}")
+        raise HTTPException(status_code=500, detail="Transcription failed across all providers")
+
+
+@app.post("/api/v2/tts/synthesize")
+async def synthesize_resilient(request: TextToSpeechRequest) -> Response:
+    """
+    Synthesize speech from text with automatic provider failover.
+    
+    If the primary provider fails, automatically falls back to alternative providers.
+    Supports: coqui_local, openai_api, google_cloud, azure, elevenlabs, amazon_polly
+    """
+    if not multi_tts:
+        raise HTTPException(status_code=503, detail="Multi-provider TTS not available")
+
+    try:
+        result = multi_tts.synthesize(
+            text=request.text,
+            voice=request.voice,
+            speed=request.speed,
+            language=request.language,
+        )
+
+        return Response(
+            content=result.audio_bytes,
+            media_type="audio/wav",
+            headers={
+                "X-Duration": str(result.duration),
+                "X-Sample-Rate": str(result.sample_rate),
+                "X-Voice-ID": result.voice_id,
+                "X-Provider": result.provider,
+                "X-Text-Length": str(len(request.text)),
+            },
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Multi-provider synthesis error: {e}")
+        raise HTTPException(status_code=500, detail="Speech synthesis failed across all providers")
+
+
+@app.post("/api/v2/alt-text/generate")
+async def generate_alt_text_resilient(
+    image: UploadFile = File(...),
+    context: Optional[str] = Query(None, description="Context about the image"),
+    preferred_provider: Optional[str] = Query(None, description="Preferred provider (e.g., blip_local, openai_api)"),
+) -> Dict[str, Any]:
+    """
+    Generate alt-text for image with automatic provider failover.
+    
+    If the primary provider fails, automatically falls back to alternative providers.
+    Supports: blip_local, openai_api, google_cloud, azure, anthropic
+    """
+    if not multi_vision:
+        raise HTTPException(status_code=503, detail="Multi-provider Vision not available")
+
+    try:
+        image_bytes = await image.read()
+
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file")
+
+        result = multi_vision.generate_caption(
+            image=image_bytes,
+            context=context,
+            preferred_provider=preferred_provider,
+        )
+
+        return {
+            "short_description": result.caption,
+            "long_description": result.detailed_description or result.caption,
+            "confidence": result.confidence,
+            "provider": result.provider,
+            "detected_objects": result.detected_objects,
+            "detected_labels": result.detected_labels,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Multi-provider alt-text generation error: {e}")
+        raise HTTPException(status_code=500, detail="Alt-text generation failed across all providers")
+
+
+@app.post("/api/v2/alt-text/extract-text")
+async def extract_text_resilient(
+    image: UploadFile = File(...),
+    language: str = Query(default="en", description="Expected language"),
+    preferred_provider: Optional[str] = Query(None, description="Preferred provider (e.g., tesseract_local, google_cloud)"),
+) -> Dict[str, Any]:
+    """
+    Extract text from image using OCR with automatic provider failover.
+    
+    If the primary provider fails, automatically falls back to alternative providers.
+    Supports: tesseract_local, google_cloud, azure, aws_textract
+    """
+    if not multi_vision:
+        raise HTTPException(status_code=503, detail="Multi-provider Vision not available")
+
+    try:
+        image_bytes = await image.read()
+
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty image file")
+
+        result = multi_vision.extract_text(
+            image=image_bytes,
+            language=language,
+            preferred_provider=preferred_provider,
+        )
+
+        return {
+            "text": result.text,
+            "confidence": result.confidence,
+            "provider": result.provider,
+            "language": result.language,
+            "regions": result.regions,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Multi-provider OCR error: {e}")
+        raise HTTPException(status_code=500, detail="Text extraction failed across all providers")
+
+
+@app.get("/api/v2/providers")
+async def list_available_providers() -> Dict[str, Any]:
+    """
+    List all available AI providers for each service.
+    
+    Returns which providers are configured and available for STT, TTS, and Vision services.
+    """
+    config = get_config()
+    
+    return {
+        "stt": {
+            "available": [p.value for p in config.get_available_stt_providers()],
+            "health": multi_stt.get_health() if multi_stt else {},
+        },
+        "tts": {
+            "available": [p.value for p in config.get_available_tts_providers()],
+            "health": multi_tts.get_health() if multi_tts else {},
+        },
+        "vision": {
+            "available": [p.value for p in config.get_available_vision_providers()],
+            "health": multi_vision.get_health().get("caption", {}) if multi_vision else {},
+        },
+        "ocr": {
+            "available": [p.value for p in config.get_available_ocr_providers()],
+            "health": multi_vision.get_health().get("ocr", {}) if multi_vision else {},
+        },
+    }
 
 
 if __name__ == "__main__":

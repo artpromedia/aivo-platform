@@ -22,3 +22,35 @@ spacy>=3.7.0
 numpy>=1.24.0
 structlog>=23.2.0
 httpx>=0.25.0
+
+# =============================================================================
+# Multi-Provider Cloud SDK Dependencies (Optional)
+# These are required for multi-provider failover support.
+# If not using specific providers, you can omit their dependencies.
+# =============================================================================
+
+# OpenAI (GPT-4 Vision, Whisper API, TTS API)
+openai>=1.0.0
+
+# Google Cloud (Speech-to-Text, Text-to-Speech, Vision AI)
+# google-cloud-speech>=2.21.0
+# google-cloud-texttospeech>=2.14.0
+# google-cloud-vision>=3.4.0
+
+# Azure (Speech Services, Computer Vision)
+# azure-cognitiveservices-speech>=1.34.0
+
+# AWS (Polly for TTS, Textract for OCR)
+# boto3>=1.34.0
+
+# ElevenLabs (High-quality TTS)
+# elevenlabs>=0.2.0
+
+# Anthropic (Claude Vision)
+# anthropic>=0.18.0
+
+# Deepgram (Speech-to-Text)
+# deepgram-sdk>=3.0.0
+
+# AssemblyAI (Speech-to-Text)
+# assemblyai>=0.20.0
