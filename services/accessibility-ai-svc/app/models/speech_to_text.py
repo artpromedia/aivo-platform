@@ -2,10 +2,13 @@
 Speech to Text
 
 Transcribe audio to text with support for multiple languages and accent handling.
+Uses OpenAI's Whisper model for accurate speech recognition.
 """
 import logging
 import hashlib
 import struct
+import tempfile
+import os
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Generator
 from enum import Enum
@@ -13,6 +16,31 @@ from enum import Enum
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Lazy load whisper to avoid startup delay
+_whisper_model = None
+_whisper_model_size = None
+
+
+def _get_whisper_model(model_size: str = "base"):
+    """Lazy load Whisper model on first use."""
+    global _whisper_model, _whisper_model_size
+    
+    if _whisper_model is None or _whisper_model_size != model_size:
+        try:
+            import whisper
+            logger.info(f"Loading Whisper model: {model_size}")
+            _whisper_model = whisper.load_model(model_size)
+            _whisper_model_size = model_size
+            logger.info(f"Whisper model {model_size} loaded successfully")
+        except ImportError:
+            logger.warning("Whisper not installed. Using placeholder transcription.")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to load Whisper model: {e}")
+            return None
+    
+    return _whisper_model
 
 
 class AudioFormat(Enum):
@@ -119,11 +147,26 @@ class SpeechToText:
         self.device = device
         self.compute_type = compute_type
         self._model_loaded = False
+        self._model = None
 
         logger.info(
             f"SpeechToText initialized with model_size={model_size}, "
             f"device={device}, compute_type={compute_type}"
         )
+
+    def _load_model(self):
+        """Load the Whisper model if not already loaded."""
+        if self._model is None:
+            self._model = _get_whisper_model(self.model_size)
+            self._model_loaded = self._model is not None
+        return self._model
+
+    def _save_audio_to_temp_file(self, audio: bytes) -> str:
+        """Save audio bytes to a temporary file for Whisper processing."""
+        # Create temp file with appropriate extension
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            f.write(audio)
+            return f.name
 
     def _estimate_audio_duration(self, audio: bytes) -> float:
         """
@@ -223,13 +266,92 @@ class SpeechToText:
             f"duration={duration:.2f}s, language={language or 'auto'}"
         )
 
-        # Detect language if not provided
+        # Try to use Whisper model
+        model = self._load_model()
+        
+        if model is not None:
+            # Use actual Whisper transcription
+            temp_file = None
+            try:
+                temp_file = self._save_audio_to_temp_file(audio)
+                
+                # Configure Whisper options
+                options = {
+                    "task": task,
+                    "word_timestamps": word_timestamps,
+                }
+                if language:
+                    options["language"] = language
+                
+                # Perform transcription
+                result = model.transcribe(temp_file, **options)
+                
+                transcription_text = result.get("text", "").strip()
+                detected_language = result.get("language", language or "en")
+                
+                # Extract word timestamps if available
+                words = []
+                if word_timestamps and "segments" in result:
+                    for segment in result["segments"]:
+                        if "words" in segment:
+                            for w in segment["words"]:
+                                words.append({
+                                    "word": w.get("word", ""),
+                                    "start": w.get("start", 0.0),
+                                    "end": w.get("end", 0.0),
+                                    "confidence": w.get("probability", 0.95),
+                                })
+                
+                # Extract segments
+                segments = []
+                for i, seg in enumerate(result.get("segments", [])):
+                    segments.append({
+                        "id": i,
+                        "start": seg.get("start", 0.0),
+                        "end": seg.get("end", duration),
+                        "text": seg.get("text", "").strip(),
+                        "confidence": seg.get("avg_logprob", -0.5) + 1.0,  # Convert log prob to ~confidence
+                    })
+                
+                # Calculate overall confidence from segments
+                if segments:
+                    avg_confidence = sum(s["confidence"] for s in segments) / len(segments)
+                    confidence = min(max(avg_confidence, 0.0), 1.0)
+                else:
+                    confidence = 0.95
+                
+                transcription_result = Transcription(
+                    text=transcription_text,
+                    confidence=confidence,
+                    language=detected_language,
+                    duration=duration,
+                    words=words,
+                    segments=segments,
+                )
+                
+                logger.info(
+                    f"Whisper transcription complete: {len(transcription_text)} chars, "
+                    f"confidence={confidence:.2f}"
+                )
+                
+                return transcription_result
+                
+            except Exception as e:
+                logger.error(f"Whisper transcription failed: {e}")
+                # Fall through to placeholder
+            finally:
+                if temp_file and os.path.exists(temp_file):
+                    try:
+                        os.unlink(temp_file)
+                    except Exception:
+                        pass
+
+        # Fallback: Detect language if not provided
         detected_language = language or self.detect_language(audio).language
 
-        # In production, this would call the actual Whisper model
-        # For now, return a placeholder indicating the request was processed
+        # Fallback placeholder when Whisper is not available
         transcription_text = (
-            f"[Transcription placeholder - Audio processed successfully. "
+            f"[Transcription unavailable - Whisper model not loaded. "
             f"Duration: {duration:.2f}s, Language: {detected_language}]"
         )
 
@@ -358,8 +480,65 @@ class SpeechToText:
 
         logger.info(f"Detecting language for audio: hash={audio_hash}")
 
-        # In production, this would use Whisper's language detection
-        # For now, use audio characteristics to provide a reasonable response
+        # Try to use Whisper for language detection
+        model = self._load_model()
+        
+        if model is not None:
+            temp_file = None
+            try:
+                import whisper
+                
+                temp_file = self._save_audio_to_temp_file(audio)
+                
+                # Load audio and detect language using Whisper
+                audio_array = whisper.load_audio(temp_file)
+                audio_array = whisper.pad_or_trim(audio_array)
+                
+                # Make log-Mel spectrogram
+                mel = whisper.log_mel_spectrogram(audio_array).to(model.device)
+                
+                # Detect language
+                _, probs = model.detect_language(mel)
+                
+                # Get top-k languages
+                sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)
+                
+                detected_language = sorted_probs[0][0]
+                base_confidence = sorted_probs[0][1]
+                
+                # Generate alternatives
+                alternatives = []
+                for lang, prob in sorted_probs[1:top_k]:
+                    if prob > 0.01:  # Only include if > 1% probability
+                        alternatives.append({
+                            "language": lang,
+                            "confidence": round(float(prob), 3),
+                        })
+                
+                result = LanguageDetectionResult(
+                    language=detected_language,
+                    confidence=round(float(base_confidence), 3),
+                    alternatives=alternatives,
+                )
+                
+                logger.info(
+                    f"Whisper language detected: {result.language} "
+                    f"(confidence={result.confidence:.2f})"
+                )
+                
+                return result
+                
+            except Exception as e:
+                logger.error(f"Whisper language detection failed: {e}")
+                # Fall through to heuristic detection
+            finally:
+                if temp_file and os.path.exists(temp_file):
+                    try:
+                        os.unlink(temp_file)
+                    except Exception:
+                        pass
+
+        # Fallback: Use audio characteristics for heuristic detection
 
         # Use energy and zero-crossing rate to simulate detection
         energy = characteristics.get("energy", 0.5)

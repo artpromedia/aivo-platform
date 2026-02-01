@@ -2,10 +2,12 @@
 Alt-text Generator
 
 Generate alt-text descriptions for images to improve accessibility.
+Uses vision models (BLIP/CLIP) for image captioning and pytesseract for OCR.
 """
 import logging
 import hashlib
 import struct
+import io
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum
@@ -13,6 +15,52 @@ from enum import Enum
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Lazy load vision models to avoid startup delay
+_caption_model = None
+_caption_processor = None
+_ocr_available = None
+
+
+def _get_caption_model():
+    """Lazy load BLIP image captioning model."""
+    global _caption_model, _caption_processor
+    
+    if _caption_model is None:
+        try:
+            from transformers import BlipProcessor, BlipForConditionalGeneration
+            from PIL import Image
+            
+            logger.info("Loading BLIP captioning model...")
+            _caption_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+            _caption_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+            logger.info("BLIP model loaded successfully")
+        except ImportError:
+            logger.warning("Transformers/BLIP not available. Using heuristic captioning.")
+            return None, None
+        except Exception as e:
+            logger.error(f"Failed to load BLIP model: {e}")
+            return None, None
+    
+    return _caption_model, _caption_processor
+
+
+def _check_ocr_available():
+    """Check if pytesseract OCR is available."""
+    global _ocr_available
+    
+    if _ocr_available is None:
+        try:
+            import pytesseract
+            # Try to run tesseract to verify installation
+            pytesseract.get_tesseract_version()
+            _ocr_available = True
+            logger.info("pytesseract OCR available")
+        except Exception as e:
+            logger.warning(f"pytesseract not available: {e}")
+            _ocr_available = False
+    
+    return _ocr_available
 
 
 class ImageType(Enum):
@@ -137,11 +185,101 @@ class AltTextGenerator:
         self.include_educational_context = include_educational_context
         self.max_description_length = max_description_length
         self._model_loaded = False
+        self._blip_model = None
+        self._blip_processor = None
 
         logger.info(
             f"AltTextGenerator initialized with model={model_name}, "
             f"educational_context={include_educational_context}"
         )
+
+    def _load_caption_model(self):
+        """Load the caption model if not already loaded."""
+        if self._blip_model is None:
+            self._blip_model, self._blip_processor = _get_caption_model()
+            self._model_loaded = self._blip_model is not None
+        return self._blip_model, self._blip_processor
+
+    def _generate_ai_caption(self, image: bytes) -> Optional[str]:
+        """Generate a caption using the BLIP model."""
+        model, processor = self._load_caption_model()
+        
+        if model is None or processor is None:
+            return None
+        
+        try:
+            from PIL import Image as PILImage
+            
+            # Convert bytes to PIL Image
+            pil_image = PILImage.open(io.BytesIO(image))
+            
+            # Ensure RGB mode
+            if pil_image.mode != 'RGB':
+                pil_image = pil_image.convert('RGB')
+            
+            # Generate caption
+            inputs = processor(pil_image, return_tensors="pt")
+            output = model.generate(**inputs, max_length=100)
+            caption = processor.decode(output[0], skip_special_tokens=True)
+            
+            return caption
+            
+        except Exception as e:
+            logger.error(f"Caption generation failed: {e}")
+            return None
+
+    def _perform_ocr(self, image: bytes, language: str = "eng") -> Dict[str, Any]:
+        """Perform OCR on the image using pytesseract."""
+        if not _check_ocr_available():
+            return None
+        
+        try:
+            import pytesseract
+            from PIL import Image as PILImage
+            
+            # Convert bytes to PIL Image
+            pil_image = PILImage.open(io.BytesIO(image))
+            
+            # Perform OCR with detailed output
+            ocr_data = pytesseract.image_to_data(
+                pil_image, 
+                lang=language,
+                output_type=pytesseract.Output.DICT
+            )
+            
+            # Extract text and regions
+            text_parts = []
+            regions = []
+            
+            for i in range(len(ocr_data['text'])):
+                text = ocr_data['text'][i].strip()
+                conf = int(ocr_data['conf'][i])
+                
+                if text and conf > 30:  # Only include confident detections
+                    text_parts.append(text)
+                    regions.append({
+                        "text": text,
+                        "confidence": conf / 100.0,
+                        "bounds": {
+                            "x": ocr_data['left'][i],
+                            "y": ocr_data['top'][i],
+                            "width": ocr_data['width'][i],
+                            "height": ocr_data['height'][i],
+                        },
+                    })
+            
+            full_text = ' '.join(text_parts)
+            avg_confidence = sum(r['confidence'] for r in regions) / len(regions) if regions else 0.0
+            
+            return {
+                "text": full_text,
+                "confidence": avg_confidence,
+                "regions": regions,
+            }
+            
+        except Exception as e:
+            logger.error(f"OCR failed: {e}")
+            return None
 
     def _compute_image_hash(self, image: bytes) -> str:
         """Compute a hash of the image for caching/logging."""
@@ -312,27 +450,56 @@ class AltTextGenerator:
             f"dimensions={width}x{height}, type={image_type.value}"
         )
 
-        # Generate descriptions based on image type
-        short_desc, long_desc = self._generate_descriptions(
-            image_type, width, height, colors, context
-        )
+        # Try to generate AI-based caption first
+        ai_caption = self._generate_ai_caption(image)
+        
+        if ai_caption:
+            # Use AI-generated caption as the short description
+            short_desc = ai_caption
+            
+            # Create a more detailed long description
+            color_desc = " and ".join(colors[:2]) if colors else "various colors"
+            long_desc = (
+                f"{ai_caption}. This {image_type.value} ({width}x{height} pixels) "
+                f"features {color_desc}."
+            )
+            if context:
+                long_desc += f" Context: {context}."
+            
+            confidence = 0.90
+            logger.info(f"AI caption generated: {ai_caption[:50]}...")
+        else:
+            # Fall back to heuristic descriptions
+            short_desc, long_desc = self._generate_descriptions(
+                image_type, width, height, colors, context
+            )
+            confidence = 0.70
 
         # Generate educational context if enabled
         educational_context = None
         if self.include_educational_context and context:
             educational_context = self._generate_educational_context(context, image_type)
 
-        # Detect objects (placeholder - would use vision model in production)
+        # Try to extract text using OCR
+        detected_text = []
+        ocr_result = self._perform_ocr(image)
+        if ocr_result and ocr_result.get("text"):
+            detected_text = [ocr_result["text"]]
+            # Include detected text in long description
+            if len(ocr_result["text"]) > 5:
+                long_desc += f" Text in image: \"{ocr_result['text'][:100]}...\""
+
+        # Detect objects
         detected_objects = self._detect_objects(image, image_type)
 
         result = AltText(
-            short_description=short_desc,
-            long_description=long_desc,
+            short_description=short_desc[:150],
+            long_description=long_desc[:self.max_description_length],
             educational_context=educational_context,
             image_type=image_type,
-            confidence=0.85,
+            confidence=confidence,
             detected_objects=detected_objects,
-            detected_text=[],
+            detected_text=detected_text,
             colors=colors,
         )
 
@@ -435,17 +602,43 @@ class AltTextGenerator:
             f"Extracting text from image: hash={image_hash}, language={language}"
         )
 
-        # In production, this would use pytesseract or similar OCR
-        # For now, return placeholder indicating processing was attempted
+        # Map language codes to tesseract codes
+        lang_map = {
+            "en": "eng",
+            "es": "spa",
+            "fr": "fra",
+            "de": "deu",
+            "it": "ita",
+            "pt": "por",
+            "zh": "chi_sim",
+            "ja": "jpn",
+            "ko": "kor",
+            "ar": "ara",
+        }
+        tess_lang = lang_map.get(language, "eng")
+        
+        # Try real OCR first
+        ocr_result = self._perform_ocr(image, tess_lang)
+        
+        if ocr_result:
+            return {
+                "text": ocr_result["text"],
+                "confidence": ocr_result["confidence"],
+                "language": language,
+                "regions": ocr_result["regions"],
+                "status": "success",
+                "message": "OCR completed successfully using pytesseract.",
+            }
+
+        # Fallback placeholder when OCR is not available
         result = {
             "text": "",
             "confidence": 0.0,
             "language": language,
             "regions": [],
-            "status": "placeholder",
+            "status": "unavailable",
             "message": (
-                "OCR processing placeholder. In production, this would extract "
-                "actual text from the image using pytesseract or cloud OCR services."
+                "OCR not available. Please install pytesseract and Tesseract OCR."
             ),
         }
 

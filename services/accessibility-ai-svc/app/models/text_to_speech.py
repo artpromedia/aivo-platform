@@ -2,10 +2,12 @@
 Text to Speech
 
 Synthesize speech from text with support for multiple voices and SSML.
+Uses Coqui TTS for high-quality neural speech synthesis.
 """
 import logging
 import hashlib
 import re
+import io
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
@@ -14,6 +16,31 @@ from enum import Enum
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# Lazy load TTS to avoid startup delay
+_tts_model = None
+_tts_model_name = None
+
+
+def _get_tts_model(model_name: str = "tts_models/en/ljspeech/tacotron2-DDC"):
+    """Lazy load TTS model on first use."""
+    global _tts_model, _tts_model_name
+    
+    if _tts_model is None or _tts_model_name != model_name:
+        try:
+            from TTS.api import TTS
+            logger.info(f"Loading TTS model: {model_name}")
+            _tts_model = TTS(model_name=model_name, progress_bar=False)
+            _tts_model_name = model_name
+            logger.info(f"TTS model loaded successfully")
+        except ImportError:
+            logger.warning("Coqui TTS not installed. Using placeholder synthesis.")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to load TTS model: {e}")
+            return None
+    
+    return _tts_model
 
 
 class AudioFormat(Enum):
@@ -222,11 +249,27 @@ class TextToSpeech:
         self.default_format = default_format
         self.default_sample_rate = default_sample_rate
         self._model_loaded = False
+        self._tts = None
 
         logger.info(
             f"TextToSpeech initialized with model={model_name}, "
             f"format={default_format.value}, sample_rate={default_sample_rate}"
         )
+
+    def _load_model(self):
+        """Load the TTS model if not already loaded."""
+        if self._tts is None:
+            # Map voice language to appropriate TTS model
+            model_mapping = {
+                "en": "tts_models/en/ljspeech/tacotron2-DDC",
+                "es": "tts_models/es/mai/tacotron2-DDC",
+                "fr": "tts_models/fr/mai/tacotron2-DDC",
+                "de": "tts_models/de/thorsten/tacotron2-DDC",
+            }
+            model_name = model_mapping.get("en", "tts_models/en/ljspeech/tacotron2-DDC")
+            self._tts = _get_tts_model(model_name)
+            self._model_loaded = self._tts is not None
+        return self._tts
 
     def _validate_parameters(
         self,
@@ -384,7 +427,67 @@ class TextToSpeech:
             f"speed={speed}, estimated_duration={duration:.2f}s"
         )
 
-        # Generate placeholder audio (in production, this calls actual TTS)
+        # Try to use TTS model
+        tts = self._load_model()
+        
+        if tts is not None:
+            try:
+                import tempfile
+                import os
+                import wave
+                
+                # Create temp file for TTS output
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                    temp_path = f.name
+                
+                try:
+                    # Synthesize using Coqui TTS
+                    tts.tts_to_file(
+                        text=text,
+                        file_path=temp_path,
+                        speed=speed,
+                    )
+                    
+                    # Read the generated audio
+                    with open(temp_path, "rb") as f:
+                        audio_bytes = f.read()
+                    
+                    # Get actual duration from WAV file
+                    with wave.open(temp_path, 'rb') as wav_file:
+                        frames = wav_file.getnframes()
+                        rate = wav_file.getframerate()
+                        actual_duration = frames / float(rate)
+                        actual_sample_rate = rate
+                    
+                    result = SynthesizedAudio(
+                        audio_bytes=audio_bytes,
+                        format=output_format.value,
+                        duration=actual_duration,
+                        sample_rate=actual_sample_rate,
+                        voice_id=voice,
+                        text_length=len(text),
+                        ssml_used=False,
+                    )
+                    
+                    logger.info(
+                        f"TTS synthesis complete: {len(audio_bytes)} bytes, "
+                        f"duration={actual_duration:.2f}s"
+                    )
+                    
+                    return result
+                    
+                finally:
+                    if os.path.exists(temp_path):
+                        try:
+                            os.unlink(temp_path)
+                        except Exception:
+                            pass
+                        
+            except Exception as e:
+                logger.error(f"TTS synthesis failed: {e}")
+                # Fall through to placeholder
+
+        # Fallback: Generate placeholder audio (when TTS model is not available)
         audio_bytes = self._generate_placeholder_audio(
             duration, sample_rate, output_format
         )
