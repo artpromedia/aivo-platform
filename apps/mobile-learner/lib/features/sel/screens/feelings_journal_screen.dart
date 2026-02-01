@@ -355,7 +355,6 @@ class _JournalEntryEditor extends StatefulWidget {
     required this.learnerId,
     required this.selService,
     required this.onSaved,
-    this.existingEntry,
   });
 
   @override

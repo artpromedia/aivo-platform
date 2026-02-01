@@ -236,111 +236,329 @@ const _g9_12Colors = _AivoGradeBandColors(
 );
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TYPOGRAPHY
-// Using Nunito as the brand font (matching web)
+// TYPOGRAPHY (Matches web tokens.json exactly)
+// Primary Font: Nunito (weights 400-800)
+// Dyslexia-Friendly Font: Atkinson Hyperlegible
 // ══════════════════════════════════════════════════════════════════════════════
 
-class _AivoTypography {
-  const _AivoTypography({
-    required this.display,
-    required this.headline,
-    required this.title,
-    required this.body,
-    required this.label,
+/// Typography specifications per grade band matching web tokens.json exactly.
+/// Each size includes both fontSize and lineHeight for precise alignment.
+class AivoTypographySpec {
+  const AivoTypographySpec({
+    required this.displaySize,
+    required this.displayLineHeight,
+    required this.headlineSize,
+    required this.headlineLineHeight,
+    required this.titleSize,
+    required this.titleLineHeight,
+    required this.bodySize,
+    required this.bodyLineHeight,
+    required this.labelSize,
+    required this.labelLineHeight,
+    required this.captionSize,
+    required this.captionLineHeight,
   });
 
-  final double display;
-  final double headline;
-  final double title;
-  final double body;
-  final double label;
+  final double displaySize;
+  final double displayLineHeight;
+  final double headlineSize;
+  final double headlineLineHeight;
+  final double titleSize;
+  final double titleLineHeight;
+  final double bodySize;
+  final double bodyLineHeight;
+  final double labelSize;
+  final double labelLineHeight;
+  final double captionSize;
+  final double captionLineHeight;
+
+  /// Create a scaled version of this typography spec.
+  AivoTypographySpec scaled(double factor) {
+    return AivoTypographySpec(
+      displaySize: displaySize * factor,
+      displayLineHeight: displayLineHeight * factor,
+      headlineSize: headlineSize * factor,
+      headlineLineHeight: headlineLineHeight * factor,
+      titleSize: titleSize * factor,
+      titleLineHeight: titleLineHeight * factor,
+      bodySize: bodySize * factor,
+      bodyLineHeight: bodyLineHeight * factor,
+      labelSize: labelSize * factor,
+      labelLineHeight: labelLineHeight * factor,
+      captionSize: captionSize * factor,
+      captionLineHeight: captionLineHeight * factor,
+    );
+  }
 }
 
-/// Explorer (K-5): Larger, more playful typography
-const _k5Type = _AivoTypography(
-  display: 42,
-  headline: 34,
-  title: 26,
-  body: 18,
-  label: 16,
+/// Explorer (Pre-K–5): Larger, playful typography - matches web tokens.json
+/// Display: 42px/52px, Headline: 34px/42px, Title: 26px/34px
+/// Body: 18px/28px, Label: 16px/24px, Caption: 14px/20px
+const explorerTypography = AivoTypographySpec(
+  displaySize: 42,
+  displayLineHeight: 52,
+  headlineSize: 34,
+  headlineLineHeight: 42,
+  titleSize: 26,
+  titleLineHeight: 34,
+  bodySize: 18,
+  bodyLineHeight: 28,
+  labelSize: 16,
+  labelLineHeight: 24,
+  captionSize: 14,
+  captionLineHeight: 20,
 );
 
-/// Navigator (6-8): Balanced typography
-const _g6_8Type = _AivoTypography(
-  display: 36,
-  headline: 28,
-  title: 22,
-  body: 16,
-  label: 14,
+/// Navigator (6-8): Balanced typography - matches web tokens.json
+/// Display: 36px/44px, Headline: 28px/36px, Title: 22px/30px
+/// Body: 16px/24px, Label: 14px/20px, Caption: 12px/18px
+const navigatorTypography = AivoTypographySpec(
+  displaySize: 36,
+  displayLineHeight: 44,
+  headlineSize: 28,
+  headlineLineHeight: 36,
+  titleSize: 22,
+  titleLineHeight: 30,
+  bodySize: 16,
+  bodyLineHeight: 24,
+  labelSize: 14,
+  labelLineHeight: 20,
+  captionSize: 12,
+  captionLineHeight: 18,
 );
 
-/// Scholar (9-12): Compact, professional typography
-const _g9_12Type = _AivoTypography(
-  display: 32,
-  headline: 24,
-  title: 20,
-  body: 15,
-  label: 13,
+/// Scholar (9-12): Professional, compact typography - matches web tokens.json
+/// Display: 32px/40px, Headline: 24px/32px, Title: 20px/28px
+/// Body: 15px/24px, Label: 13px/18px, Caption: 11px/16px
+const scholarTypography = AivoTypographySpec(
+  displaySize: 32,
+  displayLineHeight: 40,
+  headlineSize: 24,
+  headlineLineHeight: 32,
+  titleSize: 20,
+  titleLineHeight: 28,
+  bodySize: 15,
+  bodyLineHeight: 24,
+  labelSize: 13,
+  labelLineHeight: 18,
+  captionSize: 11,
+  captionLineHeight: 16,
 );
 
-TextTheme _buildTextTheme(_AivoTypography type) {
-  final base = GoogleFonts.nunitoTextTheme();
+/// Large text mode scale multiplier for accessibility.
+const double largeTextScaleFactor = 1.2;
+
+/// Dyslexia-friendly typography settings.
+/// Letter spacing: 0.05em, Word spacing: 0.1em
+/// Font: Atkinson Hyperlegible (fallback to Nunito)
+class DyslexiaTypographySettings {
+  const DyslexiaTypographySettings._();
+
+  /// Letter spacing in em units (0.05em)
+  static const double letterSpacingEm = 0.05;
+
+  /// Word spacing in em units (0.1em)
+  static const double wordSpacingEm = 0.1;
+
+  /// Get letter spacing for a given font size.
+  static double letterSpacing(double fontSize) => fontSize * letterSpacingEm;
+
+  /// Get word spacing for a given font size.
+  static double wordSpacing(double fontSize) => fontSize * wordSpacingEm;
+}
+
+/// Typography mode for accessibility features.
+enum AivoTypographyMode {
+  /// Standard Nunito typography.
+  standard,
+
+  /// Dyslexia-friendly typography with Atkinson Hyperlegible font
+  /// and increased letter/word spacing.
+  dyslexiaFriendly,
+
+  /// Large text mode with 1.2x scale multiplier.
+  largeText,
+
+  /// Combined dyslexia-friendly + large text.
+  dyslexiaFriendlyLarge,
+}
+
+// Legacy constants for backwards compatibility
+const _k5Type = explorerTypography;
+const _g6_8Type = navigatorTypography;
+const _g9_12Type = scholarTypography;
+
+/// Build TextTheme from typography spec with optional accessibility modes.
+TextTheme _buildTextTheme(
+  AivoTypographySpec spec, {
+  AivoTypographyMode mode = AivoTypographyMode.standard,
+}) {
+  // Apply large text scaling if needed
+  final effectiveSpec = (mode == AivoTypographyMode.largeText ||
+          mode == AivoTypographyMode.dyslexiaFriendlyLarge)
+      ? spec.scaled(largeTextScaleFactor)
+      : spec;
+
+  // Determine font family based on mode
+  final useDyslexiaFont = mode == AivoTypographyMode.dyslexiaFriendly ||
+      mode == AivoTypographyMode.dyslexiaFriendlyLarge;
+
+  final base = useDyslexiaFont
+      ? GoogleFonts.atkinsonHyperlegibleTextTheme()
+      : GoogleFonts.nunitoTextTheme();
+
+  // Calculate line heights as ratios (Flutter uses height as multiplier)
+  double heightRatio(double lineHeight, double fontSize) => lineHeight / fontSize;
+
+  // Dyslexia-friendly spacing
+  double? letterSpacing(double fontSize) =>
+      useDyslexiaFont ? DyslexiaTypographySettings.letterSpacing(fontSize) : null;
+  double? wordSpacing(double fontSize) =>
+      useDyslexiaFont ? DyslexiaTypographySettings.wordSpacing(fontSize) : null;
+
   return base.copyWith(
+    // Display styles (for hero text, marketing)
     displayLarge: base.displayLarge?.copyWith(
-      fontSize: type.display,
-      fontWeight: FontWeight.w800, // Extra bold for headings
-      letterSpacing: -0.5,
+      fontSize: effectiveSpec.displaySize,
+      fontWeight: FontWeight.w800,
+      height: heightRatio(effectiveSpec.displayLineHeight, effectiveSpec.displaySize),
+      letterSpacing: letterSpacing(effectiveSpec.displaySize) ?? -0.5,
+      wordSpacing: wordSpacing(effectiveSpec.displaySize),
       color: AivoBrandColors.textPrimary,
     ),
     displayMedium: base.displayMedium?.copyWith(
-      fontSize: type.display - 4,
+      fontSize: effectiveSpec.displaySize - 4,
       fontWeight: FontWeight.w800,
+      height: heightRatio(effectiveSpec.displayLineHeight, effectiveSpec.displaySize),
+      letterSpacing: letterSpacing(effectiveSpec.displaySize - 4),
+      wordSpacing: wordSpacing(effectiveSpec.displaySize - 4),
       color: AivoBrandColors.textPrimary,
     ),
+    displaySmall: base.displaySmall?.copyWith(
+      fontSize: effectiveSpec.displaySize - 6,
+      fontWeight: FontWeight.w700,
+      height: heightRatio(effectiveSpec.displayLineHeight, effectiveSpec.displaySize),
+      letterSpacing: letterSpacing(effectiveSpec.displaySize - 6),
+      wordSpacing: wordSpacing(effectiveSpec.displaySize - 6),
+      color: AivoBrandColors.textPrimary,
+    ),
+
+    // Headline styles (for section headers)
     headlineLarge: base.headlineLarge?.copyWith(
-      fontSize: type.headline,
+      fontSize: effectiveSpec.headlineSize,
       fontWeight: FontWeight.w800,
+      height: heightRatio(effectiveSpec.headlineLineHeight, effectiveSpec.headlineSize),
+      letterSpacing: letterSpacing(effectiveSpec.headlineSize),
+      wordSpacing: wordSpacing(effectiveSpec.headlineSize),
       color: AivoBrandColors.textPrimary,
     ),
     headlineMedium: base.headlineMedium?.copyWith(
-      fontSize: type.headline - 2,
+      fontSize: effectiveSpec.headlineSize - 2,
       fontWeight: FontWeight.w700,
+      height: heightRatio(effectiveSpec.headlineLineHeight, effectiveSpec.headlineSize),
+      letterSpacing: letterSpacing(effectiveSpec.headlineSize - 2),
+      wordSpacing: wordSpacing(effectiveSpec.headlineSize - 2),
       color: AivoBrandColors.textPrimary,
     ),
+    headlineSmall: base.headlineSmall?.copyWith(
+      fontSize: effectiveSpec.headlineSize - 4,
+      fontWeight: FontWeight.w600,
+      height: heightRatio(effectiveSpec.headlineLineHeight, effectiveSpec.headlineSize),
+      letterSpacing: letterSpacing(effectiveSpec.headlineSize - 4),
+      wordSpacing: wordSpacing(effectiveSpec.headlineSize - 4),
+      color: AivoBrandColors.textPrimary,
+    ),
+
+    // Title styles (for card headers, list items)
     titleLarge: base.titleLarge?.copyWith(
-      fontSize: type.title,
+      fontSize: effectiveSpec.titleSize,
       fontWeight: FontWeight.w700,
+      height: heightRatio(effectiveSpec.titleLineHeight, effectiveSpec.titleSize),
+      letterSpacing: letterSpacing(effectiveSpec.titleSize),
+      wordSpacing: wordSpacing(effectiveSpec.titleSize),
       color: AivoBrandColors.textPrimary,
     ),
     titleMedium: base.titleMedium?.copyWith(
-      fontSize: type.title - 2,
+      fontSize: effectiveSpec.titleSize - 2,
       fontWeight: FontWeight.w600,
+      height: heightRatio(effectiveSpec.titleLineHeight, effectiveSpec.titleSize),
+      letterSpacing: letterSpacing(effectiveSpec.titleSize - 2),
+      wordSpacing: wordSpacing(effectiveSpec.titleSize - 2),
       color: AivoBrandColors.textPrimary,
     ),
+    titleSmall: base.titleSmall?.copyWith(
+      fontSize: effectiveSpec.titleSize - 4,
+      fontWeight: FontWeight.w600,
+      height: heightRatio(effectiveSpec.titleLineHeight, effectiveSpec.titleSize),
+      letterSpacing: letterSpacing(effectiveSpec.titleSize - 4),
+      wordSpacing: wordSpacing(effectiveSpec.titleSize - 4),
+      color: AivoBrandColors.textPrimary,
+    ),
+
+    // Body styles (for paragraphs, descriptions)
     bodyLarge: base.bodyLarge?.copyWith(
-      fontSize: type.body,
+      fontSize: effectiveSpec.bodySize,
       fontWeight: FontWeight.w400,
-      height: 1.6,
+      height: heightRatio(effectiveSpec.bodyLineHeight, effectiveSpec.bodySize),
+      letterSpacing: letterSpacing(effectiveSpec.bodySize),
+      wordSpacing: wordSpacing(effectiveSpec.bodySize),
       color: AivoBrandColors.textPrimary,
     ),
     bodyMedium: base.bodyMedium?.copyWith(
-      fontSize: type.body - 1,
+      fontSize: effectiveSpec.bodySize - 1,
       fontWeight: FontWeight.w400,
-      height: 1.5,
+      height: heightRatio(effectiveSpec.bodyLineHeight, effectiveSpec.bodySize),
+      letterSpacing: letterSpacing(effectiveSpec.bodySize - 1),
+      wordSpacing: wordSpacing(effectiveSpec.bodySize - 1),
       color: AivoBrandColors.textSecondary,
     ),
+    bodySmall: base.bodySmall?.copyWith(
+      fontSize: effectiveSpec.bodySize - 2,
+      fontWeight: FontWeight.w400,
+      height: heightRatio(effectiveSpec.bodyLineHeight, effectiveSpec.bodySize),
+      letterSpacing: letterSpacing(effectiveSpec.bodySize - 2),
+      wordSpacing: wordSpacing(effectiveSpec.bodySize - 2),
+      color: AivoBrandColors.textSecondary,
+    ),
+
+    // Label styles (for buttons, chips, form labels)
     labelLarge: base.labelLarge?.copyWith(
-      fontSize: type.label,
+      fontSize: effectiveSpec.labelSize,
       fontWeight: FontWeight.w600,
-      letterSpacing: 0.1,
+      height: heightRatio(effectiveSpec.labelLineHeight, effectiveSpec.labelSize),
+      letterSpacing: letterSpacing(effectiveSpec.labelSize) ?? 0.1,
+      wordSpacing: wordSpacing(effectiveSpec.labelSize),
       color: AivoBrandColors.textPrimary,
     ),
     labelMedium: base.labelMedium?.copyWith(
-      fontSize: type.label - 1,
+      fontSize: effectiveSpec.labelSize - 1,
       fontWeight: FontWeight.w500,
+      height: heightRatio(effectiveSpec.labelLineHeight, effectiveSpec.labelSize),
+      letterSpacing: letterSpacing(effectiveSpec.labelSize - 1),
+      wordSpacing: wordSpacing(effectiveSpec.labelSize - 1),
       color: AivoBrandColors.textSecondary,
     ),
+    labelSmall: base.labelSmall?.copyWith(
+      fontSize: effectiveSpec.captionSize,
+      fontWeight: FontWeight.w500,
+      height: heightRatio(effectiveSpec.captionLineHeight, effectiveSpec.captionSize),
+      letterSpacing: letterSpacing(effectiveSpec.captionSize),
+      wordSpacing: wordSpacing(effectiveSpec.captionSize),
+      color: AivoBrandColors.textMuted,
+    ),
   );
+}
+
+/// Get typography spec for a grade band.
+AivoTypographySpec typographyForBand(AivoGradeBand band) {
+  switch (band) {
+    case AivoGradeBand.k5:
+      return explorerTypography;
+    case AivoGradeBand.g6_8:
+      return navigatorTypography;
+    case AivoGradeBand.g9_12:
+      return scholarTypography;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -349,9 +567,10 @@ TextTheme _buildTextTheme(_AivoTypography type) {
 
 ThemeData _buildTheme({
   required _AivoGradeBandColors colors,
-  required _AivoTypography type,
+  required AivoTypographySpec type,
+  AivoTypographyMode typographyMode = AivoTypographyMode.standard,
 }) {
-  final textTheme = _buildTextTheme(type);
+  final textTheme = _buildTextTheme(type, mode: typographyMode);
 
   return ThemeData(
     useMaterial3: true,
@@ -573,6 +792,39 @@ ThemeData themeForBand(AivoGradeBand band) {
   }
 }
 
+/// Build a theme with specific accessibility options.
+///
+/// [band] - The grade band for age-appropriate styling
+/// [mode] - Typography accessibility mode (standard, dyslexia-friendly, large text)
+/// [isDark] - Whether to use dark theme colors
+ThemeData buildAccessibleTheme({
+  required AivoGradeBand band,
+  AivoTypographyMode mode = AivoTypographyMode.standard,
+  bool isDark = false,
+}) {
+  final type = typographyForBand(band);
+
+  if (isDark) {
+    switch (band) {
+      case AivoGradeBand.k5:
+        return _buildDarkTheme(colors: _k5DarkColors, type: type, typographyMode: mode);
+      case AivoGradeBand.g6_8:
+        return _buildDarkTheme(colors: _g6_8DarkColors, type: type, typographyMode: mode);
+      case AivoGradeBand.g9_12:
+        return _buildDarkTheme(colors: _g9_12DarkColors, type: type, typographyMode: mode);
+    }
+  }
+
+  switch (band) {
+    case AivoGradeBand.k5:
+      return _buildTheme(colors: _k5Colors, type: type, typographyMode: mode);
+    case AivoGradeBand.g6_8:
+      return _buildTheme(colors: _g6_8Colors, type: type, typographyMode: mode);
+    case AivoGradeBand.g9_12:
+      return _buildTheme(colors: _g9_12Colors, type: type, typographyMode: mode);
+  }
+}
+
 // Future codegen: map token JSON -> Dart so this stays in sync with design tokens.
 // A build_runner step could read libs/design-tokens/aivo-tokens.json and emit a Dart map
 // consumed here to avoid manual duplication.
@@ -648,9 +900,10 @@ const _g9_12DarkColors = _AivoDarkColors(
 
 ThemeData _buildDarkTheme({
   required _AivoDarkColors colors,
-  required _AivoTypography type,
+  required AivoTypographySpec type,
+  AivoTypographyMode typographyMode = AivoTypographyMode.standard,
 }) {
-  final textTheme = _buildTextTheme(type).apply(
+  final textTheme = _buildTextTheme(type, mode: typographyMode).apply(
     bodyColor: colors.textPrimary,
     displayColor: colors.textPrimary,
   );

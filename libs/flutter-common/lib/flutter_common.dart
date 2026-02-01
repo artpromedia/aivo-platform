@@ -29,6 +29,9 @@ export 'widgets/why_this.dart';
 export 'widgets/loading_widgets.dart';
 export 'widgets/error_widgets.dart' hide ErrorView, ErrorBanner;
 export 'widgets/offline_widgets.dart' hide SyncStatus, OfflineBanner;
+export 'widgets/typography_preview.dart';
+export 'widgets/button_preview.dart';
+export 'widgets/card_preview.dart';
 
 // Services (hide conflicts with existing providers and data models)
 export 'services/services.dart' 

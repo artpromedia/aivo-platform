@@ -12,6 +12,14 @@ class DesignSystemGalleryScreen extends ConsumerStatefulWidget {
 
 class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryScreen> {
   bool dyslexiaFont = false;
+  bool largeText = false;
+
+  AivoTypographyMode get _typographyMode {
+    if (dyslexiaFont && largeText) return AivoTypographyMode.dyslexiaFriendlyLarge;
+    if (dyslexiaFont) return AivoTypographyMode.dyslexiaFriendly;
+    if (largeText) return AivoTypographyMode.largeText;
+    return AivoTypographyMode.standard;
+  }
 
   ThemeData _maybeDyslexia(ThemeData base) {
     if (!dyslexiaFont) return base;
@@ -31,23 +39,13 @@ class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryS
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Design System Gallery'),
-          actions: [
-            Switch(
-              value: dyslexiaFont,
-              onChanged: (value) => setState(() => dyslexiaFont = value),
-              activeThumbColor: theme.colorScheme.primary,
-            ),
-            const Padding(
-              padding: EdgeInsets.only(right: 12.0),
-              child: Center(child: Text('Dyslexia font')),
-            ),
-          ],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Grade band selector
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: AivoGradeBand.values.map((g) {
@@ -59,7 +57,31 @@ class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryS
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 16),
+              // Accessibility toggles
+              Row(
+                children: [
+                  FilterChip(
+                    label: const Text('Dyslexia Font'),
+                    selected: dyslexiaFont,
+                    onSelected: (value) => setState(() => dyslexiaFont = value),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Large Text'),
+                    selected: largeText,
+                    onSelected: (value) => setState(() => largeText = value),
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
+              // Typography section
+              _Section(title: 'Typography', children: [
+                TypographyPreview(
+                  band: band,
+                  mode: _typographyMode,
+                ),
+              ]),
               _Section(title: 'Buttons', children: [
                 Wrap(
                   spacing: 12,

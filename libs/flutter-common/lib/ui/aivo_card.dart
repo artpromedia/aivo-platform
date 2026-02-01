@@ -1,90 +1,512 @@
 /// Aivo Card Widget
 ///
-/// Consistent card styling across apps.
+/// Consistent card styling across apps with grade-band awareness.
+/// Aligned with web Card component (libs/ui-web/src/components/ui/card.tsx).
 library;
 
 import 'package:flutter/material.dart';
 
-import '../theme/theme.dart';
+import '../theme/aivo_brand.dart';
+import '../theme/aivo_theme.dart';
 
-/// Card variants.
+/// Card variants matching web specifications.
 enum AivoCardVariant {
+  /// Default: White background with soft shadow
+  standard,
+
+  /// Elevated: Higher elevation shadow (raised)
   elevated,
-  filled,
+
+  /// Outlined: 1px border, no shadow
   outlined,
+
+  /// Filled: Light background tint, no shadow
+  filled,
 }
 
-/// Aivo styled card.
-class AivoCard extends StatelessWidget {
+/// Card animation configuration per grade band.
+class _CardAnimationConfig {
+  const _CardAnimationConfig({
+    required this.hoverScale,
+    required this.pressScale,
+    required this.duration,
+  });
+
+  final double hoverScale;
+  final double pressScale;
+  final Duration duration;
+
+  /// Explorer (Pre-K–5): Playful animations
+  static const explorer = _CardAnimationConfig(
+    hoverScale: 1.02,
+    pressScale: 0.98,
+    duration: Duration(milliseconds: 250),
+  );
+
+  /// Navigator (6-8): Moderate animations
+  static const navigator = _CardAnimationConfig(
+    hoverScale: 1.01,
+    pressScale: 0.99,
+    duration: Duration(milliseconds: 200),
+  );
+
+  /// Scholar (9-12): Subtle animations
+  static const scholar = _CardAnimationConfig(
+    hoverScale: 1.005,
+    pressScale: 0.995,
+    duration: Duration(milliseconds: 150),
+  );
+
+  static _CardAnimationConfig forGradeBand(AivoGradeBand? band) {
+    return switch (band) {
+      AivoGradeBand.k5 => explorer,
+      AivoGradeBand.g6_8 => navigator,
+      AivoGradeBand.g9_12 => scholar,
+      null => navigator,
+    };
+  }
+}
+
+/// Aivo styled card with grade-band awareness.
+///
+/// Features:
+/// - 4 variants: standard, elevated, outlined, filled
+/// - Grade-band specific border radius
+/// - Interactive mode with hover/press animations
+/// - Shadow system matching web tokens
+///
+/// Example:
+/// ```dart
+/// AivoCard(
+///   variant: AivoCardVariant.elevated,
+///   gradeBand: AivoGradeBand.k5,
+///   onTap: () => print('Tapped'),
+///   child: Text('Card content'),
+/// )
+/// ```
+class AivoCard extends StatefulWidget {
   const AivoCard({
     super.key,
     required this.child,
-    this.variant = AivoCardVariant.elevated,
+    this.variant = AivoCardVariant.standard,
     this.onTap,
     this.padding,
     this.margin,
     this.color,
     this.borderRadius,
+    this.gradeBand,
+    this.enableAnimations = true,
+    this.clipBehavior = Clip.antiAlias,
   });
 
+  /// Card content
   final Widget child;
+
+  /// Card variant/style
   final AivoCardVariant variant;
+
+  /// Callback when card is tapped (enables interactive mode)
   final VoidCallback? onTap;
+
+  /// Content padding
   final EdgeInsetsGeometry? padding;
+
+  /// Card margin
   final EdgeInsetsGeometry? margin;
+
+  /// Background color override
   final Color? color;
+
+  /// Border radius override (uses grade-band default if not specified)
   final BorderRadius? borderRadius;
+
+  /// Grade band for animations and styling
+  final AivoGradeBand? gradeBand;
+
+  /// Enable hover/press scale animations
+  final bool enableAnimations;
+
+  /// Clip behavior for card content
+  final Clip clipBehavior;
+
+  @override
+  State<AivoCard> createState() => _AivoCardState();
+}
+
+class _AivoCardState extends State<AivoCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final config = _CardAnimationConfig.forGradeBand(widget.gradeBand);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: config.duration,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: AivoBrand.curveDefault,
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(AivoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.gradeBand != widget.gradeBand) {
+      final config = _CardAnimationConfig.forGradeBand(widget.gradeBand);
+      _animationController.duration = config.duration;
+    }
+  }
+
+  void _updateScaleAnimation() {
+    final config = _CardAnimationConfig.forGradeBand(widget.gradeBand);
+    final targetScale = _isPressed
+        ? config.pressScale
+        : _isHovered
+            ? config.hoverScale
+            : 1.0;
+
+    _scaleAnimation = Tween<double>(
+      begin: _scaleAnimation.value,
+      end: targetScale,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: AivoBrand.curveDefault,
+    ));
+    _animationController.forward(from: 0);
+  }
+
+  void _handleHover(bool isHovered) {
+    if (!widget.enableAnimations || widget.onTap == null) return;
+    setState(() {
+      _isHovered = isHovered;
+      _updateScaleAnimation();
+    });
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (!widget.enableAnimations || widget.onTap == null) return;
+    setState(() {
+      _isPressed = true;
+      _updateScaleAnimation();
+    });
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (!widget.enableAnimations) return;
+    setState(() {
+      _isPressed = false;
+      _updateScaleAnimation();
+    });
+  }
+
+  void _handleTapCancel() {
+    if (!widget.enableAnimations) return;
+    setState(() {
+      _isPressed = false;
+      _updateScaleAnimation();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  /// Get border radius for grade band
+  BorderRadius _getBorderRadius() {
+    if (widget.borderRadius != null) return widget.borderRadius!;
+
+    final radius = switch (widget.gradeBand) {
+      AivoGradeBand.k5 => AivoBrand.radiusExplorerCard,
+      AivoGradeBand.g6_8 => AivoBrand.radiusNavigatorCard,
+      AivoGradeBand.g9_12 => AivoBrand.radiusScholarCard,
+      null => AivoBrand.radiusMd,
+    };
+
+    return BorderRadius.circular(radius);
+  }
+
+  /// Get shadow for variant and hover state
+  List<BoxShadow> _getShadow() {
+    // No shadow for outlined and filled variants
+    if (widget.variant == AivoCardVariant.outlined ||
+        widget.variant == AivoCardVariant.filled) {
+      return [];
+    }
+
+    // Elevated shadow when hovered (for interactive cards)
+    if (_isHovered && widget.onTap != null) {
+      return AivoBrand.shadowElevated;
+    }
+
+    // Variant-specific shadow
+    return switch (widget.variant) {
+      AivoCardVariant.standard => AivoBrand.shadowSoft,
+      AivoCardVariant.elevated => AivoBrand.shadowRaised,
+      _ => [],
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final borderRadius = _getBorderRadius();
 
-    final effectivePadding = padding ?? const EdgeInsets.all(16);
-    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(12);
-    final effectiveMargin = margin ?? const EdgeInsets.only(bottom: 12);
+    // Determine background color
+    final backgroundColor = widget.color ??
+        switch (widget.variant) {
+          AivoCardVariant.standard => colorScheme.surface,
+          AivoCardVariant.elevated => colorScheme.surface,
+          AivoCardVariant.outlined => colorScheme.surface,
+          AivoCardVariant.filled => colorScheme.surfaceContainerHighest,
+        };
 
-    Widget cardChild = Padding(
-      padding: effectivePadding,
-      child: child,
+    // Determine border
+    final border = widget.variant == AivoCardVariant.outlined
+        ? Border.all(color: colorScheme.outlineVariant)
+        : null;
+
+    // Build card content
+    Widget cardContent = widget.padding != null
+        ? Padding(padding: widget.padding!, child: widget.child)
+        : widget.child;
+
+    // Build card container
+    Widget card = AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) => Transform.scale(
+        scale: _scaleAnimation.value,
+        child: child,
+      ),
+      child: AnimatedContainer(
+        duration: _CardAnimationConfig.forGradeBand(widget.gradeBand).duration,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: borderRadius,
+          border: border,
+          boxShadow: _getShadow(),
+        ),
+        clipBehavior: widget.clipBehavior,
+        child: cardContent,
+      ),
     );
 
-    if (onTap != null) {
-      cardChild = InkWell(
-        onTap: onTap,
-        borderRadius: effectiveBorderRadius,
-        child: cardChild,
+    // Add tap handling with ink effect
+    if (widget.onTap != null) {
+      card = MouseRegion(
+        onEnter: (_) => _handleHover(true),
+        onExit: (_) => _handleHover(false),
+        child: GestureDetector(
+          onTapDown: _handleTapDown,
+          onTapUp: _handleTapUp,
+          onTapCancel: _handleTapCancel,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: borderRadius,
+              child: card,
+            ),
+          ),
+        ),
       );
     }
 
+    // Apply margin
+    if (widget.margin != null) {
+      card = Padding(padding: widget.margin!, child: card);
+    }
+
+    return card;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CARD SUB-COMPONENTS (Matching web card.tsx structure)
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Card header section with optional icon, title, subtitle, and actions.
+///
+/// Matches web CardHeader with flexible layout options.
+class CardHeader extends StatelessWidget {
+  const CardHeader({
+    super.key,
+    this.leading,
+    this.title,
+    this.subtitle,
+    this.trailing,
+    this.padding,
+  });
+
+  /// Leading widget (typically an icon or avatar)
+  final Widget? leading;
+
+  /// Title text or widget
+  final Widget? title;
+
+  /// Subtitle text or widget
+  final Widget? subtitle;
+
+  /// Trailing widget (typically actions)
+  final Widget? trailing;
+
+  /// Custom padding (defaults to 16px)
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Padding(
-      padding: effectiveMargin,
-      child: switch (variant) {
-        AivoCardVariant.elevated => Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: effectiveBorderRadius),
-            color: color,
-            child: cardChild,
-          ),
-        AivoCardVariant.filled => Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: effectiveBorderRadius),
-            color: color ?? colorScheme.surfaceContainerHighest,
-            child: cardChild,
-          ),
-        AivoCardVariant.outlined => Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: effectiveBorderRadius,
-              side: BorderSide(color: colorScheme.outlineVariant),
+      padding: padding ?? const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: 16),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (title != null)
+                  DefaultTextStyle(
+                    style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ) ??
+                        const TextStyle(),
+                    child: title!,
+                  ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  DefaultTextStyle(
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ) ??
+                        const TextStyle(),
+                    child: subtitle!,
+                  ),
+                ],
+              ],
             ),
-            color: color ?? colorScheme.surface,
-            child: cardChild,
           ),
-      },
+          if (trailing != null) ...[
+            const SizedBox(width: 16),
+            trailing!,
+          ],
+        ],
+      ),
     );
   }
 }
+
+/// Card title widget for use in CardHeader.
+class CardTitle extends StatelessWidget {
+  const CardTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+}
+
+/// Card description/subtitle widget.
+class CardDescription extends StatelessWidget {
+  const CardDescription(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+    );
+  }
+}
+
+/// Card content section.
+///
+/// Matches web CardContent with padding configuration.
+class CardContent extends StatelessWidget {
+  const CardContent({
+    super.key,
+    required this.child,
+    this.padding,
+  });
+
+  /// Content widget
+  final Widget child;
+
+  /// Custom padding (defaults to 16px horizontal, 0 top, 16px bottom)
+  final EdgeInsetsGeometry? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding ?? const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: child,
+    );
+  }
+}
+
+/// Card footer section with action buttons.
+///
+/// Matches web CardFooter with flexible alignment.
+class CardFooter extends StatelessWidget {
+  const CardFooter({
+    super.key,
+    required this.child,
+    this.padding,
+    this.alignment = MainAxisAlignment.start,
+  });
+
+  /// Footer content (typically Row of buttons)
+  final Widget child;
+
+  /// Custom padding
+  final EdgeInsetsGeometry? padding;
+
+  /// Alignment of footer content
+  final MainAxisAlignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding ?? const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: child is Row
+          ? child
+          : Row(
+              mainAxisAlignment: alignment,
+              children: [child],
+            ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PRESET CARD WIDGETS
+// ════════════════════════════════════════════════════════════════════════════
 
 /// Aivo info card with icon and content.
 class AivoInfoCard extends StatelessWidget {
@@ -95,8 +517,9 @@ class AivoInfoCard extends StatelessWidget {
     this.icon,
     this.trailing,
     this.onTap,
-    this.variant = AivoCardVariant.elevated,
+    this.variant = AivoCardVariant.standard,
     this.iconColor,
+    this.gradeBand,
   });
 
   final String title;
@@ -106,27 +529,37 @@ class AivoInfoCard extends StatelessWidget {
   final VoidCallback? onTap;
   final AivoCardVariant variant;
   final Color? iconColor;
+  final AivoGradeBand? gradeBand;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final effectiveIconColor = iconColor ?? colorScheme.primary;
 
     return AivoCard(
       variant: variant,
       onTap: onTap,
+      gradeBand: gradeBand,
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           if (icon != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (iconColor ?? colorScheme.primary).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                color: effectiveIconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(
+                  gradeBand == AivoGradeBand.k5
+                      ? AivoBrand.radiusExplorerCard
+                      : gradeBand == AivoGradeBand.g9_12
+                          ? AivoBrand.radiusScholarCard
+                          : AivoBrand.radiusNavigatorCard,
+                ),
               ),
               child: Icon(
                 icon,
-                color: iconColor ?? colorScheme.primary,
+                color: effectiveIconColor,
                 size: 24,
               ),
             ),
@@ -176,6 +609,7 @@ class AivoStatCard extends StatelessWidget {
     this.trend,
     this.trendPositive,
     this.onTap,
+    this.gradeBand,
   });
 
   final String label;
@@ -184,6 +618,7 @@ class AivoStatCard extends StatelessWidget {
   final String? trend;
   final bool? trendPositive;
   final VoidCallback? onTap;
+  final AivoGradeBand? gradeBand;
 
   @override
   Widget build(BuildContext context) {
@@ -193,6 +628,8 @@ class AivoStatCard extends StatelessWidget {
     return AivoCard(
       variant: AivoCardVariant.filled,
       onTap: onTap,
+      gradeBand: gradeBand,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -253,3 +690,70 @@ class AivoStatCard extends StatelessWidget {
     );
   }
 }
+
+/// Aivo action card with icon, title, subtitle, and action button.
+class AivoActionCard extends StatelessWidget {
+  const AivoActionCard({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.icon,
+    this.iconColor,
+    this.action,
+    this.actionLabel,
+    this.onAction,
+    this.variant = AivoCardVariant.standard,
+    this.gradeBand,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final Color? iconColor;
+  final Widget? action;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final AivoCardVariant variant;
+  final AivoGradeBand? gradeBand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final effectiveIconColor = iconColor ?? colorScheme.primary;
+
+    return AivoCard(
+      variant: variant,
+      gradeBand: gradeBand,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CardHeader(
+            leading: icon != null
+                ? Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: effectiveIconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AivoBrand.radiusMd),
+                    ),
+                    child: Icon(icon, color: effectiveIconColor, size: 24),
+                  )
+                : null,
+            title: Text(title),
+            subtitle: subtitle != null ? Text(subtitle!) : null,
+          ),
+          if (action != null || actionLabel != null)
+            CardFooter(
+              alignment: MainAxisAlignment.end,
+              child: action ??
+                  TextButton(
+                    onPressed: onAction,
+                    child: Text(actionLabel!),
+                  ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+

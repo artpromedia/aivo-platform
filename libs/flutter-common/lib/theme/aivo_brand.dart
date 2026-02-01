@@ -220,10 +220,12 @@ abstract class AivoBrand {
   // SEMANTIC ALIASES
   // ════════════════════════════════════════════════════════════════════════════
 
-  static const Color success = Color(0xFF10B981); // mint.500
-  static const Color warning = Color(0xFFFBBF24); // sunshine.400
-  static const Color info = Color(0xFF0EA5E9); // sky.500
-  static const Color danger = Color(0xFFEF4444); // error.500
+  static const Color success = Color(0xFF10B981); // mint.500 - matches web
+  static const Color progress = Color(0xFFF59E0B); // progress - matches web
+  static const Color focus = Color(0xFF3B82F6); // focus - matches web
+  static const Color warning = Color(0xFFF59E0B); // amber.500 - matches web
+  static const Color info = Color(0xFF3B82F6); // blue.500 - matches web
+  static const Color danger = Color(0xFFEF4444); // error.500 - matches web
 
   // ════════════════════════════════════════════════════════════════════════════
   // SURFACE & BACKGROUND COLORS
@@ -235,6 +237,82 @@ abstract class AivoBrand {
   static const Color surfaceMuted = Color(0xFFF4F4F5); // gray.100
   static const Color surfaceElevated = Color(0xFFFFFFFF);
   static const Color surfacePrimaryTint = Color(0xFFF5F3FF); // primary.50
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // GRADE THEME COLORS (Matches web gradeThemes)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // Explorer (Pre-K–5)
+  static const Color explorerPrimary = Color(0xFF7C3AED);
+  static const Color explorerPrimaryHover = Color(0xFF6D28D9);
+  static const Color explorerSecondary = Color(0xFFA78BFA);
+  static const Color explorerAccent = Color(0xFFF59E0B);
+  static const Color explorerBackground = Color(0xFFFAFBFF);
+  static const Color explorerSurface = Color(0xFFFFFFFF);
+  static const Color explorerSurfaceMuted = Color(0xFFF5F3FF);
+  static const Color explorerSurfaceElevated = Color(0xFFFFFFFF);
+  static const Color explorerInfo = Color(0xFF3B82F6);
+  static const Color explorerSuccess = Color(0xFF10B981);
+  static const Color explorerWarning = Color(0xFFF59E0B);
+  static const Color explorerError = Color(0xFFEF4444);
+  static const Color explorerBorder = Color(0xFFDDD6FE);
+  static const Color explorerBorderMuted = Color(0xFFEDE9FE);
+  static const Color explorerFocus = Color(0xFF3B82F6);
+  static const Color explorerFocusRing = Color(0x803B82F6); // rgba(59,130,246,0.5)
+  static const Color explorerBackdrop = Color(0x801A1A2E); // rgba(26,26,46,0.5)
+  static const Color explorerTextPrimary = Color(0xFF1A1A2E);
+  static const Color explorerTextSecondary = Color(0xFF52525B);
+  static const Color explorerTextMuted = Color(0xFF71717A);
+  static const Color explorerTextOnPrimary = Color(0xFFFFFFFF);
+  static const Color explorerTextOnAccent = Color(0xFF1A1A2E);
+
+  // Navigator (6-8)
+  static const Color navigatorPrimary = Color(0xFF0891B2);
+  static const Color navigatorPrimaryHover = Color(0xFF0E7490);
+  static const Color navigatorSecondary = Color(0xFF22D3EE);
+  static const Color navigatorAccent = Color(0xFF10B981);
+  static const Color navigatorBackground = Color(0xFFF8FAFB);
+  static const Color navigatorSurface = Color(0xFFFFFFFF);
+  static const Color navigatorSurfaceMuted = Color(0xFFECFEFF);
+  static const Color navigatorSurfaceElevated = Color(0xFFFFFFFF);
+  static const Color navigatorInfo = Color(0xFF3B82F6);
+  static const Color navigatorSuccess = Color(0xFF10B981);
+  static const Color navigatorWarning = Color(0xFFF59E0B);
+  static const Color navigatorError = Color(0xFFEF4444);
+  static const Color navigatorBorder = Color(0xFFA5F3FC);
+  static const Color navigatorBorderMuted = Color(0xFFCFFAFE);
+  static const Color navigatorFocus = Color(0xFF3B82F6);
+  static const Color navigatorFocusRing = Color(0x803B82F6); // rgba(59,130,246,0.5)
+  static const Color navigatorBackdrop = Color(0x731A1A2E); // rgba(26,26,46,0.45)
+  static const Color navigatorTextPrimary = Color(0xFF1A1A2E);
+  static const Color navigatorTextSecondary = Color(0xFF52525B);
+  static const Color navigatorTextMuted = Color(0xFF71717A);
+  static const Color navigatorTextOnPrimary = Color(0xFFFFFFFF);
+  static const Color navigatorTextOnAccent = Color(0xFFFFFFFF);
+
+  // Scholar (9-12)
+  static const Color scholarPrimary = Color(0xFF1A1A2E);
+  static const Color scholarPrimaryHover = Color(0xFF2D2D47);
+  static const Color scholarSecondary = Color(0xFF47476F);
+  static const Color scholarAccent = Color(0xFF7C3AED);
+  static const Color scholarBackground = Color(0xFFFAFAFA);
+  static const Color scholarSurface = Color(0xFFFFFFFF);
+  static const Color scholarSurfaceMuted = Color(0xFFF4F4F5);
+  static const Color scholarSurfaceElevated = Color(0xFFFFFFFF);
+  static const Color scholarInfo = Color(0xFF3B82F6);
+  static const Color scholarSuccess = Color(0xFF10B981);
+  static const Color scholarWarning = Color(0xFFF59E0B);
+  static const Color scholarError = Color(0xFFEF4444);
+  static const Color scholarBorder = Color(0xFFE4E4E7);
+  static const Color scholarBorderMuted = Color(0xFFF4F4F5);
+  static const Color scholarFocus = Color(0xFF3B82F6);
+  static const Color scholarFocusRing = Color(0x803B82F6); // rgba(59,130,246,0.5)
+  static const Color scholarBackdrop = Color(0x661A1A2E); // rgba(26,26,46,0.4)
+  static const Color scholarTextPrimary = Color(0xFF1A1A2E);
+  static const Color scholarTextSecondary = Color(0xFF52525B);
+  static const Color scholarTextMuted = Color(0xFF71717A);
+  static const Color scholarTextOnPrimary = Color(0xFFFFFFFF);
+  static const Color scholarTextOnAccent = Color(0xFFFFFFFF);
 
   // ════════════════════════════════════════════════════════════════════════════
   // TEXT COLORS
@@ -296,36 +374,56 @@ abstract class AivoBrand {
   );
 
   // ════════════════════════════════════════════════════════════════════════════
-  // SPACING SCALE
+  // SPACING SCALE (Matches web tokens.json exactly)
   // ════════════════════════════════════════════════════════════════════════════
 
-  static const double space0 = 0;
-  static const double space1 = 4;
-  static const double space2 = 8;
-  static const double space3 = 12;
-  static const double space4 = 16;
-  static const double space5 = 20;
-  static const double space6 = 24;
-  static const double space8 = 32;
-  static const double space10 = 40;
-  static const double space12 = 48;
-  static const double space16 = 64;
-  static const double space20 = 80;
-  static const double space24 = 96;
+  static const double space0 = 0;   // space-0
+  static const double space1 = 4;   // space-1
+  static const double space2 = 8;   // space-2
+  static const double space3 = 12;  // space-3
+  static const double space4 = 16;  // space-4
+  static const double space5 = 20;  // space-5
+  static const double space6 = 24;  // space-6
+  static const double space7 = 32;  // space-7
+  static const double space8 = 40;  // space-8
+  static const double space9 = 48;  // space-9
+  static const double space10 = 56; // space-10
 
   // ════════════════════════════════════════════════════════════════════════════
-  // BORDER RADIUS SCALE
+  // BORDER RADIUS SCALE (Matches web base.radius tokens)
   // ════════════════════════════════════════════════════════════════════════════
 
   static const double radiusNone = 0;
-  static const double radiusSm = 8;
-  static const double radius = 12; // Default - matches marketing
-  static const double radiusMd = 16;
-  static const double radiusLg = 20;
-  static const double radiusXl = 24;
-  static const double radius2Xl = 32;
-  static const double radiusFull = 9999;
+  static const double radiusXs = 4;   // radius-xs
+  static const double radiusSm = 8;   // radius-sm
+  static const double radiusMd = 12;  // radius-md
+  static const double radiusLg = 16;  // radius-lg
+  static const double radiusXl = 20;  // radius-xl
+  static const double radiusPill = 999; // radius-pill
+  static const double radius = 12; // Default
+  static const double radiusFull = 9999; // Full circle (legacy)
 
+  // Grade-specific border radius (matches web gradeThemes)
+  // Explorer (Pre-K–5): Playful, rounded
+  static const double radiusExplorerButton = 20;
+  static const double radiusExplorerCard = 20;
+  static const double radiusExplorerInput = 12;
+  static const double radiusExplorerModal = 24;
+
+  // Navigator (6-8): Balanced
+  static const double radiusNavigatorButton = 12;
+  static const double radiusNavigatorCard = 12;
+  static const double radiusNavigatorInput = 8;
+  static const double radiusNavigatorModal = 16;
+
+  // Scholar (9-12): Professional, subtle
+  static const double radiusScholarButton = 8;
+  static const double radiusScholarCard = 8;
+  static const double radiusScholarInput = 6;
+  static const double radiusScholarModal = 12;
+
+  static const BorderRadius borderRadiusXs =
+      BorderRadius.all(Radius.circular(4));
   static const BorderRadius borderRadiusSm =
       BorderRadius.all(Radius.circular(8));
   static const BorderRadius borderRadius =
@@ -336,52 +434,78 @@ abstract class AivoBrand {
       BorderRadius.all(Radius.circular(20));
   static const BorderRadius borderRadiusXl =
       BorderRadius.all(Radius.circular(24));
-  static const BorderRadius borderRadius2Xl =
-      BorderRadius.all(Radius.circular(32));
 
   // ════════════════════════════════════════════════════════════════════════════
-  // SHADOWS / ELEVATION
+  // TOUCH TARGETS (Matches web gradeThemes.touchTarget.min)
   // ════════════════════════════════════════════════════════════════════════════
 
-  static const List<BoxShadow> shadowSm = [
-    BoxShadow(
-      color: Color(0x0D000000),
-      blurRadius: 3,
-      offset: Offset(0, 1),
-    ),
-  ];
+  /// Minimum touch target for accessibility (base - Scholar)
+  static const double touchTargetMin = 44;
 
-  static const List<BoxShadow> shadow = [
-    BoxShadow(
-      color: Color(0x14000000),
-      blurRadius: 8,
-      offset: Offset(0, 2),
-    ),
-  ];
+  /// Explorer (Pre-K–5): Larger for developing motor skills
+  static const double touchTargetExplorer = 56;
 
-  static const List<BoxShadow> shadowMd = [
+  /// Navigator (6-8): Moderate size
+  static const double touchTargetNavigator = 48;
+
+  /// Scholar (9-12): Standard size
+  static const double touchTargetScholar = 44;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SHADOWS / ELEVATION (Matches web tokens.json exactly)
+  // Uses navy-based shadow color: rgba(26, 26, 46, opacity)
+  // Navy hex: #1A1A2E
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Shadow soft - web: rgba(26, 26, 46, 0.08), y: 4, blur: 16
+  static const List<BoxShadow> shadowSoft = [
     BoxShadow(
-      color: Color(0x1A000000),
-      blurRadius: 12,
+      color: Color(0x141A1A2E), // rgba(26, 26, 46, 0.08)
+      blurRadius: 16,
       offset: Offset(0, 4),
     ),
   ];
 
-  static const List<BoxShadow> shadowLg = [
+  /// Shadow raised - web: rgba(26, 26, 46, 0.12), y: 8, blur: 24
+  static const List<BoxShadow> shadowRaised = [
     BoxShadow(
-      color: Color(0x1F000000),
+      color: Color(0x1F1A1A2E), // rgba(26, 26, 46, 0.12)
       blurRadius: 24,
       offset: Offset(0, 8),
     ),
   ];
 
-  static const List<BoxShadow> shadowXl = [
+  /// Shadow elevated - web: rgba(26, 26, 46, 0.16), y: 12, blur: 32
+  static const List<BoxShadow> shadowElevated = [
     BoxShadow(
-      color: Color(0x29000000),
-      blurRadius: 48,
-      offset: Offset(0, 16),
+      color: Color(0x291A1A2E), // rgba(26, 26, 46, 0.16)
+      blurRadius: 32,
+      offset: Offset(0, 12),
     ),
   ];
+
+  // Legacy shadow aliases (kept for backwards compatibility)
+  static const List<BoxShadow> shadowSm = [
+    BoxShadow(
+      color: Color(0x141A1A2E),
+      blurRadius: 3,
+      offset: Offset(0, 1),
+    ),
+  ];
+
+  static const List<BoxShadow> shadow = shadowSoft;
+
+  static const List<BoxShadow> shadowMd = shadowRaised;
+
+  static const List<BoxShadow> shadowLg = [
+    BoxShadow(
+      color: Color(0x1F1A1A2E),
+      blurRadius: 24,
+      offset: Offset(0, 8),
+    ),
+  ];
+
+  static const List<BoxShadow> shadowXl = shadowElevated;
 
   /// Primary colored shadow for elevated primary buttons
   static const List<BoxShadow> shadowPrimary = [
@@ -402,9 +526,10 @@ abstract class AivoBrand {
   ];
 
   // ════════════════════════════════════════════════════════════════════════════
-  // TYPOGRAPHY SCALE
+  // TYPOGRAPHY SCALE (Matches web tokens.json exactly)
   // ════════════════════════════════════════════════════════════════════════════
 
+  // Base font sizes (Tailwind-style scale)
   static const double fontSizeXs = 12;
   static const double fontSizeSm = 14;
   static const double fontSizeBase = 16;
@@ -415,23 +540,107 @@ abstract class AivoBrand {
   static const double fontSize4Xl = 36;
   static const double fontSize5Xl = 48;
 
-  static const FontWeight fontWeightNormal = FontWeight.w400;
+  // Font weights matching web tokens brand.font.weight
+  static const FontWeight fontWeightRegular = FontWeight.w400;
   static const FontWeight fontWeightMedium = FontWeight.w500;
   static const FontWeight fontWeightSemibold = FontWeight.w600;
   static const FontWeight fontWeightBold = FontWeight.w700;
+  static const FontWeight fontWeightHeading = FontWeight.w800;
 
+  // Legacy alias for backwards compatibility
+  static const FontWeight fontWeightNormal = fontWeightRegular;
+
+  // Line height multipliers
   static const double lineHeightTight = 1.25;
   static const double lineHeightNormal = 1.5;
   static const double lineHeightRelaxed = 1.625;
   static const double lineHeightLoose = 2.0;
 
   // ════════════════════════════════════════════════════════════════════════════
-  // ANIMATION DURATIONS
+  // GRADE-BAND TYPOGRAPHY (Matches web gradeThemes exactly)
   // ════════════════════════════════════════════════════════════════════════════
 
+  // Explorer (Pre-K–5) Typography - web: gradeThemes.explorer.fontSize/lineHeight
+  static const double explorerDisplaySize = 42;
+  static const double explorerDisplayLineHeight = 52;
+  static const double explorerHeadlineSize = 34;
+  static const double explorerHeadlineLineHeight = 42;
+  static const double explorerTitleSize = 26;
+  static const double explorerTitleLineHeight = 34;
+  static const double explorerBodySize = 18;
+  static const double explorerBodyLineHeight = 28;
+  static const double explorerLabelSize = 16;
+  static const double explorerLabelLineHeight = 24;
+  static const double explorerCaptionSize = 14;
+  static const double explorerCaptionLineHeight = 20;
+
+  // Navigator (6-8) Typography - web: gradeThemes.navigator.fontSize/lineHeight
+  static const double navigatorDisplaySize = 36;
+  static const double navigatorDisplayLineHeight = 44;
+  static const double navigatorHeadlineSize = 28;
+  static const double navigatorHeadlineLineHeight = 36;
+  static const double navigatorTitleSize = 22;
+  static const double navigatorTitleLineHeight = 30;
+  static const double navigatorBodySize = 16;
+  static const double navigatorBodyLineHeight = 24;
+  static const double navigatorLabelSize = 14;
+  static const double navigatorLabelLineHeight = 20;
+  static const double navigatorCaptionSize = 12;
+  static const double navigatorCaptionLineHeight = 18;
+
+  // Scholar (9-12) Typography - web: gradeThemes.scholar.fontSize/lineHeight
+  static const double scholarDisplaySize = 32;
+  static const double scholarDisplayLineHeight = 40;
+  static const double scholarHeadlineSize = 24;
+  static const double scholarHeadlineLineHeight = 32;
+  static const double scholarTitleSize = 20;
+  static const double scholarTitleLineHeight = 28;
+  static const double scholarBodySize = 15;
+  static const double scholarBodyLineHeight = 24;
+  static const double scholarLabelSize = 13;
+  static const double scholarLabelLineHeight = 18;
+  static const double scholarCaptionSize = 11;
+  static const double scholarCaptionLineHeight = 16;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ACCESSIBILITY TYPOGRAPHY SETTINGS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Large text mode scale multiplier (1.2x)
+  static const double largeTextScaleFactor = 1.2;
+
+  /// Dyslexia-friendly letter spacing in em (0.05em)
+  static const double dyslexiaLetterSpacingEm = 0.05;
+
+  /// Dyslexia-friendly word spacing in em (0.1em)
+  static const double dyslexiaWordSpacingEm = 0.1;
+
+  /// Primary font family
+  static const String fontFamilyDefault = 'Nunito';
+
+  /// Dyslexia-friendly font family
+  static const String fontFamilyDyslexia = 'Atkinson Hyperlegible';
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // ANIMATION DURATIONS (Matches web tokens.json exactly)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Fast animation - web: 150ms
   static const Duration durationFast = Duration(milliseconds: 150);
-  static const Duration durationNormal = Duration(milliseconds: 300);
-  static const Duration durationSlow = Duration(milliseconds: 500);
+  
+  /// Base animation - web: 250ms (NOTE: was 300ms, synced to web)
+  static const Duration durationBase = Duration(milliseconds: 250);
+  
+  /// Slow animation - web: 400ms (NOTE: was 500ms, synced to web)
+  static const Duration durationSlow = Duration(milliseconds: 400);
+  
+  /// Reduced motion durations - web: fast=0, base=0, slow=150
+  static const Duration durationReducedFast = Duration.zero;
+  static const Duration durationReducedBase = Duration.zero;
+  static const Duration durationReducedSlow = Duration(milliseconds: 150);
+  
+  /// Legacy alias for durationBase
+  static const Duration durationNormal = durationBase;
 
   static const Curve curveDefault = Curves.easeInOut;
   static const Curve curveEmphasized = Curves.easeOutCubic;
