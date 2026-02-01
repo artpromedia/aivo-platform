@@ -6,6 +6,155 @@
  */
 
 /**
+ * Stub Python AI/ML services that return 501 and should be feature-flagged.
+ * These services are disabled by default in production until implemented.
+ *
+ * @see STUB_SERVICES.md for full documentation
+ */
+export enum StubService {
+  /** Reinforcement learning tutoring - personalized tutoring strategies */
+  RL_TUTORING = 'rlTutoring',
+  /** Peer learning matching - collaborative learning groups */
+  PEER_LEARNING = 'peerLearning',
+  /** Multimodal analytics - cross-modal learning analysis */
+  MULTIMODAL_ANALYTICS = 'multimodalAnalytics',
+  /** Gamification Python models - achievement/reward optimization */
+  GAMIFICATION_PYTHON = 'gamificationPython',
+  /** Content intelligence - topic classification and tagging */
+  CONTENT_INTELLIGENCE = 'contentIntelligence',
+  /** Cognitive load assessment - mental load optimization */
+  COGNITIVE_LOAD = 'cognitiveLoad',
+  /** Accessibility AI - adaptive accessibility features */
+  ACCESSIBILITY_AI = 'accessibilityAi',
+  /** Specialized support - special education accommodations */
+  SPECIALIZED_SUPPORT = 'specializedSupport',
+}
+
+/**
+ * Stub service configuration with service metadata
+ */
+export interface StubServiceConfig {
+  /** Whether the service is enabled */
+  enabled: boolean;
+  /** Service URL for routing */
+  serviceUrl: string;
+  /** Human-readable service name */
+  displayName: string;
+  /** Expected implementation date */
+  expectedDate?: string;
+  /** Fallback response message */
+  fallbackMessage: string;
+}
+
+/**
+ * Default stub service configurations - ALL DISABLED BY DEFAULT
+ */
+export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
+  [StubService.RL_TUTORING]: {
+    enabled: false,
+    serviceUrl: 'http://rl-tutoring-svc:8000',
+    displayName: 'Reinforcement Learning Tutoring',
+    expectedDate: '2026-Q2',
+    fallbackMessage:
+      'AI-powered personalized tutoring is coming soon. Standard tutoring is available.',
+  },
+  [StubService.PEER_LEARNING]: {
+    enabled: false,
+    serviceUrl: 'http://peer-learning-svc:8000',
+    displayName: 'Peer Learning & Collaboration',
+    expectedDate: '2026-Q2',
+    fallbackMessage:
+      'AI-matched peer learning groups coming soon. Manual group creation is available.',
+  },
+  [StubService.MULTIMODAL_ANALYTICS]: {
+    enabled: false,
+    serviceUrl: 'http://multimodal-analytics-svc:8000',
+    displayName: 'Multimodal Learning Analytics',
+    expectedDate: '2026-Q3',
+    fallbackMessage:
+      'Advanced cross-modal analytics coming soon. Standard analytics are available.',
+  },
+  [StubService.GAMIFICATION_PYTHON]: {
+    enabled: false,
+    serviceUrl: 'http://gamification-svc:8000',
+    displayName: 'AI Gamification Optimization',
+    expectedDate: '2026-Q1',
+    fallbackMessage: 'AI-optimized rewards coming soon. Standard gamification is active.',
+  },
+  [StubService.CONTENT_INTELLIGENCE]: {
+    enabled: false,
+    serviceUrl: 'http://content-intelligence-svc:8000',
+    displayName: 'Content Intelligence',
+    expectedDate: '2026-Q1',
+    fallbackMessage: 'AI content analysis coming soon. Manual tagging is available.',
+  },
+  [StubService.COGNITIVE_LOAD]: {
+    enabled: false,
+    serviceUrl: 'http://cognitive-load-svc:8000',
+    displayName: 'Cognitive Load Assessment',
+    expectedDate: '2026-Q2',
+    fallbackMessage: 'Cognitive load optimization coming soon. Standard pacing is available.',
+  },
+  [StubService.ACCESSIBILITY_AI]: {
+    enabled: false,
+    serviceUrl: 'http://accessibility-ai-svc:8000',
+    displayName: 'AI Accessibility Adaptations',
+    expectedDate: '2026-Q2',
+    fallbackMessage: 'AI accessibility features coming soon. Manual accommodations are available.',
+  },
+  [StubService.SPECIALIZED_SUPPORT]: {
+    enabled: false,
+    serviceUrl: 'http://specialized-support-svc:8000',
+    displayName: 'Specialized Learning Support',
+    expectedDate: '2026-Q2',
+    fallbackMessage: 'AI specialized support coming soon. Standard accommodations are available.',
+  },
+};
+
+/**
+ * Check if a stub service is enabled
+ */
+export function isStubServiceEnabled(service: StubService): boolean {
+  // Check environment variable override first
+  // Convert camelCase to SCREAMING_SNAKE_CASE for env var
+  const envKey = `FEATURE_${service.toUpperCase().replaceAll(/([A-Z])/g, '_$1')}`;
+  const envValue =
+    typeof globalThis.process !== 'undefined' ? globalThis.process.env[envKey] : undefined;
+
+  if (envValue !== undefined) {
+    return envValue === 'true' || envValue === '1';
+  }
+
+  return STUB_SERVICE_DEFAULTS[service]?.enabled ?? false;
+}
+
+/**
+ * Get stub service configuration
+ */
+export function getStubServiceConfig(service: StubService): StubServiceConfig {
+  return STUB_SERVICE_DEFAULTS[service];
+}
+
+/**
+ * Get all stub services and their status
+ */
+export function getAllStubServicesStatus(): Record<
+  StubService,
+  { enabled: boolean; config: StubServiceConfig }
+> {
+  const status: Record<string, { enabled: boolean; config: StubServiceConfig }> = {};
+
+  for (const service of Object.values(StubService)) {
+    status[service] = {
+      enabled: isStubServiceEnabled(service),
+      config: getStubServiceConfig(service),
+    };
+  }
+
+  return status as Record<StubService, { enabled: boolean; config: StubServiceConfig }>;
+}
+
+/**
  * Feature flag identifiers for web-mobile parity features
  */
 export enum ParityFeature {
@@ -128,7 +277,7 @@ function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
@@ -141,13 +290,11 @@ export class FeatureFlagsService {
   private static instance: FeatureFlagsService;
   private flags: Map<ParityFeature, FeatureFlagConfig>;
   private userContext: UserContext = {};
-  private listeners: Set<() => void> = new Set();
+  private listeners = new Set<() => void>();
   private initialized = false;
 
   private constructor() {
-    this.flags = new Map(
-      Object.entries(DEFAULT_FLAGS) as [ParityFeature, FeatureFlagConfig][]
-    );
+    this.flags = new Map(Object.entries(DEFAULT_FLAGS) as [ParityFeature, FeatureFlagConfig][]);
   }
 
   /**
@@ -177,7 +324,7 @@ export class FeatureFlagsService {
     // Apply overrides
     if (options?.overrides) {
       for (const [feature, config] of Object.entries(options.overrides)) {
-        this.flags.set(feature as ParityFeature, config as FeatureFlagConfig);
+        this.flags.set(feature as ParityFeature, config);
       }
     }
 
@@ -212,7 +359,10 @@ export class FeatureFlagsService {
 
     // Check school allowlist
     if (config.allowedSchoolIds?.length) {
-      if (this.userContext.schoolId && config.allowedSchoolIds.includes(this.userContext.schoolId)) {
+      if (
+        this.userContext.schoolId &&
+        config.allowedSchoolIds.includes(this.userContext.schoolId)
+      ) {
         return true;
       }
     }
@@ -228,7 +378,7 @@ export class FeatureFlagsService {
     }
 
     // Random rollout for anonymous users
-    return (Date.now() % 100) < config.rolloutPercentage;
+    return Date.now() % 100 < config.rolloutPercentage;
   }
 
   /**
@@ -252,7 +402,7 @@ export class FeatureFlagsService {
    */
   updateFlags(flags: Partial<Record<ParityFeature, FeatureFlagConfig>>): void {
     for (const [feature, config] of Object.entries(flags)) {
-      this.flags.set(feature as ParityFeature, config as FeatureFlagConfig);
+      this.flags.set(feature as ParityFeature, config);
     }
     this.saveToStorage();
     this.notifyListeners();
@@ -269,7 +419,9 @@ export class FeatureFlagsService {
   }
 
   private notifyListeners(): void {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => {
+      listener();
+    });
   }
 
   /**
@@ -323,9 +475,7 @@ export class FeatureFlagsService {
    * Reset to defaults
    */
   reset(): void {
-    this.flags = new Map(
-      Object.entries(DEFAULT_FLAGS) as [ParityFeature, FeatureFlagConfig][]
-    );
+    this.flags = new Map(Object.entries(DEFAULT_FLAGS) as [ParityFeature, FeatureFlagConfig][]);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -336,7 +486,7 @@ export class FeatureFlagsService {
    * Get all enabled features
    */
   getEnabledFeatures(): ParityFeature[] {
-    return Object.values(ParityFeature).filter(f => this.isEnabled(f));
+    return Object.values(ParityFeature).filter((f) => this.isEnabled(f));
   }
 
   /**
@@ -379,10 +529,6 @@ export function useFeatureFlag(feature: ParityFeature): boolean {
 /**
  * Feature gate helper
  */
-export function featureGate<T>(options: {
-  feature: ParityFeature;
-  enabled: T;
-  disabled: T;
-}): T {
+export function featureGate<T>(options: { feature: ParityFeature; enabled: T; disabled: T }): T {
   return featureFlags.isEnabled(options.feature) ? options.enabled : options.disabled;
 }

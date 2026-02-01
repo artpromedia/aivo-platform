@@ -1,0 +1,230 @@
+# =============================================================================
+# AIVO Platform - Stub Services Kubernetes Configuration
+# =============================================================================
+#
+# This ConfigMap defines feature flags for Python AI/ML stub services.
+# These services return HTTP 501 and should be disabled in production
+# until fully implemented.
+#
+# Usage:
+#   kubectl apply -f k8s/stub-services-config.yaml
+#
+# To enable a service after implementation:
+#   kubectl patch configmap stub-services-config -n aivo \
+#     --type merge -p '{"data":{"FEATURE_RL_TUTORING":"true"}}'
+#
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stub-services-config
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: aivo
+    app.kubernetes.io/component: feature-flags
+    app.kubernetes.io/part-of: aivo-platform
+  annotations:
+    description: "Feature flags for Python AI/ML stub services"
+    documentation: "https://docs.aivo.ai/features/coming-soon"
+data:
+  # ===========================================
+  # STUB SERVICE FEATURE FLAGS
+  # ===========================================
+  # Set to "true" only when the service is fully implemented and tested.
+  # Default: "false" (service returns HTTP 503 "coming soon")
+  # ===========================================
+  
+  # P0 - Critical AI Services (Expected Q2 2026)
+  FEATURE_RL_TUTORING: "false"
+  FEATURE_PEER_LEARNING: "false"
+  FEATURE_MULTIMODAL_ANALYTICS: "false"
+  
+  # P1 - Important AI Services (Expected Q1-Q2 2026)
+  FEATURE_GAMIFICATION_PYTHON: "false"
+  FEATURE_CONTENT_INTELLIGENCE: "false"
+  FEATURE_COGNITIVE_LOAD: "false"
+  FEATURE_ACCESSIBILITY_AI: "false"
+  FEATURE_SPECIALIZED_SUPPORT: "false"
+
+---
+
+# =============================================================================
+# Service Mesh / Ingress Configuration for Stub Services
+# =============================================================================
+# This VirtualService routes traffic to stub services and handles
+# the 503 responses gracefully.
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: stub-services-routing
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: aivo
+    app.kubernetes.io/component: stub-services
+spec:
+  hosts:
+    - api.aivo.ai
+  http:
+    # RL Tutoring Service
+    - match:
+        - uri:
+            prefix: /api/v1/rl-tutoring
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0  # No retries for stub services
+      timeout: 5s
+    
+    # Peer Learning Service
+    - match:
+        - uri:
+            prefix: /api/v1/peer-learning
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Multimodal Analytics Service
+    - match:
+        - uri:
+            prefix: /api/v1/multimodal
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Gamification Python Service
+    - match:
+        - uri:
+            prefix: /api/v1/gamification/ai
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Content Intelligence Service
+    - match:
+        - uri:
+            prefix: /api/v1/content-intelligence
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Cognitive Load Service
+    - match:
+        - uri:
+            prefix: /api/v1/cognitive-load
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Accessibility AI Service
+    - match:
+        - uri:
+            prefix: /api/v1/accessibility-ai
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+    
+    # Specialized Support Service
+    - match:
+        - uri:
+            prefix: /api/v1/specialized-support
+      route:
+        - destination:
+            host: python-api-gateway
+            port:
+              number: 8000
+      retries:
+        attempts: 0
+      timeout: 5s
+
+---
+
+# =============================================================================
+# Monitoring Alert for 501 Responses
+# =============================================================================
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stub-service-alerts
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: aivo
+    app.kubernetes.io/component: monitoring
+spec:
+  groups:
+    - name: stub-service-alerts
+      interval: 30s
+      rules:
+        # Alert on any HTTP 501 responses (indicates unhandled stub service)
+        - alert: UnhandledStubService501
+          expr: |
+            sum(rate(http_requests_total{status="501"}[5m])) > 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "HTTP 501 responses detected - unhandled stub service"
+            description: |
+              HTTP 501 (Not Implemented) responses are being returned.
+              This indicates a stub service is being called without proper
+              feature flag protection. Check the following:
+              1. Is the service path in STUB_SERVICE_CONFIGS?
+              2. Is the StubServiceMiddleware enabled?
+              3. Is the API gateway routing correctly?
+              
+              Runbook: https://docs.aivo.ai/runbooks/stub-service-501
+        
+        # Alert on excessive 503 responses from stub services
+        - alert: HighStubServiceUsageAttempts
+          expr: |
+            sum(rate(http_requests_total{status="503", path=~"/api/v1/(rl-tutoring|peer-learning|multimodal|gamification/ai|content-intelligence|cognitive-load|accessibility-ai|specialized-support).*"}[1h])) > 100
+          for: 5m
+          labels:
+            severity: warning
+            team: product
+          annotations:
+            summary: "High usage attempts on disabled stub services"
+            description: |
+              Users are frequently attempting to use features that are not yet
+              available. Consider:
+              1. Updating UI to hide unavailable features
+              2. Adding more prominent "coming soon" messaging
+              3. Prioritizing implementation of the requested feature
+              
+              Dashboard: https://grafana.aivo.ai/d/stub-services

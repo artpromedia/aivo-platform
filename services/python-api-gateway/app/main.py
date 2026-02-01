@@ -6,6 +6,8 @@ This gateway provides unified access to all Python services:
 - AI Inference Service
 - Training Service
 - Curriculum Service
+
+Includes middleware for handling stub services gracefully.
 """
 
 import logging
@@ -19,6 +21,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.middleware.stub_service_middleware import StubServiceMiddleware, stub_router
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +67,10 @@ app.add_middleware(
     max_age=3600,
 )
 
+# Stub service middleware - intercepts requests to disabled stub services
+# and returns HTTP 503 with "coming soon" message instead of HTTP 501
+app.add_middleware(StubServiceMiddleware)
+
 # GZip compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -76,6 +83,9 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Include API routers
 from app.api.v1 import api_router
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Include stub service status router
+app.include_router(stub_router, prefix="/api/v1")
 
 
 @app.get("/")
