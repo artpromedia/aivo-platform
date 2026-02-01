@@ -6,10 +6,12 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../theme/aivo_brand.dart';
+import '../theme/aivo_motion.dart';
+import '../theme/aivo_shadows.dart';
 import '../theme/aivo_theme.dart';
 
 /// Switch animation configuration per grade band.
+/// Uses the centralized AivoMotion system for consistency.
 class _SwitchAnimationConfig {
   const _SwitchAnimationConfig({
     required this.duration,
@@ -19,31 +21,15 @@ class _SwitchAnimationConfig {
   final Duration duration;
   final Curve curve;
 
-  /// Explorer (Pre-K–5): More playful animations
-  static const explorer = _SwitchAnimationConfig(
-    duration: Duration(milliseconds: 250),
-    curve: Curves.easeOutBack,
-  );
-
-  /// Navigator (6-8): Moderate animations
-  static const navigator = _SwitchAnimationConfig(
-    duration: Duration(milliseconds: 200),
-    curve: Curves.easeInOut,
-  );
-
-  /// Scholar (9-12): Subtle animations
-  static const scholar = _SwitchAnimationConfig(
-    duration: Duration(milliseconds: 150),
-    curve: Curves.easeInOut,
-  );
-
+  /// Get config for grade band using centralized AivoMotion system
   static _SwitchAnimationConfig forGradeBand(AivoGradeBand? band) {
-    return switch (band) {
-      AivoGradeBand.k5 => explorer,
-      AivoGradeBand.g6_8 => navigator,
-      AivoGradeBand.g9_12 => scholar,
-      null => navigator,
-    };
+    final durationConfig = AivoDurationConfig.forGradeBand(band);
+    final curve = AivoCurves.bounceForGradeBand(band);
+
+    return _SwitchAnimationConfig(
+      duration: durationConfig.base,
+      curve: curve,
+    );
   }
 }
 
@@ -241,13 +227,7 @@ class _AivoSwitchState extends State<AivoSwitch>
                               ? Colors.white
                               : colorScheme.surface,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AivoBrand.navy[600]!.withValues(alpha: 0.16),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          boxShadow: AivoShadows.soft,
                         ),
                       ),
                     ),

@@ -7,6 +7,8 @@ library;
 import 'package:flutter/material.dart';
 
 import '../theme/aivo_brand.dart';
+import '../theme/aivo_motion.dart';
+import '../theme/aivo_shadows.dart';
 import '../theme/aivo_theme.dart';
 
 /// Card variants matching web specifications.
@@ -25,45 +27,37 @@ enum AivoCardVariant {
 }
 
 /// Card animation configuration per grade band.
+/// Uses the centralized AivoMotion system for consistency.
 class _CardAnimationConfig {
   const _CardAnimationConfig({
     required this.hoverScale,
     required this.pressScale,
     required this.duration,
+    required this.curve,
   });
 
   final double hoverScale;
   final double pressScale;
   final Duration duration;
+  final Curve curve;
 
-  /// Explorer (Pre-K–5): Playful animations
-  static const explorer = _CardAnimationConfig(
-    hoverScale: 1.02,
-    pressScale: 0.98,
-    duration: Duration(milliseconds: 250),
-  );
-
-  /// Navigator (6-8): Moderate animations
-  static const navigator = _CardAnimationConfig(
-    hoverScale: 1.01,
-    pressScale: 0.99,
-    duration: Duration(milliseconds: 200),
-  );
-
-  /// Scholar (9-12): Subtle animations
-  static const scholar = _CardAnimationConfig(
-    hoverScale: 1.005,
-    pressScale: 0.995,
-    duration: Duration(milliseconds: 150),
-  );
-
+  /// Get config for grade band using centralized AivoMotion system
+  /// Note: Cards use smaller scale values than buttons for subtlety
   static _CardAnimationConfig forGradeBand(AivoGradeBand? band) {
-    return switch (band) {
-      AivoGradeBand.k5 => explorer,
-      AivoGradeBand.g6_8 => navigator,
-      AivoGradeBand.g9_12 => scholar,
-      null => navigator,
-    };
+    final durationConfig = AivoDurationConfig.forGradeBand(band);
+    final baseScale = AivoScaleConfig.forGradeBand(band);
+    final curve = AivoCurves.bounceForGradeBand(band);
+
+    // Cards use more subtle scaling (half of button values)
+    final hoverDelta = (baseScale.hover - 1.0) / 2;
+    final pressDelta = (1.0 - baseScale.press) / 2;
+
+    return _CardAnimationConfig(
+      hoverScale: 1.0 + hoverDelta, // Explorer: 1.025, Navigator: 1.01, Scholar: 1.005
+      pressScale: 1.0 - pressDelta, // Explorer: 0.975, Navigator: 0.99, Scholar: 0.995
+      duration: durationConfig.base,
+      curve: curve,
+    );
   }
 }
 
@@ -151,7 +145,7 @@ class _AivoCardState extends State<AivoCard>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: AivoBrand.curveDefault,
+        curve: config.curve,
       ),
     );
   }
@@ -178,7 +172,7 @@ class _AivoCardState extends State<AivoCard>
       end: targetScale,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: AivoBrand.curveDefault,
+      curve: config.curve,
     ));
     _animationController.forward(from: 0);
   }
@@ -243,15 +237,19 @@ class _AivoCardState extends State<AivoCard>
       return [];
     }
 
-    // Elevated shadow when hovered (for interactive cards)
+    // Use grade-band specific card shadows
+    final gradeBand = widget.gradeBand ?? AivoGradeBand.g6_8;
+
+    // Hover shadow for interactive cards
     if (_isHovered && widget.onTap != null) {
-      return AivoBrand.shadowElevated;
+      return AivoShadows.cardHoverForGradeBand(gradeBand);
     }
 
-    // Variant-specific shadow
+    // Standard: use grade-band card shadow
+    // Elevated: use raised shadow
     return switch (widget.variant) {
-      AivoCardVariant.standard => AivoBrand.shadowSoft,
-      AivoCardVariant.elevated => AivoBrand.shadowRaised,
+      AivoCardVariant.standard => AivoShadows.cardForGradeBand(gradeBand),
+      AivoCardVariant.elevated => AivoShadows.raised,
       _ => [],
     };
   }

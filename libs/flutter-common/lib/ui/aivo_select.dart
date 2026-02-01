@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../theme/aivo_brand.dart';
+import '../theme/aivo_shadows.dart';
 import '../theme/aivo_theme.dart';
 
 /// A select item with value and display content.
@@ -415,19 +416,16 @@ class _DropdownOverlayState<T> extends State<_DropdownOverlay<T>> {
           offset: const Offset(0, 4),
           targetAnchor: Alignment.bottomLeft,
           followerAnchor: Alignment.topLeft,
-          child: Material(
-            elevation: 8,
-            shadowColor: AivoBrand.navy[600]!.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            child: Container(
-              width: widget.width,
-              constraints: const BoxConstraints(maxHeight: 300),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(widget.borderRadius),
-                border: Border.all(color: colorScheme.outline),
-              ),
-              child: Column(
+          child: Container(
+            width: widget.width,
+            constraints: const BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              border: Border.all(color: colorScheme.outline),
+              boxShadow: AivoShadows.elevated,
+            ),
+            child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Search field
@@ -498,7 +496,6 @@ class _DropdownOverlayState<T> extends State<_DropdownOverlay<T>> {
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ],

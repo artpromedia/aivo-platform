@@ -834,7 +834,8 @@ ThemeData buildAccessibleTheme({
 // Addresses P1 Issue: Dark theme support for mobile
 // ══════════════════════════════════════════════════════════════════════════════
 
-/// Dark theme color palette for all grade bands
+/// Dark theme color palette for all grade bands.
+/// Extended with additional semantic colors to match web tokens.
 class _AivoDarkColors {
   const _AivoDarkColors({
     required this.primary,
@@ -846,6 +847,17 @@ class _AivoDarkColors {
     required this.textPrimary,
     required this.textSecondary,
     required this.error,
+    this.textMuted,
+    this.border,
+    this.borderMuted,
+    this.info,
+    this.success,
+    this.warning,
+    this.focus,
+    this.focusRing,
+    this.backdrop,
+    this.textOnPrimary,
+    this.textOnAccent,
   });
 
   final Color primary;
@@ -857,6 +869,32 @@ class _AivoDarkColors {
   final Color textPrimary;
   final Color textSecondary;
   final Color error;
+
+  // Extended colors (with defaults for backwards compatibility)
+  final Color? textMuted;
+  final Color? border;
+  final Color? borderMuted;
+  final Color? info;
+  final Color? success;
+  final Color? warning;
+  final Color? focus;
+  final Color? focusRing;
+  final Color? backdrop;
+  final Color? textOnPrimary;
+  final Color? textOnAccent;
+
+  // Helper getters with defaults
+  Color get effectiveBorder => border ?? surfaceMuted;
+  Color get effectiveBorderMuted => borderMuted ?? surfaceMuted;
+  Color get effectiveTextMuted => textMuted ?? textSecondary.withOpacity(0.7);
+  Color get effectiveInfo => info ?? const Color(0xFF60A5FA);
+  Color get effectiveSuccess => success ?? const Color(0xFF34D399);
+  Color get effectiveWarning => warning ?? const Color(0xFFFBBF24);
+  Color get effectiveFocus => focus ?? primary;
+  Color get effectiveFocusRing => focusRing ?? primary.withOpacity(0.5);
+  Color get effectiveBackdrop => backdrop ?? const Color(0x99000000);
+  Color get effectiveTextOnPrimary => textOnPrimary ?? background;
+  Color get effectiveTextOnAccent => textOnAccent ?? const Color(0xFFFFFFFF);
 }
 
 /// K-5 Dark: Playful purple tones
@@ -885,17 +923,29 @@ const _g6_8DarkColors = _AivoDarkColors(
   error: Color(0xFFF87171),
 );
 
-/// G9-12 Dark: Professional navy tones
+/// G9-12 Dark: Professional navy tones - EXACTLY matches web scholarDark tokens
+/// Web reference: libs/ui-web/src/tokens.json -> gradeThemes.scholarDark
 const _g9_12DarkColors = _AivoDarkColors(
-  primary: Color(0xFF8B8BFF), // Light purple-blue
-  secondary: Color(0xFFA5A5FF),
-  accent: Color(0xFFA78BFA), // Purple
-  background: Color(0xFF09090B), // Near black
-  surface: Color(0xFF18181B), // Dark gray
-  surfaceMuted: Color(0xFF27272A), // Medium gray
-  textPrimary: Color(0xFFFAFAFA),
-  textSecondary: Color(0xFFA1A1AA),
-  error: Color(0xFFEF4444),
+  primary: Color(0xFFA78BFA), // Web: #A78BFA - Lighter purple for dark mode
+  secondary: Color(0xFF757593), // Web: #757593
+  accent: Color(0xFF7C3AED), // Web: #7C3AED - Purple accent
+  background: Color(0xFF09090B), // Web: #09090B - Near black
+  surface: Color(0xFF18181B), // Web: #18181B - Dark gray
+  surfaceMuted: Color(0xFF27272A), // Web: #27272A - Medium gray / surfaceElevated
+  textPrimary: Color(0xFFFAFAFA), // Web: #FAFAFA
+  textSecondary: Color(0xFFA1A1AA), // Web: #A1A1AA
+  textMuted: Color(0xFF71717A), // Web: #71717A
+  border: Color(0xFF3F3F46), // Web: #3F3F46
+  borderMuted: Color(0xFF27272A), // Web: #27272A
+  info: Color(0xFF60A5FA), // Web: #60A5FA
+  success: Color(0xFF34D399), // Web: #34D399
+  warning: Color(0xFFFBBF24), // Web: #FBBF24
+  error: Color(0xFFF87171), // Web: #F87171
+  focus: Color(0xFF60A5FA), // Web: #60A5FA
+  focusRing: Color(0x8060A5FA), // Web: rgba(96, 165, 250, 0.5)
+  backdrop: Color(0x99000000), // Web: rgba(0, 0, 0, 0.6)
+  textOnPrimary: Color(0xFF09090B), // Web: #09090B
+  textOnAccent: Color(0xFFFFFFFF), // Web: #FFFFFF
 );
 
 ThemeData _buildDarkTheme({
@@ -944,22 +994,22 @@ ThemeData _buildDarkTheme({
       surfaceTintColor: Colors.transparent,
     ),
 
-    // Cards
+    // Cards - Use border instead of shadow in dark mode
     cardTheme: CardThemeData(
       color: colors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.surfaceMuted),
+        side: BorderSide(color: colors.effectiveBorder),
       ),
       surfaceTintColor: Colors.transparent,
     ),
 
-    // Elevated Buttons (Primary)
+    // Elevated Buttons (Primary) - Use textOnPrimary for proper contrast
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: colors.primary,
-        foregroundColor: Colors.black,
+        foregroundColor: colors.effectiveTextOnPrimary,
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -967,24 +1017,24 @@ ThemeData _buildDarkTheme({
       ),
     ),
 
-    // Filled Buttons (CTA)
+    // Filled Buttons (CTA) - Use proper text color
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: colors.secondary,
-        foregroundColor: Colors.black,
+        backgroundColor: colors.accent,
+        foregroundColor: colors.effectiveTextOnAccent,
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
     ),
 
-    // Outlined Buttons
+    // Outlined Buttons - Use border color
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: colors.primary,
         textStyle: textTheme.labelLarge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: colors.surfaceMuted, width: 1.5),
+        side: BorderSide(color: colors.effectiveBorder, width: 1.5),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       ),
     ),
@@ -1014,27 +1064,33 @@ ThemeData _buildDarkTheme({
       ),
     ),
 
-    // Input Decoration
+    // Input Decoration - Visible borders for dark mode
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: colors.surfaceMuted,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: colors.effectiveBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.surfaceMuted),
+        borderSide: BorderSide(color: colors.effectiveBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: colors.primary, width: 2),
+        borderSide: BorderSide(color: colors.effectiveFocus, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: colors.error),
       ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: colors.error, width: 2),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      labelStyle: TextStyle(color: colors.textSecondary),
+      hintStyle: TextStyle(color: colors.effectiveTextMuted),
     ),
 
     // Bottom Navigation

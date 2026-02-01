@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/aivo_brand.dart';
+import 'package:flutter_common/theme/aivo_motion.dart';
 import 'package:flutter_common/theme/aivo_theme.dart';
 
 /// Button variants matching web button.tsx:
@@ -72,6 +73,7 @@ enum AivoButtonSize {
 }
 
 /// Button animation settings per grade band.
+/// Uses the centralized AivoMotion system for consistency.
 /// Explorer: More playful animations
 /// Navigator: Moderate animations
 /// Scholar: Subtle, professional animations
@@ -80,6 +82,7 @@ class _ButtonAnimationConfig {
     required this.hoverScale,
     required this.pressScale,
     required this.duration,
+    required this.curve,
   });
 
   /// Scale factor on hover
@@ -91,35 +94,21 @@ class _ButtonAnimationConfig {
   /// Animation duration
   final Duration duration;
 
-  /// Explorer (Pre-K–5): Playful, bouncy animations
-  static const explorer = _ButtonAnimationConfig(
-    hoverScale: 1.05,
-    pressScale: 0.95,
-    duration: Duration(milliseconds: 250),
-  );
+  /// Animation curve
+  final Curve curve;
 
-  /// Navigator (6-8): Moderate animations
-  static const navigator = _ButtonAnimationConfig(
-    hoverScale: 1.02,
-    pressScale: 0.98,
-    duration: Duration(milliseconds: 200),
-  );
-
-  /// Scholar (9-12): Subtle, professional animations
-  static const scholar = _ButtonAnimationConfig(
-    hoverScale: 1.01,
-    pressScale: 0.99,
-    duration: Duration(milliseconds: 150),
-  );
-
-  /// Get config for grade band
+  /// Get config for grade band using centralized AivoMotion system
   static _ButtonAnimationConfig forGradeBand(AivoGradeBand? band) {
-    return switch (band) {
-      AivoGradeBand.k5 => explorer,
-      AivoGradeBand.g6_8 => navigator,
-      AivoGradeBand.g9_12 => scholar,
-      null => navigator, // Default to navigator
-    };
+    final durationConfig = AivoDurationConfig.forGradeBand(band);
+    final scaleConfig = AivoScaleConfig.forGradeBand(band);
+    final curve = AivoCurves.bounceForGradeBand(band);
+
+    return _ButtonAnimationConfig(
+      hoverScale: scaleConfig.hover,
+      pressScale: scaleConfig.press,
+      duration: durationConfig.base,
+      curve: curve,
+    );
   }
 }
 
@@ -264,7 +253,7 @@ class _AivoButtonState extends State<AivoButton>
       end: targetScale,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: AivoBrand.curveDefault,
+      curve: config.curve,
     ));
   }
 
