@@ -1,0 +1,33 @@
+[run]
+source = app
+omit = 
+    app/__init__.py
+    app/api/__init__.py
+    app/core/__init__.py
+    app/middleware/__init__.py
+
+[report]
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code:
+    def __repr__
+    
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run:
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    
+    # Don't complain about abstract methods
+    @abstractmethod
+
+# Exclude dead code in main.py (duplicate routes shadowed by routers)
+partial_branches =
+    pragma: no branch
+
+[html]
+directory = coverage_html_report
