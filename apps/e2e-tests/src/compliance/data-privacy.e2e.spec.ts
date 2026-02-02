@@ -12,7 +12,15 @@
  * @tags compliance, privacy, gdpr, coppa, audit
  */
 
-import { test, expect, APIRequestContext } from '@playwright/test';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { test, expect } from '@playwright/test';
+import type { APIRequestContext } from '@playwright/test';
 
 // =============================================================================
 // TEST CONFIGURATION
@@ -46,13 +54,19 @@ async function getAuthToken(request: APIRequestContext): Promise<string> {
 }
 
 async function createTestUser(request: APIRequestContext): Promise<void> {
-  await request.post(`${API_URL}/test/seed/user`, {
-    data: testUser,
-  }).catch(() => {});
+  await request
+    .post(`${API_URL}/test/seed/user`, {
+      data: testUser,
+    })
+    .catch(() => {
+      /* ignore seed errors */
+    });
 }
 
 async function cleanupTestUser(request: APIRequestContext): Promise<void> {
-  await request.delete(`${API_URL}/test/cleanup/user/${testUser.id}`).catch(() => {});
+  await request.delete(`${API_URL}/test/cleanup/user/${testUser.id}`).catch(() => {
+    /* ignore cleanup errors */
+  });
 }
 
 // =============================================================================

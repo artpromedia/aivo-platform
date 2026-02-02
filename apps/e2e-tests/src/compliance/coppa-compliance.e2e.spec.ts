@@ -14,7 +14,13 @@
  * @tags compliance, coppa, privacy, regulatory, audit
  */
 
-import { test, expect, Page, BrowserContext, APIRequestContext } from '@playwright/test';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
+import { test, expect } from '@playwright/test';
+import type { Page, BrowserContext, APIRequestContext } from '@playwright/test';
 
 // =============================================================================
 // TEST CONFIGURATION
@@ -60,15 +66,23 @@ const testData = {
 // =============================================================================
 
 async function seedTestData(apiContext: APIRequestContext): Promise<void> {
-  await apiContext.post(`${API_URL}/test/seed`, {
-    data: { type: 'coppa-compliance' },
-  }).catch(() => {});
+  await apiContext
+    .post(`${API_URL}/test/seed`, {
+      data: { type: 'coppa-compliance' },
+    })
+    .catch(() => {
+      /* ignore seed errors */
+    });
 }
 
 async function cleanupTestData(apiContext: APIRequestContext): Promise<void> {
-  await apiContext.post(`${API_URL}/test/cleanup`, {
-    data: { type: 'coppa-compliance' },
-  }).catch(() => {});
+  await apiContext
+    .post(`${API_URL}/test/cleanup`, {
+      data: { type: 'coppa-compliance' },
+    })
+    .catch(() => {
+      /* ignore cleanup errors */
+    });
 }
 
 async function loginAsParent(page: Page): Promise<void> {
@@ -113,7 +127,7 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
 
     // Or age verification through another method
     const ageField = page.locator('[name="age"], [data-testid="age-input"]');
-    const hasAgeVerification = await dobField.isVisible() || await ageField.isVisible();
+    const hasAgeVerification = (await dobField.isVisible()) || (await ageField.isVisible());
     expect(hasAgeVerification).toBe(true);
   });
 
@@ -161,15 +175,15 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
   });
 
   test('1.4 Verifiable parental consent (VPC) is required', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/consent-methods`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/consent-methods`);
     const methods = await response.json();
 
     // FTC requires verifiable parental consent
     expect(methods.supportedMethods).toContainEqual(
       expect.objectContaining({
-        type: expect.stringMatching(/signed-consent|credit-card|knowledge-based|video-verification/i),
+        type: expect.stringMatching(
+          /signed-consent|credit-card|knowledge-based|video-verification/i
+        ),
         ftcApproved: true,
       })
     );
@@ -225,7 +239,7 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
       },
     });
 
-    const registerResult = await registerResponse.json();
+    const _registerResult = await registerResponse.json();
 
     // Try to login
     const loginResponse = await apiContext.post(`${AUTH_URL}/api/v1/auth/login`, {
@@ -241,9 +255,7 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
   });
 
   test('1.8 Consent expires and requires renewal', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/consent-policy`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/consent-policy`);
     const policy = await response.json();
 
     expect(policy.consentExpiry).toBeDefined();
@@ -252,16 +264,13 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
   });
 
   test('1.9 Parent can revoke consent at any time', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/consent/revoke`,
-      {
-        data: {
-          parentId: 'test-parent-id',
-          childId: 'test-child-id',
-          reason: 'Parent requested revocation',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/consent/revoke`, {
+      data: {
+        parentId: 'test-parent-id',
+        childId: 'test-child-id',
+        reason: 'Parent requested revocation',
+      },
+    });
 
     const result = await response.json();
     expect(result.revoked).toBe(true);
@@ -269,9 +278,7 @@ test.describe('Parental Consent Flows @compliance @coppa @consent', () => {
   });
 
   test('1.10 Consent audit trail is maintained', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/audit/consent?childId=test-child-id`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/audit/consent?childId=test-child-id`);
     const auditTrail = await response.json();
 
     expect(auditTrail.records).toBeDefined();
@@ -319,16 +326,13 @@ test.describe('Data Collection Limitations @compliance @coppa @privacy', () => {
   });
 
   test('2.2 Location data not collected from children without consent', async () => {
-    const response = await apiContext.post(
-      `${LEARNER_URL}/api/analytics/track`,
-      {
-        data: {
-          userId: testData.childUnder13.email,
-          event: 'page_view',
-          location: { lat: 40.7128, lng: -74.0060 },
-        },
-      }
-    );
+    const response = await apiContext.post(`${LEARNER_URL}/api/analytics/track`, {
+      data: {
+        userId: testData.childUnder13.email,
+        event: 'page_view',
+        location: { lat: 40.7128, lng: -74.006 },
+      },
+    });
 
     // Should reject or strip location data
     if (response.ok()) {
@@ -356,10 +360,11 @@ test.describe('Data Collection Limitations @compliance @coppa @privacy', () => {
     // Check for fingerprinting scripts
     const fingerprintScripts = await page.evaluate(() => {
       const scripts = Array.from(document.querySelectorAll('script'));
-      return scripts.some(s =>
-        s.src?.includes('fingerprint') ||
-        s.innerHTML?.includes('fingerprint') ||
-        s.innerHTML?.includes('canvas.toDataURL')
+      return scripts.some(
+        (s) =>
+          s.src?.includes('fingerprint') ||
+          s.innerHTML?.includes('fingerprint') ||
+          s.innerHTML?.includes('canvas.toDataURL')
       );
     });
 
@@ -367,9 +372,7 @@ test.describe('Data Collection Limitations @compliance @coppa @privacy', () => {
   });
 
   test('2.5 Audio/video recordings require explicit consent', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/av-recording-policy`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/av-recording-policy`);
     const policy = await response.json();
 
     expect(policy.childrenRequireParentalConsent).toBe(true);
@@ -378,9 +381,7 @@ test.describe('Data Collection Limitations @compliance @coppa @privacy', () => {
   });
 
   test('2.6 Photo uploads from children require parental consent', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/media-upload-policy`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/media-upload-policy`);
     const policy = await response.json();
 
     expect(policy.childPhotoUpload).toBeDefined();
@@ -455,9 +456,7 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   });
 
   test('3.1 Child data retention policy is defined', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/retention-policy/children`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/retention-policy/children`);
     const policy = await response.json();
 
     expect(policy.retentionPeriod).toBeDefined();
@@ -466,9 +465,7 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   });
 
   test('3.2 Data retained only as long as necessary', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/retention-justification`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/retention-justification`);
     const justification = await response.json();
 
     expect(justification.dataCategories).toBeDefined();
@@ -490,20 +487,18 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   });
 
   test('3.4 Learning data anonymized after retention period', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/anonymization-policy`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/anonymization-policy`);
     const policy = await response.json();
 
     expect(policy.childLearningData).toBeDefined();
     expect(policy.childLearningData.anonymizeAfterRetention).toBe(true);
-    expect(policy.childLearningData.anonymizationMethod).toMatch(/k-anonymity|aggregation|pseudonymization/i);
+    expect(policy.childLearningData.anonymizationMethod).toMatch(
+      /k-anonymity|aggregation|pseudonymization/i
+    );
   });
 
   test('3.5 Consent records retained for compliance', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/consent-retention-policy`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/consent-retention-policy`);
     const policy = await response.json();
 
     expect(policy.retentionPeriod).toBeDefined();
@@ -512,9 +507,7 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   });
 
   test('3.6 Data retention is documented and auditable', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/audit/data-retention`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/audit/data-retention`);
     const audit = await response.json();
 
     expect(audit.policyVersion).toBeDefined();
@@ -543,9 +536,7 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   });
 
   test('3.9 Third-party data sharing records retained', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/third-party-sharing-audit`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/third-party-sharing-audit`);
     const audit = await response.json();
 
     expect(audit.sharingRecords).toBeDefined();
@@ -555,7 +546,9 @@ test.describe('Data Retention Policies @compliance @coppa @retention', () => {
   test('3.10 Retention policy is publicly accessible', async ({ page }) => {
     await page.goto(`${LEARNER_URL}/privacy`);
 
-    const retentionSection = page.locator('[data-testid="data-retention"], text=/retention|how long/i').first();
+    const retentionSection = page
+      .locator('[data-testid="data-retention"], text=/retention|how long/i')
+      .first();
     await expect(retentionSection).toBeVisible();
   });
 });
@@ -585,22 +578,21 @@ test.describe('Data Deletion Requests @compliance @coppa @deletion', () => {
     if (await childCard.isVisible()) {
       await childCard.click();
 
-      const deleteButton = page.locator('button:has-text("Delete"), [data-testid="delete-child-data"]');
+      const deleteButton = page.locator(
+        'button:has-text("Delete"), [data-testid="delete-child-data"]'
+      );
       await expect(deleteButton).toBeVisible();
     }
   });
 
   test('4.2 Deletion request requires parent verification', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/data/deletion-request`,
-      {
-        data: {
-          childId: 'test-child-id',
-          parentId: 'test-parent-id',
-          verificationMethod: 'email',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/data/deletion-request`, {
+      data: {
+        childId: 'test-child-id',
+        parentId: 'test-parent-id',
+        verificationMethod: 'email',
+      },
+    });
 
     const result = await response.json();
     expect(result.verificationRequired).toBe(true);
@@ -608,15 +600,12 @@ test.describe('Data Deletion Requests @compliance @coppa @deletion', () => {
   });
 
   test('4.3 Deletion request confirmation is sent', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/data/deletion-request/confirm`,
-      {
-        data: {
-          requestId: 'test-deletion-request-id',
-          verificationCode: '123456',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/data/deletion-request/confirm`, {
+      data: {
+        requestId: 'test-deletion-request-id',
+        verificationCode: '123456',
+      },
+    });
 
     const result = await response.json();
     expect(result.confirmed).toBe(true);
@@ -624,9 +613,7 @@ test.describe('Data Deletion Requests @compliance @coppa @deletion', () => {
   });
 
   test('4.4 Deletion is completed within required timeframe', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/deletion-sla`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/deletion-sla`);
     const sla = await response.json();
 
     expect(sla.maxDays).toBeDefined();
@@ -673,14 +660,14 @@ test.describe('Data Deletion Requests @compliance @coppa @deletion', () => {
     await loginAsParent(page);
     await page.goto(`${PARENT_URL}/settings/children/data`);
 
-    const downloadButton = page.locator('button:has-text("Download"), [data-testid="download-child-data"]');
+    const downloadButton = page.locator(
+      'button:has-text("Download"), [data-testid="download-child-data"]'
+    );
     await expect(downloadButton).toBeVisible();
   });
 
   test('4.9 Deletion audit log is maintained', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/audit/deletions?type=child-data`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/audit/deletions?type=child-data`);
     const audit = await response.json();
 
     expect(audit.records).toBeDefined();
@@ -693,9 +680,7 @@ test.describe('Data Deletion Requests @compliance @coppa @deletion', () => {
   });
 
   test('4.10 Deleted data cannot be recovered', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/users/deleted-child-id`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/users/deleted-child-id`);
 
     expect(response.status()).toBe(404);
   });
@@ -723,9 +708,8 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
 
     // Check for tracking cookies
     const cookies = await page.context().cookies();
-    const trackingCookies = cookies.filter(c =>
-      c.name.match(/tracking|ad|pixel|segment|mixpanel|amplitude/i)
-    );
+    const trackingRegex = /tracking|ad|pixel|segment|mixpanel|amplitude/i;
+    const trackingCookies = cookies.filter((c) => trackingRegex.exec(c.name) !== null);
 
     expect(trackingCookies.length).toBe(0);
   });
@@ -743,9 +727,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
         'facebook.net/en_US/fbevents',
         'advertising',
       ];
-      return scripts.filter(s =>
-        adDomains.some(domain => s.src?.includes(domain))
-      ).length;
+      return scripts.filter((s) => adDomains.some((domain) => s.src?.includes(domain))).length;
     });
 
     expect(adScripts).toBe(0);
@@ -765,9 +747,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
   });
 
   test('5.4 No behavioral profiling for children', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/profiling-policy/children`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/profiling-policy/children`);
     const policy = await response.json();
 
     expect(policy.behavioralProfilingEnabled).toBe(false);
@@ -776,9 +756,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
   });
 
   test('5.5 Analytics limited to educational purposes', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/analytics-policy/children`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/analytics-policy/children`);
     const policy = await response.json();
 
     expect(policy.allowedPurposes).toBeDefined();
@@ -788,9 +766,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
   });
 
   test('5.6 No data shared with advertisers', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/data-sharing/children`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/data-sharing/children`);
     const sharingPolicy = await response.json();
 
     const advertiserSharing = sharingPolicy.recipients?.filter(
@@ -815,12 +791,12 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
 
   test('5.8 Do Not Track (DNT) header respected for children', async ({ page }) => {
     // Set DNT header
-    await page.setExtraHTTPHeaders({ 'DNT': '1' });
+    await page.setExtraHTTPHeaders({ DNT: '1' });
     await loginAsChild(page);
 
     // Verify tracking is disabled
-    const trackingDisabled = await page.evaluate(() => {
-      // @ts-ignore - custom property
+    const _trackingDisabled = await page.evaluate(() => {
+      // @ts-expect-error - custom property
       return window.__trackingDisabled === true;
     });
 
@@ -832,7 +808,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
 
     const retargetingPixels = await page.evaluate(() => {
       const pixels = Array.from(document.querySelectorAll('img[width="1"], img[height="1"]'));
-      return pixels.filter(p =>
+      return pixels.filter((p) =>
         (p as HTMLImageElement).src?.match(/facebook|google|linkedin|twitter|pixel/i)
       ).length;
     });
@@ -841,9 +817,7 @@ test.describe('No Behavioral Advertising to Minors @compliance @coppa @advertisi
   });
 
   test('5.10 Advertising compliance is auditable', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/audit/advertising-compliance`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/audit/advertising-compliance`);
     const audit = await response.json();
 
     expect(audit.childrenExcluded).toBe(true);
@@ -895,7 +869,9 @@ test.describe('Parental Access to Child Data @compliance @coppa @parental-rights
     await page.goto(`${PARENT_URL}/children/progress`);
 
     const progressReport = page.locator('[data-testid="progress-report"], .progress-section');
-    await expect(progressReport.or(page.locator('text=/progress|performance/i').first())).toBeVisible();
+    await expect(
+      progressReport.or(page.locator('text=/progress|performance/i').first())
+    ).toBeVisible();
   });
 
   test('6.4 Parent can export all child data', async () => {
@@ -905,7 +881,7 @@ test.describe('Parental Access to Child Data @compliance @coppa @parental-rights
     await expect(exportButton).toBeVisible();
 
     if (await exportButton.isEnabled()) {
-      const downloadPromise = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
+      const _downloadPromise = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
       await exportButton.click();
       // May trigger download or show options
     }
@@ -917,21 +893,19 @@ test.describe('Parental Access to Child Data @compliance @coppa @parental-rights
     );
     const preview = await response.json();
 
-    expect(preview.categories).toContainEqual(
-      expect.objectContaining({ name: 'profile' })
-    );
+    expect(preview.categories).toContainEqual(expect.objectContaining({ name: 'profile' }));
     expect(preview.categories).toContainEqual(
       expect.objectContaining({ name: 'learning-activity' })
     );
-    expect(preview.categories).toContainEqual(
-      expect.objectContaining({ name: 'progress' })
-    );
+    expect(preview.categories).toContainEqual(expect.objectContaining({ name: 'progress' }));
   });
 
   test('6.6 Parent can view data shared with third parties', async () => {
     await page.goto(`${PARENT_URL}/settings/privacy`);
 
-    const thirdPartySection = page.locator('[data-testid="third-party-sharing"], text=/third.*party|sharing/i').first();
+    const thirdPartySection = page
+      .locator('[data-testid="third-party-sharing"], text=/third.*party|sharing/i')
+      .first();
     await expect(thirdPartySection).toBeVisible();
   });
 
@@ -946,34 +920,27 @@ test.describe('Parental Access to Child Data @compliance @coppa @parental-rights
   });
 
   test('6.8 Parent data requests are processed timely', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/data-request-sla`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/data-request-sla`);
     const sla = await response.json();
 
     expect(sla.parentAccessRequestMaxDays).toBeLessThanOrEqual(30);
   });
 
   test('6.9 Parent verification required for data access', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/data/request-access`,
-      {
-        data: {
-          parentId: 'test-parent-id',
-          childId: 'test-child-id',
-          requestType: 'full-export',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/data/request-access`, {
+      data: {
+        parentId: 'test-parent-id',
+        childId: 'test-child-id',
+        requestType: 'full-export',
+      },
+    });
 
     const result = await response.json();
     expect(result.verificationRequired).toBe(true);
   });
 
   test('6.10 Parent access requests are logged', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/audit/parent-data-access`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/audit/parent-data-access`);
     const audit = await response.json();
 
     expect(audit.records).toBeDefined();
@@ -1015,7 +982,9 @@ test.describe('Third-Party Data Sharing Restrictions @compliance @coppa @third-p
   test('7.2 Third-party recipients are disclosed', async ({ page }) => {
     await page.goto(`${LEARNER_URL}/privacy`);
 
-    const thirdPartySection = page.locator('[data-testid="third-party-list"], text=/third.*part/i').first();
+    const thirdPartySection = page
+      .locator('[data-testid="third-party-list"], text=/third.*part/i')
+      .first();
     await expect(thirdPartySection).toBeVisible();
   });
 
@@ -1037,9 +1006,7 @@ test.describe('Third-Party Data Sharing Restrictions @compliance @coppa @third-p
   });
 
   test('7.4 Third parties have COPPA compliance agreements', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/third-party-agreements`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/third-party-agreements`);
     const agreements = await response.json();
 
     expect(agreements.vendors).toBeDefined();
@@ -1065,7 +1032,9 @@ test.describe('Third-Party Data Sharing Restrictions @compliance @coppa @third-p
     await loginAsParent(page);
     await page.goto(`${PARENT_URL}/settings/privacy`);
 
-    const optOutToggle = page.locator('[data-testid="third-party-opt-out"], input[name="thirdPartySharing"]');
+    const optOutToggle = page.locator(
+      '[data-testid="third-party-opt-out"], input[name="thirdPartySharing"]'
+    );
     await expect(optOutToggle).toBeVisible();
   });
 
@@ -1082,15 +1051,12 @@ test.describe('Third-Party Data Sharing Restrictions @compliance @coppa @third-p
   });
 
   test('7.8 Third-party data deletion on request', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/data/third-party-deletion`,
-      {
-        data: {
-          childId: 'test-child-id',
-          parentId: 'test-parent-id',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/data/third-party-deletion`, {
+      data: {
+        childId: 'test-child-id',
+        parentId: 'test-parent-id',
+      },
+    });
 
     const result = await response.json();
     expect(result.deletionRequestsSent).toBeDefined();
@@ -1098,9 +1064,7 @@ test.describe('Third-Party Data Sharing Restrictions @compliance @coppa @third-p
   });
 
   test('7.9 Safe harbor compliance for third parties', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/safe-harbor-status`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/safe-harbor-status`);
     const status = await response.json();
 
     expect(status.safeHarborProgram).toBeDefined();
@@ -1137,16 +1101,13 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.1 Can generate COPPA compliance report', async () => {
-    const response = await apiContext.post(
-      `${API_URL}/api/v1/compliance/reports/coppa`,
-      {
-        data: {
-          startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date().toISOString(),
-          format: 'pdf',
-        },
-      }
-    );
+    const response = await apiContext.post(`${API_URL}/api/v1/compliance/reports/coppa`, {
+      data: {
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date().toISOString(),
+        format: 'pdf',
+      },
+    });
 
     expect(response.status()).toBe(200);
     const result = await response.json();
@@ -1154,9 +1115,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.2 Report includes consent metrics', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/metrics/consent`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/metrics/consent`);
     const metrics = await response.json();
 
     expect(metrics).toHaveProperty('totalConsentRequests');
@@ -1166,9 +1125,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.3 Report includes data deletion metrics', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/metrics/deletions`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/metrics/deletions`);
     const metrics = await response.json();
 
     expect(metrics).toHaveProperty('deletionRequests');
@@ -1177,9 +1134,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.4 Report includes parental access metrics', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/metrics/parental-access`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/metrics/parental-access`);
     const metrics = await response.json();
 
     expect(metrics).toHaveProperty('accessRequests');
@@ -1199,9 +1154,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.6 Compliance dashboard available for auditors', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/dashboard/coppa`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/dashboard/coppa`);
 
     expect(response.status()).toBe(200);
     const dashboard = await response.json();
@@ -1210,9 +1163,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.7 Historical compliance trends available', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/trends/coppa?months=12`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/trends/coppa?months=12`);
     const trends = await response.json();
 
     expect(trends.monthlyData).toBeDefined();
@@ -1220,9 +1171,7 @@ test.describe('COPPA Compliance Report Generation @compliance @coppa @audit @rep
   });
 
   test('8.8 Compliance exceptions are documented', async () => {
-    const response = await apiContext.get(
-      `${API_URL}/api/v1/compliance/exceptions/coppa`
-    );
+    const response = await apiContext.get(`${API_URL}/api/v1/compliance/exceptions/coppa`);
     const exceptions = await response.json();
 
     expect(exceptions.records).toBeDefined();

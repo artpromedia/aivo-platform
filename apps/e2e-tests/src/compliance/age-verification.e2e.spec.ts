@@ -11,19 +11,26 @@
  * @tags compliance, coppa, age-gate, parental-controls, audit
  */
 
-import { test, expect, Page, BrowserContext, APIRequestContext } from '@playwright/test';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { test, expect } from '@playwright/test';
+import type { Page, BrowserContext, APIRequestContext } from '@playwright/test';
 
 // =============================================================================
 // TEST CONFIGURATION
 // =============================================================================
 
 const API_URL = process.env.API_URL || 'http://localhost:4000';
-const AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
+const _AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
 const LEARNER_URL = process.env.LEARNER_URL || 'http://localhost:3000';
 
 test.describe.configure({ mode: 'serial' });
 
-const ageGroups = {
+const _ageGroups = {
   under13: { minAge: 5, maxAge: 12, requiresParent: true },
   teen: { minAge: 13, maxAge: 17, requiresParent: false },
   adult: { minAge: 18, maxAge: null, requiresParent: false },
@@ -40,15 +47,23 @@ function calculateBirthdate(age: number): string {
 }
 
 async function seedTestData(request: APIRequestContext): Promise<void> {
-  await request.post(`${API_URL}/test/seed`, {
-    data: { type: 'age-verification-tests' },
-  }).catch(() => {});
+  await request
+    .post(`${API_URL}/test/seed`, {
+      data: { type: 'age-verification-tests' },
+    })
+    .catch(() => {
+      /* ignore seed errors */
+    });
 }
 
 async function cleanupTestData(request: APIRequestContext): Promise<void> {
-  await request.post(`${API_URL}/test/cleanup`, {
-    data: { type: 'age-verification-tests' },
-  }).catch(() => {});
+  await request
+    .post(`${API_URL}/test/cleanup`, {
+      data: { type: 'age-verification-tests' },
+    })
+    .catch(() => {
+      /* ignore cleanup errors */
+    });
 }
 
 // =============================================================================
@@ -71,7 +86,9 @@ test.describe('Age Verification on Signup @compliance @coppa', () => {
   test('1.1 Signup form requires date of birth', async () => {
     await page.goto(`${LEARNER_URL}/signup`);
 
-    const dobField = page.locator('input[name="dateOfBirth"], input[name="birthdate"], input[type="date"]');
+    const dobField = page.locator(
+      'input[name="dateOfBirth"], input[name="birthdate"], input[type="date"]'
+    );
     await expect(dobField.first()).toBeVisible();
   });
 
@@ -87,9 +104,11 @@ test.describe('Age Verification on Signup @compliance @coppa', () => {
         await nextBtn.click();
 
         // Should show parental consent requirement
-        await expect(
-          page.locator('text=/parent|guardian|consent/i').first()
-        ).toBeVisible({ timeout: 5000 }).catch(() => {});
+        await expect(page.locator('text=/parent|guardian|consent/i').first())
+          .toBeVisible({ timeout: 5000 })
+          .catch(() => {
+            /* may not be visible in mock */
+          });
       }
     }
   });
@@ -260,13 +279,13 @@ test.describe('Feature Restrictions by Age @compliance @coppa', () => {
 
 test.describe('Parental Controls @compliance @coppa', () => {
   let request: APIRequestContext;
-  let page: Page;
+  let _page: Page;
   let context: BrowserContext;
 
   test.beforeAll(async ({ browser, playwright }) => {
     request = await playwright.request.newContext();
     context = await browser.newContext();
-    page = await context.newPage();
+    _page = await context.newPage();
     await seedTestData(request);
   });
 
@@ -444,7 +463,9 @@ test.describe('Content Filtering by Age Group @compliance @coppa', () => {
     if (response.ok()) {
       const results = await response.json();
       // Results should be age-filtered
-      expect(results.filtered || results.ageRestricted !== undefined || results.items).toBeDefined();
+      expect(
+        results.filtered || results.ageRestricted !== undefined || results.items
+      ).toBeDefined();
     }
   });
 
