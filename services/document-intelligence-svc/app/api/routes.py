@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Error Constants
+ERROR_FILE_MUST_BE_PDF = "File must be a PDF document"
+
 
 # Response Models
 class IEPGoalResponse(BaseModel):
