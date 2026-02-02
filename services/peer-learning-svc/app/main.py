@@ -1590,6 +1590,6 @@ async def validate_groups(
         raise HTTPException(status_code=500, detail=f"Validation error: {str(e)}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
