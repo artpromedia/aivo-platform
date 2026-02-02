@@ -1,0 +1,5266 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\ofema\\aivo\\apps\\e2e-tests\\playwright.config.ts",
+    "rootDir": "C:/Users/ofema/aivo/apps/e2e-tests/src/compliance",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "testSuite": "AIVO Compliance Tests",
+      "complianceFrameworks": [
+        "COPPA",
+        "GDPR",
+        "AI-Safety"
+      ],
+      "version": "1.0.0"
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/ofema/aivo/test-results/compliance-output",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "testSuite": "AIVO Compliance Tests",
+          "complianceFrameworks": [
+            "COPPA",
+            "GDPR",
+            "AI-Safety"
+          ],
+          "version": "1.0.0"
+        },
+        "id": "compliance-chrome",
+        "name": "compliance-chrome",
+        "testDir": "C:/Users/ofema/aivo/apps/e2e-tests/src/compliance",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "../../test-results/compliance-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../../test-results/compliance-results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "age-verification.e2e.spec.ts",
+      "file": "age-verification.e2e.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Age Verification on Signup @compliance @coppa",
+          "file": "age-verification.e2e.spec.ts",
+          "line": 58,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1.1 Signup form requires date of birth",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-b996eca9f49b315fafc4",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 71,
+              "column": 7
+            },
+            {
+              "title": "1.2 Under-13 signup redirects to parental consent flow",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-c3176eb99f782bedd34f",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 78,
+              "column": 7
+            },
+            {
+              "title": "1.3 Teen signup (13-17) shows appropriate terms",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f03b38c2dbd222471da3",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 97,
+              "column": 7
+            },
+            {
+              "title": "1.4 Adult signup (18+) proceeds normally",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f73e0ebe634f91d8a36d",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 112,
+              "column": 7
+            },
+            {
+              "title": "1.5 Age cannot be changed after initial verification",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-2e328ad2ade640acf59e",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 127,
+              "column": 7
+            },
+            {
+              "title": "1.6 Suspicious age patterns are flagged",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-92539e77bda689292d96",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 137,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Feature Restrictions by Age @compliance @coppa",
+          "file": "age-verification.e2e.spec.ts",
+          "line": 155,
+          "column": 6,
+          "specs": [
+            {
+              "title": "2.1 Under-13 cannot access social features",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f58345824439830ef17d",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 168,
+              "column": 7
+            },
+            {
+              "title": "2.2 Under-13 cannot share content publicly",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-cb1b182c9c3d065711c8",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 180,
+              "column": 7
+            },
+            {
+              "title": "2.3 Under-13 cannot access external links",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-8f7d8b9737c18e0f62da",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 189,
+              "column": 7
+            },
+            {
+              "title": "2.4 Teens have limited social features",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-126681e875884da1cbb5",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 200,
+              "column": 7
+            },
+            {
+              "title": "2.5 Adults have full feature access",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-6ec18191f1a1bb2c7897",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 212,
+              "column": 7
+            },
+            {
+              "title": "2.6 AI chat is restricted for under-13",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f2592c95072d05f97199",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 223,
+              "column": 7
+            },
+            {
+              "title": "2.7 Video calls require parental consent for minors",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-e6916eb8b362373a288a",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 234,
+              "column": 7
+            },
+            {
+              "title": "2.8 Location sharing disabled for minors",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-8cbcf9368c9f9d401514",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 245,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Parental Controls @compliance @coppa",
+          "file": "age-verification.e2e.spec.ts",
+          "line": 261,
+          "column": 6,
+          "specs": [
+            {
+              "title": "3.1 Parent can set screen time limits",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-d15ed8e0a631462099f3",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 279,
+              "column": 7
+            },
+            {
+              "title": "3.2 Parent can restrict content categories",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-d84f063ffae9493c6530",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 292,
+              "column": 7
+            },
+            {
+              "title": "3.3 Parent can view child activity",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f7fa0a93e4f402d40c67",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 304,
+              "column": 7
+            },
+            {
+              "title": "3.4 Parent can block specific features",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-03e62f36889ae022f4a6",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 313,
+              "column": 7
+            },
+            {
+              "title": "3.5 Parent receives alerts for concerning activity",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-6be4975498f5447a2adb",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 325,
+              "column": 7
+            },
+            {
+              "title": "3.6 Child cannot disable parental controls",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-57c0358060992412cfd3",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 336,
+              "column": 7
+            },
+            {
+              "title": "3.7 Parent can set allowed contact list",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-682effdc7a93e01746ce",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 344,
+              "column": 7
+            },
+            {
+              "title": "3.8 Parent can pause account",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-5a2145f27317f7167b66",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 357,
+              "column": 7
+            },
+            {
+              "title": "3.9 Screen time limit enforced",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-4e0fce31d5ca21f90e65",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 369,
+              "column": 7
+            },
+            {
+              "title": "3.10 Parent can set bedtime hours",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-395792412983386f8fbe",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 381,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Content Filtering by Age Group @compliance @coppa",
+          "file": "age-verification.e2e.spec.ts",
+          "line": 400,
+          "column": 6,
+          "specs": [
+            {
+              "title": "4.1 Content is tagged with age ratings",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-20df3e3d9d464d9270b9",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 413,
+              "column": 7
+            },
+            {
+              "title": "4.2 Under-13 only sees age-appropriate content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-f1f76db767323a6ad4c6",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 422,
+              "column": 7
+            },
+            {
+              "title": "4.3 Search results filtered by age",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-7bc0695d12ef5c075953",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 438,
+              "column": 7
+            },
+            {
+              "title": "4.4 Mature content requires age verification",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-bdf04a6336c9e1b7a3f8",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 451,
+              "column": 7
+            },
+            {
+              "title": "4.5 Content recommendations are age-appropriate",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-0749a5674bbeaa32402e",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 459,
+              "column": 7
+            },
+            {
+              "title": "4.6 User-generated content is moderated for minors",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-8d4618d9dfe7f7da475e",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 474,
+              "column": 7
+            },
+            {
+              "title": "4.7 Comments are filtered for under-13",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-206294e904af46052e69",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 484,
+              "column": 7
+            },
+            {
+              "title": "4.8 Grade-level content matching",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-96281596e8c963091253",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 495,
+              "column": 7
+            },
+            {
+              "title": "4.9 Educational standards filtering",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-d3257fb7afdad6f4f228",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 508,
+              "column": 7
+            },
+            {
+              "title": "4.10 Content flagging available for inappropriate material",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "209d50530898f1d8dbef-2837f76566121f91bcb1",
+              "file": "age-verification.e2e.spec.ts",
+              "line": 519,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "ai-safety.e2e.spec.ts",
+      "file": "ai-safety.e2e.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "AI-Generated Content Filtering @compliance @ai-safety",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 143,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1.1 AI filters violent content requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-983531bf983e407e6a3d",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 156,
+              "column": 7
+            },
+            {
+              "title": "1.2 AI filters self-harm content requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-b690fdd98e9267d95767",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 170,
+              "column": 7
+            },
+            {
+              "title": "1.3 AI filters bullying assistance requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-4069d304f136c79f0a0d",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 185,
+              "column": 7
+            },
+            {
+              "title": "1.4 AI filters inappropriate content requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-f852492afae806e110a4",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 197,
+              "column": 7
+            },
+            {
+              "title": "1.5 AI filters drug-related content requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-34506d53d12549e6f2e2",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 209,
+              "column": 7
+            },
+            {
+              "title": "1.6 AI filters weapons content requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-e0197394207b37ba8183",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 221,
+              "column": 7
+            },
+            {
+              "title": "1.7 AI filters cheating assistance requests",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-65a1406d6ffa90e3507a",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 233,
+              "column": 7
+            },
+            {
+              "title": "1.8 AI provides educational redirect for filtered content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-7418c68b19bb895cbd67",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 245,
+              "column": 7
+            },
+            {
+              "title": "1.9 AI filters profanity in generated responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-753a277e7550eb462fc7",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 258,
+              "column": 7
+            },
+            {
+              "title": "1.10 AI maintains educational focus in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-ded5d1ce711d3c3bc25a",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 272,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Age-Appropriate AI Responses @compliance @ai-safety @coppa",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 291,
+          "column": 6,
+          "specs": [
+            {
+              "title": "2.1 AI adjusts vocabulary for elementary students (under 10)",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-36bce28af3d925962086",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 304,
+              "column": 7
+            },
+            {
+              "title": "2.2 AI adjusts vocabulary for middle school students (10-13)",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-3cc8fe1aadb2b4adf7bb",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 317,
+              "column": 7
+            },
+            {
+              "title": "2.3 AI adjusts vocabulary for high school students (14+)",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-dcbf95893839666c6ea2",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 329,
+              "column": 7
+            },
+            {
+              "title": "2.4 AI provides age-appropriate examples for young children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-79461a2733ae7c3d6dc3",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 341,
+              "column": 7
+            },
+            {
+              "title": "2.5 AI limits response complexity for younger users",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-ee847f657be7bae63cee",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 353,
+              "column": 7
+            },
+            {
+              "title": "2.6 AI avoids sensitive topics for young children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-198e31eff731491fd97e",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 374,
+              "column": 7
+            },
+            {
+              "title": "2.7 AI respects grade-level content boundaries",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-92057ae689197e11e805",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 386,
+              "column": 7
+            },
+            {
+              "title": "2.8 AI provides encouragement appropriate to age",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-a98fedf9495dc9f6e1ed",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 398,
+              "column": 7
+            },
+            {
+              "title": "2.9 AI uses age-appropriate interaction style",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-e7acc6045aae4a3357cb",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 409,
+              "column": 7
+            },
+            {
+              "title": "2.10 AI correctly identifies user age context",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "coppa"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-9f692c4e8a034634f1d3",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 421,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Harmful Content Detection @compliance @ai-safety @audit",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 439,
+          "column": 6,
+          "specs": [
+            {
+              "title": "3.1 System detects and flags violent content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-d1943b0089fbd44d9c12",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 452,
+              "column": 7
+            },
+            {
+              "title": "3.2 System detects and flags self-harm content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-2fa1ec41dbee21337404",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 467,
+              "column": 7
+            },
+            {
+              "title": "3.3 System detects bullying language",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-33afd989b2d85b89184a",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 482,
+              "column": 7
+            },
+            {
+              "title": "3.4 System detects sexually explicit content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-7464c2b5d58bc4fbee01",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 495,
+              "column": 7
+            },
+            {
+              "title": "3.5 System detects grooming patterns",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-d2e8d6df287f6b76ffa5",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 509,
+              "column": 7
+            },
+            {
+              "title": "3.6 System detects drug/substance references",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-eb0eb52b538dc8d2c415",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 526,
+              "column": 7
+            },
+            {
+              "title": "3.7 System provides severity scoring for flagged content",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-6913fa1254481abc0203",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 539,
+              "column": 7
+            },
+            {
+              "title": "3.8 System allows educational content about sensitive topics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-41349280c0f5a67ea536",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 562,
+              "column": 7
+            },
+            {
+              "title": "3.9 System escalates critical content to administrators",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-52c12a9d691a5b065465",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 579,
+              "column": 7
+            },
+            {
+              "title": "3.10 System maintains content analysis audit trail",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-98dd6f377ef36cc6478d",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 594,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "PII Detection in AI Responses @compliance @ai-safety @privacy",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 622,
+          "column": 6,
+          "specs": [
+            {
+              "title": "4.1 AI does not expose SSN in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-85a3990d2ed32375abe8",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 635,
+              "column": 7
+            },
+            {
+              "title": "4.2 AI does not expose phone numbers in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-89dc2a443ca4c15618f6",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 648,
+              "column": 7
+            },
+            {
+              "title": "4.3 AI does not expose email addresses in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-d315524385cd018dd333",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 660,
+              "column": 7
+            },
+            {
+              "title": "4.4 AI does not expose physical addresses in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-662542d82e08bdfe9e8c",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 672,
+              "column": 7
+            },
+            {
+              "title": "4.5 AI does not expose credit card numbers in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-5f9adf23ada6f3100150",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 685,
+              "column": 7
+            },
+            {
+              "title": "4.6 AI does not expose date of birth in responses",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-91d3833838d4f1adae47",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 697,
+              "column": 7
+            },
+            {
+              "title": "4.7 AI educates children about privacy when PII detected",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-56f1bac57fdc1467da02",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 708,
+              "column": 7
+            },
+            {
+              "title": "4.8 System logs PII detection events for audit",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-f564838442a8971873bf",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 719,
+              "column": 7
+            },
+            {
+              "title": "4.9 AI prevents collection of PII through conversation",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-964a730b6f221b5fdd29",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 738,
+              "column": 7
+            },
+            {
+              "title": "4.10 AI does not expose other users' information",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-0b45e372a2d8ea363372",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 750,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Prompt Injection Prevention @compliance @ai-safety @security",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 767,
+          "column": 6,
+          "specs": [
+            {
+              "title": "5.1 AI resists \"ignore instructions\" attacks",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-01e5874787310d373973",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 780,
+              "column": 7
+            },
+            {
+              "title": "5.2 AI resists role-play jailbreak attempts",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-2623a0a7ba251f5abe1a",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 794,
+              "column": 7
+            },
+            {
+              "title": "5.3 AI resists DAN-style jailbreaks",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-0adb9594d3055bccc75f",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 807,
+              "column": 7
+            },
+            {
+              "title": "5.4 AI resists system prompt injection",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-e2041397f527a4953212",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 820,
+              "column": 7
+            },
+            {
+              "title": "5.5 AI resists escape sequence attacks",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-c582926ab4caebfaf720",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 833,
+              "column": 7
+            },
+            {
+              "title": "5.6 AI resists encoded injection attempts",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-834d70ee12068cece730",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 845,
+              "column": 7
+            },
+            {
+              "title": "5.7 AI logs injection attempts for security review",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-bb65f84e3c368f246d0f",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 856,
+              "column": 7
+            },
+            {
+              "title": "5.8 AI maintains safety after multiple injection attempts",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-06f78ed3ed400e8e2a33",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 874,
+              "column": 7
+            },
+            {
+              "title": "5.9 AI resists multi-language injection attempts",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-09802f2ed0bb75e4ce01",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 892,
+              "column": 7
+            },
+            {
+              "title": "5.10 AI alerts on repeated injection attempts",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "security"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-2b384caaedcf1850a6c6",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 903,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "AI Response Logging for Audit @compliance @ai-safety @audit",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 932,
+          "column": 6,
+          "specs": [
+            {
+              "title": "6.1 All AI interactions are logged",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-6bf11d6ea992ba8e3104",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 945,
+              "column": 7
+            },
+            {
+              "title": "6.2 Audit log contains user context",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-c8ccb0cbf3a23eee176f",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 959,
+              "column": 7
+            },
+            {
+              "title": "6.3 Audit log contains prompt and response hash",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-7d4a56aca871483b9251",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 974,
+              "column": 7
+            },
+            {
+              "title": "6.4 Audit log contains safety filter results",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-f46cff4cf760955295c7",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 990,
+              "column": 7
+            },
+            {
+              "title": "6.5 Audit log contains timestamp and session info",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-80416354dd88092d4d88",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1005,
+              "column": 7
+            },
+            {
+              "title": "6.6 Audit logs are immutable (append-only)",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-792867133d5b707d1d02",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1025,
+              "column": 7
+            },
+            {
+              "title": "6.7 Audit logs can be queried by date range",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-bed5c49e92ad66fce916",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1044,
+              "column": 7
+            },
+            {
+              "title": "6.8 Audit logs can be queried by user",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-53b613a99e606522ade9",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1057,
+              "column": 7
+            },
+            {
+              "title": "6.9 Audit logs can be exported for compliance reporting",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-51162551204e544be18a",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1069,
+              "column": 7
+            },
+            {
+              "title": "6.10 Audit log retention complies with COPPA requirements",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "ai-safety",
+                "audit"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-ff4f475387bd135cbd99",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1078,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "AI Safety Compliance Report Generation @compliance @audit @reporting",
+          "file": "ai-safety.e2e.spec.ts",
+          "line": 1095,
+          "column": 6,
+          "specs": [
+            {
+              "title": "7.1 Can generate AI safety compliance report",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-918174bb0487ce63167c",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1108,
+              "column": 7
+            },
+            {
+              "title": "7.2 Compliance report includes content filtering metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-8e2014a599936d0b371d",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1125,
+              "column": 7
+            },
+            {
+              "title": "7.3 Compliance report includes age-appropriate content metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-4bd707f2799fba529006",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1137,
+              "column": 7
+            },
+            {
+              "title": "7.4 Compliance report includes PII detection metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-a417584d5c753c4a56f5",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1148,
+              "column": 7
+            },
+            {
+              "title": "7.5 Compliance report includes injection attempt metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "29476534af2cde2cb413-1945a86b80e5e5a0da90",
+              "file": "ai-safety.e2e.spec.ts",
+              "line": 1159,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "coppa-compliance.e2e.spec.ts",
+      "file": "coppa-compliance.e2e.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Parental Consent Flows @compliance @coppa @consent",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 94,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1.1 Registration requires age verification",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-bc03d2bb1605ae7afc17",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 107,
+              "column": 7
+            },
+            {
+              "title": "1.2 Under-13 signup triggers parental consent flow",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-5801061e4778313bc5ee",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "1.3 Parent receives consent request email",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-cae6b6a72ac729dbd15f",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 141,
+              "column": 7
+            },
+            {
+              "title": "1.4 Verifiable parental consent (VPC) is required",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-b3a01efefc5af44c82fe",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 163,
+              "column": 7
+            },
+            {
+              "title": "1.5 Parent can provide consent via signed form",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-ce37bff3654ab3108bc2",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 178,
+              "column": 7
+            },
+            {
+              "title": "1.6 Parent can deny consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-6fe2bec177fd1a60435c",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 200,
+              "column": 7
+            },
+            {
+              "title": "1.7 Child account restricted until consent is granted",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-c395da799dde80b98712",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 213,
+              "column": 7
+            },
+            {
+              "title": "1.8 Consent expires and requires renewal",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-73beae8c576cf7b2b5e1",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 243,
+              "column": 7
+            },
+            {
+              "title": "1.9 Parent can revoke consent at any time",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-286d10e5e024673c36f0",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 254,
+              "column": 7
+            },
+            {
+              "title": "1.10 Consent audit trail is maintained",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "consent"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d95aeffe7fe2c3d12e9b",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 271,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data Collection Limitations @compliance @coppa @privacy",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 291,
+          "column": 6,
+          "specs": [
+            {
+              "title": "2.1 Only necessary data collected from children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-35fe588d52784cfe632b",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 304,
+              "column": 7
+            },
+            {
+              "title": "2.2 Location data not collected from children without consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-ae1bc1fdf72b5ddbf9e9",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 321,
+              "column": 7
+            },
+            {
+              "title": "2.3 Persistent identifiers limited for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-61e49f25a0a9661b8c50",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 342,
+              "column": 7
+            },
+            {
+              "title": "2.4 No device fingerprinting for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-61c2d06ed0b751a95c31",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 353,
+              "column": 7
+            },
+            {
+              "title": "2.5 Audio/video recordings require explicit consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-f9ff1dfe60f5ad6042ac",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 369,
+              "column": 7
+            },
+            {
+              "title": "2.6 Photo uploads from children require parental consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-283e875f834c3b8d6bea",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 380,
+              "column": 7
+            },
+            {
+              "title": "2.7 Contact information collection is minimized",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-0c734a977ff0750ec490",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 390,
+              "column": 7
+            },
+            {
+              "title": "2.8 Social features require parental consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-01545debfc63e2abd24d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 401,
+              "column": 7
+            },
+            {
+              "title": "2.9 Data collection notice is displayed",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-fa424f22f48a6d551e01",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 413,
+              "column": 7
+            },
+            {
+              "title": "2.10 Operator contact information is accessible",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-e37137fc812ec46b4fe1",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 428,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data Retention Policies @compliance @coppa @retention",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 444,
+          "column": 6,
+          "specs": [
+            {
+              "title": "3.1 Child data retention policy is defined",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-fafe59b78ea509e50840",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 457,
+              "column": 7
+            },
+            {
+              "title": "3.2 Data retained only as long as necessary",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-a0ea5d6448e64ee54271",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 468,
+              "column": 7
+            },
+            {
+              "title": "3.3 Inactive child accounts are automatically deleted",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-160334a3c916a4c8ffea",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 481,
+              "column": 7
+            },
+            {
+              "title": "3.4 Learning data anonymized after retention period",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-f462787aa19b8105dd60",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 492,
+              "column": 7
+            },
+            {
+              "title": "3.5 Consent records retained for compliance",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-a5f12e97b3b0968f8c9d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 503,
+              "column": 7
+            },
+            {
+              "title": "3.6 Data retention is documented and auditable",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-1e5059f0dcde15453786",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 514,
+              "column": 7
+            },
+            {
+              "title": "3.7 Parent notified before child data deletion",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-9da7791f5d8d0396064d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 525,
+              "column": 7
+            },
+            {
+              "title": "3.8 Backup data follows same retention policy",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-ca3d9976dbb73731dfe6",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 535,
+              "column": 7
+            },
+            {
+              "title": "3.9 Third-party data sharing records retained",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-4cb7b8d85dba8c7133ad",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 545,
+              "column": 7
+            },
+            {
+              "title": "3.10 Retention policy is publicly accessible",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "retention"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-7534bbc0b8a424a56401",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 555,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data Deletion Requests @compliance @coppa @deletion",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 567,
+          "column": 6,
+          "specs": [
+            {
+              "title": "4.1 Parent can request child data deletion",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-2d6034c8e3a2358a0a1a",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 580,
+              "column": 7
+            },
+            {
+              "title": "4.2 Deletion request requires parent verification",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-48c28f8aff8d239e9b87",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 593,
+              "column": 7
+            },
+            {
+              "title": "4.3 Deletion request confirmation is sent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-56931882e96b72af8c7d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 610,
+              "column": 7
+            },
+            {
+              "title": "4.4 Deletion is completed within required timeframe",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-1a97351a023464848151",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 626,
+              "column": 7
+            },
+            {
+              "title": "4.5 All child data is deleted",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-5340dc1c01f3c83c45c8",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 636,
+              "column": 7
+            },
+            {
+              "title": "4.6 Third-party data deletion is triggered",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d8619319fbf99f589d3f",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 650,
+              "column": 7
+            },
+            {
+              "title": "4.7 Deletion confirmation sent to parent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-27d1a7389d8ea97a14ad",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 662,
+              "column": 7
+            },
+            {
+              "title": "4.8 Parent can download data before deletion",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-e440ecd7ba2335f57d61",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 672,
+              "column": 7
+            },
+            {
+              "title": "4.9 Deletion audit log is maintained",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-83827e535348bbfcce32",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 680,
+              "column": 7
+            },
+            {
+              "title": "4.10 Deleted data cannot be recovered",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "deletion"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d28e1b9d0afe06b91ec4",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 695,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "No Behavioral Advertising to Minors @compliance @coppa @advertising",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 708,
+          "column": 6,
+          "specs": [
+            {
+              "title": "5.1 No behavioral tracking for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-2e6d20eca68a1b958b20",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 721,
+              "column": 7
+            },
+            {
+              "title": "5.2 No third-party advertising scripts for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-356fd3a3c3374d93a17d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 733,
+              "column": 7
+            },
+            {
+              "title": "5.3 No personalized ads shown to children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-37cd53b955b8018a3fa2",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 754,
+              "column": 7
+            },
+            {
+              "title": "5.4 No behavioral profiling for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-b5a69e1eb69336640b0d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 767,
+              "column": 7
+            },
+            {
+              "title": "5.5 Analytics limited to educational purposes",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d32ebbdf889a88a20864",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 778,
+              "column": 7
+            },
+            {
+              "title": "5.6 No data shared with advertisers",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-1276a7b827eacc752cdd",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 790,
+              "column": 7
+            },
+            {
+              "title": "5.7 Contextual (non-behavioral) ads only if any",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-f1d5f06d4337edd3a7e1",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 802,
+              "column": 7
+            },
+            {
+              "title": "5.8 Do Not Track (DNT) header respected for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d9145585c64ad09878b1",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 816,
+              "column": 7
+            },
+            {
+              "title": "5.9 No retargeting pixels for children",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-40c2e0334d6873aafe62",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 830,
+              "column": 7
+            },
+            {
+              "title": "5.10 Advertising compliance is auditable",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "advertising"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-20fca22d34517bcd3b0d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 843,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Parental Access to Child Data @compliance @coppa @parental-rights",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 859,
+          "column": 6,
+          "specs": [
+            {
+              "title": "6.1 Parent can view child profile information",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-3dc9267d781c5b7752b1",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 880,
+              "column": 7
+            },
+            {
+              "title": "6.2 Parent can view child learning activity",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-237da260209069ca1482",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 887,
+              "column": 7
+            },
+            {
+              "title": "6.3 Parent can view child progress reports",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-5b28f05234a37ce67f21",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 894,
+              "column": 7
+            },
+            {
+              "title": "6.4 Parent can export all child data",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-34024bbd4caaa16d06ef",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 901,
+              "column": 7
+            },
+            {
+              "title": "6.5 Data export includes all collected information",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-068760edba417f1cb313",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 914,
+              "column": 7
+            },
+            {
+              "title": "6.6 Parent can view data shared with third parties",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-5e7edbdd021c03fc2e5c",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 931,
+              "column": 7
+            },
+            {
+              "title": "6.7 Parent can update child information",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-eeb0df46a80a111ecac3",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 938,
+              "column": 7
+            },
+            {
+              "title": "6.8 Parent data requests are processed timely",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-ca16777f3d1ebeb5a94c",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 948,
+              "column": 7
+            },
+            {
+              "title": "6.9 Parent verification required for data access",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-e8ae8725af74b13cef31",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 957,
+              "column": 7
+            },
+            {
+              "title": "6.10 Parent access requests are logged",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "parental-rights"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-52f2b9d222786a6492b6",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 973,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Third-Party Data Sharing Restrictions @compliance @coppa @third-party",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 992,
+          "column": 6,
+          "specs": [
+            {
+              "title": "7.1 Third-party sharing requires parental consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-b9eaf9ea7460946c7f6b",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1005,
+              "column": 7
+            },
+            {
+              "title": "7.2 Third-party recipients are disclosed",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d270d747f4114ef03383",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1015,
+              "column": 7
+            },
+            {
+              "title": "7.3 Third-party data sharing is logged",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-571c1d1deea9a68991e8",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1022,
+              "column": 7
+            },
+            {
+              "title": "7.4 Third parties have COPPA compliance agreements",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-21f18ebae78d79e34b6d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1039,
+              "column": 7
+            },
+            {
+              "title": "7.5 Third parties cannot use data for non-educational purposes",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d0ad07661ec9ca4c5744",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1052,
+              "column": 7
+            },
+            {
+              "title": "7.6 Parent can opt out of third-party sharing",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-bf2c8258dee969d4076b",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1064,
+              "column": 7
+            },
+            {
+              "title": "7.7 Data minimization with third parties",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-58471addf940da433bb0",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1072,
+              "column": 7
+            },
+            {
+              "title": "7.8 Third-party data deletion on request",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-d215510ea9b5d1b15dd8",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1084,
+              "column": 7
+            },
+            {
+              "title": "7.9 Safe harbor compliance for third parties",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-babec9e96255713cf81d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1100,
+              "column": 7
+            },
+            {
+              "title": "7.10 Third-party sharing audit report available",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "third-party"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-198cffdaf84de2c566ec",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1110,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "COPPA Compliance Report Generation @compliance @coppa @audit @reporting",
+          "file": "coppa-compliance.e2e.spec.ts",
+          "line": 1126,
+          "column": 6,
+          "specs": [
+            {
+              "title": "8.1 Can generate COPPA compliance report",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-c5ef6e37b7b51e3a73c8",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1139,
+              "column": 7
+            },
+            {
+              "title": "8.2 Report includes consent metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-66e4775ccc8b489d6ae4",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1156,
+              "column": 7
+            },
+            {
+              "title": "8.3 Report includes data deletion metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-c21e8ce3b9b6037b3e9a",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1168,
+              "column": 7
+            },
+            {
+              "title": "8.4 Report includes parental access metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-ee0177f950f32a0e960b",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1179,
+              "column": 7
+            },
+            {
+              "title": "8.5 Report includes third-party sharing metrics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-4631681c18d96892af0d",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1190,
+              "column": 7
+            },
+            {
+              "title": "8.6 Compliance dashboard available for auditors",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-f79d112ebb0931111212",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1201,
+              "column": 7
+            },
+            {
+              "title": "8.7 Historical compliance trends available",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-cb9c0cb19c317dc7a480",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1212,
+              "column": 7
+            },
+            {
+              "title": "8.8 Compliance exceptions are documented",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-a46c175ae4e835e0be94",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1222,
+              "column": 7
+            },
+            {
+              "title": "8.9 FTC contact information is accessible",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-079a0e091618212daf40",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1235,
+              "column": 7
+            },
+            {
+              "title": "8.10 Privacy policy includes all COPPA requirements",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "coppa",
+                "audit",
+                "reporting"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ec7479697b13da480f24-6ca06a1d9103974032c9",
+              "file": "coppa-compliance.e2e.spec.ts",
+              "line": 1242,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "data-privacy.e2e.spec.ts",
+      "file": "data-privacy.e2e.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "PII Encryption at Rest @compliance @privacy",
+          "file": "data-privacy.e2e.spec.ts",
+          "line": 62,
+          "column": 6,
+          "specs": [
+            {
+              "title": "1.1 Verify PII fields are encrypted in database",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-8ceec340528e8a0ad26d",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 75,
+              "column": 7
+            },
+            {
+              "title": "1.2 Verify encryption keys are rotated",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-7455c16d9f5fa30ae47e",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 91,
+              "column": 7
+            },
+            {
+              "title": "1.3 Verify backup data is encrypted",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-4ef316cef3c380f75f1b",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 105,
+              "column": 7
+            },
+            {
+              "title": "1.4 Verify sensitive data not stored in plain text",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-0b2f9d0182524df3fc38",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "1.5 Verify encryption in transit (TLS)",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-35a62e7fd6840213888d",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 132,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "PII Masking in Logs @compliance @privacy",
+          "file": "data-privacy.e2e.spec.ts",
+          "line": 143,
+          "column": 6,
+          "specs": [
+            {
+              "title": "2.1 Verify email addresses are masked in logs",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-8e4b8352767346dce34b",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 154,
+              "column": 7
+            },
+            {
+              "title": "2.2 Verify phone numbers are masked in logs",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-5c7ec16c45561f675605",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 177,
+              "column": 7
+            },
+            {
+              "title": "2.3 Verify SSN patterns are masked",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-24feca98e19c67ad8f05",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 195,
+              "column": 7
+            },
+            {
+              "title": "2.4 Verify passwords never appear in logs",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-2bbd10671d97e06d1e12",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 209,
+              "column": 7
+            },
+            {
+              "title": "2.5 Verify credit card numbers are masked",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-4f82e7d7900188ee4be2",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 224,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data Export Functionality @compliance @privacy @gdpr",
+          "file": "data-privacy.e2e.spec.ts",
+          "line": 243,
+          "column": 6,
+          "specs": [
+            {
+              "title": "3.1 User can request data export",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-96eda781beb4efa40090",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 256,
+              "column": 7
+            },
+            {
+              "title": "3.2 Data export includes all user data",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-81b193a2f8fbbd942f6b",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 273,
+              "column": 7
+            },
+            {
+              "title": "3.3 Data export available in multiple formats",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-bb4de3e2c148918111c7",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 288,
+              "column": 7
+            },
+            {
+              "title": "3.4 Data export is delivered securely",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-8c6f95a5c0046935b25e",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 302,
+              "column": 7
+            },
+            {
+              "title": "3.5 Parent can export child data",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-c050fa9a9ac582d83e39",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 316,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Account Deletion Completeness @compliance @privacy @gdpr",
+          "file": "data-privacy.e2e.spec.ts",
+          "line": 332,
+          "column": 6,
+          "specs": [
+            {
+              "title": "4.1 User can request account deletion",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-4cf52331ace637956a1f",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 343,
+              "column": 7
+            },
+            {
+              "title": "4.2 Deletion removes all user data",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-cf653ace5cfcb3a4f16e",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 368,
+              "column": 7
+            },
+            {
+              "title": "4.3 Deletion has grace period",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-302c33be1424044b935a",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 384,
+              "column": 7
+            },
+            {
+              "title": "4.4 Deletion can be cancelled during grace period",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-6d01ba58faa33d84de4a",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 398,
+              "column": 7
+            },
+            {
+              "title": "4.5 Deleted data is not recoverable",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-9284430c8fe3feb6c2db",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 420,
+              "column": 7
+            },
+            {
+              "title": "4.6 Anonymized data retained for analytics",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-62d15b314cf1b2d3e45e",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 435,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Consent Management @compliance @privacy @gdpr",
+          "file": "data-privacy.e2e.spec.ts",
+          "line": 454,
+          "column": 6,
+          "specs": [
+            {
+              "title": "5.1 User can view current consent settings",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-b8e96df057d9cdb7ed93",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 467,
+              "column": 7
+            },
+            {
+              "title": "5.2 User can update consent preferences",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-d6bc7dbfdef36fd85d66",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 482,
+              "column": 7
+            },
+            {
+              "title": "5.3 Consent changes are logged",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-a2e15d28fec4a69c9f68",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 497,
+              "column": 7
+            },
+            {
+              "title": "5.4 Marketing requires explicit opt-in",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-a5ca71e7b84a22c3b00c",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 510,
+              "column": 7
+            },
+            {
+              "title": "5.5 Essential services dont require consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-a3e208a12d2cf1dbc5ba",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 523,
+              "column": 7
+            },
+            {
+              "title": "5.6 Parent manages child consent",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-54b9fe6b68fef1fd5cee",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 538,
+              "column": 7
+            },
+            {
+              "title": "5.7 Consent withdrawal is immediate",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-01efc263f2aa4533a084",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 548,
+              "column": 7
+            },
+            {
+              "title": "5.8 Consent banner shown to new users",
+              "ok": true,
+              "tags": [
+                "compliance",
+                "privacy",
+                "gdpr"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "compliance-chrome",
+                  "projectName": "compliance-chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "b6fd58f21f717843016b-17ff52a975c9aee16bce",
+              "file": "data-privacy.e2e.spec.ts",
+              "line": 570,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-02T01:57:49.031Z",
+    "duration": 111.69799999999987,
+    "expected": 0,
+    "skipped": 208,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

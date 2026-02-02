@@ -1,0 +1,17 @@
+{
+  "name": "@aivo/e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end tests for AIVO applications",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.3.3"
+  }
+}
