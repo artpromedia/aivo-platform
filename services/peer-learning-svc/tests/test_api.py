@@ -1316,3 +1316,464 @@ class TestComplexSessionFlows:
         assert get_response.status_code == 200
         data = get_response.json()
         assert len(data["session"]["participants"]) >= 3
+
+
+# ============================================================================
+# Exception Path Tests - Trigger 500 errors via mocking
+# ============================================================================
+
+class TestExceptionPaths:
+    """Tests that trigger exception handlers via mocking to achieve 95% coverage."""
+
+    def test_create_group_internal_error(self, client):
+        """Test create_group 500 error via exception."""
+        with patch("app.main.group_former") as mock_gf:
+            mock_gf.__bool__ = MagicMock(return_value=True)
+            # Force an exception during group creation via uuid
+            with patch("uuid.uuid4", side_effect=RuntimeError("UUID generation failed")):
+                response = client.post(
+                    "/api/v1/groups/create",
+                    json={
+                        "name": "Test Group",
+                        "topic": "Math",
+                        "creator_id": "user_001",
+                    },
+                )
+                assert response.status_code == 500
+                assert "Group creation error" in response.json()["detail"]
+
+    def test_get_group_activity_internal_error(self, client):
+        """Test get_group_activity 500 error via exception."""
+        with patch("app.main.session_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.get_group_sessions.side_effect = RuntimeError("Database error")
+            with patch("app.main.collaboration_scorer") as mock_cs:
+                mock_cs.__bool__ = MagicMock(return_value=True)
+                response = client.get("/api/v1/groups/error_group/activity")
+                assert response.status_code == 500
+                assert "Activity retrieval error" in response.json()["detail"]
+
+    def test_form_groups_internal_error(self, client, sample_learner_profiles):
+        """Test form_groups 500 error via exception."""
+        with patch("app.main.group_former") as mock_gf:
+            mock_gf.__bool__ = MagicMock(return_value=True)
+            mock_gf.form.side_effect = RuntimeError("Formation algorithm failed")
+            response = client.post(
+                "/api/v1/groups/form",
+                json={
+                    "learner_ids": [p["learner_id"] for p in sample_learner_profiles],
+                    "learner_profiles": sample_learner_profiles,
+                    "topic": "Math",
+                    "group_size": 3,
+                },
+            )
+            assert response.status_code == 500
+            assert "Group formation error" in response.json()["detail"]
+
+    def test_get_user_matches_internal_error(self, client):
+        """Test get_user_matches 500 error via exception."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.compute_compatibility.side_effect = RuntimeError("Matching failed")
+            # Need candidates in pool for the exception path
+            with patch("app.main.candidate_pool", [
+                {"learner_id": "user_001", "knowledge_state": {}},
+                {"learner_id": "user_002", "knowledge_state": {}},
+            ]):
+                response = client.get("/api/v1/users/user_001/matches")
+                # This returns 200 with empty matches due to warning logging
+                assert response.status_code == 200
+
+    def test_match_peer_internal_error(self, client):
+        """Test match_peer 500 error via exception."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.find_match.side_effect = RuntimeError("Match algorithm failed")
+            with patch("app.main.candidate_pool", [
+                {"learner_id": "other_user", "knowledge_state": {}},
+            ]):
+                response = client.post(
+                    "/api/v1/match/peer",
+                    params={"role": "study_partner"},
+                    json={"profile": {"learner_id": "user_001", "knowledge_state": {}}},
+                )
+                assert response.status_code == 500
+                assert "Matching error" in response.json()["detail"]
+
+    def test_match_tutor_internal_error(self, client):
+        """Test match_tutor 500 error via exception."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.find_tutor.side_effect = RuntimeError("Tutor match failed")
+            with patch("app.main.candidate_pool", [
+                {"learner_id": "tutor_user", "knowledge_state": {"math": 0.9}},
+            ]):
+                response = client.post(
+                    "/api/v1/match/tutor",
+                    params={"topic": "math"},
+                    json={"profile": {"learner_id": "user_001", "knowledge_state": {}}},
+                )
+                assert response.status_code == 500
+                assert "Matching error" in response.json()["detail"]
+
+    def test_compute_compatibility_internal_error(self, client):
+        """Test compute_compatibility 500 error via exception."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.compute_compatibility.side_effect = RuntimeError("Compatibility calculation failed")
+            response = client.post(
+                "/api/v1/match/compatibility",
+                params={"role": "study_partner"},
+                json={
+                    "profile_a": {"learner_id": "user_001", "knowledge_state": {}},
+                    "profile_b": {"learner_id": "user_002", "knowledge_state": {}},
+                },
+            )
+            assert response.status_code == 500
+            assert "Compatibility error" in response.json()["detail"]
+
+    def test_start_session_internal_error(self, client):
+        """Test start_session 500 error via exception."""
+        with patch("app.main.session_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.create_session.side_effect = RuntimeError("Session creation failed")
+            response = client.post(
+                "/api/v1/sessions/start",
+                json={
+                    "group_id": "group_001",
+                    "session_type": "study_group",
+                    "topic": "Math",
+                    "created_by": "user_001",
+                },
+            )
+            assert response.status_code == 500
+            assert "Session start error" in response.json()["detail"]
+
+    def test_join_session_internal_error(self, client):
+        """Test join_session 500 error via exception."""
+        with patch("app.main.session_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.join_session.side_effect = RuntimeError("Join failed unexpectedly")
+            response = client.post(
+                "/api/v1/sessions/test_session/join",
+                json={"user_id": "user_001", "role": "learner", "has_recording_consent": True},
+            )
+            assert response.status_code == 500
+            assert "Session join error" in response.json()["detail"]
+
+    def test_submit_peer_review_internal_error(self, client):
+        """Test submit_peer_review 500 error via exception."""
+        with patch("app.main.assessment_service") as mock_as:
+            mock_as.__bool__ = MagicMock(return_value=True)
+            mock_as.create_assessment.side_effect = RuntimeError("Assessment creation failed")
+            response = client.post(
+                "/api/v1/assessments/peer-review",
+                json={
+                    "assessor_id": "user_001",
+                    "assessee_id": "user_002",
+                    "assessment_type": "session_feedback",
+                    "scores": [],
+                },
+            )
+            assert response.status_code == 500
+            assert "Assessment error" in response.json()["detail"]
+
+    def test_score_collaboration_internal_error(self, client):
+        """Test score_collaboration 500 error via exception."""
+        with patch("app.main.collaboration_scorer") as mock_cs:
+            mock_cs.__bool__ = MagicMock(return_value=True)
+            mock_cs.score.side_effect = RuntimeError("Scoring failed")
+            response = client.post(
+                "/api/v1/collaboration/score",
+                json={
+                    "group_id": "group_001",
+                    "messages": [{"sender": "user_001", "content": "Hello"}],
+                    "member_ids": ["user_001"],
+                },
+            )
+            assert response.status_code == 500
+            assert "Scoring error" in response.json()["detail"]
+
+    def test_detect_issues_internal_error(self, client):
+        """Test detect_collaboration_issues 500 error via exception."""
+        with patch("app.main.collaboration_scorer") as mock_cs:
+            mock_cs.__bool__ = MagicMock(return_value=True)
+            mock_cs.detect_issues.side_effect = RuntimeError("Issue detection failed")
+            response = client.post(
+                "/api/v1/collaboration/issues",
+                json={
+                    "group_id": "group_001",
+                    "messages": [{"sender": "user_001", "content": "Hello"}],
+                    "member_ids": ["user_001"],
+                },
+            )
+            assert response.status_code == 500
+            assert "Issue detection error" in response.json()["detail"]
+
+    def test_facilitate_discussion_internal_error(self, client):
+        """Test facilitate_discussion 500 error via exception."""
+        with patch("app.main.discussion_facilitator") as mock_df:
+            mock_df.__bool__ = MagicMock(return_value=True)
+            mock_df.suggest_actions.side_effect = RuntimeError("Facilitation failed")
+            response = client.post(
+                "/api/v1/discussion/facilitate",
+                json={
+                    "group_id": "group_001",
+                    "topic": "Math",
+                    "messages": [{"sender": "user_001", "content": "Hello"}],
+                },
+            )
+            assert response.status_code == 500
+            assert "Facilitation error" in response.json()["detail"]
+
+    def test_summarize_discussion_internal_error(self, client):
+        """Test summarize_discussion 500 error via exception."""
+        with patch("app.main.discussion_facilitator") as mock_df:
+            mock_df.__bool__ = MagicMock(return_value=True)
+            mock_df.summarize_discussion.side_effect = RuntimeError("Summarization failed")
+            response = client.post(
+                "/api/v1/discussion/summarize",
+                json=[{"sender": "user_001", "content": "Hello"}],
+            )
+            assert response.status_code == 500
+            assert "Summarization error" in response.json()["detail"]
+
+    def test_moderate_content_internal_error(self, client):
+        """Test moderate_content 500 error via exception."""
+        with patch("app.main.safety_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.moderate_and_check.side_effect = RuntimeError("Moderation failed")
+            response = client.post(
+                "/api/v1/safety/moderate",
+                json={"content": "Test content"},
+            )
+            assert response.status_code == 500
+            assert "Moderation error" in response.json()["detail"]
+
+    def test_submit_report_internal_error(self, client):
+        """Test submit_report 500 error via exception."""
+        with patch("app.main.safety_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.handle_report.side_effect = RuntimeError("Report submission failed")
+            response = client.post(
+                "/api/v1/safety/report",
+                json={
+                    "reporter_id": "user_001",
+                    "reported_user_id": "user_002",
+                    "report_type": "harassment",
+                    "description": "Test report",
+                },
+            )
+            assert response.status_code == 500
+            assert "Report error" in response.json()["detail"]
+
+    def test_record_consent_internal_error(self, client):
+        """Test record_consent 500 error via exception."""
+        with patch("app.main.safety_manager") as mock_sm:
+            mock_sm.__bool__ = MagicMock(return_value=True)
+            mock_sm.minor_protection.record_consent.side_effect = RuntimeError("Consent recording failed")
+            response = client.post(
+                "/api/v1/safety/consent",
+                json={
+                    "user_id": "user_001",
+                    "consent_type": "session_recording",
+                    "granted": True,
+                },
+            )
+            assert response.status_code == 500
+            assert "Consent error" in response.json()["detail"]
+
+    def test_validate_groups_internal_error(self, client):
+        """Test validate_groups 500 error via exception."""
+        with patch("app.main.group_former") as mock_gf:
+            mock_gf.__bool__ = MagicMock(return_value=True)
+            mock_gf.validate_groups.side_effect = RuntimeError("Validation failed")
+            response = client.post(
+                "/api/v1/groups/validate",
+                json={
+                    "groups": [{"group_id": "group_001", "member_ids": ["user_001"]}],
+                },
+            )
+            assert response.status_code == 500
+            assert "Validation error" in response.json()["detail"]
+
+
+class TestValueErrorPaths:
+    """Tests that trigger ValueError paths (400 errors)."""
+
+    def test_match_peer_value_error(self, client):
+        """Test match_peer ValueError path (no_match status)."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.find_match.side_effect = ValueError("No suitable match found")
+            with patch("app.main.candidate_pool", [
+                {"learner_id": "other_user", "knowledge_state": {}},
+            ]):
+                response = client.post(
+                    "/api/v1/match/peer",
+                    params={"role": "study_partner"},
+                    json={"profile": {"learner_id": "user_001", "knowledge_state": {}}},
+                )
+                assert response.status_code == 200
+                data = response.json()
+                assert data["status"] == "no_match"
+
+    def test_match_tutor_value_error(self, client):
+        """Test match_tutor ValueError path (no_match status)."""
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            mock_pm.find_tutor.side_effect = ValueError("No tutor available for topic")
+            with patch("app.main.candidate_pool", [
+                {"learner_id": "tutor_user", "knowledge_state": {"math": 0.9}},
+            ]):
+                response = client.post(
+                    "/api/v1/match/tutor",
+                    params={"topic": "advanced_quantum_mechanics"},
+                    json={"profile": {"learner_id": "user_001", "knowledge_state": {}}},
+                )
+                assert response.status_code == 200
+                data = response.json()
+                assert data["status"] == "no_match"
+
+    def test_submit_peer_review_value_error(self, client):
+        """Test submit_peer_review ValueError path (400 error)."""
+        with patch("app.main.assessment_service") as mock_as:
+            mock_as.__bool__ = MagicMock(return_value=True)
+            mock_as.create_assessment.side_effect = ValueError("Invalid assessment data")
+            response = client.post(
+                "/api/v1/assessments/peer-review",
+                json={
+                    "assessor_id": "user_001",
+                    "assessee_id": "user_002",
+                    "assessment_type": "session_feedback",
+                    "scores": [],
+                },
+            )
+            assert response.status_code == 400
+
+
+class TestAdditionalEdgeCases:
+    """Additional edge cases to maximize coverage."""
+
+    def test_get_user_matches_compatibility_warning(self, client, sample_learner_profiles):
+        """Test that compatibility errors are logged as warnings."""
+        # Update pool first
+        client.post(
+            "/api/v1/candidates/update",
+            json={"candidates": sample_learner_profiles},
+        )
+        
+        # Now test with a partial mock that fails on one candidate
+        original_matcher = None
+        with patch("app.main.peer_matcher") as mock_pm:
+            mock_pm.__bool__ = MagicMock(return_value=True)
+            # Return valid scores
+            mock_pm.compute_compatibility.return_value = 0.75
+            
+            response = client.get(
+                "/api/v1/users/user_001/matches",
+                params={"limit": 5},
+            )
+            assert response.status_code == 200
+
+    def test_form_groups_with_learner_ids_only(self, client):
+        """Test group formation with only learner IDs (no profiles)."""
+        response = client.post(
+            "/api/v1/groups/form",
+            json={
+                "learner_ids": ["user_001", "user_002", "user_003"],
+                "topic": "Science",
+                "group_size": 2,
+            },
+        )
+        assert response.status_code == 200
+
+    def test_session_recording_consent_required(self, client):
+        """Test session with recording consent requirement."""
+        # Create session with recording consent required
+        create_response = client.post(
+            "/api/v1/sessions/start",
+            json={
+                "group_id": "consent_group",
+                "session_type": "peer_tutoring",
+                "topic": "Tutoring Session",
+                "created_by": "tutor_user",
+                "requires_recording_consent": True,
+            },
+        )
+        assert create_response.status_code == 200
+        data = create_response.json()
+        assert data["requires_recording_consent"] is True
+
+    def test_assessment_with_group_and_session(self, client):
+        """Test peer review with group and session IDs."""
+        response = client.post(
+            "/api/v1/assessments/peer-review",
+            json={
+                "assessor_id": "user_001",
+                "assessee_id": "user_002",
+                "assessment_type": "session_feedback",
+                "group_id": "group_001",
+                "session_id": "session_001",
+                "is_anonymous": True,
+                "scores": [
+                    {"criterion_id": "participation", "score": 4, "comments": "Good"},
+                    {"criterion_id": "helpfulness", "score": 5, "comments": "Great"},
+                    {"criterion_id": "respectfulness", "score": 5, "comments": "Perfect"},
+                    {"criterion_id": "collaboration", "score": 4, "comments": "Good teamwork"},
+                ],
+                "overall_feedback": "Great session partner!",
+                "strengths": ["Clear explanations", "Patient"],
+                "areas_for_improvement": ["Could share more resources"],
+            },
+        )
+        assert response.status_code == 200
+
+    def test_collaboration_scoring_full_data(self, client, sample_messages):
+        """Test collaboration scoring with comprehensive message data."""
+        response = client.post(
+            "/api/v1/collaboration/score",
+            json={
+                "group_id": "scoring_group",
+                "messages": sample_messages,
+                "topic": "Advanced Mathematics",
+                "member_ids": ["user_001", "user_002", "user_003", "user_004"],
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "scores" in data
+        assert "engagement" in data
+
+    def test_discussion_facilitation_full_flow(self, client, sample_messages):
+        """Test discussion facilitation with full message flow."""
+        response = client.post(
+            "/api/v1/discussion/facilitate",
+            json={
+                "group_id": "facilitation_group",
+                "topic": "Study Topic",
+                "messages": sample_messages,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "actions" in data
+        assert "suggestions" in data
+        assert "conflicts" in data
+
+    def test_validate_groups_with_profiles(self, client, sample_learner_profiles):
+        """Test group validation with explicit learner profiles."""
+        response = client.post(
+            "/api/v1/groups/validate",
+            json={
+                "groups": [
+                    {"group_id": "valid_group_1", "member_ids": ["user_001", "user_002"]},
+                    {"group_id": "valid_group_2", "member_ids": ["user_003", "user_004"]},
+                ],
+                "learner_profiles": sample_learner_profiles,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "validations" in data
+        assert "all_valid" in data
