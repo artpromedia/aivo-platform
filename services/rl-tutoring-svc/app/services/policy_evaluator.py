@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -325,7 +325,7 @@ class PolicyEvaluator:
             "reward_difference": reward_diff,
             "learning_difference": learning_diff,
             "winner": winner,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         self._evaluation_history.append(result)
