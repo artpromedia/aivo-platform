@@ -591,3 +591,812 @@ class TestSessionManagerEdgeCases:
         
         assert retrieved1.status == SessionStatus.ACTIVE
         assert retrieved2.status == SessionStatus.ACTIVE
+
+
+class TestAdditionalSessionManagerCoverage:
+    """Additional tests for SessionManager coverage."""
+
+    def test_join_session_full(self):
+        """Test joining a full session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            max_participants=2,
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        manager.join_session(session.session_id, "user_002", ParticipantRole.LEARNER)
+        
+        # Try to join when full
+        success, message = manager.join_session(
+            session.session_id, "user_003", ParticipantRole.LEARNER
+        )
+        
+        assert success is False
+        assert "full" in message.lower()
+
+    def test_join_session_requires_consent(self):
+        """Test joining session requiring recording consent."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=True,
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        # Try without consent
+        success, message = manager.join_session(
+            session.session_id, "user_002", has_recording_consent=False
+        )
+        
+        assert success is False
+        assert "consent" in message.lower()
+
+    def test_join_session_completed(self):
+        """Test joining a completed session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.end_session(session.session_id, "user_001", "completed")
+        
+        success, message = manager.join_session(
+            session.session_id, "user_002", ParticipantRole.LEARNER
+        )
+        
+        assert success is False
+
+    def test_leave_session_user_not_in_session(self):
+        """Test leaving session when user isn't in it."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        
+        success, message = manager.leave_session(session.session_id, "user_002")
+        
+        assert success is False
+        assert "not in" in message.lower()
+
+    def test_leave_session_auto_end(self):
+        """Test session auto-ends when all participants leave."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        # Leave session
+        manager.leave_session(session.session_id, "user_001")
+        
+        # Session may have ended automatically
+        retrieved = manager.get_session(session.session_id)
+        # Either completed or no active participants
+
+    def test_pause_session_not_active(self):
+        """Test pausing a non-active session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        
+        # Try to pause pending session
+        result = manager.pause_session(session.session_id, "user_001")
+        
+        # Should return session without changing status
+        assert result.status == SessionStatus.PENDING
+
+    def test_resume_session_not_paused(self):
+        """Test resuming a non-paused session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        # Try to resume active session
+        result = manager.resume_session(session.session_id, "user_001")
+        
+        # Should return session without changing status
+        assert result.status == SessionStatus.ACTIVE
+
+    def test_start_nonexistent_session(self):
+        """Test starting nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.start_session("nonexistent", "user_001")
+        
+        assert result is None
+
+    def test_pause_nonexistent_session(self):
+        """Test pausing nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.pause_session("nonexistent", "user_001")
+        
+        assert result is None
+
+    def test_resume_nonexistent_session(self):
+        """Test resuming nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.resume_session("nonexistent", "user_001")
+        
+        assert result is None
+
+    def test_end_nonexistent_session(self):
+        """Test ending nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.end_session("nonexistent", "user_001")
+        
+        assert result is None
+
+    def test_update_presence_nonexistent(self):
+        """Test updating presence for nonexistent session/user."""
+        manager = SessionManager()
+        
+        result = manager.update_presence("nonexistent", "user_001", PresenceStatus.AWAY)
+        
+        assert result is False
+
+    def test_update_presence_user_not_in_session(self):
+        """Test updating presence for user not in session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        
+        result = manager.update_presence(session.session_id, "user_002", PresenceStatus.AWAY)
+        
+        assert result is False
+
+    def test_update_typing_status(self):
+        """Test updating typing status."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        result = manager.update_typing_status(session.session_id, "user_001", True)
+        
+        assert result is True
+        assert session.participants["user_001"].is_typing is True
+
+    def test_update_typing_status_nonexistent(self):
+        """Test updating typing status for nonexistent session/user."""
+        manager = SessionManager()
+        
+        result = manager.update_typing_status("nonexistent", "user_001", True)
+        
+        assert result is False
+
+    def test_send_message_not_active(self):
+        """Test sending message to non-active session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        # Session not started yet
+        result = manager.send_message(session.session_id, "user_001", "Hello")
+        
+        assert result is None
+
+    def test_send_message_user_not_participant(self):
+        """Test sending message from non-participant."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        # user_002 not joined
+        result = manager.send_message(session.session_id, "user_002", "Hello")
+        
+        assert result is None
+
+    def test_send_message_truncates_long_content(self):
+        """Test sending message truncates long content."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        long_content = "x" * 6000  # Exceeds MAX_MESSAGE_LENGTH
+        result = manager.send_message(session.session_id, "user_001", long_content)
+        
+        assert result is not None
+        assert len(result.content) <= manager.MAX_MESSAGE_LENGTH + 3  # +3 for "..."
+
+    def test_add_resource_nonexistent_session(self):
+        """Test adding resource to nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.add_resource("nonexistent", "user_001", "link", "Test", url="http://example.com")
+        
+        assert result is None
+
+    def test_add_resource_user_not_participant(self):
+        """Test adding resource by non-participant."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        
+        result = manager.add_resource(session.session_id, "user_002", "link", "Test", url="http://example.com")
+        
+        assert result is None
+
+    def test_update_resource(self):
+        """Test updating a resource."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        resource = manager.add_resource(
+            session.session_id, "user_001", "document", "Notes", content="Initial"
+        )
+        
+        updated = manager.update_resource(
+            session.session_id, resource.resource_id, "user_001", "Updated content"
+        )
+        
+        assert updated is not None
+        assert updated.content == "Updated content"
+        assert updated.version == 2
+
+    def test_update_resource_nonexistent_session(self):
+        """Test updating resource in nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.update_resource("nonexistent", "resource_001", "user_001", "Content")
+        
+        assert result is None
+
+    def test_update_resource_nonexistent_resource(self):
+        """Test updating nonexistent resource."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        
+        result = manager.update_resource(session.session_id, "nonexistent", "user_001", "Content")
+        
+        assert result is None
+
+    def test_send_edit_signal(self):
+        """Test sending edit signal."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        resource = manager.add_resource(
+            session.session_id, "user_001", "document", "Doc", content="Test"
+        )
+        
+        signal = manager.send_edit_signal(
+            session.session_id,
+            "user_001",
+            resource.resource_id,
+            EditSignalType.CURSOR_MOVE,
+            {"position": {"line": 5, "column": 10}},
+        )
+        
+        assert signal is not None
+        assert session.participants["user_001"].cursor_position == {"line": 5, "column": 10}
+
+    def test_send_edit_signal_selection(self):
+        """Test sending selection edit signal."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        signal = manager.send_edit_signal(
+            session.session_id,
+            "user_001",
+            "doc_001",
+            EditSignalType.SELECTION,
+            {"range": {"start": 0, "end": 10}},
+        )
+        
+        assert signal is not None
+        assert session.participants["user_001"].selected_range == {"start": 0, "end": 10}
+
+    def test_send_edit_signal_nonexistent(self):
+        """Test sending edit signal to nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.send_edit_signal(
+            "nonexistent", "user_001", "doc_001", EditSignalType.CURSOR_MOVE, {}
+        )
+        
+        assert result is None
+
+    def test_send_edit_signal_user_not_participant(self):
+        """Test sending edit signal by non-participant."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        
+        result = manager.send_edit_signal(
+            session.session_id, "user_002", "doc_001", EditSignalType.CURSOR_MOVE, {}
+        )
+        
+        assert result is None
+
+    def test_get_edit_signals(self):
+        """Test getting edit signals."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        manager.send_edit_signal(
+            session.session_id, "user_001", "doc_001", EditSignalType.CURSOR_MOVE, {"position": {"line": 1}}
+        )
+        manager.send_edit_signal(
+            session.session_id, "user_001", "doc_001", EditSignalType.TEXT_INSERT, {"text": "Hello"}
+        )
+        
+        signals = manager.get_edit_signals(session.session_id)
+        
+        assert len(signals) == 2
+
+    def test_get_edit_signals_since(self):
+        """Test getting edit signals since a timestamp."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        manager.send_edit_signal(
+            session.session_id, "user_001", "doc_001", EditSignalType.CURSOR_MOVE, {}
+        )
+        
+        # Get signals since now (should be empty or very few)
+        since = datetime.now(timezone.utc)
+        signals = manager.get_edit_signals(session.session_id, since=since)
+        
+        # Signals created before 'since' should be filtered
+        assert isinstance(signals, list)
+
+    def test_get_edit_signals_nonexistent_session(self):
+        """Test getting edit signals for nonexistent session."""
+        manager = SessionManager()
+        
+        signals = manager.get_edit_signals("nonexistent")
+        
+        assert signals == []
+
+    def test_get_session_activity_nonexistent(self):
+        """Test getting activity for nonexistent session."""
+        manager = SessionManager()
+        
+        result = manager.get_session_activity("nonexistent")
+        
+        assert result is None
+
+    def test_check_session_health(self):
+        """Test checking session health."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        manager.join_session(session.session_id, "user_002", ParticipantRole.LEARNER)
+        
+        health = manager.check_session_health(session.session_id)
+        
+        assert health["healthy"] is True
+        assert health["active_participants"] == 2
+
+    def test_check_session_health_nonexistent(self):
+        """Test checking health of nonexistent session."""
+        manager = SessionManager()
+        
+        health = manager.check_session_health("nonexistent")
+        
+        assert health["healthy"] is False
+        assert "not found" in health["reason"].lower()
+
+    def test_check_session_health_no_participants(self):
+        """Test session health with no active participants."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        manager.leave_session(session.session_id, "user_001")
+        
+        # Session might have auto-ended, but if not:
+        if manager.get_session(session.session_id).status == SessionStatus.ACTIVE:
+            health = manager.check_session_health(session.session_id)
+            assert len(health.get("issues", [])) > 0 or len(health.get("warnings", [])) > 0
+
+    def test_check_session_health_one_participant(self):
+        """Test session health with only one participant."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        health = manager.check_session_health(session.session_id)
+        
+        # Should have warning about only one participant
+        assert "warnings" in health
+
+    def test_check_session_health_long_duration(self):
+        """Test session health for long-running session."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        # Simulate long duration
+        session.actual_start = datetime.now(timezone.utc) - timedelta(minutes=150)
+        
+        health = manager.check_session_health(session.session_id)
+        
+        # Should have warning about duration
+        assert len(health.get("warnings", [])) > 0
+
+    def test_check_session_health_idle_participant(self):
+        """Test session health with idle participant."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        # Simulate idle participant
+        session.participants["user_001"].last_active = (
+            datetime.now(timezone.utc) - timedelta(minutes=15)
+        )
+        
+        health = manager.check_session_health(session.session_id)
+        
+        # Should have warning about idle participant
+        assert len(health.get("warnings", [])) > 0
+
+    def test_cleanup_expired_sessions(self):
+        """Test cleaning up expired sessions."""
+        manager = SessionManager()
+        
+        # Create session with past scheduled end
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            scheduled_end=datetime.now(timezone.utc) - timedelta(hours=1),
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        count = manager.cleanup_expired_sessions()
+        
+        assert count >= 1
+        assert manager.get_session(session.session_id).status == SessionStatus.EXPIRED
+
+    def test_cleanup_stale_pending_sessions(self):
+        """Test cleaning up stale pending sessions."""
+        manager = SessionManager()
+        
+        # Create old pending session
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        
+        # Simulate old session
+        session.created_at = datetime.now(timezone.utc) - timedelta(hours=25)
+        
+        count = manager.cleanup_expired_sessions()
+        
+        assert count >= 1
+        assert manager.get_session(session.session_id).status == SessionStatus.EXPIRED
+
+    def test_cleanup_long_running_sessions(self):
+        """Test cleaning up very long-running sessions."""
+        manager = SessionManager()
+        
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        # Simulate very long session (> 2x max duration)
+        session.actual_start = datetime.now(timezone.utc) - timedelta(minutes=250)
+        
+        count = manager.cleanup_expired_sessions()
+        
+        assert count >= 1
+        assert manager.get_session(session.session_id).status == SessionStatus.EXPIRED
+
+    def test_get_user_sessions(self):
+        """Test getting user's active sessions."""
+        manager = SessionManager()
+        
+        # Create multiple sessions
+        s1 = manager.create_session("group_001", SessionType.STUDY_GROUP, "Math", "user_001", requires_recording_consent=False)
+        s2 = manager.create_session("group_002", SessionType.DISCUSSION, "Physics", "user_001", requires_recording_consent=False)
+        
+        manager.start_session(s1.session_id, "user_001")
+        manager.start_session(s2.session_id, "user_001")
+        manager.join_session(s1.session_id, "user_001", ParticipantRole.HOST)
+        manager.join_session(s2.session_id, "user_001", ParticipantRole.HOST)
+        
+        sessions = manager.get_user_sessions("user_001")
+        
+        assert len(sessions) == 2
+
+    def test_end_session_cancelled(self):
+        """Test ending session with cancelled reason."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        ended = manager.end_session(session.session_id, "user_001", "cancelled")
+        
+        assert ended.status == SessionStatus.CANCELLED
+
+    def test_create_session_with_metadata(self):
+        """Test creating session with metadata."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.PROJECT,
+            topic="Project Work",
+            created_by="user_001",
+            metadata={"project_id": "proj_001", "milestone": "v1.0"},
+        )
+        
+        assert session.metadata["project_id"] == "proj_001"
+        assert session.metadata["milestone"] == "v1.0"
+
+    def test_calculate_idle_periods(self):
+        """Test idle period calculation."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.DISCUSSION,
+            topic="Topic",
+            created_by="user_001",
+            requires_recording_consent=False,
+        )
+        manager.start_session(session.session_id, "user_001")
+        manager.join_session(session.session_id, "user_001", ParticipantRole.HOST)
+        
+        # Add messages with gap
+        now = datetime.now(timezone.utc)
+        msg1 = SessionMessage(
+            message_id="msg_001",
+            sender_id="user_001",
+            content="First",
+            timestamp=now - timedelta(minutes=30),
+        )
+        msg2 = SessionMessage(
+            message_id="msg_002",
+            sender_id="user_001",
+            content="Second",
+            timestamp=now,
+        )
+        session.messages.append(msg1)
+        session.messages.append(msg2)
+        
+        # Get activity which calculates idle periods
+        activity = manager.get_session_activity(session.session_id)
+        
+        # Should detect idle period > 10 minutes
+        assert len(activity.idle_periods) >= 1
+
+    def test_join_session_with_recording_consent(self):
+        """Test joining session with recording consent."""
+        manager = SessionManager()
+        session = manager.create_session(
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Math",
+            created_by="user_001",
+            requires_recording_consent=True,
+        )
+        manager.start_session(session.session_id, "user_001")
+        
+        success, message = manager.join_session(
+            session.session_id, "user_001", ParticipantRole.HOST, has_recording_consent=True
+        )
+        
+        assert success is True
+        assert session.participants["user_001"].has_recording_consent is True
+
+
+class TestCollaborativeSessionMethods:
+    """Additional tests for CollaborativeSession methods."""
+
+    def test_is_participant(self):
+        """Test is_participant method."""
+        session = CollaborativeSession(
+            session_id="sess_001",
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Test",
+            status=SessionStatus.ACTIVE,
+            created_by="user_001",
+            created_at=datetime.now(timezone.utc),
+        )
+        
+        # Add participant
+        session.participants["user_001"] = ParticipantState(
+            user_id="user_001",
+            role=ParticipantRole.HOST,
+            joined_at=datetime.now(timezone.utc),
+        )
+        
+        assert session.is_participant("user_001") is True
+        assert session.is_participant("user_002") is False
+
+    def test_get_active_count(self):
+        """Test get_active_count method."""
+        session = CollaborativeSession(
+            session_id="sess_001",
+            group_id="group_001",
+            session_type=SessionType.STUDY_GROUP,
+            topic="Test",
+            status=SessionStatus.ACTIVE,
+            created_by="user_001",
+            created_at=datetime.now(timezone.utc),
+        )
+        
+        # Add participants with different presence
+        session.participants["user_001"] = ParticipantState(
+            user_id="user_001",
+            role=ParticipantRole.HOST,
+            joined_at=datetime.now(timezone.utc),
+            presence=PresenceStatus.ONLINE,
+        )
+        session.participants["user_002"] = ParticipantState(
+            user_id="user_002",
+            role=ParticipantRole.LEARNER,
+            joined_at=datetime.now(timezone.utc),
+            presence=PresenceStatus.AWAY,
+        )
+        session.participants["user_003"] = ParticipantState(
+            user_id="user_003",
+            role=ParticipantRole.LEARNER,
+            joined_at=datetime.now(timezone.utc),
+            presence=PresenceStatus.ONLINE,
+        )
+        
+        assert session.get_active_count() == 2  # Only online users

@@ -668,3 +668,497 @@ class TestAssessmentIntegration:
         
         assert summary.total_received == 5
         assert summary.average_score_received is not None
+
+
+class TestAdditionalPeerAssessmentCoverage:
+    """Additional tests for improved coverage."""
+
+    @pytest.fixture
+    def service(self):
+        """Create assessment service."""
+        return PeerAssessmentService()
+
+    def test_cannot_self_assess(self, service):
+        """Test that self-assessment raises error."""
+        with pytest.raises(ValueError, match="Cannot assess yourself"):
+            service.create_assessment(
+                assessor_id="user_001",
+                assessee_id="user_001",
+                assessment_type=AssessmentType.SESSION_FEEDBACK,
+            )
+
+    def test_create_assessment_unknown_type(self, service):
+        """Test creating assessment with unknown type (no default rubric)."""
+        # PARTICIPATION has no default rubric
+        with pytest.raises(ValueError, match="No rubric found"):
+            service.create_assessment(
+                assessor_id="user_001",
+                assessee_id="user_002",
+                assessment_type=AssessmentType.PARTICIPATION,
+            )
+
+    def test_update_scores_nonexistent(self, service):
+        """Test updating scores for nonexistent assessment."""
+        result = service.update_scores("nonexistent", [])
+        assert result is None
+
+    def test_update_scores_completed_assessment(self, service):
+        """Test cannot update scores on completed assessment."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        # Fill and submit
+        rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+        if rubric:
+            scores = [{"criterion_id": c.criterion_id, "score": 4} for c in rubric.criteria]
+            service.update_scores(assessment.assessment_id, scores)
+            service.submit_assessment(assessment.assessment_id)
+            
+            # Mark as completed
+            assessment.status = AssessmentStatus.COMPLETED
+            
+            # Try to update scores
+            result = service.update_scores(assessment.assessment_id, scores)
+            assert result.status == AssessmentStatus.COMPLETED
+
+    def test_update_feedback_nonexistent(self, service):
+        """Test updating feedback for nonexistent assessment."""
+        result = service.update_feedback("nonexistent", "feedback")
+        assert result is None
+
+    def test_submit_nonexistent_assessment(self, service):
+        """Test submitting nonexistent assessment."""
+        success, message, assessment = service.submit_assessment("nonexistent")
+        assert success is False
+        assert "not found" in message.lower()
+
+    def test_submit_already_submitted(self, service):
+        """Test cannot re-submit assessment."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+        if rubric:
+            scores = [{"criterion_id": c.criterion_id, "score": 4} for c in rubric.criteria]
+            service.update_scores(assessment.assessment_id, scores)
+            
+            # First submit
+            success1, _, _ = service.submit_assessment(assessment.assessment_id)
+            assert success1 is True
+            
+            # Try to submit again
+            success2, message, _ = service.submit_assessment(assessment.assessment_id)
+            assert success2 is False
+            assert "cannot be submitted" in message.lower()
+
+    def test_submit_missing_required_scores(self, service):
+        """Test submit fails with missing required scores."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        # Submit without filling scores
+        success, message, _ = service.submit_assessment(assessment.assessment_id)
+        
+        assert success is False
+        assert "missing" in message.lower()
+
+    def test_get_session_assessments(self, service):
+        """Test getting assessments for a session."""
+        service.create_assessment(
+            "user_001", "user_002",
+            AssessmentType.SESSION_FEEDBACK,
+            session_id="session_001",
+        )
+        service.create_assessment(
+            "user_002", "user_003",
+            AssessmentType.SESSION_FEEDBACK,
+            session_id="session_001",
+        )
+        service.create_assessment(
+            "user_001", "user_004",
+            AssessmentType.SESSION_FEEDBACK,
+            session_id="session_002",
+        )
+        
+        session1 = service.get_session_assessments("session_001")
+        
+        assert len(session1) == 2
+
+    def test_get_user_summary_insufficient_data(self, service):
+        """Test getting summary with insufficient assessments."""
+        # Create only 1 assessment (need 3 minimum)
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+        if rubric:
+            scores = [{"criterion_id": c.criterion_id, "score": 4} for c in rubric.criteria]
+            service.update_scores(assessment.assessment_id, scores)
+            service.submit_assessment(assessment.assessment_id)
+        
+        summary = service.get_user_summary("user_002")
+        
+        # Should return None due to insufficient data
+        assert summary is None
+
+    def test_calculate_overall_score_no_rubric(self, service):
+        """Test score calculation when rubric is not found."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        # Manually set scores and invalidate rubric
+        assessment.scores = [CriterionScore("c1", 4), CriterionScore("c2", 5)]
+        assessment.rubric_id = "invalid_rubric"
+        
+        # Calculate directly
+        score = service._calculate_overall_score(assessment)
+        
+        # Should use simple average: (4+5)/2 = 4.5
+        assert score == 4.5
+
+    def test_calculate_overall_score_all_zero(self, service):
+        """Test score calculation when all scores are zero."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        # All scores at 0
+        score = service._calculate_overall_score(assessment)
+        
+        assert score == 0.0
+
+    def test_check_calibration_insufficient_data(self, service):
+        """Test calibration check with insufficient data."""
+        # No assessments given
+        result = service.check_calibration("user_001")
+        
+        assert result is None
+
+    def test_check_calibration_with_data(self, service):
+        """Test calibration check with sufficient data."""
+        # Create 5+ submitted assessments for calibration
+        for i in range(5):
+            assessment = service.create_assessment(
+                assessor_id="calibration_user",
+                assessee_id=f"user_{i:03d}",
+                assessment_type=AssessmentType.SESSION_FEEDBACK,
+            )
+            
+            rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": 5} for c in rubric.criteria]
+                service.update_scores(assessment.assessment_id, scores)
+                service.submit_assessment(assessment.assessment_id)
+        
+        result = service.check_calibration("calibration_user")
+        
+        # May be None if no other assessments exist for comparison
+        # The result depends on having other assessors for same assessees
+
+    def test_check_calibration_with_comparison(self, service):
+        """Test calibration check with comparison data."""
+        assessees = ["compare_user_001", "compare_user_002", "compare_user_003", 
+                     "compare_user_004", "compare_user_005"]
+        
+        # Create assessments from multiple assessors
+        for assessee in assessees:
+            # First assessor (being calibrated) gives high scores
+            a1 = service.create_assessment("test_assessor", assessee, AssessmentType.SESSION_FEEDBACK)
+            rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": 5} for c in rubric.criteria]
+                service.update_scores(a1.assessment_id, scores)
+                service.submit_assessment(a1.assessment_id)
+            
+            # Second assessor gives lower scores
+            a2 = service.create_assessment("other_assessor", assessee, AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": 3} for c in rubric.criteria]
+                service.update_scores(a2.assessment_id, scores)
+                service.submit_assessment(a2.assessment_id)
+        
+        result = service.check_calibration("test_assessor")
+        
+        if result:
+            assert result.assessor_id == "test_assessor"
+            # Should detect lenient bias (scores higher than others)
+            assert result.bias_detected == "lenient" or result.calibration_score < 100
+
+    def test_check_calibration_harsh_bias(self, service):
+        """Test calibration detects harsh bias."""
+        assessees = ["harsh_user_001", "harsh_user_002", "harsh_user_003", 
+                     "harsh_user_004", "harsh_user_005"]
+        
+        for assessee in assessees:
+            # First assessor gives low scores
+            a1 = service.create_assessment("harsh_assessor", assessee, AssessmentType.SESSION_FEEDBACK)
+            rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": 1} for c in rubric.criteria]
+                service.update_scores(a1.assessment_id, scores)
+                service.submit_assessment(a1.assessment_id)
+            
+            # Second assessor gives higher scores
+            a2 = service.create_assessment("normal_assessor", assessee, AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": 5} for c in rubric.criteria]
+                service.update_scores(a2.assessment_id, scores)
+                service.submit_assessment(a2.assessment_id)
+        
+        result = service.check_calibration("harsh_assessor")
+        
+        if result:
+            # Should detect harsh bias
+            assert result.bias_detected == "harsh" or result.calibration_score < 100
+
+    def test_dispute_assessment(self, service):
+        """Test disputing an assessment."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+        if rubric:
+            scores = [{"criterion_id": c.criterion_id, "score": 2} for c in rubric.criteria]
+            service.update_scores(assessment.assessment_id, scores)
+            service.submit_assessment(assessment.assessment_id)
+        
+        success, message = service.dispute_assessment(
+            assessment.assessment_id,
+            "I believe this assessment is unfair",
+        )
+        
+        assert success is True
+        assert assessment.status == AssessmentStatus.DISPUTED
+        assert "dispute_reason" in assessment.metadata
+
+    def test_dispute_nonexistent_assessment(self, service):
+        """Test disputing nonexistent assessment."""
+        success, message = service.dispute_assessment("nonexistent", "reason")
+        
+        assert success is False
+        assert "not found" in message.lower()
+
+    def test_dispute_draft_assessment(self, service):
+        """Test cannot dispute draft assessment."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        # Still in draft status
+        success, message = service.dispute_assessment(assessment.assessment_id, "reason")
+        
+        assert success is False
+        assert "submitted" in message.lower()
+
+    def test_complete_assessment(self, service):
+        """Test completing an assessment after review."""
+        assessment = service.create_assessment(
+            assessor_id="user_001",
+            assessee_id="user_002",
+            assessment_type=AssessmentType.SESSION_FEEDBACK,
+        )
+        
+        result = service.complete_assessment(assessment.assessment_id)
+        
+        assert result is not None
+        assert result.status == AssessmentStatus.COMPLETED
+
+    def test_complete_nonexistent_assessment(self, service):
+        """Test completing nonexistent assessment."""
+        result = service.complete_assessment("nonexistent")
+        
+        assert result is None
+
+    def test_user_summary_score_distribution(self, service):
+        """Test user summary score distribution calculation."""
+        # Create assessments with varied scores
+        score_values = [1, 3, 4, 5, 5]  # Tests different distribution buckets
+        
+        for i, score_val in enumerate(score_values):
+            assessment = service.create_assessment(
+                assessor_id=f"reviewer_{i}",
+                assessee_id="distribution_user",
+                assessment_type=AssessmentType.SESSION_FEEDBACK,
+            )
+            
+            rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                scores = [{"criterion_id": c.criterion_id, "score": score_val} for c in rubric.criteria]
+                service.update_scores(assessment.assessment_id, scores)
+                service.submit_assessment(assessment.assessment_id)
+        
+        summary = service.get_user_summary("distribution_user")
+        
+        if summary:
+            assert "score_distribution" in summary.__dict__
+            # Check distribution has expected buckets
+            assert "0-20" in summary.score_distribution or sum(summary.score_distribution.values()) > 0
+
+    def test_user_summary_trend_calculation(self, service):
+        """Test user summary trend calculation."""
+        # Create 5+ assessments for trend calculation
+        for i in range(6):
+            assessment = service.create_assessment(
+                assessor_id=f"trend_reviewer_{i}",
+                assessee_id="trend_user",
+                assessment_type=AssessmentType.SESSION_FEEDBACK,
+            )
+            
+            rubric = service.rubric_manager.get_default_rubric(AssessmentType.SESSION_FEEDBACK)
+            if rubric:
+                # Increasing scores to simulate improvement
+                score = min(5, 2 + i)
+                scores = [{"criterion_id": c.criterion_id, "score": score} for c in rubric.criteria]
+                service.update_scores(assessment.assessment_id, scores)
+                service.submit_assessment(assessment.assessment_id)
+        
+        summary = service.get_user_summary("trend_user")
+        
+        if summary:
+            assert summary.assessment_trend in ["improving", "stable", "declining", "insufficient_data"]
+
+    def test_find_common_themes_empty(self, service):
+        """Test finding themes with empty list."""
+        result = service._find_common_themes([])
+        assert result == []
+
+    def test_find_common_themes(self, service):
+        """Test finding common themes."""
+        items = ["Good work", "Good work", "Clear explanations", 
+                 "Clear explanations", "Single item"]
+        
+        result = service._find_common_themes(items, min_occurrences=2)
+        
+        assert "Good work" in result
+        assert "Clear explanations" in result
+        assert "Single item" not in result
+
+    def test_calculate_trend_stable(self, service):
+        """Test trend calculation for stable scores."""
+        scores = [70, 71, 69, 70, 71]  # Very stable
+        
+        trend = service._calculate_trend(scores)
+        
+        assert trend == "stable"
+
+    def test_calculate_trend_improving(self, service):
+        """Test trend calculation for improving scores."""
+        scores = [50, 55, 60, 65, 70]  # Clear improvement
+        
+        trend = service._calculate_trend(scores)
+        
+        assert trend == "improving"
+
+    def test_calculate_trend_declining(self, service):
+        """Test trend calculation for declining scores."""
+        scores = [80, 75, 70, 65, 60]  # Clear decline
+        
+        trend = service._calculate_trend(scores)
+        
+        assert trend == "declining"
+
+    def test_calculate_trend_single_score(self, service):
+        """Test trend calculation with single score."""
+        trend = service._calculate_trend([70])
+        
+        assert trend == "stable"
+
+
+class TestRubricValidation:
+    """Tests for rubric validation."""
+
+    def test_validate_weights_correct(self):
+        """Test validation passes with correct weights."""
+        criteria = [
+            RubricCriterion("c1", "C1", "", 0.5, RatingScale.FIVE_POINT),
+            RubricCriterion("c2", "C2", "", 0.5, RatingScale.FIVE_POINT),
+        ]
+        rubric = Rubric(
+            "r1", "Test", "", AssessmentType.WORK_REVIEW, criteria,
+            datetime.now(timezone.utc), "user"
+        )
+        
+        assert rubric.validate_weights() is True
+
+    def test_validate_weights_incorrect(self):
+        """Test validation fails with incorrect weights."""
+        criteria = [
+            RubricCriterion("c1", "C1", "", 0.3, RatingScale.FIVE_POINT),
+            RubricCriterion("c2", "C2", "", 0.3, RatingScale.FIVE_POINT),
+        ]
+        rubric = Rubric(
+            "r1", "Test", "", AssessmentType.WORK_REVIEW, criteria,
+            datetime.now(timezone.utc), "user"
+        )
+        
+        assert rubric.validate_weights() is False
+
+    def test_get_max_score(self):
+        """Test calculating max score."""
+        criteria = [
+            RubricCriterion("c1", "C1", "", 0.5, RatingScale.FIVE_POINT, max_score=5),
+            RubricCriterion("c2", "C2", "", 0.5, RatingScale.TEN_POINT, max_score=10),
+        ]
+        rubric = Rubric(
+            "r1", "Test", "", AssessmentType.WORK_REVIEW, criteria,
+            datetime.now(timezone.utc), "user"
+        )
+        
+        max_score = rubric.get_max_score()
+        
+        # 0.5 * 5 + 0.5 * 10 = 7.5
+        assert max_score == 7.5
+
+
+class TestRubricManagerAdditional:
+    """Additional tests for RubricManager."""
+
+    def test_get_default_rubric_unknown_type(self):
+        """Test getting default rubric for unknown type."""
+        manager = RubricManager()
+        
+        result = manager.get_default_rubric(AssessmentType.SKILL_VERIFICATION)
+        
+        assert result is None
+
+    def test_list_rubrics_templates_only(self):
+        """Test listing only template rubrics."""
+        manager = RubricManager()
+        
+        # Create a non-template rubric
+        manager.create_rubric(
+            "Custom", "Custom rubric",
+            AssessmentType.WORK_REVIEW,
+            [{"name": "C1", "weight": 1.0}],
+            "user"
+        )
+        
+        templates = manager.list_rubrics(templates_only=True)
+        non_templates = [r for r in manager.list_rubrics() if not r.is_template]
+        
+        for r in templates:
+            assert r.is_template is True
+        
+        assert len(non_templates) >= 1

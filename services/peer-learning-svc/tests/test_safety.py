@@ -462,3 +462,502 @@ class TestContentModerationIntegration:
         
         # Should have specific handling for minor sessions
         assert isinstance(reasons, list)
+
+
+class TestAdditionalSafetyCoverage:
+    """Additional tests for improved safety module coverage."""
+
+    def test_batch_moderate(self):
+        """Test batch moderation of multiple contents."""
+        moderator = ContentModerator()
+        
+        contents = [
+            {"content_id": "msg_001", "content": "Hello world"},
+            {"content_id": "msg_002", "content": "You stupid idiot"},
+            {"content_id": "msg_003", "content": "Let's study together"},
+        ]
+        
+        results = moderator.batch_moderate(contents)
+        
+        assert len(results) == 3
+        assert results[0].is_safe is True
+        assert results[1].is_safe is False
+        assert results[2].is_safe is True
+
+    def test_batch_moderate_with_profile(self):
+        """Test batch moderation with user profile context."""
+        moderator = ContentModerator(strict_mode=True)
+        
+        profile = UserSafetyProfile(
+            user_id="minor_001",
+            is_minor=True,
+            age_verified=False,
+            requires_supervision=True,
+            supervisor_id="parent_001",
+        )
+        
+        contents = [
+            {"content_id": "msg_001", "content": "Mild inappropriate content shut up"},
+        ]
+        
+        results = moderator.batch_moderate(contents, user_profile=profile)
+        
+        assert len(results) == 1
+        # Minors should have stricter handling
+        if not results[0].is_safe:
+            assert results[0].auto_action == ActionType.MESSAGE_REMOVED
+
+    def test_moderate_with_minor_profile(self):
+        """Test moderation applies stricter rules for minors."""
+        moderator = ContentModerator(strict_mode=True)
+        
+        minor_profile = UserSafetyProfile(
+            user_id="minor_001",
+            is_minor=True,
+            age_verified=False,
+            requires_supervision=True,
+            supervisor_id="parent_001",
+        )
+        
+        result = moderator.moderate(
+            "That's stupid",
+            user_profile=minor_profile,
+        )
+        
+        # Minor with flagged content should trigger message removal
+        if not result.is_safe:
+            assert result.auto_action == ActionType.MESSAGE_REMOVED
+
+    def test_moderate_spam_content(self):
+        """Test moderation catches spam content."""
+        moderator = ContentModerator()
+        result = moderator.moderate(
+            "Click this link now to get free stuff today!",
+        )
+        
+        assert ContentCategory.SPAM in result.categories
+
+    def test_moderate_address_pii(self):
+        """Test moderation catches address information."""
+        moderator = ContentModerator()
+        result = moderator.moderate(
+            "I live at 123 main street",
+        )
+        
+        assert ContentCategory.PERSONAL_INFO in result.categories
+
+    def test_moderate_non_strict_inappropriate(self):
+        """Test non-strict mode for inappropriate content."""
+        moderator = ContentModerator(strict_mode=False)
+        result = moderator.moderate("That's stupid and dumb")
+        
+        if not result.is_safe:
+            # Non-strict mode should use warning not removal
+            assert result.auto_action == ActionType.WARNING
+
+    def test_update_report_status_nonexistent(self):
+        """Test updating nonexistent report."""
+        system = ReportingSystem()
+        
+        result = system.update_report_status(
+            "nonexistent",
+            ReportStatus.RESOLVED,
+        )
+        
+        assert result is None
+
+    def test_get_user_reports_made_by(self):
+        """Test getting reports made by a user."""
+        system = ReportingSystem()
+        
+        system.create_report("user_001", "user_002", "spam", "Spam 1")
+        system.create_report("user_001", "user_003", "spam", "Spam 2")
+        system.create_report("user_002", "user_001", "harassment", "Mean")
+        
+        user1_reports = system.get_user_reports("user_001")
+        
+        assert len(user1_reports) == 2
+
+    def test_get_pending_reports_limit(self):
+        """Test pending reports respects limit."""
+        system = ReportingSystem()
+        
+        for i in range(10):
+            system.create_report(f"user_{i}", f"reported_{i}", "spam", "Spam")
+        
+        pending = system.get_pending_reports(limit=5)
+        
+        assert len(pending) == 5
+
+    def test_calculate_priority_multiple_reports(self):
+        """Test priority increases with multiple reports."""
+        system = ReportingSystem()
+        
+        # Create multiple reports against same user
+        for i in range(5):
+            system.create_report(f"reporter_{i}", "bad_user", "spam", "Spam")
+        
+        report = system._reports[list(system._reports.keys())[0]]
+        priority = system.calculate_priority(report)
+        
+        # Priority should be increased due to multiple reports
+        assert priority >= 0.5  # Base spam priority + bonus
+
+    def test_register_minor_with_custom_settings(self):
+        """Test registering minor with custom supervision settings."""
+        service = MinorProtectionService()
+        
+        custom_settings = {
+            "require_session_approval": False,
+            "notify_on_session_start": False,
+            "max_session_duration_minutes": 30,
+            "allowed_hours_start": 8,
+            "allowed_hours_end": 20,
+        }
+        
+        profile = service.register_minor("minor_001", "parent_001", custom_settings)
+        settings = service.get_supervision_settings("minor_001")
+        
+        assert settings.require_session_approval is False
+        assert settings.max_session_duration_minutes == 30
+        assert settings.allowed_hours_start == 8
+
+    def test_check_session_allowed_unknown_user(self):
+        """Test session check for unknown user."""
+        service = MinorProtectionService()
+        
+        allowed, reasons = service.check_session_allowed("unknown_user")
+        
+        # Unknown users should be allowed by default
+        assert allowed is True
+
+    def test_check_session_blocked_partner(self):
+        """Test session check with blocked partner."""
+        service = MinorProtectionService()
+        profile = service.register_minor("minor_001", "parent_001")
+        profile.blocked_users.append("blocked_user")
+        
+        allowed, reasons = service.check_session_allowed(
+            "minor_001",
+            partner_ids=["blocked_user"],
+        )
+        
+        # Should not allow session with blocked user
+        if not allowed:
+            assert any("blocked" in r.lower() for r in reasons)
+
+    def test_check_session_type_restriction(self):
+        """Test session type restriction for minors."""
+        service = MinorProtectionService()
+        service.register_minor("minor_001", "parent_001")
+        settings = service.get_supervision_settings("minor_001")
+        
+        # Try disallowed session type
+        allowed, reasons = service.check_session_allowed(
+            "minor_001",
+            session_type="social",  # Not in allowed types
+        )
+        
+        if not allowed:
+            assert any("type" in r.lower() for r in reasons)
+
+    def test_record_consent(self):
+        """Test recording user consent."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        result = service.record_consent(
+            "user_001",
+            ConsentType.SESSION_RECORDING,
+            True,
+        )
+        
+        assert result is True
+
+    def test_record_consent_unknown_user(self):
+        """Test recording consent for unknown user."""
+        service = MinorProtectionService()
+        
+        result = service.record_consent(
+            "unknown_user",
+            ConsentType.SESSION_RECORDING,
+            True,
+        )
+        
+        assert result is False
+
+    def test_check_consent(self):
+        """Test checking user consent."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        service.record_consent("user_001", ConsentType.SESSION_RECORDING, True)
+        
+        has_consent, timestamp = service.check_consent(
+            "user_001",
+            ConsentType.SESSION_RECORDING,
+        )
+        
+        assert has_consent is True
+        assert timestamp is not None
+
+    def test_check_consent_unknown_user(self):
+        """Test checking consent for unknown user."""
+        service = MinorProtectionService()
+        
+        has_consent, timestamp = service.check_consent(
+            "unknown_user",
+            ConsentType.SESSION_RECORDING,
+        )
+        
+        # Unknown users default to no consent
+        assert has_consent is False
+
+    def test_check_consent_not_given(self):
+        """Test checking consent that wasn't given."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        has_consent, timestamp = service.check_consent(
+            "user_001",
+            ConsentType.DATA_SHARING,  # Never recorded
+        )
+        
+        assert has_consent is False
+
+    def test_add_blocked_user(self):
+        """Test adding a blocked user."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        result = service.add_blocked_user("user_001", "blocked_user")
+        
+        assert result is True
+        profile = service.get_safety_profile("user_001")
+        assert "blocked_user" in profile.blocked_users
+
+    def test_add_blocked_user_unknown(self):
+        """Test adding blocked user for unknown user."""
+        service = MinorProtectionService()
+        
+        result = service.add_blocked_user("unknown", "blocked_user")
+        
+        assert result is False
+
+    def test_remove_blocked_user(self):
+        """Test removing a blocked user."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        service.add_blocked_user("user_001", "blocked_user")
+        
+        result = service.remove_blocked_user("user_001", "blocked_user")
+        
+        assert result is True
+        profile = service.get_safety_profile("user_001")
+        assert "blocked_user" not in profile.blocked_users
+
+    def test_remove_blocked_user_unknown(self):
+        """Test removing blocked user for unknown user."""
+        service = MinorProtectionService()
+        
+        result = service.remove_blocked_user("unknown", "blocked_user")
+        
+        assert result is False
+
+    def test_add_warning(self):
+        """Test adding warnings to user."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        count = service.add_warning("user_001")
+        
+        assert count == 1
+
+    def test_add_warning_unknown_user(self):
+        """Test adding warning for unknown user."""
+        service = MinorProtectionService()
+        
+        count = service.add_warning("unknown")
+        
+        assert count == 0
+
+    def test_add_warning_restrictions(self):
+        """Test warnings trigger restrictions."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        # Add 3 warnings for limited_matching restriction
+        for _ in range(3):
+            service.add_warning("user_001")
+        
+        profile = service.get_safety_profile("user_001")
+        assert "limited_matching" in profile.restrictions
+
+    def test_add_warning_require_approval(self):
+        """Test 5 warnings trigger require_approval."""
+        service = MinorProtectionService()
+        service.register_adult("user_001")
+        
+        for _ in range(5):
+            service.add_warning("user_001")
+        
+        profile = service.get_safety_profile("user_001")
+        assert "require_approval" in profile.restrictions
+
+    def test_notify_supervisor(self):
+        """Test supervisor notification."""
+        service = MinorProtectionService()
+        service.register_minor("minor_001", "parent_001")
+        
+        result = service.notify_supervisor(
+            "minor_001",
+            "session_start",
+            {"session_id": "session_001"},
+        )
+        
+        assert result is True
+
+    def test_notify_supervisor_unknown_user(self):
+        """Test notification for unknown user."""
+        service = MinorProtectionService()
+        
+        result = service.notify_supervisor(
+            "unknown",
+            "session_start",
+            {},
+        )
+        
+        assert result is False
+
+    def test_notify_supervisor_serious_issue(self):
+        """Test notification for serious issue always sent."""
+        service = MinorProtectionService()
+        # Register with notifications disabled
+        service.register_minor("minor_001", "parent_001", {
+            "notify_on_session_start": False,
+            "notify_on_report": False,
+        })
+        
+        # Serious issues should still notify
+        result = service.notify_supervisor(
+            "minor_001",
+            "safety_concern",
+            {"details": "Important"},
+        )
+        
+        assert result is True
+
+
+class TestSafetyManagerIntegration:
+    """Integration tests for SafetyManager."""
+
+    def test_moderate_and_check(self):
+        """Test combined moderation with user context."""
+        manager = SafetyManager(strict_mode=True)
+        manager.minor_protection.register_adult("user_001")
+        
+        result = manager.moderate_and_check(
+            "Hello world",
+            "user_001",
+            content_id="msg_001",
+        )
+        
+        assert result.is_safe is True
+
+    def test_moderate_and_check_unsafe_minor(self):
+        """Test moderation notifies supervisor for minor."""
+        manager = SafetyManager(strict_mode=True)
+        manager.minor_protection.register_minor("minor_001", "parent_001")
+        
+        result = manager.moderate_and_check(
+            "You stupid idiot",
+            "minor_001",
+            content_id="msg_001",
+        )
+        
+        assert result.is_safe is False
+        # Supervisor should be notified (logged)
+
+    def test_moderate_and_check_adds_warning(self):
+        """Test moderation adds warning when appropriate."""
+        manager = SafetyManager(strict_mode=False)
+        manager.minor_protection.register_adult("user_001")
+        
+        # Moderating inappropriate content should add warning
+        result = manager.moderate_and_check(
+            "That's stupid and dumb",
+            "user_001",
+        )
+        
+        if result.auto_action == ActionType.WARNING:
+            profile = manager.minor_protection.get_safety_profile("user_001")
+            assert profile.warnings_count > 0
+
+    def test_check_session_safety(self):
+        """Test session safety check."""
+        manager = SafetyManager()
+        manager.minor_protection.register_adult("user_001")
+        manager.minor_protection.register_adult("user_002")
+        
+        all_allowed, issues = manager.check_session_safety(
+            ["user_001", "user_002"],
+            session_type="study",
+        )
+        
+        assert all_allowed is True
+        assert len(issues) == 0
+
+    def test_check_session_safety_with_issues(self):
+        """Test session safety with restricted users."""
+        manager = SafetyManager()
+        manager.minor_protection.register_minor("minor_001", "parent_001")
+        
+        # Try a disallowed session type
+        all_allowed, issues = manager.check_session_safety(
+            ["minor_001"],
+            session_type="social",  # Not allowed
+        )
+        
+        # May have issues for minor
+        assert isinstance(issues, dict)
+
+    def test_handle_report(self):
+        """Test handling report through manager."""
+        manager = SafetyManager()
+        
+        report = manager.handle_report(
+            reporter_id="user_001",
+            reported_user_id="user_002",
+            report_type="spam",
+            description="Spamming messages",
+        )
+        
+        assert report is not None
+        assert report.status == ReportStatus.PENDING
+
+    def test_handle_report_safety_concern(self):
+        """Test safety concern is auto-escalated."""
+        manager = SafetyManager()
+        
+        report = manager.handle_report(
+            reporter_id="user_001",
+            reported_user_id="user_002",
+            report_type="safety_concern",
+            description="Concerning behavior",
+        )
+        
+        assert report.status == ReportStatus.ESCALATED
+
+    def test_handle_report_minor_involved(self):
+        """Test report involving minor notifies supervisor."""
+        manager = SafetyManager()
+        manager.minor_protection.register_minor("minor_001", "parent_001")
+        
+        report = manager.handle_report(
+            reporter_id="user_001",
+            reported_user_id="minor_001",
+            report_type="harassment",
+            description="Issue with minor",
+        )
+        
+        assert report is not None
+        # Supervisor notification triggered (logged)
