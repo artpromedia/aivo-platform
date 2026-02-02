@@ -1,0 +1,160 @@
+# Codecov Configuration
+# https://docs.codecov.com/docs/codecov-yaml
+#
+# This configuration enforces coverage thresholds for the AIVO monorepo.
+
+coverage:
+  # Overall coverage targets
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+        if_not_found: success
+        informational: false
+      
+    # Per-flag targets
+    patch:
+      default:
+        target: 75%
+        threshold: 5%
+        if_not_found: success
+
+  # Precision for coverage display
+  precision: 2
+  round: down
+  range: "70...100"
+
+# Component coverage (by service)
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 75%
+        threshold: 2%
+
+  individual_components:
+    # Critical services - higher threshold
+    - component_id: auth-svc
+      name: Authentication Service
+      paths:
+        - services/auth-svc/**
+    
+    - component_id: billing-svc
+      name: Billing Service
+      paths:
+        - services/billing-svc/**
+    
+    - component_id: payments-svc
+      name: Payments Service
+      paths:
+        - services/payments-svc/**
+    
+    - component_id: profile-svc
+      name: Profile Service
+      paths:
+        - services/profile-svc/**
+    
+    - component_id: assessment-svc
+      name: Assessment Service
+      paths:
+        - services/assessment-svc/**
+    
+    - component_id: grading-engine
+      name: Grading Engine
+      paths:
+        - services/grading-engine/**
+    
+    - component_id: legal-hold-svc
+      name: Legal Hold Service
+      paths:
+        - services/legal-hold-svc/**
+    
+    - component_id: ai-orchestrator
+      name: AI Orchestrator
+      paths:
+        - services/ai-orchestrator/**
+    
+    - component_id: ai-inference-svc
+      name: AI Inference Service
+      paths:
+        - services/ai-inference-svc/**
+    
+    # Core services
+    - component_id: brain-engine
+      name: Brain Engine
+      paths:
+        - services/brain-engine/**
+    
+    - component_id: model-registry-svc
+      name: Model Registry Service
+      paths:
+        - services/model-registry-svc/**
+    
+    - component_id: curriculum-svc
+      name: Curriculum Service
+      paths:
+        - services/curriculum-svc/**
+    
+    - component_id: content-svc
+      name: Content Service
+      paths:
+        - services/content-svc/**
+
+# Flags for different test types
+flags:
+  node:
+    paths:
+      - services/**/src/**
+      - libs/**/src/**
+    carryforward: true
+  
+  python:
+    paths:
+      - services/**/*.py
+    carryforward: true
+  
+  integration:
+    paths:
+      - tests/integration/**
+    carryforward: true
+
+# PR comment configuration
+comment:
+  layout: "header, diff, components, flags, files"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
+
+# Ignore patterns
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/__tests__/**"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.next/**"
+  - "**/coverage/**"
+  - "**/scripts/**"
+  - "**/docs/**"
+  - "**/*.config.ts"
+  - "**/*.config.js"
+  - "**/vitest.config.ts"
+  - "**/prisma/**"
+  - "**/generated/**"
+
+# GitHub Actions integration
+github_checks:
+  annotations: true
+
+# Notify configuration
+notify:
+  # Wait for all CI jobs to complete before posting
+  wait_for_ci: true

@@ -26,6 +26,13 @@ from app.models.reward_optimizer import (
     RewardRecommendation,
     RewardType,
 )
+from app.models.points_system import (
+    EarnSource,
+    LearnerPoints,
+    PointType,
+    SpendCategory,
+    TransactionType,
+)
 from app.services.leaderboard_manager import (
     LeaderboardManager,
     LeaderboardEntry,
@@ -35,6 +42,15 @@ from app.services.streak_tracker import (
     StreakTracker,
     StreakInfo,
     StreakType,
+)
+from app.services.points_manager import (
+    PointsManager,
+    get_points_manager,
+)
+from app.services.badge_manager import (
+    BadgeManager,
+    LearnerStats,
+    get_badge_manager,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +63,8 @@ engagement_predictor: Optional[EngagementPredictor] = None
 reward_optimizer: Optional[RewardOptimizer] = None
 leaderboard_manager: Optional[LeaderboardManager] = None
 streak_tracker: Optional[StreakTracker] = None
+points_manager: Optional[PointsManager] = None
+badge_manager: Optional[BadgeManager] = None
 
 
 @asynccontextmanager
@@ -54,6 +72,7 @@ async def lifespan(app: FastAPI):
     """Initialize and cleanup resources."""
     global achievement_engine, challenge_calibrator, engagement_predictor
     global reward_optimizer, leaderboard_manager, streak_tracker
+    global points_manager, badge_manager
 
     logger.info("Initializing Gamification Service...")
 
@@ -64,6 +83,8 @@ async def lifespan(app: FastAPI):
     reward_optimizer = RewardOptimizer()
     leaderboard_manager = LeaderboardManager()
     streak_tracker = StreakTracker()
+    points_manager = get_points_manager()
+    badge_manager = get_badge_manager()
 
     logger.info("All gamification models and services initialized")
 
@@ -619,6 +640,459 @@ async def use_streak_freeze(
         "success": success,
         "message": "Streak freeze applied" if success else "No freezes available",
     }
+
+
+# =============================================================================
+# User Points Endpoints
+# =============================================================================
+
+class EarnPointsRequest(BaseModel):
+    """Request body for earning points."""
+    source: str = Field(..., description="Source of points (lesson_complete, quiz_complete, etc.)")
+    point_type: str = Field(default="xp", description="Type of points (xp, coins, gems)")
+    custom_amount: Optional[int] = Field(default=None, description="Override default amount")
+    streak_multiplier: float = Field(default=1.0, ge=1.0, le=5.0)
+    difficulty_multiplier: float = Field(default=1.0, ge=1.0, le=3.0)
+    event_multiplier: float = Field(default=1.0, ge=1.0, le=5.0)
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class SpendPointsRequest(BaseModel):
+    """Request body for spending points."""
+    category: str = Field(..., description="Category of purchase (streak_freeze, power_up, etc.)")
+    point_type: str = Field(default="coins", description="Type of points to spend")
+    custom_amount: Optional[int] = Field(default=None, description="Override default cost")
+    item_id: Optional[str] = Field(default=None, description="Specific item ID")
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class PointsResponse(BaseModel):
+    """Response model for points balance."""
+    learner_id: str
+    xp: int
+    coins: int
+    gems: int
+    total_xp_earned: int
+    total_coins_earned: int
+    total_coins_spent: int
+    level: int
+    level_name: str
+    xp_to_next_level: int
+    progress_percentage: float
+
+
+class EarnPointsResponse(BaseModel):
+    """Response model for earning points."""
+    success: bool
+    transaction_id: str
+    point_type: str
+    amount_earned: int
+    bonus_amount: int
+    total_amount: int
+    new_balance: int
+    level_up: bool
+    new_level: Optional[int]
+    achievements_unlocked: List[str]
+    message: Optional[str]
+
+
+class SpendPointsResponse(BaseModel):
+    """Response model for spending points."""
+    success: bool
+    transaction_id: str
+    point_type: str
+    amount_spent: int
+    new_balance: int
+    item_purchased: Optional[str]
+    error: Optional[str]
+
+
+class TransactionResponse(BaseModel):
+    """Response model for a transaction."""
+    id: str
+    point_type: str
+    transaction_type: str
+    amount: int
+    balance_after: int
+    source: Optional[str]
+    category: Optional[str]
+    description: Optional[str]
+    created_at: str
+
+
+@app.get("/api/v1/users/{learner_id}/points", response_model=PointsResponse)
+async def get_user_points(learner_id: str) -> PointsResponse:
+    """Get current point balances and level for a user."""
+    if not points_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    balance = points_manager.get_balance(learner_id)
+
+    return PointsResponse(
+        learner_id=balance.learner_id,
+        xp=balance.xp,
+        coins=balance.coins,
+        gems=balance.gems,
+        total_xp_earned=balance.total_xp_earned,
+        total_coins_earned=balance.total_coins_earned,
+        total_coins_spent=balance.total_coins_spent,
+        level=balance.level.current_level,
+        level_name=balance.level.level_name,
+        xp_to_next_level=balance.level.xp_to_next_level,
+        progress_percentage=balance.level.progress_percentage,
+    )
+
+
+@app.post("/api/v1/users/{learner_id}/points/earn", response_model=EarnPointsResponse)
+async def earn_user_points(learner_id: str, request: EarnPointsRequest) -> EarnPointsResponse:
+    """Award points to a user for completing activities."""
+    if not points_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    try:
+        source = EarnSource(request.source)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid source: {request.source}. Valid sources: {[e.value for e in EarnSource]}"
+        )
+
+    try:
+        point_type = PointType(request.point_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid point_type: {request.point_type}. Valid types: {[e.value for e in PointType]}"
+        )
+
+    result = points_manager.earn_points(
+        learner_id=learner_id,
+        source=source,
+        point_type=point_type,
+        custom_amount=request.custom_amount,
+        streak_multiplier=request.streak_multiplier,
+        difficulty_multiplier=request.difficulty_multiplier,
+        event_multiplier=request.event_multiplier,
+        metadata=request.metadata,
+    )
+
+    return EarnPointsResponse(
+        success=result.success,
+        transaction_id=result.transaction_id,
+        point_type=result.point_type.value,
+        amount_earned=result.amount_earned,
+        bonus_amount=result.bonus_amount,
+        total_amount=result.total_amount,
+        new_balance=result.new_balance,
+        level_up=result.level_up,
+        new_level=result.new_level,
+        achievements_unlocked=result.achievements_unlocked,
+        message=result.message,
+    )
+
+
+@app.post("/api/v1/users/{learner_id}/points/spend", response_model=SpendPointsResponse)
+async def spend_user_points(learner_id: str, request: SpendPointsRequest) -> SpendPointsResponse:
+    """Spend points on items or services."""
+    if not points_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    try:
+        category = SpendCategory(request.category)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category: {request.category}. Valid categories: {[e.value for e in SpendCategory]}"
+        )
+
+    try:
+        point_type = PointType(request.point_type)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid point_type: {request.point_type}. Valid types: {[e.value for e in PointType]}"
+        )
+
+    result = points_manager.spend_points(
+        learner_id=learner_id,
+        category=category,
+        point_type=point_type,
+        custom_amount=request.custom_amount,
+        item_id=request.item_id,
+        metadata=request.metadata,
+    )
+
+    return SpendPointsResponse(
+        success=result.success,
+        transaction_id=result.transaction_id,
+        point_type=result.point_type.value,
+        amount_spent=result.amount_spent,
+        new_balance=result.new_balance,
+        item_purchased=result.item_purchased,
+        error=result.error,
+    )
+
+
+@app.get("/api/v1/users/{learner_id}/points/history", response_model=Dict[str, Any])
+async def get_user_points_history(
+    learner_id: str,
+    point_type: Optional[str] = Query(default=None, description="Filter by point type"),
+    transaction_type: Optional[str] = Query(default=None, description="Filter by transaction type"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> Dict[str, Any]:
+    """Get transaction history for a user."""
+    if not points_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    pt = None
+    if point_type:
+        try:
+            pt = PointType(point_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid point_type: {point_type}")
+
+    tt = None
+    if transaction_type:
+        try:
+            tt = TransactionType(transaction_type)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid transaction_type: {transaction_type}")
+
+    transactions, total = points_manager.get_transaction_history(
+        learner_id=learner_id,
+        point_type=pt,
+        transaction_type=tt,
+        limit=limit,
+        offset=offset,
+    )
+
+    return {
+        "transactions": [
+            TransactionResponse(
+                id=t.id,
+                point_type=t.point_type.value,
+                transaction_type=t.transaction_type.value,
+                amount=t.amount,
+                balance_after=t.balance_after,
+                source=t.source,
+                category=t.category,
+                description=t.description,
+                created_at=t.created_at.isoformat(),
+            ).model_dump()
+            for t in transactions
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@app.get("/api/v1/users/{learner_id}/level")
+async def get_user_level(learner_id: str) -> Dict[str, Any]:
+    """Get detailed level progress for a user."""
+    if not points_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    level = points_manager.get_level_progress(learner_id)
+
+    return {
+        "current_level": level.current_level,
+        "current_xp": level.current_xp,
+        "xp_to_next_level": level.xp_to_next_level,
+        "xp_in_current_level": level.xp_in_current_level,
+        "progress_percentage": level.progress_percentage,
+        "level_name": level.level_name,
+        "next_level_name": level.next_level_name,
+    }
+
+
+# =============================================================================
+# User Badges Endpoints
+# =============================================================================
+
+class BadgeResponse(BaseModel):
+    """Response model for a badge."""
+    id: str
+    name: str
+    description: str
+    icon: str
+    category: str
+    rarity: str
+    xp_reward: int
+    tier: Optional[str]
+    earned_at: Optional[str]
+
+
+class BadgeProgressResponse(BaseModel):
+    """Response model for badge progress."""
+    badge_id: str
+    badge_name: str
+    description: str
+    icon: str
+    category: str
+    rarity: str
+    current_value: int
+    target_value: int
+    progress_percentage: float
+    is_earned: bool
+    tier: Optional[str]
+
+
+class UserBadgesResponse(BaseModel):
+    """Response model for user badges."""
+    learner_id: str
+    earned_badges: List[BadgeResponse]
+    in_progress: List[BadgeProgressResponse]
+    total_badges: int
+    badges_by_rarity: Dict[str, int]
+
+
+class CheckBadgesRequest(BaseModel):
+    """Request body for checking badges."""
+    lessons_completed: int = Field(default=0, ge=0)
+    quizzes_completed: int = Field(default=0, ge=0)
+    perfect_scores: int = Field(default=0, ge=0)
+    streak_days: int = Field(default=0, ge=0)
+    total_xp: int = Field(default=0, ge=0)
+    total_time_minutes: int = Field(default=0, ge=0)
+    skills_mastered: int = Field(default=0, ge=0)
+    challenges_won: int = Field(default=0, ge=0)
+    help_given: int = Field(default=0, ge=0)
+
+
+class CheckBadgesResponse(BaseModel):
+    """Response model for badge check."""
+    learner_id: str
+    newly_unlocked: List[BadgeResponse]
+    xp_earned: int
+    message: str
+
+
+@app.get("/api/v1/users/{learner_id}/badges", response_model=UserBadgesResponse)
+async def get_user_badges(
+    learner_id: str,
+    category: Optional[str] = Query(default=None, description="Filter by category"),
+    rarity: Optional[str] = Query(default=None, description="Filter by rarity"),
+    include_progress: bool = Query(default=True, description="Include in-progress badges"),
+) -> UserBadgesResponse:
+    """Get all badges and progress for a user."""
+    if not badge_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    badges = badge_manager.get_badges(
+        learner_id=learner_id,
+        category=category,
+        rarity=rarity,
+        include_progress=include_progress,
+    )
+
+    return UserBadgesResponse(
+        learner_id=badges.learner_id,
+        earned_badges=[
+            BadgeResponse(
+                id=b.id,
+                name=b.name,
+                description=b.description,
+                icon=b.icon,
+                category=b.category,
+                rarity=b.rarity,
+                xp_reward=b.xp_reward,
+                tier=b.tier,
+                earned_at=b.earned_at.isoformat() if b.earned_at else None,
+            )
+            for b in badges.earned_badges
+        ],
+        in_progress=[
+            BadgeProgressResponse(
+                badge_id=p.badge_id,
+                badge_name=p.badge_name,
+                description=p.description,
+                icon=p.icon,
+                category=p.category,
+                rarity=p.rarity,
+                current_value=p.current_value,
+                target_value=p.target_value,
+                progress_percentage=p.progress_percentage,
+                is_earned=p.is_earned,
+                tier=p.tier,
+            )
+            for p in badges.in_progress
+        ],
+        total_badges=badges.total_badges,
+        badges_by_rarity=badges.badges_by_rarity,
+    )
+
+
+@app.post("/api/v1/users/{learner_id}/badges/check", response_model=CheckBadgesResponse)
+async def check_user_badges(learner_id: str, request: CheckBadgesRequest) -> CheckBadgesResponse:
+    """Check if a user has earned any new badges based on their stats."""
+    if not badge_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    stats = LearnerStats(
+        lessons_completed=request.lessons_completed,
+        quizzes_completed=request.quizzes_completed,
+        perfect_scores=request.perfect_scores,
+        streak_days=request.streak_days,
+        total_xp=request.total_xp,
+        total_time_minutes=request.total_time_minutes,
+        skills_mastered=request.skills_mastered,
+        challenges_won=request.challenges_won,
+        help_given=request.help_given,
+    )
+
+    result = badge_manager.check_badges(learner_id=learner_id, stats=stats)
+
+    return CheckBadgesResponse(
+        learner_id=result.learner_id,
+        newly_unlocked=[
+            BadgeResponse(
+                id=b.id,
+                name=b.name,
+                description=b.description,
+                icon=b.icon,
+                category=b.category,
+                rarity=b.rarity,
+                xp_reward=b.xp_reward,
+                tier=b.tier,
+                earned_at=b.earned_at.isoformat() if b.earned_at else None,
+            )
+            for b in result.newly_unlocked
+        ],
+        xp_earned=result.xp_earned,
+        message=result.message,
+    )
+
+
+@app.get("/api/v1/badges")
+async def list_all_badges(
+    category: Optional[str] = Query(default=None, description="Filter by category"),
+    rarity: Optional[str] = Query(default=None, description="Filter by rarity"),
+) -> List[Dict[str, Any]]:
+    """List all available badges."""
+    if not badge_manager:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    badges = badge_manager.get_all_badges(category=category, rarity=rarity)
+
+    return [
+        {
+            "id": b.id,
+            "name": b.name,
+            "description": b.description,
+            "icon": b.icon,
+            "category": b.category.value,
+            "rarity": b.rarity.value,
+            "xp_reward": b.xp_reward,
+            "tier": b.tier.value if b.tier else None,
+            "requirement": {
+                "type": b.requirement.requirement_type,
+                "count": b.requirement.count,
+            } if b.requirement else None,
+        }
+        for b in badges
+    ]
 
 
 if __name__ == "__main__":

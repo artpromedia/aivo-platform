@@ -13,6 +13,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx,css,scss,html}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,mdx,css,scss,html}\"",
     "test": "turbo run test --filter=...[origin/main]",
+    "test:coverage": "turbo run test:coverage",
+    "test:coverage:check": "node scripts/check-coverage.js",
     "test:tenant-isolation": "vitest run tests/integration/tenant-isolation",
     "test:tenant-isolation:watch": "vitest watch tests/integration/tenant-isolation",
     "test:tenant-isolation:report": "vitest run tests/integration/tenant-isolation --reporter=verbose && node -e \"require('./tests/integration/tenant-isolation/reporter').TenantIsolationReporter.generateFromResults()\"",
