@@ -65,13 +65,12 @@ class ContentEventPublisherService {
     this.isConnecting = true;
 
     try {
-      // Use the EventPublisher constructor with the stub's expected options
+      // Use the EventPublisher constructor with the correct options
       this.publisher = new EventPublisher({
-        natsUrl: Array.isArray(config.nats.servers)
-          ? config.nats.servers[0]
-          : config.nats.servers,
-        clientId: 'content-svc-publisher',
-        stream: 'content',
+        servers: config.nats.servers,
+        name: 'content-svc-publisher',
+        serviceName: 'content-svc',
+        serviceVersion: '1.0.0',
       });
 
       await this.publisher.connect();
@@ -131,8 +130,13 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use publish method from the stub interface
-        await publisher.publish(subject, payload);
+        // Use publishRaw method for custom event types
+        await publisher.publishRaw({
+          tenantId: data.tenantId ?? 'system',
+          eventType: 'content.ingestion.file.created',
+          eventVersion: '1.0.0',
+          payload: payload as Record<string, unknown>,
+        });
         console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
         return { success: true };
       } catch (err) {
@@ -180,8 +184,13 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use publish method from the stub interface
-        await publisher.publish(subject, payload);
+        // Use publishRaw method for custom event types
+        await publisher.publishRaw({
+          tenantId: data.tenantId ?? 'system',
+          eventType: 'content.ingestion.ai-draft.created',
+          eventVersion: '1.0.0',
+          payload: payload as Record<string, unknown>,
+        });
         console.log(`[content-svc] Published AI draft job: ${data.jobId}`);
         return { success: true };
       } catch (err) {

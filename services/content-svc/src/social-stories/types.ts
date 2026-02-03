@@ -14,6 +14,10 @@ export {
   LearningObjectGradeBand,
 } from '../prisma-types.js';
 
+// Aliases for backward compatibility
+export { SocialStoryReadingLevel as StoryReadingLevel } from '../prisma-types.js';
+export { SocialStoryVisualStyle as StoryVisualStyle } from '../prisma-types.js';
+
 // Import for local use in type definitions
 import type {
   SocialStoryCategory as SocialStoryCategoryType,
