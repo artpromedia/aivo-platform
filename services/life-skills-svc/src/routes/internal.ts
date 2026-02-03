@@ -14,7 +14,7 @@ import { prisma } from '../prisma.js';
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function validateInternalKey(request: {
-  headers: Record<string, string | undefined>;
+  headers: Record<string, string | string[] | undefined>;
 }): Promise<boolean> {
   const apiKey = request.headers['x-internal-api-key'];
   return apiKey === config.internalApiKey;

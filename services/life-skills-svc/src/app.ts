@@ -21,18 +21,18 @@ import {
 } from './routes/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
-  const app = Fastify({
-    logger: {
-      level: config.nodeEnv === 'production' ? 'info' : 'debug',
-      transport:
-        config.nodeEnv !== 'production'
-          ? {
-              target: 'pino-pretty',
-              options: { colorize: true },
-            }
-          : undefined,
-    },
-  });
+  const logger =
+    config.nodeEnv !== 'production'
+      ? {
+          level: 'debug' as const,
+          transport: {
+            target: 'pino-pretty',
+            options: { colorize: true },
+          },
+        }
+      : { level: 'info' as const };
+
+  const app = Fastify({ logger });
 
   // ════════════════════════════════════════════════════════════════════════════
   // HEALTH CHECK
@@ -124,7 +124,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   if (config.nodeEnv === 'production') {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await app.register(rateLimit as any, FastifyRateLimitPresets.strict);
+    await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('life-skills-svc'));
   }
 
   // ════════════════════════════════════════════════════════════════════════════
