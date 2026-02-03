@@ -14,3 +14,5 @@ export 'grade_repository.dart';
 export 'integration_repository.dart';
 export 'analytics_repository.dart';
 export 'grading_repository.dart';
+export 'gamification_repository.dart';
+export 'monitoring_repository.dart';
