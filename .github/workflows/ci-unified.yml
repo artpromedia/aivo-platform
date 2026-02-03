@@ -607,7 +607,7 @@ jobs:
                     profile-svc personalization-svc life-skills-svc)
           
           for svc in "${SERVICES[@]}"; do
-            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha | substring(0, 7) }}
+            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha }}
           done
           
           # Apply to cluster
