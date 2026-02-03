@@ -19,3 +19,4 @@ export 'lms_integration.dart';
 export 'risk_prediction.dart';
 export 'intervention.dart';
 export 'assessment.dart';
+export 'rubric.dart';
