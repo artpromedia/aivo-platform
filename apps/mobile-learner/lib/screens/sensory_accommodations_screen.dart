@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/theme/theme.dart';
+import '../config/environment.dart';
 import '../sensory/sensory_accommodations_service.dart';
 import '../sensory/models.dart';
 
@@ -1298,6 +1299,6 @@ class _SensoryPreferencesTabState extends ConsumerState<SensoryPreferencesTab> {
 // Provider for sensory service (reusing existing provider structure)
 final sensoryServiceProvider = Provider<SensoryService>((ref) {
   return SensoryService(
-    baseUrl: 'http://localhost:8087/api/sensory',
+    baseUrl: EnvironmentConfig.sensoryBaseUrl,
   );
 });

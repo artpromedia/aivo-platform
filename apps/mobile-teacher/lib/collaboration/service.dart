@@ -10,7 +10,7 @@ import 'models.dart';
 
 const _baseUrl = String.fromEnvironment(
   'COLLABORATION_BASE_URL',
-  defaultValue: 'http://localhost:3020',
+  defaultValue: 'https://api.aivo.app/collaboration',
 );
 
 const _useMock = bool.fromEnvironment('USE_COLLABORATION_MOCK', defaultValue: false);

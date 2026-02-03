@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'models.dart';
+import '../config/environment.dart';
 
 /// Motor Skills Service
 /// Service for managing motor skills development features
@@ -10,8 +11,8 @@ class MotorSkillsService {
 
   MotorSkillsService({
     required this.client,
-    this.baseUrl = 'http://localhost:8088/api/motor-skills',
-  });
+    String? baseUrl,
+  }) : baseUrl = baseUrl ?? EnvironmentConfig.motorSkillsBaseUrl;
 
   // Handwriting Practice
 

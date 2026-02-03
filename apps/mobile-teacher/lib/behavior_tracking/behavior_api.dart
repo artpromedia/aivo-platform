@@ -10,7 +10,10 @@ import 'package:http/http.dart' as http;
 import 'models.dart';
 
 /// Base URL for the behavior tracking service.
-const _baseUrl = 'http://localhost:8093';
+const _baseUrl = String.fromEnvironment(
+  'BEHAVIOR_API_URL',
+  defaultValue: 'https://api.aivo.app/behavior',
+);
 
 /// API client for behavior tracking operations.
 class BehaviorTrackingApi {

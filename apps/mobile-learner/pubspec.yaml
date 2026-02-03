@@ -1,7 +1,7 @@
 name: mobile_learner
-version: 0.0.0
+version: 1.0.0
 publish_to: "none"
-description: Flutter app for learners. Placeholder.
+description: Flutter app for learners.
 environment:
   sdk: ">=3.3.0 <4.0.0"
 dependencies:
