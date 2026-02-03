@@ -733,6 +733,32 @@ class TeacherLocalDatabase {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
+  // GOOGLE CLASSROOM STUDENT ROSTER CACHE
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get cached students for a classroom course
+  Future<List<dynamic>> getCachedStudents(String cacheKey) async {
+    final cached = await _getCachedValue(cacheKey);
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache students for a classroom course
+  Future<void> cacheStudents(String cacheKey, List<dynamic> students) async {
+    await _setCachedValue(cacheKey, students);
+  }
+
+  /// Get cached student mappings
+  Future<List<dynamic>> getCachedStudentMappings(String cacheKey) async {
+    final cached = await _getCachedValue(cacheKey);
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache student mappings
+  Future<void> cacheStudentMappings(String cacheKey, List<dynamic> mappings) async {
+    await _setCachedValue(cacheKey, mappings);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
   // RISK PREDICTION CACHE
   // ════════════════════════════════════════════════════════════════════════════
 

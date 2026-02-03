@@ -197,6 +197,150 @@ class LmsRepository {
   }
 
   // ==========================================================================
+  // STUDENT ROSTER & MAPPINGS
+  // ==========================================================================
+
+  /// Get students from a Google Classroom course with mapping info
+  Future<List<GoogleClassroomStudent>> getCourseStudents(String courseId) async {
+    final cacheKey = 'classroom_students_$courseId';
+    final cached = await _db.getCachedStudents(cacheKey);
+
+    if (await _connectivity.isOnline) {
+      try {
+        final response = await _api.get('$_basePath/courses/$courseId/students');
+        final students = (response.data as List<dynamic>)
+            .map((json) => GoogleClassroomStudent.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Cache students
+        await _db.cacheStudents(cacheKey, students);
+
+        return students;
+      } catch (e) {
+        if (cached.isNotEmpty) return cached.cast<GoogleClassroomStudent>();
+        rethrow;
+      }
+    }
+
+    return cached.cast<GoogleClassroomStudent>();
+  }
+
+  /// Get all student mappings for a course
+  Future<List<StudentMapping>> getStudentMappings({String? courseId}) async {
+    final cacheKey = courseId != null 
+        ? 'student_mappings_$courseId' 
+        : 'student_mappings_all';
+    final cached = await _db.getCachedStudentMappings(cacheKey);
+
+    if (await _connectivity.isOnline) {
+      try {
+        final response = await _api.get(
+          '$_basePath/students/mappings',
+          queryParameters: {
+            if (courseId != null) 'courseId': courseId,
+          },
+        );
+        
+        final mappings = (response.data as List<dynamic>)
+            .map((json) => StudentMapping.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        await _db.cacheStudentMappings(cacheKey, mappings);
+
+        return mappings;
+      } catch (e) {
+        if (cached.isNotEmpty) return cached.cast<StudentMapping>();
+        rethrow;
+      }
+    }
+
+    return cached.cast<StudentMapping>();
+  }
+
+  /// Map a Google Classroom student to an AIVO student
+  Future<StudentMapping> mapStudentToAivo({
+    required String googleUserId,
+    required String aivoStudentId,
+    required String courseId,
+  }) async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    final response = await _api.post(
+      '$_basePath/students/mappings',
+      data: {
+        'googleUserId': googleUserId,
+        'aivoStudentId': aivoStudentId,
+        'courseId': courseId,
+      },
+    );
+
+    final mapping = StudentMapping.fromJson(response.data as Map<String, dynamic>);
+
+    // Refresh cached student data
+    await getCourseStudents(courseId);
+
+    return mapping;
+  }
+
+  /// Remove a student mapping
+  Future<void> unmapStudent(String mappingId, {String? courseId}) async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    await _api.delete('$_basePath/students/mappings/$mappingId');
+
+    // Refresh cached data if courseId provided
+    if (courseId != null) {
+      await getCourseStudents(courseId);
+    }
+  }
+
+  /// Auto-map students by matching email addresses
+  Future<List<StudentMapping>> autoMapStudents(String courseId) async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    final response = await _api.post(
+      '$_basePath/courses/$courseId/students/auto-map',
+    );
+
+    final mappings = (response.data as List<dynamic>)
+        .map((json) => StudentMapping.fromJson(json as Map<String, dynamic>))
+        .toList();
+
+    // Refresh cached student data
+    await getCourseStudents(courseId);
+
+    return mappings;
+  }
+
+  /// Get list of AIVO students available for mapping
+  Future<List<Map<String, dynamic>>> getAivoStudentsForMapping(
+    String classId, {
+    String? searchQuery,
+  }) async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    final response = await _api.get(
+      '/api/classes/$classId/students',
+      queryParameters: {
+        'unmappedOnly': true,
+        if (searchQuery != null && searchQuery.isNotEmpty) 'search': searchQuery,
+      },
+    );
+
+    return (response.data as List<dynamic>)
+        .map((json) => json as Map<String, dynamic>)
+        .toList();
+  }
+
+  // ==========================================================================
   // SYNC OPERATIONS
   // ==========================================================================
 

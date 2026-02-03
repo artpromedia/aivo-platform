@@ -512,3 +512,195 @@ final courseSyncHistoryProvider = FutureProvider.family
   final repository = ref.watch(lmsRepositoryProvider);
   return repository.getSyncHistory(courseId: courseId);
 });
+
+// ==========================================================================
+// STUDENT ROSTER & MAPPING PROVIDERS
+// ==========================================================================
+
+/// State for course student roster with mappings
+class CourseStudentsState {
+  const CourseStudentsState({
+    this.students = const [],
+    this.isLoading = false,
+    this.isAutoMapping = false,
+    this.error,
+    this.lastUpdated,
+  });
+
+  final List<GoogleClassroomStudent> students;
+  final bool isLoading;
+  final bool isAutoMapping;
+  final String? error;
+  final DateTime? lastUpdated;
+
+  /// Students that are already mapped to AIVO
+  List<GoogleClassroomStudent> get mappedStudents =>
+      students.where((s) => s.isMapped).toList();
+
+  /// Students that need to be mapped
+  List<GoogleClassroomStudent> get unmappedStudents =>
+      students.where((s) => !s.isMapped).toList();
+
+  /// Count of mapped students
+  int get mappedCount => mappedStudents.length;
+
+  /// Count of unmapped students
+  int get unmappedCount => unmappedStudents.length;
+
+  /// Percentage of students mapped
+  double get mappingProgress =>
+      students.isEmpty ? 0 : mappedCount / students.length;
+
+  CourseStudentsState copyWith({
+    List<GoogleClassroomStudent>? students,
+    bool? isLoading,
+    bool? isAutoMapping,
+    String? error,
+    DateTime? lastUpdated,
+  }) {
+    return CourseStudentsState(
+      students: students ?? this.students,
+      isLoading: isLoading ?? this.isLoading,
+      isAutoMapping: isAutoMapping ?? this.isAutoMapping,
+      error: error,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
+/// Notifier for course students and mappings
+class CourseStudentsNotifier extends StateNotifier<CourseStudentsState> {
+  CourseStudentsNotifier(this._repository, this.courseId)
+      : super(const CourseStudentsState());
+
+  final LmsRepository _repository;
+  final String courseId;
+
+  /// Load students for this course
+  Future<void> loadStudents() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final students = await _repository.getCourseStudents(courseId);
+      state = state.copyWith(
+        students: students,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Map a Google Classroom student to an AIVO student
+  Future<void> mapStudent({
+    required String googleUserId,
+    required String aivoStudentId,
+  }) async {
+    try {
+      await _repository.mapStudentToAivo(
+        googleUserId: googleUserId,
+        aivoStudentId: aivoStudentId,
+        courseId: courseId,
+      );
+      await loadStudents();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
+  /// Remove a student mapping
+  Future<void> unmapStudent(String mappingId) async {
+    try {
+      await _repository.unmapStudent(mappingId, courseId: courseId);
+      await loadStudents();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
+  /// Auto-map students by email
+  Future<List<StudentMapping>> autoMapStudents() async {
+    state = state.copyWith(isAutoMapping: true, error: null);
+
+    try {
+      final mappings = await _repository.autoMapStudents(courseId);
+      await loadStudents();
+      state = state.copyWith(isAutoMapping: false);
+      return mappings;
+    } catch (e) {
+      state = state.copyWith(
+        isAutoMapping: false,
+        error: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  /// Refresh students
+  Future<void> refresh() => loadStudents();
+
+  /// Clear error
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+}
+
+/// Family provider for course students - one per course
+final courseStudentsProvider = StateNotifierProvider.family
+    .autoDispose<CourseStudentsNotifier, CourseStudentsState, String>(
+  (ref, courseId) {
+    final repository = ref.watch(lmsRepositoryProvider);
+    final notifier = CourseStudentsNotifier(repository, courseId);
+    notifier.loadStudents();
+    return notifier;
+  },
+);
+
+/// Provider for AIVO students available for mapping
+final aivoStudentsForMappingProvider = FutureProvider.family
+    .autoDispose<List<Map<String, dynamic>>, ({String classId, String? search})>(
+  (ref, params) async {
+    final repository = ref.watch(lmsRepositoryProvider);
+    return repository.getAivoStudentsForMapping(
+      params.classId,
+      searchQuery: params.search,
+    );
+  },
+);
+
+/// Computed provider for total unmapped students across all linked courses
+final totalUnmappedStudentsProvider = Provider<int>((ref) {
+  final connectionState = ref.watch(lmsConnectionProvider);
+  var total = 0;
+  
+  for (final mapping in connectionState.mappings) {
+    try {
+      final courseState = ref.watch(courseStudentsProvider(mapping.googleCourseId));
+      total += courseState.unmappedCount;
+    } catch (_) {
+      // Course students not loaded yet
+    }
+  }
+  
+  return total;
+});
+
+/// Computed provider for sync progress indicator
+final syncProgressProvider = Provider<DetailedSyncStatus?>((ref) {
+  final syncState = ref.watch(syncOperationProvider);
+  if (!syncState.isSyncing) return null;
+  
+  // Return a basic status while syncing
+  return DetailedSyncStatus(
+    courseId: '',
+    phase: SyncPhase.processingChanges,
+    progress: 0.5,
+    message: 'Syncing courses...',
+  );
+});

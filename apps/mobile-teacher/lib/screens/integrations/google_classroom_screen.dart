@@ -9,6 +9,7 @@ import 'package:flutter_common/theme/theme.dart';
 
 import '../../models/lms_integration.dart';
 import '../../providers/lms_provider.dart';
+import 'student_roster_screen.dart';
 
 /// Main Google Classroom integration management screen
 class GoogleClassroomScreen extends ConsumerStatefulWidget {
@@ -320,8 +321,21 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
                 mapping: mapping,
                 onSync: () => _syncCourse(mapping.googleCourseId),
                 onUnlink: () => _showUnlinkDialog(mapping),
+                onManageStudents: () => _navigateToStudentRoster(mapping),
               )),
       ],
+    );
+  }
+
+  void _navigateToStudentRoster(CourseMapping mapping) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StudentRosterScreen(
+          courseId: mapping.googleCourseId,
+          courseName: mapping.googleCourseName,
+          classId: mapping.classId,
+        ),
+      ),
     );
   }
 
@@ -438,6 +452,13 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
         ),
         const SizedBox(height: 8),
         _ActionCard(
+          icon: Icons.people,
+          title: 'Student Roster',
+          subtitle: 'Manage student mappings',
+          onTap: () => _showCourseSelectionForRoster(),
+        ),
+        const SizedBox(height: 8),
+        _ActionCard(
           icon: Icons.history,
           title: 'Sync History',
           subtitle: 'View past sync operations',
@@ -451,6 +472,54 @@ class _GoogleClassroomScreenState extends ConsumerState<GoogleClassroomScreen> {
           onTap: () => _showHelpDialog(),
         ),
       ],
+    );
+  }
+
+  void _showCourseSelectionForRoster() {
+    final state = ref.read(lmsConnectionProvider);
+    
+    if (state.mappings.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No linked courses available')),
+      );
+      return;
+    }
+
+    if (state.mappings.length == 1) {
+      // Only one course, go directly to roster
+      _navigateToStudentRoster(state.mappings.first);
+      return;
+    }
+
+    // Multiple courses, show selection dialog
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Select Course',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          ...state.mappings.map((mapping) => ListTile(
+                leading: const Icon(Icons.class_),
+                title: Text(mapping.googleCourseName),
+                subtitle: Text('Linked to ${mapping.className}'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToStudentRoster(mapping);
+                },
+              )),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
@@ -737,11 +806,13 @@ class _CourseCard extends StatelessWidget {
     required this.mapping,
     this.onSync,
     this.onUnlink,
+    this.onManageStudents,
   });
 
   final CourseMapping mapping;
   final VoidCallback? onSync;
   final VoidCallback? onUnlink;
+  final VoidCallback? onManageStudents;
 
   @override
   Widget build(BuildContext context) {
@@ -761,6 +832,16 @@ class _CourseCard extends StatelessWidget {
         subtitle: Text('Linked to ${mapping.className}'),
         trailing: PopupMenuButton(
           itemBuilder: (context) => [
+            PopupMenuItem(
+              onTap: onManageStudents,
+              child: const Row(
+                children: [
+                  Icon(Icons.people, size: 20),
+                  SizedBox(width: 8),
+                  Text('Manage Students'),
+                ],
+              ),
+            ),
             PopupMenuItem(
               onTap: onSync,
               child: const Row(

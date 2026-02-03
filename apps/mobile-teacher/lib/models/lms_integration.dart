@@ -402,6 +402,556 @@ enum GradeSyncStatus {
   }
 }
 
+/// Google Classroom student with AIVO mapping information
+@immutable
+class GoogleClassroomStudent {
+  const GoogleClassroomStudent({
+    required this.id,
+    required this.userId,
+    required this.courseId,
+    required this.profile,
+    this.studentMapping,
+    required this.enrolledAt,
+  });
+
+  /// Google Classroom student enrollment ID
+  final String id;
+  
+  /// Google user ID
+  final String userId;
+  
+  /// Google Classroom course ID
+  final String courseId;
+  
+  /// Student profile information
+  final GoogleStudentProfile profile;
+  
+  /// AIVO student mapping (null if not mapped)
+  final StudentMapping? studentMapping;
+  
+  /// When the student enrolled in the course
+  final DateTime enrolledAt;
+
+  /// Whether this student is mapped to an AIVO student
+  bool get isMapped => studentMapping != null;
+  
+  /// Display name (full name or email)
+  String get displayName => profile.fullName.isNotEmpty 
+      ? profile.fullName 
+      : profile.emailAddress;
+
+  factory GoogleClassroomStudent.fromJson(Map<String, dynamic> json) {
+    return GoogleClassroomStudent(
+      id: json['id'] as String? ?? '',
+      userId: json['userId'] as String? ?? json['user_id'] as String? ?? '',
+      courseId: json['courseId'] as String? ?? json['course_id'] as String? ?? '',
+      profile: GoogleStudentProfile.fromJson(
+        json['profile'] as Map<String, dynamic>? ?? {},
+      ),
+      studentMapping: json['studentMapping'] != null || json['student_mapping'] != null
+          ? StudentMapping.fromJson(
+              (json['studentMapping'] ?? json['student_mapping']) as Map<String, dynamic>,
+            )
+          : null,
+      enrolledAt: DateTime.tryParse(
+        json['enrolledAt'] as String? ?? json['enrolled_at'] as String? ?? '',
+      ) ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'userId': userId,
+        'courseId': courseId,
+        'profile': profile.toJson(),
+        if (studentMapping != null) 'studentMapping': studentMapping!.toJson(),
+        'enrolledAt': enrolledAt.toIso8601String(),
+      };
+
+  GoogleClassroomStudent copyWith({
+    String? id,
+    String? userId,
+    String? courseId,
+    GoogleStudentProfile? profile,
+    StudentMapping? studentMapping,
+    DateTime? enrolledAt,
+  }) {
+    return GoogleClassroomStudent(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      courseId: courseId ?? this.courseId,
+      profile: profile ?? this.profile,
+      studentMapping: studentMapping ?? this.studentMapping,
+      enrolledAt: enrolledAt ?? this.enrolledAt,
+    );
+  }
+}
+
+/// Google Classroom student profile
+@immutable
+class GoogleStudentProfile {
+  const GoogleStudentProfile({
+    required this.id,
+    required this.emailAddress,
+    required this.fullName,
+    this.givenName,
+    this.familyName,
+    this.photoUrl,
+  });
+
+  final String id;
+  final String emailAddress;
+  final String fullName;
+  final String? givenName;
+  final String? familyName;
+  final String? photoUrl;
+
+  factory GoogleStudentProfile.fromJson(Map<String, dynamic> json) {
+    return GoogleStudentProfile(
+      id: json['id'] as String? ?? '',
+      emailAddress: json['emailAddress'] as String? ?? 
+                    json['email_address'] as String? ?? 
+                    json['email'] as String? ?? '',
+      fullName: json['fullName'] as String? ?? 
+                json['full_name'] as String? ?? 
+                json['name'] as String? ?? '',
+      givenName: json['givenName'] as String? ?? json['given_name'] as String?,
+      familyName: json['familyName'] as String? ?? json['family_name'] as String?,
+      photoUrl: json['photoUrl'] as String? ?? json['photo_url'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'emailAddress': emailAddress,
+        'fullName': fullName,
+        if (givenName != null) 'givenName': givenName,
+        if (familyName != null) 'familyName': familyName,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+      };
+}
+
+/// Mapping between Google Classroom student and AIVO student
+@immutable
+class StudentMapping {
+  const StudentMapping({
+    required this.id,
+    required this.googleUserId,
+    required this.aivoStudentId,
+    required this.aivoStudentName,
+    this.aivoStudentEmail,
+    required this.mappedBy,
+    required this.mappedAt,
+    this.autoMapped = false,
+    this.confidence,
+  });
+
+  final String id;
+  final String googleUserId;
+  final String aivoStudentId;
+  final String aivoStudentName;
+  final String? aivoStudentEmail;
+  final String mappedBy;
+  final DateTime mappedAt;
+  final bool autoMapped;
+  final double? confidence;
+
+  factory StudentMapping.fromJson(Map<String, dynamic> json) {
+    return StudentMapping(
+      id: json['id'] as String? ?? '',
+      googleUserId: json['googleUserId'] as String? ?? 
+                    json['google_user_id'] as String? ?? '',
+      aivoStudentId: json['aivoStudentId'] as String? ?? 
+                     json['aivo_student_id'] as String? ?? '',
+      aivoStudentName: json['aivoStudentName'] as String? ?? 
+                       json['aivo_student_name'] as String? ?? '',
+      aivoStudentEmail: json['aivoStudentEmail'] as String? ?? 
+                        json['aivo_student_email'] as String?,
+      mappedBy: json['mappedBy'] as String? ?? json['mapped_by'] as String? ?? '',
+      mappedAt: DateTime.tryParse(
+        json['mappedAt'] as String? ?? json['mapped_at'] as String? ?? '',
+      ) ?? DateTime.now(),
+      autoMapped: json['autoMapped'] as bool? ?? json['auto_mapped'] as bool? ?? false,
+      confidence: (json['confidence'] as num?)?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'googleUserId': googleUserId,
+        'aivoStudentId': aivoStudentId,
+        'aivoStudentName': aivoStudentName,
+        if (aivoStudentEmail != null) 'aivoStudentEmail': aivoStudentEmail,
+        'mappedBy': mappedBy,
+        'mappedAt': mappedAt.toIso8601String(),
+        'autoMapped': autoMapped,
+        if (confidence != null) 'confidence': confidence,
+      };
+}
+
+/// Google Classroom submission with grade information
+@immutable
+class GoogleClassroomSubmission {
+  const GoogleClassroomSubmission({
+    required this.id,
+    required this.courseId,
+    required this.courseWorkId,
+    required this.userId,
+    required this.state,
+    this.assignedGrade,
+    this.draftGrade,
+    this.late = false,
+    this.submissionHistory,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String courseId;
+  final String courseWorkId;
+  final String userId;
+  final SubmissionState state;
+  final double? assignedGrade;
+  final double? draftGrade;
+  final bool late;
+  final List<SubmissionHistoryEntry>? submissionHistory;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  /// Whether submission has been graded
+  bool get isGraded => assignedGrade != null;
+
+  /// Whether submission has been turned in
+  bool get isTurnedIn => state == SubmissionState.turnedIn || 
+                          state == SubmissionState.returned;
+
+  factory GoogleClassroomSubmission.fromJson(Map<String, dynamic> json) {
+    return GoogleClassroomSubmission(
+      id: json['id'] as String? ?? '',
+      courseId: json['courseId'] as String? ?? json['course_id'] as String? ?? '',
+      courseWorkId: json['courseWorkId'] as String? ?? 
+                    json['course_work_id'] as String? ?? '',
+      userId: json['userId'] as String? ?? json['user_id'] as String? ?? '',
+      state: SubmissionState.fromString(
+        json['state'] as String? ?? 'created',
+      ),
+      assignedGrade: (json['assignedGrade'] as num?)?.toDouble() ??
+                     (json['assigned_grade'] as num?)?.toDouble(),
+      draftGrade: (json['draftGrade'] as num?)?.toDouble() ??
+                  (json['draft_grade'] as num?)?.toDouble(),
+      late: json['late'] as bool? ?? false,
+      submissionHistory: json['submissionHistory'] != null
+          ? (json['submissionHistory'] as List<dynamic>)
+              .map((e) => SubmissionHistoryEntry.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : json['submission_history'] != null
+              ? (json['submission_history'] as List<dynamic>)
+                  .map((e) => SubmissionHistoryEntry.fromJson(e as Map<String, dynamic>))
+                  .toList()
+              : null,
+      createdAt: DateTime.tryParse(
+        json['createdAt'] as String? ?? json['created_at'] as String? ?? '',
+      ) ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(
+        json['updatedAt'] as String? ?? json['updated_at'] as String? ?? '',
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'courseId': courseId,
+        'courseWorkId': courseWorkId,
+        'userId': userId,
+        'state': state.value,
+        if (assignedGrade != null) 'assignedGrade': assignedGrade,
+        if (draftGrade != null) 'draftGrade': draftGrade,
+        'late': late,
+        if (submissionHistory != null)
+          'submissionHistory': submissionHistory!.map((e) => e.toJson()).toList(),
+        'createdAt': createdAt.toIso8601String(),
+        if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+      };
+}
+
+/// State of a submission
+enum SubmissionState {
+  created('CREATED'),
+  newState('NEW'),
+  turnedIn('TURNED_IN'),
+  returned('RETURNED'),
+  reclaimedByStudent('RECLAIMED_BY_STUDENT');
+
+  const SubmissionState(this.value);
+  final String value;
+
+  static SubmissionState fromString(String value) {
+    return SubmissionState.values.firstWhere(
+      (s) => s.value == value.toUpperCase(),
+      orElse: () => SubmissionState.created,
+    );
+  }
+
+  String get label {
+    switch (this) {
+      case SubmissionState.created:
+        return 'Created';
+      case SubmissionState.newState:
+        return 'New';
+      case SubmissionState.turnedIn:
+        return 'Turned In';
+      case SubmissionState.returned:
+        return 'Returned';
+      case SubmissionState.reclaimedByStudent:
+        return 'Reclaimed';
+    }
+  }
+}
+
+/// History entry for a submission
+@immutable
+class SubmissionHistoryEntry {
+  const SubmissionHistoryEntry({
+    required this.stateHistory,
+    this.gradeHistory,
+  });
+
+  final StateHistory? stateHistory;
+  final GradeHistory? gradeHistory;
+
+  factory SubmissionHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return SubmissionHistoryEntry(
+      stateHistory: json['stateHistory'] != null || json['state_history'] != null
+          ? StateHistory.fromJson(
+              (json['stateHistory'] ?? json['state_history']) as Map<String, dynamic>,
+            )
+          : null,
+      gradeHistory: json['gradeHistory'] != null || json['grade_history'] != null
+          ? GradeHistory.fromJson(
+              (json['gradeHistory'] ?? json['grade_history']) as Map<String, dynamic>,
+            )
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        if (stateHistory != null) 'stateHistory': stateHistory!.toJson(),
+        if (gradeHistory != null) 'gradeHistory': gradeHistory!.toJson(),
+      };
+}
+
+/// State change history
+@immutable
+class StateHistory {
+  const StateHistory({
+    required this.state,
+    required this.timestamp,
+    this.actorUserId,
+  });
+
+  final SubmissionState state;
+  final DateTime timestamp;
+  final String? actorUserId;
+
+  factory StateHistory.fromJson(Map<String, dynamic> json) {
+    return StateHistory(
+      state: SubmissionState.fromString(json['state'] as String? ?? 'created'),
+      timestamp: DateTime.tryParse(
+        json['timestamp'] as String? ?? json['stateTimestamp'] as String? ?? '',
+      ) ?? DateTime.now(),
+      actorUserId: json['actorUserId'] as String? ?? json['actor_user_id'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'state': state.value,
+        'timestamp': timestamp.toIso8601String(),
+        if (actorUserId != null) 'actorUserId': actorUserId,
+      };
+}
+
+/// Grade change history
+@immutable
+class GradeHistory {
+  const GradeHistory({
+    required this.pointsEarned,
+    required this.maxPoints,
+    required this.timestamp,
+    this.actorUserId,
+  });
+
+  final double pointsEarned;
+  final double maxPoints;
+  final DateTime timestamp;
+  final String? actorUserId;
+
+  /// Grade as percentage
+  double get percentage => maxPoints > 0 ? (pointsEarned / maxPoints) * 100 : 0;
+
+  factory GradeHistory.fromJson(Map<String, dynamic> json) {
+    return GradeHistory(
+      pointsEarned: (json['pointsEarned'] as num?)?.toDouble() ?? 
+                    (json['points_earned'] as num?)?.toDouble() ?? 0,
+      maxPoints: (json['maxPoints'] as num?)?.toDouble() ?? 
+                 (json['max_points'] as num?)?.toDouble() ?? 0,
+      timestamp: DateTime.tryParse(
+        json['timestamp'] as String? ?? json['gradeTimestamp'] as String? ?? '',
+      ) ?? DateTime.now(),
+      actorUserId: json['actorUserId'] as String? ?? json['actor_user_id'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'pointsEarned': pointsEarned,
+        'maxPoints': maxPoints,
+        'timestamp': timestamp.toIso8601String(),
+        if (actorUserId != null) 'actorUserId': actorUserId,
+      };
+}
+
+/// Sync status for detailed progress tracking
+@immutable
+class DetailedSyncStatus {
+  const DetailedSyncStatus({
+    required this.courseId,
+    required this.phase,
+    required this.progress,
+    required this.message,
+    this.itemsProcessed = 0,
+    this.totalItems = 0,
+    this.errors,
+    this.startedAt,
+    this.estimatedCompletion,
+  });
+
+  final String courseId;
+  final SyncPhase phase;
+  final double progress;
+  final String message;
+  final int itemsProcessed;
+  final int totalItems;
+  final List<String>? errors;
+  final DateTime? startedAt;
+  final DateTime? estimatedCompletion;
+
+  /// Whether sync has errors
+  bool get hasErrors => errors?.isNotEmpty ?? false;
+  
+  /// Percentage progress
+  int get progressPercent => (progress * 100).round();
+  
+  /// Items remaining
+  int get itemsRemaining => totalItems - itemsProcessed;
+
+  factory DetailedSyncStatus.fromJson(Map<String, dynamic> json) {
+    return DetailedSyncStatus(
+      courseId: json['courseId'] as String? ?? json['course_id'] as String? ?? '',
+      phase: SyncPhase.fromString(json['phase'] as String? ?? 'preparing'),
+      progress: (json['progress'] as num?)?.toDouble() ?? 0,
+      message: json['message'] as String? ?? '',
+      itemsProcessed: json['itemsProcessed'] as int? ?? 
+                      json['items_processed'] as int? ?? 0,
+      totalItems: json['totalItems'] as int? ?? json['total_items'] as int? ?? 0,
+      errors: json['errors'] != null
+          ? List<String>.from(json['errors'] as List<dynamic>)
+          : null,
+      startedAt: DateTime.tryParse(
+        json['startedAt'] as String? ?? json['started_at'] as String? ?? '',
+      ),
+      estimatedCompletion: DateTime.tryParse(
+        json['estimatedCompletion'] as String? ?? 
+        json['estimated_completion'] as String? ?? '',
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'courseId': courseId,
+        'phase': phase.value,
+        'progress': progress,
+        'message': message,
+        'itemsProcessed': itemsProcessed,
+        'totalItems': totalItems,
+        if (errors != null) 'errors': errors,
+        if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
+        if (estimatedCompletion != null) 
+          'estimatedCompletion': estimatedCompletion!.toIso8601String(),
+      };
+
+  DetailedSyncStatus copyWith({
+    String? courseId,
+    SyncPhase? phase,
+    double? progress,
+    String? message,
+    int? itemsProcessed,
+    int? totalItems,
+    List<String>? errors,
+    DateTime? startedAt,
+    DateTime? estimatedCompletion,
+  }) {
+    return DetailedSyncStatus(
+      courseId: courseId ?? this.courseId,
+      phase: phase ?? this.phase,
+      progress: progress ?? this.progress,
+      message: message ?? this.message,
+      itemsProcessed: itemsProcessed ?? this.itemsProcessed,
+      totalItems: totalItems ?? this.totalItems,
+      errors: errors ?? this.errors,
+      startedAt: startedAt ?? this.startedAt,
+      estimatedCompletion: estimatedCompletion ?? this.estimatedCompletion,
+    );
+  }
+}
+
+/// Phases of sync operation
+enum SyncPhase {
+  preparing('preparing'),
+  fetchingStudents('fetching_students'),
+  mappingStudents('mapping_students'),
+  fetchingTeachers('fetching_teachers'),
+  fetchingGuardians('fetching_guardians'),
+  processingChanges('processing_changes'),
+  finalizingSync('finalizing'),
+  completed('completed'),
+  failed('failed');
+
+  const SyncPhase(this.value);
+  final String value;
+
+  static SyncPhase fromString(String value) {
+    return SyncPhase.values.firstWhere(
+      (p) => p.value == value.toLowerCase(),
+      orElse: () => SyncPhase.preparing,
+    );
+  }
+
+  String get label {
+    switch (this) {
+      case SyncPhase.preparing:
+        return 'Preparing';
+      case SyncPhase.fetchingStudents:
+        return 'Fetching students';
+      case SyncPhase.mappingStudents:
+        return 'Mapping students';
+      case SyncPhase.fetchingTeachers:
+        return 'Fetching teachers';
+      case SyncPhase.fetchingGuardians:
+        return 'Fetching guardians';
+      case SyncPhase.processingChanges:
+        return 'Processing changes';
+      case SyncPhase.finalizingSync:
+        return 'Finalizing';
+      case SyncPhase.completed:
+        return 'Completed';
+      case SyncPhase.failed:
+        return 'Failed';
+    }
+  }
+
+  /// Whether this phase is a terminal state
+  bool get isTerminal => this == completed || this == failed;
+}
+
 /// Result of a sync operation
 @immutable
 class SyncResult {
