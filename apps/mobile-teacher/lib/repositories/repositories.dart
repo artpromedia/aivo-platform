@@ -12,3 +12,5 @@ export 'assignment_repository.dart';
 export 'assessment_repository.dart';
 export 'grade_repository.dart';
 export 'integration_repository.dart';
+export 'analytics_repository.dart';
+export 'grading_repository.dart';

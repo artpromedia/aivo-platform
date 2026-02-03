@@ -594,3 +594,839 @@ class ScheduleSessionDto {
     };
   }
 }
+
+// ============================================================================
+// Engagement Analytics Models (Sprint 8: MT-005)
+// ============================================================================
+
+/// Student engagement level.
+enum EngagementLevel {
+  low('Low', 'Student shows minimal engagement'),
+  medium('Medium', 'Student shows moderate engagement'),
+  high('High', 'Student shows strong engagement'),
+  exceptional('Exceptional', 'Student shows outstanding engagement');
+
+  const EngagementLevel(this.label, this.description);
+  final String label;
+  final String description;
+}
+
+/// Engagement event type.
+enum EngagementEventType {
+  sessionStart,
+  sessionEnd,
+  taskStart,
+  taskComplete,
+  interaction,
+  pauseStart,
+  pauseEnd,
+  helpRequested,
+  contentViewed,
+  assessmentStarted,
+  assessmentCompleted,
+}
+
+/// Aggregated engagement metrics.
+@immutable
+class EngagementMetrics {
+  const EngagementMetrics({
+    required this.avgSessionDuration,
+    required this.avgTimeOnTask,
+    required this.interactionRate,
+    required this.completionRate,
+    this.totalSessions = 0,
+    this.totalInteractions = 0,
+    this.avgInteractionsPerSession = 0,
+  });
+
+  /// Average session duration in minutes.
+  final double avgSessionDuration;
+
+  /// Average time spent on each task in minutes.
+  final double avgTimeOnTask;
+
+  /// Rate of interactions per minute (0.0 to 1.0+).
+  final double interactionRate;
+
+  /// Completion rate of assigned tasks (0.0 to 1.0).
+  final double completionRate;
+
+  /// Total number of sessions in the period.
+  final int totalSessions;
+
+  /// Total number of interactions in the period.
+  final int totalInteractions;
+
+  /// Average number of interactions per session.
+  final double avgInteractionsPerSession;
+
+  factory EngagementMetrics.fromJson(Map<String, dynamic> json) {
+    return EngagementMetrics(
+      avgSessionDuration: (json['avgSessionDuration'] as num).toDouble(),
+      avgTimeOnTask: (json['avgTimeOnTask'] as num).toDouble(),
+      interactionRate: (json['interactionRate'] as num).toDouble(),
+      completionRate: (json['completionRate'] as num).toDouble(),
+      totalSessions: json['totalSessions'] as int? ?? 0,
+      totalInteractions: json['totalInteractions'] as int? ?? 0,
+      avgInteractionsPerSession:
+          (json['avgInteractionsPerSession'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'avgSessionDuration': avgSessionDuration,
+      'avgTimeOnTask': avgTimeOnTask,
+      'interactionRate': interactionRate,
+      'completionRate': completionRate,
+      'totalSessions': totalSessions,
+      'totalInteractions': totalInteractions,
+      'avgInteractionsPerSession': avgInteractionsPerSession,
+    };
+  }
+
+  /// Calculate overall engagement score (0.0 to 1.0).
+  double get overallScore {
+    // Weighted average of metrics
+    const sessionWeight = 0.25;
+    const timeOnTaskWeight = 0.25;
+    const interactionWeight = 0.25;
+    const completionWeight = 0.25;
+
+    // Normalize session duration (assume 30 min is ideal)
+    final sessionScore = (avgSessionDuration / 30).clamp(0.0, 1.0);
+    // Normalize time on task (assume 5 min per task is ideal)
+    final timeOnTaskScore = (avgTimeOnTask / 5).clamp(0.0, 1.0);
+    // Interaction rate is already normalized
+    final interactionScore = interactionRate.clamp(0.0, 1.0);
+    // Completion rate is already 0-1
+    final completionScore = completionRate;
+
+    return (sessionScore * sessionWeight) +
+        (timeOnTaskScore * timeOnTaskWeight) +
+        (interactionScore * interactionWeight) +
+        (completionScore * completionWeight);
+  }
+}
+
+/// Engagement trend over time.
+@immutable
+class EngagementTrend {
+  const EngagementTrend({
+    required this.direction,
+    required this.percentChange,
+    required this.period,
+    this.previousValue,
+    this.currentValue,
+  });
+
+  /// Direction of the trend.
+  final TrendDirection direction;
+
+  /// Percent change in engagement (can be negative).
+  final double percentChange;
+
+  /// Period over which the trend was calculated.
+  final DateRange period;
+
+  /// Previous period's engagement value.
+  final double? previousValue;
+
+  /// Current period's engagement value.
+  final double? currentValue;
+
+  factory EngagementTrend.fromJson(Map<String, dynamic> json) {
+    return EngagementTrend(
+      direction: TrendDirection.values.firstWhere(
+        (e) => e.name == json['direction'],
+        orElse: () => TrendDirection.stable,
+      ),
+      percentChange: (json['percentChange'] as num).toDouble(),
+      period: DateRange.fromJson(json['period'] as Map<String, dynamic>),
+      previousValue: (json['previousValue'] as num?)?.toDouble(),
+      currentValue: (json['currentValue'] as num?)?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'direction': direction.name,
+      'percentChange': percentChange,
+      'period': period.toJson(),
+      'previousValue': previousValue,
+      'currentValue': currentValue,
+    };
+  }
+
+  /// Returns true if trend is positive.
+  bool get isPositive =>
+      direction == TrendDirection.increasing && percentChange > 0;
+
+  /// Returns true if trend is concerning.
+  bool get isConcerning =>
+      direction == TrendDirection.decreasing && percentChange < -10;
+}
+
+/// Individual engagement event.
+@immutable
+class EngagementEvent {
+  const EngagementEvent({
+    required this.id,
+    required this.eventType,
+    required this.timestamp,
+    this.duration,
+    this.context,
+    this.metadata,
+  });
+
+  final String id;
+
+  /// Type of engagement event.
+  final EngagementEventType eventType;
+
+  /// When the event occurred.
+  final DateTime timestamp;
+
+  /// Duration in seconds (for events that have duration).
+  final int? duration;
+
+  /// Context about the event (e.g., content ID, task name).
+  final Map<String, dynamic>? context;
+
+  /// Additional metadata.
+  final Map<String, dynamic>? metadata;
+
+  factory EngagementEvent.fromJson(Map<String, dynamic> json) {
+    return EngagementEvent(
+      id: json['id'] as String,
+      eventType: EngagementEventType.values.firstWhere(
+        (e) => e.name == json['eventType'],
+        orElse: () => EngagementEventType.interaction,
+      ),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      duration: json['duration'] as int?,
+      context: json['context'] as Map<String, dynamic>?,
+      metadata: json['metadata'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'eventType': eventType.name,
+      'timestamp': timestamp.toIso8601String(),
+      'duration': duration,
+      'context': context,
+      'metadata': metadata,
+    };
+  }
+}
+
+/// Student engagement profile.
+@immutable
+class StudentEngagement {
+  const StudentEngagement({
+    required this.studentId,
+    required this.studentName,
+    required this.metrics,
+    required this.engagementLevel,
+    required this.trend,
+    this.lastActive,
+    this.recentEvents = const [],
+    this.engagementScore,
+    this.riskFactors = const [],
+  });
+
+  final String studentId;
+  final String studentName;
+
+  /// Aggregated engagement metrics.
+  final EngagementMetrics metrics;
+
+  /// Current engagement level classification.
+  final EngagementLevel engagementLevel;
+
+  /// Trend over the analysis period.
+  final EngagementTrend trend;
+
+  /// Last activity timestamp.
+  final DateTime? lastActive;
+
+  /// Recent engagement events.
+  final List<EngagementEvent> recentEvents;
+
+  /// Overall engagement score (0-100).
+  final double? engagementScore;
+
+  /// List of risk factors for disengagement.
+  final List<String> riskFactors;
+
+  factory StudentEngagement.fromJson(Map<String, dynamic> json) {
+    return StudentEngagement(
+      studentId: json['studentId'] as String,
+      studentName: json['studentName'] as String,
+      metrics:
+          EngagementMetrics.fromJson(json['metrics'] as Map<String, dynamic>),
+      engagementLevel: EngagementLevel.values.firstWhere(
+        (e) => e.name == json['engagementLevel'],
+        orElse: () => EngagementLevel.medium,
+      ),
+      trend: EngagementTrend.fromJson(json['trend'] as Map<String, dynamic>),
+      lastActive: json['lastActive'] != null
+          ? DateTime.parse(json['lastActive'] as String)
+          : null,
+      recentEvents: (json['recentEvents'] as List<dynamic>?)
+              ?.map((e) => EngagementEvent.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      engagementScore: (json['engagementScore'] as num?)?.toDouble(),
+      riskFactors: (json['riskFactors'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'studentId': studentId,
+      'studentName': studentName,
+      'metrics': metrics.toJson(),
+      'engagementLevel': engagementLevel.name,
+      'trend': trend.toJson(),
+      'lastActive': lastActive?.toIso8601String(),
+      'recentEvents': recentEvents.map((e) => e.toJson()).toList(),
+      'engagementScore': engagementScore,
+      'riskFactors': riskFactors,
+    };
+  }
+
+  /// Check if student is at risk of disengagement.
+  bool get isAtRisk =>
+      engagementLevel == EngagementLevel.low || trend.isConcerning;
+
+  /// Get days since last active.
+  int? get daysSinceActive {
+    if (lastActive == null) return null;
+    return DateTime.now().difference(lastActive!).inDays;
+  }
+}
+
+/// Class-level engagement summary.
+@immutable
+class ClassEngagement {
+  const ClassEngagement({
+    required this.classId,
+    required this.className,
+    required this.period,
+    required this.averageMetrics,
+    required this.distribution,
+    required this.students,
+    this.trend,
+    this.alerts = const [],
+  });
+
+  final String classId;
+  final String className;
+  final DateRange period;
+
+  /// Class average engagement metrics.
+  final EngagementMetrics averageMetrics;
+
+  /// Distribution of engagement levels.
+  final EngagementDistribution distribution;
+
+  /// Individual student engagement data.
+  final List<StudentEngagement> students;
+
+  /// Class-level engagement trend.
+  final EngagementTrend? trend;
+
+  /// Disengaged student alerts.
+  final List<EngagementAlert> alerts;
+
+  factory ClassEngagement.fromJson(Map<String, dynamic> json) {
+    return ClassEngagement(
+      classId: json['classId'] as String,
+      className: json['className'] as String,
+      period: DateRange.fromJson(json['period'] as Map<String, dynamic>),
+      averageMetrics: EngagementMetrics.fromJson(
+          json['averageMetrics'] as Map<String, dynamic>),
+      distribution: EngagementDistribution.fromJson(
+          json['distribution'] as Map<String, dynamic>),
+      students: (json['students'] as List<dynamic>)
+          .map((e) => StudentEngagement.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      trend: json['trend'] != null
+          ? EngagementTrend.fromJson(json['trend'] as Map<String, dynamic>)
+          : null,
+      alerts: (json['alerts'] as List<dynamic>?)
+              ?.map((e) => EngagementAlert.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'classId': classId,
+      'className': className,
+      'period': period.toJson(),
+      'averageMetrics': averageMetrics.toJson(),
+      'distribution': distribution.toJson(),
+      'students': students.map((e) => e.toJson()).toList(),
+      'trend': trend?.toJson(),
+      'alerts': alerts.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  /// Get students at risk of disengagement.
+  List<StudentEngagement> get atRiskStudents =>
+      students.where((s) => s.isAtRisk).toList();
+
+  /// Get top engaged students.
+  List<StudentEngagement> get topEngaged => students
+      .where((s) => s.engagementLevel == EngagementLevel.exceptional)
+      .toList();
+}
+
+/// Distribution of engagement levels in a class.
+@immutable
+class EngagementDistribution {
+  const EngagementDistribution({
+    required this.low,
+    required this.medium,
+    required this.high,
+    required this.exceptional,
+    required this.total,
+  });
+
+  final int low;
+  final int medium;
+  final int high;
+  final int exceptional;
+  final int total;
+
+  factory EngagementDistribution.fromJson(Map<String, dynamic> json) {
+    return EngagementDistribution(
+      low: json['low'] as int,
+      medium: json['medium'] as int,
+      high: json['high'] as int,
+      exceptional: json['exceptional'] as int,
+      total: json['total'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'low': low,
+      'medium': medium,
+      'high': high,
+      'exceptional': exceptional,
+      'total': total,
+    };
+  }
+
+  /// Get percentage for each level.
+  double get lowPercent => total > 0 ? (low / total) * 100 : 0;
+  double get mediumPercent => total > 0 ? (medium / total) * 100 : 0;
+  double get highPercent => total > 0 ? (high / total) * 100 : 0;
+  double get exceptionalPercent => total > 0 ? (exceptional / total) * 100 : 0;
+}
+
+/// Alert for disengaged students.
+@immutable
+class EngagementAlert {
+  const EngagementAlert({
+    required this.id,
+    required this.studentId,
+    required this.studentName,
+    required this.alertType,
+    required this.severity,
+    required this.message,
+    required this.createdAt,
+    this.engagementLevel,
+    this.suggestedActions = const [],
+    this.isResolved = false,
+  });
+
+  final String id;
+  final String studentId;
+  final String studentName;
+  final EngagementAlertType alertType;
+  final AlertSeverity severity;
+  final String message;
+  final DateTime createdAt;
+  final EngagementLevel? engagementLevel;
+  final List<String> suggestedActions;
+  final bool isResolved;
+
+  factory EngagementAlert.fromJson(Map<String, dynamic> json) {
+    return EngagementAlert(
+      id: json['id'] as String,
+      studentId: json['studentId'] as String,
+      studentName: json['studentName'] as String,
+      alertType: EngagementAlertType.values.firstWhere(
+        (e) => e.name == json['alertType'],
+        orElse: () => EngagementAlertType.lowEngagement,
+      ),
+      severity: AlertSeverity.values.firstWhere(
+        (e) => e.name == json['severity'],
+        orElse: () => AlertSeverity.medium,
+      ),
+      message: json['message'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      engagementLevel: json['engagementLevel'] != null
+          ? EngagementLevel.values.firstWhere(
+              (e) => e.name == json['engagementLevel'],
+              orElse: () => EngagementLevel.low,
+            )
+          : null,
+      suggestedActions: (json['suggestedActions'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      isResolved: json['isResolved'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'studentId': studentId,
+      'studentName': studentName,
+      'alertType': alertType.name,
+      'severity': severity.name,
+      'message': message,
+      'createdAt': createdAt.toIso8601String(),
+      'engagementLevel': engagementLevel?.name,
+      'suggestedActions': suggestedActions,
+      'isResolved': isResolved,
+    };
+  }
+}
+
+/// Types of engagement alerts.
+enum EngagementAlertType {
+  lowEngagement('Low Engagement'),
+  decliningTrend('Declining Trend'),
+  inactivity('Extended Inactivity'),
+  lowCompletion('Low Completion Rate'),
+  shortSessions('Short Session Duration');
+
+  const EngagementAlertType(this.label);
+  final String label;
+}
+
+/// Engagement timeline data point.
+@immutable
+class EngagementTimelinePoint {
+  const EngagementTimelinePoint({
+    required this.timestamp,
+    required this.avgEngagement,
+    required this.activeStudents,
+    required this.totalStudents,
+    this.metrics,
+  });
+
+  final DateTime timestamp;
+  final double avgEngagement;
+  final int activeStudents;
+  final int totalStudents;
+  final EngagementMetrics? metrics;
+
+  factory EngagementTimelinePoint.fromJson(Map<String, dynamic> json) {
+    return EngagementTimelinePoint(
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      avgEngagement: (json['avgEngagement'] as num).toDouble(),
+      activeStudents: json['activeStudents'] as int,
+      totalStudents: json['totalStudents'] as int,
+      metrics: json['metrics'] != null
+          ? EngagementMetrics.fromJson(json['metrics'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'avgEngagement': avgEngagement,
+      'activeStudents': activeStudents,
+      'totalStudents': totalStudents,
+      'metrics': metrics?.toJson(),
+    };
+  }
+
+  double get participationRate =>
+      totalStudents > 0 ? activeStudents / totalStudents : 0;
+}
+
+/// Timeline granularity for engagement data.
+enum TimelineGranularity {
+  hourly,
+  daily,
+  weekly,
+  monthly,
+}
+
+/// Content engagement data.
+@immutable
+class ContentEngagement {
+  const ContentEngagement({
+    required this.contentId,
+    required this.contentName,
+    required this.contentType,
+    required this.viewCount,
+    required this.completionCount,
+    required this.avgTimeSpent,
+    required this.avgEngagementScore,
+    this.lastAccessed,
+  });
+
+  final String contentId;
+  final String contentName;
+  final String contentType;
+  final int viewCount;
+  final int completionCount;
+  final double avgTimeSpent;
+  final double avgEngagementScore;
+  final DateTime? lastAccessed;
+
+  factory ContentEngagement.fromJson(Map<String, dynamic> json) {
+    return ContentEngagement(
+      contentId: json['contentId'] as String,
+      contentName: json['contentName'] as String,
+      contentType: json['contentType'] as String,
+      viewCount: json['viewCount'] as int,
+      completionCount: json['completionCount'] as int,
+      avgTimeSpent: (json['avgTimeSpent'] as num).toDouble(),
+      avgEngagementScore: (json['avgEngagementScore'] as num).toDouble(),
+      lastAccessed: json['lastAccessed'] != null
+          ? DateTime.parse(json['lastAccessed'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'contentId': contentId,
+      'contentName': contentName,
+      'contentType': contentType,
+      'viewCount': viewCount,
+      'completionCount': completionCount,
+      'avgTimeSpent': avgTimeSpent,
+      'avgEngagementScore': avgEngagementScore,
+      'lastAccessed': lastAccessed?.toIso8601String(),
+    };
+  }
+
+  double get completionRate =>
+      viewCount > 0 ? completionCount / viewCount : 0.0;
+}
+
+/// Engagement patterns for a student (time of day, day of week).
+@immutable
+class EngagementPatterns {
+  const EngagementPatterns({
+    required this.studentId,
+    required this.hourlyPattern,
+    required this.dailyPattern,
+    this.peakHours = const [],
+    this.preferredDays = const [],
+  });
+
+  final String studentId;
+
+  /// Engagement by hour of day (0-23).
+  final Map<int, double> hourlyPattern;
+
+  /// Engagement by day of week (1-7, Monday=1).
+  final Map<int, double> dailyPattern;
+
+  /// Hours with highest engagement.
+  final List<int> peakHours;
+
+  /// Days with highest engagement.
+  final List<int> preferredDays;
+
+  factory EngagementPatterns.fromJson(Map<String, dynamic> json) {
+    return EngagementPatterns(
+      studentId: json['studentId'] as String,
+      hourlyPattern: (json['hourlyPattern'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(int.parse(key), (value as num).toDouble()),
+      ),
+      dailyPattern: (json['dailyPattern'] as Map<String, dynamic>).map(
+        (key, value) => MapEntry(int.parse(key), (value as num).toDouble()),
+      ),
+      peakHours: (json['peakHours'] as List<dynamic>?)
+              ?.map((e) => e as int)
+              .toList() ??
+          [],
+      preferredDays: (json['preferredDays'] as List<dynamic>?)
+              ?.map((e) => e as int)
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'studentId': studentId,
+      'hourlyPattern':
+          hourlyPattern.map((key, value) => MapEntry(key.toString(), value)),
+      'dailyPattern':
+          dailyPattern.map((key, value) => MapEntry(key.toString(), value)),
+      'peakHours': peakHours,
+      'preferredDays': preferredDays,
+    };
+  }
+
+  /// Get formatted peak hours string.
+  String get peakHoursFormatted {
+    if (peakHours.isEmpty) return 'No data';
+    return peakHours.map((h) => '${h.toString().padLeft(2, '0')}:00').join(', ');
+  }
+
+  /// Get formatted preferred days string.
+  String get preferredDaysFormatted {
+    if (preferredDays.isEmpty) return 'No data';
+    const days = [
+      '',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    return preferredDays.map((d) => days[d]).join(', ');
+  }
+}
+
+/// Session history entry.
+@immutable
+class SessionHistoryEntry {
+  const SessionHistoryEntry({
+    required this.sessionId,
+    required this.startTime,
+    required this.endTime,
+    required this.durationMinutes,
+    required this.engagementScore,
+    this.tasksCompleted = 0,
+    this.interactionCount = 0,
+    this.contentAccessed = const [],
+  });
+
+  final String sessionId;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int durationMinutes;
+  final double engagementScore;
+  final int tasksCompleted;
+  final int interactionCount;
+  final List<String> contentAccessed;
+
+  factory SessionHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return SessionHistoryEntry(
+      sessionId: json['sessionId'] as String,
+      startTime: DateTime.parse(json['startTime'] as String),
+      endTime: DateTime.parse(json['endTime'] as String),
+      durationMinutes: json['durationMinutes'] as int,
+      engagementScore: (json['engagementScore'] as num).toDouble(),
+      tasksCompleted: json['tasksCompleted'] as int? ?? 0,
+      interactionCount: json['interactionCount'] as int? ?? 0,
+      contentAccessed: (json['contentAccessed'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'sessionId': sessionId,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+      'durationMinutes': durationMinutes,
+      'engagementScore': engagementScore,
+      'tasksCompleted': tasksCompleted,
+      'interactionCount': interactionCount,
+      'contentAccessed': contentAccessed,
+    };
+  }
+}
+
+/// Recommendations for improving student engagement.
+@immutable
+class EngagementRecommendation {
+  const EngagementRecommendation({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.priority,
+    required this.category,
+    this.targetMetric,
+    this.expectedImpact,
+    this.relatedInterventionId,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final RecommendationPriority priority;
+  final RecommendationCategory category;
+  final String? targetMetric;
+  final String? expectedImpact;
+  final String? relatedInterventionId;
+
+  factory EngagementRecommendation.fromJson(Map<String, dynamic> json) {
+    return EngagementRecommendation(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      priority: RecommendationPriority.values.firstWhere(
+        (e) => e.name == json['priority'],
+        orElse: () => RecommendationPriority.medium,
+      ),
+      category: RecommendationCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => RecommendationCategory.engagement,
+      ),
+      targetMetric: json['targetMetric'] as String?,
+      expectedImpact: json['expectedImpact'] as String?,
+      relatedInterventionId: json['relatedInterventionId'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'priority': priority.name,
+      'category': category.name,
+      'targetMetric': targetMetric,
+      'expectedImpact': expectedImpact,
+      'relatedInterventionId': relatedInterventionId,
+    };
+  }
+}
+
+/// Priority levels for recommendations.
+enum RecommendationPriority {
+  low,
+  medium,
+  high,
+  critical,
+}
+
+/// Categories of engagement recommendations.
+enum RecommendationCategory {
+  engagement,
+  timeManagement,
+  contentDifficulty,
+  socialSupport,
+  accessibility,
+  motivation,
+}

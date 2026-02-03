@@ -15,3 +15,5 @@ export 'assessment_provider.dart';
 export 'grades_provider.dart';
 export 'ai_transparency_provider.dart';
 export 'settings_provider.dart';
+export 'analytics_provider.dart';
+export 'grading_provider.dart';
