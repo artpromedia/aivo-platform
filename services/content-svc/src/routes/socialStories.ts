@@ -181,7 +181,18 @@ function mapStoryPages(pages: StoryPageInput[]): StoryPage[] {
       emphasisWords: s.emphasisWords,
       personalizationTokens: s.personalizationTokens,
     })),
-    visual: p.visual,
+    visual: p.visual
+      ? {
+        id: p.visual.id ?? `visual-${idx}`,
+        type: p.visual.type ?? 'IMAGE',
+        url: p.visual.url ?? '',
+        altText: p.visual.altText ?? '',
+        style: p.visual.style ?? 'PHOTOGRAPHS',
+        position: p.visual.position ?? 'CENTER',
+        aspectRatio: p.visual.aspectRatio,
+        variants: p.visual.variants,
+      }
+      : undefined,
     interactions: p.interactions,
     backgroundColor: p.backgroundColor,
     transitionEffect: p.transitionEffect,

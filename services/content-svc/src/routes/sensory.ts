@@ -418,8 +418,19 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
         .status(400)
         .send({ error: 'learnerId, tenantId, incidentType, and triggerCategory are required' });
     }
-    const { triggerTimestamp, ...rest } = body;
+    const {
+      learnerId,
+      tenantId,
+      incidentType,
+      triggerCategory,
+      triggerTimestamp,
+      ...rest
+    } = body;
     const incidentInput: CreateSensoryIncidentInput = {
+      learnerId,
+      tenantId,
+      incidentType,
+      triggerCategory,
       ...rest,
       triggerTimestamp: triggerTimestamp ? new Date(triggerTimestamp) : undefined,
     };
