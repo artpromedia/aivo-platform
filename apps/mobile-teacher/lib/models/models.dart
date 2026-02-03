@@ -20,3 +20,5 @@ export 'risk_prediction.dart';
 export 'intervention.dart';
 export 'assessment.dart';
 export 'rubric.dart';
+export 'gamification.dart';
+export 'monitoring.dart';
