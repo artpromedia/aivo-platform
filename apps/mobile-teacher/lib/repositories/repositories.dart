@@ -9,5 +9,6 @@ export 'iep_repository.dart';
 export 'message_repository.dart';
 export 'class_repository.dart';
 export 'assignment_repository.dart';
+export 'assessment_repository.dart';
 export 'grade_repository.dart';
 export 'integration_repository.dart';

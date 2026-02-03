@@ -38,6 +38,9 @@ export 'gradebook/grade_submission_screen.dart';
 export 'assignments/assignment_list_screen.dart';
 export 'assignments/assignment_detail_screen.dart';
 
+// Assessments
+export 'assessments/assessments.dart';
+
 // Monitoring
 export 'monitoring/class_monitoring_screen.dart';
 
