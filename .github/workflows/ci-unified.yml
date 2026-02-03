@@ -11,6 +11,11 @@
 
 name: CI/CD Pipeline
 
+permissions:
+  contents: read
+  id-token: write
+  security-events: write
+
 on:
   push:
     branches: [main, develop, release/*, hotfix/*]
@@ -43,7 +48,7 @@ concurrency:
 # Global environment variables
 env:
   REGISTRY: gcr.io
-  PROJECT_ID: aivo-platform
+  PROJECT_ID: aivo-learning
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
   FLUTTER_VERSION: '3.22.0'
@@ -512,7 +517,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
 
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io --quiet
@@ -573,13 +579,14 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
 
       - name: Get GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
-          cluster_name: aivo-staging
-          location: us-central1
+          cluster_name: aivo-gke-staging
+          location: us-central1-c
 
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v2
@@ -655,7 +662,7 @@ jobs:
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: aivo-production
-          location: us-central1
+          location: us-central1-c
 
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@v2
