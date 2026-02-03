@@ -32,6 +32,9 @@ import '../features/analytics/presentation/classroom_analytics_screen.dart';
 import '../features/professional_development/presentation/pd_screen.dart';
 import '../screens/collaboration_dashboard_screen.dart';
 import '../screens/learner_collaboration_screen.dart';
+import '../screens/risk/risk_dashboard_screen.dart';
+import '../screens/risk/student_risk_detail_screen.dart';
+import '../screens/risk/intervention_screen.dart';
 
 /// Application router.
 final GoRouter appRouter = GoRouter(
@@ -230,6 +233,35 @@ final GoRouter appRouter = GoRouter(
       path: '/collaboration/plans/:planId',
       builder: (context, state) => _ActionPlanDetailScreen(
         planId: state.pathParameters['planId']!,
+      ),
+    ),
+
+    // Risk Dashboard & Interventions
+    GoRoute(
+      path: '/risk/dashboard/:classId',
+      builder: (context, state) => RiskDashboardScreen(
+        classId: state.pathParameters['classId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/risk/dashboard',
+      builder: (context, state) {
+        final classId = state.uri.queryParameters['classId'] ?? '';
+        return RiskDashboardScreen(classId: classId);
+      },
+    ),
+    GoRoute(
+      path: '/students/:id/risk',
+      builder: (context, state) => StudentRiskDetailScreen(
+        studentId: state.pathParameters['id']!,
+        studentName: state.uri.queryParameters['name'],
+      ),
+    ),
+    GoRoute(
+      path: '/risk/interventions/:studentId',
+      builder: (context, state) => InterventionScreen(
+        studentId: state.pathParameters['studentId']!,
+        studentName: state.uri.queryParameters['name'] ?? 'Student',
       ),
     ),
   ],

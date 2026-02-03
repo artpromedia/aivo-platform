@@ -25,6 +25,7 @@ dependencies:
   firebase_crashlytics: ^3.5.7
   firebase_analytics: ^10.10.7
   share_plus: ^10.1.3
+  fl_chart: ^0.69.0
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:

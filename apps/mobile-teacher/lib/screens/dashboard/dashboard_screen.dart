@@ -105,6 +105,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 16),
 
+            // At-risk students alert
+            AtRiskAlertCard(
+              onViewAll: () {
+                final classId = ref.read(classesProvider).selectedClassId ?? '';
+                context.push('/risk/dashboard/$classId');
+              },
+              onStudentTap: (student) {
+                context.push('/students/${student.studentId}/risk');
+              },
+            ),
+            const SizedBox(height: 16),
+
             // Goals at risk
             GoalsAtRiskCard(
               onViewAll: () => context.push('/reports/iep'),
