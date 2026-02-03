@@ -129,6 +129,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onViewStudents: () => context.push('/students'),
               onViewClasses: () => context.push('/classes'),
               onViewReports: () => context.push('/reports'),
+              onViewAssessments: () => context.push('/assessments'),
             ),
           ],
         ),

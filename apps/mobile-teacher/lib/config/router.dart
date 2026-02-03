@@ -35,6 +35,12 @@ import '../screens/learner_collaboration_screen.dart';
 import '../screens/risk/risk_dashboard_screen.dart';
 import '../screens/risk/student_risk_detail_screen.dart';
 import '../screens/risk/intervention_screen.dart';
+import '../screens/assessments/assessment_list_screen.dart';
+import '../screens/assessments/assessment_builder_screen.dart';
+import '../screens/assessments/assessment_preview_screen.dart';
+import '../screens/assessments/assessment_results_screen.dart';
+import '../screens/assessments/question_editor_screen.dart';
+import '../models/assessment.dart' show QuestionType;
 
 /// Application router.
 final GoRouter appRouter = GoRouter(
@@ -262,6 +268,60 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => InterventionScreen(
         studentId: state.pathParameters['studentId']!,
         studentName: state.uri.queryParameters['name'] ?? 'Student',
+      ),
+    ),
+
+    // Assessments
+    GoRoute(
+      path: '/assessments',
+      builder: (context, state) => AssessmentListScreen(
+        classId: state.uri.queryParameters['classId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/new',
+      builder: (context, state) => AssessmentBuilderScreen(
+        classId: state.uri.queryParameters['classId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:id',
+      builder: (context, state) => AssessmentBuilderScreen(
+        assessmentId: state.pathParameters['id'],
+        classId: state.uri.queryParameters['classId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:id/edit',
+      builder: (context, state) => AssessmentBuilderScreen(
+        assessmentId: state.pathParameters['id'],
+        classId: state.uri.queryParameters['classId'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:id/preview',
+      builder: (context, state) => AssessmentPreviewScreen(
+        assessmentId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:id/results',
+      builder: (context, state) => AssessmentResultsScreen(
+        assessmentId: state.pathParameters['id']!,
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:assessmentId/questions/new',
+      builder: (context, state) => QuestionEditorScreen(
+        questionType: QuestionType.multipleChoice,
+        questionIndex: int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0,
+      ),
+    ),
+    GoRoute(
+      path: '/assessments/:assessmentId/questions/:questionId',
+      builder: (context, state) => QuestionEditorScreen(
+        questionType: QuestionType.multipleChoice,
+        questionIndex: int.tryParse(state.uri.queryParameters['index'] ?? '0') ?? 0,
       ),
     ),
   ],

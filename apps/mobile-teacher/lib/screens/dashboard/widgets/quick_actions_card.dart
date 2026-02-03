@@ -12,12 +12,14 @@ class QuickActionsCard extends StatelessWidget {
     required this.onViewStudents,
     required this.onViewClasses,
     required this.onViewReports,
+    this.onViewAssessments,
   });
 
   final VoidCallback onNewSession;
   final VoidCallback onViewStudents;
   final VoidCallback onViewClasses;
   final VoidCallback onViewReports;
+  final VoidCallback? onViewAssessments;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +62,13 @@ class QuickActionsCard extends StatelessWidget {
                   color: AivoBrand.warning,
                   onTap: onViewReports,
                 ),
+                if (onViewAssessments != null)
+                  _ActionButton(
+                    icon: Icons.quiz,
+                    label: 'Assessments',
+                    color: Colors.teal,
+                    onTap: onViewAssessments!,
+                  ),
               ],
             ),
           ],

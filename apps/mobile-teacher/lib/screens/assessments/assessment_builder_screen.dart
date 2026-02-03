@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/assessment.dart';
 import '../../providers/assessment_provider.dart';
-import '../../repositories/assessment_repository.dart';
 import 'question_editor_screen.dart';
 import 'assessment_preview_screen.dart';
 import 'assessment_settings_screen.dart';
@@ -636,11 +635,18 @@ class _AssessmentBuilderScreenState
   }
 
   void _importFromBank(BuildContext context) {
-    // TODO: Implement question bank import
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Question bank import coming soon'),
-        behavior: SnackBarBehavior.floating,
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _QuestionBankSheet(
+        onImport: (questions) {
+          for (final question in questions) {
+            ref.read(currentAssessmentProvider.notifier).addQuestion(question);
+          }
+        },
       ),
     );
   }
@@ -976,6 +982,481 @@ class _SummaryRow extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: valueColor,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Question bank import sheet
+class _QuestionBankSheet extends StatefulWidget {
+  const _QuestionBankSheet({
+    required this.onImport,
+  });
+
+  final void Function(List<Question>) onImport;
+
+  @override
+  State<_QuestionBankSheet> createState() => _QuestionBankSheetState();
+}
+
+class _QuestionBankSheetState extends State<_QuestionBankSheet> {
+  final _searchController = TextEditingController();
+  final Set<String> _selectedQuestionIds = {};
+  QuestionType? _filterType;
+  String _sourceFilter = 'all'; // 'all', 'my', 'shared'
+
+  // Sample questions from the question bank
+  // In real implementation, this would come from a provider
+  final List<_BankQuestion> _bankQuestions = [
+    _BankQuestion(
+      id: 'bank_1',
+      text: 'What is the capital of France?',
+      type: QuestionType.multipleChoice,
+      points: 1,
+      difficulty: Difficulty.easy,
+      tags: ['geography', 'europe'],
+      timesUsed: 12,
+    ),
+    _BankQuestion(
+      id: 'bank_2',
+      text: 'Solve for x: 2x + 5 = 13',
+      type: QuestionType.shortAnswer,
+      points: 2,
+      difficulty: Difficulty.medium,
+      tags: ['math', 'algebra'],
+      timesUsed: 8,
+    ),
+    _BankQuestion(
+      id: 'bank_3',
+      text: 'The mitochondria is the powerhouse of the cell.',
+      type: QuestionType.trueFalse,
+      points: 1,
+      difficulty: Difficulty.easy,
+      tags: ['biology', 'cells'],
+      timesUsed: 25,
+    ),
+    _BankQuestion(
+      id: 'bank_4',
+      text: 'Explain the process of photosynthesis and its importance to life on Earth.',
+      type: QuestionType.essay,
+      points: 10,
+      difficulty: Difficulty.hard,
+      tags: ['biology', 'ecology'],
+      timesUsed: 5,
+    ),
+    _BankQuestion(
+      id: 'bank_5',
+      text: 'Match the following countries with their capitals:',
+      type: QuestionType.matching,
+      points: 4,
+      difficulty: Difficulty.medium,
+      tags: ['geography', 'world'],
+      timesUsed: 15,
+    ),
+  ];
+
+  List<_BankQuestion> get _filteredQuestions {
+    return _bankQuestions.where((q) {
+      if (_filterType != null && q.type != _filterType) return false;
+      if (_searchController.text.isNotEmpty) {
+        final query = _searchController.text.toLowerCase();
+        if (!q.text.toLowerCase().contains(query) &&
+            !q.tags.any((t) => t.toLowerCase().contains(query))) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filtered = _filteredQuestions;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  // Handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.library_books, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Question Bank',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const Spacer(),
+                      if (_selectedQuestionIds.isNotEmpty)
+                        Badge(
+                          label: Text('${_selectedQuestionIds.length}'),
+                          child: const SizedBox.shrink(),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Search
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search questions...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+              ),
+            ),
+
+            // Filter chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('All Types'),
+                    selected: _filterType == null,
+                    onSelected: (_) => setState(() => _filterType = null),
+                  ),
+                  const SizedBox(width: 8),
+                  ...QuestionType.values.take(5).map((type) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(type.label),
+                      selected: _filterType == type,
+                      onSelected: (_) => setState(() => _filterType = type),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+
+            // Questions list
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No questions found',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final question = filtered[index];
+                        final isSelected = _selectedQuestionIds.contains(question.id);
+                        return _BankQuestionTile(
+                          question: question,
+                          isSelected: isSelected,
+                          onToggle: () {
+                            setState(() {
+                              if (isSelected) {
+                                _selectedQuestionIds.remove(question.id);
+                              } else {
+                                _selectedQuestionIds.add(question.id);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+            ),
+
+            // Import button
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${_selectedQuestionIds.length} questions selected',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _selectedQuestionIds.isEmpty
+                          ? null
+                          : () {
+                              final selected = _bankQuestions
+                                  .where((q) => _selectedQuestionIds.contains(q.id))
+                                  .map((q) => q.toQuestion())
+                                  .toList();
+                              widget.onImport(selected);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Imported ${selected.length} questions'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                      child: const Text('Import'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BankQuestion {
+  const _BankQuestion({
+    required this.id,
+    required this.text,
+    required this.type,
+    required this.points,
+    required this.difficulty,
+    required this.tags,
+    required this.timesUsed,
+  });
+
+  final String id;
+  final String text;
+  final QuestionType type;
+  final double points;
+  final Difficulty difficulty;
+  final List<String> tags;
+  final int timesUsed;
+
+  Question toQuestion() {
+    return Question(
+      id: 'imported_${DateTime.now().millisecondsSinceEpoch}_$id',
+      text: text,
+      type: type,
+      points: points,
+      difficulty: difficulty,
+      options: type == QuestionType.multipleChoice
+          ? [
+              AnswerOption(id: '1', text: 'Option A', isCorrect: true),
+              AnswerOption(id: '2', text: 'Option B', isCorrect: false),
+              AnswerOption(id: '3', text: 'Option C', isCorrect: false),
+              AnswerOption(id: '4', text: 'Option D', isCorrect: false),
+            ]
+          : [],
+      correctAnswer: type == QuestionType.trueFalse ? 'true' : null,
+    );
+  }
+}
+
+class _BankQuestionTile extends StatelessWidget {
+  const _BankQuestionTile({
+    required this.question,
+    required this.isSelected,
+    required this.onToggle,
+  });
+
+  final _BankQuestion question;
+  final bool isSelected;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: isSelected ? 2 : 0,
+      color: isSelected ? theme.colorScheme.primaryContainer.withOpacity(0.3) : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: isSelected,
+                onChanged: (_) => onToggle(),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      question.text,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _MiniChip(
+                          icon: _getTypeIcon(question.type),
+                          label: question.type.label,
+                        ),
+                        _MiniChip(
+                          icon: Icons.grade,
+                          label: '${question.points.toStringAsFixed(0)} pts',
+                        ),
+                        _MiniChip(
+                          icon: Icons.signal_cellular_alt,
+                          label: question.difficulty.label,
+                          color: _getDifficultyColor(question.difficulty),
+                        ),
+                        _MiniChip(
+                          icon: Icons.repeat,
+                          label: 'Used ${question.timesUsed}x',
+                        ),
+                      ],
+                    ),
+                    if (question.tags.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 4,
+                        children: question.tags.map((tag) => Chip(
+                          label: Text(tag),
+                          labelStyle: const TextStyle(fontSize: 10),
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                        )).toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getTypeIcon(QuestionType type) {
+    switch (type) {
+      case QuestionType.multipleChoice:
+        return Icons.radio_button_checked;
+      case QuestionType.multipleSelect:
+        return Icons.check_box;
+      case QuestionType.trueFalse:
+        return Icons.thumbs_up_down;
+      case QuestionType.shortAnswer:
+        return Icons.short_text;
+      case QuestionType.essay:
+        return Icons.article;
+      case QuestionType.fillBlank:
+        return Icons.space_bar;
+      case QuestionType.matching:
+        return Icons.compare_arrows;
+      case QuestionType.ordering:
+        return Icons.format_list_numbered;
+      case QuestionType.numeric:
+        return Icons.numbers;
+    }
+  }
+
+  Color _getDifficultyColor(Difficulty difficulty) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return Colors.green;
+      case Difficulty.medium:
+        return Colors.orange;
+      case Difficulty.hard:
+        return Colors.red;
+    }
+  }
+}
+
+class _MiniChip extends StatelessWidget {
+  const _MiniChip({
+    required this.icon,
+    required this.label,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color ?? Colors.grey[600];
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: effectiveColor),
+        const SizedBox(width: 2),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: effectiveColor),
         ),
       ],
     );
