@@ -15,3 +15,7 @@ export 'assignment.dart';
 export 'grade.dart';
 export 'integration.dart';
 export 'ai_transparency.dart';
+export 'lms_integration.dart';
+export 'risk_prediction.dart';
+export 'intervention.dart';
+export 'assessment.dart';

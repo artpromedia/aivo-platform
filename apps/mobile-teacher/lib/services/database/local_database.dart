@@ -975,4 +975,96 @@ class TeacherLocalDatabase {
       'student_ids',
     ]);
   }
+
+  // ========================================================================
+  // GRADE PASSBACK SETTINGS & QUEUE CACHE
+  // ========================================================================
+
+  /// Get cached passback settings
+  Future<PassbackSettings?> getCachedPassbackSettings() async {
+    final cached = await _getCachedValue('passback_settings');
+    if (cached == null) return null;
+    return PassbackSettings.fromJson(cached as Map<String, dynamic>);
+  }
+
+  /// Cache passback settings
+  Future<void> cachePassbackSettings(PassbackSettings settings) async {
+    await _setCachedValue('passback_settings', settings.toJson());
+  }
+
+  /// Get cached passback history
+  Future<List<GradePassbackQueueItem>?> getCachedPassbackHistory() async {
+    final cached = await _getCachedValue('passback_history');
+    if (cached == null) return null;
+    return (cached as List<dynamic>)
+        .map((json) => GradePassbackQueueItem.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Cache passback history
+  Future<void> cachePassbackHistory(List<GradePassbackQueueItem> history) async {
+    await _setCachedValue(
+      'passback_history',
+      history.map((h) => h.toJson()).toList(),
+    );
+  }
+
+  /// Get passback queue (pending items to sync)
+  Future<List<GradePassbackQueueItem>> getPassbackQueue() async {
+    final cached = await _getCachedValue('passback_queue');
+    if (cached == null) return [];
+    return (cached as List<dynamic>)
+        .map((json) => GradePassbackQueueItem.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Add item to passback queue
+  Future<void> addToPassbackQueue(GradePassbackQueueItem item) async {
+    final queue = await getPassbackQueue();
+    queue.add(item);
+    await _setCachedValue(
+      'passback_queue',
+      queue.map((i) => i.toJson()).toList(),
+    );
+  }
+
+  /// Update passback queue item status
+  Future<void> updatePassbackQueueItemStatus(
+    String itemId,
+    GradeSyncStatus status, {
+    String? error,
+    bool incrementAttempt = false,
+  }) async {
+    final queue = await getPassbackQueue();
+    final index = queue.indexWhere((i) => i.id == itemId);
+    if (index == -1) return;
+
+    final item = queue[index];
+    queue[index] = item.copyWith(
+      status: status,
+      lastError: error,
+      attemptCount: incrementAttempt ? item.attemptCount + 1 : item.attemptCount,
+      lastAttemptAt: DateTime.now(),
+    );
+
+    await _setCachedValue(
+      'passback_queue',
+      queue.map((i) => i.toJson()).toList(),
+    );
+  }
+
+  /// Remove synced items from passback queue
+  Future<void> cleanupPassbackQueue() async {
+    final queue = await getPassbackQueue();
+    final filtered = queue.where((i) => i.status != GradeSyncStatus.synced).toList();
+    await _setCachedValue(
+      'passback_queue',
+      filtered.map((i) => i.toJson()).toList(),
+    );
+  }
+
+  /// Clear passback queue
+  Future<void> clearPassbackQueue() async {
+    await _db.deleteContentByKeys(['passback_queue']);
+  }
 }

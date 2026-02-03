@@ -569,6 +569,209 @@ class LmsRepository {
     return GradePassbackResult.fromJson(response.data as Map<String, dynamic>);
   }
 
+  /// Retry failed grade passbacks
+  Future<GradePassbackResult> retryFailedPassbacks({String? courseId}) async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    final response = await _api.post(
+      '$_basePath/grades/retry-failed',
+      data: courseId != null ? {'courseId': courseId} : null,
+    );
+    return GradePassbackResult.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Get passback history (recent sync attempts)
+  Future<List<GradePassbackQueueItem>> getPassbackHistory({
+    String? courseId,
+    int limit = 50,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'limit': limit.toString(),
+      if (courseId != null) 'courseId': courseId,
+    };
+
+    // Try to get from API if online
+    if (await _connectivity.isOnline) {
+      try {
+        final response = await _api.get(
+          '$_basePath/grades/history',
+          queryParameters: queryParams,
+        );
+        final history = (response.data as List<dynamic>)
+            .map((json) => GradePassbackQueueItem.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        // Cache history
+        await _db.cachePassbackHistory(history);
+
+        return history;
+      } catch (e) {
+        // Fall through to cached data
+      }
+    }
+
+    // Return cached data
+    return await _db.getCachedPassbackHistory() ?? [];
+  }
+
+  // ==========================================================================
+  // PASSBACK SETTINGS
+  // ==========================================================================
+
+  /// Get grade passback settings
+  Future<PassbackSettings> getPassbackSettings() async {
+    // Check for cached settings first
+    final cached = await _db.getCachedPassbackSettings();
+
+    if (await _connectivity.isOnline) {
+      try {
+        final response = await _api.get('$_basePath/settings/passback');
+        final settings = PassbackSettings.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+
+        // Cache settings
+        await _db.cachePassbackSettings(settings);
+
+        return settings;
+      } catch (e) {
+        if (cached != null) return cached;
+        // Return defaults if no cached data and API fails
+        return const PassbackSettings();
+      }
+    }
+
+    return cached ?? const PassbackSettings();
+  }
+
+  /// Update grade passback settings
+  Future<PassbackSettings> updatePassbackSettings(PassbackSettings settings) async {
+    // Always cache locally first for offline support
+    await _db.cachePassbackSettings(settings);
+
+    if (!await _connectivity.isOnline) {
+      // Queue settings update for later sync
+      await _sync.queueUpdate(
+        entityType: 'passback_settings',
+        entityId: 'current',
+        data: settings.toJson(),
+      );
+      return settings;
+    }
+
+    final response = await _api.put(
+      '$_basePath/settings/passback',
+      data: settings.toJson(),
+    );
+
+    return PassbackSettings.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Queue a grade for passback (used when saving grades offline)
+  Future<void> queueGradeForPassback({
+    required String gradeId,
+    required String studentId,
+    required String studentName,
+    required String assignmentId,
+    required String assignmentTitle,
+    required double score,
+    required double maxPoints,
+  }) async {
+    final item = GradePassbackQueueItem(
+      id: 'queue_${DateTime.now().millisecondsSinceEpoch}',
+      gradeId: gradeId,
+      studentId: studentId,
+      studentName: studentName,
+      assignmentId: assignmentId,
+      assignmentTitle: assignmentTitle,
+      score: score,
+      maxPoints: maxPoints,
+      status: GradeSyncStatus.pending,
+      createdAt: DateTime.now(),
+    );
+
+    await _db.addToPassbackQueue(item);
+
+    // Try to sync immediately if online
+    if (await _connectivity.isOnline) {
+      try {
+        await syncGrade(
+          assignmentId: assignmentId,
+          studentId: studentId,
+          score: score,
+        );
+        // Mark as synced
+        await _db.updatePassbackQueueItemStatus(item.id, GradeSyncStatus.synced);
+      } catch (e) {
+        // Keep in queue for retry
+        await _db.updatePassbackQueueItemStatus(
+          item.id,
+          GradeSyncStatus.failed,
+          error: e.toString(),
+        );
+      }
+    }
+  }
+
+  /// Get pending items from the passback queue
+  Future<List<GradePassbackQueueItem>> getPassbackQueue() async {
+    return await _db.getPassbackQueue();
+  }
+
+  /// Process pending items in the passback queue
+  Future<GradePassbackResult> processPassbackQueue() async {
+    if (!await _connectivity.isOnline) {
+      throw Exception('Internet connection required');
+    }
+
+    final queue = await _db.getPassbackQueue();
+    final pendingItems = queue.where((item) => item.canRetry).toList();
+
+    if (pendingItems.isEmpty) {
+      return const GradePassbackResult(
+        successful: 0,
+        failed: 0,
+        errors: [],
+      );
+    }
+
+    int successful = 0;
+    int failed = 0;
+    final errors = <GradePassbackError>[];
+
+    for (final item in pendingItems) {
+      try {
+        await syncGrade(
+          assignmentId: item.assignmentId,
+          studentId: item.studentId,
+          score: item.score,
+        );
+        await _db.updatePassbackQueueItemStatus(item.id, GradeSyncStatus.synced);
+        successful++;
+      } catch (e) {
+        await _db.updatePassbackQueueItemStatus(
+          item.id,
+          GradeSyncStatus.failed,
+          error: e.toString(),
+          incrementAttempt: true,
+        );
+        failed++;
+        errors.add(GradePassbackError(
+          studentId: item.studentId,
+          error: e.toString(),
+        ));
+      }
+    }
+
+    return GradePassbackResult(
+      successful: successful,
+      failed: failed,
+      errors: errors,
+    );
+  }
+
   // ==========================================================================
   // CACHE MANAGEMENT
   // ==========================================================================

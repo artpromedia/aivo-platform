@@ -33,6 +33,8 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
   bool _isExcused = false;
   bool _applyLatePenalty = true;
   bool _isSaving = false;
+  bool _syncToClassroom = true;
+  GradeSyncStatus? _lastSyncStatus;
 
   Submission? _submission;
   Assignment? _assignment;
@@ -41,6 +43,17 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
   void initState() {
     super.initState();
     _loadData();
+    _loadSyncSettings();
+  }
+
+  Future<void> _loadSyncSettings() async {
+    // Load passback settings to get default sync behavior
+    final settingsState = ref.read(passbackSettingsProvider);
+    if (mounted) {
+      setState(() {
+        _syncToClassroom = settingsState.settings.syncOnGradeSubmit;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -254,6 +267,9 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
                 onChanged: _isExcused ? null : (v) => setState(() => _applyLatePenalty = v),
               ),
 
+            // Google Classroom sync toggle
+            _buildClassroomSyncSection(),
+
             const SizedBox(height: 24),
 
             // Feedback
@@ -317,6 +333,93 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
               _updatePreview();
             },
     );
+  }
+
+  Widget _buildClassroomSyncSection() {
+    final isConnected = ref.watch(isLmsConnectedProvider);
+
+    if (!isConnected) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: Icon(
+              Icons.school,
+              color: _syncToClassroom ? AivoBrand.mint[600] : theme.colorScheme.outline,
+            ),
+            title: const Text('Sync to Google Classroom'),
+            subtitle: Text(
+              _syncToClassroom
+                  ? 'Grade will be synced to Google Classroom'
+                  : 'Grade will only be saved in AIVO',
+            ),
+            value: _syncToClassroom,
+            onChanged: (v) => setState(() => _syncToClassroom = v),
+          ),
+
+          // Show last sync status if available
+          if (_lastSyncStatus != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              child: Row(
+                children: [
+                  _buildSyncStatusBadge(_lastSyncStatus!),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getSyncStatusText(_lastSyncStatus!),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: _getSyncStatusColor(_lastSyncStatus!),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncStatusBadge(GradeSyncStatus status) {
+    final (color, icon) = switch (status) {
+      GradeSyncStatus.pending => (AivoBrand.warning, Icons.schedule),
+      GradeSyncStatus.synced => (AivoBrand.success, Icons.check_circle),
+      GradeSyncStatus.failed => (AivoBrand.error, Icons.error),
+      GradeSyncStatus.retrying => (Colors.blue, Icons.refresh),
+    };
+
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 14, color: color),
+    );
+  }
+
+  String _getSyncStatusText(GradeSyncStatus status) {
+    return switch (status) {
+      GradeSyncStatus.pending => 'Waiting to sync',
+      GradeSyncStatus.synced => 'Synced to Google Classroom',
+      GradeSyncStatus.failed => 'Sync failed - will retry',
+      GradeSyncStatus.retrying => 'Retrying sync...',
+    };
+  }
+
+  Color _getSyncStatusColor(GradeSyncStatus status) {
+    return switch (status) {
+      GradeSyncStatus.pending => AivoBrand.warning,
+      GradeSyncStatus.synced => AivoBrand.success,
+      GradeSyncStatus.failed => AivoBrand.error,
+      GradeSyncStatus.retrying => Colors.blue,
+    };
   }
 
   String _getStatusText(Submission submission) {
@@ -415,9 +518,17 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
           .read(submissionsProvider(widget.assignmentId).notifier)
           .gradeSubmission(widget.submissionId, dto);
 
+      // Sync to Google Classroom if enabled
+      if (_syncToClassroom && !_isExcused && points != null) {
+        await _syncGradeToClassroom(points);
+      }
+
       if (mounted) {
+        final message = _syncToClassroom && !_isExcused
+            ? 'Grade saved and syncing to Google Classroom'
+            : 'Grade saved';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Grade saved')),
+          SnackBar(content: Text(message)),
         );
         context.pop();
       }
@@ -429,6 +540,36 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _syncGradeToClassroom(double points) async {
+    final submission = _submission;
+    final assignment = _assignment;
+
+    if (submission == null || assignment == null) return;
+
+    setState(() => _lastSyncStatus = GradeSyncStatus.pending);
+
+    try {
+      // Queue for passback (this will sync immediately if online, or queue if offline)
+      await ref.read(passbackQueueProvider.notifier).queueGrade(
+            gradeId: '${submission.id}_${DateTime.now().millisecondsSinceEpoch}',
+            studentId: submission.studentId,
+            studentName: submission.studentName ?? 'Student',
+            assignmentId: assignment.id,
+            assignmentTitle: assignment.title,
+            score: points,
+            maxPoints: assignment.pointsPossible,
+          );
+
+      if (mounted) {
+        setState(() => _lastSyncStatus = GradeSyncStatus.synced);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _lastSyncStatus = GradeSyncStatus.failed);
+      }
     }
   }
 
@@ -447,6 +588,11 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
       await ref
           .read(submissionsProvider(widget.assignmentId).notifier)
           .gradeSubmission(widget.submissionId, dto);
+
+      // Sync to Google Classroom if enabled
+      if (_syncToClassroom && !_isExcused && points != null) {
+        await _syncGradeToClassroom(points);
+      }
 
       if (!mounted) return;
 
@@ -471,8 +617,11 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
       } else {
         // Navigate to next ungraded submission
         final nextSubmission = ungradedSubmissions.first;
+        final message = _syncToClassroom && !_isExcused
+            ? 'Grade saved & syncing. Moving to next...'
+            : 'Grade saved. Moving to next submission...';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Grade saved. Moving to next submission...')),
+          SnackBar(content: Text(message)),
         );
 
         // Replace current route with next submission

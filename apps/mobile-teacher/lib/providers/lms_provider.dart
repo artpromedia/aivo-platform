@@ -468,6 +468,304 @@ final gradePassbackProvider =
   return GradePassbackNotifier(repository);
 });
 
+// ==========================================================================
+// PASSBACK SETTINGS & QUEUE PROVIDERS
+// ==========================================================================
+
+/// State for passback settings
+class PassbackSettingsState {
+  const PassbackSettingsState({
+    this.settings = const PassbackSettings(),
+    this.isLoading = false,
+    this.isSaving = false,
+    this.error,
+  });
+
+  final PassbackSettings settings;
+  final bool isLoading;
+  final bool isSaving;
+  final String? error;
+
+  PassbackSettingsState copyWith({
+    PassbackSettings? settings,
+    bool? isLoading,
+    bool? isSaving,
+    String? error,
+  }) {
+    return PassbackSettingsState(
+      settings: settings ?? this.settings,
+      isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      error: error,
+    );
+  }
+}
+
+/// Notifier for passback settings
+class PassbackSettingsNotifier extends StateNotifier<PassbackSettingsState> {
+  PassbackSettingsNotifier(this._repository) : super(const PassbackSettingsState());
+
+  final LmsRepository _repository;
+
+  /// Load passback settings
+  Future<void> loadSettings() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final settings = await _repository.getPassbackSettings();
+      state = state.copyWith(
+        settings: settings,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Update passback settings
+  Future<bool> updateSettings(PassbackSettings settings) async {
+    state = state.copyWith(isSaving: true, error: null);
+
+    try {
+      final updatedSettings = await _repository.updatePassbackSettings(settings);
+      state = state.copyWith(
+        settings: updatedSettings,
+        isSaving: false,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSaving: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Toggle auto-sync
+  Future<bool> toggleAutoSync() async {
+    return updateSettings(
+      state.settings.copyWith(autoSyncEnabled: !state.settings.autoSyncEnabled),
+    );
+  }
+
+  /// Toggle sync on grade submit
+  Future<bool> toggleSyncOnGradeSubmit() async {
+    return updateSettings(
+      state.settings.copyWith(syncOnGradeSubmit: !state.settings.syncOnGradeSubmit),
+    );
+  }
+
+  /// Toggle require confirmation
+  Future<bool> toggleRequireConfirmation() async {
+    return updateSettings(
+      state.settings.copyWith(requireConfirmation: !state.settings.requireConfirmation),
+    );
+  }
+
+  /// Set retry policy
+  Future<bool> setRetryPolicy(PassbackRetryPolicy policy) async {
+    return updateSettings(
+      state.settings.copyWith(retryPolicy: policy),
+    );
+  }
+
+  /// Clear error
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+}
+
+/// Provider for passback settings
+final passbackSettingsProvider =
+    StateNotifierProvider<PassbackSettingsNotifier, PassbackSettingsState>((ref) {
+  final repository = ref.watch(lmsRepositoryProvider);
+  final notifier = PassbackSettingsNotifier(repository);
+  notifier.loadSettings();
+  return notifier;
+});
+
+/// State for passback queue
+class PassbackQueueState {
+  const PassbackQueueState({
+    this.items = const [],
+    this.isLoading = false,
+    this.isProcessing = false,
+    this.error,
+    this.lastProcessResult,
+  });
+
+  final List<GradePassbackQueueItem> items;
+  final bool isLoading;
+  final bool isProcessing;
+  final String? error;
+  final GradePassbackResult? lastProcessResult;
+
+  /// Number of pending items
+  int get pendingCount =>
+      items.where((i) => i.status == GradeSyncStatus.pending).length;
+
+  /// Number of failed items
+  int get failedCount =>
+      items.where((i) => i.status == GradeSyncStatus.failed).length;
+
+  /// Number of synced items
+  int get syncedCount =>
+      items.where((i) => i.status == GradeSyncStatus.synced).length;
+
+  /// Whether there are items to process
+  bool get hasItemsToProcess => pendingCount > 0 || failedCount > 0;
+
+  PassbackQueueState copyWith({
+    List<GradePassbackQueueItem>? items,
+    bool? isLoading,
+    bool? isProcessing,
+    String? error,
+    GradePassbackResult? lastProcessResult,
+  }) {
+    return PassbackQueueState(
+      items: items ?? this.items,
+      isLoading: isLoading ?? this.isLoading,
+      isProcessing: isProcessing ?? this.isProcessing,
+      error: error,
+      lastProcessResult: lastProcessResult ?? this.lastProcessResult,
+    );
+  }
+}
+
+/// Notifier for passback queue
+class PassbackQueueNotifier extends StateNotifier<PassbackQueueState> {
+  PassbackQueueNotifier(this._repository) : super(const PassbackQueueState());
+
+  final LmsRepository _repository;
+
+  /// Load queue items
+  Future<void> loadQueue() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final items = await _repository.getPassbackQueue();
+      state = state.copyWith(
+        items: items,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Process all pending items in the queue
+  Future<GradePassbackResult?> processQueue() async {
+    if (!state.hasItemsToProcess) return null;
+
+    state = state.copyWith(isProcessing: true, error: null);
+
+    try {
+      final result = await _repository.processPassbackQueue();
+
+      // Reload queue to get updated statuses
+      await loadQueue();
+
+      state = state.copyWith(
+        isProcessing: false,
+        lastProcessResult: result,
+      );
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(
+        isProcessing: false,
+        error: e.toString(),
+      );
+      return null;
+    }
+  }
+
+  /// Retry failed passbacks from server
+  Future<GradePassbackResult?> retryFailed({String? courseId}) async {
+    state = state.copyWith(isProcessing: true, error: null);
+
+    try {
+      final result = await _repository.retryFailedPassbacks(courseId: courseId);
+
+      // Reload to get updated statuses
+      await loadQueue();
+
+      state = state.copyWith(
+        isProcessing: false,
+        lastProcessResult: result,
+      );
+
+      return result;
+    } catch (e) {
+      state = state.copyWith(
+        isProcessing: false,
+        error: e.toString(),
+      );
+      return null;
+    }
+  }
+
+  /// Add a grade to the queue
+  Future<void> queueGrade({
+    required String gradeId,
+    required String studentId,
+    required String studentName,
+    required String assignmentId,
+    required String assignmentTitle,
+    required double score,
+    required double maxPoints,
+  }) async {
+    await _repository.queueGradeForPassback(
+      gradeId: gradeId,
+      studentId: studentId,
+      studentName: studentName,
+      assignmentId: assignmentId,
+      assignmentTitle: assignmentTitle,
+      score: score,
+      maxPoints: maxPoints,
+    );
+
+    await loadQueue();
+  }
+
+  /// Refresh queue
+  Future<void> refresh() async {
+    await loadQueue();
+  }
+
+  /// Clear error
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+}
+
+/// Provider for passback queue
+final passbackQueueProvider =
+    StateNotifierProvider<PassbackQueueNotifier, PassbackQueueState>((ref) {
+  final repository = ref.watch(lmsRepositoryProvider);
+  return PassbackQueueNotifier(repository);
+});
+
+/// Computed provider for total queue count (pending + failed)
+final passbackQueueCountProvider = Provider<int>((ref) {
+  final queueState = ref.watch(passbackQueueProvider);
+  return queueState.pendingCount + queueState.failedCount;
+});
+
+/// Computed provider for whether sync is needed
+final needsGradeSyncProvider = Provider<bool>((ref) {
+  final gradeState = ref.watch(gradePassbackProvider);
+  final queueState = ref.watch(passbackQueueProvider);
+  return gradeState.hasGradesToSync || queueState.hasItemsToProcess;
+});
+
 /// Provider for sync operations state
 final syncOperationProvider =
     StateNotifierProvider<SyncOperationNotifier, SyncOperationState>((ref) {

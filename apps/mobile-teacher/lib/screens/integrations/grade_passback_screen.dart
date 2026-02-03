@@ -46,6 +46,12 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
       appBar: AppBar(
         title: const Text('Grade Passback'),
         actions: [
+          // Settings button
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => _showSettingsSheet(context),
+            tooltip: 'Passback Settings',
+          ),
           if (state.pendingGrades.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -275,6 +281,8 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
   }
 
   Widget _buildBottomBar(GradePassbackState state, ThemeData theme) {
+    final hasFailedGrades = state.failedCount > 0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -288,39 +296,62 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: state.isSyncing
-                    ? null
-                    : () => _syncAllGrades(),
-                child: const Text('Sync All'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: FilledButton.icon(
-                onPressed: state.isSyncing || _selectedGrades.isEmpty
-                    ? null
-                    : () => _syncSelectedGrades(),
-                icon: state.isSyncing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.sync),
-                label: Text(
-                  state.isSyncing
-                      ? 'Syncing...'
-                      : 'Sync Selected (${_selectedGrades.length})',
+            // Retry failed button (shown when there are failures)
+            if (hasFailedGrades) ...[
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: state.isSyncing ? null : () => _retryFailedGrades(),
+                  icon: const Icon(Icons.refresh),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AivoBrand.error,
+                    side: BorderSide(color: AivoBrand.error),
+                  ),
+                  label: Text('Retry ${state.failedCount} Failed'),
                 ),
               ),
+              const SizedBox(height: 12),
+            ],
+
+            // Main action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: state.isSyncing
+                        ? null
+                        : () => _syncAllGrades(),
+                    child: const Text('Sync All'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: state.isSyncing || _selectedGrades.isEmpty
+                        ? null
+                        : () => _syncSelectedGrades(),
+                    icon: state.isSyncing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.sync),
+                    label: Text(
+                      state.isSyncing
+                          ? 'Syncing...'
+                          : 'Sync Selected (${_selectedGrades.length})',
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -370,6 +401,285 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _retryFailedGrades() async {
+    final result = await ref.read(passbackQueueProvider.notifier).retryFailed(
+          courseId: widget.courseId,
+        );
+
+    if (result != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.allSuccessful
+                ? '${result.successful} grades synced successfully!'
+                : '${result.successful} synced, ${result.failed} still failing',
+          ),
+          backgroundColor: result.allSuccessful ? AivoBrand.success : AivoBrand.warning,
+        ),
+      );
+
+      // Refresh the pending grades list
+      ref.read(gradePassbackProvider.notifier).refresh();
+    }
+  }
+
+  void _showSettingsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => const _PassbackSettingsSheet(),
+    );
+  }
+}
+
+/// Settings sheet for grade passback configuration
+class _PassbackSettingsSheet extends ConsumerWidget {
+  const _PassbackSettingsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settingsState = ref.watch(passbackSettingsProvider);
+    final settings = settingsState.settings;
+    final theme = Theme.of(context);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Handle bar
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.settings,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Passback Settings',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const Spacer(),
+                  if (settingsState.isSaving)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Settings list
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  // Auto-sync section
+                  _buildSectionHeader(theme, 'Automatic Sync', Icons.sync),
+                  const SizedBox(height: 8),
+
+                  SwitchListTile(
+                    title: const Text('Enable Auto-Sync'),
+                    subtitle: const Text('Automatically sync grades in the background'),
+                    value: settings.autoSyncEnabled,
+                    onChanged: settingsState.isSaving
+                        ? null
+                        : (_) => ref
+                            .read(passbackSettingsProvider.notifier)
+                            .toggleAutoSync(),
+                  ),
+
+                  if (settings.autoSyncEnabled) ...[
+                    ListTile(
+                      title: const Text('Sync Interval'),
+                      subtitle: Text('Every ${settings.syncIntervalMinutes} minutes'),
+                      trailing: DropdownButton<int>(
+                        value: settings.syncIntervalMinutes,
+                        underline: const SizedBox(),
+                        items: const [
+                          DropdownMenuItem(value: 5, child: Text('5 min')),
+                          DropdownMenuItem(value: 15, child: Text('15 min')),
+                          DropdownMenuItem(value: 30, child: Text('30 min')),
+                          DropdownMenuItem(value: 60, child: Text('1 hour')),
+                        ],
+                        onChanged: settingsState.isSaving
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  ref
+                                      .read(passbackSettingsProvider.notifier)
+                                      .updateSettings(
+                                        settings.copyWith(
+                                            syncIntervalMinutes: value),
+                                      );
+                                }
+                              },
+                      ),
+                    ),
+                  ],
+
+                  const Divider(height: 32),
+
+                  // Behavior section
+                  _buildSectionHeader(theme, 'Behavior', Icons.tune),
+                  const SizedBox(height: 8),
+
+                  SwitchListTile(
+                    title: const Text('Sync on Grade Submit'),
+                    subtitle:
+                        const Text('Immediately sync when you save a grade'),
+                    value: settings.syncOnGradeSubmit,
+                    onChanged: settingsState.isSaving
+                        ? null
+                        : (_) => ref
+                            .read(passbackSettingsProvider.notifier)
+                            .toggleSyncOnGradeSubmit(),
+                  ),
+
+                  SwitchListTile(
+                    title: const Text('Require Confirmation'),
+                    subtitle: const Text('Ask before syncing grades'),
+                    value: settings.requireConfirmation,
+                    onChanged: settingsState.isSaving
+                        ? null
+                        : (_) => ref
+                            .read(passbackSettingsProvider.notifier)
+                            .toggleRequireConfirmation(),
+                  ),
+
+                  const Divider(height: 32),
+
+                  // Retry section
+                  _buildSectionHeader(theme, 'Failed Sync Retry', Icons.refresh),
+                  const SizedBox(height: 8),
+
+                  ListTile(
+                    title: const Text('Retry Policy'),
+                    subtitle: Text(settings.retryPolicy.description),
+                  ),
+
+                  ...PassbackRetryPolicy.values.map((policy) => RadioListTile(
+                        title: Text(policy.label),
+                        value: policy,
+                        groupValue: settings.retryPolicy,
+                        onChanged: settingsState.isSaving
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  ref
+                                      .read(passbackSettingsProvider.notifier)
+                                      .setRetryPolicy(value);
+                                }
+                              },
+                      )),
+
+                  const Divider(height: 32),
+
+                  // Notifications section
+                  _buildSectionHeader(theme, 'Notifications', Icons.notifications),
+                  const SizedBox(height: 8),
+
+                  SwitchListTile(
+                    title: const Text('Notify on Failure'),
+                    subtitle: const Text('Show notification when sync fails'),
+                    value: settings.notifyOnFailure,
+                    onChanged: settingsState.isSaving
+                        ? null
+                        : (value) {
+                            ref
+                                .read(passbackSettingsProvider.notifier)
+                                .updateSettings(
+                                  settings.copyWith(notifyOnFailure: value),
+                                );
+                          },
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Batch sync threshold
+                  _buildSectionHeader(theme, 'Batch Sync', Icons.batch_prediction),
+                  const SizedBox(height: 8),
+
+                  ListTile(
+                    title: const Text('Batch Prompt Threshold'),
+                    subtitle: Text(
+                      'Prompt for batch sync when ${settings.batchSyncThreshold}+ grades pending',
+                    ),
+                    trailing: DropdownButton<int>(
+                      value: settings.batchSyncThreshold,
+                      underline: const SizedBox(),
+                      items: const [
+                        DropdownMenuItem(value: 5, child: Text('5')),
+                        DropdownMenuItem(value: 10, child: Text('10')),
+                        DropdownMenuItem(value: 20, child: Text('20')),
+                        DropdownMenuItem(value: 50, child: Text('50')),
+                      ],
+                      onChanged: settingsState.isSaving
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                ref
+                                    .read(passbackSettingsProvider.notifier)
+                                    .updateSettings(
+                                      settings.copyWith(
+                                          batchSyncThreshold: value),
+                                    );
+                              }
+                            },
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionHeader(ThemeData theme, String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -1248,6 +1248,276 @@ class GradePassbackError {
       };
 }
 
+/// Retry policy for failed grade passbacks
+enum PassbackRetryPolicy {
+  /// No automatic retry
+  manual('manual'),
+  
+  /// Retry once after 5 minutes
+  once('once'),
+  
+  /// Retry up to 3 times with exponential backoff
+  exponential('exponential');
+
+  const PassbackRetryPolicy(this.value);
+  final String value;
+
+  static PassbackRetryPolicy fromString(String value) {
+    return PassbackRetryPolicy.values.firstWhere(
+      (p) => p.value == value.toLowerCase(),
+      orElse: () => PassbackRetryPolicy.exponential,
+    );
+  }
+
+  String get label {
+    switch (this) {
+      case PassbackRetryPolicy.manual:
+        return 'Manual only';
+      case PassbackRetryPolicy.once:
+        return 'Retry once';
+      case PassbackRetryPolicy.exponential:
+        return 'Auto-retry (recommended)';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case PassbackRetryPolicy.manual:
+        return 'Failed grades must be synced manually';
+      case PassbackRetryPolicy.once:
+        return 'Retry failed grades once after 5 minutes';
+      case PassbackRetryPolicy.exponential:
+        return 'Automatically retry up to 3 times with increasing delays';
+    }
+  }
+}
+
+/// Settings for grade passback to Google Classroom
+@immutable
+class PassbackSettings {
+  const PassbackSettings({
+    this.autoSyncEnabled = true,
+    this.syncOnGradeSubmit = true,
+    this.requireConfirmation = false,
+    this.retryPolicy = PassbackRetryPolicy.exponential,
+    this.syncIntervalMinutes = 15,
+    this.maxRetryAttempts = 3,
+    this.notifyOnFailure = true,
+    this.batchSyncThreshold = 10,
+  });
+
+  /// Whether automatic background sync is enabled
+  final bool autoSyncEnabled;
+
+  /// Whether to immediately sync when a grade is submitted
+  final bool syncOnGradeSubmit;
+
+  /// Whether to require confirmation before syncing grades
+  final bool requireConfirmation;
+
+  /// Retry policy for failed passbacks
+  final PassbackRetryPolicy retryPolicy;
+
+  /// Interval in minutes between auto-sync checks
+  final int syncIntervalMinutes;
+
+  /// Maximum number of retry attempts for failed grades
+  final int maxRetryAttempts;
+
+  /// Whether to show notification when passback fails
+  final bool notifyOnFailure;
+
+  /// Number of pending grades that triggers batch sync prompt
+  final int batchSyncThreshold;
+
+  PassbackSettings copyWith({
+    bool? autoSyncEnabled,
+    bool? syncOnGradeSubmit,
+    bool? requireConfirmation,
+    PassbackRetryPolicy? retryPolicy,
+    int? syncIntervalMinutes,
+    int? maxRetryAttempts,
+    bool? notifyOnFailure,
+    int? batchSyncThreshold,
+  }) {
+    return PassbackSettings(
+      autoSyncEnabled: autoSyncEnabled ?? this.autoSyncEnabled,
+      syncOnGradeSubmit: syncOnGradeSubmit ?? this.syncOnGradeSubmit,
+      requireConfirmation: requireConfirmation ?? this.requireConfirmation,
+      retryPolicy: retryPolicy ?? this.retryPolicy,
+      syncIntervalMinutes: syncIntervalMinutes ?? this.syncIntervalMinutes,
+      maxRetryAttempts: maxRetryAttempts ?? this.maxRetryAttempts,
+      notifyOnFailure: notifyOnFailure ?? this.notifyOnFailure,
+      batchSyncThreshold: batchSyncThreshold ?? this.batchSyncThreshold,
+    );
+  }
+
+  factory PassbackSettings.fromJson(Map<String, dynamic> json) {
+    return PassbackSettings(
+      autoSyncEnabled: json['autoSyncEnabled'] as bool? ??
+          json['auto_sync_enabled'] as bool? ?? true,
+      syncOnGradeSubmit: json['syncOnGradeSubmit'] as bool? ??
+          json['sync_on_grade_submit'] as bool? ?? true,
+      requireConfirmation: json['requireConfirmation'] as bool? ??
+          json['require_confirmation'] as bool? ?? false,
+      retryPolicy: PassbackRetryPolicy.fromString(
+        json['retryPolicy'] as String? ??
+            json['retry_policy'] as String? ?? 'exponential',
+      ),
+      syncIntervalMinutes: json['syncIntervalMinutes'] as int? ??
+          json['sync_interval_minutes'] as int? ?? 15,
+      maxRetryAttempts: json['maxRetryAttempts'] as int? ??
+          json['max_retry_attempts'] as int? ?? 3,
+      notifyOnFailure: json['notifyOnFailure'] as bool? ??
+          json['notify_on_failure'] as bool? ?? true,
+      batchSyncThreshold: json['batchSyncThreshold'] as int? ??
+          json['batch_sync_threshold'] as int? ?? 10,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'autoSyncEnabled': autoSyncEnabled,
+        'syncOnGradeSubmit': syncOnGradeSubmit,
+        'requireConfirmation': requireConfirmation,
+        'retryPolicy': retryPolicy.value,
+        'syncIntervalMinutes': syncIntervalMinutes,
+        'maxRetryAttempts': maxRetryAttempts,
+        'notifyOnFailure': notifyOnFailure,
+        'batchSyncThreshold': batchSyncThreshold,
+      };
+}
+
+/// Item in the grade passback queue
+@immutable
+class GradePassbackQueueItem {
+  const GradePassbackQueueItem({
+    required this.id,
+    required this.gradeId,
+    required this.studentId,
+    required this.studentName,
+    required this.assignmentId,
+    required this.assignmentTitle,
+    required this.score,
+    required this.maxPoints,
+    required this.status,
+    required this.createdAt,
+    this.attemptCount = 0,
+    this.lastAttemptAt,
+    this.nextRetryAt,
+    this.lastError,
+  });
+
+  final String id;
+  final String gradeId;
+  final String studentId;
+  final String studentName;
+  final String assignmentId;
+  final String assignmentTitle;
+  final double score;
+  final double maxPoints;
+  final GradeSyncStatus status;
+  final DateTime createdAt;
+  final int attemptCount;
+  final DateTime? lastAttemptAt;
+  final DateTime? nextRetryAt;
+  final String? lastError;
+
+  /// Score as percentage
+  double get scorePercent => maxPoints > 0 ? (score / maxPoints) * 100 : 0;
+
+  /// Whether this item can be retried
+  bool get canRetry =>
+      status == GradeSyncStatus.failed || status == GradeSyncStatus.pending;
+
+  /// Whether this item is scheduled for retry
+  bool get isScheduledForRetry =>
+      nextRetryAt != null && nextRetryAt!.isAfter(DateTime.now());
+
+  GradePassbackQueueItem copyWith({
+    String? id,
+    String? gradeId,
+    String? studentId,
+    String? studentName,
+    String? assignmentId,
+    String? assignmentTitle,
+    double? score,
+    double? maxPoints,
+    GradeSyncStatus? status,
+    DateTime? createdAt,
+    int? attemptCount,
+    DateTime? lastAttemptAt,
+    DateTime? nextRetryAt,
+    String? lastError,
+  }) {
+    return GradePassbackQueueItem(
+      id: id ?? this.id,
+      gradeId: gradeId ?? this.gradeId,
+      studentId: studentId ?? this.studentId,
+      studentName: studentName ?? this.studentName,
+      assignmentId: assignmentId ?? this.assignmentId,
+      assignmentTitle: assignmentTitle ?? this.assignmentTitle,
+      score: score ?? this.score,
+      maxPoints: maxPoints ?? this.maxPoints,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
+      nextRetryAt: nextRetryAt ?? this.nextRetryAt,
+      lastError: lastError ?? this.lastError,
+    );
+  }
+
+  factory GradePassbackQueueItem.fromJson(Map<String, dynamic> json) {
+    return GradePassbackQueueItem(
+      id: json['id'] as String? ?? '',
+      gradeId: json['gradeId'] as String? ?? json['grade_id'] as String? ?? '',
+      studentId: json['studentId'] as String? ?? json['student_id'] as String? ?? '',
+      studentName: json['studentName'] as String? ?? json['student_name'] as String? ?? '',
+      assignmentId: json['assignmentId'] as String? ?? json['assignment_id'] as String? ?? '',
+      assignmentTitle: json['assignmentTitle'] as String? ??
+          json['assignment_title'] as String? ?? '',
+      score: (json['score'] as num?)?.toDouble() ?? 0,
+      maxPoints: (json['maxPoints'] as num?)?.toDouble() ??
+          (json['max_points'] as num?)?.toDouble() ?? 0,
+      status: GradeSyncStatus.fromString(
+        json['status'] as String? ?? 'pending',
+      ),
+      createdAt: DateTime.tryParse(
+        json['createdAt'] as String? ?? json['created_at'] as String? ?? '',
+      ) ?? DateTime.now(),
+      attemptCount: json['attemptCount'] as int? ?? json['attempt_count'] as int? ?? 0,
+      lastAttemptAt: json['lastAttemptAt'] != null || json['last_attempt_at'] != null
+          ? DateTime.tryParse(
+              json['lastAttemptAt'] as String? ?? json['last_attempt_at'] as String? ?? '',
+            )
+          : null,
+      nextRetryAt: json['nextRetryAt'] != null || json['next_retry_at'] != null
+          ? DateTime.tryParse(
+              json['nextRetryAt'] as String? ?? json['next_retry_at'] as String? ?? '',
+            )
+          : null,
+      lastError: json['lastError'] as String? ?? json['last_error'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'gradeId': gradeId,
+        'studentId': studentId,
+        'studentName': studentName,
+        'assignmentId': assignmentId,
+        'assignmentTitle': assignmentTitle,
+        'score': score,
+        'maxPoints': maxPoints,
+        'status': status.value,
+        'createdAt': createdAt.toIso8601String(),
+        'attemptCount': attemptCount,
+        if (lastAttemptAt != null) 'lastAttemptAt': lastAttemptAt!.toIso8601String(),
+        if (nextRetryAt != null) 'nextRetryAt': nextRetryAt!.toIso8601String(),
+        if (lastError != null) 'lastError': lastError,
+      };
+}
+
 /// DTO for posting an assignment to Google Classroom
 @immutable
 class PostAssignmentRequest {
