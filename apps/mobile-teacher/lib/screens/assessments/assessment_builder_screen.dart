@@ -57,7 +57,7 @@ class _AssessmentBuilderScreenState
     if (widget.isEditing) {
       await notifier.loadAssessment(widget.assessmentId!);
     } else {
-      notifier.createNew(
+      notifier.initNewAssessment(
         classId: widget.classId,
         type: widget.type,
         name: widget.name,
@@ -87,7 +87,6 @@ class _AssessmentBuilderScreenState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(currentAssessmentProvider);
-    final theme = Theme.of(context);
 
     if (_isLoading) {
       return Scaffold(
@@ -277,7 +276,7 @@ class _AssessmentBuilderScreenState
                 return null;
               },
               onChanged: (value) {
-                ref.read(currentAssessmentProvider.notifier).updateBasicInfo(
+                ref.read(currentAssessmentProvider.notifier).updateAssessment(
                       name: value,
                     );
               },
@@ -294,7 +293,7 @@ class _AssessmentBuilderScreenState
               ),
               maxLines: 2,
               onChanged: (value) {
-                ref.read(currentAssessmentProvider.notifier).updateBasicInfo(
+                ref.read(currentAssessmentProvider.notifier).updateAssessment(
                       description: value.isEmpty ? null : value,
                     );
               },
@@ -311,7 +310,7 @@ class _AssessmentBuilderScreenState
               ),
               maxLines: 3,
               onChanged: (value) {
-                ref.read(currentAssessmentProvider.notifier).updateBasicInfo(
+                ref.read(currentAssessmentProvider.notifier).updateAssessment(
                       instructions: value.isEmpty ? null : value,
                     );
               },
@@ -345,7 +344,7 @@ class _AssessmentBuilderScreenState
                     if (type != null) {
                       ref
                           .read(currentAssessmentProvider.notifier)
-                          .updateBasicInfo(type: type);
+                          .updateAssessment(type: type);
                     }
                   },
                 ),
@@ -602,7 +601,7 @@ class _AssessmentBuilderScreenState
     if (result != null && mounted) {
       final notifier = ref.read(currentAssessmentProvider.notifier);
       if (question != null) {
-        notifier.updateQuestion(result);
+        notifier.updateQuestion(question.id, result);
       } else {
         notifier.addQuestion(result);
       }
@@ -630,7 +629,7 @@ class _AssessmentBuilderScreenState
     );
 
     if (confirm == true) {
-      ref.read(currentAssessmentProvider.notifier).removeQuestion(question.id);
+      ref.read(currentAssessmentProvider.notifier).deleteQuestion(question.id);
     }
   }
 
@@ -781,7 +780,7 @@ class _AssessmentBuilderScreenState
     setState(() => _isSaving = true);
 
     try {
-      await ref.read(currentAssessmentProvider.notifier).saveAndPublish();
+      await ref.read(currentAssessmentProvider.notifier).publish();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -886,7 +885,7 @@ class _QuestionListItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          question.text,
+          question.stem,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -1004,7 +1003,6 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
   final _searchController = TextEditingController();
   final Set<String> _selectedQuestionIds = {};
   QuestionType? _filterType;
-  String _sourceFilter = 'all'; // 'all', 'my', 'shared'
 
   // Sample questions from the question bank
   // In real implementation, this would come from a provider
@@ -1281,7 +1279,7 @@ class _BankQuestion {
   final String id;
   final String text;
   final QuestionType type;
-  final double points;
+  final int points;
   final Difficulty difficulty;
   final List<String> tags;
   final int timesUsed;
@@ -1289,16 +1287,16 @@ class _BankQuestion {
   Question toQuestion() {
     return Question(
       id: 'imported_${DateTime.now().millisecondsSinceEpoch}_$id',
-      text: text,
+      stem: text,
       type: type,
       points: points,
       difficulty: difficulty,
       options: type == QuestionType.multipleChoice
           ? [
-              AnswerOption(id: '1', text: 'Option A', isCorrect: true),
-              AnswerOption(id: '2', text: 'Option B', isCorrect: false),
-              AnswerOption(id: '3', text: 'Option C', isCorrect: false),
-              AnswerOption(id: '4', text: 'Option D', isCorrect: false),
+              QuestionOption(id: '1', text: 'Option A', isCorrect: true),
+              QuestionOption(id: '2', text: 'Option B', isCorrect: false),
+              QuestionOption(id: '3', text: 'Option C', isCorrect: false),
+              QuestionOption(id: '4', text: 'Option D', isCorrect: false),
             ]
           : [],
       correctAnswer: type == QuestionType.trueFalse ? 'true' : null,

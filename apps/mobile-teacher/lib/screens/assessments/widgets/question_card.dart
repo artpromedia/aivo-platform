@@ -88,15 +88,15 @@ class QuestionCard extends StatelessWidget {
                     children: [
                       // Question text
                       Text(
-                        question.text.isNotEmpty
-                            ? question.text
+                        question.stem.isNotEmpty
+                            ? question.stem
                             : '(No question text)',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
-                          fontStyle: question.text.isEmpty
+                          fontStyle: question.stem.isEmpty
                               ? FontStyle.italic
                               : null,
-                          color: question.text.isEmpty
+                          color: question.stem.isEmpty
                               ? theme.colorScheme.onSurfaceVariant
                               : null,
                         ),
@@ -110,19 +110,19 @@ class QuestionCard extends StatelessWidget {
                         children: [
                           _QuestionTypeChip(type: question.type),
                           const SizedBox(width: 8),
-                          _PointsChip(points: question.points),
-                          if (question.difficulty != null) ...[
+                          _PointsChip(points: question.points.toDouble()),
+                          ...[
                             const SizedBox(width: 8),
-                            _DifficultyChip(difficulty: question.difficulty!),
+                            _DifficultyChip(difficulty: question.difficulty),
                           ],
                         ],
                       ),
 
                       // Preview of answer options for MC
                       if (question.type == QuestionType.multipleChoice &&
-                          question.options.isNotEmpty) ...[
+                          (question.options?.isNotEmpty ?? false)) ...[
                         const SizedBox(height: 8),
-                        _OptionsPreview(options: question.options),
+                        _OptionsPreview(options: question.options ?? []),
                       ],
                     ],
                   ),

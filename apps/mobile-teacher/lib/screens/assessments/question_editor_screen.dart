@@ -44,9 +44,8 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
   final _explanationController = TextEditingController();
 
   late QuestionType _selectedType;
-  late double _points;
+  late int _points;
   late Difficulty _difficulty;
-  late bool _isRequired;
   bool _hasChanges = false;
 
   // Type-specific data
@@ -54,9 +53,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
   List<MatchingPair> _matchingPairs = [];
   List<FillBlankSlot> _fillBlankSlots = [];
   List<String> _acceptedAnswers = [];
-  bool? _correctBoolAnswer;
-  double? _numericAnswer;
-  double? _numericTolerance;
+  dynamic _correctAnswer; // For true/false, short answer, numeric
 
   @override
   void initState() {
@@ -67,25 +64,23 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
   void _initializeFromQuestion() {
     final q = widget.question;
     if (q != null) {
-      _questionTextController.text = q.text;
+      _questionTextController.text = q.stem;
       _hintController.text = q.hint ?? '';
       _explanationController.text = q.explanation ?? '';
       _selectedType = q.type;
       _points = q.points;
-      _difficulty = q.difficulty ?? Difficulty.medium;
-      _isRequired = q.isRequired;
-      _options = List.from(q.options);
-      _matchingPairs = List.from(q.matchingPairs);
-      _fillBlankSlots = List.from(q.fillBlankSlots);
-      _acceptedAnswers = List.from(q.acceptedAnswers);
-      _correctBoolAnswer = q.correctBoolAnswer;
-      _numericAnswer = q.numericAnswer;
-      _numericTolerance = q.numericTolerance;
+      _difficulty = q.difficulty;
+      _options = List.from(q.options ?? []);
+      _matchingPairs = List.from(q.pairs ?? []);
+      _fillBlankSlots = List.from(q.blanks ?? []);
+      _acceptedAnswers = q.correctAnswer is List
+          ? List<String>.from(q.correctAnswer as List)
+          : [];
+      _correctAnswer = q.correctAnswer;
     } else {
       _selectedType = widget.questionType;
-      _points = 1.0;
+      _points = 1;
       _difficulty = Difficulty.medium;
-      _isRequired = true;
       _initializeTypeDefaults();
     }
   }
@@ -100,7 +95,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
         ];
         break;
       case QuestionType.trueFalse:
-        _correctBoolAnswer = true;
+        _correctAnswer = true;
         break;
       case QuestionType.matching:
         _matchingPairs = [
@@ -111,7 +106,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
         _fillBlankSlots = [];
         break;
       case QuestionType.numeric:
-        _numericTolerance = 0.0;
+        _correctAnswer = null;
         break;
       default:
         break;
@@ -134,8 +129,6 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return WillPopScope(
       onWillPop: () => _onWillPop(),
       child: Scaffold(
@@ -331,9 +324,9 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
         );
       case QuestionType.trueFalse:
         return TrueFalseEditor(
-          correctAnswer: _correctBoolAnswer ?? true,
+          correctAnswer: _correctAnswer == true,
           onAnswerChanged: (value) {
-            setState(() => _correctBoolAnswer = value);
+            setState(() => _correctAnswer = value);
             _markChanged();
           },
         );
@@ -515,7 +508,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
                 Expanded(
                   flex: 2,
                   child: TextFormField(
-                    initialValue: _numericAnswer?.toString() ?? '',
+                    initialValue: _correctAnswer?.toString() ?? '',
                     decoration: const InputDecoration(
                       labelText: 'Correct Answer *',
                       hintText: 'e.g., 42',
@@ -532,35 +525,12 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
                       return null;
                     },
                     onChanged: (value) {
-                      _numericAnswer = double.tryParse(value);
-                      _markChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: _numericTolerance?.toString() ?? '0',
-                    decoration: const InputDecoration(
-                      labelText: 'Tolerance (±)',
-                      hintText: '0',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      _numericTolerance = double.tryParse(value) ?? 0;
+                      _correctAnswer = double.tryParse(value);
                       _markChanged();
                     },
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tolerance allows for acceptable range around the correct answer.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
             ),
           ],
         ),
@@ -599,13 +569,13 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Slider(
-                    value: _points,
-                    min: 0.5,
+                    value: _points.toDouble(),
+                    min: 1,
                     max: 10,
-                    divisions: 19,
+                    divisions: 9,
                     label: _points.toString(),
                     onChanged: (value) {
-                      setState(() => _points = value);
+                      setState(() => _points = value.round());
                       _markChanged();
                     },
                   ),
@@ -613,7 +583,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
                 SizedBox(
                   width: 50,
                   child: Text(
-                    _points.toStringAsFixed(1),
+                    _points.toString(),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.right,
                   ),
@@ -641,18 +611,6 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
                   },
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-
-            // Required toggle
-            SwitchListTile(
-              title: const Text('Required'),
-              subtitle: const Text('Student must answer this question'),
-              value: _isRequired,
-              onChanged: (value) {
-                setState(() => _isRequired = value);
-                _markChanged();
-              },
             ),
           ],
         ),
@@ -756,25 +714,35 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
 
     final question = Question(
       id: widget.question?.id ?? const Uuid().v4(),
-      text: _questionTextController.text,
+      stem: _questionTextController.text,
       type: _selectedType,
       points: _points,
       difficulty: _difficulty,
-      isRequired: _isRequired,
       hint: _hintController.text.isEmpty ? null : _hintController.text,
       explanation: _explanationController.text.isEmpty
           ? null
           : _explanationController.text,
-      options: _options,
-      matchingPairs: _matchingPairs,
-      fillBlankSlots: _fillBlankSlots,
-      acceptedAnswers: _acceptedAnswers,
-      correctBoolAnswer: _correctBoolAnswer,
-      numericAnswer: _numericAnswer,
-      numericTolerance: _numericTolerance,
+      options: _options.isEmpty ? null : _options,
+      pairs: _matchingPairs.isEmpty ? null : _matchingPairs,
+      blanks: _fillBlankSlots.isEmpty ? null : _fillBlankSlots,
+      correctAnswer: _getCorrectAnswer(),
     );
 
     Navigator.pop(context, question);
+  }
+
+  dynamic _getCorrectAnswer() {
+    switch (_selectedType) {
+      case QuestionType.trueFalse:
+        return _correctAnswer;
+      case QuestionType.shortAnswer:
+      case QuestionType.essay:
+        return _acceptedAnswers.isNotEmpty ? _acceptedAnswers : null;
+      case QuestionType.numeric:
+        return _correctAnswer;
+      default:
+        return null;
+    }
   }
 
   String? _validateTypeSpecific() {
@@ -815,7 +783,7 @@ class _QuestionEditorScreenState extends ConsumerState<QuestionEditorScreen> {
         }
         break;
       case QuestionType.numeric:
-        if (_numericAnswer == null) {
+        if (_correctAnswer == null) {
           return 'Please enter the correct numeric answer';
         }
         break;

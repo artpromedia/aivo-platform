@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/assessment.dart';
 import '../../providers/assessment_provider.dart';
-import '../../repositories/assessment_repository.dart';
 import 'assessment_builder_screen.dart';
 import 'assessment_results_screen.dart';
 
@@ -41,7 +40,6 @@ class _AssessmentListScreenState extends ConsumerState<AssessmentListScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assessmentListProvider(widget.classId));
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(

@@ -6,7 +6,6 @@ library;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_common/theme/theme.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Model for an attached image

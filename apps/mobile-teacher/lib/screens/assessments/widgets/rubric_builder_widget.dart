@@ -4,7 +4,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_common/theme/theme.dart';
 
 /// Model for a rubric criterion level
 class RubricLevel {

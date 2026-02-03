@@ -4,7 +4,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_common/theme/theme.dart';
 
 /// Rich text editor for question prompts
 class RichTextEditor extends StatefulWidget {

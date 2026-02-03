@@ -4,9 +4,6 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_common/theme/theme.dart';
-
-import 'widgets/time_limit_picker.dart';
 
 /// Assessment visibility options
 enum AssessmentVisibility {
@@ -274,8 +271,6 @@ class _AssessmentSettingsSheetState extends State<AssessmentSettingsSheet> {
   }
 
   List<Widget> _buildBasicInfoSection() {
-    final theme = Theme.of(context);
-
     return [
       // Title
       TextField(
@@ -329,13 +324,12 @@ class _AssessmentSettingsSheetState extends State<AssessmentSettingsSheet> {
             : 'No time limit',
         icon: Icons.timer,
         onTap: () async {
-          final result = await showTimeLimitPickerSheet(
-            context,
-            initialMinutes: _settings.timeLimitMinutes,
-          );
-          if (result != null) {
+          final result = await _showTimeLimitPicker(context);
+          if (result != null || result == -1) {
             setState(() {
-              _settings = _settings.copyWith(timeLimitMinutes: result);
+              _settings = _settings.copyWith(
+                timeLimitMinutes: result == -1 ? null : result,
+              );
             });
           }
         },
@@ -602,6 +596,56 @@ class _AssessmentSettingsSheetState extends State<AssessmentSettingsSheet> {
         onTap: () => _showTagsEditor(),
       ),
     ];
+  }
+
+  Future<int?> _showTimeLimitPicker(BuildContext context) async {
+    final theme = Theme.of(context);
+    final presets = [10, 15, 20, 30, 45, 60, 90, 120];
+
+    return showModalBottomSheet<int?>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Time Limit',
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.all_inclusive),
+                title: const Text('No time limit'),
+                trailing: _settings.timeLimitMinutes == null
+                    ? Icon(Icons.check, color: theme.colorScheme.primary)
+                    : null,
+                onTap: () => Navigator.pop(context, -1),
+              ),
+              const Divider(),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: presets.map((minutes) {
+                  final isSelected = minutes == _settings.timeLimitMinutes;
+                  return ChoiceChip(
+                    label: Text('$minutes min'),
+                    selected: isSelected,
+                    onSelected: (_) => Navigator.pop(context, minutes),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showVisibilityPicker() {

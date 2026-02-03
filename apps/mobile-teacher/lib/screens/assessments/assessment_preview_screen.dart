@@ -29,7 +29,6 @@ class _AssessmentPreviewScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final assessment = widget.assessment;
     final questions = assessment.questions;
 
@@ -137,12 +136,12 @@ class _AssessmentPreviewScreenState
                     label: 'Total Points',
                     value: '${assessment.totalPoints}',
                   ),
-                  if (assessment.settings?.timeLimit != null) ...[
+                  if (assessment.settings.timeLimit != null) ...[
                     const Divider(),
                     _InfoRow(
                       icon: Icons.timer,
                       label: 'Time Limit',
-                      value: '${assessment.settings!.timeLimit} minutes',
+                      value: '${assessment.settings.timeLimit} minutes',
                     ),
                   ],
                 ],
@@ -234,7 +233,7 @@ class _AssessmentPreviewScreenState
 
           // Question text
           Text(
-            question.text,
+            question.stem,
             style: theme.textTheme.titleLarge,
           ),
 
@@ -307,7 +306,7 @@ class _AssessmentPreviewScreenState
           style: Theme.of(context).textTheme.labelMedium,
         ),
         const SizedBox(height: 12),
-        ...question.options.map((option) {
+        ...(question.options ?? []).map((option) {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
@@ -385,7 +384,7 @@ class _AssessmentPreviewScreenState
           style: Theme.of(context).textTheme.labelMedium,
         ),
         const SizedBox(height: 12),
-        ...question.fillBlankSlots.asMap().entries.map((entry) {
+        ...(question.blanks ?? []).asMap().entries.map((entry) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: TextField(
@@ -417,7 +416,7 @@ class _AssessmentPreviewScreenState
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: question.matchingPairs.map((pair) {
+                children: (question.pairs ?? []).map((pair) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Padding(
@@ -432,7 +431,7 @@ class _AssessmentPreviewScreenState
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: question.matchingPairs.map((pair) {
+                children: (question.pairs ?? []).map((pair) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     color: Colors.grey[100],
@@ -459,7 +458,7 @@ class _AssessmentPreviewScreenState
           style: Theme.of(context).textTheme.labelMedium,
         ),
         const SizedBox(height: 12),
-        ...question.options.asMap().entries.map((entry) {
+        ...(question.options ?? []).asMap().entries.map((entry) {
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(

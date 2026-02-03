@@ -76,8 +76,8 @@ class _FillInBlankEditorState extends State<FillInBlankEditor> {
       );
       _slots.add(FillBlankSlot(
         id: newSlotId,
-        correctAnswer: '',
-        alternatives: [],
+        position: _slots.length,
+        correctAnswers: [],
       ));
     });
 
@@ -86,12 +86,25 @@ class _FillInBlankEditorState extends State<FillInBlankEditor> {
   }
 
   void _updateSlotAnswer(int index, String answer) {
-    _slots[index] = _slots[index].copyWith(correctAnswer: answer);
+    final oldSlot = _slots[index];
+    _slots[index] = FillBlankSlot(
+      id: oldSlot.id,
+      position: oldSlot.position,
+      correctAnswers: answer.isEmpty ? [] : [answer, ...oldSlot.correctAnswers.skip(1)],
+      caseSensitive: oldSlot.caseSensitive,
+    );
     widget.onSlotsChanged(List.from(_slots));
   }
 
   void _updateSlotAlternatives(int index, List<String> alternatives) {
-    _slots[index] = _slots[index].copyWith(alternatives: alternatives);
+    final oldSlot = _slots[index];
+    final primaryAnswer = oldSlot.correctAnswers.isNotEmpty ? oldSlot.correctAnswers.first : '';
+    _slots[index] = FillBlankSlot(
+      id: oldSlot.id,
+      position: oldSlot.position,
+      correctAnswers: primaryAnswer.isEmpty ? alternatives : [primaryAnswer, ...alternatives],
+      caseSensitive: oldSlot.caseSensitive,
+    );
     widget.onSlotsChanged(List.from(_slots));
   }
 
@@ -328,20 +341,24 @@ class _BlankConfigCardState extends State<_BlankConfigCard> {
   @override
   void initState() {
     super.initState();
-    _answerController = TextEditingController(text: widget.slot.correctAnswer);
+    _answerController = TextEditingController(
+      text: widget.slot.correctAnswers.isNotEmpty ? widget.slot.correctAnswers.first : '',
+    );
     _alternativesController = TextEditingController(
-      text: widget.slot.alternatives.join(', '),
+      text: widget.slot.correctAnswers.skip(1).join(', '),
     );
   }
 
   @override
   void didUpdateWidget(_BlankConfigCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.slot.correctAnswer != widget.slot.correctAnswer) {
-      _answerController.text = widget.slot.correctAnswer;
+    final newPrimary = widget.slot.correctAnswers.isNotEmpty ? widget.slot.correctAnswers.first : '';
+    final oldPrimary = oldWidget.slot.correctAnswers.isNotEmpty ? oldWidget.slot.correctAnswers.first : '';
+    if (oldPrimary != newPrimary) {
+      _answerController.text = newPrimary;
     }
-    if (oldWidget.slot.alternatives != widget.slot.alternatives) {
-      _alternativesController.text = widget.slot.alternatives.join(', ');
+    if (oldWidget.slot.correctAnswers != widget.slot.correctAnswers) {
+      _alternativesController.text = widget.slot.correctAnswers.skip(1).join(', ');
     }
   }
 

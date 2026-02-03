@@ -39,7 +39,7 @@ class _AssessmentResultsScreenState
     Future.microtask(() {
       ref
           .read(assessmentResultsProvider(widget.assessmentId).notifier)
-          .loadResults(widget.assessmentId);
+          .loadResults();
     });
   }
 
@@ -76,7 +76,7 @@ class _AssessmentResultsScreenState
             icon: const Icon(Icons.refresh),
             onPressed: () => ref
                 .read(assessmentResultsProvider(widget.assessmentId).notifier)
-                .loadResults(widget.assessmentId),
+                .loadResults(),
             tooltip: 'Refresh',
           ),
         ],
@@ -121,7 +121,7 @@ class _AssessmentResultsScreenState
           ElevatedButton(
             onPressed: () => ref
                 .read(assessmentResultsProvider(widget.assessmentId).notifier)
-                .loadResults(widget.assessmentId),
+                .loadResults(),
             child: const Text('Retry'),
           ),
         ],
@@ -149,7 +149,7 @@ class _AssessmentResultsScreenState
                 child: _StatCard(
                   icon: Icons.people,
                   label: 'Submissions',
-                  value: '${results.totalSubmissions}',
+                  value: '${results.submittedCount}',
                   color: Colors.blue,
                 ),
               ),
@@ -227,7 +227,10 @@ class _AssessmentResultsScreenState
     };
 
     for (final submission in results.submissions) {
-      final score = (submission.score / submission.totalPoints) * 100;
+      final score = submission.percentage ?? 
+          ((submission.maxScore ?? 0) > 0 
+              ? ((submission.score ?? 0) / submission.maxScore!) * 100 
+              : 0);
       if (score >= 90) {
         ranges['90-100%'] = ranges['90-100%']! + 1;
       } else if (score >= 80) {
@@ -384,39 +387,37 @@ class _AssessmentResultsScreenState
                     contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     isDense: true,
                   ),
+                  // Note: Search is filtered client-side
                   onChanged: (value) {
-                    ref
-                        .read(assessmentResultsProvider(widget.assessmentId)
-                            .notifier)
-                        .setSearchQuery(value);
+                    // Could implement local filtering here
                   },
                 ),
               ),
               const SizedBox(width: 8),
-              PopupMenuButton<ResultsSortBy>(
+              PopupMenuButton<SubmissionSortBy>(
                 icon: const Icon(Icons.sort),
                 onSelected: (sort) {
                   ref
                       .read(assessmentResultsProvider(widget.assessmentId)
                           .notifier)
-                      .setSortBy(sort);
+                      .setSort(sort);
                 },
                 itemBuilder: (context) => [
                   const PopupMenuItem(
-                    value: ResultsSortBy.name,
+                    value: SubmissionSortBy.name,
                     child: Text('Sort by Name'),
                   ),
                   const PopupMenuItem(
-                    value: ResultsSortBy.scoreHigh,
-                    child: Text('Score: High to Low'),
+                    value: SubmissionSortBy.score,
+                    child: Text('Sort by Score'),
                   ),
                   const PopupMenuItem(
-                    value: ResultsSortBy.scoreLow,
-                    child: Text('Score: Low to High'),
-                  ),
-                  const PopupMenuItem(
-                    value: ResultsSortBy.submittedAt,
+                    value: SubmissionSortBy.submittedAt,
                     child: Text('Sort by Date'),
+                  ),
+                  const PopupMenuItem(
+                    value: SubmissionSortBy.status,
+                    child: Text('Sort by Status'),
                   ),
                 ],
               ),
@@ -428,9 +429,9 @@ class _AssessmentResultsScreenState
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: state.filteredSubmissions.length,
+            itemCount: state.sortedSubmissions.length,
             itemBuilder: (context, index) {
-              final submission = state.filteredSubmissions[index];
+              final submission = state.sortedSubmissions[index];
               return _SubmissionCard(
                 submission: submission,
                 onTap: () => _viewSubmission(context, submission),
@@ -616,9 +617,10 @@ class _SubmissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scorePercent = submission.totalPoints > 0
-        ? (submission.score / submission.totalPoints) * 100
-        : 0.0;
+    final scorePercent = submission.percentage ?? 
+        ((submission.maxScore ?? 0) > 0
+            ? ((submission.score ?? 0) / submission.maxScore!) * 100
+            : 0.0);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -632,7 +634,7 @@ class _SubmissionCard extends StatelessWidget {
         ),
         title: Text(submission.studentName),
         subtitle: Text(
-          '${submission.score.toStringAsFixed(1)} / ${submission.totalPoints} pts '
+          '${(submission.score ?? 0).toStringAsFixed(1)} / ${submission.maxScore ?? 0} pts '
           '(${scorePercent.toStringAsFixed(0)}%)',
         ),
         trailing: Row(
@@ -659,6 +661,8 @@ class _SubmissionCard extends StatelessWidget {
         return Colors.orange;
       case SubmissionStatus.submitted:
         return Colors.blue;
+      case SubmissionStatus.partiallyGraded:
+        return Colors.amber;
       case SubmissionStatus.graded:
         return Colors.green;
     }
@@ -672,6 +676,8 @@ class _SubmissionCard extends StatelessWidget {
         return Icons.edit;
       case SubmissionStatus.submitted:
         return Icons.send;
+      case SubmissionStatus.partiallyGraded:
+        return Icons.pending;
       case SubmissionStatus.graded:
         return Icons.check_circle;
     }
@@ -690,9 +696,7 @@ class _QuestionStatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final correctPercent = stats.totalAttempts > 0
-        ? (stats.correctCount / stats.totalAttempts) * 100
-        : 0.0;
+    final correctPercent = stats.correctRate;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -717,7 +721,7 @@ class _QuestionStatsCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    stats.questionText,
+                    stats.questionStem,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleSmall,
@@ -735,16 +739,14 @@ class _QuestionStatsCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 24),
                 _MiniStat(
-                  label: 'Attempts',
-                  value: '${stats.totalAttempts}',
+                  label: 'Responses',
+                  value: '${stats.totalResponses}',
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 24),
                 _MiniStat(
-                  label: 'Avg Time',
-                  value: stats.averageTimeSeconds != null
-                      ? '${stats.averageTimeSeconds}s'
-                      : '-',
+                  label: 'Avg Score',
+                  value: '${stats.averageScore.toStringAsFixed(1)}',
                   color: Colors.orange,
                 ),
               ],

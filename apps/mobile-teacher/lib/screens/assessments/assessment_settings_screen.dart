@@ -23,7 +23,6 @@ class _AssessmentSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(currentAssessmentSettingsProvider);
-    final theme = Theme.of(context);
 
     if (settings == null) {
       return Scaffold(
