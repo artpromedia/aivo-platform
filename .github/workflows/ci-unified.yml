@@ -531,7 +531,8 @@ jobs:
               --repository-format=docker \
               --location=us \
               --project="${PROJECT_ID}" \
-              --description="GCR-compatible repo for CI pushes"
+              --description="GCR-compatible repo for CI pushes" || \
+            gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1
           fi
 
       - name: Extract metadata
