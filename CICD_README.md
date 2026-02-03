@@ -12,15 +12,21 @@ This document provides an overview of the CI/CD and DevOps configuration for the
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                  │
 │  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────────┐   │
-│  │  Push   │───▶│  Lint   │───▶│  Test   │───▶│  Build  │───▶│   Docker    │   │
-│  │         │    │TypeCheck│    │         │    │         │    │   Images    │   │
+│  │  Push   │───▶│  Lint   │───▶│  Test   │───▶│Coverage │───▶│   Build     │   │
+│  │         │    │TypeCheck│    │         │    │ Check   │    │             │   │
 │  └─────────┘    └─────────┘    └─────────┘    └─────────┘    └──────┬──────┘   │
 │                                                                      │          │
 │                                    ┌─────────────────────────────────┘          │
 │                                    ▼                                            │
 │  ┌─────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐ │
-│  │  Security   │    │   Staging Deployment    │───▶│  Production Deployment  │ │
-│  │    Scan     │    │    (auto on main)       │    │  (on release + approval)│ │
+│  │  Security   │───▶│   Quality Gates         │───▶│  Docker Images          │ │
+│  │   Scan      │    │   - Coverage ≥80%       │    │                         │ │
+│  │  (Trivy)    │    │   - No Critical Vulns   │    └──────────┬──────────────┘ │
+│  └─────────────┘    │   - Tests Pass          │               │                │
+│                     └─────────────────────────┘               ▼                │
+│  ┌─────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐ │
+│  │ E2E Tests   │    │   Staging Deployment    │───▶│  Production Deployment  │ │
+│  │ (Playwright)│───▶│    (auto on main)       │    │  (on release + approval)│ │
 │  └─────────────┘    └─────────────────────────┘    └─────────────────────────┘ │
 │                                                                                  │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -114,28 +120,145 @@ docs/
 
 The main pipeline includes:
 
-| Job                 | Description              | Trigger                 |
-| ------------------- | ------------------------ | ----------------------- |
-| `changes`           | Detect file changes      | Always                  |
-| `install`           | Install dependencies     | Always                  |
-| `lint`              | ESLint + Prettier        | Always                  |
-| `typecheck`         | TypeScript checking      | Always                  |
-| `test`              | Unit + integration tests | Always (unless skipped) |
-| `build`             | Build all packages       | After lint/test pass    |
-| `security`          | Security scanning        | Non-draft PRs           |
-| `docker`            | Build Docker images      | main/release branches   |
-| `deploy-staging`    | Deploy to staging        | main branch             |
-| `deploy-production` | Deploy to production     | Release publication     |
+| Job                 | Description                   | Trigger                 | Quality Gate |
+| ------------------- | ----------------------------- | ----------------------- | ------------ |
+| `changes`           | Detect file changes           | Always                  | —            |
+| `install`           | Install dependencies          | Always                  | —            |
+| `lint`              | ESLint + Prettier             | Always                  | ✅ Required  |
+| `typecheck`         | TypeScript checking           | Always                  | ✅ Required  |
+| `test`              | Unit tests (Node.js + Python) | Always (unless skipped) | ✅ Required  |
+| `coverage`          | Code coverage tracking        | PR + main push          | ✅ ≥80%      |
+| `integration`       | Integration test scenarios    | PR + main push          | ✅ Required  |
+| `security`          | Security scanning + tests     | Non-draft PRs           | ✅ No CRIT   |
+| `build`             | Build all packages            | After lint/test pass    | ✅ Required  |
+| `e2e-web`           | Playwright E2E tests          | main branch             | ⚠️ ≥95% pass |
+| `e2e-mobile`        | Patrol Flutter tests          | main branch             | ⚠️ ≥95% pass |
+| `docker`            | Build Docker images           | main/release branches   | ✅ Required  |
+| `deploy-staging`    | Deploy to staging             | main branch             | Manual       |
+| `deploy-production` | Deploy to production          | Release publication     | Manual       |
+
+### Test Pipeline Stages
+
+#### Stage 1: Fast Feedback (runs on every PR)
+
+```yaml
+Jobs (parallel):
+  - Lint & TypeCheck (~2 min)
+  - Unit Tests - Node.js (~5 min)
+  - Unit Tests - Python (~4 min)
+  - Security Scans (~3 min)
+
+Gates: ✅ All linting passes
+  ✅ All tests pass
+  ✅ Coverage ≥80%
+  ✅ No critical vulnerabilities
+```
+
+#### Stage 2: Integration Validation (runs on PR)
+
+```yaml
+Jobs (sequential after Stage 1):
+  - Integration Tests (~8 min)
+  - Build Verification (~6 min)
+
+Gates: ✅ All integration scenarios pass
+  ✅ Services build successfully
+  ✅ Docker images build (if applicable)
+```
+
+#### Stage 3: E2E & Performance (runs on main branch)
+
+```yaml
+Jobs (parallel):
+  - E2E Web Tests (~15 min)
+  - E2E Mobile Tests (~12 min)
+  - Performance Tests (~10 min)
+
+Gates: ⚠️ E2E pass rate ≥95%
+  ⚠️ Performance within SLA
+  ⚠️ Accessibility checks pass
+```
+
+#### Stage 4: Deployment (runs on main/release)
+
+```yaml
+Staging Deployment:
+  - Automatic on main branch
+  - Post-deployment smoke tests
+  - Rollback on failure
+
+Production Deployment:
+  - Manual approval required
+  - Release tag trigger
+  - Blue/green deployment
+  - Automated rollback capability
+```
 
 ### Triggers
 
-| Event             | Workflow                 |
-| ----------------- | ------------------------ |
-| Push to `main`    | Full CI + Staging deploy |
-| Push to `develop` | Full CI (no deploy)      |
-| Pull Request      | CI without deployment    |
-| Release published | Production deployment    |
-| Manual dispatch   | Configurable             |
+| Event             | Workflow                 | Tests Executed                        |
+| ----------------- | ------------------------ | ------------------------------------- |
+| Push to `main`    | Full CI + Staging deploy | Unit, Integration, E2E, Security      |
+| Push to `develop` | Full CI (no deploy)      | Unit, Integration, Security           |
+| Pull Request      | CI without deployment    | Unit, Integration, Security, Coverage |
+| Release published | Production deployment    | All tests + smoke tests               |
+| Manual dispatch   | Configurable             | User-defined                          |
+| Nightly           | Comprehensive suite      | All tests + Performance               |
+
+## Coverage Requirements
+
+### Coverage Thresholds
+
+All code coverage tracked via **Codecov** with automated enforcement:
+
+| Service Type      | Minimum Coverage | Enforcement Level |
+| ----------------- | ---------------- | ----------------- |
+| Critical Services | ≥90%             | ❌ CI Fails       |
+| Standard Services | ≥75%             | ❌ CI Fails       |
+| Utility Packages  | ≥85%             | ❌ CI Fails       |
+| Overall Platform  | ≥80%             | ⚠️ Warning        |
+
+**Critical Services:**
+
+- `auth-svc` - Authentication and authorization
+- `billing-svc` - Billing and subscription management
+- `payments-svc` - Payment processing
+- `profile-svc` - Learner profiles and PII
+- `assessment-svc` - Assessment delivery
+- `grading-engine` - AI-powered grading
+- `ai-orchestrator` - AI coordination
+- `legal-hold-svc` - Legal compliance
+
+### Coverage Workflows
+
+**`.github/workflows/coverage.yml`** runs on every PR and main push:
+
+```yaml
+Jobs:
+  node-coverage: # Node.js/TypeScript services
+    - Install dependencies
+    - Generate Prisma clients
+    - Run tests with coverage
+    - Upload to Codecov
+    - Check thresholds (scripts/check-coverage.js)
+
+  python-coverage: # Python services
+    - Setup Python environment
+    - Install dependencies
+    - Run pytest with coverage
+    - Upload to Codecov
+    - Check thresholds
+```
+
+### Quality Gates
+
+Deployments blocked if:
+
+- ❌ Any critical service below coverage threshold
+- ❌ Critical vulnerabilities detected
+- ❌ Security tests fail
+- ❌ E2E test pass rate <95%
+- ❌ Build failures
 
 ## Kubernetes Deployment
 
@@ -252,7 +375,12 @@ pnpm run dev
 
 ## Related Documentation
 
+- [TEST_STRATEGY.md](./TEST_STRATEGY.md) - Comprehensive test strategy
+- [TEST_RUNBOOK.md](./TEST_RUNBOOK.md) - Practical testing guide
+- [TESTING_GUIDELINES.md](./docs/TESTING_GUIDELINES.md) - Testing best practices
+- [QA_COMPREHENSIVE_AUDIT_REPORT_2026.md](./QA_COMPREHENSIVE_AUDIT_REPORT_2026.md) - QA audit results
 - [ENVIRONMENTS.md](.github/ENVIRONMENTS.md) - Environment configuration
 - [DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) - Deployment procedures
 - [CONTRIBUTING.md](docs/CONTRIBUTING.md) - Development guidelines
 - [SECURITY.md](SECURITY.md) - Security policies
+- [COMPLIANCE_TEST_REPORT_TEMPLATE.md](./COMPLIANCE_TEST_REPORT_TEMPLATE.md) - Compliance testing
