@@ -21,7 +21,11 @@ import {
   batchCalculateSensoryMatch,
 } from '../sensory/sensory-matcher.service.js';
 import * as sensoryMetadataService from '../sensory/sensory-metadata.service.js';
-import type { SensoryProfile, ContentSensoryMetadata } from '../sensory/sensory.types.js';
+import type {
+  SensoryProfile,
+  ContentSensoryMetadata,
+  CreateSensoryIncidentInput,
+} from '../sensory/sensory.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -416,12 +420,7 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
     const incident = await sensoryIncidentService.createSensoryIncident({
       ...body,
       triggerTimestamp: body.triggerTimestamp ? new Date(body.triggerTimestamp) : undefined,
-    } as {
-      learnerId: string;
-      tenantId: string;
-      incidentType: string;
-      triggerCategory: 'audio' | 'visual' | 'motion' | 'tactile' | 'cognitive';
-    } & typeof body);
+    } as unknown as CreateSensoryIncidentInput);
     return reply.status(201).send(incident);
   });
 

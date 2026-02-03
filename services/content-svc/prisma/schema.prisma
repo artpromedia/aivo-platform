@@ -1025,33 +1025,37 @@ model LessonVersion {
 model LessonTemplate {
   id              String    @id @default(uuid()) @db.Uuid
   tenantId        String?   @map("tenant_id") @db.Uuid  // null = global template
-  
+
   // Template info
   name            String    @db.VarChar(200)
   description     String?   @db.Text
   category        String    @db.VarChar(100)    // e.g., "Reading Comprehension", "Math Practice"
-  subject         String    @db.VarChar(50)     // ELA, MATH, SCIENCE, etc.
-  gradeBand       String    @map("grade_band") @db.VarChar(50)  // K_2, G3_5, etc.
-  
+  subject         String?   @db.VarChar(50)     // ELA, MATH, SCIENCE, etc. (optional)
+  gradeBand       String?   @map("grade_band") @db.VarChar(50)  // K_2, G3_5, etc. (optional)
+
   // Template content
   blocks          Json      @default("[]")      // Template blocks
   settings        Json      @default("{}")      // Default settings
-  
+  tags            String[]  @default([])        // Searchable tags
+
   // Display
-  thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(500)
+  thumbnail       String?   @db.VarChar(500)    // Thumbnail URL
+  thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(500) // Deprecated, use thumbnail
   isActive        Boolean   @default(true) @map("is_active")
+  isPublic        Boolean   @default(false) @map("is_public")  // Global public template
   usageCount      Int       @default(0) @map("usage_count")
-  
+
   // Audit
   createdById     String    @map("created_by_id") @db.Uuid
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
-  
+
   @@index([tenantId])
   @@index([category])
   @@index([subject])
   @@index([gradeBand])
   @@index([isActive])
+  @@index([isPublic])
   @@map("lesson_templates")
 }
 

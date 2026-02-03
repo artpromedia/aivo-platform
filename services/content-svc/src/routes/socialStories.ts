@@ -161,6 +161,7 @@ const UpdateStorySchema = z.object({
   maxAge: z.number().int().max(25).nullable().optional(),
   gradeBands: z.array(GradeBandEnum).optional(),
   supportsPersonalization: z.boolean().optional(),
+  personalizationTokens: z.array(z.string()).optional(),
   defaultVisualStyle: VisualStyleEnum.optional(),
   hasAudio: z.boolean().optional(),
   hasVideo: z.boolean().optional(),
@@ -436,7 +437,9 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         personalizationTokens: parseResult.data.personalizationTokens,
         hasAudio: parseResult.data.hasAudio,
         hasVideo: parseResult.data.hasVideo,
-        translations: parseResult.data.translations,
+        translations: parseResult.data.translations as unknown as
+          | Record<string, import('../social-stories/types.js').TranslatedStoryContent>
+          | undefined,
       },
       user.sub
     );
