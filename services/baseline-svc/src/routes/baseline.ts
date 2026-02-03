@@ -18,7 +18,7 @@ import {
 } from '../lib/generationStatus.js';
 import { getGradeLevelCalculator, gradeBandToGrade } from '../lib/gradeLevelEquivalent.js';
 import { selectDomainsForLearner, getDomainSelectionSummary } from '../lib/domainSelector.js';
-import { prisma } from '../prisma.js';
+import { prisma, IepDocumentStatus } from '../prisma.js';
 import { DOMAIN_SKILL_CODES, type GeneratedQuestion, type DomainSelectionContext } from '../types/baseline.js';
 
 // --- Type definitions for JSON fields ---
@@ -428,7 +428,7 @@ function calculateDomainScoresAndSkillEstimates(
       score = Number(responseScore);
     }
 
-    const prompt = item.promptJson as PromptJson;
+    const prompt = item.promptJson as unknown as PromptJson;
 
     // Use adaptive ability estimate (0-1) scaled to (0-10) for this domain
     const domainAbility = adaptiveEngine.getDomainSummary(domain).estimatedAbility;
@@ -642,7 +642,9 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         where: {
           baselineProfileId: profileId,
           // Include EXTRACTED status - we can use goals even before comparison
-          status: { in: ['EXTRACTED', 'PROCESSED', 'COMPARING', 'COMPARISON_READY', 'COMPARED', 'APPROVED'] }
+          status: {
+            in: ['EXTRACTED', 'PROCESSED', 'COMPARING', 'COMPARISON_READY', 'COMPARED', 'APPROVED'] as unknown as IepDocumentStatus[],
+          },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -969,7 +971,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const prompt = nextItem.promptJson as PromptJson;
+      const prompt = nextItem.promptJson as unknown as PromptJson;
 
       return reply.send({
         complete: false,
@@ -1037,8 +1039,8 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         return reply.status(409).send({ error: 'Item already answered' });
       }
 
-      const prompt = item.promptJson as PromptJson;
-      const correctAnswerData = item.correctAnswerJson as CorrectAnswerJson;
+      const prompt = item.promptJson as unknown as PromptJson;
+      const correctAnswerData = item.correctAnswerJson as unknown as CorrectAnswerJson;
 
       // Score the response
       const scoreResult = await scoreResponse({

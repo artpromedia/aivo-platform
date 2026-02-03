@@ -14,10 +14,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../prisma.js';
-
-// JSON value type for Prisma fields
-type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+import { prisma, toJsonValue } from '../prisma.js';
 import { extractIepContent, compareIepWithAssessment } from '../lib/iepProcessor.js';
 import { publishIepComparisonReady, publishIepDecisionMade } from '../lib/eventPublisher.js';
 
@@ -437,11 +434,11 @@ export async function iepUploadRoutes(fastify: FastifyInstance) {
           data: {
             iepDocumentId: iepDocument.id,
             baselineAttemptId: latestAttempt.id,
-            summaryJson: comparisonResult.summary,
-            domainComparisonsJson: comparisonResult.domainComparisons,
-            goalAlignmentJson: comparisonResult.goalAlignment,
-            discrepanciesJson: comparisonResult.discrepancies,
-            recommendationsJson: comparisonResult.recommendations,
+            summaryJson: toJsonValue(comparisonResult.summary),
+            domainComparisonsJson: toJsonValue(comparisonResult.domainComparisons),
+            goalAlignmentJson: toJsonValue(comparisonResult.goalAlignment),
+            discrepanciesJson: toJsonValue(comparisonResult.discrepancies),
+            recommendationsJson: toJsonValue(comparisonResult.recommendations),
             overallMatchScore: comparisonResult.overallMatchScore,
             confidenceLevel: comparisonResult.confidenceLevel,
             decision: 'PENDING',
@@ -813,11 +810,11 @@ async function processIepDocumentAsync(
       data: {
         status: 'PROCESSED',
         processedAt: new Date(),
-        extractedTextJson: extractedContent.rawText,
-        extractedGoalsJson: extractedContent.goals,
-        extractedAccommodationsJson: extractedContent.accommodations,
-        extractedServicesJson: extractedContent.services,
-        extractedMetadataJson: extractedContent.metadata as unknown as JsonValue,
+        extractedTextJson: toJsonValue(extractedContent.rawText),
+        extractedGoalsJson: toJsonValue(extractedContent.goals),
+        extractedAccommodationsJson: toJsonValue(extractedContent.accommodations),
+        extractedServicesJson: toJsonValue(extractedContent.services),
+        extractedMetadataJson: toJsonValue(extractedContent.metadata),
       },
     });
   } catch (error) {

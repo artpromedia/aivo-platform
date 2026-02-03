@@ -2,7 +2,7 @@
  * Prisma client singleton for baseline-svc
  */
 
-import { PrismaClient } from '../generated/prisma-client/index.js';
+import { PrismaClient, Prisma } from '../generated/prisma-client/index.js';
 
 export { Prisma } from '../generated/prisma-client/index.js';
 
@@ -11,6 +11,12 @@ import { config } from './config.js';
 export const prisma = new PrismaClient({
   datasources: { db: { url: config.databaseUrl } },
 });
+
+export function toJsonValue(
+  value: unknown
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | null | undefined {
+  return value as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | null | undefined;
+}
 
 // Re-export enums
 export {
