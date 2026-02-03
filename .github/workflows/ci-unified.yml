@@ -523,6 +523,17 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker gcr.io --quiet
 
+      - name: Ensure GCR Artifact Registry repo exists
+        run: |
+          set -e
+          if ! gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1; then
+            gcloud artifacts repositories create gcr.io \
+              --repository-format=docker \
+              --location=us \
+              --project="${PROJECT_ID}" \
+              --description="GCR-compatible repo for CI pushes"
+          fi
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
