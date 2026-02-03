@@ -866,3 +866,430 @@ class StudentRiskWithInterventions {
         if (interventions != null) 'interventions': interventions!.toJson(),
       };
 }
+
+/// Comprehensive risk score with metadata
+@immutable
+class RiskScore {
+  const RiskScore({
+    required this.score,
+    required this.level,
+    required this.timestamp,
+    required this.confidence,
+    required this.contributingFactors,
+    this.modelVersion,
+  });
+
+  final double score; // 0-1 normalized
+  final RiskLevel level;
+  final DateTime timestamp;
+  final double confidence; // 0-1
+  final List<RiskFactor> contributingFactors;
+  final String? modelVersion;
+
+  /// Score as percentage (0-100)
+  int get scorePercent => (score * 100).round();
+
+  /// Confidence as percentage (0-100)
+  int get confidencePercent => (confidence * 100).round();
+
+  factory RiskScore.fromJson(Map<String, dynamic> json) {
+    return RiskScore(
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
+      level: RiskLevel.fromString(json['level'] as String? ?? 'on-track'),
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
+      contributingFactors: (json['contributingFactors'] as List<dynamic>? ??
+                           json['contributing_factors'] as List<dynamic>? ?? [])
+          .map((f) => RiskFactor.fromJson(f as Map<String, dynamic>))
+          .toList(),
+      modelVersion: json['modelVersion'] as String? ?? json['model_version'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'score': score,
+        'level': level.value,
+        'timestamp': timestamp.toIso8601String(),
+        'confidence': confidence,
+        'contributingFactors': contributingFactors.map((f) => f.toJson()).toList(),
+        if (modelVersion != null) 'modelVersion': modelVersion,
+      };
+}
+
+/// Trend analysis for risk scores over time
+@immutable
+class RiskTrendAnalysis {
+  const RiskTrendAnalysis({
+    required this.direction,
+    required this.magnitude,
+    required this.consistency,
+    required this.timeframe,
+    this.projectedLevel,
+    this.projectedDate,
+  });
+
+  final RiskTrend direction;
+  final double magnitude; // Rate of change
+  final double consistency; // 0-1, how consistent the trend is
+  final Duration timeframe;
+  final RiskLevel? projectedLevel;
+  final DateTime? projectedDate;
+
+  /// Whether trend is concerning (increasing + high magnitude)
+  bool get isConcerning => direction == RiskTrend.increasing && magnitude > 0.1;
+
+  factory RiskTrendAnalysis.fromJson(Map<String, dynamic> json) {
+    return RiskTrendAnalysis(
+      direction: RiskTrend.fromString(json['direction'] as String? ?? 'stable'),
+      magnitude: (json['magnitude'] as num?)?.toDouble() ?? 0.0,
+      consistency: (json['consistency'] as num?)?.toDouble() ?? 0.0,
+      timeframe: Duration(
+        days: json['timeframeDays'] as int? ?? json['timeframe_days'] as int? ?? 7,
+      ),
+      projectedLevel: json['projectedLevel'] != null || json['projected_level'] != null
+          ? RiskLevel.fromString(json['projectedLevel'] as String? ??
+                                 json['projected_level'] as String? ?? 'on-track')
+          : null,
+      projectedDate: json['projectedDate'] != null
+          ? DateTime.tryParse(json['projectedDate'] as String)
+          : json['projected_date'] != null
+              ? DateTime.tryParse(json['projected_date'] as String)
+              : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'direction': direction.name,
+        'magnitude': magnitude,
+        'consistency': consistency,
+        'timeframeDays': timeframe.inDays,
+        if (projectedLevel != null) 'projectedLevel': projectedLevel!.value,
+        if (projectedDate != null) 'projectedDate': projectedDate!.toIso8601String(),
+      };
+}
+
+/// Predictive indicator for early warning signals
+@immutable
+class PredictiveIndicator {
+  const PredictiveIndicator({
+    required this.indicatorId,
+    required this.name,
+    required this.category,
+    required this.currentValue,
+    required this.threshold,
+    required this.severity,
+    required this.description,
+    required this.recommendation,
+    this.daysUntilThreshold,
+    this.confidence,
+  });
+
+  final String indicatorId;
+  final String name;
+  final RiskCategory category;
+  final double currentValue;
+  final double threshold;
+  final RiskSeverity severity;
+  final String description;
+  final String recommendation;
+  final int? daysUntilThreshold;
+  final double? confidence;
+
+  /// Whether indicator has breached threshold
+  bool get isTriggered => currentValue >= threshold;
+
+  /// Percentage of threshold reached
+  double get thresholdPercent => (currentValue / threshold * 100).clamp(0, 100);
+
+  factory PredictiveIndicator.fromJson(Map<String, dynamic> json) {
+    return PredictiveIndicator(
+      indicatorId: json['indicatorId'] as String? ?? json['indicator_id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      category: RiskCategory.fromString(json['category'] as String? ?? 'academic'),
+      currentValue: (json['currentValue'] as num?)?.toDouble() ??
+                    (json['current_value'] as num?)?.toDouble() ?? 0.0,
+      threshold: (json['threshold'] as num?)?.toDouble() ?? 0.0,
+      severity: RiskSeverity.fromString(json['severity'] as String? ?? 'low'),
+      description: json['description'] as String? ?? '',
+      recommendation: json['recommendation'] as String? ?? '',
+      daysUntilThreshold: json['daysUntilThreshold'] as int? ??
+                          json['days_until_threshold'] as int?,
+      confidence: (json['confidence'] as num?)?.toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'indicatorId': indicatorId,
+        'name': name,
+        'category': category.name,
+        'currentValue': currentValue,
+        'threshold': threshold,
+        'severity': severity.name,
+        'description': description,
+        'recommendation': recommendation,
+        if (daysUntilThreshold != null) 'daysUntilThreshold': daysUntilThreshold,
+        if (confidence != null) 'confidence': confidence,
+      };
+}
+
+/// Historical risk data point for time-series analysis
+@immutable
+class HistoricalRiskData {
+  const HistoricalRiskData({
+    required this.studentId,
+    required this.dataPoints,
+    required this.periodStart,
+    required this.periodEnd,
+    required this.aggregationType,
+  });
+
+  final String studentId;
+  final List<RiskDataPoint> dataPoints;
+  final DateTime periodStart;
+  final DateTime periodEnd;
+  final String aggregationType; // 'daily', 'weekly', 'monthly'
+
+  /// Average risk score over the period
+  double get averageScore {
+    if (dataPoints.isEmpty) return 0.0;
+    return dataPoints.map((p) => p.riskScore).reduce((a, b) => a + b) / dataPoints.length;
+  }
+
+  /// Maximum risk score in the period
+  double get maxScore {
+    if (dataPoints.isEmpty) return 0.0;
+    return dataPoints.map((p) => p.riskScore).reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Minimum risk score in the period
+  double get minScore {
+    if (dataPoints.isEmpty) return 0.0;
+    return dataPoints.map((p) => p.riskScore).reduce((a, b) => a < b ? a : b);
+  }
+
+  /// Number of data points
+  int get dataPointCount => dataPoints.length;
+
+  factory HistoricalRiskData.fromJson(Map<String, dynamic> json) {
+    return HistoricalRiskData(
+      studentId: json['studentId'] as String? ?? json['student_id'] as String? ?? '',
+      dataPoints: (json['dataPoints'] as List<dynamic>? ??
+                   json['data_points'] as List<dynamic>? ?? [])
+          .map((p) => RiskDataPoint.fromJson(p as Map<String, dynamic>))
+          .toList(),
+      periodStart: DateTime.tryParse(json['periodStart'] as String? ??
+                                     json['period_start'] as String? ?? '') ?? DateTime.now(),
+      periodEnd: DateTime.tryParse(json['periodEnd'] as String? ??
+                                   json['period_end'] as String? ?? '') ?? DateTime.now(),
+      aggregationType: json['aggregationType'] as String? ??
+                       json['aggregation_type'] as String? ?? 'daily',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'studentId': studentId,
+        'dataPoints': dataPoints.map((p) => p.toJson()).toList(),
+        'periodStart': periodStart.toIso8601String(),
+        'periodEnd': periodEnd.toIso8601String(),
+        'aggregationType': aggregationType,
+      };
+}
+
+/// Individual data point in risk time series
+@immutable
+class RiskDataPoint {
+  const RiskDataPoint({
+    required this.timestamp,
+    required this.riskScore,
+    required this.riskLevel,
+    this.categoryScores,
+    this.primaryRiskFactor,
+  });
+
+  final DateTime timestamp;
+  final double riskScore;
+  final RiskLevel riskLevel;
+  final RiskCategoryScores? categoryScores;
+  final String? primaryRiskFactor;
+
+  factory RiskDataPoint.fromJson(Map<String, dynamic> json) {
+    return RiskDataPoint(
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ?? DateTime.now(),
+      riskScore: (json['riskScore'] as num?)?.toDouble() ??
+                 (json['risk_score'] as num?)?.toDouble() ?? 0.0,
+      riskLevel: RiskLevel.fromString(json['riskLevel'] as String? ??
+                                       json['risk_level'] as String? ?? 'on-track'),
+      categoryScores: json['categoryScores'] != null || json['category_scores'] != null
+          ? RiskCategoryScores.fromJson(
+              json['categoryScores'] as Map<String, dynamic>? ??
+              json['category_scores'] as Map<String, dynamic>? ?? {},
+            )
+          : null,
+      primaryRiskFactor: json['primaryRiskFactor'] as String? ??
+                         json['primary_risk_factor'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'timestamp': timestamp.toIso8601String(),
+        'riskScore': riskScore,
+        'riskLevel': riskLevel.value,
+        if (categoryScores != null) 'categoryScores': categoryScores!.toJson(),
+        if (primaryRiskFactor != null) 'primaryRiskFactor': primaryRiskFactor,
+      };
+}
+
+/// Complete student risk profile with trends and indicators
+@immutable
+class StudentRiskProfile {
+  const StudentRiskProfile({
+    required this.studentId,
+    required this.currentRisk,
+    required this.trendAnalysis,
+    required this.predictiveIndicators,
+    required this.historicalData,
+    this.interventions,
+  });
+
+  final String studentId;
+  final RiskPrediction currentRisk;
+  final RiskTrendAnalysis trendAnalysis;
+  final List<PredictiveIndicator> predictiveIndicators;
+  final HistoricalRiskData historicalData;
+  final InterventionPlan? interventions;
+
+  /// Active predictive indicators (triggered)
+  List<PredictiveIndicator> get activeIndicators =>
+      predictiveIndicators.where((i) => i.isTriggered).toList();
+
+  /// High severity indicators
+  List<PredictiveIndicator> get criticalIndicators =>
+      predictiveIndicators.where((i) => i.severity == RiskSeverity.high).toList();
+
+  factory StudentRiskProfile.fromJson(Map<String, dynamic> json) {
+    return StudentRiskProfile(
+      studentId: json['studentId'] as String? ?? json['student_id'] as String? ?? '',
+      currentRisk: RiskPrediction.fromJson(
+        json['currentRisk'] as Map<String, dynamic>? ??
+        json['current_risk'] as Map<String, dynamic>? ?? {},
+      ),
+      trendAnalysis: RiskTrendAnalysis.fromJson(
+        json['trendAnalysis'] as Map<String, dynamic>? ??
+        json['trend_analysis'] as Map<String, dynamic>? ?? {},
+      ),
+      predictiveIndicators: (json['predictiveIndicators'] as List<dynamic>? ??
+                             json['predictive_indicators'] as List<dynamic>? ?? [])
+          .map((i) => PredictiveIndicator.fromJson(i as Map<String, dynamic>))
+          .toList(),
+      historicalData: HistoricalRiskData.fromJson(
+        json['historicalData'] as Map<String, dynamic>? ??
+        json['historical_data'] as Map<String, dynamic>? ?? {},
+      ),
+      interventions: json['interventions'] != null
+          ? InterventionPlan.fromJson(json['interventions'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'studentId': studentId,
+        'currentRisk': currentRisk.toJson(),
+        'trendAnalysis': trendAnalysis.toJson(),
+        'predictiveIndicators': predictiveIndicators.map((i) => i.toJson()).toList(),
+        'historicalData': historicalData.toJson(),
+        if (interventions != null) 'interventions': interventions!.toJson(),
+      };
+}
+
+/// Class-level risk overview with aggregated data
+@immutable
+class ClassRiskOverview {
+  const ClassRiskOverview({
+    required this.classId,
+    required this.summary,
+    required this.trendingSummary,
+    required this.topIndicators,
+    required this.studentProfiles,
+    required this.lastUpdated,
+  });
+
+  final String classId;
+  final ClassroomRiskSummary summary;
+  final TrendingSummary trendingSummary;
+  final List<PredictiveIndicator> topIndicators;
+  final List<StudentRiskProfile> studentProfiles;
+  final DateTime lastUpdated;
+
+  /// Students requiring immediate attention
+  List<StudentRiskProfile> get urgentStudents =>
+      studentProfiles.where((s) => s.currentRisk.riskLevel == RiskLevel.critical).toList();
+
+  factory ClassRiskOverview.fromJson(Map<String, dynamic> json) {
+    return ClassRiskOverview(
+      classId: json['classId'] as String? ?? json['class_id'] as String? ?? '',
+      summary: ClassroomRiskSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? {},
+      ),
+      trendingSummary: TrendingSummary.fromJson(
+        json['trendingSummary'] as Map<String, dynamic>? ??
+        json['trending_summary'] as Map<String, dynamic>? ?? {},
+      ),
+      topIndicators: (json['topIndicators'] as List<dynamic>? ??
+                      json['top_indicators'] as List<dynamic>? ?? [])
+          .map((i) => PredictiveIndicator.fromJson(i as Map<String, dynamic>))
+          .toList(),
+      studentProfiles: (json['studentProfiles'] as List<dynamic>? ??
+                        json['student_profiles'] as List<dynamic>? ?? [])
+          .map((p) => StudentRiskProfile.fromJson(p as Map<String, dynamic>))
+          .toList(),
+      lastUpdated: DateTime.tryParse(json['lastUpdated'] as String? ??
+                                     json['last_updated'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'classId': classId,
+        'summary': summary.toJson(),
+        'trendingSummary': trendingSummary.toJson(),
+        'topIndicators': topIndicators.map((i) => i.toJson()).toList(),
+        'studentProfiles': studentProfiles.map((p) => p.toJson()).toList(),
+        'lastUpdated': lastUpdated.toIso8601String(),
+      };
+}
+
+/// Summary of trending risk patterns across class
+@immutable
+class TrendingSummary {
+  const TrendingSummary({
+    required this.improving,
+    required this.worsening,
+    required this.stable,
+    required this.emergingPatterns,
+  });
+
+  final int improving;
+  final int worsening;
+  final int stable;
+  final List<String> emergingPatterns;
+
+  int get total => improving + worsening + stable;
+
+  factory TrendingSummary.fromJson(Map<String, dynamic> json) {
+    return TrendingSummary(
+      improving: json['improving'] as int? ?? 0,
+      worsening: json['worsening'] as int? ?? 0,
+      stable: json['stable'] as int? ?? 0,
+      emergingPatterns: List<String>.from(
+        json['emergingPatterns'] as List<dynamic>? ??
+        json['emerging_patterns'] as List<dynamic>? ?? [],
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'improving': improving,
+        'worsening': worsening,
+        'stable': stable,
+        'emergingPatterns': emergingPatterns,
+      };
+}

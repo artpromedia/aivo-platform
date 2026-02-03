@@ -795,6 +795,151 @@ class TeacherLocalDatabase {
     return (cached as List<dynamic>).cast<String>();
   }
 
+  // ========================================================================
+  // PHASE 1 ENHANCEMENTS - Advanced Risk Prediction Cache Methods
+  // ========================================================================
+
+  /// Get cached student risk profile
+  Future<dynamic> getCachedRiskProfile(String studentId) async {
+    return _getCachedValue('risk_profile_$studentId');
+  }
+
+  /// Cache student risk profile
+  Future<void> cacheRiskProfile(String studentId, dynamic profile) async {
+    await _setCachedValue('risk_profile_$studentId', profile);
+  }
+
+  /// Get cached class risk overview
+  Future<dynamic> getCachedClassRiskOverview(String classId) async {
+    return _getCachedValue('class_risk_overview_$classId');
+  }
+
+  /// Cache class risk overview
+  Future<void> cacheClassRiskOverview(String classId, dynamic overview) async {
+    await _setCachedValue('class_risk_overview_$classId', overview);
+  }
+
+  /// Get cached risk trends
+  Future<dynamic> getCachedRiskTrends(String studentId) async {
+    return _getCachedValue('risk_trends_$studentId');
+  }
+
+  /// Cache risk trends
+  Future<void> cacheRiskTrends(String studentId, dynamic trends) async {
+    await _setCachedValue('risk_trends_$studentId', trends);
+  }
+
+  /// Get cached predictive indicators
+  Future<List<dynamic>> getCachedPredictiveIndicators(String studentId) async {
+    final cached = await _getCachedValue('predictive_indicators_$studentId');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache predictive indicators
+  Future<void> cachePredictiveIndicators(String studentId, List<dynamic> indicators) async {
+    await _setCachedValue('predictive_indicators_$studentId', indicators);
+  }
+
+  /// Get cached historical risk data
+  Future<dynamic> getCachedHistoricalRiskData(String studentId) async {
+    return _getCachedValue('historical_risk_data_$studentId');
+  }
+
+  /// Cache historical risk data
+  Future<void> cacheHistoricalRiskData(String studentId, dynamic historicalData) async {
+    await _setCachedValue('historical_risk_data_$studentId', historicalData);
+  }
+
+  // ========================================================================
+  // INTERVENTION CACHE METHODS
+  // ========================================================================
+
+  /// Get cached intervention suggestions
+  Future<List<dynamic>> getCachedInterventionSuggestions(String studentId) async {
+    final cached = await _getCachedValue('intervention_suggestions_$studentId');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache intervention suggestions
+  Future<void> cacheInterventionSuggestions(
+    String studentId,
+    List<dynamic> suggestions,
+  ) async {
+    await _setCachedValue('intervention_suggestions_$studentId', suggestions);
+  }
+
+  /// Get cached intervention
+  Future<dynamic> getCachedIntervention(String interventionId) async {
+    return _getCachedValue('intervention_$interventionId');
+  }
+
+  /// Cache intervention
+  Future<void> cacheIntervention(dynamic intervention) async {
+    final id = intervention is Map ? intervention['id'] as String? : null;
+    if (id != null) {
+      await _setCachedValue('intervention_$id', intervention);
+    }
+  }
+
+  /// Get cached intervention outcome
+  Future<dynamic> getCachedInterventionOutcome(String outcomeId) async {
+    return _getCachedValue('intervention_outcome_$outcomeId');
+  }
+
+  /// Cache intervention outcome
+  Future<void> cacheInterventionOutcome(dynamic outcome) async {
+    final id = outcome is Map ? outcome['id'] as String? : null;
+    if (id != null) {
+      await _setCachedValue('intervention_outcome_$id', outcome);
+    }
+  }
+
+  /// Get cached intervention history
+  Future<dynamic> getCachedInterventionHistory(String studentId) async {
+    return _getCachedValue('intervention_history_$studentId');
+  }
+
+  /// Cache intervention history
+  Future<void> cacheInterventionHistory(String studentId, dynamic history) async {
+    await _setCachedValue('intervention_history_$studentId', history);
+  }
+
+  /// Get cached active interventions
+  Future<List<dynamic>> getCachedActiveInterventions(String studentId) async {
+    final cached = await _getCachedValue('active_interventions_$studentId');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache active interventions
+  Future<void> cacheActiveInterventions(
+    String studentId,
+    List<dynamic> interventions,
+  ) async {
+    await _setCachedValue('active_interventions_$studentId', interventions);
+  }
+
+  /// Get cached intervention templates
+  Future<List<dynamic>> getCachedInterventionTemplates() async {
+    final cached = await _getCachedValue('intervention_templates');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache intervention templates
+  Future<void> cacheInterventionTemplates(List<dynamic> templates) async {
+    await _setCachedValue('intervention_templates', templates);
+  }
+
+  /// Delete intervention from cache
+  Future<void> deleteIntervention(String interventionId) async {
+    await _db.deleteContentByKeys(['intervention_$interventionId']);
+  }
+
+  /// Clear all intervention cache
+  Future<void> clearInterventionCache() async {
+    // This would need to be implemented more efficiently in production
+    // For now, we'll just document it needs implementation
+  }
+
   /// Clear all risk prediction cache
   Future<void> clearRiskCache() async {
     // Delete all content with 'risk' in the key (using batch delete would be more efficient)

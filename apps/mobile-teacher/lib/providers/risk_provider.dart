@@ -376,3 +376,355 @@ final needsImmediateActionProvider = Provider<bool>((ref) {
   final state = ref.watch(studentRiskProvider);
   return state.interventions?.requiresImmediateAction ?? false;
 });
+
+// ============================================================================
+// PHASE 1 ENHANCEMENTS - Advanced Risk Prediction Providers
+// ============================================================================
+
+/// State class for student risk profile
+class StudentRiskProfileState {
+  const StudentRiskProfileState({
+    this.profile,
+    this.isLoading = false,
+    this.error,
+    this.lastUpdated,
+  });
+
+  final StudentRiskProfile? profile;
+  final bool isLoading;
+  final String? error;
+  final DateTime? lastUpdated;
+
+  StudentRiskProfileState copyWith({
+    StudentRiskProfile? profile,
+    bool? isLoading,
+    String? error,
+    DateTime? lastUpdated,
+  }) {
+    return StudentRiskProfileState(
+      profile: profile ?? this.profile,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+
+  /// Whether there are active predictive indicators
+  bool get hasActiveIndicators => profile?.activeIndicators.isNotEmpty ?? false;
+
+  /// Whether there are critical indicators
+  bool get hasCriticalIndicators => profile?.criticalIndicators.isNotEmpty ?? false;
+}
+
+/// AsyncNotifier for student risk profile
+class StudentRiskProfileNotifier extends AsyncNotifier<StudentRiskProfile> {
+  @override
+  Future<StudentRiskProfile> build() async {
+    // Return empty state initially
+    throw UnimplementedError('Call loadProfile() with studentId');
+  }
+
+  /// Load profile for a specific student
+  Future<void> loadProfile(String studentId, {String period = 'month'}) async {
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(riskRepositoryProvider);
+      return repository.fetchStudentRiskProfile(studentId, period: period);
+    });
+  }
+
+  /// Refresh the current profile
+  Future<void> refresh() async {
+    final current = state.value;
+    if (current == null) return;
+
+    await loadProfile(current.studentId);
+  }
+}
+
+/// State class for class risk summary
+class ClassRiskSummaryState {
+  const ClassRiskSummaryState({
+    this.overview,
+    this.isLoading = false,
+    this.error,
+    this.lastUpdated,
+  });
+
+  final ClassRiskOverview? overview;
+  final bool isLoading;
+  final String? error;
+  final DateTime? lastUpdated;
+
+  ClassRiskSummaryState copyWith({
+    ClassRiskOverview? overview,
+    bool? isLoading,
+    String? error,
+    DateTime? lastUpdated,
+  }) {
+    return ClassRiskSummaryState(
+      overview: overview ?? this.overview,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+
+  /// Number of students requiring urgent attention
+  int get urgentStudentsCount => overview?.urgentStudents.length ?? 0;
+
+  /// Whether there are students needing attention
+  bool get hasUrgentStudents => urgentStudentsCount > 0;
+}
+
+/// State notifier for class risk summary
+class ClassRiskSummaryNotifier extends StateNotifier<ClassRiskSummaryState> {
+  ClassRiskSummaryNotifier(this._repository) : super(const ClassRiskSummaryState());
+
+  final RiskRepository _repository;
+  String? _currentClassId;
+
+  /// Load risk overview for a class
+  Future<void> loadOverview(String classId, {bool includeStudentProfiles = true}) async {
+    _currentClassId = classId;
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final overview = await _repository.fetchClassRiskOverview(
+        classId,
+        includeStudentProfiles: includeStudentProfiles,
+      );
+
+      state = state.copyWith(
+        overview: overview,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Refresh the current overview
+  Future<void> refresh() async {
+    if (_currentClassId == null) return;
+    await loadOverview(_currentClassId!);
+  }
+
+  /// Clear state
+  void clear() {
+    _currentClassId = null;
+    state = const ClassRiskSummaryState();
+  }
+}
+
+/// Risk filter options
+class RiskFilterOptions {
+  const RiskFilterOptions({
+    this.riskType,
+    this.severity,
+    this.trendDirection,
+    this.minConfidence,
+  });
+
+  final RiskCategory? riskType;
+  final RiskSeverity? severity;
+  final RiskTrend? trendDirection;
+  final double? minConfidence;
+
+  RiskFilterOptions copyWith({
+    RiskCategory? riskType,
+    RiskSeverity? severity,
+    RiskTrend? trendDirection,
+    double? minConfidence,
+  }) {
+    return RiskFilterOptions(
+      riskType: riskType ?? this.riskType,
+      severity: severity ?? this.severity,
+      trendDirection: trendDirection ?? this.trendDirection,
+      minConfidence: minConfidence ?? this.minConfidence,
+    );
+  }
+
+  /// Whether any filters are active
+  bool get hasActiveFilters =>
+      riskType != null || severity != null || trendDirection != null || minConfidence != null;
+
+  /// Clear all filters
+  RiskFilterOptions clear() {
+    return const RiskFilterOptions();
+  }
+}
+
+/// State notifier for risk filter
+class RiskFilterNotifier extends StateNotifier<RiskFilterOptions> {
+  RiskFilterNotifier() : super(const RiskFilterOptions());
+
+  /// Set risk type filter
+  void setRiskType(RiskCategory? type) {
+    state = state.copyWith(riskType: type);
+  }
+
+  /// Set severity filter
+  void setSeverity(RiskSeverity? severity) {
+    state = state.copyWith(severity: severity);
+  }
+
+  /// Set trend direction filter
+  void setTrendDirection(RiskTrend? trend) {
+    state = state.copyWith(trendDirection: trend);
+  }
+
+  /// Set minimum confidence filter
+  void setMinConfidence(double? confidence) {
+    state = state.copyWith(minConfidence: confidence);
+  }
+
+  /// Clear all filters
+  void clearFilters() {
+    state = const RiskFilterOptions();
+  }
+}
+
+// ============================================================================
+// PHASE 1 PROVIDERS
+// ============================================================================
+
+/// Provider for student risk profile (AsyncNotifier)
+final studentRiskProfileProvider =
+    AsyncNotifierProvider<StudentRiskProfileNotifier, StudentRiskProfile>(() {
+  return StudentRiskProfileNotifier();
+});
+
+/// Provider for class risk summary
+final classRiskSummaryProvider =
+    StateNotifierProvider<ClassRiskSummaryNotifier, ClassRiskSummaryState>((ref) {
+  final repository = ref.watch(riskRepositoryProvider);
+  return ClassRiskSummaryNotifier(repository);
+});
+
+/// Provider for risk filter options
+final riskFilterProvider =
+    StateNotifierProvider<RiskFilterNotifier, RiskFilterOptions>((ref) {
+  return RiskFilterNotifier();
+});
+
+/// Family provider for fetching risk trends
+final riskTrendsProvider = FutureProvider.family.autoDispose<
+    RiskTrendAnalysis,
+    ({String studentId, DateTime? startDate, DateTime? endDate})
+>((ref, params) async {
+  final repository = ref.watch(riskRepositoryProvider);
+  return repository.fetchRiskTrends(
+    params.studentId,
+    startDate: params.startDate,
+    endDate: params.endDate,
+  );
+});
+
+/// Family provider for fetching predictive indicators
+final predictiveIndicatorsProvider = FutureProvider.family.autoDispose<
+    List<PredictiveIndicator>,
+    ({String studentId, RiskCategory? category, RiskSeverity? minSeverity})
+>((ref, params) async {
+  final repository = ref.watch(riskRepositoryProvider);
+  return repository.fetchPredictiveIndicators(
+    params.studentId,
+    category: params.category,
+    minSeverity: params.minSeverity,
+  );
+});
+
+/// Family provider for fetching historical risk data
+final historicalRiskDataProvider = FutureProvider.family.autoDispose<
+    HistoricalRiskData,
+    ({String studentId, DateTime startDate, DateTime endDate, String aggregation})
+>((ref, params) async {
+  final repository = ref.watch(riskRepositoryProvider);
+  return repository.fetchHistoricalRiskData(
+    params.studentId,
+    startDate: params.startDate,
+    endDate: params.endDate,
+    aggregation: params.aggregation,
+  );
+});
+
+/// Stream provider for real-time risk alerts
+/// This would connect to WebSocket or Firebase for real-time updates
+final riskAlertStreamProvider = StreamProvider.autoDispose<RiskAlert>((ref) async* {
+  // TODO: Implement WebSocket/Firebase connection for real-time alerts
+  // For now, return an empty stream
+  // In production, this would subscribe to backend push notifications
+  yield* Stream<RiskAlert>.empty();
+});
+
+/// Filtered predictive indicators based on current filter options
+final filteredPredictiveIndicatorsProvider = Provider.family<
+    List<PredictiveIndicator>?,
+    List<PredictiveIndicator>
+>((ref, indicators) {
+  final filter = ref.watch(riskFilterProvider);
+
+  if (!filter.hasActiveFilters) return indicators;
+
+  return indicators.where((indicator) {
+    if (filter.riskType != null && indicator.category != filter.riskType) {
+      return false;
+    }
+    if (filter.severity != null && indicator.severity != filter.severity) {
+      return false;
+    }
+    if (filter.minConfidence != null &&
+        (indicator.confidence ?? 0) < filter.minConfidence!) {
+      return false;
+    }
+    return true;
+  }).toList();
+});
+
+/// Filtered student profiles based on trend and risk level
+final filteredStudentProfilesProvider = Provider.family<
+    List<StudentRiskProfile>?,
+    List<StudentRiskProfile>
+>((ref, profiles) {
+  final filter = ref.watch(riskFilterProvider);
+
+  if (!filter.hasActiveFilters) return profiles;
+
+  return profiles.where((profile) {
+    if (filter.trendDirection != null &&
+        profile.trendAnalysis.direction != filter.trendDirection) {
+      return false;
+    }
+    if (filter.minConfidence != null &&
+        profile.currentRisk.confidence < filter.minConfidence!) {
+      return false;
+    }
+    return true;
+  }).toList();
+});
+
+/// Model for risk alerts
+class RiskAlert {
+  const RiskAlert({
+    required this.studentId,
+    required this.studentName,
+    required this.alertType,
+    required this.severity,
+    required this.message,
+    required this.timestamp,
+    this.actionRequired,
+  });
+
+  final String studentId;
+  final String studentName;
+  final String alertType; // 'risk_level_change', 'indicator_triggered', etc.
+  final RiskSeverity severity;
+  final String message;
+  final DateTime timestamp;
+  final String? actionRequired;
+}
