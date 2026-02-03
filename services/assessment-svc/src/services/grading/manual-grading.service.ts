@@ -100,7 +100,6 @@ export class ManualGradingService {
         OR: [
           { type: 'ESSAY' },
           { type: 'SHORT_ANSWER' },
-          { type: 'CODE' },
         ],
       },
     };
@@ -130,14 +129,18 @@ export class ManualGradingService {
             },
           },
           attempt: {
-            include: {
-              assessment: {
-                select: { id: true, name: true, type: true },
-              },
-            },
             select: blindGrading
-              ? { id: true, assessmentId: true, assessment: true }
-              : { id: true, assessmentId: true, assessment: true, userId: true },
+              ? {
+                id: true,
+                assessmentId: true,
+                assessment: { select: { id: true, title: true, type: true } },
+              }
+              : {
+                id: true,
+                assessmentId: true,
+                assessment: { select: { id: true, title: true, type: true } },
+                userId: true,
+              },
           },
           gradingRecords: {
             orderBy: { gradedAt: 'desc' },
@@ -145,7 +148,7 @@ export class ManualGradingService {
           },
         },
         orderBy: [
-          { createdAt: 'asc' }, // Oldest first (FIFO)
+          { startedAt: 'asc' }, // Oldest first (FIFO)
         ],
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -158,15 +161,15 @@ export class ManualGradingService {
       questionId: response.questionId,
       attemptId: response.attemptId,
       assessmentId: response.attempt.assessmentId,
-      assessmentName: response.attempt.assessment.name,
+      assessmentName: response.attempt.assessment.title,
       questionType: response.question.type,
       questionStem: response.question.stem,
-      answer: response.answer,
+      answer: response.response,
       maxPoints: response.maxPoints,
-      pointsAwarded: response.pointsAwarded,
+      pointsAwarded: response.pointsEarned ?? undefined,
       status: response.status as ResponseStatus,
       studentId: blindGrading ? undefined : response.attempt.userId,
-      submittedAt: response.createdAt,
+      submittedAt: response.answeredAt ?? response.startedAt,
       rubric: response.question.rubric
         ? this.mapRubric(response.question.rubric)
         : undefined,
@@ -219,7 +222,7 @@ export class ManualGradingService {
         attempt: {
           include: {
             assessment: {
-              select: { id: true, name: true, type: true },
+              select: { id: true, title: true, type: true },
             },
           },
         },
@@ -236,25 +239,24 @@ export class ManualGradingService {
       questionId: response.questionId,
       attemptId: response.attemptId,
       assessmentId: response.attempt.assessmentId,
-      assessmentName: response.attempt.assessment.name,
+      assessmentName: response.attempt.assessment.title,
       questionType: response.question.type,
       questionStem: response.question.stem,
-      answer: response.answer,
+      answer: response.response,
       maxPoints: response.maxPoints,
-      pointsAwarded: response.pointsAwarded,
+      pointsAwarded: response.pointsEarned ?? undefined,
       feedback: response.feedback ?? undefined,
       status: response.status as ResponseStatus,
       studentId: blindGrading ? undefined : response.attempt.userId,
-      submittedAt: response.createdAt,
+      submittedAt: response.answeredAt ?? response.startedAt,
       rubric: response.question.rubric
         ? this.mapRubric(response.question.rubric)
         : undefined,
       rubricScores: response.rubricScores as Record<string, number> | undefined,
-      annotations: response.annotations as any[] | undefined,
       gradingHistory: response.gradingRecords.map((record) => ({
-        gradedBy: record.gradedBy,
+        gradedBy: record.graderId,
         gradedAt: record.gradedAt,
-        pointsAwarded: record.pointsAwarded,
+        pointsAwarded: record.score,
         feedback: record.feedback ?? undefined,
         rubricScores: record.rubricScores as Record<string, number> | undefined,
       })),
@@ -303,11 +305,11 @@ export class ManualGradingService {
     await client.gradingRecord.create({
       data: {
         responseId: input.responseId,
-        gradedBy: input.gradedBy,
-        pointsAwarded: input.pointsAwarded,
+        graderId: input.gradedBy,
+        score: input.pointsAwarded,
+        maxPoints: response.maxPoints,
         feedback: input.feedback,
         rubricScores: input.rubricScores ?? undefined,
-        rubricFeedback: input.rubricFeedback ?? undefined,
       },
     });
 
@@ -315,16 +317,14 @@ export class ManualGradingService {
     const updated = await client.questionResponse.update({
       where: { id: input.responseId },
       data: {
-        pointsAwarded: input.pointsAwarded,
+        pointsEarned: input.pointsAwarded,
         feedback: input.feedback,
         rubricScores: input.rubricScores ?? undefined,
-        annotations: input.annotations ?? undefined,
         status: 'GRADED',
         autoGraded: false,
         gradedBy: input.gradedBy,
         gradedAt: new Date(),
         flagged: input.flagged ?? false,
-        flagReason: input.flagReason ?? null,
       },
       include: {
         question: true,
@@ -396,7 +396,7 @@ export class ManualGradingService {
       where: { id: responseId },
       data: {
         flagged: true,
-        flagReason: reason ?? 'Flagged for review',
+        feedback: reason ?? 'Flagged for review',
       },
     });
 
@@ -415,7 +415,6 @@ export class ManualGradingService {
       where: { id: responseId },
       data: {
         flagged: false,
-        flagReason: null,
       },
     });
   }
@@ -432,11 +431,15 @@ export class ManualGradingService {
       include: {
         questions: {
           where: {
-            OR: [
-              { type: 'ESSAY' },
-              { type: 'SHORT_ANSWER' },
-              { type: 'CODE' },
-            ],
+            question: {
+              OR: [
+                { type: 'ESSAY' },
+                { type: 'SHORT_ANSWER' },
+              ],
+            },
+          },
+          include: {
+            question: true,
           },
         },
         attempts: {
@@ -448,7 +451,6 @@ export class ManualGradingService {
                   OR: [
                     { type: 'ESSAY' },
                     { type: 'SHORT_ANSWER' },
-                    { type: 'CODE' },
                   ],
                 },
               },
@@ -468,7 +470,8 @@ export class ManualGradingService {
     const total = allResponses.length;
 
     // Per-question breakdown
-    const byQuestion = assessment.questions.map((question) => {
+    const byQuestion = assessment.questions.map((assessmentQuestion) => {
+      const question = assessmentQuestion.question;
       const questionResponses = allResponses.filter(
         (r) => r.questionId === question.id
       );
@@ -497,7 +500,7 @@ export class ManualGradingService {
 
     return {
       assessmentId,
-      assessmentName: assessment.name,
+      assessmentName: assessment.title,
       totalResponses: total,
       pending,
       graded,
@@ -578,28 +581,31 @@ export class ManualGradingService {
     );
 
     if (allGraded && attempt.status === 'SUBMITTED') {
-      const totalScore = attempt.responses.reduce(
-        (sum, r) => sum + (r.pointsAwarded ?? 0),
+      const pointsEarned = attempt.responses.reduce(
+        (sum, r) => sum + (r.pointsEarned ?? 0),
         0
       );
-      const maxScore = attempt.responses.reduce((sum, r) => sum + r.maxPoints, 0);
-      const percentScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+      const pointsPossible = attempt.responses.reduce(
+        (sum, r) => sum + r.maxPoints,
+        0
+      );
+      const score = pointsPossible > 0 ? (pointsEarned / pointsPossible) * 100 : 0;
 
       await client.attempt.update({
         where: { id: attemptId },
         data: {
           status: 'GRADED',
-          score: totalScore,
-          maxScore,
-          percentScore,
+          score,
+          pointsEarned,
+          pointsPossible,
         },
       });
 
       await publishEvent('attempt.graded', {
         attemptId,
-        score: totalScore,
-        maxScore,
-        percentScore,
+        score,
+        pointsEarned,
+        pointsPossible,
       });
     }
   }
@@ -665,20 +671,25 @@ export class ManualGradingService {
       id: data.id,
       attemptId: data.attemptId,
       questionId: data.questionId,
-      answer: data.answer,
-      pointsAwarded: data.pointsAwarded,
+      answer: data.response ?? undefined,
+      response: data.response ?? undefined,
+      responseText: data.responseText ?? undefined,
+      isCorrect: data.isCorrect ?? undefined,
+      pointsAwarded: data.pointsEarned ?? null,
+      pointsEarned: data.pointsEarned ?? undefined,
       maxPoints: data.maxPoints,
-      feedback: data.feedback,
+      partialCredit: data.partialCredit ?? undefined,
+      autoGraded: data.autoGraded ?? undefined,
       status: data.status,
-      autoGraded: data.autoGraded,
-      rubricScores: data.rubricScores,
-      annotations: data.annotations,
-      gradedBy: data.gradedBy,
-      gradedAt: data.gradedAt,
-      flagged: data.flagged,
-      flagReason: data.flagReason,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      flagged: data.flagged ?? undefined,
+      rubricScores: data.rubricScores ?? undefined,
+      feedback: data.feedback ?? undefined,
+      gradedBy: data.gradedBy ?? undefined,
+      gradedAt: data.gradedAt ?? undefined,
+      startedAt: data.startedAt ?? undefined,
+      answeredAt: data.answeredAt ?? undefined,
+      timeSpentSeconds: data.timeSpentSeconds ?? undefined,
+      hintsUsed: data.hintsUsed ?? undefined,
     };
   }
 }

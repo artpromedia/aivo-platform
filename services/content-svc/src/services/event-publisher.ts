@@ -5,7 +5,7 @@
 // Publishes content ingestion events to NATS JetStream.
 // Falls back to logging when NATS is disabled or unavailable.
 
-import { EventPublisher } from '@aivo/events';
+import { NatsTransport } from '@aivo/events';
 
 import { config } from '../config.js';
 
@@ -44,7 +44,7 @@ export interface AiDraftJobData {
 // -----------------------------------------------------------------------------
 
 class ContentEventPublisherService {
-  private publisher: EventPublisher | null = null;
+  private publisher: NatsTransport | null = null;
   private isConnecting = false;
   private connected = false;
   private connectionError: Error | null = null;
@@ -65,13 +65,15 @@ class ContentEventPublisherService {
     this.isConnecting = true;
 
     try {
-      // Use the EventPublisher constructor with the stub's expected options
-      this.publisher = new EventPublisher({
-        natsUrl: Array.isArray(config.nats.servers)
-          ? config.nats.servers[0]
-          : config.nats.servers,
-        clientId: 'content-svc-publisher',
-        stream: 'content',
+      this.publisher = new NatsTransport({
+        servers: config.nats.servers,
+        serviceName: 'content-svc',
+        serviceVersion:
+          process.env.SERVICE_VERSION ?? process.env.npm_package_version ?? '0.1.0',
+        name: 'content-svc',
+        token: config.nats.token,
+        user: config.nats.user,
+        pass: config.nats.pass,
       });
 
       await this.publisher.connect();
@@ -88,7 +90,7 @@ class ContentEventPublisherService {
     }
   }
 
-  private async ensureConnected(): Promise<EventPublisher | null> {
+  private async ensureConnected(): Promise<NatsTransport | null> {
     if (!config.nats.enabled) {
       return null;
     }
@@ -114,7 +116,11 @@ class ContentEventPublisherService {
   ): Promise<{ success: boolean; error?: string }> {
     const publisher = await this.ensureConnected();
 
-    const subject = `content.ingestion.file.${data.jobId}`;
+    if (!data.tenantId) {
+      console.log('[content-svc] Missing tenantId, skipping publish for file ingestion job');
+      return { success: true };
+    }
+
     const payload = {
       type: 'FILE_INGESTION_JOB_CREATED',
       jobId: data.jobId,
@@ -131,8 +137,12 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use publish method from the stub interface
-        await publisher.publish(subject, payload);
+        await publisher.publish({
+          tenantId: data.tenantId,
+          eventType: 'content.ingestion',
+          eventVersion: '1.0.0',
+          payload,
+        });
         console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
         return { success: true };
       } catch (err) {
@@ -143,10 +153,7 @@ class ContentEventPublisherService {
       }
     } else {
       // Log event when NATS is not available
-      console.log('[content-svc] NATS unavailable, logging event:', {
-        subject,
-        payload,
-      });
+      console.log('[content-svc] NATS unavailable, logging event:', payload);
       return { success: true }; // Return success since we logged it (for dev/test)
     }
   }
@@ -161,7 +168,11 @@ class ContentEventPublisherService {
   async publishAiDraftJob(data: AiDraftJobData): Promise<{ success: boolean; error?: string }> {
     const publisher = await this.ensureConnected();
 
-    const subject = `content.ingestion.ai-draft.${data.jobId}`;
+    if (!data.tenantId) {
+      console.log('[content-svc] Missing tenantId, skipping publish for AI draft job');
+      return { success: true };
+    }
+
     const payload = {
       type: 'AI_DRAFT_JOB_CREATED',
       jobId: data.jobId,
@@ -180,8 +191,12 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        // Use publish method from the stub interface
-        await publisher.publish(subject, payload);
+        await publisher.publish({
+          tenantId: data.tenantId,
+          eventType: 'content.ai_draft',
+          eventVersion: '1.0.0',
+          payload,
+        });
         console.log(`[content-svc] Published AI draft job: ${data.jobId}`);
         return { success: true };
       } catch (err) {
@@ -192,10 +207,7 @@ class ContentEventPublisherService {
       }
     } else {
       // Log event when NATS is not available
-      console.log('[content-svc] NATS unavailable, logging event:', {
-        subject,
-        payload,
-      });
+      console.log('[content-svc] NATS unavailable, logging event:', payload);
       return { success: true }; // Return success since we logged it (for dev/test)
     }
   }

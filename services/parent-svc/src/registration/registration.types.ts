@@ -350,7 +350,7 @@ export interface ActivityItem {
   metadata?: Record<string, unknown>;
 }
 
-export interface SetActiveLearnerDto {
+export class SetActiveLearnerDto {
   @IsUUID()
   learnerId!: string;
 }

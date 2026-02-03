@@ -252,8 +252,9 @@ export class SecurityService {
         attemptId,
         type: violation.type,
         details: violation.details ?? {},
-        detectedAt: violation.timestamp,
-        clientInfo: violation.clientInfo ?? {},
+        timestamp: violation.timestamp,
+        ipAddress: undefined,
+        userAgent: violation.clientInfo?.userAgent,
       },
     });
 
@@ -282,7 +283,6 @@ export class SecurityService {
           data: {
             status: 'SUBMITTED',
             submittedAt: new Date(),
-            autoSubmitted: true,
           },
         });
 
@@ -315,15 +315,17 @@ export class SecurityService {
   ): Promise<(ViolationReport & { id: string })[]> {
     const violations = await prisma.attemptSecurityViolation.findMany({
       where: { attemptId },
-      orderBy: { detectedAt: 'asc' },
+      orderBy: { timestamp: 'asc' },
     });
 
     return violations.map(v => ({
       id: v.id,
       type: v.type as SecurityViolationType,
-      timestamp: v.detectedAt,
+      timestamp: v.timestamp,
       details: v.details as Record<string, any>,
-      clientInfo: v.clientInfo as ViolationReport['clientInfo'],
+      clientInfo: {
+        userAgent: v.userAgent ?? undefined,
+      },
     }));
   }
 

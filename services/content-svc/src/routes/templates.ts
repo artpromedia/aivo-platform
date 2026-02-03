@@ -31,20 +31,26 @@ const CreateTemplateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
   category: z.string().max(100),
+  subject: z.string().max(50),
+  gradeBand: z.string().max(50),
   blocks: z.array(ContentBlockSchema).default([]),
+  settings: z.record(z.unknown()).optional(),
   thumbnail: z.string().url().optional(),
-  tags: z.array(z.string().max(50)).optional(),
   isPublic: z.boolean().default(false),
+  isActive: z.boolean().optional(),
 });
 
 const UpdateTemplateSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional(),
   category: z.string().max(100).optional(),
+  subject: z.string().max(50).optional(),
+  gradeBand: z.string().max(50).optional(),
   blocks: z.array(ContentBlockSchema).optional(),
+  settings: z.record(z.unknown()).optional(),
   thumbnail: z.string().url().optional(),
-  tags: z.array(z.string().max(50)).optional(),
   isPublic: z.boolean().optional(),
+  isActive: z.boolean().optional(),
 });
 
 const ListQuerySchema = z.object({
@@ -105,7 +111,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
 
     // Scope: user's tenant templates + optionally public templates
     if (includePublic) {
-      where.OR = [{ tenantId: userTenantId }, { isPublic: true }];
+      where.OR = [{ tenantId: userTenantId }, { tenantId: null }];
     } else {
       where.tenantId = userTenantId;
     }
@@ -127,7 +133,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
     const [items, total] = await Promise.all([
       prisma.lessonTemplate.findMany({
         where,
-        orderBy: [{ isPublic: 'desc' }, { usageCount: 'desc' }, { updatedAt: 'desc' }],
+        orderBy: [{ isActive: 'desc' }, { usageCount: 'desc' }, { updatedAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -164,7 +170,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
       const template = await prisma.lessonTemplate.findFirst({
         where: {
           id,
-          OR: [{ tenantId: userTenantId }, { isPublic: true }],
+          OR: [{ tenantId: userTenantId }, { tenantId: null }],
         },
       });
 
@@ -193,7 +199,18 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const { name, description, category, blocks, thumbnail, tags, isPublic } = parseResult.data;
+    const {
+      name,
+      description,
+      category,
+      subject,
+      gradeBand,
+      blocks,
+      settings,
+      thumbnail,
+      isPublic,
+      isActive,
+    } = parseResult.data;
     const userTenantId = getUserTenantId(user);
 
     // Only platform admins can create public templates
@@ -206,10 +223,12 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         name,
         description: description ?? null,
         category,
+        subject,
+        gradeBand,
         blocks: blocks as JsonValue,
-        thumbnail: thumbnail ?? null,
-        tags: tags ?? [],
-        isPublic: effectiveIsPublic,
+        settings: (settings ?? {}) as JsonValue,
+        thumbnailUrl: thumbnail ?? null,
+        isActive: isActive ?? true,
         usageCount: 0,
         createdById: user.sub,
       },
@@ -246,7 +265,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
           id,
           OR: [
             { tenantId: userTenantId, createdById: user.sub },
-            ...(user.role === 'PLATFORM_ADMIN' ? [{ isPublic: true }] : []),
+            ...(user.role === 'PLATFORM_ADMIN' ? [{ tenantId: null }] : []),
           ],
         },
       });
@@ -255,17 +274,15 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Template not found or no permission' });
       }
 
-      const updateData = parseResult.data;
-
-      // Only platform admins can change isPublic
-      if (updateData.isPublic !== undefined && user.role !== 'PLATFORM_ADMIN') {
-        delete updateData.isPublic;
-      }
-
-      // Cast blocks if present
+      const { isPublic, thumbnail, blocks, settings, ...rest } = parseResult.data;
       const dataToUpdate = {
-        ...updateData,
-        ...(updateData.blocks && { blocks: updateData.blocks as JsonValue }),
+        ...rest,
+        ...(blocks && { blocks: blocks as JsonValue }),
+        ...(settings && { settings: settings as JsonValue }),
+        ...(thumbnail && { thumbnailUrl: thumbnail }),
+        ...(isPublic !== undefined && user.role === 'PLATFORM_ADMIN'
+          ? { tenantId: isPublic ? null : userTenantId ?? null }
+          : {}),
         updatedAt: new Date(),
       };
 
@@ -297,7 +314,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
           id,
           OR: [
             { tenantId: userTenantId, createdById: user.sub },
-            ...(user.role === 'PLATFORM_ADMIN' ? [{ isPublic: true }] : []),
+            ...(user.role === 'PLATFORM_ADMIN' ? [{ tenantId: null }] : []),
           ],
         },
       });
@@ -326,7 +343,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
     const categories = await prisma.lessonTemplate.groupBy({
       by: ['category'],
       where: {
-        OR: [{ tenantId: userTenantId }, { isPublic: true }],
+        OR: [{ tenantId: userTenantId }, { tenantId: null }],
       },
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
@@ -357,7 +374,7 @@ export async function lessonTemplateRoutes(fastify: FastifyInstance) {
       const template = await prisma.lessonTemplate.findFirst({
         where: {
           id,
-          OR: [{ tenantId: userTenantId }, { isPublic: true }],
+          OR: [{ tenantId: userTenantId }, { tenantId: null }],
         },
       });
 

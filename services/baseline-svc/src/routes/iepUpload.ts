@@ -14,7 +14,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { prisma, toJsonValue } from '../prisma.js';
+import { prisma, toJsonValue, toJsonValueOptional } from '../prisma.js';
 import { extractIepContent, compareIepWithAssessment } from '../lib/iepProcessor.js';
 import { publishIepComparisonReady, publishIepDecisionMade } from '../lib/eventPublisher.js';
 
@@ -810,11 +810,11 @@ async function processIepDocumentAsync(
       data: {
         status: 'PROCESSED',
         processedAt: new Date(),
-        extractedTextJson: toJsonValue(extractedContent.rawText),
-        extractedGoalsJson: toJsonValue(extractedContent.goals),
-        extractedAccommodationsJson: toJsonValue(extractedContent.accommodations),
-        extractedServicesJson: toJsonValue(extractedContent.services),
-        extractedMetadataJson: toJsonValue(extractedContent.metadata),
+        extractedTextJson: toJsonValueOptional(extractedContent.rawText),
+        extractedGoalsJson: toJsonValueOptional(extractedContent.goals),
+        extractedAccommodationsJson: toJsonValueOptional(extractedContent.accommodations),
+        extractedServicesJson: toJsonValueOptional(extractedContent.services),
+        extractedMetadataJson: toJsonValueOptional(extractedContent.metadata),
       },
     });
   } catch (error) {

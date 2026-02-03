@@ -244,6 +244,9 @@ export const EVENT_STREAM_MAP: Record<string, string> = {
   marketplace: 'MARKETPLACE',
   transition: 'TRANSITION',
   predictability: 'PREDICTABILITY',
+  message: 'MESSAGING',
+  conversation: 'MESSAGING',
+  participant: 'MESSAGING',
 };
 
 /**

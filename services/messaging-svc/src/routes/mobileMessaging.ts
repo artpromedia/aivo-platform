@@ -302,18 +302,24 @@ export async function registerMobileMessagingRoutes(fastify: FastifyInstance): P
       const { limit, before } = paginationResult.data;
 
       try {
-        const messages = await messageService.listMessages({
+        const messageResult = await messageService.listMessages(
+          {
           conversationId,
           tenantId: ctx.tenantId,
           beforeId: before,
-          pageSize: limit,
-        });
+          },
+          limit
+        );
 
-        const transformedMessages = messages.map((msg: any) => 
+        const transformedMessages = messageResult.data.map((msg: any) =>
           transformMessage(msg, ctx.userId)
         );
 
-        return reply.send({ messages: transformedMessages });
+        return reply.send({
+          messages: transformedMessages,
+          hasMore: messageResult.hasMore,
+          nextCursor: messageResult.nextCursor,
+        });
       } catch (error) {
         fastify.log.error({ error, conversationId }, 'Error fetching messages');
         return reply.code(500).send({ error: 'Failed to fetch messages' });

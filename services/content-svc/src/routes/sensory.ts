@@ -21,7 +21,12 @@ import {
   batchCalculateSensoryMatch,
 } from '../sensory/sensory-matcher.service.js';
 import * as sensoryMetadataService from '../sensory/sensory-metadata.service.js';
-import type { SensoryProfile, ContentSensoryMetadata } from '../sensory/sensory.types.js';
+import type {
+  SensoryProfile,
+  ContentSensoryMetadata,
+  IncidentAction,
+  CreateSensoryIncidentInput,
+} from '../sensory/sensory.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -413,15 +418,12 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
         .status(400)
         .send({ error: 'learnerId, tenantId, incidentType, and triggerCategory are required' });
     }
-    const incident = await sensoryIncidentService.createSensoryIncident({
-      ...body,
-      triggerTimestamp: body.triggerTimestamp ? new Date(body.triggerTimestamp) : undefined,
-    } as {
-      learnerId: string;
-      tenantId: string;
-      incidentType: string;
-      triggerCategory: 'audio' | 'visual' | 'motion' | 'tactile' | 'cognitive';
-    } & typeof body);
+    const { triggerTimestamp, ...rest } = body;
+    const incidentInput: CreateSensoryIncidentInput = {
+      ...rest,
+      triggerTimestamp: triggerTimestamp ? new Date(triggerTimestamp) : undefined,
+    };
+    const incident = await sensoryIncidentService.createSensoryIncident(incidentInput);
     return reply.status(201).send(incident);
   });
 
@@ -506,15 +508,17 @@ export async function sensoryRoutes(fastify: FastifyInstance): Promise<void> {
     '/sensory-incidents/:id/resolve',
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const body = ResolveIncidentSchema.parse(request.body);
-      const incident = await sensoryIncidentService.resolveIncident(request.params.id, {
+        const incident = await sensoryIncidentService.resolveIncident(request.params.id, {
         resolvedByUserId: body.resolvedByUserId,
         resolutionNotes: body.resolutionNotes,
-        actionsTaken: body.actionsTaken?.map((a) => ({
-          type: a.type,
-          description: a.description,
-          performedAt: new Date(a.performedAt),
-          performedByUserId: a.performedByUserId,
-        })),
+          actionsTaken: body.actionsTaken?.map(
+            (a): IncidentAction => ({
+              type: a.type ?? 'unspecified',
+              description: a.description ?? '',
+              performedAt: new Date(a.performedAt),
+              performedByUserId: a.performedByUserId ?? undefined,
+            })
+          ),
         profileUpdated: body.profileUpdated,
         contentFlagged: body.contentFlagged,
       });

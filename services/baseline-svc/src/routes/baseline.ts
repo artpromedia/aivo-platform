@@ -18,7 +18,7 @@ import {
 } from '../lib/generationStatus.js';
 import { getGradeLevelCalculator, gradeBandToGrade } from '../lib/gradeLevelEquivalent.js';
 import { selectDomainsForLearner, getDomainSelectionSummary } from '../lib/domainSelector.js';
-import { prisma, IepDocumentStatus } from '../prisma.js';
+import { prisma, IepDocumentStatus, toJsonValue } from '../prisma.js';
 import { DOMAIN_SKILL_CODES, type GeneratedQuestion, type DomainSelectionContext } from '../types/baseline.js';
 
 // --- Type definitions for JSON fields ---
@@ -1069,7 +1069,7 @@ export async function baselineRoutes(fastify: FastifyInstance) {
         data: {
           baselineItemId: item.id,
           learnerId: item.attempt.profile.learnerId,
-          responseJson: responseData,
+          responseJson: toJsonValue(responseData),
           isCorrect: scoreResult.isCorrect,
           score: scoreResult.partialCredit,
           latencyMs,

@@ -9,7 +9,12 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import type { SocialStoryCategory, LearningObjectGradeBand } from '../prisma-types.js';
-import type { StoryTriggerType } from '../social-stories/types.js';
+import { SentenceType } from '../social-stories/types.js';
+import type {
+  StoryTriggerType,
+  StoryPage,
+  TranslatedStoryContent,
+} from '../social-stories/types.js';
 import * as socialStoryService from '../social-stories/social-story.service.js';
 import { seedBuiltInStories } from '../social-stories/story-templates.js';
 
@@ -66,15 +71,7 @@ const TriggerTypeEnum = z.enum(['MANUAL', 'AUTO', 'SCHEDULED', 'RECOMMENDED', 'T
 const StorySentenceSchema = z.object({
   id: z.string(),
   text: z.string(),
-  type: z.enum([
-    'DESCRIPTIVE',
-    'PERSPECTIVE',
-    'DIRECTIVE',
-    'AFFIRMATIVE',
-    'COOPERATIVE',
-    'CONTROL',
-    'PARTIAL',
-  ]),
+  type: z.nativeEnum(SentenceType),
   audioUrl: z.string().optional(),
   emphasisWords: z.array(z.string()).optional(),
   personalizationTokens: z.array(z.string()).optional(),
@@ -161,6 +158,7 @@ const UpdateStorySchema = z.object({
   maxAge: z.number().int().max(25).nullable().optional(),
   gradeBands: z.array(GradeBandEnum).optional(),
   supportsPersonalization: z.boolean().optional(),
+  personalizationTokens: z.array(z.string()).optional(),
   defaultVisualStyle: VisualStyleEnum.optional(),
   hasAudio: z.boolean().optional(),
   hasVideo: z.boolean().optional(),
@@ -168,6 +166,49 @@ const UpdateStorySchema = z.object({
   translations: z.record(z.unknown()).optional(),
   isActive: z.boolean().optional(),
 });
+
+type StoryPageInput = z.infer<typeof StoryPageSchema>;
+
+function mapStoryPages(pages: StoryPageInput[]): StoryPage[] {
+  return pages.map((p, idx) => ({
+    id: p.id ?? `page-${idx}`,
+    pageNumber: p.pageNumber ?? idx + 1,
+    sentences: (p.sentences ?? []).map((s, sIdx) => ({
+      id: s.id ?? `sentence-${idx}-${sIdx}`,
+      type: s.type ?? SentenceType.DESCRIPTIVE,
+      text: s.text ?? '',
+      audioUrl: s.audioUrl,
+      emphasisWords: s.emphasisWords,
+      personalizationTokens: s.personalizationTokens,
+    })),
+    visual: p.visual,
+    interactions: p.interactions,
+    backgroundColor: p.backgroundColor,
+    transitionEffect: p.transitionEffect,
+    audioNarration: p.audioNarration,
+    displayDuration: p.displayDuration,
+  }));
+}
+
+function mapTranslations(
+  translations: Record<string, unknown> | undefined
+): Record<string, TranslatedStoryContent> | undefined {
+  if (!translations) return undefined;
+
+  return Object.fromEntries(
+    Object.entries(translations).map(([locale, value]) => {
+      const entry = value as { title?: string; description?: string; pages?: StoryPageInput[] };
+      return [
+        locale,
+        {
+          title: entry.title ?? '',
+          description: entry.description,
+          pages: entry.pages ? mapStoryPages(entry.pages) : [],
+        },
+      ];
+    })
+  ) as Record<string, TranslatedStoryContent>;
+}
 
 const UpdatePreferencesSchema = z.object({
   preferredVisualStyle: VisualStyleEnum.optional(),
@@ -408,24 +449,7 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         title: parseResult.data.title,
         description: parseResult.data.description,
         category: parseResult.data.category as SocialStoryCategory,
-        pages: (parseResult.data.pages ?? []).map((p, idx) => ({
-          id: p.id ?? `page-${idx}`,
-          pageNumber: p.pageNumber ?? idx + 1,
-          sentences: (p.sentences ?? []).map((s, sIdx) => ({
-            id: s.id ?? `sentence-${idx}-${sIdx}`,
-            type: s.type ?? 'DESCRIPTIVE',
-            text: s.text ?? '',
-            audioUrl: s.audioUrl,
-            emphasisWords: s.emphasisWords,
-            personalizationTokens: s.personalizationTokens,
-          })),
-          imageUrl: p.visual?.type === 'IMAGE' ? p.visual.url : undefined,
-          videoUrl: p.visual?.type === 'VIDEO' ? p.visual.url : undefined,
-          visualStyle: p.visual?.style,
-          backgroundColor: p.backgroundColor,
-          interactionType: p.interactions?.[0]?.type,
-          displayDuration: p.displayDuration,
-        })),
+        pages: mapStoryPages(parseResult.data.pages ?? []),
         readingLevel: parseResult.data.readingLevel,
         gradeBands: parseResult.data.gradeBands as LearningObjectGradeBand[] | undefined,
         defaultVisualStyle: parseResult.data.defaultVisualStyle,
@@ -436,7 +460,7 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         personalizationTokens: parseResult.data.personalizationTokens,
         hasAudio: parseResult.data.hasAudio,
         hasVideo: parseResult.data.hasVideo,
-        translations: parseResult.data.translations,
+        translations: mapTranslations(parseResult.data.translations),
       },
       user.sub
     );
@@ -478,24 +502,8 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         hasAudio: parseResult.data.hasAudio,
         hasVideo: parseResult.data.hasVideo,
         isActive: parseResult.data.isActive,
-        pages: parseResult.data.pages?.map((p, idx) => ({
-          id: p.id ?? `page-${idx}`,
-          pageNumber: p.pageNumber ?? idx + 1,
-          sentences: (p.sentences ?? []).map((s, sIdx) => ({
-            id: s.id ?? `sentence-${idx}-${sIdx}`,
-            type: s.type ?? 'DESCRIPTIVE',
-            text: s.text ?? '',
-            audioUrl: s.audioUrl,
-            emphasisWords: s.emphasisWords,
-            personalizationTokens: s.personalizationTokens,
-          })),
-          imageUrl: p.visual?.type === 'IMAGE' ? p.visual.url : undefined,
-          videoUrl: p.visual?.type === 'VIDEO' ? p.visual.url : undefined,
-          visualStyle: p.visual?.style,
-          backgroundColor: p.backgroundColor,
-          interactionType: p.interactions?.[0]?.type,
-          displayDuration: p.displayDuration,
-        })),
+        pages: parseResult.data.pages ? mapStoryPages(parseResult.data.pages) : undefined,
+        translations: mapTranslations(parseResult.data.translations),
       });
 
       if (!story) {

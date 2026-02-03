@@ -5,14 +5,14 @@
  * story library. They cover common scenarios for K-12 learners.
  */
 
-import type { SocialStoryCategory, StoryVisualStyle, StoryReadingLevel } from './types.js';
+import type { SocialStoryCategory, SocialStoryReadingLevel } from './types.js';
 
 export interface StoryTemplate {
   slug: string;
   title: string;
   description: string;
   category: SocialStoryCategory;
-  readingLevel: StoryReadingLevel;
+  readingLevel: SocialStoryReadingLevel;
   minAge: number;
   maxAge: number;
   gradeBands: string[];

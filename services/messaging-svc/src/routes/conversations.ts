@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import * as conversationService from '../services/conversationService.js';
 import * as participantService from '../services/participantService.js';
-import { ConversationType, ParticipantRole } from '../prisma.js';
+import { ConversationType, ParticipantRole, ContextType } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -76,7 +76,13 @@ export async function registerConversationRoutes(fastify: FastifyInstance): Prom
       const conversation = await conversationService.createConversation({
         tenantId: ctx.tenantId,
         createdBy: ctx.userId,
-        ...body,
+        participantIds: body.participantIds ?? [],
+        type: body.type,
+        name: body.name,
+        description: body.description,
+        avatarUrl: body.avatarUrl,
+        contextType: body.contextType as ContextType | undefined,
+        contextId: body.contextId,
       });
 
       fastify.log.info(
@@ -140,7 +146,7 @@ export async function registerConversationRoutes(fastify: FastifyInstance): Prom
           userId: ctx.userId,
           type: type as any,
           isArchived: isArchived === 'true',
-          contextType,
+          contextType: contextType as ContextType | undefined,
           contextId,
           search,
         },

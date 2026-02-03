@@ -10,7 +10,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
+import { prisma, Prisma, AssessmentMode } from '../prisma.js';
 import type { TenantContext } from '../types/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -140,6 +140,8 @@ interface LearnerParams {
   learnerId: string;
 }
 
+const toJsonValue = (value: unknown): Prisma.InputJsonValue => value as Prisma.InputJsonValue;
+
 function extractTenantContext(request: FastifyRequest): TenantContext {
   const tenantId = request.headers['x-tenant-id'] as string | undefined;
   const userId = request.headers['x-user-id'] as string | undefined;
@@ -218,6 +220,16 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       }
 
       try {
+        const cognitiveIndicatorsJson = parseResult.data.cognitiveIndicators
+          ? toJsonValue(parseResult.data.cognitiveIndicators)
+          : undefined;
+        const dailyLivingSkillsJson = parseResult.data.dailyLivingSkills
+          ? toJsonValue(parseResult.data.dailyLivingSkills)
+          : undefined;
+        const supportNeedsJson = parseResult.data.supportNeeds
+          ? toJsonValue(parseResult.data.supportNeeds)
+          : undefined;
+
         const profile = await prisma.learnerFunctioningProfile.upsert({
           where: {
             tenantId_learnerId: {
@@ -230,20 +242,18 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
             learnerId,
             tenantId: context.tenantId,
             functioningLevel: parseResult.data.functioningLevel,
-            determinedBy: parseResult.data.determinedBy,
-            cognitiveIndicators: parseResult.data.cognitiveIndicators ?? undefined,
-            dailyLivingSkills: parseResult.data.dailyLivingSkills ?? undefined,
-            supportNeeds: parseResult.data.supportNeeds ?? undefined,
-            assessmentNotes: parseResult.data.assessmentNotes ?? undefined,
+            cognitiveIndicatorsJson,
+            dailyLivingSkillsJson,
+            supportNeedsJson,
+            professionalNotes: parseResult.data.assessmentNotes ?? undefined,
             createdByUserId: context.userId,
           },
           update: {
             functioningLevel: parseResult.data.functioningLevel,
-            determinedBy: parseResult.data.determinedBy,
-            cognitiveIndicators: parseResult.data.cognitiveIndicators ?? undefined,
-            dailyLivingSkills: parseResult.data.dailyLivingSkills ?? undefined,
-            supportNeeds: parseResult.data.supportNeeds ?? undefined,
-            assessmentNotes: parseResult.data.assessmentNotes ?? undefined,
+            cognitiveIndicatorsJson,
+            dailyLivingSkillsJson,
+            supportNeedsJson,
+            professionalNotes: parseResult.data.assessmentNotes ?? undefined,
             updatedByUserId: context.userId,
           },
         });
@@ -284,14 +294,31 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       }
 
       try {
+        const cognitiveIndicatorsJson = parseResult.data.cognitiveIndicators
+          ? toJsonValue(parseResult.data.cognitiveIndicators)
+          : undefined;
+        const dailyLivingSkillsJson = parseResult.data.dailyLivingSkills
+          ? toJsonValue(parseResult.data.dailyLivingSkills)
+          : undefined;
+        const supportNeedsJson = parseResult.data.supportNeeds
+          ? toJsonValue(parseResult.data.supportNeeds)
+          : undefined;
+
         const profile = await prisma.learnerFunctioningProfile.update({
           where: {
-            learnerId_tenantId: {
+            tenantId_learnerId: {
               learnerId,
               tenantId: context.tenantId,
             },
           },
-          data: parseResult.data,
+          data: {
+            functioningLevel: parseResult.data.functioningLevel ?? undefined,
+            cognitiveIndicatorsJson,
+            dailyLivingSkillsJson,
+            supportNeedsJson,
+            professionalNotes: parseResult.data.assessmentNotes ?? undefined,
+            updatedByUserId: context.userId,
+          },
         });
 
         console.log('[functioning-profile-routes] functioning_profile_updated', {
@@ -326,7 +353,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerSensoryProfile.findUnique({
           where: {
-            learnerId_tenantId: {
+            tenantId_learnerId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -369,9 +396,13 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       }
 
       try {
+        const alternativeInputMethod = parseResult.data.inputMethods.find(
+          (method) => method !== parseResult.data.preferredInputMethod
+        );
+
         const profile = await prisma.learnerSensoryProfile.upsert({
           where: {
-            learnerId_tenantId: {
+            tenantId_learnerId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -380,9 +411,39 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
             id: crypto.randomUUID(),
             learnerId,
             tenantId: context.tenantId,
-            ...parseResult.data,
+            sensoryImpairmentType: parseResult.data.sensoryImpairmentType,
+            visionProfileJson: parseResult.data.visionProfile
+              ? toJsonValue(parseResult.data.visionProfile)
+              : undefined,
+            hearingProfileJson: parseResult.data.hearingProfile
+              ? toJsonValue(parseResult.data.hearingProfile)
+              : undefined,
+            primaryCommunication: parseResult.data.communicationModality,
+            aacSystemType: parseResult.data.aacSettings?.aacSystemType ?? undefined,
+            aacSettingsJson: parseResult.data.aacSettings
+              ? toJsonValue(parseResult.data.aacSettings)
+              : undefined,
+            preferredInputMethod: parseResult.data.preferredInputMethod,
+            alternativeInputMethod,
+            createdByUserId: context.userId,
           },
-          update: parseResult.data,
+          update: {
+            sensoryImpairmentType: parseResult.data.sensoryImpairmentType,
+            visionProfileJson: parseResult.data.visionProfile
+              ? toJsonValue(parseResult.data.visionProfile)
+              : undefined,
+            hearingProfileJson: parseResult.data.hearingProfile
+              ? toJsonValue(parseResult.data.hearingProfile)
+              : undefined,
+            primaryCommunication: parseResult.data.communicationModality,
+            aacSystemType: parseResult.data.aacSettings?.aacSystemType ?? undefined,
+            aacSettingsJson: parseResult.data.aacSettings
+              ? toJsonValue(parseResult.data.aacSettings)
+              : undefined,
+            preferredInputMethod: parseResult.data.preferredInputMethod,
+            alternativeInputMethod,
+            updatedByUserId: context.userId,
+          },
         });
 
         console.log('[functioning-profile-routes] sensory_profile_created', {
@@ -420,14 +481,34 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       }
 
       try {
+        const alternativeInputMethod = parseResult.data.inputMethods?.find(
+          (method) => method !== parseResult.data.preferredInputMethod
+        );
+
         const profile = await prisma.learnerSensoryProfile.update({
           where: {
-            learnerId_tenantId: {
+            tenantId_learnerId: {
               learnerId,
               tenantId: context.tenantId,
             },
           },
-          data: parseResult.data,
+          data: {
+            sensoryImpairmentType: parseResult.data.sensoryImpairmentType ?? undefined,
+            visionProfileJson: parseResult.data.visionProfile
+              ? toJsonValue(parseResult.data.visionProfile)
+              : undefined,
+            hearingProfileJson: parseResult.data.hearingProfile
+              ? toJsonValue(parseResult.data.hearingProfile)
+              : undefined,
+            primaryCommunication: parseResult.data.communicationModality ?? undefined,
+            aacSystemType: parseResult.data.aacSettings?.aacSystemType ?? undefined,
+            aacSettingsJson: parseResult.data.aacSettings
+              ? toJsonValue(parseResult.data.aacSettings)
+              : undefined,
+            preferredInputMethod: parseResult.data.preferredInputMethod ?? undefined,
+            alternativeInputMethod,
+            updatedByUserId: context.userId,
+          },
         });
 
         console.log('[functioning-profile-routes] sensory_profile_updated', {
@@ -539,7 +620,19 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
             id: crypto.randomUUID(),
             learnerId,
             tenantId: context.tenantId,
-            ...parseResult.data,
+            inputFactorsJson: toJsonValue({
+              functioningLevel: parseResult.data.functioningLevel,
+              sensoryImpairment: parseResult.data.sensoryImpairment,
+              inputMethod: parseResult.data.inputMethod,
+              accommodations: parseResult.data.accommodations,
+              flags: parseResult.data.flags,
+              reasoning: parseResult.data.reasoning,
+              source: parseResult.data.source,
+            }),
+            algorithmRecommendation: parseResult.data.mode as AssessmentMode,
+            recommendationConfidence: parseResult.data.confidence,
+            reasoningExplanation: parseResult.data.reasoning,
+            finalSelectedMode: parseResult.data.mode as AssessmentMode,
             decidedAt: new Date(),
           },
         });
@@ -547,7 +640,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
         console.log('[functioning-profile-routes] assessment_mode_decision_recorded', {
           learnerId,
           decisionId: decision.id,
-          mode: decision.mode,
+          mode: decision.finalSelectedMode,
           source: parseResult.data.source,
         });
 
@@ -580,7 +673,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
         const [functioningProfile, sensoryProfile, assessmentModeDecision] = await Promise.all([
           prisma.learnerFunctioningProfile.findUnique({
             where: {
-              learnerId_tenantId: {
+              tenantId_learnerId: {
                 learnerId,
                 tenantId: context.tenantId,
               },
@@ -588,7 +681,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
           }),
           prisma.learnerSensoryProfile.findUnique({
             where: {
-              learnerId_tenantId: {
+              tenantId_learnerId: {
                 learnerId,
                 tenantId: context.tenantId,
               },

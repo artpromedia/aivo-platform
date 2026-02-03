@@ -4,10 +4,25 @@
  * Publishes events when messages are sent, read, etc.
  */
 
-import { EventPublisher } from '@aivo/events';
+import { NatsTransport } from '@aivo/events';
 import { config } from '../config.js';
 
-let publisher: EventPublisher | null = null;
+let publisher: NatsTransport | null = null;
+
+async function publishEvent(
+  eventType: string,
+  tenantId: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  if (!publisher) return;
+
+  await publisher.publish({
+    tenantId,
+    eventType,
+    eventVersion: '1.0.0',
+    payload,
+  });
+}
 
 export async function initEventPublisher(): Promise<void> {
   if (!config.nats.enabled) {
@@ -15,10 +30,11 @@ export async function initEventPublisher(): Promise<void> {
     return;
   }
 
-  publisher = new EventPublisher({
-    natsUrl: config.nats.url,
-    clientId: 'messaging-svc',
-    stream: 'MESSAGING',
+  publisher = new NatsTransport({
+    servers: config.nats.url,
+    serviceName: 'messaging-svc',
+    serviceVersion: process.env.SERVICE_VERSION ?? '0.1.0',
+    name: 'messaging-svc',
   });
 
   await publisher.connect();
@@ -27,7 +43,7 @@ export async function initEventPublisher(): Promise<void> {
 
 export async function stopEventPublisher(): Promise<void> {
   if (publisher) {
-    await publisher.disconnect();
+    await publisher.close();
     publisher = null;
   }
 }
@@ -84,31 +100,36 @@ export interface ParticipantRemovedEvent {
 export async function publishMessageSent(event: MessageSentEvent): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish('message.sent', event);
+  const { tenantId, ...payload } = event;
+  await publishEvent('message.sent', tenantId, payload);
 }
 
 export async function publishMessageRead(event: MessageReadEvent): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish('message.read', event);
+  const { tenantId, ...payload } = event;
+  await publishEvent('message.read', tenantId, payload);
 }
 
 export async function publishConversationCreated(event: ConversationCreatedEvent): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish('conversation.created', event);
+  const { tenantId, ...payload } = event;
+  await publishEvent('conversation.created', tenantId, payload);
 }
 
 export async function publishParticipantAdded(event: ParticipantAddedEvent): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish('participant.added', event);
+  const { tenantId, ...payload } = event;
+  await publishEvent('participant.added', tenantId, payload);
 }
 
 export async function publishParticipantRemoved(event: ParticipantRemovedEvent): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish('participant.removed', event);
+  const { tenantId, ...payload } = event;
+  await publishEvent('participant.removed', tenantId, payload);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -125,8 +146,7 @@ export async function notifyMessageReceived(
   for (const recipientId of event.recipientIds) {
     if (recipientId === event.senderId) continue; // Don't notify sender
 
-    await publisher.publish('message.received', {
-      tenantId: event.tenantId,
+    await publishEvent('message.received', event.tenantId, {
       recipientId,
       senderId: event.senderId,
       senderName,

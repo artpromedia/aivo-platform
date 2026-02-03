@@ -73,8 +73,6 @@ function generateThreadName(contextType: ContextType, customName?: string): stri
       return 'Task Discussion';
     case ContextType.SESSION:
       return 'Session Notes';
-    case ContextType.DOCUMENT:
-      return 'Document Discussion';
     case ContextType.CLASS:
       return 'Class Channel';
     default:

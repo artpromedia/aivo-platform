@@ -12,10 +12,22 @@ export const prisma = new PrismaClient({
   datasources: { db: { url: config.databaseUrl } },
 });
 
-export function toJsonValue(
+export function toJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.JsonNull {
+  if (value === null || value === undefined) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
+}
+
+export function toJsonValueOptional(
   value: unknown
-): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | null | undefined {
-  return value as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | null | undefined;
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  return value as Prisma.InputJsonValue;
 }
 
 // Re-export enums

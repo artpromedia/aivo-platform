@@ -8,9 +8,9 @@
  * - Maintaining consistent randomization per attempt
  */
 
-import { prisma } from '../../prisma.js';
-import type { PrismaTransactionClient } from '../../prisma.js';
-import type { Question, Assessment, AssessmentSettings } from '../../types/assessment.types.js';
+import { prisma } from '../prisma.js';
+import type { PrismaTransactionClient } from '../prisma.js';
+import type { Question, Assessment, AssessmentSettings } from '../types/assessment.types.js';
 
 // ============================================================================
 // TYPES
