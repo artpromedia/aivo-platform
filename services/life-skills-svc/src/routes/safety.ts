@@ -349,9 +349,13 @@ export async function registerSafetyRoutes(app: FastifyInstance): Promise<void> 
       byType[type].attempts++;
     }
     for (const type of Object.keys(byType)) {
+      const entry = byType[type];
+      if (!entry) {
+        continue;
+      }
       const typeAttempts = attempts.filter((a) => a.scenario.scenarioType === type);
       const safeCount = typeAttempts.filter((a) => a.outcome === 'SAFE').length;
-      byType[type].safePercent = (safeCount / typeAttempts.length) * 100;
+      entry.safePercent = (safeCount / typeAttempts.length) * 100;
     }
 
     return reply.send({

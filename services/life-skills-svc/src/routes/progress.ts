@@ -7,7 +7,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
-import { prisma, ProgressStatus, PromptLevel } from '../prisma.js';
+import { prisma, ProgressStatus, PromptLevel, SkillCategory } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -15,12 +15,13 @@ import { prisma, ProgressStatus, PromptLevel } from '../prisma.js';
 
 const ProgressStatusEnum = z.nativeEnum(ProgressStatus);
 const PromptLevelEnum = z.nativeEnum(PromptLevel);
+const SkillCategoryEnum = z.nativeEnum(SkillCategory);
 
 const GetProgressQuerySchema = z.object({
   tenantId: z.string().uuid(),
   learnerId: z.string().uuid(),
   status: ProgressStatusEnum.optional(),
-  category: z.string().optional(),
+  category: SkillCategoryEnum.optional(),
 });
 
 const InitProgressSchema = z.object({

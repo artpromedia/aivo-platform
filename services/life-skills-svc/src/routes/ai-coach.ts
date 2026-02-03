@@ -152,8 +152,10 @@ function generateEncouragement(
         'Wonderful! That was perfect! 👏',
         "Super! You're a star! ⭐",
       ];
+      const message =
+        stepMessages[Math.floor(Math.random() * stepMessages.length)] ?? stepMessages[0];
       return {
-        message: stepMessages[Math.floor(Math.random() * stepMessages.length)],
+        message,
       };
     }
 
