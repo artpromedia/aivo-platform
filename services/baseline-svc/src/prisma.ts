@@ -12,7 +12,7 @@ export const prisma = new PrismaClient({
   datasources: { db: { url: config.databaseUrl } },
 });
 
-export function toJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.JsonNull {
+export function toJsonValue(value: unknown): Prisma.InputJsonValue | Prisma.JsonNullValueInput {
   if (value === null || value === undefined) {
     return Prisma.JsonNull;
   }
