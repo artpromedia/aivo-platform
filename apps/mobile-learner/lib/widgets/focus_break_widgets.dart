@@ -19,7 +19,7 @@ class FocusBreakBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final focusState = ref.watch(focusControllerProvider(learnerId));
-    final gradeBand = ref.watch(gradeThemeControllerProvider);
+    final gradeBand = ref.watch(gradeBandProvider);
     final theme = Theme.of(context);
 
     // Don't show if no break is recommended or already on break
@@ -36,7 +36,7 @@ class FocusBreakBanner extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.1),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -55,7 +55,7 @@ class FocusBreakBanner extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.tertiary.withOpacity(0.2),
+                      color: theme.colorScheme.tertiary.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -80,7 +80,7 @@ class FocusBreakBanner extends ConsumerWidget {
                         Text(
                           _messageForGrade(gradeBand),
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onTertiaryContainer.withOpacity(0.8),
+                            color: theme.colorScheme.onTertiaryContainer.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -95,7 +95,7 @@ class FocusBreakBanner extends ConsumerWidget {
                     icon: Icon(
                       Icons.close,
                       size: 20,
-                      color: theme.colorScheme.onTertiaryContainer.withOpacity(0.6),
+                      color: theme.colorScheme.onTertiaryContainer.withValues(alpha: 0.6),
                     ),
                     tooltip: 'Dismiss',
                   ),
@@ -112,7 +112,7 @@ class FocusBreakBanner extends ConsumerWidget {
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                          color: theme.colorScheme.outline.withOpacity(0.5),
+                          color: theme.colorScheme.outline.withValues(alpha: 0.5),
                         ),
                       ),
                       child: const Text('Not now'),
@@ -187,7 +187,7 @@ class FocusBreakFAB extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gradeBand = ref.watch(gradeThemeControllerProvider);
+    final gradeBand = ref.watch(gradeBandProvider);
     final theme = Theme.of(context);
 
     return FloatingActionButton.extended(
@@ -208,7 +208,7 @@ class FocusBreakFAB extends ConsumerWidget {
   }
 
   Future<void> _showBreakOptions(BuildContext context, WidgetRef ref) async {
-    final gradeBand = ref.read(gradeThemeControllerProvider);
+    final gradeBand = ref.read(gradeBandProvider);
 
     // First, optionally ask how they're feeling
     final mood = await showModalBottomSheet<SelfReportedMood>(

@@ -79,7 +79,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
 
   void _showCompletionDialog() {
     final theme = Theme.of(context);
-    final gradeBand = ref.read(gradeThemeControllerProvider);
+    final gradeBand = ref.read(gradeBandProvider);
 
     showDialog(
       context: context,
@@ -131,7 +131,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = ref.watch(homeworkControllerProvider(widget.learnerId));
-    final gradeBand = ref.watch(gradeThemeControllerProvider);
+    final gradeBand = ref.watch(gradeBandProvider);
 
     final currentStep = state.currentStep;
 
@@ -339,10 +339,10 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer.withOpacity(0.5),
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.secondary.withOpacity(0.3),
+          color: theme.colorScheme.secondary.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -407,7 +407,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
             margin: const EdgeInsets.only(top: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.tertiaryContainer.withOpacity(0.5),
+              color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

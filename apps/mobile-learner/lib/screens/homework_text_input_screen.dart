@@ -42,7 +42,7 @@ class _HomeworkTextInputScreenState extends ConsumerState<HomeworkTextInputScree
     setState(() => _isStarting = true);
 
     // Set grade band on controller
-    final gradeBand = ref.read(gradeThemeControllerProvider);
+    final gradeBand = ref.read(gradeBandProvider);
     final controller = ref.read(homeworkControllerProvider(widget.learnerId).notifier);
     controller.setGradeBand(gradeBand);
 
@@ -70,7 +70,7 @@ class _HomeworkTextInputScreenState extends ConsumerState<HomeworkTextInputScree
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gradeBand = ref.watch(gradeThemeControllerProvider);
+    final gradeBand = ref.watch(gradeBandProvider);
 
     return Scaffold(
       appBar: AppBar(
