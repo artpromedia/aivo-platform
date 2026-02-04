@@ -5,14 +5,9 @@
  * Note: ESLint unsafe warnings are expected until Prisma migration is run.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import type { PrismaClient } from '../prisma.js';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { NotificationPreferencesService } from './notification-preferences.service.js';
 import type {
@@ -112,7 +107,8 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         }
 
         const { learnerId } = request.params;
-        const preferences = await preferencesService.getPreferences(parentId, learnerId);
+        const tenantId = request.headers['x-tenant-id'] as string;
+        const preferences = await preferencesService.getPreferences(tenantId, parentId, learnerId);
 
         if (!preferences) {
           return reply.code(404).send({ error: 'Preferences not found' });
@@ -143,6 +139,7 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         }
 
         const { learnerId } = request.params;
+        const tenantId = request.headers['x-tenant-id'] as string;
 
         // Validate the request body
         const validationResult = validateUpdateBody(request.body);
@@ -151,12 +148,13 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         }
 
         // Check that preferences exist
-        const existing = await preferencesService.getPreferences(parentId, learnerId);
+        const existing = await preferencesService.getPreferences(tenantId, parentId, learnerId);
         if (!existing) {
           return reply.code(404).send({ error: 'Preferences not found' });
         }
 
         const updated = await preferencesService.updatePreferences(
+          tenantId,
           parentId,
           learnerId,
           request.body
@@ -187,9 +185,10 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         }
 
         const { learnerId } = request.params;
+        const tenantId = request.headers['x-tenant-id'] as string;
 
         // Get existing to find learner name
-        const existing = await preferencesService.getPreferences(parentId, learnerId);
+        const existing = await preferencesService.getPreferences(tenantId, parentId, learnerId);
         if (!existing) {
           return reply.code(404).send({ error: 'Preferences not found' });
         }
@@ -197,12 +196,13 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
         // Delete existing
         await prisma.parentNotificationPreferences.delete({
           where: {
-            parentId_learnerId: { parentId, learnerId },
+            tenantId_parentId_learnerId: { tenantId, parentId, learnerId },
           },
         });
 
         // Create new with defaults
         const newPreferences = await preferencesService.createDefaultPreferences({
+          tenantId,
           parentId,
           learnerId,
           learnerName: existing.learnerName,
@@ -244,7 +244,8 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
           return reply.code(400).send({ error: 'Invalid platform' });
         }
 
-        await preferencesService.registerDeviceToken(parentId, {
+        const tenantId = (request.headers['x-tenant-id'] as string) || '';
+        await preferencesService.registerDeviceToken(tenantId, parentId, {
           token,
           platform,
           deviceId,
@@ -398,9 +399,8 @@ export function registerParentNotificationRoutes(app: FastifyInstance, prisma: P
             select: {
               id: true,
               learnerId: true,
-              learnerName: true,
               category: true,
-              event: true,
+              sourceEvent: true,
               urgency: true,
               title: true,
               body: true,

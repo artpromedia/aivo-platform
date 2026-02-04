@@ -7,9 +7,9 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import { NotificationType, DeliveryChannel, NotificationPriority } from '../prisma.js';
 import * as notificationService from '../services/notificationService.js';
 import * as preferenceService from '../services/preferenceService.js';
-import { NotificationType, DeliveryChannel, NotificationPriority } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -72,9 +72,17 @@ export async function registerNotificationRoutes(fastify: FastifyInstance): Prom
       const ctx = getTenantContext(request);
       const body = CreateNotificationSchema.parse(request.body);
 
+      if (!body.recipientId) {
+        return reply.status(400).send({ error: 'recipientId is required' });
+      }
+
       const notification = await notificationService.createNotification({
         tenantId: ctx.tenantId,
         ...body,
+        recipientId: body.recipientId,
+        type: body.type ?? NotificationType.SYSTEM,
+        title: body.title,
+        body: body.body,
       });
 
       fastify.log.info(
@@ -96,9 +104,17 @@ export async function registerNotificationRoutes(fastify: FastifyInstance): Prom
       const ctx = getTenantContext(request);
       const body = BulkNotificationSchema.parse(request.body);
 
+      if (!body.recipientIds || body.recipientIds.length === 0) {
+        return reply.status(400).send({ error: 'recipientIds is required' });
+      }
+
       const notifications = await notificationService.createBulkNotifications({
         tenantId: ctx.tenantId,
         ...body,
+        recipientIds: body.recipientIds,
+        type: body.type ?? NotificationType.SYSTEM,
+        title: body.title,
+        body: body.body,
       });
 
       fastify.log.info(
@@ -151,13 +167,16 @@ export async function registerNotificationRoutes(fastify: FastifyInstance): Prom
    * GET /notifications/unread-count
    * Get unread notification count
    */
-  fastify.get('/notifications/unread-count', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getTenantContext(request);
+  fastify.get(
+    '/notifications/unread-count',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getTenantContext(request);
 
-    const count = await notificationService.getUnreadCount(ctx.tenantId, ctx.userId);
+      const count = await notificationService.getUnreadCount(ctx.tenantId, ctx.userId);
 
-    return reply.send({ data: { count } });
-  });
+      return reply.send({ data: { count } });
+    }
+  );
 
   /**
    * GET /notifications/:notificationId

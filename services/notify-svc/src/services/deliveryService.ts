@@ -5,8 +5,8 @@
  */
 
 import { config } from '../config.js';
-import type { PushPayload, EmailPayload, SmsPayload, DeliveryResult } from '../types.js';
 import { DeliveryChannel } from '../prisma.js';
+import type { PushPayload, EmailPayload, SmsPayload, DeliveryResult } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PUSH NOTIFICATIONS
@@ -91,7 +91,7 @@ export async function sendEmail(payload: EmailPayload): Promise<DeliveryResult> 
   }
 
   try {
-    if (config.email.provider === 'sendgrid') {
+    if (config.email.primaryProvider === 'sendgrid') {
       return await sendSendgridEmail(payload);
     }
 
@@ -99,7 +99,7 @@ export async function sendEmail(payload: EmailPayload): Promise<DeliveryResult> 
       channel: DeliveryChannel.EMAIL,
       success: false,
       errorCode: 'UNKNOWN_PROVIDER',
-      errorMessage: `Unknown email provider: ${config.email.provider}`,
+      errorMessage: `Unknown email provider: ${config.email.primaryProvider}`,
     };
   } catch (error) {
     console.error('[DeliveryService] Email error:', error);
@@ -153,7 +153,7 @@ export async function sendSms(payload: SmsPayload): Promise<DeliveryResult> {
   }
 
   try {
-    if (config.sms.provider === 'twilio') {
+    if ((config.sms as Record<string, unknown>).provider === 'twilio') {
       return await sendTwilioSms(payload);
     }
 
@@ -161,7 +161,7 @@ export async function sendSms(payload: SmsPayload): Promise<DeliveryResult> {
       channel: DeliveryChannel.SMS,
       success: false,
       errorCode: 'UNKNOWN_PROVIDER',
-      errorMessage: `Unknown SMS provider: ${config.sms.provider}`,
+      errorMessage: `Unknown SMS provider`,
     };
   } catch (error) {
     console.error('[DeliveryService] SMS error:', error);

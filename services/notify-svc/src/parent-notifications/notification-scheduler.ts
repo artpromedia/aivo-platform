@@ -5,12 +5,6 @@
  * Note: ESLint unsafe warnings are expected until Prisma migration is run.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-
 import type { PrismaClient } from '../prisma.js';
 
 import type { NotificationAggregator } from './notification-aggregator.js';
@@ -54,7 +48,14 @@ export class NotificationScheduler {
     learnerId: string,
     urgency: ParentNotificationUrgency
   ): Promise<{ scheduled: boolean; scheduledTime?: Date; reason?: string }> {
-    const preferences = await this.preferencesService.getPreferences(parentId, learnerId);
+    // Look up the notification record to obtain tenantId
+    const notificationRecord = await this.prisma.parentNotificationQueue.findUnique({
+      where: { id: notificationId },
+      select: { tenantId: true },
+    });
+    const tenantId = notificationRecord?.tenantId ?? '';
+
+    const preferences = await this.preferencesService.getPreferences(tenantId, parentId, learnerId);
     if (!preferences) {
       return { scheduled: false, reason: 'preferences_not_found' };
     }
@@ -74,7 +75,11 @@ export class NotificationScheduler {
     }
 
     // Check quiet hours
-    const isQuietHours = await this.preferencesService.isInQuietHours(parentId, learnerId);
+    const isQuietHours = await this.preferencesService.isInQuietHours(
+      tenantId,
+      parentId,
+      learnerId
+    );
     if (isQuietHours) {
       // Critical notifications can bypass quiet hours
       if (urgency === ParentNotificationUrgency.CRITICAL && preferences.quietHoursBypassCritical) {
@@ -271,7 +276,7 @@ export class NotificationScheduler {
         parentId: true,
         digestFrequency: true,
         digestTime: true,
-        digestDay: true,
+        digestDayOfWeek: true,
         timezone: true,
       },
     });
@@ -280,7 +285,7 @@ export class NotificationScheduler {
       const shouldCreateDigest = this.shouldCreateDigest(
         pref.digestFrequency as 'hourly' | 'daily' | 'weekly',
         pref.digestTime,
-        pref.digestDay,
+        pref.digestDayOfWeek,
         pref.timezone
       );
 

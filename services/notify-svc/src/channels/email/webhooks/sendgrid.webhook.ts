@@ -304,8 +304,8 @@ export function transformToCanonicalEvent(event: SendGridEvent): EmailWebhookEve
     email: event.email,
     messageId: event.sg_message_id || '',
     timestamp: new Date(event.timestamp * 1000),
-    rawEvent: event,
     metadata: {
+      rawEvent: event,
       eventId: event.sg_event_id,
       category: event.category,
       userAgent: event.useragent,

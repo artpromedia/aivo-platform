@@ -4,7 +4,14 @@
  * Core business logic for creating, delivering, and managing notifications.
  */
 
-import { prisma, NotificationType, DeliveryChannel, NotificationPriority, DeliveryStatus } from '../prisma.js';
+import type { Prisma } from '../../generated/prisma-client/index.js';
+import {
+  prisma,
+  NotificationType,
+  DeliveryChannel,
+  NotificationPriority,
+  DeliveryStatus,
+} from '../prisma.js';
 import type {
   CreateNotificationInput,
   NotificationFilters,
@@ -28,7 +35,7 @@ export async function createNotification(input: CreateNotificationInput) {
       body: input.body,
       imageUrl: input.imageUrl,
       actionUrl: input.actionUrl,
-      actionData: input.actionData,
+      actionData: input.actionData as unknown as Prisma.InputJsonValue,
       priority: input.priority ?? NotificationPriority.NORMAL,
       expiresAt: input.expiresAt,
       groupKey: input.groupKey,
@@ -206,7 +213,7 @@ export async function updateDeliveryStatus(
   });
 }
 
-export async function getPendingDeliveries(limit: number = 100) {
+export async function getPendingDeliveries(limit = 100) {
   return prisma.deliveryLog.findMany({
     where: {
       status: DeliveryStatus.PENDING,
@@ -220,7 +227,7 @@ export async function getPendingDeliveries(limit: number = 100) {
   });
 }
 
-export async function scheduleRetry(deliveryLogId: string, retryDelayMs: number = 60000) {
+export async function scheduleRetry(deliveryLogId: string, retryDelayMs = 60000) {
   return prisma.deliveryLog.update({
     where: { id: deliveryLogId },
     data: {
@@ -247,7 +254,7 @@ export async function deleteExpiredNotifications() {
   return result.count;
 }
 
-export async function deleteOldNotifications(daysOld: number = 90) {
+export async function deleteOldNotifications(daysOld = 90) {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
