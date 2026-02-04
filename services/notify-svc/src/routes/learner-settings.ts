@@ -63,7 +63,7 @@ export async function registerLearnerSettingsRoutes(fastify: FastifyInstance): P
       const { learnerId } = request.params;
 
       const settings = await prisma.learnerNotificationSettings.findUnique({
-        where: { learnerId },
+        where: { tenantId_learnerId: { tenantId: ctx.tenantId, learnerId } },
       });
 
       if (!settings) {
@@ -115,7 +115,7 @@ export async function registerLearnerSettingsRoutes(fastify: FastifyInstance): P
 
       // Check if settings exist
       const existing = await prisma.learnerNotificationSettings.findUnique({
-        where: { learnerId },
+        where: { tenantId_learnerId: { tenantId: ctx.tenantId, learnerId } },
       });
 
       if (existing && existing.parentId !== ctx.userId) {
@@ -158,7 +158,7 @@ export async function registerLearnerSettingsRoutes(fastify: FastifyInstance): P
 
       // Upsert settings
       const settings = await prisma.learnerNotificationSettings.upsert({
-        where: { learnerId },
+        where: { tenantId_learnerId: { tenantId: ctx.tenantId, learnerId } },
         create: createData,
         update: updateData,
       });
@@ -198,7 +198,7 @@ export async function registerLearnerSettingsRoutes(fastify: FastifyInstance): P
 
       // Check if already exists
       const existing = await prisma.learnerNotificationSettings.findUnique({
-        where: { learnerId },
+        where: { tenantId_learnerId: { tenantId: ctx.tenantId, learnerId } },
       });
 
       if (existing) {

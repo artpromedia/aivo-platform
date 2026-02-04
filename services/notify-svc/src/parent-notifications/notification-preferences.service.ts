@@ -5,13 +5,7 @@
  * Note: ESLint unsafe warnings are expected until Prisma migration is run.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-
-import type { PrismaClient } from '../prisma.js';
+import type { PrismaClient, Prisma } from '../prisma.js';
 
 import type {
   ParentNotificationPreferencesData,
@@ -24,9 +18,10 @@ import {
 } from './parent-notification.types.js';
 
 interface CreatePreferencesInput {
+  tenantId: string;
   parentId: string;
   learnerId: string;
-  learnerName: string;
+  learnerName?: string;
   timezone?: string;
   language?: string;
 }
@@ -38,16 +33,16 @@ interface UpdatePreferencesInput {
   emailEnabled?: boolean;
   smsEnabled?: boolean;
   inAppEnabled?: boolean;
-  email?: string;
-  phoneNumber?: string;
+  emailAddress?: string;
+  smsPhoneNumber?: string;
   quietHoursEnabled?: boolean;
   quietHoursStart?: string;
   quietHoursEnd?: string;
-  quietHoursBypassCritical?: boolean;
+  quietHoursWeekendOnly?: boolean;
   digestEnabled?: boolean;
   digestFrequency?: 'realtime' | 'hourly' | 'daily' | 'weekly';
   digestTime?: string;
-  digestDay?: number;
+  digestDayOfWeek?: number;
   maxNotificationsPerHour?: number;
   maxNotificationsPerDay?: number;
   timezone?: string;
@@ -67,13 +62,14 @@ export class NotificationPreferencesService {
    * Get or create preferences for a parent-learner pair
    */
   async getOrCreatePreferences(
+    tenantId: string,
     parentId: string,
     learnerId: string,
-    learnerName: string
+    learnerName?: string
   ): Promise<ParentNotificationPreferencesData> {
     const existing = await this.prisma.parentNotificationPreferences.findUnique({
       where: {
-        parentId_learnerId: { parentId, learnerId },
+        tenantId_parentId_learnerId: { tenantId, parentId, learnerId },
       },
     });
 
@@ -82,6 +78,7 @@ export class NotificationPreferencesService {
     }
 
     return this.createDefaultPreferences({
+      tenantId,
       parentId,
       learnerId,
       learnerName,
@@ -96,11 +93,11 @@ export class NotificationPreferencesService {
   ): Promise<ParentNotificationPreferencesData> {
     const preferences = await this.prisma.parentNotificationPreferences.create({
       data: {
+        tenantId: input.tenantId,
         parentId: input.parentId,
         learnerId: input.learnerId,
-        learnerName: input.learnerName,
-        urgencySettings: DEFAULT_URGENCY_SETTINGS as unknown as Record<string, unknown>,
-        categorySettings: DEFAULT_CATEGORY_SETTINGS as unknown as Record<string, unknown>,
+        urgencySettings: DEFAULT_URGENCY_SETTINGS as unknown as Prisma.InputJsonValue,
+        categorySettings: DEFAULT_CATEGORY_SETTINGS as unknown as Prisma.InputJsonValue,
         pushEnabled: true,
         emailEnabled: true,
         smsEnabled: false,
@@ -108,11 +105,10 @@ export class NotificationPreferencesService {
         quietHoursEnabled: false,
         quietHoursStart: '22:00',
         quietHoursEnd: '07:00',
-        quietHoursBypassCritical: true,
         digestEnabled: true,
         digestFrequency: 'daily',
         digestTime: '18:00',
-        digestDay: 1, // Monday
+        digestDayOfWeek: 1, // Monday
         maxNotificationsPerHour: 10,
         maxNotificationsPerDay: 50,
         timezone: input.timezone ?? 'America/New_York',
@@ -127,6 +123,7 @@ export class NotificationPreferencesService {
    * Update preferences for a parent-learner pair
    */
   async updatePreferences(
+    tenantId: string,
     parentId: string,
     learnerId: string,
     updates: UpdatePreferencesInput
@@ -135,28 +132,28 @@ export class NotificationPreferencesService {
     const updateData: Record<string, unknown> = {};
 
     if (updates.urgencySettings !== undefined) {
-      updateData.urgencySettings = updates.urgencySettings as unknown as Record<string, unknown>;
+      updateData.urgencySettings = updates.urgencySettings as unknown as Prisma.InputJsonValue;
     }
     if (updates.categorySettings !== undefined) {
-      updateData.categorySettings = updates.categorySettings as unknown as Record<string, unknown>;
+      updateData.categorySettings = updates.categorySettings as unknown as Prisma.InputJsonValue;
     }
     if (updates.pushEnabled !== undefined) updateData.pushEnabled = updates.pushEnabled;
     if (updates.emailEnabled !== undefined) updateData.emailEnabled = updates.emailEnabled;
     if (updates.smsEnabled !== undefined) updateData.smsEnabled = updates.smsEnabled;
     if (updates.inAppEnabled !== undefined) updateData.inAppEnabled = updates.inAppEnabled;
-    if (updates.email !== undefined) updateData.email = updates.email;
-    if (updates.phoneNumber !== undefined) updateData.phoneNumber = updates.phoneNumber;
+    if (updates.emailAddress !== undefined) updateData.emailAddress = updates.emailAddress;
+    if (updates.smsPhoneNumber !== undefined) updateData.smsPhoneNumber = updates.smsPhoneNumber;
     if (updates.quietHoursEnabled !== undefined)
       updateData.quietHoursEnabled = updates.quietHoursEnabled;
     if (updates.quietHoursStart !== undefined) updateData.quietHoursStart = updates.quietHoursStart;
     if (updates.quietHoursEnd !== undefined) updateData.quietHoursEnd = updates.quietHoursEnd;
-    if (updates.quietHoursBypassCritical !== undefined) {
-      updateData.quietHoursBypassCritical = updates.quietHoursBypassCritical;
+    if (updates.quietHoursWeekendOnly !== undefined) {
+      updateData.quietHoursWeekendOnly = updates.quietHoursWeekendOnly;
     }
     if (updates.digestEnabled !== undefined) updateData.digestEnabled = updates.digestEnabled;
     if (updates.digestFrequency !== undefined) updateData.digestFrequency = updates.digestFrequency;
     if (updates.digestTime !== undefined) updateData.digestTime = updates.digestTime;
-    if (updates.digestDay !== undefined) updateData.digestDay = updates.digestDay;
+    if (updates.digestDayOfWeek !== undefined) updateData.digestDayOfWeek = updates.digestDayOfWeek;
     if (updates.maxNotificationsPerHour !== undefined) {
       updateData.maxNotificationsPerHour = updates.maxNotificationsPerHour;
     }
@@ -168,7 +165,7 @@ export class NotificationPreferencesService {
 
     const preferences = await this.prisma.parentNotificationPreferences.update({
       where: {
-        parentId_learnerId: { parentId, learnerId },
+        tenantId_parentId_learnerId: { tenantId, parentId, learnerId },
       },
       data: updateData,
     });
@@ -182,7 +179,7 @@ export class NotificationPreferencesService {
   async getPreferencesForParent(parentId: string): Promise<ParentNotificationPreferencesData[]> {
     const preferences = await this.prisma.parentNotificationPreferences.findMany({
       where: { parentId },
-      orderBy: { learnerName: 'asc' },
+      orderBy: { learnerId: 'asc' },
     });
 
     return preferences.map((p) => this.mapToPreferencesData(p));
@@ -192,12 +189,13 @@ export class NotificationPreferencesService {
    * Get preferences for a specific parent-learner pair
    */
   async getPreferences(
+    tenantId: string,
     parentId: string,
     learnerId: string
   ): Promise<ParentNotificationPreferencesData | null> {
     const preferences = await this.prisma.parentNotificationPreferences.findUnique({
       where: {
-        parentId_learnerId: { parentId, learnerId },
+        tenantId_parentId_learnerId: { tenantId, parentId, learnerId },
       },
     });
 
@@ -207,20 +205,25 @@ export class NotificationPreferencesService {
   /**
    * Register a device token for push notifications
    */
-  async registerDeviceToken(parentId: string, input: DeviceTokenInput): Promise<void> {
+  async registerDeviceToken(
+    tenantId: string,
+    parentId: string,
+    input: DeviceTokenInput
+  ): Promise<void> {
     await this.prisma.deviceToken.upsert({
       where: {
         token: input.token,
       },
       create: {
+        tenantId,
         userId: parentId,
         token: input.token,
         platform: input.platform,
         deviceId: input.deviceId,
-        active: true,
+        isActive: true,
       },
       update: {
-        active: true,
+        isActive: true,
         lastUsedAt: new Date(),
       },
     });
@@ -232,7 +235,7 @@ export class NotificationPreferencesService {
   async unregisterDeviceToken(token: string): Promise<void> {
     await this.prisma.deviceToken.update({
       where: { token },
-      data: { active: false },
+      data: { isActive: false },
     });
   }
 
@@ -243,7 +246,7 @@ export class NotificationPreferencesService {
     const tokens = await this.prisma.deviceToken.findMany({
       where: {
         userId: parentId,
-        active: true,
+        isActive: true,
       },
       select: { token: true },
     });
@@ -255,11 +258,12 @@ export class NotificationPreferencesService {
    * Check if a channel is enabled for a parent-learner pair
    */
   async isChannelEnabled(
+    tenantId: string,
     parentId: string,
     learnerId: string,
     channel: DeliveryChannel
   ): Promise<boolean> {
-    const preferences = await this.getPreferences(parentId, learnerId);
+    const preferences = await this.getPreferences(tenantId, parentId, learnerId);
     if (!preferences) return false;
 
     switch (channel) {
@@ -279,8 +283,8 @@ export class NotificationPreferencesService {
   /**
    * Check if currently in quiet hours
    */
-  async isInQuietHours(parentId: string, learnerId: string): Promise<boolean> {
-    const preferences = await this.getPreferences(parentId, learnerId);
+  async isInQuietHours(tenantId: string, parentId: string, learnerId: string): Promise<boolean> {
+    const preferences = await this.getPreferences(tenantId, parentId, learnerId);
     if (!preferences?.quietHoursEnabled) return false;
 
     const now = new Date();
@@ -312,33 +316,46 @@ export class NotificationPreferencesService {
   }
 
   /**
-   * Map database record to preferences data
+   * Map database record to preferences data.
+   * The record parameter matches the Prisma ParentNotificationPreferences model output.
+   * Fields not present in Prisma (learnerName, quietHoursBypassCritical) get default/fallback values.
    */
   private mapToPreferencesData(record: {
     id: string;
     parentId: string;
     learnerId: string;
-    learnerName: string;
+    tenantId: string;
+    notificationsEnabled: boolean;
     urgencySettings: unknown;
     categorySettings: unknown;
+    preferredChannels: string[];
     pushEnabled: boolean;
+    pushDeviceTokens: unknown;
     emailEnabled: boolean;
+    emailAddress: string | null;
+    emailFormat: string;
     smsEnabled: boolean;
+    smsPhoneNumber: string | null;
+    smsForCriticalOnly: boolean;
     inAppEnabled: boolean;
-    email: string | null;
-    phoneNumber: string | null;
+    inAppBadgeCount: boolean;
+    timezone: string;
     quietHoursEnabled: boolean;
     quietHoursStart: string;
     quietHoursEnd: string;
-    quietHoursBypassCritical: boolean;
+    quietHoursWeekendOnly: boolean;
     digestEnabled: boolean;
     digestFrequency: string;
     digestTime: string;
-    digestDay: number;
+    digestDayOfWeek: number | null;
+    digestIncludeDetails: boolean;
     maxNotificationsPerHour: number;
     maxNotificationsPerDay: number;
-    timezone: string;
+    cooldownMinutes: number;
     language: string;
+    useSimpleLanguage: boolean;
+    includeActionItems: boolean;
+    includeResources: boolean;
     createdAt: Date;
     updatedAt: Date;
   }): ParentNotificationPreferencesData {
@@ -346,28 +363,43 @@ export class NotificationPreferencesService {
       id: record.id,
       parentId: record.parentId,
       learnerId: record.learnerId,
-      learnerName: record.learnerName,
+      tenantId: record.tenantId,
+      notificationsEnabled: record.notificationsEnabled,
       urgencySettings:
         record.urgencySettings as ParentNotificationPreferencesData['urgencySettings'],
       categorySettings: record.categorySettings as CategorySettings,
+      preferredChannels:
+        record.preferredChannels as ParentNotificationPreferencesData['preferredChannels'],
       pushEnabled: record.pushEnabled,
+      pushDeviceTokens: (record.pushDeviceTokens ??
+        []) as ParentNotificationPreferencesData['pushDeviceTokens'],
       emailEnabled: record.emailEnabled,
+      emailAddress: record.emailAddress ?? undefined,
+      emailFormat: record.emailFormat as ParentNotificationPreferencesData['emailFormat'],
       smsEnabled: record.smsEnabled,
+      smsPhoneNumber: record.smsPhoneNumber ?? undefined,
+      smsForCriticalOnly: record.smsForCriticalOnly,
       inAppEnabled: record.inAppEnabled,
-      email: record.email ?? undefined,
-      phoneNumber: record.phoneNumber ?? undefined,
+      inAppBadgeCount: record.inAppBadgeCount,
+      timezone: record.timezone,
       quietHoursEnabled: record.quietHoursEnabled,
       quietHoursStart: record.quietHoursStart,
       quietHoursEnd: record.quietHoursEnd,
-      quietHoursBypassCritical: record.quietHoursBypassCritical,
+      quietHoursWeekendOnly: record.quietHoursWeekendOnly,
+      quietHoursBypassCritical: undefined,
       digestEnabled: record.digestEnabled,
-      digestFrequency: record.digestFrequency as 'realtime' | 'hourly' | 'daily' | 'weekly',
+      digestFrequency:
+        record.digestFrequency as ParentNotificationPreferencesData['digestFrequency'],
       digestTime: record.digestTime,
-      digestDay: record.digestDay,
+      digestDayOfWeek: record.digestDayOfWeek ?? undefined,
+      digestIncludeDetails: record.digestIncludeDetails,
       maxNotificationsPerHour: record.maxNotificationsPerHour,
       maxNotificationsPerDay: record.maxNotificationsPerDay,
-      timezone: record.timezone,
+      cooldownMinutes: record.cooldownMinutes,
       language: record.language,
+      useSimpleLanguage: record.useSimpleLanguage,
+      includeActionItems: record.includeActionItems,
+      includeResources: record.includeResources,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     };

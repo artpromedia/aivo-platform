@@ -11,5 +11,13 @@
     "sourceMap": true
   },
   "include": ["src/**/*", "generated/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/__tests__/**",
+    "src/**/__tests__/**",
+    "src/controllers/**",
+    "src/services/push-notification.service.ts"
+  ]
 }

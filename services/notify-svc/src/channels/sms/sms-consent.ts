@@ -9,7 +9,11 @@
  * - Re-consent after 18 months (TCPA requirement)
  */
 
-import type { PrismaClient } from '../../prisma.js';
+import type {
+  PrismaClient,
+  SmsConsentType as PrismaSmsConsentType,
+  SmsConsentMethod as PrismaSmsConsentMethod,
+} from '../../prisma.js';
 
 import { phoneValidationService, toE164 } from './phone-validation.js';
 import type {
@@ -39,39 +43,22 @@ const CONSENT_RENEWAL_WARNING_DAYS = 30;
 /**
  * Message types that require explicit consent
  */
-const CONSENT_REQUIRED_TYPES: Set<SmsType> = new Set([
-  'REMINDER',
-  'ALERT',
-  'MARKETING',
-]);
+const CONSENT_REQUIRED_TYPES = new Set<SmsType>(['REMINDER', 'ALERT', 'MARKETING']);
 
 /**
  * Message types exempt from consent (transactional)
  */
-const CONSENT_EXEMPT_TYPES: Set<SmsType> = new Set([
-  'OTP',
-  'TRANSACTIONAL',
-]);
+const CONSENT_EXEMPT_TYPES = new Set<SmsType>(['OTP', 'TRANSACTIONAL']);
 
 /**
  * STOP keywords that trigger opt-out
  */
-const STOP_KEYWORDS = new Set([
-  'stop',
-  'stopall',
-  'unsubscribe',
-  'cancel',
-  'end',
-  'quit',
-]);
+const STOP_KEYWORDS = new Set(['stop', 'stopall', 'unsubscribe', 'cancel', 'end', 'quit']);
 
 /**
  * HELP keywords that trigger help response
  */
-const HELP_KEYWORDS = new Set([
-  'help',
-  'info',
-]);
+const HELP_KEYWORDS = new Set(['help', 'info']);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SMS CONSENT SERVICE
@@ -142,7 +129,7 @@ class SmsConsentService {
       }
 
       // Check consent type matches
-      if (messageType === 'MARKETING' && consent.consentType === 'TRANSACTIONAL') {
+      if (messageType === 'MARKETING' && (consent.consentType as string) === 'TRANSACTIONAL') {
         return {
           hasConsent: false,
           reason: 'Marketing consent not granted',
@@ -152,7 +139,7 @@ class SmsConsentService {
       // Check for 18-month expiry
       const consentAge = Date.now() - consent.consentedAt.getTime();
       const expiryMs = CONSENT_EXPIRY_MONTHS * 30 * 24 * 60 * 60 * 1000;
-      
+
       if (consentAge > expiryMs) {
         return {
           hasConsent: false,
@@ -162,7 +149,8 @@ class SmsConsentService {
       }
 
       // Check if approaching expiry (for renewal warning)
-      const renewalWarningMs = (CONSENT_EXPIRY_MONTHS * 30 - CONSENT_RENEWAL_WARNING_DAYS) * 24 * 60 * 60 * 1000;
+      const renewalWarningMs =
+        (CONSENT_EXPIRY_MONTHS * 30 - CONSENT_RENEWAL_WARNING_DAYS) * 24 * 60 * 60 * 1000;
       const needsRenewal = consentAge > renewalWarningMs;
 
       return {
@@ -208,20 +196,20 @@ class SmsConsentService {
           phoneNumber: e164,
           userId: options.userId,
           tenantId: options.tenantId,
-          consentType: options.consentType,
+          consentType: options.consentType as unknown as PrismaSmsConsentType,
           consentedAt: new Date(),
-          consentMethod: options.consentMethod,
+          consentMethod: options.consentMethod as unknown as PrismaSmsConsentMethod,
           ipAddress: options.ipAddress,
         },
         update: {
           // Re-consent clears revocation and updates timestamp
           userId: options.userId,
-          consentType: options.consentType,
+          consentType: options.consentType as unknown as PrismaSmsConsentType,
           consentedAt: new Date(),
-          consentMethod: options.consentMethod,
+          consentMethod: options.consentMethod as unknown as PrismaSmsConsentMethod,
           ipAddress: options.ipAddress,
           revokedAt: null,
-          revokeMethod: null,
+          revokedMethod: null,
         },
       });
 
@@ -265,7 +253,7 @@ class SmsConsentService {
         },
         data: {
           revokedAt: new Date(),
-          revokeMethod: method,
+          revokedMethod: method,
         },
       });
 
@@ -302,7 +290,7 @@ class SmsConsentService {
         },
         data: {
           revokedAt: new Date(),
-          revokeMethod: method,
+          revokedMethod: method,
         },
       });
 
@@ -334,7 +322,7 @@ class SmsConsentService {
     // Check for STOP keywords
     if (STOP_KEYWORDS.has(normalizedBody)) {
       const revokedCount = await this.revokeAllConsent(phoneNumber, 'sms_stop');
-      
+
       return {
         keyword: 'stop',
         response: 'You have been unsubscribed from AIVO SMS messages. Reply HELP for assistance.',
@@ -346,7 +334,8 @@ class SmsConsentService {
     if (HELP_KEYWORDS.has(normalizedBody)) {
       return {
         keyword: 'help',
-        response: 'AIVO: For help, visit aivolearning.com/help or call 1-800-XXX-XXXX. Reply STOP to opt out.',
+        response:
+          'AIVO: For help, visit aivolearning.com/help or call 1-800-XXX-XXXX. Reply STOP to opt out.',
       };
     }
 
@@ -359,10 +348,7 @@ class SmsConsentService {
   /**
    * Get consent history for a phone number
    */
-  async getConsentHistory(
-    phoneNumber: string,
-    tenantId?: string
-  ): Promise<SmsConsent[]> {
+  async getConsentHistory(phoneNumber: string, tenantId?: string): Promise<SmsConsent[]> {
     if (!this.prisma) {
       return [];
     }
@@ -398,10 +384,7 @@ class SmsConsentService {
   /**
    * Get consents that will expire soon (for renewal campaigns)
    */
-  async getExpiringConsents(
-    daysUntilExpiry: number = 30,
-    limit: number = 100
-  ): Promise<SmsConsent[]> {
+  async getExpiringConsents(daysUntilExpiry = 30, limit = 100): Promise<SmsConsent[]> {
     if (!this.prisma) {
       return [];
     }
@@ -436,27 +419,27 @@ class SmsConsentService {
   private mapToSmsConsent(record: {
     id: string;
     phoneNumber: string;
-    userId: string;
+    userId?: string | null;
     tenantId: string;
     consentType: string;
     consentedAt: Date;
     consentMethod: string;
-    ipAddress: string | null;
-    revokedAt: Date | null;
-    revokeMethod: string | null;
+    ipAddress?: string | null;
+    revokedAt?: Date | null;
+    revokedMethod?: string | null;
     createdAt?: Date;
   }): SmsConsent {
     return {
       id: record.id,
       phoneNumber: record.phoneNumber,
-      userId: record.userId,
+      userId: record.userId ?? '',
       tenantId: record.tenantId,
       consentType: record.consentType as ConsentType,
       consentedAt: record.consentedAt,
       consentMethod: record.consentMethod as ConsentMethod,
       ipAddress: record.ipAddress || undefined,
       revokedAt: record.revokedAt || undefined,
-      revokeMethod: record.revokeMethod as RevokeMethod | undefined,
+      revokeMethod: record.revokedMethod as RevokeMethod | undefined,
     };
   }
 }

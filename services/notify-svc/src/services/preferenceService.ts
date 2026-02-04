@@ -4,7 +4,8 @@
  * Manages user notification preferences.
  */
 
-import { prisma, NotificationType, DeliveryChannel } from '../prisma.js';
+import type { NotificationType, DeliveryChannel } from '../prisma.js';
+import { prisma } from '../prisma.js';
 import type { NotificationPreferencesInput } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -13,7 +14,7 @@ import type { NotificationPreferencesInput } from '../types.js';
 
 export async function getPreferences(tenantId: string, userId: string) {
   const prefs = await prisma.notificationPreference.findUnique({
-    where: { userId },
+    where: { tenantId_userId: { tenantId, userId } },
   });
 
   if (!prefs) {
@@ -44,7 +45,7 @@ export async function updatePreferences(
   input: NotificationPreferencesInput
 ) {
   return prisma.notificationPreference.upsert({
-    where: { userId },
+    where: { tenantId_userId: { tenantId, userId } },
     update: {
       ...(input.inAppEnabled !== undefined && { inAppEnabled: input.inAppEnabled }),
       ...(input.pushEnabled !== undefined && { pushEnabled: input.pushEnabled }),
@@ -53,7 +54,9 @@ export async function updatePreferences(
       ...(input.typePreferences !== undefined && { typePreferences: input.typePreferences }),
       ...(input.quietHoursStart !== undefined && { quietHoursStart: input.quietHoursStart }),
       ...(input.quietHoursEnd !== undefined && { quietHoursEnd: input.quietHoursEnd }),
-      ...(input.quietHoursTimezone !== undefined && { quietHoursTimezone: input.quietHoursTimezone }),
+      ...(input.quietHoursTimezone !== undefined && {
+        quietHoursTimezone: input.quietHoursTimezone,
+      }),
       ...(input.digestEnabled !== undefined && { digestEnabled: input.digestEnabled }),
       ...(input.digestFrequency !== undefined && { digestFrequency: input.digestFrequency }),
       ...(input.digestTime !== undefined && { digestTime: input.digestTime }),
@@ -81,7 +84,12 @@ export async function updatePreferences(
 // ══════════════════════════════════════════════════════════════════════════════
 
 export function isChannelEnabled(
-  prefs: { inAppEnabled: boolean; pushEnabled: boolean; emailEnabled: boolean; smsEnabled: boolean },
+  prefs: {
+    inAppEnabled: boolean;
+    pushEnabled: boolean;
+    emailEnabled: boolean;
+    smsEnabled: boolean;
+  },
   channel: DeliveryChannel
 ): boolean {
   switch (channel) {
@@ -107,9 +115,11 @@ export function isTypeEnabled(
   return pref !== false;
 }
 
-export function isInQuietHours(
-  prefs: { quietHoursStart: string | null; quietHoursEnd: string | null; quietHoursTimezone: string | null }
-): boolean {
+export function isInQuietHours(prefs: {
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+  quietHoursTimezone: string | null;
+}): boolean {
   if (!prefs.quietHoursStart || !prefs.quietHoursEnd) {
     return false;
   }
@@ -197,7 +207,7 @@ export async function deactivateDeviceToken(token: string) {
   });
 }
 
-export async function cleanupStaleTokens(daysInactive: number = 90) {
+export async function cleanupStaleTokens(daysInactive = 90) {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysInactive);
 

@@ -6,11 +6,12 @@
  * 2. Parent adds child → Learner app download link sent
  */
 
-import { prisma } from '../prisma.js';
 import { sendEmail } from '../channels/email/email.service.js';
-import { sendSms } from '../channels/sms/sms.service.js';
 import { renderSmsTemplate } from '../channels/sms/sms-templates.js';
+import { sendSms } from '../channels/sms/sms.service.js';
 import { config } from '../config.js';
+import { prisma } from '../prisma.js';
+import type { Prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -53,14 +54,18 @@ export interface NotificationResult {
 
 const APP_STORE_LINKS = {
   learner: {
-    ios: process.env['LEARNER_APP_IOS_URL'] || 'https://apps.apple.com/app/aivo-learner/id1234567890',
-    android: process.env['LEARNER_APP_ANDROID_URL'] || 'https://play.google.com/store/apps/details?id=com.aivolearning.learner',
-    universal: process.env['LEARNER_APP_UNIVERSAL_URL'] || 'https://aivolearning.com/download/learner',
+    ios: process.env.LEARNER_APP_IOS_URL || 'https://apps.apple.com/app/aivo-learner/id1234567890',
+    android:
+      process.env.LEARNER_APP_ANDROID_URL ||
+      'https://play.google.com/store/apps/details?id=com.aivolearning.learner',
+    universal: process.env.LEARNER_APP_UNIVERSAL_URL || 'https://aivolearning.com/download/learner',
   },
   parent: {
-    ios: process.env['PARENT_APP_IOS_URL'] || 'https://apps.apple.com/app/aivo-parent/id1234567891',
-    android: process.env['PARENT_APP_ANDROID_URL'] || 'https://play.google.com/store/apps/details?id=com.aivolearning.parent',
-    universal: process.env['PARENT_APP_UNIVERSAL_URL'] || 'https://aivolearning.com/download/parent',
+    ios: process.env.PARENT_APP_IOS_URL || 'https://apps.apple.com/app/aivo-parent/id1234567891',
+    android:
+      process.env.PARENT_APP_ANDROID_URL ||
+      'https://play.google.com/store/apps/details?id=com.aivolearning.parent',
+    universal: process.env.PARENT_APP_UNIVERSAL_URL || 'https://aivolearning.com/download/parent',
   },
 };
 
@@ -112,6 +117,7 @@ export async function notifyParentBaselineComplete(
       type: 'BASELINE_COMPLETE_PARENT_APP',
       tenantId: payload.tenantId,
       recipientId: payload.parentId,
+      learnerId: payload.learnerId,
       recipientType: 'parent',
       channel: 'email',
       status: 'sent',
@@ -147,6 +153,7 @@ export async function notifyParentBaselineComplete(
         type: 'BASELINE_COMPLETE_PARENT_APP',
         tenantId: payload.tenantId,
         recipientId: payload.parentId,
+        learnerId: payload.learnerId,
         recipientType: 'parent',
         channel: 'sms',
         status: 'sent',
@@ -221,6 +228,7 @@ export async function notifyParentLearnerAppDownload(
       type: 'LEARNER_ADDED_LEARNER_APP',
       tenantId: payload.tenantId,
       recipientId: payload.parentId,
+      learnerId: payload.learnerId,
       recipientType: 'parent',
       channel: 'email',
       status: 'sent',
@@ -257,6 +265,7 @@ export async function notifyParentLearnerAppDownload(
         type: 'LEARNER_ADDED_LEARNER_APP',
         tenantId: payload.tenantId,
         recipientId: payload.parentId,
+        learnerId: payload.learnerId,
         recipientType: 'parent',
         channel: 'sms',
         status: 'sent',
@@ -301,21 +310,21 @@ async function logNotification(data: {
   type: string;
   tenantId: string;
   recipientId: string;
+  learnerId: string;
   recipientType: 'parent' | 'learner' | 'teacher';
   channel: 'email' | 'sms' | 'push';
   status: 'sent' | 'failed';
   metadata?: Record<string, unknown>;
 }): Promise<void> {
   try {
-    await prisma.notificationLog.create({
+    await prisma.parentNotificationLog.create({
       data: {
-        type: data.type,
         tenantId: data.tenantId,
-        recipientId: data.recipientId,
-        recipientType: data.recipientType,
+        parentId: data.recipientId,
+        learnerId: data.learnerId,
         channel: data.channel,
         status: data.status,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        metadata: (data.metadata ?? undefined) as unknown as Prisma.InputJsonValue,
         sentAt: new Date(),
       },
     });

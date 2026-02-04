@@ -5,12 +5,6 @@
  * Note: ESLint unsafe warnings are expected until Prisma migration is run.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-
 import type { PrismaClient } from '../prisma.js';
 
 import {
@@ -94,8 +88,8 @@ export class NotificationAggregator {
       body: n.body,
       timestamp: n.createdAt,
       learnerId: n.learnerId,
-      learnerName: n.learnerName,
-      data: n.data as Record<string, unknown> | undefined,
+      learnerName: ((n.richContent as Record<string, unknown>)?.learnerName as string) ?? '',
+      data: (n.richContent as Record<string, unknown>) ?? undefined,
     }));
   }
 
@@ -119,7 +113,9 @@ export class NotificationAggregator {
     const digest = await this.prisma.parentNotificationDigest.create({
       data: {
         parentId: input.parentId,
-        period: input.period,
+        digestType: input.period,
+        learnerId: '',
+        tenantId: '',
         periodStart: input.startTime,
         periodEnd: input.endTime,
         notifications: notifications as unknown as object[],
@@ -134,8 +130,8 @@ export class NotificationAggregator {
         id: { in: notifications.map((n) => n.id) },
       },
       data: {
-        status: ParentNotificationStatus.DIGESTED,
-        digestedAt: new Date(),
+        status: 'QUEUED_FOR_DIGEST',
+        addedToDigest: true,
       },
     });
 
@@ -365,7 +361,7 @@ export class NotificationAggregator {
     return digests.map((d) => ({
       id: d.id,
       parentId: d.parentId,
-      period: d.period,
+      period: d.digestType,
       notifications: d.notifications as unknown as DigestNotification[],
       summary: d.summary as unknown as DigestSummary,
     }));
