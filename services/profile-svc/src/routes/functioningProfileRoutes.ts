@@ -177,7 +177,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerFunctioningProfile.findUnique({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               tenantId: context.tenantId,
               learnerId,
             },
@@ -232,7 +232,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
 
         const profile = await prisma.learnerFunctioningProfile.upsert({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               tenantId: context.tenantId,
               learnerId,
             },
@@ -306,7 +306,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
 
         const profile = await prisma.learnerFunctioningProfile.update({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -353,7 +353,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerSensoryProfile.findUnique({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -402,7 +402,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
 
         const profile = await prisma.learnerSensoryProfile.upsert({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -487,7 +487,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
 
         const profile = await prisma.learnerSensoryProfile.update({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               learnerId,
               tenantId: context.tenantId,
             },
@@ -673,7 +673,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
         const [functioningProfile, sensoryProfile, assessmentModeDecision] = await Promise.all([
           prisma.learnerFunctioningProfile.findUnique({
             where: {
-              tenantId_learnerId: {
+              learnerId_tenantId: {
                 learnerId,
                 tenantId: context.tenantId,
               },
@@ -681,7 +681,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
           }),
           prisma.learnerSensoryProfile.findUnique({
             where: {
-              tenantId_learnerId: {
+              learnerId_tenantId: {
                 learnerId,
                 tenantId: context.tenantId,
               },
@@ -781,7 +781,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
 
         const profile = await prisma.learnerFunctioningProfile.upsert({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               tenantId: data.tenantId,
               learnerId: data.learnerId,
             },
@@ -850,7 +850,7 @@ export async function registerFunctioningProfileRoutes(app: FastifyInstance): Pr
       try {
         const profile = await prisma.learnerFunctioningProfile.findUnique({
           where: {
-            tenantId_learnerId: {
+            learnerId_tenantId: {
               tenantId,
               learnerId,
             },

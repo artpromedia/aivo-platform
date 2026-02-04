@@ -163,7 +163,7 @@ async function main() {
 
     const profile = await prisma.learnerProfile.upsert({
       where: {
-        tenantId_learnerId: {
+        learnerId_tenantId: {
           tenantId: TENANTS.ANOKA_HENNEPIN,
           learnerId: learner.id,
         },
