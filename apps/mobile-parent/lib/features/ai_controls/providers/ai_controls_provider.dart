@@ -233,7 +233,7 @@ class RestrictionsNotifier extends _$RestrictionsNotifier {
   }
 
   /// Update a restriction.
-  Future<void> update(String restrictionId, AIRestriction restriction) async {
+  Future<void> updateRestriction(String restrictionId, AIRestriction restriction) async {
     final api = ref.read(aiControlsApiProvider);
 
     state = const AsyncLoading();

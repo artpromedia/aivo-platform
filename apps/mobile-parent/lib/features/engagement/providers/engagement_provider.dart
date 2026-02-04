@@ -6,6 +6,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/api_client.dart';
 import '../api/engagement_api.dart';
 import '../models/engagement_models.dart';
 
@@ -36,14 +37,14 @@ class StreakNotifier extends _$StreakNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(engagementApiProvider);
-      return api.fetchStreak(arg);
+      return api.fetchStreak(childId);
     });
   }
 
   /// Updates the weekly goal.
   Future<void> updateWeeklyGoal(int goal) async {
     final api = ref.read(engagementApiProvider);
-    final updated = await api.updateWeeklyGoal(arg, goal);
+    final updated = await api.updateWeeklyGoal(childId, goal);
     state = AsyncData(updated);
   }
 }
@@ -136,7 +137,7 @@ class ScreenTimeSettingsNotifier extends _$ScreenTimeSettingsNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(engagementApiProvider);
-      return api.updateScreenTimeSettings(arg, settings);
+      return api.updateScreenTimeSettings(childId, settings);
     });
   }
 
@@ -181,7 +182,7 @@ class ScreenTimeSettingsNotifier extends _$ScreenTimeSettingsNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(engagementApiProvider);
-      return api.addSchedule(arg, schedule);
+      return api.addSchedule(childId, schedule);
     });
   }
 
@@ -190,14 +191,14 @@ class ScreenTimeSettingsNotifier extends _$ScreenTimeSettingsNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(engagementApiProvider);
-      return api.updateSchedule(arg, schedule);
+      return api.updateSchedule(childId, schedule);
     });
   }
 
   /// Deletes a schedule.
   Future<void> deleteSchedule(String scheduleId) async {
     final api = ref.read(engagementApiProvider);
-    await api.deleteSchedule(arg, scheduleId);
+    await api.deleteSchedule(childId, scheduleId);
     ref.invalidateSelf();
   }
 }

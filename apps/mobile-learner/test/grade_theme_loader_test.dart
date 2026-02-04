@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_common/flutter_common.dart';
 
-import '../lib/learner/learner_service.dart';
-import '../lib/learner/theme_loader.dart';
+import 'package:mobile_learner/learner/learner_service.dart';
+import 'package:mobile_learner/learner/theme_loader.dart';
 
 class _MockLearnerService extends LearnerService {
   @override
@@ -24,7 +24,7 @@ void main() {
               future: loadAndApplyLearnerTheme(ref, 'learner-123'),
               builder: (context, snapshot) {
                 final band = ref.watch(gradeThemeControllerProvider);
-                return MaterialApp(home: Text('band:${band.name}'));
+                return MaterialApp(home: Text('band:${band.gradeBand.name}'));
               },
             );
           },

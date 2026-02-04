@@ -6,6 +6,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/api_client.dart';
 import '../api/communication_api.dart';
 import '../models/communication_models.dart';
 
@@ -35,7 +36,7 @@ class TranscriptsNotifier extends _$TranscriptsNotifier {
   Future<void> loadMore() async {
     final current = state.valueOrNull ?? [];
     final api = ref.read(communicationApiProvider);
-    final more = await api.fetchTranscripts(arg, offset: current.length);
+    final more = await api.fetchTranscripts(childId, offset: current.length);
     state = AsyncData([...current, ...more]);
   }
 
@@ -44,7 +45,7 @@ class TranscriptsNotifier extends _$TranscriptsNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(communicationApiProvider);
-      return api.fetchTranscripts(arg, subject: subject);
+      return api.fetchTranscripts(childId, subject: subject);
     });
   }
 
@@ -90,7 +91,7 @@ class TeacherNotesNotifier extends _$TeacherNotesNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(communicationApiProvider);
-      return api.fetchTeacherNotes(arg, unreadOnly: true);
+      return api.fetchTeacherNotes(childId, unreadOnly: true);
     });
   }
 
@@ -99,29 +100,29 @@ class TeacherNotesNotifier extends _$TeacherNotesNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(communicationApiProvider);
-      return api.fetchTeacherNotes(arg, type: type);
+      return api.fetchTeacherNotes(childId, type: type);
     });
   }
 
   /// Marks a note as read.
   Future<void> markAsRead(String noteId) async {
     final api = ref.read(communicationApiProvider);
-    final updated = await api.markNoteAsRead(arg, noteId);
+    final updated = await api.markNoteAsRead(childId, noteId);
     _updateNote(updated);
-    ref.invalidate(unreadNoteCountProvider(arg));
+    ref.invalidate(unreadNoteCountProvider(childId));
   }
 
   /// Acknowledges a note.
   Future<void> acknowledge(String noteId) async {
     final api = ref.read(communicationApiProvider);
-    final updated = await api.acknowledgeNote(arg, noteId);
+    final updated = await api.acknowledgeNote(childId, noteId);
     _updateNote(updated);
   }
 
   /// Responds to a note.
   Future<void> respond(String noteId, String response) async {
     final api = ref.read(communicationApiProvider);
-    final updated = await api.respondToNote(arg, noteId, response);
+    final updated = await api.respondToNote(childId, noteId, response);
     _updateNote(updated);
   }
 
@@ -185,14 +186,14 @@ class ReportsNotifier extends _$ReportsNotifier {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final api = ref.read(communicationApiProvider);
-      return api.fetchReports(arg, period: period);
+      return api.fetchReports(childId, period: period);
     });
   }
 
   /// Generates a new report.
   Future<ProgressReport> generateReport(ReportRequest request) async {
     final api = ref.read(communicationApiProvider);
-    final report = await api.generateReport(arg, request);
+    final report = await api.generateReport(childId, request);
     final current = state.valueOrNull ?? [];
     state = AsyncData([report, ...current]);
     return report;
