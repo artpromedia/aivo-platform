@@ -113,11 +113,13 @@ export async function createCheckIn(tenantId: string, profileId: string, input: 
   // Check for alerts
   if (data.needsSupport || (data.moodRating && (data.moodRating as number) <= 2)) {
     const moodRating = data.moodRating as number | undefined;
+    const moodDescription =
+      moodRating === undefined ? 'needing support' : `mood rating of ${moodRating}`;
     await createAlert(tenantId, profileId, {
       alertType: data.needsSupport ? 'FOLLOW_UP_REQUIRED' : 'LOW_MOOD_PATTERN',
       severity: moodRating === 1 ? 'HIGH' : 'MEDIUM',
       title: data.needsSupport ? 'Student requested support' : 'Low mood check-in',
-      description: `Student reported ${moodRating !== undefined ? `mood rating of ${moodRating}` : 'needing support'}`,
+      description: `Student reported ${moodDescription}`,
     });
   }
 
@@ -232,7 +234,7 @@ export async function submitAssessmentResponse(
   });
 
   let score: number | undefined;
-  if (item && !isNaN(Number(response))) {
+  if (item && !Number.isNaN(Number(response))) {
     score = item.reverseScored ? item.maxScore - Number(response) + 1 : Number(response);
   }
 
@@ -270,9 +272,7 @@ export async function completeAssessment(assessmentId: string) {
       const item = assessment.template.items.find((i) => i.itemNumber === response.itemNumber);
       if (item?.competencyId) {
         const competencyId = item.competencyId;
-        if (!competencyScores[competencyId]) {
-          competencyScores[competencyId] = { sum: 0, count: 0 };
-        }
+        competencyScores[competencyId] ??= { sum: 0, count: 0 };
         const entry = competencyScores[competencyId];
         entry.sum += response.score;
         entry.count++;

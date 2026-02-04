@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs';
 
 import { createVerifier, type VerifierOptions } from 'fast-jwt';
 import type { FastifyRequest, FastifyReply } from 'fastify';

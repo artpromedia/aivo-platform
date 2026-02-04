@@ -126,6 +126,7 @@ export async function registerInternationalizedAuthRoutes(fastify: FastifyInstan
    * POST /v2/register
    * Enhanced registration with locale preferences
    */
+
   fastify.post('/v2/register', { preHandler: registerRateLimiter }, async (request, reply) => {
     const parsed = registerWithPreferencesBody.safeParse(request.body);
     if (!parsed.success) {

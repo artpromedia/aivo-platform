@@ -390,7 +390,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
     }
 
     const queryResult = getCheckInsQuerySchema.safeParse({
-      limit: query.limit ? parseInt(query.limit, 10) : 30,
+      limit: query.limit ? Number.parseInt(query.limit, 10) : 30,
     });
     if (!queryResult.success) {
       return sendValidationError(reply, queryResult.error);
@@ -488,7 +488,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
     const queryResult = listActivitiesQuerySchema.safeParse({
       type: 'MINDFULNESS',
       subtype: query.type,
-      maxDuration: query.maxDuration ? parseInt(query.maxDuration, 10) : undefined,
+      maxDuration: query.maxDuration ? Number.parseInt(query.maxDuration, 10) : undefined,
     });
     if (!queryResult.success) {
       return sendValidationError(reply, queryResult.error);
@@ -575,7 +575,7 @@ export default async function routes(fastify: FastifyInstance): Promise<void> {
     }
 
     const entries = await selService.getJournalEntries(tenantId, query.learnerId, {
-      limit: query.limit ? parseInt(query.limit, 10) : 20,
+      limit: query.limit ? Number.parseInt(query.limit, 10) : 20,
     });
     return reply.send({ data: entries });
   });

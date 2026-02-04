@@ -242,7 +242,7 @@ export async function search(
   const results = documents.map(
     (doc: { sourceId: string; content: unknown; metadata: unknown }) => ({
       id: doc.sourceId,
-      score: 1.0, // Simplified scoring
+      score: 1, // Simplified scoring
       source: doc.content,
       metadata: doc.metadata,
       ...(params.highlight && {

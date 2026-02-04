@@ -43,8 +43,6 @@ class _SELObservationScreenState extends ConsumerState<SELObservationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('SEL Observations'),
@@ -315,7 +313,7 @@ class _QuickPresetChip extends StatelessWidget {
 
     return ActionChip(
       avatar: Text(
-        preset.emoji,
+        preset.icon ?? '📝',
         style: const TextStyle(fontSize: 16),
       ),
       label: Text(preset.label),
@@ -355,7 +353,7 @@ class _StudentSelector extends StatelessWidget {
     ];
 
     return DropdownButtonFormField<String>(
-      value: selectedStudentId,
+      initialValue: selectedStudentId,
       decoration: const InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -493,7 +491,7 @@ class _CompetencyFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<SELCompetency?>(
-      value: value,
+      initialValue: value,
       decoration: const InputDecoration(
         labelText: 'Filter by Competency',
         border: OutlineInputBorder(),
@@ -582,14 +580,14 @@ class _ObservationCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      observation.description,
+                      observation.description ?? '',
                       style: theme.textTheme.bodySmall,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _formatDate(observation.observedAt),
+                      _formatDate(observation.timestamp),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
@@ -706,20 +704,20 @@ class _ObservationDetailsDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            observation.description,
+            observation.description ?? '',
             style: theme.textTheme.bodyMedium,
           ),
-          if (observation.notes != null) ...[
+          if (observation.behaviorIndicator != null) ...[
             const SizedBox(height: 16),
             Text(
-              'Notes',
+              'Behavior Indicator',
               style: theme.textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              observation.notes!,
+              observation.behaviorIndicator!,
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -733,7 +731,7 @@ class _ObservationDetailsDialog extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                _formatFullDate(observation.observedAt),
+                _formatFullDate(observation.timestamp),
                 style: theme.textTheme.labelSmall,
               ),
             ],
@@ -864,7 +862,7 @@ class _AddObservationSheetState extends ConsumerState<_AddObservationSheet> {
 
                 // Competency selector
                 DropdownButtonFormField<SELCompetency>(
-                  value: _selectedCompetency,
+                  initialValue: _selectedCompetency,
                   decoration: const InputDecoration(
                     labelText: 'SEL Competency',
                     border: OutlineInputBorder(),
@@ -966,8 +964,8 @@ class _AddObservationSheetState extends ConsumerState<_AddObservationSheet> {
         return Icons.warning;
       case ObservationType.neutral:
         return Icons.remove;
-      case ObservationType.milestone:
-        return Icons.star;
+      case ObservationType.needsSupport:
+        return Icons.support;
     }
   }
 
@@ -990,11 +988,9 @@ class _AddObservationSheetState extends ConsumerState<_AddObservationSheet> {
         competency: _selectedCompetency!,
         type: _selectedType,
         description: _descriptionController.text,
-        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+        behaviorIndicator: _notesController.text.isNotEmpty ? _notesController.text : null,
         context: _contextController.text.isNotEmpty ? _contextController.text : null,
-        observedAt: DateTime.now(),
-        teacherId: 'current_teacher', // Would come from auth
-        teacherName: 'Current Teacher',
+        timestamp: DateTime.now(),
       );
 
       await ref
@@ -1209,7 +1205,7 @@ class _StudentSELSummaryTile extends StatelessWidget {
         ),
         title: Text(summary.studentName),
         subtitle: Text(
-          '${summary.totalObservations} observations',
+          '${summary.recentObservations.length} observations',
           style: theme.textTheme.bodySmall,
         ),
         trailing: Row(

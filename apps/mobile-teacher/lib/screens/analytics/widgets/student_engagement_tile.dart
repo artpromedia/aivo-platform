@@ -8,7 +8,6 @@ import 'package:flutter_common/theme/theme.dart';
 
 import '../../../models/analytics.dart';
 import 'engagement_gauge.dart';
-import 'engagement_timeline_chart.dart';
 
 /// Tile showing student engagement summary.
 class StudentEngagementTile extends StatelessWidget {

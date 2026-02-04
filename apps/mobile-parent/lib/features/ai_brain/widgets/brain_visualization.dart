@@ -3,7 +3,6 @@
 /// Animated brain graphic showing AI's current focus.
 library;
 
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 

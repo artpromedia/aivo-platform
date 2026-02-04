@@ -742,8 +742,8 @@ class TeacherLocalDatabase {
     return cached != null ? cached as List<dynamic> : [];
   }
 
-  /// Cache students for a classroom course
-  Future<void> cacheStudents(String cacheKey, List<dynamic> students) async {
+  /// Cache students for a classroom course (generic key-based caching)
+  Future<void> cacheClassroomStudents(String cacheKey, List<dynamic> students) async {
     await _setCachedValue(cacheKey, students);
   }
 

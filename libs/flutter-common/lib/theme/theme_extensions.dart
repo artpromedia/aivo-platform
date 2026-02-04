@@ -592,7 +592,7 @@ class AivoBorderRadius {
   static BorderRadius get xxl => AivoBrand.borderRadiusXl;
 
   /// Extra extra large border radius (32px).
-  static BorderRadius get xxxl => AivoBrand.borderRadius2Xl;
+  static BorderRadius get xxxl => const BorderRadius.all(Radius.circular(32));
 
   /// Full/circular border radius.
   static BorderRadius circular(double radius) =>

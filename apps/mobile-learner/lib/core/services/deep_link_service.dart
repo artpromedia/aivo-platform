@@ -75,16 +75,6 @@ class DeepLinkService {
     }
   }
 
-  /// Handle incoming deep link (legacy string support)
-  Future<void> _handleDeepLink(String link) async {
-    try {
-      final uri = Uri.parse(link);
-      await _handleDeepLinkUri(uri);
-    } catch (e) {
-      debugPrint('Failed to parse deep link: $e');
-    }
-  }
-
   /// Map URI to app route
   String? _mapUriToRoute(Uri uri) {
     // Handle custom scheme (aivo://...)

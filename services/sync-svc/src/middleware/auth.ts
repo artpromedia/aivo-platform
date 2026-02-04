@@ -40,8 +40,8 @@ export const authMiddleware = fp(async (fastify: FastifyInstance) => {
         });
 
         request.user = {
-          userId: payload.sub as string,
-          tenantId: payload.tenantId as string,
+          userId: payload.sub ?? '',
+          tenantId: (payload.tenantId as string) ?? '',
           deviceId: (request.headers['x-device-id'] as string) || 'unknown',
           roles: (payload.roles as string[]) || [],
         };

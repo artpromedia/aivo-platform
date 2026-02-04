@@ -349,12 +349,15 @@ class _JournalEntryEditor extends StatefulWidget {
   final String learnerId;
   final SELService selService;
   final VoidCallback onSaved;
+  /// Reserved for future edit-entry feature
   final JournalEntry? existingEntry;
 
   const _JournalEntryEditor({
     required this.learnerId,
     required this.selService,
     required this.onSaved,
+    // ignore: unused_formal_parameter
+    this.existingEntry,
   });
 
   @override

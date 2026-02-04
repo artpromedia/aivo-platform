@@ -213,7 +213,7 @@ class LmsRepository {
             .toList();
 
         // Cache students
-        await _db.cacheStudents(cacheKey, students);
+        await _db.cacheClassroomStudents(cacheKey, students);
 
         return students;
       } catch (e) {

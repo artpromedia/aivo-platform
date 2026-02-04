@@ -21,10 +21,10 @@ export 'aivo_app_bar.dart';
 export 'aivo_bottom_nav.dart';
 export 'aivo_drawer.dart';
 export 'aivo_tab_bar.dart';
-export 'aivo_transitions.dart';
+export 'aivo_transitions.dart' hide aivoPageTransitionsTheme;
 
 // Feedback Components (Sprint 7 - Feedback Parity)
-export 'aivo_dialog.dart';
+export 'aivo_dialog.dart' hide AivoBottomSheet;
 export 'aivo_snackbar.dart';
 export 'aivo_loading.dart';
 export 'aivo_alert_banner.dart';

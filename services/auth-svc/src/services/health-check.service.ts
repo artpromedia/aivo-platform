@@ -49,13 +49,13 @@ export interface ResourceCheck extends HealthCheck {
 }
 
 export class HealthCheckService {
-  private startTime: number;
+  private readonly startTime: number;
 
   constructor(
-    private prisma: PrismaClient,
-    private redis: Redis,
-    private logger: FastifyBaseLogger,
-    private serviceName: string
+    private readonly prisma: PrismaClient,
+    private readonly redis: Redis,
+    private readonly logger: FastifyBaseLogger,
+    private readonly serviceName: string
   ) {
     this.startTime = Date.now();
   }
@@ -88,7 +88,14 @@ export class HealthCheckService {
     const hasFailed = allChecks.some((check) => check.status === 'fail');
     const hasWarnings = allChecks.some((check) => check.status === 'warn');
 
-    const status = hasFailed ? 'unhealthy' : hasWarnings ? 'degraded' : 'healthy';
+    let status: 'healthy' | 'degraded' | 'unhealthy';
+    if (hasFailed) {
+      status = 'unhealthy';
+    } else if (hasWarnings) {
+      status = 'degraded';
+    } else {
+      status = 'healthy';
+    }
 
     return {
       status,
@@ -168,7 +175,7 @@ export class HealthCheckService {
 
       // Parse memory usage
       const memoryMatch = /used_memory:(\d+)/.exec(memory);
-      const memoryUsedMB = memoryMatch ? parseInt(memoryMatch[1]) / 1024 / 1024 : 0;
+      const memoryUsedMB = memoryMatch ? Number.parseInt(memoryMatch[1]) / 1024 / 1024 : 0;
 
       if (responseTime > 50) {
         return {

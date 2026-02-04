@@ -11,7 +11,6 @@ import 'package:flutter_common/theme/theme.dart';
 import '../../models/analytics.dart';
 import '../../models/iep_goal.dart';
 import '../../providers/analytics_provider.dart';
-import '../../providers/classes_provider.dart';
 import 'widgets/widgets.dart';
 
 /// Main engagement analytics screen.
@@ -70,7 +69,6 @@ class _EngagementScreenState extends ConsumerState<EngagementScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final engagementState = ref.watch(classEngagementProvider);
     final alertsState = ref.watch(engagementAlertsProvider);
     final timelineState = ref.watch(engagementTimelineProvider);
