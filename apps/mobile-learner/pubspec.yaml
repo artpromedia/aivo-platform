@@ -33,6 +33,7 @@ dependencies:
     path: ../../libs/flutter-common
   flutter_notifications:
     path: ../../libs/flutter-notifications
+  workmanager: ^0.9.0
 
 dependency_overrides:
   flutter_local_notifications: ^17.2.3

@@ -38,7 +38,6 @@ class BackgroundSyncService {
 
     await Workmanager().initialize(
       callbackDispatcher,
-      isInDebugMode: kDebugMode,
     );
 
     _isInitialized = true;
@@ -57,11 +56,11 @@ class BackgroundSyncService {
       frequency: frequency,
       constraints: Constraints(
         networkType:
-            requiresNetwork ? NetworkType.connected : NetworkType.not_required,
+            requiresNetwork ? NetworkType.connected : NetworkType.notRequired,
         requiresBatteryNotLow: true,
         requiresCharging: requiresCharging,
       ),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       backoffPolicy: BackoffPolicy.exponential,
       backoffPolicyDelay: const Duration(minutes: 5),
     );
@@ -117,10 +116,10 @@ class BackgroundSyncService {
       BackgroundTaskIds.cleanupCache,
       frequency: frequency,
       constraints: Constraints(
-        networkType: NetworkType.not_required,
+        networkType: NetworkType.notRequired,
         requiresBatteryNotLow: true,
       ),
-      existingWorkPolicy: ExistingWorkPolicy.keep,
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );
 
     debugPrint('[BackgroundSyncService] Registered cache cleanup');
