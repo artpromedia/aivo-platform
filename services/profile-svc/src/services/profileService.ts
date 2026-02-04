@@ -29,7 +29,7 @@ export async function getProfile(
 ): Promise<ProfileWithAccommodations | null> {
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
     include: {
       accommodations: {
@@ -80,7 +80,7 @@ export async function createProfile(
   // Check if profile already exists
   const existing = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
   });
 
@@ -95,7 +95,8 @@ export async function createProfile(
       summary: data.summary,
       learningStyleJson: (data.learningStyleJson ?? {}) as Prisma.InputJsonValue,
       sensoryProfileJson: (data.sensoryProfileJson ?? {}) as Prisma.InputJsonValue,
-      communicationPreferencesJson: (data.communicationPreferencesJson ?? {}) as Prisma.InputJsonValue,
+      communicationPreferencesJson: (data.communicationPreferencesJson ??
+        {}) as Prisma.InputJsonValue,
       interactionConstraintsJson: (data.interactionConstraintsJson ?? {}) as Prisma.InputJsonValue,
       uiAccessibilityJson: (data.uiAccessibilityJson ?? {}) as Prisma.InputJsonValue,
       origin: data.origin ?? 'PARENT_REPORTED',
@@ -137,7 +138,7 @@ export async function updateProfile(
   // Get existing profile
   const existing = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
   });
 
@@ -192,13 +193,22 @@ export async function updateProfile(
         ? mergeJson(existing.sensoryProfileJson as Record<string, unknown>, data.sensoryProfileJson)
         : existing.sensoryProfileJson) as Prisma.InputJsonValue,
       communicationPreferencesJson: (data.communicationPreferencesJson
-        ? mergeJson(existing.communicationPreferencesJson as Record<string, unknown>, data.communicationPreferencesJson)
+        ? mergeJson(
+            existing.communicationPreferencesJson as Record<string, unknown>,
+            data.communicationPreferencesJson
+          )
         : existing.communicationPreferencesJson) as Prisma.InputJsonValue,
       interactionConstraintsJson: (data.interactionConstraintsJson
-        ? mergeJson(existing.interactionConstraintsJson as Record<string, unknown>, data.interactionConstraintsJson)
+        ? mergeJson(
+            existing.interactionConstraintsJson as Record<string, unknown>,
+            data.interactionConstraintsJson
+          )
         : existing.interactionConstraintsJson) as Prisma.InputJsonValue,
       uiAccessibilityJson: (data.uiAccessibilityJson
-        ? mergeJson(existing.uiAccessibilityJson as Record<string, unknown>, data.uiAccessibilityJson)
+        ? mergeJson(
+            existing.uiAccessibilityJson as Record<string, unknown>,
+            data.uiAccessibilityJson
+          )
         : existing.uiAccessibilityJson) as Prisma.InputJsonValue,
       origin: data.origin ?? existing.origin,
       profileVersion: newVersion,
@@ -236,16 +246,13 @@ export async function getProfileForAi(
 ): Promise<ProfileForAi | null> {
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
     include: {
       accommodations: {
         where: {
           isActive: true,
-          OR: [
-            { effectiveTo: null },
-            { effectiveTo: { gte: new Date() } },
-          ],
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }],
         },
       },
     },

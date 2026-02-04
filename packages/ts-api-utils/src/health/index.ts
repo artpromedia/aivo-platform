@@ -8,7 +8,11 @@
  * - Connection count
  */
 
-import type { PrismaClient } from '@prisma/client';
+// Minimal interface for PrismaClient to avoid requiring a generated client at build time.
+// @prisma/client is an optional peer dependency.
+interface PrismaClient {
+  $queryRaw(query: TemplateStringsArray, ...values: unknown[]): Promise<unknown>;
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS

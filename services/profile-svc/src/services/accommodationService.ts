@@ -5,7 +5,11 @@
  */
 
 import { prisma, type LearnerAccommodation } from '../prisma.js';
-import type { CreateAccommodationRequest, UpdateAccommodationRequest, ListAccommodationsQuery } from '../schemas/index.js';
+import type {
+  CreateAccommodationRequest,
+  UpdateAccommodationRequest,
+  ListAccommodationsQuery,
+} from '../schemas/index.js';
 import type { AccommodationSummary, TenantContext } from '../types/index.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -63,7 +67,7 @@ export async function createAccommodation(
   // Get profile ID if exists
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
     select: { id: true },
   });
@@ -123,7 +127,9 @@ export async function updateAccommodation(
       ...(data.source !== undefined && { source: data.source }),
       ...(data.isCritical !== undefined && { isCritical: data.isCritical }),
       ...(data.effectiveFrom !== undefined && { effectiveFrom: new Date(data.effectiveFrom) }),
-      ...(data.effectiveTo !== undefined && { effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null }),
+      ...(data.effectiveTo !== undefined && {
+        effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
+      }),
       updatedByUserId: context.userId,
     },
   });
