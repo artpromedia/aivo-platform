@@ -48,8 +48,8 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.4
   drift_dev: ^2.22.1
-  build_runner: ^2.4.13
-  json_serializable: ^6.9.5
+  build_runner: ^2.10.5
+  json_serializable: ^6.12.0
 
 flutter:
   assets:
