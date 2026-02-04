@@ -2,6 +2,7 @@
 ///
 /// Full-screen overlay that presents interventions to the learner
 /// in a calming, non-overwhelming way.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/aivo_brand.dart';

@@ -1,6 +1,7 @@
 /// Story Recommendation Widget - ND-1.2
 ///
 /// Displays story recommendations with context-aware suggestions.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

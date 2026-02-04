@@ -17,6 +17,7 @@
 /// // Announce assertively (interrupts current speech)
 /// A11yAnnouncer.announceAssertive('Error: Please try again');
 /// ```
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';

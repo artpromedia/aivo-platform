@@ -1,6 +1,7 @@
 /// Social Stories Widget Tests - ND-1.2
 ///
 /// Tests for social story models, services, and widgets.
+library;
 
 import 'package:flutter_test/flutter_test.dart';
 

@@ -2,6 +2,7 @@
 ///
 /// Main menu for accessing offline regulation activities.
 /// Provides categorized access to breathing, grounding, movement, and sensory activities.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';

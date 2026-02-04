@@ -7,6 +7,7 @@
 /// - Dynamic game rendering based on game type
 /// - Real-time difficulty adaptation
 /// - Hint system with AI-generated guidance
+library;
 
 import 'dart:async';
 import 'dart:convert';

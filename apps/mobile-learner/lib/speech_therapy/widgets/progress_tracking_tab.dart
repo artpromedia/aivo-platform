@@ -1,6 +1,7 @@
 /// Progress Tracking Tab
 ///
 /// Displays learner's speech therapy progress, statistics, and achievements.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

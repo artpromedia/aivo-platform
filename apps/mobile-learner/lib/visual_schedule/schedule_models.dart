@@ -1,6 +1,7 @@
 /// Visual Schedule Models - ND-1.3
 ///
 /// Data models for the visual schedule system.
+library;
 
 import 'package:flutter/foundation.dart';
 

@@ -2,6 +2,7 @@
 ///
 /// State management for motor accommodations.
 /// Provides reactive access to motor profile settings.
+library;
 
 import 'package:flutter/foundation.dart';
 import 'motor_models.dart';

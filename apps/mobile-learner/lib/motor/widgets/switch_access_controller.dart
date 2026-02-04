@@ -2,6 +2,7 @@
 ///
 /// Provides switch-based access for users who cannot use standard touch input.
 /// Supports 1-5 switch configurations with scanning patterns.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

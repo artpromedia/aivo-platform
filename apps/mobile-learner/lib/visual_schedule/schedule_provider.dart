@@ -1,6 +1,7 @@
 /// Schedule Provider - ND-1.3
 ///
 /// State management for visual schedules using Riverpod.
+library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'schedule_models.dart';

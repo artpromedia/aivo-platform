@@ -1,6 +1,7 @@
 /// Schedule Customization Screen - ND-1.3
 ///
 /// User preference editor for visual schedule display and behavior.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

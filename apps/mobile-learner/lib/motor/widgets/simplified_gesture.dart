@@ -2,6 +2,7 @@
 ///
 /// Provides simplified gesture alternatives for complex multi-touch gestures.
 /// Converts pinch, rotate, multi-finger swipes to single-tap/button alternatives.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

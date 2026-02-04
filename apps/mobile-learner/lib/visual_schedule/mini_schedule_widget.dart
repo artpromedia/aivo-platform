@@ -1,6 +1,7 @@
 /// Mini Schedule Widget - ND-1.3
 ///
 /// Compact schedule widget for embedding in other screens.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

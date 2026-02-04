@@ -2,6 +2,7 @@
 ///
 /// Handles communication with the AI backend for math
 /// handwriting recognition and session management.
+library;
 
 import 'dart:convert';
 import 'dart:typed_data';

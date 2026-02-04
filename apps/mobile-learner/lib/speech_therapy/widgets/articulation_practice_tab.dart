@@ -1,6 +1,7 @@
 /// Articulation Practice Tab
 ///
 /// Focused practice for specific speech sounds with real-time feedback.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

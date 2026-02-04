@@ -2,6 +2,7 @@
 ///
 /// Data models for motor accommodation profiles and input adaptations
 /// for learners with fine or gross motor challenges.
+library;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENUMS

@@ -1,6 +1,7 @@
 /// Progress Widgets
 /// 
 /// Widgets for displaying learner progress in life skills.
+library;
 
 import 'package:flutter/material.dart';
 import '../life_skills_models.dart';

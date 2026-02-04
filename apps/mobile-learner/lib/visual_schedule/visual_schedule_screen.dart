@@ -1,6 +1,7 @@
 /// Visual Schedule Screen - ND-1.3
 ///
 /// Main screen for displaying visual schedules with multiple layout options.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

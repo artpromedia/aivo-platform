@@ -2,6 +2,7 @@
 /// 
 /// Interactive safety training scenarios that teach learners
 /// how to handle potentially dangerous situations.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

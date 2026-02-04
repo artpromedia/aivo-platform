@@ -1,6 +1,7 @@
 /// Schedule Item Widget - ND-1.3
 ///
 /// Reusable widget for displaying a single schedule item.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';

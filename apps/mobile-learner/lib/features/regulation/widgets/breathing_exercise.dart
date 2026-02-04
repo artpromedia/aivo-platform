@@ -2,6 +2,7 @@
 ///
 /// Specialized widget for breathing exercises with animated visual guidance.
 /// Supports various breathing patterns (box, 4-7-8, bunny, star, etc.)
+library;
 
 import 'dart:async';
 import 'dart:math' as math;

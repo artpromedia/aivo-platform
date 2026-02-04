@@ -2,6 +2,7 @@
 ///
 /// Provides fatigue detection, break reminders, and requirement reduction
 /// for learners who experience motor fatigue during extended use.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

@@ -1,6 +1,7 @@
 /// Skill Guide Screen
 /// 
 /// Displays a skill's task analysis and allows learners to practice step-by-step.
+library;
 
 import 'package:flutter/material.dart';
 import 'life_skills_models.dart';

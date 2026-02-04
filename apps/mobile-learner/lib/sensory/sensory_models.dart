@@ -1,6 +1,7 @@
 /// Sensory Models - ND-2.1
 ///
 /// Data models for sensory profile matching and content adaptation.
+library;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENUMS

@@ -2,6 +2,7 @@
 ///
 /// Manages emotional state detection and intervention delivery for learners.
 /// Communicates with ai-orchestrator for state analysis and tracks intervention outcomes.
+library;
 
 import 'dart:async';
 import 'dart:convert';

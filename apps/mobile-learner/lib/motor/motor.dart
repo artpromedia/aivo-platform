@@ -12,6 +12,7 @@
 /// - Handwriting alternatives (word banks, symbols)
 /// - Dwell-based selection for eye-gaze input
 /// - Drag assistance with snap-to-grid
+library;
 
 export 'motor_models.dart';
 export 'motor_profile_provider.dart';

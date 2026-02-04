@@ -6,6 +6,7 @@
 /// - Movement breaks
 /// - Sensory exercises
 /// - Encouragement and affirmations
+library;
 
 import 'dart:async';
 

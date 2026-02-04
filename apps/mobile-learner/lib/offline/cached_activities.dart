@@ -2,6 +2,7 @@
 ///
 /// Built-in regulation activities that work completely offline.
 /// These activities are embedded in the app and require no network access.
+library;
 
 enum ActivityCategory {
   breathing,

@@ -30,7 +30,7 @@
 /// )
 /// ```
 
-library sensory;
+library;
 
 export 'sensory_models.dart';
 export 'sensory_service.dart';

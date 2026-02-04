@@ -2,6 +2,7 @@
 ///
 /// Provides voice input as an alternative to typing/touch.
 /// Uses speech-to-text with visual feedback and motor-friendly controls.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

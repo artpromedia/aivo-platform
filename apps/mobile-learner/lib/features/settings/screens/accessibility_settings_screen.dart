@@ -7,6 +7,7 @@
 /// - Screen reader support
 /// - Reduced motion
 /// - Voice input configuration
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

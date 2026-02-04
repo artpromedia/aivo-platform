@@ -2,6 +2,7 @@
 ///
 /// Plays regulation activities step by step with visual guidance,
 /// timer, and progress tracking. Works completely offline.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

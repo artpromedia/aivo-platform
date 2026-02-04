@@ -5,6 +5,7 @@
 /// - Undo/redo functionality
 /// - Clear canvas
 /// - AI-powered handwriting recognition
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

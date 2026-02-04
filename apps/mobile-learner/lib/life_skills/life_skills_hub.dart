@@ -2,6 +2,7 @@
 /// 
 /// Main entry point for the life skills module.
 /// Displays skill categories, progress, and goals.
+library;
 
 import 'package:flutter/material.dart';
 import 'life_skills_models.dart';

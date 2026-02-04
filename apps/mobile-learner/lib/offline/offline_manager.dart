@@ -3,6 +3,7 @@
 /// Manages connectivity status and coordinates offline content synchronization.
 /// Ensures regulation activities are always available regardless of network state.
 /// Integrates with flutter-common's ConnectivityService for consistency.
+library;
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -39,7 +40,7 @@ class OfflineManager extends ChangeNotifier {
   DateTime? _lastOnline;
   bool _syncInProgress = false;
   bool _initialized = false;
-  OfflineSyncStatus _syncStatus = OfflineSyncStatus.initial();
+  final OfflineSyncStatus _syncStatus = OfflineSyncStatus.initial();
 
   final OfflineStorage _storage = OfflineStorage();
   

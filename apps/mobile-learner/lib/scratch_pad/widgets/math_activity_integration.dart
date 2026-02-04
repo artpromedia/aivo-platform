@@ -2,6 +2,7 @@
 ///
 /// Provides widgets to integrate the scratch pad with
 /// math activities and assessments.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

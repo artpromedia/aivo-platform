@@ -1,6 +1,7 @@
 /// Sensory Widgets - ND-2.1
 ///
 /// UI components for sensory-adaptive content presentation.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

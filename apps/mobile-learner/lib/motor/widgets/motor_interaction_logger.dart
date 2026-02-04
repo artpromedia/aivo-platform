@@ -2,6 +2,7 @@
 ///
 /// Provides utilities for logging motor interactions
 /// to track usage and adapt accommodations over time.
+library;
 
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';

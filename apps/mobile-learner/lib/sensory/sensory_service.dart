@@ -1,6 +1,7 @@
 /// Sensory Service - ND-2.1
 ///
 /// Client service for sensory profile management and content matching.
+library;
 
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

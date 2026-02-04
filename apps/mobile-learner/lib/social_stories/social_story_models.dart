@@ -1,6 +1,7 @@
 /// Social Story Data Models - ND-1.2
 ///
 /// Dart models for social stories, matching the backend Prisma schema.
+library;
 
 import 'package:flutter/foundation.dart';
 

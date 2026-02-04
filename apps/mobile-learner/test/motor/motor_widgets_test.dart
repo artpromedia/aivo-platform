@@ -12,7 +12,7 @@ import 'package:mobile_learner/motor/widgets/simplified_gesture.dart';
 /// Mock provider that allows setting accommodations directly for testing
 class TestableMotorProfileProvider extends MotorProfileProvider {
   MotorAccommodations? _testAccommodations;
-  MotorProfile? _testProfile;
+  final MotorProfile? _testProfile;
 
   TestableMotorProfileProvider({
     MotorAccommodations? accommodations,

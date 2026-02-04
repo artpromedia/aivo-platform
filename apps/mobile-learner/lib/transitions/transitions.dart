@@ -9,7 +9,7 @@
 /// - [FirstThenBoardWidget] - Visual First/Then board for activity preview
 /// - [TransitionRoutineWidget] - Guided routine with breathing, movement, sensory steps
 
-library transitions;
+library;
 
 export 'transition_service.dart';
 export 'transition_widgets.dart';

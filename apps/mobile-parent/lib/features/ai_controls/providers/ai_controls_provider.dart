@@ -265,7 +265,7 @@ class RestrictionsNotifier extends _$RestrictionsNotifier {
     final current = state.valueOrNull?.firstWhere((r) => r.id == restrictionId);
     if (current == null) return;
 
-    await update(restrictionId, current.copyWith(isActive: isActive));
+    await updateRestriction(restrictionId, current.copyWith(isActive: isActive));
   }
 }
 

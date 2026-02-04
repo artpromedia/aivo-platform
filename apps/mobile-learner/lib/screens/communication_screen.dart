@@ -1254,10 +1254,10 @@ class _CommunicationTemplatesTabState
 
   String _composeMessage(CommunicationTemplate template) {
     String message = template.template;
-    template.fields.forEach((field) {
+    for (var field in template.fields) {
       final value = _fieldValues[field.id] ?? field.defaultValue ?? '';
       message = message.replaceAll('{${field.id}}', value);
-    });
+    }
     return message;
   }
 

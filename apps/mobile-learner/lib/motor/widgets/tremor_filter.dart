@@ -2,6 +2,7 @@
 ///
 /// Provides input smoothing and stabilization for users with tremors.
 /// Uses moving average algorithm to filter out unintended movements.
+library;
 
 import 'dart:collection';
 import 'package:flutter/material.dart';

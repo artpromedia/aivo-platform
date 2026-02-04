@@ -1,4 +1,5 @@
 /// Communication feature models for AAC boards, visual schedules, choice boards, and communication templates
+library;
 
 // AAC Board Models
 class AACSymbol {

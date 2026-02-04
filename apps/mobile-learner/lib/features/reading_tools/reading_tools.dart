@@ -5,7 +5,7 @@
 /// - Word prediction for assisted writing
 /// - Reading comprehension strategies and questions
 /// - Vocabulary building and flashcards
-library reading_tools;
+library;
 
 export 'reading_tools_models.dart';
 export 'reading_tools_service.dart';

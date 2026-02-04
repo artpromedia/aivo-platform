@@ -1,6 +1,7 @@
 /// Skill Card Widget
 /// 
 /// Card component for displaying a life skill in grid/list views.
+library;
 
 import 'package:flutter/material.dart';
 import '../life_skills_models.dart';

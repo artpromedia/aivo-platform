@@ -4,7 +4,6 @@
 library;
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:dio/dio.dart';
 
 import '../../../core/api_client.dart';
 import '../api/ai_brain_api.dart';

@@ -2,6 +2,7 @@
 ///
 /// Displays social stories recommendations and allows browsing by category.
 /// Integrates with the social stories service for personalized suggestions.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

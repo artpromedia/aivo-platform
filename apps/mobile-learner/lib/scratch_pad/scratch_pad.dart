@@ -21,7 +21,7 @@
 /// )
 /// ```
 
-library scratch_pad;
+library;
 
 // Models
 export 'models/stroke_data.dart';

@@ -2,6 +2,7 @@
 ///
 /// Provides alternatives to handwriting for learners with motor challenges.
 /// Includes predictive text, word banks, and symbol pickers.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

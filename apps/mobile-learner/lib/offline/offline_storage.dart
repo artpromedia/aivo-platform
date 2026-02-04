@@ -2,6 +2,7 @@
 ///
 /// Local storage for offline regulation content using SharedPreferences and file system.
 /// Manages regulation activities, assets, preferences, and metadata.
+library;
 
 import 'dart:convert';
 import 'dart:io';
@@ -238,7 +239,7 @@ class OfflineStorage {
 
   Future<void> saveActivityUsage(Map<String, dynamic> usage) async {
     _ensureInitialized();
-    final key = '${_usagePrefix}${DateTime.now().millisecondsSinceEpoch}';
+    final key = '$_usagePrefix${DateTime.now().millisecondsSinceEpoch}';
     _usageCache[key] = usage;
     await _saveUsageCache();
   }

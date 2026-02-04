@@ -1,6 +1,7 @@
 /// Life Skills Data Models
 /// 
 /// Type-safe models for life skills data from the API.
+library;
 
 import 'dart:ui' show Color;
 import 'package:flutter/foundation.dart';

@@ -3,7 +3,7 @@
 /// Agentic AI-driven interactive life skills teaching module.
 /// Provides step-by-step visual guidance for daily living skills,
 /// safety awareness, and social skills.
-library life_skills;
+library;
 
 export 'life_skills_hub.dart';
 export 'skill_guide_screen.dart';

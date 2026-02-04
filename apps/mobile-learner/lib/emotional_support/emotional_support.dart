@@ -3,7 +3,7 @@
 /// Provides anxiety and overwhelm detection with calming interventions
 /// for neurodivergent learners.
 
-library emotional_support;
+library;
 
 export 'anxiety_indicator_widget.dart';
 export 'calming_intervention_widget.dart';

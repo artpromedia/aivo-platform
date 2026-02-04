@@ -2,6 +2,7 @@
 ///
 /// Provides enhanced visual focus indicators for navigation
 /// to help learners track their current focus position.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

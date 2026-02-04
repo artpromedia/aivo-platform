@@ -2,7 +2,7 @@
 ///
 /// Provides predictability enforcement for learners who need predictable session flow.
 /// This includes visual schedules, routines, change warnings, and anxiety support.
-library predictability;
+library;
 
 export 'predictability_models.dart';
 export 'predictability_service.dart';

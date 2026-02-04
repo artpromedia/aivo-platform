@@ -2,6 +2,7 @@
 ///
 /// A popup/modal that displays the scratch pad for solving
 /// math problems during activities and assessments.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

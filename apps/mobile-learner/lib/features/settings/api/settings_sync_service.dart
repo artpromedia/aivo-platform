@@ -2,6 +2,7 @@
 ///
 /// Handles synchronization of settings across devices when the user logs in
 /// or when settings are updated on another device.
+library;
 
 import 'dart:async';
 

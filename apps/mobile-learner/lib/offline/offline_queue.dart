@@ -26,6 +26,7 @@
 /// // Or manually trigger sync:
 /// await queue.processQueue();
 /// ```
+library;
 
 import 'dart:async';
 import 'dart:convert';

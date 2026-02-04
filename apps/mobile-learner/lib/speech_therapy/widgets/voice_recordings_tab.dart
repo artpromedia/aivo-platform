@@ -1,6 +1,7 @@
 /// Voice Recordings Tab
 ///
 /// View, playback, and manage saved voice recordings.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

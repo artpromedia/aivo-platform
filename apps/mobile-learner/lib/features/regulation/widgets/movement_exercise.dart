@@ -2,6 +2,7 @@
 ///
 /// Guides users through movement-based regulation activities
 /// like shaking, stretching, and cross-body movements.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

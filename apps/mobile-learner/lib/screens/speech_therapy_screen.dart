@@ -2,6 +2,7 @@
 ///
 /// Main screen for speech therapy features including exercises,
 /// articulation practice, voice recording, and progress tracking.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

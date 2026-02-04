@@ -2,6 +2,7 @@
 ///
 /// API client for persisting accessibility settings to profile-svc.
 /// Syncs learner UI accessibility preferences across devices.
+library;
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

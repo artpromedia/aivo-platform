@@ -2,6 +2,7 @@
 ///
 /// Widget for displaying a single page of a social story with
 /// visual, text, and interactive elements.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';

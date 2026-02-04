@@ -2,6 +2,7 @@
 ///
 /// Adapts touch target size based on motor accommodations.
 /// Provides hold-to-activate and enhanced feedback options.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

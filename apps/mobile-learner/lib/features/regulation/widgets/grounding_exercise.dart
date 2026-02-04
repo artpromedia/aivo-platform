@@ -2,6 +2,7 @@
 ///
 /// Interactive 5-4-3-2-1 grounding exercise and variations.
 /// Guides users through sensory awareness activities.
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';

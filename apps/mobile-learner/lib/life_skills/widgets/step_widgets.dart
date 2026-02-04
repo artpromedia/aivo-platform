@@ -1,6 +1,7 @@
 /// Step Widgets
 /// 
 /// Widgets for the step-by-step view of life skills learning.
+library;
 
 import 'package:flutter/material.dart';
 import '../life_skills_models.dart';

@@ -2,6 +2,7 @@
 ///
 /// Filters out unintended touches at screen edges and provides
 /// protection against accidental activation.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

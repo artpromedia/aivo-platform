@@ -2,6 +2,7 @@
 /// 
 /// Interactive view that guides learners through each step of a skill
 /// with AI coaching, visual prompts, and progressive prompting.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

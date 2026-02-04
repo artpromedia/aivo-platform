@@ -8,6 +8,7 @@
 /// - Short duration (30-120 seconds)
 /// - Non-competitive (self-improvement focused)
 /// - Calming/re-centering (not stimulating)
+library;
 
 import 'dart:async';
 import 'dart:math' as math;

@@ -1,6 +1,7 @@
 /// AI Widgets
 /// 
 /// Widgets for displaying AI coaching and guidance in life skills learning.
+library;
 
 import 'package:flutter/material.dart';
 import '../life_skills_models.dart';

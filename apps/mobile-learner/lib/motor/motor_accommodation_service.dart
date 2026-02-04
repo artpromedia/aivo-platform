@@ -2,6 +2,7 @@
 ///
 /// Client service for motor profile management.
 /// Communicates with personalization-svc backend.
+library;
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';

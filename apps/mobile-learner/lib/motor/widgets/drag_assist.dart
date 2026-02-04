@@ -2,6 +2,7 @@
 ///
 /// Provides motor-assisted drag and drop functionality.
 /// Includes snap-to-grid, auto-complete, and visual guides.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

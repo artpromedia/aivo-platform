@@ -2,6 +2,7 @@
 ///
 /// Full-screen viewer for social stories with audio/TTS support,
 /// progress tracking, and accessibility features.
+library;
 
 import 'dart:async';
 

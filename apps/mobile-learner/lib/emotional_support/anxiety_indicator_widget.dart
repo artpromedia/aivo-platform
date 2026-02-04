@@ -2,6 +2,7 @@
 ///
 /// Visual indicator that shows the current anxiety/overwhelm risk level
 /// in a non-intrusive way for the learner.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/aivo_brand.dart';

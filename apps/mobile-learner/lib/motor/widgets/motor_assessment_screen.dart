@@ -2,6 +2,7 @@
 ///
 /// Provides an interactive assessment to evaluate learner's
 /// motor abilities and configure accommodations accordingly.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

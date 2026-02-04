@@ -1,6 +1,7 @@
 /// Schedule Service - ND-1.3
 ///
 /// API client for visual schedule operations.
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

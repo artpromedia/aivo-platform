@@ -2,6 +2,7 @@
 ///
 /// Enables dwell-based selection for users who cannot tap.
 /// Supports eye-gaze and hover-based interaction.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

@@ -1,6 +1,7 @@
 /// Life Skills Service
 /// 
 /// API client for the life-skills-svc backend.
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

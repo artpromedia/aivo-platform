@@ -2,6 +2,7 @@
 ///
 /// Visual indicator showing online/offline status.
 /// Provides feedback about sync status and offline capabilities.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';

@@ -1,5 +1,6 @@
 /// Motor Skills Models
 /// Comprehensive data models for motor skills development support
+library;
 
 /// Handwriting Exercise
 class HandwritingExercise {

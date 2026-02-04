@@ -2,6 +2,7 @@
 ///
 /// Manages regulation activities for offline use.
 /// Provides activity discovery, execution tracking, and preference management.
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

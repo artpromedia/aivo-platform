@@ -3,7 +3,7 @@
 /// Provides visual schedule functionality for neurodiverse learners.
 /// Helps learners understand their daily activities and reduces
 /// anxiety about transitions.
-library visual_schedule;
+library;
 
 export 'schedule_models.dart';
 export 'schedule_service.dart';

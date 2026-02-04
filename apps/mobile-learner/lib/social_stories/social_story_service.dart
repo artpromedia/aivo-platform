@@ -1,6 +1,7 @@
 /// Social Story Service - ND-1.2
 ///
 /// Client service for fetching and managing social stories.
+library;
 
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

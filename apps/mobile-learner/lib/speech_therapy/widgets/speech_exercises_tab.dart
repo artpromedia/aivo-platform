@@ -1,6 +1,7 @@
 /// Speech Exercises Tab
 ///
 /// Displays available speech exercises and allows learners to start practice sessions.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

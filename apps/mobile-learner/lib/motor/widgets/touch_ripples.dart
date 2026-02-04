@@ -2,6 +2,7 @@
 ///
 /// Provides enhanced visual feedback for touch interactions
 /// to help learners confirm their touches were registered.
+library;
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';

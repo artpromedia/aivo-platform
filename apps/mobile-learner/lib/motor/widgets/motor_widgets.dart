@@ -3,6 +3,7 @@
 /// Barrel export for all motor accommodation widgets.
 /// Provides alternative input methods, enlarged touch targets,
 /// gesture simplification, and handwriting alternatives.
+library;
 
 // Core widgets
 export 'large_touch_target.dart';
