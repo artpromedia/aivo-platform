@@ -14,6 +14,10 @@ export {
   LearningObjectGradeBand,
 } from '../prisma-types.js';
 
+// Aliases for backward compatibility
+export { SocialStoryReadingLevel as StoryReadingLevel } from '../prisma-types.js';
+export { SocialStoryVisualStyle as StoryVisualStyle } from '../prisma-types.js';
+
 // Import for local use in type definitions
 import type {
   SocialStoryCategory as SocialStoryCategoryType,
@@ -36,15 +40,25 @@ export enum StoryTriggerType {
 // ══════════════════════════════════════════════════════════════════════════════
 
 /** Sentence types following Carol Gray's Social Stories framework */
-export enum SentenceType {
-  DESCRIPTIVE = 'DESCRIPTIVE',
-  PERSPECTIVE = 'PERSPECTIVE',
-  DIRECTIVE = 'DIRECTIVE',
-  AFFIRMATIVE = 'AFFIRMATIVE',
-  COOPERATIVE = 'COOPERATIVE',
-  CONTROL = 'CONTROL',
-  PARTIAL = 'PARTIAL',
-}
+export type SentenceType =
+  | 'DESCRIPTIVE'
+  | 'PERSPECTIVE'
+  | 'DIRECTIVE'
+  | 'AFFIRMATIVE'
+  | 'COOPERATIVE'
+  | 'CONTROL'
+  | 'PARTIAL';
+
+// Keep enum for backward compatibility
+export const SentenceTypeEnum = {
+  DESCRIPTIVE: 'DESCRIPTIVE' as const,
+  PERSPECTIVE: 'PERSPECTIVE' as const,
+  DIRECTIVE: 'DIRECTIVE' as const,
+  AFFIRMATIVE: 'AFFIRMATIVE' as const,
+  COOPERATIVE: 'COOPERATIVE' as const,
+  CONTROL: 'CONTROL' as const,
+  PARTIAL: 'PARTIAL' as const,
+};
 
 /** A single sentence within a story page */
 export interface StorySentence {

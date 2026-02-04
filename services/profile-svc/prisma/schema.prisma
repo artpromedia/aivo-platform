@@ -680,14 +680,18 @@ model LearnerFunctioningProfile {
   
   /// Confidence in the functioning level determination
   confidenceScore           Float?            @map("confidence_score")
-  
+
+  // ── Decision Source ────────────────────────────────────────────────────────
+  /// How the functioning level was determined
+  determinedBy              String?           @map("determined_by") @db.VarChar(50)  // 'parent_assessment', 'iep_import', 'manual', etc.
+
   // ── Audit ───────────────────────────────────────────────────────────────────
   createdAt                 DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt                 DateTime          @updatedAt @map("updated_at") @db.Timestamptz
-  createdByUserId           String            @map("created_by_user_id") @db.Uuid
+  createdByUserId           String?           @map("created_by_user_id") @db.Uuid
   updatedByUserId           String?           @map("updated_by_user_id") @db.Uuid
-  
-  @@unique([tenantId, learnerId])
+
+  @@unique([learnerId, tenantId], name: "learnerId_tenantId")
   @@index([tenantId, learnerId])
   @@index([functioningLevel])
   @@index([recommendedAssessmentMode])
@@ -795,10 +799,10 @@ model LearnerSensoryProfile {
   // ── Audit ───────────────────────────────────────────────────────────────────
   createdAt                 DateTime                @default(now()) @map("created_at") @db.Timestamptz
   updatedAt                 DateTime                @updatedAt @map("updated_at") @db.Timestamptz
-  createdByUserId           String                  @map("created_by_user_id") @db.Uuid
+  createdByUserId           String?                 @map("created_by_user_id") @db.Uuid
   updatedByUserId           String?                 @map("updated_by_user_id") @db.Uuid
-  
-  @@unique([tenantId, learnerId])
+
+  @@unique([learnerId, tenantId], name: "learnerId_tenantId")
   @@index([tenantId, learnerId])
   @@index([sensoryImpairmentType])
   @@index([primaryCommunication])
@@ -835,7 +839,10 @@ model AssessmentModeDecision {
   
   /// Final selected mode (may differ from algorithm)
   finalSelectedMode         AssessmentMode    @map("final_selected_mode")
-  
+
+  /// Selected assessment mode (alias for finalSelectedMode for API compatibility)
+  mode                      AssessmentMode?
+
   /// Who overrode the recommendation (if applicable)
   overriddenByUserId        String?           @map("overridden_by_user_id") @db.Uuid
   
