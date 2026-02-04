@@ -137,7 +137,7 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        await publisher.publishRaw({
+        await publisher.publish({
           tenantId: data.tenantId,
           eventType: 'content.ingestion',
           eventVersion: '1.0.0',
@@ -191,7 +191,7 @@ class ContentEventPublisherService {
 
     if (publisher) {
       try {
-        await publisher.publishRaw({
+        await publisher.publish({
           tenantId: data.tenantId,
           eventType: 'content.ai_draft',
           eventVersion: '1.0.0',

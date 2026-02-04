@@ -9,7 +9,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import type { SocialStoryCategory, LearningObjectGradeBand } from '../prisma-types.js';
-import { SentenceType } from '../social-stories/types.js';
+import { SentenceTypeEnum } from '../social-stories/types.js';
 import type {
   StoryTriggerType,
   StoryPage,
@@ -71,7 +71,7 @@ const TriggerTypeEnum = z.enum(['MANUAL', 'AUTO', 'SCHEDULED', 'RECOMMENDED', 'T
 const StorySentenceSchema = z.object({
   id: z.string(),
   text: z.string(),
-  type: z.nativeEnum(SentenceType),
+  type: z.nativeEnum(SentenceTypeEnum),
   audioUrl: z.string().optional(),
   emphasisWords: z.array(z.string()).optional(),
   personalizationTokens: z.array(z.string()).optional(),
@@ -175,7 +175,7 @@ function mapStoryPages(pages: StoryPageInput[]): StoryPage[] {
     pageNumber: p.pageNumber ?? idx + 1,
     sentences: (p.sentences ?? []).map((s, sIdx) => ({
       id: s.id ?? `sentence-${idx}-${sIdx}`,
-      type: s.type ?? SentenceType.DESCRIPTIVE,
+      type: s.type ?? SentenceTypeEnum.DESCRIPTIVE,
       text: s.text ?? '',
       audioUrl: s.audioUrl,
       emphasisWords: s.emphasisWords,
