@@ -49,12 +49,7 @@ export type DunningStage = 'day0' | 'day3' | 'day7';
 
 export interface DunningResult {
   success: boolean;
-  action:
-    | 'dunning_started'
-    | 'reminder_sent'
-    | 'limited_mode_activated'
-    | 'resolved'
-    | 'none';
+  action: 'dunning_started' | 'reminder_sent' | 'limited_mode_activated' | 'resolved' | 'none';
   newLimitedMode?: boolean;
   error?: string;
 }
@@ -133,7 +128,10 @@ export class DunningService {
 
       return { success: true, action: 'dunning_started', newLimitedMode: false };
     } catch (error) {
-      log.error({ correlationId, subscriptionId, error }, 'Dunning: Failed to process payment failure');
+      log.error(
+        { correlationId, subscriptionId, error },
+        'Dunning: Failed to process payment failure'
+      );
       return { success: false, action: 'none', error: String(error) };
     }
   }
@@ -145,10 +143,7 @@ export class DunningService {
   async handlePaymentSuccess(ctx: DunningContext): Promise<DunningResult> {
     const { subscriptionId, tenantId, correlationId, log } = ctx;
 
-    log.info(
-      { correlationId, subscriptionId, tenantId },
-      'Dunning: Processing payment success'
-    );
+    log.info({ correlationId, subscriptionId, tenantId }, 'Dunning: Processing payment success');
 
     try {
       // Resolve any active dunning records
@@ -179,7 +174,10 @@ export class DunningService {
 
       return { success: true, action: 'resolved', newLimitedMode: false };
     } catch (error) {
-      log.error({ correlationId, subscriptionId, error }, 'Dunning: Failed to process payment success');
+      log.error(
+        { correlationId, subscriptionId, error },
+        'Dunning: Failed to process payment success'
+      );
       return { success: false, action: 'none', error: String(error) };
     }
   }
@@ -388,31 +386,37 @@ export class DunningService {
     stage: DunningStage | 'resolved',
     subscriptionId: string
   ): Promise<void> {
-    const notificationTypes: Record<string, {
-      type: string;
-      subject: string;
-      message: string;
-      priority: 'high' | 'normal';
-      template: string;
-    }> = {
+    const notificationTypes: Record<
+      string,
+      {
+        type: string;
+        subject: string;
+        message: string;
+        priority: 'high' | 'normal';
+        template: string;
+      }
+    > = {
       day0: {
         type: 'PAYMENT_FAILED',
         subject: 'Action Required: Payment Failed',
-        message: "We couldn't process your payment. Please update your payment method to continue your subscription.",
+        message:
+          "We couldn't process your payment. Please update your payment method to continue your subscription.",
         priority: 'high',
         template: 'payment-failed',
       },
       day3: {
         type: 'PAYMENT_REMINDER',
         subject: 'Reminder: Payment Still Pending',
-        message: 'Your payment is still pending. Please update your payment method within 4 days to avoid service interruption.',
+        message:
+          'Your payment is still pending. Please update your payment method within 4 days to avoid service interruption.',
         priority: 'high',
         template: 'payment-reminder',
       },
       day7: {
         type: 'LIMITED_MODE_ACTIVATED',
         subject: 'Service Limited: Payment Required',
-        message: 'Your subscription is now in limited mode due to unpaid balance. Some features are restricted until payment is resolved.',
+        message:
+          'Your subscription is now in limited mode due to unpaid balance. Some features are restricted until payment is resolved.',
         priority: 'high',
         template: 'limited-mode-activated',
       },
@@ -431,7 +435,9 @@ export class DunningService {
       return;
     }
 
-    console.log(`[Dunning Notification] tenant=${tenantId} type=${notification.type} subscription=${subscriptionId}`);
+    console.log(
+      `[Dunning Notification] tenant=${tenantId} type=${notification.type} subscription=${subscriptionId}`
+    );
 
     // Get billing account owner for notification targeting
     const subscription = await prisma.subscription.findUnique({
@@ -440,7 +446,7 @@ export class DunningService {
         billingAccount: {
           select: {
             ownerUserId: true,
-            email: true,
+            billingEmail: true,
           },
         },
       },

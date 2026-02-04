@@ -224,7 +224,7 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
 
     const body: CreateCustomerInput = CreateCustomerSchema.parse(request.body);
 
-    const customer = await enterpriseProvisioningService.createCustomer(body, ctx.userId);
+    const customer = await enterpriseProvisioningService.createCustomer(body as any, ctx.userId);
 
     return reply.status(201).send({
       success: true,
@@ -356,7 +356,7 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
       const contact = await enterpriseProvisioningService.addContact({
         customerId: id,
         ...body,
-      } as AddContactInput);
+      } as any);
 
       return reply.status(201).send({
         success: true,
@@ -380,7 +380,7 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
 
     const body: CreateDealInput = CreateDealSchema.parse(request.body);
 
-    const deal = await enterpriseProvisioningService.createDeal(body, ctx.userId);
+    const deal = await enterpriseProvisioningService.createDeal(body as any, ctx.userId);
 
     return reply.status(201).send({
       success: true,
@@ -515,7 +515,7 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
         {
           dealId: id,
           ...body,
-        } as AddDealActivityInput,
+        } as any,
         ctx.userId
       );
 
@@ -641,7 +641,7 @@ export async function enterpriseProvisioningRoutes(app: FastifyInstance): Promis
       const body: ProvisionBatchInput = ProvisionBatchSchema.parse(request.body);
 
       const batch = await enterpriseProvisioningService.createProvisioningBatch(
-        body,
+        body as any,
         ctx.userId,
         ctx.ipAddress,
         ctx.userAgent

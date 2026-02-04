@@ -258,30 +258,20 @@ export class RazorpayGateway implements PaymentGateway {
 
   async getCustomer(customerId: string): Promise<GatewayCustomer | null> {
     try {
-      const customer = await this.request<RazorpayCustomer>(
-        'GET',
-        `/customers/${customerId}`
-      );
+      const customer = await this.request<RazorpayCustomer>('GET', `/customers/${customerId}`);
       return this.mapCustomer(customer);
     } catch {
       return null;
     }
   }
 
-  async updateCustomer(
-    customerId: string,
-    input: UpdateCustomerInput
-  ): Promise<GatewayCustomer> {
-    const customer = await this.request<RazorpayCustomer>(
-      'PUT',
-      `/customers/${customerId}`,
-      {
-        name: input.name,
-        email: input.email,
-        contact: input.phone,
-        notes: input.metadata,
-      }
-    );
+  async updateCustomer(customerId: string, input: UpdateCustomerInput): Promise<GatewayCustomer> {
+    const customer = await this.request<RazorpayCustomer>('PUT', `/customers/${customerId}`, {
+      name: input.name,
+      email: input.email,
+      contact: input.phone,
+      notes: input.metadata,
+    });
 
     return this.mapCustomer(customer);
   }
@@ -328,10 +318,7 @@ export class RazorpayGateway implements PaymentGateway {
   async verifyPayment(input: VerifyPaymentInput): Promise<PaymentVerificationResult> {
     // For Razorpay, we verify the payment signature
     // The reference should be payment_id
-    const payment = await this.request<RazorpayPayment>(
-      'GET',
-      `/payments/${input.reference}`
-    );
+    const payment = await this.request<RazorpayPayment>('GET', `/payments/${input.reference}`);
 
     const gatewayPayment = this.mapPayment(payment);
 
@@ -344,10 +331,7 @@ export class RazorpayGateway implements PaymentGateway {
 
   async getPayment(paymentId: string): Promise<GatewayPayment | null> {
     try {
-      const payment = await this.request<RazorpayPayment>(
-        'GET',
-        `/payments/${paymentId}`
-      );
+      const payment = await this.request<RazorpayPayment>('GET', `/payments/${paymentId}`);
       return this.mapPayment(payment);
     } catch {
       return null;
@@ -358,11 +342,9 @@ export class RazorpayGateway implements PaymentGateway {
    * Capture a payment (for 2-step payments)
    */
   async capturePayment(paymentId: string, amount: number): Promise<GatewayPayment> {
-    const payment = await this.request<RazorpayPayment>(
-      'POST',
-      `/payments/${paymentId}/capture`,
-      { amount }
-    );
+    const payment = await this.request<RazorpayPayment>('POST', `/payments/${paymentId}/capture`, {
+      amount,
+    });
     return this.mapPayment(payment);
   }
 
@@ -406,10 +388,7 @@ export class RazorpayGateway implements PaymentGateway {
         'GET',
         `/subscriptions/${subscriptionId}`
       );
-      const plan = await this.request<RazorpayPlan>(
-        'GET',
-        `/plans/${subscription.plan_id}`
-      );
+      const plan = await this.request<RazorpayPlan>('GET', `/plans/${subscription.plan_id}`);
       return this.mapSubscription(subscription, plan);
     } catch {
       return null;
@@ -429,7 +408,6 @@ export class RazorpayGateway implements PaymentGateway {
         amountCents: input.amountCents ?? 0,
         currency: 'INR',
         interval: 'monthly',
-        customerId: '',
       });
       params.plan_id = newPlan.id;
     }
@@ -448,10 +426,7 @@ export class RazorpayGateway implements PaymentGateway {
       params
     );
 
-    const plan = await this.request<RazorpayPlan>(
-      'GET',
-      `/plans/${subscription.plan_id}`
-    );
+    const plan = await this.request<RazorpayPlan>('GET', `/plans/${subscription.plan_id}`);
 
     return this.mapSubscription(subscription, plan);
   }
@@ -468,10 +443,7 @@ export class RazorpayGateway implements PaymentGateway {
       }
     );
 
-    const plan = await this.request<RazorpayPlan>(
-      'GET',
-      `/plans/${subscription.plan_id}`
-    );
+    const plan = await this.request<RazorpayPlan>('GET', `/plans/${subscription.plan_id}`);
 
     return this.mapSubscription(subscription, plan);
   }
@@ -482,10 +454,7 @@ export class RazorpayGateway implements PaymentGateway {
       `/subscriptions/${subscriptionId}/resume`
     );
 
-    const plan = await this.request<RazorpayPlan>(
-      'GET',
-      `/plans/${subscription.plan_id}`
-    );
+    const plan = await this.request<RazorpayPlan>('GET', `/plans/${subscription.plan_id}`);
 
     return this.mapSubscription(subscription, plan);
   }
@@ -534,41 +503,35 @@ export class RazorpayGateway implements PaymentGateway {
 
     const referenceId = this.generateReceipt();
 
-    const paymentLink = await this.request<RazorpayPaymentLink>(
-      'POST',
-      '/payment_links',
-      {
-        amount: totalAmount,
-        currency: input.currency,
-        accept_partial: false,
-        reference_id: referenceId,
-        description: input.items.map((i) => i.name).join(', '),
-        customer: {
-          email: input.customerEmail,
-        },
-        notify: {
-          sms: true,
-          email: true,
-        },
-        reminder_enable: true,
-        notes: {
-          ...input.metadata,
-          customerId: input.customerId ?? '',
-          items: JSON.stringify(input.items),
-        },
-        callback_url: input.successUrl,
-        callback_method: 'get',
-      }
-    );
+    const paymentLink = await this.request<RazorpayPaymentLink>('POST', '/payment_links', {
+      amount: totalAmount,
+      currency: input.currency,
+      accept_partial: false,
+      reference_id: referenceId,
+      description: input.items.map((i) => i.name).join(', '),
+      customer: {
+        email: input.customerEmail,
+      },
+      notify: {
+        sms: true,
+        email: true,
+      },
+      reminder_enable: true,
+      notes: {
+        ...input.metadata,
+        customerId: input.customerId ?? '',
+        items: JSON.stringify(input.items),
+      },
+      callback_url: input.successUrl,
+      callback_method: 'get',
+    });
 
     return {
       id: paymentLink.id,
       gatewayType: this.type,
       url: paymentLink.short_url,
       reference: paymentLink.reference_id,
-      expiresAt: paymentLink.expire_by
-        ? new Date(paymentLink.expire_by * 1000)
-        : undefined,
+      expiresAt: paymentLink.expire_by ? new Date(paymentLink.expire_by * 1000) : undefined,
       rawResponse: paymentLink,
     };
   }
@@ -702,9 +665,7 @@ export class RazorpayGateway implements PaymentGateway {
         ? new Date(subscription.current_end * 1000)
         : new Date(),
       cancelAtPeriodEnd: subscription.status === 'pending' && !!subscription.ended_at,
-      endedAt: subscription.ended_at
-        ? new Date(subscription.ended_at * 1000)
-        : undefined,
+      endedAt: subscription.ended_at ? new Date(subscription.ended_at * 1000) : undefined,
       metadata: subscription.notes,
       createdAt: new Date(subscription.created_at * 1000),
       rawResponse: subscription,

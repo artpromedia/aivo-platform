@@ -12,6 +12,7 @@
  */
 
 import type { ParentSku } from '@aivo/billing-common';
+
 import type { PrismaClient } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -166,23 +167,22 @@ export class SubscriptionAnalyticsService {
     const totalNewSubscriptions = dailyData.reduce((sum, d) => sum + d.newSubscriptions, 0);
     const totalChurned = dailyData.reduce((sum, d) => sum + d.churned, 0);
     const totalTrialConversions = dailyData.reduce((sum, d) => sum + d.trialConversions, 0);
-    const avgMrrCents = dailyData.length > 0
-      ? dailyData.reduce((sum, d) => sum + d.mrrCents, 0) / dailyData.length
-      : 0;
+    const avgMrrCents =
+      dailyData.length > 0
+        ? dailyData.reduce((sum, d) => sum + d.mrrCents, 0) / dailyData.length
+        : 0;
 
     // Calculate churn rate (churned / avg active subscriptions)
-    const avgActiveSubscriptions = dailyData.length > 0
-      ? dailyData.reduce((sum, d) => sum + d.totalActiveSubscriptions, 0) / dailyData.length
-      : 0;
-    const churnRate = avgActiveSubscriptions > 0
-      ? (totalChurned / avgActiveSubscriptions) * 100
-      : 0;
+    const avgActiveSubscriptions =
+      dailyData.length > 0
+        ? dailyData.reduce((sum, d) => sum + d.totalActiveSubscriptions, 0) / dailyData.length
+        : 0;
+    const churnRate =
+      avgActiveSubscriptions > 0 ? (totalChurned / avgActiveSubscriptions) * 100 : 0;
 
     // Calculate trial conversion rate
     const totalTrials = dailyData.reduce((sum, d) => sum + d.totalTrialSubscriptions, 0);
-    const trialConversionRate = totalTrials > 0
-      ? (totalTrialConversions / totalTrials) * 100
-      : 0;
+    const trialConversionRate = totalTrials > 0 ? (totalTrialConversions / totalTrials) * 100 : 0;
 
     return {
       startDate,
@@ -243,10 +243,7 @@ export class SubscriptionAnalyticsService {
       by: ['status'],
       where: {
         createdAt: { lte: endOfDay },
-        OR: [
-          { canceledAt: null },
-          { canceledAt: { gt: endOfDay } },
-        ],
+        OR: [{ canceledAt: null }, { canceledAt: { gt: endOfDay } }],
       },
       _count: true,
     });
@@ -254,16 +251,16 @@ export class SubscriptionAnalyticsService {
     const result = { active: 0, trialing: 0, pastDue: 0, canceled: 0 };
     for (const c of counts) {
       switch (c.status) {
-        case 'active':
+        case 'ACTIVE':
           result.active = c._count;
           break;
-        case 'trialing':
+        case 'IN_TRIAL':
           result.trialing = c._count;
           break;
-        case 'past_due':
+        case 'PAST_DUE':
           result.pastDue = c._count;
           break;
-        case 'canceled':
+        case 'CANCELED':
           result.canceled = c._count;
           break;
       }
@@ -308,7 +305,7 @@ export class SubscriptionAnalyticsService {
 
     return this.prisma.subscription.count({
       where: {
-        status: 'canceled',
+        status: 'CANCELED',
         canceledAt: {
           gte: startOfDay,
           lte: endOfDay,

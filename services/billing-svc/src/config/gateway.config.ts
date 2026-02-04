@@ -73,7 +73,9 @@ export interface GatewayEnvConfig {
 /**
  * Initialize payment gateways from environment variables
  */
-export function initializeGatewaysFromEnv(env: GatewayEnvConfig = process.env): void {
+export function initializeGatewaysFromEnv(
+  env: GatewayEnvConfig = process.env as unknown as GatewayEnvConfig
+): void {
   const config: Parameters<typeof initializePaymentGateways>[0] = {};
 
   // Stripe (required for global coverage)
@@ -127,7 +129,13 @@ export function initializeGatewaysFromEnv(env: GatewayEnvConfig = process.env): 
 
   // M-Pesa (East Africa) - Feature-flagged: DISABLED by default
   // Enable when: persistent storage implemented, production credentials configured, tests added
-  if (env.ENABLE_MPESA === 'true' && env.MPESA_CONSUMER_KEY && env.MPESA_CONSUMER_SECRET && env.MPESA_SHORT_CODE && env.MPESA_PASS_KEY) {
+  if (
+    env.ENABLE_MPESA === 'true' &&
+    env.MPESA_CONSUMER_KEY &&
+    env.MPESA_CONSUMER_SECRET &&
+    env.MPESA_SHORT_CODE &&
+    env.MPESA_PASS_KEY
+  ) {
     config.mpesa = {
       consumerKey: env.MPESA_CONSUMER_KEY,
       consumerSecret: env.MPESA_CONSUMER_SECRET,
@@ -185,7 +193,10 @@ export function initializeGatewaysFromEnv(env: GatewayEnvConfig = process.env): 
 /**
  * Get the recommended gateway for a country/currency combination
  */
-export function getRecommendedGateway(country: string, currency: string): {
+export function getRecommendedGateway(
+  country: string,
+  currency: string
+): {
   gateway: PaymentGatewayType;
   localMethods: string[];
   notes?: string;
@@ -217,7 +228,9 @@ export function getRecommendedGateway(country: string, currency: string): {
   }
 
   // East/Central Africa - Flutterwave
-  if (['TZ', 'UG', 'RW', 'ZM', 'CI', 'SN', 'CM', 'BJ', 'TG', 'BF', 'ML', 'NE'].includes(countryUpper)) {
+  if (
+    ['TZ', 'UG', 'RW', 'ZM', 'CI', 'SN', 'CM', 'BJ', 'TG', 'BF', 'ML', 'NE'].includes(countryUpper)
+  ) {
     return {
       gateway: PaymentGatewayType.FLUTTERWAVE,
       localMethods: ['mobile_money', 'card', 'bank_transfer'],
@@ -295,14 +308,40 @@ export function getRecommendedGateway(country: string, currency: string): {
 export function isCurrencySupported(currency: string): boolean {
   const supportedCurrencies = new Set([
     // Stripe currencies (Global)
-    'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK',
-    'NZD', 'SGD', 'HKD', 'MYR', 'THB', 'PHP', 'IDR', 'VND', 'AED', 'SAR',
+    'USD',
+    'EUR',
+    'GBP',
+    'CAD',
+    'AUD',
+    'JPY',
+    'CHF',
+    'SEK',
+    'NOK',
+    'DKK',
+    'NZD',
+    'SGD',
+    'HKD',
+    'MYR',
+    'THB',
+    'PHP',
+    'IDR',
+    'VND',
+    'AED',
+    'SAR',
 
     // Paystack currencies (Africa)
-    'NGN', 'GHS', 'ZAR',
+    'NGN',
+    'GHS',
+    'ZAR',
 
     // Flutterwave currencies (Pan-Africa)
-    'KES', 'TZS', 'UGX', 'RWF', 'ZMW', 'XOF', 'XAF',
+    'KES',
+    'TZS',
+    'UGX',
+    'RWF',
+    'ZMW',
+    'XOF',
+    'XAF',
 
     // M-Pesa currencies (East Africa)
     // KES already listed above
@@ -311,10 +350,19 @@ export function isCurrencySupported(currency: string): boolean {
     'INR',
 
     // PayU currencies (Europe)
-    'PLN', 'CZK', 'RON', 'TRY',
+    'PLN',
+    'CZK',
+    'RON',
+    'TRY',
 
     // Mercado Pago currencies (Latin America)
-    'ARS', 'BRL', 'CLP', 'COP', 'MXN', 'PEN', 'UYU',
+    'ARS',
+    'BRL',
+    'CLP',
+    'COP',
+    'MXN',
+    'PEN',
+    'UYU',
   ]);
 
   return supportedCurrencies.has(currency.toUpperCase());

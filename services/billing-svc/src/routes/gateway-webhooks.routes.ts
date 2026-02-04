@@ -16,13 +16,13 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 import {
   getPaymentGatewayFactory,
   PaymentGatewayType,
   WebhookEventType,
 } from '../gateways/index.js';
 import { prisma } from '../prisma.js';
-import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -82,12 +82,9 @@ class MultiGatewayWebhookProcessor {
       const { event } = result;
 
       // Check for duplicate event
-      const existingEvent = await prisma.gatewayWebhookEvent.findUnique({
+      const existingEvent = await prisma.paymentEvent.findUnique({
         where: {
-          gateway_event_id: {
-            gateway: gatewayType,
-            eventId: event.id,
-          },
+          providerEventId: event.id,
         },
       });
 
@@ -97,13 +94,12 @@ class MultiGatewayWebhookProcessor {
       }
 
       // Store the event
-      await prisma.gatewayWebhookEvent.create({
+      await prisma.paymentEvent.create({
         data: {
-          gateway: gatewayType,
-          eventId: event.id,
+          provider: gatewayType as any,
+          providerEventId: event.id,
           eventType: event.eventType,
           payload: event.rawEvent as object,
-          processed: false,
         },
       });
 
@@ -111,15 +107,11 @@ class MultiGatewayWebhookProcessor {
       await this.handleEvent(gatewayType, event);
 
       // Mark as processed
-      await prisma.gatewayWebhookEvent.update({
+      await prisma.paymentEvent.update({
         where: {
-          gateway_event_id: {
-            gateway: gatewayType,
-            eventId: event.id,
-          },
+          providerEventId: event.id,
         },
         data: {
-          processed: true,
           processedAt: new Date(),
         },
       });
@@ -224,7 +216,8 @@ class MultiGatewayWebhookProcessor {
     });
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.PAYMENT_SUCCEEDED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.PAYMENT_SUCCEEDED,
       gateway: gatewayType,
       transactionId: paymentData.id,
       amount: paymentData.amount,
@@ -233,10 +226,7 @@ class MultiGatewayWebhookProcessor {
     });
   }
 
-  private async handlePaymentFailed(
-    gatewayType: PaymentGatewayType,
-    data: unknown
-  ): Promise<void> {
+  private async handlePaymentFailed(gatewayType: PaymentGatewayType, data: unknown): Promise<void> {
     const paymentData = data as {
       id: string;
       error_code?: string;
@@ -258,7 +248,8 @@ class MultiGatewayWebhookProcessor {
     });
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.PAYMENT_FAILED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.PAYMENT_FAILED,
       gateway: gatewayType,
       transactionId: paymentData.id,
       errorCode: paymentData.error_code,
@@ -285,7 +276,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.SUBSCRIPTION_ACTIVATED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.SUBSCRIPTION_UPDATED,
       gateway: gatewayType,
       subscriptionId: subData.id,
       customerId: subData.customer,
@@ -304,7 +296,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.SUBSCRIPTION_UPDATED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.SUBSCRIPTION_UPDATED,
       gateway: gatewayType,
       subscriptionId: subData.id,
       status: subData.status,
@@ -323,7 +316,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.SUBSCRIPTION_CANCELLED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.SUBSCRIPTION_CANCELED,
       gateway: gatewayType,
       subscriptionId: subData.id,
       customerId: subData.customer,
@@ -343,7 +337,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.INVOICE_PAID, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.INVOICE_PAID,
       gateway: gatewayType,
       invoiceId: invoiceData.id,
       subscriptionId: invoiceData.subscription,
@@ -363,7 +358,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event for dunning process
-    await billingEventPublisher.publish(BillingEventType.INVOICE_PAYMENT_FAILED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.INVOICE_PAYMENT_FAILED,
       gateway: gatewayType,
       invoiceId: invoiceData.id,
       subscriptionId: invoiceData.subscription,
@@ -383,7 +379,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event
-    await billingEventPublisher.publish(BillingEventType.REFUND_PROCESSED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.PAYMENT_REFUNDED,
       gateway: gatewayType,
       refundId: refundData.id,
       paymentId: refundData.payment_intent,
@@ -392,10 +389,7 @@ class MultiGatewayWebhookProcessor {
     });
   }
 
-  private async handleDispute(
-    gatewayType: PaymentGatewayType,
-    data: unknown
-  ): Promise<void> {
+  private async handleDispute(gatewayType: PaymentGatewayType, data: unknown): Promise<void> {
     const disputeData = data as {
       id: string;
       payment_intent?: string;
@@ -404,7 +398,8 @@ class MultiGatewayWebhookProcessor {
     };
 
     // Publish event for dispute handling
-    await billingEventPublisher.publish(BillingEventType.DISPUTE_CREATED, {
+    await billingEventPublisher.publish({
+      type: BillingEventType.DISPUTE_CREATED,
       gateway: gatewayType,
       disputeId: disputeData.id,
       paymentId: disputeData.payment_intent,
@@ -433,7 +428,7 @@ export async function registerGatewayWebhookRoutes(fastify: FastifyInstance): Pr
   fastify.post(
     '/webhooks/stripe',
     {
-      config: { rawBody: true },
+      config: { rawBody: true } as Record<string, unknown>,
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const payload = (request as FastifyRequest & { rawBody?: Buffer }).rawBody?.toString() ?? '';
@@ -563,32 +558,34 @@ export async function registerGatewayWebhookRoutes(fastify: FastifyInstance): Pr
   });
 
   // M-Pesa C2B Validation (optional)
-  fastify.post('/webhooks/mpesa/validation', async (request: FastifyRequest, reply: FastifyReply) => {
-    // M-Pesa validation endpoint - accept all payments
-    return reply.status(200).send({
-      ResultCode: 0,
-      ResultDesc: 'Accepted',
-    });
-  });
+  fastify.post(
+    '/webhooks/mpesa/validation',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // M-Pesa validation endpoint - accept all payments
+      return reply.status(200).send({
+        ResultCode: 0,
+        ResultDesc: 'Accepted',
+      });
+    }
+  );
 
   // M-Pesa Reversal Callback
-  fastify.post('/webhooks/mpesa/reversal/result', async (request: FastifyRequest, reply: FastifyReply) => {
-    const payload = JSON.stringify(request.body);
-    const headers = Object.fromEntries(
-      Object.entries(request.headers).map(([k, v]) => [k, String(v)])
-    );
+  fastify.post(
+    '/webhooks/mpesa/reversal/result',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const payload = JSON.stringify(request.body);
+      const headers = Object.fromEntries(
+        Object.entries(request.headers).map(([k, v]) => [k, String(v)])
+      );
 
-    await webhookProcessor.processWebhook(
-      PaymentGatewayType.MPESA,
-      payload,
-      headers
-    );
+      await webhookProcessor.processWebhook(PaymentGatewayType.MPESA, payload, headers);
 
-    return reply.status(200).send({
-      ResultCode: 0,
-      ResultDesc: 'Reversal result received',
-    });
-  });
+      return reply.status(200).send({
+        ResultCode: 0,
+        ResultDesc: 'Reversal result received',
+      });
+    }
+  );
 
   // PayU Webhook
   fastify.post('/webhooks/payu', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -597,11 +594,7 @@ export async function registerGatewayWebhookRoutes(fastify: FastifyInstance): Pr
       Object.entries(request.headers).map(([k, v]) => [k, String(v)])
     );
 
-    const result = await webhookProcessor.processWebhook(
-      PaymentGatewayType.PAYU,
-      payload,
-      headers
-    );
+    const result = await webhookProcessor.processWebhook(PaymentGatewayType.PAYU, payload, headers);
 
     if (result.success) {
       return reply.status(200).send({ status: 'ok' });

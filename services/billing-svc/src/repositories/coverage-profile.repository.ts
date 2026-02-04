@@ -312,34 +312,36 @@ export class CoverageProfileRepository {
       },
     });
 
-    return subscriptions.map((sub) => {
-      const planMeta = sub.plan.metadataJson as Record<string, unknown> | null;
-      const coveredFeatures = extractCoveredFeatures(planMeta);
-      const linkedLearnerId =
-        sub.subscriptionItems[0]?.learnerId ??
-        ((sub.metadataJson as Record<string, unknown> | null)?.linkedLearnerId as string | null);
+    return subscriptions
+      .map((sub) => {
+        const planMeta = sub.plan.metadataJson as Record<string, unknown> | null;
+        const coveredFeatures = extractCoveredFeatures(planMeta);
+        const linkedLearnerId =
+          sub.subscriptionItems[0]?.learnerId ??
+          ((sub.metadataJson as Record<string, unknown> | null)?.linkedLearnerId as string | null);
 
-      // Defense in depth: validate that the linked learner belongs to the requested tenant
-      if (linkedLearnerId && !tenantLearnerIdSet.has(linkedLearnerId)) {
-        // Skip this subscription if it's linked to a learner not in the tenant
-        // This should never happen due to the query filter, but we check anyway
-        return null;
-      }
+        // Defense in depth: validate that the linked learner belongs to the requested tenant
+        if (linkedLearnerId && !tenantLearnerIdSet.has(linkedLearnerId)) {
+          // Skip this subscription if it's linked to a learner not in the tenant
+          // This should never happen due to the query filter, but we check anyway
+          return null;
+        }
 
-      return {
-        subscriptionId: sub.id,
-        billingAccountId: sub.billingAccount.id,
-        ownerUserId: sub.billingAccount.ownerUserId ?? '',
-        planSku: sub.plan.sku,
-        planType: sub.plan.planType,
-        status: sub.status,
-        linkedLearnerId,
-        coveredFeatures,
-        periodStart: sub.currentPeriodStart,
-        periodEnd: sub.currentPeriodEnd,
-        metadataJson: sub.metadataJson,
-      };
-    }).filter((sub): sub is ParentSubscriptionData => sub !== null);
+        return {
+          subscriptionId: sub.id,
+          billingAccountId: sub.billingAccount.id,
+          ownerUserId: sub.billingAccount.ownerUserId ?? '',
+          planSku: sub.plan.sku,
+          planType: sub.plan.planType,
+          status: sub.status,
+          linkedLearnerId,
+          coveredFeatures,
+          periodStart: sub.currentPeriodStart,
+          periodEnd: sub.currentPeriodEnd,
+          metadataJson: sub.metadataJson,
+        };
+      })
+      .filter((sub) => sub !== null) as ParentSubscriptionData[];
   }
 
   /**

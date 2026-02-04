@@ -9,7 +9,6 @@
  * - Invoice retrieval
  */
 
-
 import type {
   BillingPeriod,
   CheckoutSessionRequest,
@@ -128,7 +127,11 @@ export class ParentBillingService {
     // Validate and resolve coupon
     let stripeCouponId: string | undefined;
     if (couponCode) {
-      const couponResult = await this.couponService.validateCoupon(tenantId, couponCode, parsedSkus);
+      const couponResult = await this.couponService.validateCoupon(
+        tenantId,
+        couponCode,
+        parsedSkus
+      );
       if (!couponResult.valid) {
         throw new Error(couponResult.error ?? 'Invalid coupon');
       }
@@ -334,9 +337,7 @@ export class ParentBillingService {
       } else {
         // REMOVE: Find existing item and mark for deletion
         const existingItem = stripeSubscription.items.data.find(
-          (item) =>
-            item.price.id === priceId &&
-            item.metadata?.learnerId === update.learnerId
+          (item) => item.price.id === priceId && item.metadata?.learnerId === update.learnerId
         );
 
         if (existingItem) {
@@ -349,10 +350,7 @@ export class ParentBillingService {
     }
 
     // Generate proration preview
-    const prorationPreview = await this.getProrationPreview(
-      stripeSubscriptionId,
-      updateItems
-    );
+    const prorationPreview = await this.getProrationPreview(stripeSubscriptionId, updateItems);
 
     // If preview-only, return without applying changes
     if (preview) {
@@ -666,7 +664,7 @@ export class ParentBillingService {
     const catalog = getSkuCatalog();
 
     for (const sku of skus) {
-      const skuConfig = catalog.skus[sku];
+      const _skuConfig = catalog.skus[sku];
       const priceId = getStripePriceId(sku, billingPeriod);
 
       if (isBaseSku(sku)) {
@@ -800,8 +798,8 @@ export class ParentBillingService {
           metadataJson: {
             stripeSubscriptionItemId: item.id,
             stripePriceId: price.id,
-            trialEndsAt: item.trial_end
-              ? new Date(item.trial_end * 1000).toISOString()
+            trialEndsAt: stripeSubscription.trial_end
+              ? new Date(stripeSubscription.trial_end * 1000).toISOString()
               : null,
           },
         },

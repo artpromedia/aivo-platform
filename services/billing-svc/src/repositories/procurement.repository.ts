@@ -1,11 +1,10 @@
- 
 /**
  * Procurement Repository
  *
  * Data access layer for quotes, purchase orders, invoices, and renewal tasks.
  */
 
-import type { PrismaClient } from '../prisma.js';
+import type { Prisma, PrismaClient } from '../prisma.js';
 import type {
   Quote,
   QuoteLineItem,
@@ -50,8 +49,8 @@ export class QuoteRepository {
         quoteNumber,
         status: QuoteStatus.DRAFT,
         totalAmountCents: 0n,
-        metadataJson: input.metadataJson ?? null,
-      },
+        metadataJson: (input.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.QuoteUncheckedCreateInput,
     }) as unknown as Quote;
   }
 
@@ -146,7 +145,7 @@ export class QuoteRepository {
       where: { id },
       data: {
         ...input,
-        metadataJson: input.metadataJson ?? undefined,
+        metadataJson: (input.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as Quote;
   }
@@ -237,8 +236,8 @@ export class QuoteLineItemRepository {
         unitPriceCents: BigInt(input.unitPriceCents),
         totalAmountCents,
         discountPercent: input.discountPercent ?? null,
-        metadataJson: input.metadataJson ?? null,
-      },
+        metadataJson: (input.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.QuoteLineItemUncheckedCreateInput,
     });
 
     // Update quote total
@@ -273,7 +272,7 @@ export class QuoteLineItemRepository {
         unitPriceCents:
           input.unitPriceCents !== undefined ? BigInt(input.unitPriceCents) : undefined,
         totalAmountCents,
-        metadataJson: input.metadataJson ?? undefined,
+        metadataJson: (input.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     });
 
@@ -340,8 +339,8 @@ export class PurchaseOrderRepository {
         amountCents: BigInt(input.amountCents),
         status: POStatus.PENDING,
         attachmentsJson: input.attachmentsJson ?? null,
-        metadataJson: input.metadataJson ?? null,
-      },
+        metadataJson: (input.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.PurchaseOrderUncheckedCreateInput,
     }) as unknown as PurchaseOrder;
   }
 
@@ -474,7 +473,7 @@ export class PurchaseOrderRepository {
     return this.prisma.purchaseOrder.update({
       where: { id },
       data: {
-        attachmentsJson: [...existingAttachments, newAttachment],
+        attachmentsJson: [...existingAttachments, newAttachment] as Prisma.InputJsonValue,
       },
     }) as unknown as PurchaseOrder;
   }
@@ -502,8 +501,8 @@ export class DistrictInvoiceRepository {
         status: DistrictInvoiceStatus.DRAFT,
         amountDueCents: BigInt(input.amountDueCents),
         amountPaidCents: 0n,
-        metadataJson: input.metadataJson ?? null,
-      },
+        metadataJson: (input.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.DistrictInvoiceUncheckedCreateInput,
     }) as unknown as DistrictInvoice;
   }
 
@@ -845,7 +844,7 @@ export class RenewalTaskRepository {
         notesJson: {
           ...existingNotes,
           activities: [...activities, { ...activity, date: new Date().toISOString() }],
-        },
+        } as Prisma.InputJsonValue,
       },
     }) as unknown as RenewalTask;
   }

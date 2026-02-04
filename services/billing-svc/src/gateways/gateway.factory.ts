@@ -229,7 +229,7 @@ const CURRENCY_GATEWAY_MAP: Record<string, PaymentGatewayType> = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export class PaymentGatewayFactory {
-  private readonly gateways: Map<PaymentGatewayType, PaymentGateway> = new Map();
+  private readonly gateways = new Map<PaymentGatewayType, PaymentGateway>();
   private readonly defaultGateway: PaymentGatewayType;
 
   constructor(config: GatewayFactoryConfig) {
@@ -237,26 +237,17 @@ export class PaymentGatewayFactory {
 
     // Stripe (Global)
     if (config.stripe) {
-      this.gateways.set(
-        PaymentGatewayType.STRIPE,
-        new StripeGateway(config.stripe)
-      );
+      this.gateways.set(PaymentGatewayType.STRIPE, new StripeGateway(config.stripe));
     }
 
     // Paystack (Africa - Nigeria, Ghana, Kenya, South Africa)
     if (config.paystack) {
-      this.gateways.set(
-        PaymentGatewayType.PAYSTACK,
-        new PaystackGateway(config.paystack)
-      );
+      this.gateways.set(PaymentGatewayType.PAYSTACK, new PaystackGateway(config.paystack));
     }
 
     // Razorpay (India)
     if (config.razorpay) {
-      this.gateways.set(
-        PaymentGatewayType.RAZORPAY,
-        new RazorpayGateway(config.razorpay)
-      );
+      this.gateways.set(PaymentGatewayType.RAZORPAY, new RazorpayGateway(config.razorpay));
     }
 
     // Mercado Pago (Latin America)
@@ -274,7 +265,7 @@ export class PaymentGatewayFactory {
         new FlutterwaveGateway({
           ...config.flutterwave,
           environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-        })
+        }) as unknown as PaymentGateway
       );
     }
 
@@ -285,7 +276,7 @@ export class PaymentGatewayFactory {
         new MpesaGateway({
           ...config.mpesa,
           environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-        })
+        }) as unknown as PaymentGateway
       );
     }
 
@@ -296,7 +287,7 @@ export class PaymentGatewayFactory {
         new PayUGateway({
           ...config.payu,
           environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-        })
+        }) as unknown as PaymentGateway
       );
     }
 
@@ -307,7 +298,7 @@ export class PaymentGatewayFactory {
         new PaytmGateway({
           ...config.paytm,
           environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
-        })
+        }) as unknown as PaymentGateway
       );
     }
 
@@ -453,16 +444,16 @@ export class PaymentGatewayFactory {
   /**
    * Get all countries supported by any gateway
    */
-  getAllSupportedCountries(): Array<{
+  getAllSupportedCountries(): {
     country: string;
     gatewayType: PaymentGatewayType;
     currencies: string[];
-  }> {
-    const result: Array<{
+  }[] {
+    const result: {
       country: string;
       gatewayType: PaymentGatewayType;
       currencies: string[];
-    }> = [];
+    }[] = [];
 
     for (const [country, gatewayType] of Object.entries(COUNTRY_GATEWAY_MAP)) {
       const gateway = this.gateways.get(gatewayType);
@@ -498,7 +489,9 @@ export function initializePaymentGateways(config: GatewayFactoryConfig): Payment
  */
 export function getPaymentGatewayFactory(): PaymentGatewayFactory {
   if (!factoryInstance) {
-    throw new Error('Payment gateway factory not initialized. Call initializePaymentGateways first.');
+    throw new Error(
+      'Payment gateway factory not initialized. Call initializePaymentGateways first.'
+    );
   }
   return factoryInstance;
 }

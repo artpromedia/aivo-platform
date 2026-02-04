@@ -1,12 +1,12 @@
 /**
  * PayU Payment Gateway Implementation
- * 
+ *
  * PayU provides payment processing across multiple regions:
  * - PayU India (PayUmoney, PayUbiz)
  * - PayU Latin America (Argentina, Brazil, Chile, Colombia, Mexico, Panama, Peru)
  * - PayU Europe (Poland, Czech Republic, Romania, Turkey)
  * - PayU Africa (South Africa, Nigeria, Kenya)
- * 
+ *
  * Features:
  * - Card payments (credit, debit)
  * - Net banking
@@ -14,30 +14,37 @@
  * - Digital wallets
  * - Cash payments (via convenience stores)
  * - UPI (India)
- * 
+ *
  * This implementation focuses on the PayU Hub API for multi-region support
  */
 
-import type {
-  PaymentGateway,
-  CreateCustomerInput,
-  CreatePaymentInput,
-  CreateSubscriptionInput,
-  CreateRefundInput,
-  CreateCheckoutInput,
-  CustomerResult,
-  PaymentResult,
-  SubscriptionResult,
-  RefundResult,
-  CheckoutResult,
-  WebhookResult,
+import * as crypto from 'crypto';
+
+import {
+  PaymentGatewayType,
   PaymentStatus,
   SubscriptionGatewayStatus,
   RefundStatus,
-  PaymentGatewayType,
-  GatewayCapabilities,
+  WebhookEventType,
 } from './payment-gateway.interface';
-import * as crypto from 'crypto';
+import type {
+  PaymentGateway,
+  CreateCustomerInput,
+  UpdateCustomerInput,
+  CreatePaymentInput,
+  VerifyPaymentInput,
+  PaymentVerificationResult,
+  CreateSubscriptionInput,
+  UpdateSubscriptionInput,
+  CreateRefundInput,
+  CreateCheckoutInput,
+  GatewayCustomer,
+  GatewayPayment,
+  GatewaySubscription,
+  GatewayRefund,
+  GatewayCheckoutSession,
+  WebhookVerificationResult,
+} from './payment-gateway.interface';
 
 interface PayUConfig {
   merchantKey: string;
@@ -66,7 +73,7 @@ interface PayUTransaction {
   pg_TYPE?: string;
 }
 
-interface PayURefund {
+interface _PayURefund {
   refund_id: string;
   transaction_id: string;
   amount: string;
@@ -96,7 +103,7 @@ const PAYU_ENDPOINTS: Record<string, Record<string, string>> = {
 };
 
 // Regional payment methods
-const REGIONAL_PAYMENT_METHODS: Record<string, string[]> = {
+const _REGIONAL_PAYMENT_METHODS: Record<string, string[]> = {
   india: ['card', 'netbanking', 'upi', 'wallet', 'emi'],
   latam: ['card', 'cash', 'bank_transfer', 'wallet', 'pix', 'boleto'],
   europe: ['card', 'bank_transfer', 'blik', 'installments'],
@@ -120,7 +127,9 @@ const REGIONAL_COUNTRIES: Record<string, string[]> = {
 };
 
 export class PayUGateway implements PaymentGateway {
-  readonly type: PaymentGatewayType = 'PAYU';
+  readonly type: PaymentGatewayType = PaymentGatewayType.PAYU;
+  readonly supportedCurrencies: string[];
+  readonly supportedCountries: string[];
   private readonly baseUrl: string;
   private readonly config: PayUConfig;
 
@@ -128,6 +137,12 @@ export class PayUGateway implements PaymentGateway {
     this.config = config;
     const endpoints = PAYU_ENDPOINTS[config.region];
     this.baseUrl = endpoints?.[config.environment] || PAYU_ENDPOINTS.india.sandbox;
+    this.supportedCurrencies = REGIONAL_CURRENCIES[config.region] || [];
+    this.supportedCountries = REGIONAL_COUNTRIES[config.region] || [];
+  }
+
+  isAvailable(): boolean {
+    return !!(this.config.merchantKey && this.config.merchantSalt);
   }
 
   // ============================================
@@ -149,7 +164,11 @@ export class PayUGateway implements PaymentGateway {
       params.udf3 || '',
       params.udf4 || '',
       params.udf5 || '',
-      '', '', '', '', '',
+      '',
+      '',
+      '',
+      '',
+      '',
       this.config.merchantSalt,
     ].join('|');
 
@@ -162,7 +181,11 @@ export class PayUGateway implements PaymentGateway {
     const hashString = [
       this.config.merchantSalt,
       params.status,
-      '', '', '', '', '',
+      '',
+      '',
+      '',
+      '',
+      '',
       params.udf5 || '',
       params.udf4 || '',
       params.udf3 || '',
@@ -179,12 +202,9 @@ export class PayUGateway implements PaymentGateway {
     return crypto.createHash('sha512').update(hashString).digest('hex');
   }
 
-  private async request<T>(
-    endpoint: string,
-    params: Record<string, string>
-  ): Promise<T> {
+  private async request<T>(endpoint: string, params: Record<string, string>): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const formData = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
       formData.append(key, value);
@@ -199,7 +219,7 @@ export class PayUGateway implements PaymentGateway {
     });
 
     const text = await response.text();
-    
+
     try {
       return JSON.parse(text);
     } catch {
@@ -212,54 +232,56 @@ export class PayUGateway implements PaymentGateway {
   // CUSTOMER MANAGEMENT
   // ============================================
 
-  async createCustomer(input: CreateCustomerInput): Promise<CustomerResult> {
+  async createCustomer(input: CreateCustomerInput): Promise<GatewayCustomer> {
     // PayU doesn't have standalone customer creation
     const customerId = `payu_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
     return {
-      success: true,
-      customerId,
-      gatewayType: this.type,
+      id: customerId,
+      gatewayType: PaymentGatewayType.PAYU,
+      email: input.email,
+      name: input.name,
+      phone: input.phone,
+      address: input.address,
       metadata: {
-        email: input.email,
-        name: input.name,
-        phone: input.phone,
+        ...(input.metadata as Record<string, string>),
         region: this.config.region,
       },
+      createdAt: new Date(),
+      rawResponse: { region: this.config.region },
     };
   }
 
-  async getCustomer(customerId: string): Promise<CustomerResult> {
+  async getCustomer(_customerId: string): Promise<GatewayCustomer | null> {
+    // PayU customers are transaction-based; no standalone lookup
+    return null;
+  }
+
+  async updateCustomer(customerId: string, input: UpdateCustomerInput): Promise<GatewayCustomer> {
     return {
-      success: true,
-      customerId,
-      gatewayType: this.type,
-      metadata: {
-        note: 'PayU customers are transaction-based',
-      },
+      id: customerId,
+      gatewayType: PaymentGatewayType.PAYU,
+      email: input.email || '',
+      name: input.name,
+      phone: input.phone,
+      address: input.address,
+      metadata: (input.metadata || {}) as Record<string, string>,
+      createdAt: new Date(),
+      rawResponse: { updated: true },
     };
   }
 
-  async updateCustomer(customerId: string, input: Partial<CreateCustomerInput>): Promise<CustomerResult> {
-    return {
-      success: true,
-      customerId,
-      gatewayType: this.type,
-      metadata: { updated: true, ...input },
-    };
-  }
-
-  async deleteCustomer(customerId: string): Promise<{ success: boolean }> {
-    return { success: true };
+  async deleteCustomer(_customerId: string): Promise<boolean> {
+    return true;
   }
 
   // ============================================
   // PAYMENT OPERATIONS
   // ============================================
 
-  async createPayment(input: CreatePaymentInput): Promise<PaymentResult> {
+  async createPayment(input: CreatePaymentInput): Promise<GatewayPayment> {
     const txnid = `aivo_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const amount = (input.amount / 100).toFixed(2);
+    const amount = (input.amountCents / 100).toFixed(2);
 
     // Build payment form parameters
     const params: Record<string, string> = {
@@ -267,13 +289,13 @@ export class PayUGateway implements PaymentGateway {
       txnid,
       amount,
       productinfo: input.description || 'AIVO Education',
-      firstname: input.customerName?.split(' ')[0] || 'User',
-      email: input.email,
-      phone: input.phone || '',
+      firstname: input.metadata?.userId || 'User',
+      email: input.metadata?.email || '',
+      phone: input.metadata?.phone || '',
       surl: input.returnUrl || 'https://aivo.education/payment/success',
       furl: input.returnUrl || 'https://aivo.education/payment/failure',
       udf1: input.customerId || '',
-      udf2: input.metadata?.planId || '',
+      udf2: input.metadata?.planCode || '',
       udf3: '',
       udf4: '',
       udf5: '',
@@ -282,14 +304,14 @@ export class PayUGateway implements PaymentGateway {
     // Generate hash
     params.hash = this.generateHash(params);
 
-    // For India region with specific payment mode
-    if (this.config.region === 'india' && input.paymentMethodType) {
-      params.pg = this.mapIndianPaymentMode(input.paymentMethodType);
-      
-      if (input.paymentMethodType === 'upi') {
+    // For India region with specific payment method
+    if (this.config.region === 'india' && input.paymentMethodId) {
+      params.pg = this.mapIndianPaymentMode(input.paymentMethodId);
+
+      if (input.paymentMethodId === 'upi') {
         params.bankcode = 'UPI';
         params.vpa = input.metadata?.upiId || '';
-      } else if (input.paymentMethodType === 'netbanking' && input.metadata?.bankCode) {
+      } else if (input.paymentMethodId === 'netbanking' && input.metadata?.bankCode) {
         params.bankcode = input.metadata.bankCode;
       }
     }
@@ -299,34 +321,37 @@ export class PayUGateway implements PaymentGateway {
     const checkoutUrl = `${this.baseUrl}/_payment`;
 
     return {
-      success: true,
-      paymentId: txnid,
-      status: 'pending' as PaymentStatus,
-      gatewayType: this.type,
-      gatewayPaymentId: txnid,
-      amount: input.amount,
+      id: txnid,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: input.customerId,
+      amountCents: input.amountCents,
       currency: input.currency,
-      redirectUrl: `${checkoutUrl}?${formParams}`,
-      metadata: {
+      status: PaymentStatus.PENDING,
+      description: input.description,
+      metadata: (input.metadata || {}) as Record<string, string>,
+      authorizationUrl: `${checkoutUrl}?${formParams}`,
+      reference: txnid,
+      createdAt: new Date(),
+      rawResponse: {
         region: this.config.region,
         formParams: params,
-        note: 'Redirect user to checkoutUrl or submit form to _payment endpoint',
+        note: 'Redirect user to authorizationUrl or submit form to _payment endpoint',
       },
     };
   }
 
-  async verifyPayment(paymentId: string): Promise<PaymentResult> {
+  async verifyPayment(input: VerifyPaymentInput): Promise<PaymentVerificationResult> {
     const command = 'verify_payment';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
-      var1: paymentId,
+      var1: input.reference,
       hash: '',
     };
 
     // Generate command hash
-    const hashString = `${this.config.merchantKey}|${command}|${paymentId}|${this.config.merchantSalt}`;
+    const hashString = `${this.config.merchantKey}|${command}|${input.reference}|${this.config.merchantSalt}`;
     params.hash = crypto.createHash('sha512').update(hashString).digest('hex');
 
     const response = await this.request<{
@@ -337,48 +362,78 @@ export class PayUGateway implements PaymentGateway {
 
     if (response.status !== 1) {
       return {
-        success: false,
-        paymentId,
-        status: 'failed' as PaymentStatus,
-        gatewayType: this.type,
-        error: response.msg || 'Payment verification failed',
+        verified: false,
+        status: PaymentStatus.FAILED,
+        payment: {
+          id: input.reference,
+          gatewayType: PaymentGatewayType.PAYU,
+          customerId: '',
+          amountCents: 0,
+          currency: this.getRegionCurrency(),
+          status: PaymentStatus.FAILED,
+          metadata: {},
+          createdAt: new Date(),
+          rawResponse: response,
+        },
       };
     }
 
-    const tx = response.transaction_details[paymentId];
+    const tx = response.transaction_details[input.reference];
     if (!tx) {
       return {
-        success: false,
-        paymentId,
-        status: 'failed' as PaymentStatus,
-        gatewayType: this.type,
-        error: 'Transaction not found',
+        verified: false,
+        status: PaymentStatus.FAILED,
+        payment: {
+          id: input.reference,
+          gatewayType: PaymentGatewayType.PAYU,
+          customerId: '',
+          amountCents: 0,
+          currency: this.getRegionCurrency(),
+          status: PaymentStatus.FAILED,
+          metadata: {},
+          createdAt: new Date(),
+          rawResponse: response,
+        },
       };
     }
 
     const status = this.mapTransactionStatus(tx.status);
 
     return {
-      success: status === 'succeeded',
-      paymentId,
+      verified: status === PaymentStatus.SUCCEEDED,
       status,
-      gatewayType: this.type,
-      gatewayPaymentId: tx.mihpayid,
-      amount: Math.round(parseFloat(tx.amount) * 100),
-      currency: this.getRegionCurrency(),
-      metadata: {
-        mode: tx.mode,
-        bankRefNum: tx.bank_ref_num,
-        pgType: tx.pg_TYPE,
-        netAmountDebit: tx.net_amount_debit,
+      payment: {
+        id: tx.mihpayid,
+        gatewayType: PaymentGatewayType.PAYU,
+        customerId: '',
+        amountCents: Math.round(parseFloat(tx.amount) * 100),
+        currency: this.getRegionCurrency(),
+        status,
+        metadata: {
+          mode: tx.mode,
+          bankRefNum: tx.bank_ref_num || '',
+          pgType: tx.pg_TYPE || '',
+          netAmountDebit: tx.net_amount_debit,
+        },
+        reference: tx.txnid,
+        createdAt: new Date(),
+        rawResponse: tx,
       },
     };
   }
 
-  async capturePayment(paymentId: string, amount?: number): Promise<PaymentResult> {
+  async getPayment(paymentId: string): Promise<GatewayPayment | null> {
+    const result = await this.verifyPayment({ reference: paymentId });
+    if (!result.verified && result.status === PaymentStatus.FAILED) {
+      return null;
+    }
+    return result.payment;
+  }
+
+  async capturePayment(paymentId: string, _amount?: number): Promise<GatewayPayment> {
     // PayU auto-captures, but supports capture for auth-only transactions
     const command = 'capture_transaction';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
@@ -394,29 +449,27 @@ export class PayUGateway implements PaymentGateway {
       msg: string;
     }>('/merchant/postservice.php?form=2', params);
 
-    if (response.status === 1) {
-      return {
-        success: true,
-        paymentId,
-        status: 'succeeded' as PaymentStatus,
-        gatewayType: this.type,
-        gatewayPaymentId: paymentId,
-      };
+    if (response.status !== 1) {
+      throw new Error(response.msg || 'Capture failed');
     }
 
     return {
-      success: false,
-      paymentId,
-      status: 'failed' as PaymentStatus,
-      gatewayType: this.type,
-      error: response.msg,
+      id: paymentId,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: '',
+      amountCents: 0,
+      currency: this.getRegionCurrency(),
+      status: PaymentStatus.SUCCEEDED,
+      metadata: {},
+      createdAt: new Date(),
+      rawResponse: response,
     };
   }
 
-  async cancelPayment(paymentId: string): Promise<PaymentResult> {
+  async cancelPayment(paymentId: string): Promise<GatewayPayment> {
     // PayU supports cancel for auth-only transactions
     const command = 'cancel_transaction';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
@@ -433,12 +486,20 @@ export class PayUGateway implements PaymentGateway {
       msg: string;
     }>('/merchant/postservice.php?form=2', params);
 
+    if (response.status !== 1) {
+      throw new Error(response.msg || 'Cancel failed');
+    }
+
     return {
-      success: response.status === 1,
-      paymentId,
-      status: response.status === 1 ? 'canceled' as PaymentStatus : 'failed' as PaymentStatus,
-      gatewayType: this.type,
-      error: response.status !== 1 ? response.msg : undefined,
+      id: paymentId,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: '',
+      amountCents: 0,
+      currency: this.getRegionCurrency(),
+      status: PaymentStatus.CANCELED,
+      metadata: {},
+      createdAt: new Date(),
+      rawResponse: response,
     };
   }
 
@@ -446,32 +507,27 @@ export class PayUGateway implements PaymentGateway {
   // SUBSCRIPTION MANAGEMENT
   // ============================================
 
-  async createSubscription(input: CreateSubscriptionInput): Promise<SubscriptionResult> {
+  async createSubscription(input: CreateSubscriptionInput): Promise<GatewaySubscription> {
     // PayU Standing Instructions (SI) for recurring payments
     // This is India-specific
     if (this.config.region !== 'india') {
-      return {
-        success: false,
-        subscriptionId: '',
-        status: 'pending' as SubscriptionGatewayStatus,
-        gatewayType: this.type,
-        error: 'Subscriptions only supported in India region via Standing Instructions',
-      };
+      throw new Error('Subscriptions only supported in India region via Standing Instructions');
     }
 
     const txnid = `si_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const amount = (input.amount / 100).toFixed(2);
+    const amount = (input.amountCents / 100).toFixed(2);
+    const now = new Date();
 
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       txnid,
       amount,
-      productinfo: input.planId,
-      firstname: input.customerName?.split(' ')[0] || 'User',
-      email: input.email,
-      phone: input.phone || '',
-      surl: input.returnUrl || 'https://aivo.education/subscription/success',
-      furl: input.returnUrl || 'https://aivo.education/subscription/failure',
+      productinfo: input.planCode,
+      firstname: input.metadata?.userId || 'User',
+      email: input.metadata?.email || '',
+      phone: input.metadata?.phone || '',
+      surl: input.metadata?.returnUrl || 'https://aivo.education/subscription/success',
+      furl: input.metadata?.returnUrl || 'https://aivo.education/subscription/failure',
       // SI specific parameters
       si: '1',
       si_details: JSON.stringify({
@@ -479,8 +535,8 @@ export class PayUGateway implements PaymentGateway {
         billingCurrency: input.currency,
         billingCycle: this.mapBillingCycle(input.interval),
         billingInterval: '1',
-        paymentStartDate: new Date().toISOString().split('T')[0],
-        paymentEndDate: this.calculateEndDate(input.interval, 12).split('T')[0], // 12 cycles
+        paymentStartDate: now.toISOString().split('T')[0],
+        paymentEndDate: this.calculateEndDate(input.interval, 12).toISOString().split('T')[0], // 12 cycles
       }),
     };
 
@@ -489,33 +545,39 @@ export class PayUGateway implements PaymentGateway {
     const checkoutUrl = `${this.baseUrl}/_payment`;
 
     return {
-      success: true,
-      subscriptionId: txnid,
-      status: 'pending' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      gatewaySubscriptionId: txnid,
+      id: txnid,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: input.customerId,
+      planCode: input.planCode,
+      status: input.trialDays
+        ? SubscriptionGatewayStatus.TRIALING
+        : SubscriptionGatewayStatus.ACTIVE,
+      amountCents: input.amountCents,
+      currency: input.currency,
+      interval: input.interval,
+      quantity: 1,
+      trialStart: input.trialDays ? now : undefined,
+      trialEnd: input.trialDays ? new Date(now.getTime() + input.trialDays * 86400000) : undefined,
+      currentPeriodStart: now,
       currentPeriodEnd: this.calculateEndDate(input.interval, 1),
-      redirectUrl: `${checkoutUrl}?${new URLSearchParams(params).toString()}`,
-      metadata: {
+      cancelAtPeriodEnd: false,
+      metadata: (input.metadata || {}) as Record<string, string>,
+      createdAt: now,
+      rawResponse: {
+        redirectUrl: `${checkoutUrl}?${new URLSearchParams(params).toString()}`,
         note: 'Redirect user to complete SI mandate registration',
       },
     };
   }
 
-  async getSubscription(subscriptionId: string): Promise<SubscriptionResult> {
+  async getSubscription(subscriptionId: string): Promise<GatewaySubscription | null> {
     if (this.config.region !== 'india') {
-      return {
-        success: false,
-        subscriptionId,
-        status: 'pending' as SubscriptionGatewayStatus,
-        gatewayType: this.type,
-        error: 'Subscription lookup only available for India region',
-      };
+      return null;
     }
 
     // Use SI status check API
     const command = 'check_si_status';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
@@ -533,50 +595,47 @@ export class PayUGateway implements PaymentGateway {
     }>('/merchant/postservice.php?form=2', params);
 
     if (response.status !== 1) {
-      return {
-        success: false,
-        subscriptionId,
-        status: 'pending' as SubscriptionGatewayStatus,
-        gatewayType: this.type,
-        error: response.msg || 'SI status check failed',
-      };
+      return null;
     }
 
+    const now = new Date();
+
     return {
-      success: true,
-      subscriptionId,
+      id: subscriptionId,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: '',
+      planCode: '',
       status: this.mapSIStatus(response.si_status || ''),
-      gatewayType: this.type,
-      gatewaySubscriptionId: subscriptionId,
+      amountCents: 0,
+      currency: this.getRegionCurrency(),
+      interval: 'monthly',
+      quantity: 1,
+      currentPeriodStart: now,
+      currentPeriodEnd: now,
+      cancelAtPeriodEnd: false,
+      metadata: {},
+      createdAt: now,
+      rawResponse: response,
     };
   }
 
   async updateSubscription(
-    subscriptionId: string,
-    input: Partial<CreateSubscriptionInput>
-  ): Promise<SubscriptionResult> {
-    return {
-      success: false,
-      subscriptionId,
-      status: 'active' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: 'PayU SI modifications require new mandate registration',
-    };
+    _subscriptionId: string,
+    _input: UpdateSubscriptionInput
+  ): Promise<GatewaySubscription> {
+    throw new Error('PayU SI modifications require new mandate registration');
   }
 
-  async cancelSubscription(subscriptionId: string): Promise<SubscriptionResult> {
+  async cancelSubscription(
+    subscriptionId: string,
+    options?: { immediate?: boolean }
+  ): Promise<GatewaySubscription> {
     if (this.config.region !== 'india') {
-      return {
-        success: false,
-        subscriptionId,
-        status: 'active' as SubscriptionGatewayStatus,
-        gatewayType: this.type,
-        error: 'Subscription cancellation only available for India region',
-      };
+      throw new Error('Subscription cancellation only available for India region');
     }
 
     const command = 'cancel_si';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
@@ -592,37 +651,55 @@ export class PayUGateway implements PaymentGateway {
       msg: string;
     }>('/merchant/postservice.php?form=2', params);
 
+    if (response.status !== 1) {
+      throw new Error(response.msg || 'Failed to cancel SI mandate');
+    }
+
+    const now = new Date();
+
     return {
-      success: response.status === 1,
-      subscriptionId,
-      status: response.status === 1 ? 'canceled' as SubscriptionGatewayStatus : 'active' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: response.status !== 1 ? response.msg : undefined,
+      id: subscriptionId,
+      gatewayType: PaymentGatewayType.PAYU,
+      customerId: '',
+      planCode: '',
+      status: SubscriptionGatewayStatus.CANCELED,
+      amountCents: 0,
+      currency: this.getRegionCurrency(),
+      interval: 'monthly',
+      quantity: 1,
+      currentPeriodStart: now,
+      currentPeriodEnd: now,
+      cancelAtPeriodEnd: !options?.immediate,
+      canceledAt: now,
+      metadata: {},
+      createdAt: now,
+      rawResponse: response,
     };
+  }
+
+  async resumeSubscription(_subscriptionId: string): Promise<GatewaySubscription> {
+    throw new Error(
+      'PayU SI does not support resuming subscriptions; a new mandate must be created'
+    );
   }
 
   // ============================================
   // REFUND OPERATIONS
   // ============================================
 
-  async createRefund(input: CreateRefundInput): Promise<RefundResult> {
+  async createRefund(input: CreateRefundInput): Promise<GatewayRefund> {
     const command = 'cancel_refund_transaction';
     const refundId = `ref_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    
+
     // First verify the original transaction
-    const verifyResult = await this.verifyPayment(input.paymentId);
-    if (!verifyResult.success || !verifyResult.gatewayPaymentId) {
-      return {
-        success: false,
-        refundId: '',
-        status: 'failed' as RefundStatus,
-        gatewayType: this.type,
-        error: 'Original transaction not found or invalid',
-      };
+    const verifyResult = await this.verifyPayment({ reference: input.paymentId });
+    if (!verifyResult.verified) {
+      throw new Error('Original transaction not found or invalid');
     }
 
-    const mihpayid = verifyResult.gatewayPaymentId;
-    const amount = input.amount ? (input.amount / 100).toFixed(2) : (verifyResult.amount! / 100).toFixed(2);
+    const mihpayid = verifyResult.payment.id;
+    const refundAmountCents = input.amountCents ?? verifyResult.payment.amountCents;
+    const amount = (refundAmountCents / 100).toFixed(2);
 
     const params: Record<string, string> = {
       key: this.config.merchantKey,
@@ -643,32 +720,26 @@ export class PayUGateway implements PaymentGateway {
       bank_ref_num?: string;
     }>('/merchant/postservice.php?form=2', params);
 
-    if (response.status === 1) {
-      return {
-        success: true,
-        refundId,
-        status: 'pending' as RefundStatus,
-        gatewayType: this.type,
-        gatewayRefundId: response.request_id || refundId,
-        amount: input.amount || verifyResult.amount,
-        metadata: {
-          bankRefNum: response.bank_ref_num,
-        },
-      };
+    if (response.status !== 1) {
+      throw new Error(response.msg || 'Refund request failed');
     }
 
     return {
-      success: false,
-      refundId: '',
-      status: 'failed' as RefundStatus,
-      gatewayType: this.type,
-      error: response.msg,
+      id: response.request_id || refundId,
+      gatewayType: PaymentGatewayType.PAYU,
+      paymentId: input.paymentId,
+      amountCents: refundAmountCents,
+      currency: verifyResult.payment.currency,
+      status: RefundStatus.PENDING,
+      reason: input.reason,
+      createdAt: new Date(),
+      rawResponse: response,
     };
   }
 
-  async getRefund(refundId: string): Promise<RefundResult> {
+  async getRefund(refundId: string): Promise<GatewayRefund | null> {
     const command = 'check_action_status';
-    
+
     const params: Record<string, string> = {
       key: this.config.merchantKey,
       command,
@@ -689,22 +760,18 @@ export class PayUGateway implements PaymentGateway {
     }>('/merchant/postservice.php?form=2', params);
 
     if (response.status !== 1) {
-      return {
-        success: false,
-        refundId,
-        status: 'failed' as RefundStatus,
-        gatewayType: this.type,
-        error: response.msg || 'Refund status check failed',
-      };
+      return null;
     }
 
     return {
-      success: true,
-      refundId,
+      id: response.request_id,
+      gatewayType: PaymentGatewayType.PAYU,
+      paymentId: '',
+      amountCents: Math.round(parseFloat(response.refund_amount) * 100),
+      currency: this.getRegionCurrency(),
       status: this.mapRefundStatus(response.action_status),
-      gatewayType: this.type,
-      gatewayRefundId: response.request_id,
-      amount: Math.round(parseFloat(response.refund_amount) * 100),
+      createdAt: new Date(),
+      rawResponse: response,
     };
   }
 
@@ -712,30 +779,29 @@ export class PayUGateway implements PaymentGateway {
   // CHECKOUT SESSION
   // ============================================
 
-  async createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutResult> {
+  async createCheckoutSession(input: CreateCheckoutInput): Promise<GatewayCheckoutSession> {
     const totalAmount = input.items.reduce(
-      (sum, item) => sum + (item.amount * item.quantity),
+      (sum, item) => sum + item.amountCents * item.quantity,
       0
     );
 
     const paymentResult = await this.createPayment({
-      amount: totalAmount,
+      amountCents: totalAmount,
       currency: input.currency,
-      customerId: input.customerId,
-      email: input.email,
-      phone: input.phone,
-      customerName: input.customerName,
-      description: input.items.map(i => i.name).join(', '),
+      customerId: input.customerId || '',
+      description: input.items.map((i) => i.name).join(', '),
       returnUrl: input.successUrl,
+      callbackUrl: input.callbackUrl,
       metadata: input.metadata,
     });
 
     return {
-      success: paymentResult.success,
-      sessionId: paymentResult.paymentId,
-      checkoutUrl: paymentResult.redirectUrl,
-      gatewayType: this.type,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      id: paymentResult.id,
+      gatewayType: PaymentGatewayType.PAYU,
+      url: paymentResult.authorizationUrl || `${this.baseUrl}/_payment`,
+      reference: paymentResult.reference,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      rawResponse: paymentResult.rawResponse,
     };
   }
 
@@ -743,55 +809,59 @@ export class PayUGateway implements PaymentGateway {
   // WEBHOOK HANDLING
   // ============================================
 
-  async verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
-    // PayU sends response hash in the payload itself
-    const params = JSON.parse(payload);
-    
+  async verifyWebhook(
+    payload: string | Buffer,
+    _headers: Record<string, string>
+  ): Promise<WebhookVerificationResult> {
+    const payloadStr = typeof payload === 'string' ? payload : payload.toString('utf-8');
+    let params: Record<string, string>;
+
+    try {
+      params = JSON.parse(payloadStr);
+    } catch {
+      return {
+        verified: false,
+        error: 'Invalid JSON payload',
+      };
+    }
+
     if (!params.hash) {
-      console.warn('No hash in PayU webhook payload');
-      return false;
+      return {
+        verified: false,
+        error: 'No hash in PayU webhook payload',
+      };
     }
 
     const expectedHash = this.generateVerifyHash(params);
-    return params.hash === expectedHash;
-  }
-
-  async handleWebhook(payload: string, signature: string): Promise<WebhookResult> {
-    const params = JSON.parse(payload);
-    
-    // Verify hash
-    const isValid = await this.verifyWebhookSignature(payload, signature);
-    if (!isValid) {
+    if (params.hash !== expectedHash) {
       return {
-        success: false,
-        eventType: 'unknown',
-        gatewayType: this.type,
+        verified: false,
         error: 'Invalid webhook hash',
       };
     }
 
     const status = this.mapTransactionStatus(params.status);
-    let eventType: string;
+    let eventType: WebhookEventType;
 
-    if (status === 'succeeded') {
-      eventType = params.si ? 'subscription.created' : 'payment.succeeded';
-    } else if (status === 'failed') {
-      eventType = 'payment.failed';
+    if (status === PaymentStatus.SUCCEEDED) {
+      eventType = params.si
+        ? WebhookEventType.SUBSCRIPTION_CREATED
+        : WebhookEventType.PAYMENT_SUCCESS;
+    } else if (status === PaymentStatus.FAILED) {
+      eventType = WebhookEventType.PAYMENT_FAILED;
     } else {
-      eventType = 'payment.pending';
+      eventType = WebhookEventType.UNKNOWN;
     }
 
     return {
-      success: true,
-      eventType,
-      gatewayType: this.type,
-      resourceId: params.txnid,
-      metadata: {
-        mihpayid: params.mihpayid,
-        mode: params.mode,
-        amount: params.amount,
-        status: params.status,
-        unmappedstatus: params.unmappedstatus,
+      verified: true,
+      event: {
+        id: params.mihpayid || params.txnid || '',
+        gatewayType: PaymentGatewayType.PAYU,
+        eventType,
+        data: params,
+        timestamp: new Date(),
+        rawEvent: params,
       },
     };
   }
@@ -802,36 +872,36 @@ export class PayUGateway implements PaymentGateway {
 
   private mapTransactionStatus(status: string): PaymentStatus {
     const statusMap: Record<string, PaymentStatus> = {
-      success: 'succeeded',
-      captured: 'succeeded',
-      failure: 'failed',
-      failed: 'failed',
-      pending: 'pending',
-      inprogress: 'pending',
-      bounced: 'failed',
-      userCancelled: 'canceled',
+      success: PaymentStatus.SUCCEEDED,
+      captured: PaymentStatus.SUCCEEDED,
+      failure: PaymentStatus.FAILED,
+      failed: PaymentStatus.FAILED,
+      pending: PaymentStatus.PENDING,
+      inprogress: PaymentStatus.PENDING,
+      bounced: PaymentStatus.FAILED,
+      usercancelled: PaymentStatus.CANCELED,
     };
-    return statusMap[status.toLowerCase()] || 'pending';
+    return statusMap[status.toLowerCase()] || PaymentStatus.PENDING;
   }
 
   private mapSIStatus(status: string): SubscriptionGatewayStatus {
     const statusMap: Record<string, SubscriptionGatewayStatus> = {
-      active: 'active',
-      paused: 'paused',
-      cancelled: 'canceled',
-      expired: 'canceled',
+      active: SubscriptionGatewayStatus.ACTIVE,
+      paused: SubscriptionGatewayStatus.PAUSED,
+      cancelled: SubscriptionGatewayStatus.CANCELED,
+      expired: SubscriptionGatewayStatus.CANCELED,
     };
-    return statusMap[status.toLowerCase()] || 'active';
+    return statusMap[status.toLowerCase()] || SubscriptionGatewayStatus.ACTIVE;
   }
 
   private mapRefundStatus(status: string): RefundStatus {
     const statusMap: Record<string, RefundStatus> = {
-      success: 'succeeded',
-      pending: 'pending',
-      queued: 'pending',
-      failure: 'failed',
+      success: RefundStatus.SUCCEEDED,
+      pending: RefundStatus.PENDING,
+      queued: RefundStatus.PENDING,
+      failure: RefundStatus.FAILED,
     };
-    return statusMap[status.toLowerCase()] || 'pending';
+    return statusMap[status.toLowerCase()] || RefundStatus.PENDING;
   }
 
   private mapIndianPaymentMode(method: string): string {
@@ -849,10 +919,11 @@ export class PayUGateway implements PaymentGateway {
 
   private mapBillingCycle(interval: string): string {
     const cycleMap: Record<string, string> = {
-      day: 'DAILY',
-      week: 'WEEKLY',
-      month: 'MONTHLY',
-      year: 'YEARLY',
+      daily: 'DAILY',
+      weekly: 'WEEKLY',
+      monthly: 'MONTHLY',
+      quarterly: 'QUARTERLY',
+      yearly: 'YEARLY',
     };
     return cycleMap[interval] || 'MONTHLY';
   }
@@ -867,43 +938,26 @@ export class PayUGateway implements PaymentGateway {
     return defaultCurrencies[this.config.region] || 'USD';
   }
 
-  private calculateEndDate(interval: string, cycles: number): string {
+  private calculateEndDate(interval: string, cycles: number): Date {
     const date = new Date();
     switch (interval) {
-      case 'day':
+      case 'daily':
         date.setDate(date.getDate() + cycles);
         break;
-      case 'week':
-        date.setDate(date.getDate() + (cycles * 7));
+      case 'weekly':
+        date.setDate(date.getDate() + cycles * 7);
         break;
-      case 'month':
+      case 'monthly':
         date.setMonth(date.getMonth() + cycles);
         break;
-      case 'year':
+      case 'quarterly':
+        date.setMonth(date.getMonth() + cycles * 3);
+        break;
+      case 'yearly':
         date.setFullYear(date.getFullYear() + cycles);
         break;
     }
-    return date.toISOString();
-  }
-
-  getCapabilities(): GatewayCapabilities {
-    return {
-      supportedCurrencies: REGIONAL_CURRENCIES[this.config.region] || [],
-      supportedCountries: REGIONAL_COUNTRIES[this.config.region] || [],
-      supportedPaymentMethods: REGIONAL_PAYMENT_METHODS[this.config.region] || ['card'],
-      supportsRefunds: true,
-      supportsPartialRefunds: true,
-      supportsSubscriptions: this.config.region === 'india', // SI only in India
-      supportsCheckout: true,
-      supportsWebhooks: true,
-      webhookEvents: [
-        'payment.succeeded',
-        'payment.failed',
-        'refund.succeeded',
-        'subscription.created',
-        'subscription.canceled',
-      ],
-    };
+    return date;
   }
 }
 

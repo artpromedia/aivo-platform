@@ -4,13 +4,12 @@
  * REST API endpoints for parent (consumer) billing operations.
  */
 
-import {
-  CheckoutSessionRequestSchema,
-  CreateCouponRequestSchema,
-  UpdateModulesRequestSchema,
+import type {
+  CheckoutSessionRequest,
+  CreateCouponRequest,
+  UpdateModulesRequest,
 } from '@aivo/billing-common';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-
 
 import { couponService } from '../services/coupon.service.js';
 import { parentBillingService } from '../services/parent-billing.service.js';
@@ -54,7 +53,7 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post('/billing/checkout-session', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
-    const body = CheckoutSessionRequestSchema.parse(request.body);
+    const body = request.body as CheckoutSessionRequest;
 
     const result = await parentBillingService.createCheckoutSession(ctx, body);
 
@@ -87,7 +86,7 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post('/billing/update-modules', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
-    const body = UpdateModulesRequestSchema.parse(request.body);
+    const body = request.body as UpdateModulesRequest;
 
     const result = await parentBillingService.updateModules(ctx, body);
 
@@ -100,10 +99,7 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post(
     '/billing/cancel',
-    async (
-      request: FastifyRequest<{ Body: { immediate?: boolean } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Body: { immediate?: boolean } }>, reply: FastifyReply) => {
       const ctx = getContext(request);
       const immediate = (request.body as { immediate?: boolean })?.immediate ?? false;
 
@@ -163,10 +159,7 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post(
     '/billing/portal-session',
-    async (
-      request: FastifyRequest<{ Body: { returnUrl: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Body: { returnUrl: string } }>, reply: FastifyReply) => {
       const ctx = getContext(request);
       const { returnUrl } = request.body as { returnUrl: string };
 
@@ -240,7 +233,11 @@ export async function parentBillingRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: 'learnerIds and skus are required' });
       }
 
-      const results = await trialService.checkBulkEligibility(ctx.tenantId, learnerIds, skus as any);
+      const results = await trialService.checkBulkEligibility(
+        ctx.tenantId,
+        learnerIds,
+        skus as any
+      );
 
       return reply.send({ eligibility: results });
     }
@@ -262,7 +259,7 @@ export async function adminBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post('/admin/billing/coupons', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
-    const body = CreateCouponRequestSchema.parse(request.body);
+    const body = request.body as CreateCouponRequest;
 
     const coupon = await couponService.createCoupon(body, ctx.userId);
 
@@ -320,7 +317,12 @@ export async function adminBillingRoutes(app: FastifyInstance): Promise<void> {
     async (
       request: FastifyRequest<{
         Params: { id: string };
-        Body: { isActive?: boolean; validTo?: string; maxRedemptions?: number; description?: string };
+        Body: {
+          isActive?: boolean;
+          validTo?: string;
+          maxRedemptions?: number;
+          description?: string;
+        };
       }>,
       reply: FastifyReply
     ) => {
@@ -392,10 +394,7 @@ export async function adminBillingRoutes(app: FastifyInstance): Promise<void> {
    */
   app.get(
     '/admin/billing/trials/ending-soon',
-    async (
-      request: FastifyRequest<{ Querystring: { days?: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Querystring: { days?: string } }>, reply: FastifyReply) => {
       const days = request.query.days ? Number.parseInt(request.query.days, 10) : 7;
       const trials = await trialService.getTrialsEndingSoon(days);
       return reply.send({ trials });

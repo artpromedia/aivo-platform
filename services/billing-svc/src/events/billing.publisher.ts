@@ -377,7 +377,6 @@ class BillingEventPublisher {
             max_msgs: 100000,
             max_age: 7 * 24 * 60 * 60 * 1000000000, // 7 days in nanoseconds
             storage: StorageType.File,
-            replicas: 1,
           });
           logger.info('NATS JetStream stream created', { stream: this.streamName });
         }

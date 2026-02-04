@@ -8,9 +8,6 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyPluginAsync } from 'fastify';
 
 import { config } from './config.js';
-
-// Type assertion helper for Fastify plugins with type provider mismatches
-const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { billingEventPublisher } from './events/billing.publisher.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
@@ -19,6 +16,9 @@ import { finopsRoutes } from './routes/finops.routes.js';
 import { internalBillingRoutes } from './routes/internal-billing.routes.js';
 import { parentBillingRoutes } from './routes/parent-billing.routes.js';
 import { webhookRoutes } from './routes/webhook.routes.js';
+
+// Type assertion helper for Fastify plugins with type provider mismatches
+const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -50,7 +50,7 @@ async function main() {
   await app.register(webhookRoutes, { prefix: '/billing/webhooks' });
   await app.register(finopsRoutes, { prefix: '/api/v1/finops' });
   await app.register(parentBillingRoutes, { prefix: '/api/v1' });
-  await app.register(internalBillingRoutes, { prefix: '/api/v1/internal' });
+  await app.register(asPlugin(internalBillingRoutes), { prefix: '/api/v1/internal' });
 
   // Graceful shutdown
   const shutdown = async () => {

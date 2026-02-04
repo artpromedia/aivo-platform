@@ -148,6 +148,7 @@ class PilotProgramService {
     const vaultService = getLicenseVaultService();
     const licenseResult = await vaultService.generateBulkLicenses({
       tenantId: params.tenantId,
+      enterpriseDealId: params.enterpriseDealId ?? '',
       type: 'TRIAL', // Pilots use trial license type
       seatsPerLicense: 1,
       quantity: params.seats,
@@ -631,7 +632,7 @@ class PilotProgramService {
   async cancelPilot(
     pilotId: string,
     reason?: string,
-    cancelledBy?: string
+    _cancelledBy?: string
   ): Promise<{ success: boolean; error?: string }> {
     const pilot = await prisma.pilotProgram.findUnique({
       where: { id: pilotId },

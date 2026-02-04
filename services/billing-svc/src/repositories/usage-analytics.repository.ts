@@ -1,4 +1,3 @@
- 
 /**
  * Usage Analytics Repository
  *
@@ -153,7 +152,7 @@ export class SeatUsageRepository {
       totalCommitted: Number(row?.totalCommitted ?? 0),
       totalAllocated: Number(row?.totalAllocated ?? 0),
       totalOverage: Number(row?.totalOverage ?? 0),
-      overallUtilization: Number(row?.overallUtilization ?? 0),
+      overallUtilization: row?.overallUtilization ?? 0,
     };
   }
 }
@@ -176,7 +175,7 @@ export class SeatUsageAlertRepository {
         gradeBand: input.gradeBand as GradeBand,
         threshold: new Prisma.Decimal(input.threshold),
         status: SeatUsageAlertStatus.OPEN,
-        contextJson: input.contextJson as Prisma.InputJsonValue,
+        contextJson: input.contextJson as unknown as Prisma.InputJsonValue,
       },
     });
     return this.mapToAlert(alert);
@@ -273,7 +272,7 @@ export class SeatUsageAlertRepository {
     const alert = await this.prisma.seatUsageAlert.update({
       where: { id },
       data: {
-        contextJson: contextJson as Prisma.InputJsonValue,
+        contextJson: contextJson as unknown as Prisma.InputJsonValue,
       },
     });
     return this.mapToAlert(alert);
@@ -349,7 +348,7 @@ export class SeatUsageAlertRepository {
       gradeBand: alert.gradeBand as GradeBand,
       threshold: Number(alert.threshold),
       status: alert.status as SeatUsageAlertStatus,
-      contextJson: alert.contextJson,
+      contextJson: alert.contextJson as unknown as SeatUsageAlertContext,
       acknowledgedAt: alert.acknowledgedAt,
       acknowledgedBy: alert.acknowledgedBy,
       resolvedAt: alert.resolvedAt,

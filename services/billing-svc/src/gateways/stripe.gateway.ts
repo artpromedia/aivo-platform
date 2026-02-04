@@ -62,16 +62,77 @@ export class StripeGateway implements PaymentGateway {
 
   // Stripe supports 135+ currencies
   public readonly supportedCurrencies = [
-    'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CNY', 'INR', 'BRL', 'MXN',
-    'SGD', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'CHF', 'ZAR', 'KRW', 'THB',
-    'MYR', 'PHP', 'IDR', 'VND', 'AED', 'SAR', 'EGP', 'NGN', 'KES', 'GHS',
+    'USD',
+    'EUR',
+    'GBP',
+    'CAD',
+    'AUD',
+    'JPY',
+    'CNY',
+    'INR',
+    'BRL',
+    'MXN',
+    'SGD',
+    'HKD',
+    'NZD',
+    'SEK',
+    'NOK',
+    'DKK',
+    'CHF',
+    'ZAR',
+    'KRW',
+    'THB',
+    'MYR',
+    'PHP',
+    'IDR',
+    'VND',
+    'AED',
+    'SAR',
+    'EGP',
+    'NGN',
+    'KES',
+    'GHS',
   ];
 
   // Stripe supports 190+ countries
   public readonly supportedCountries = [
-    'US', 'GB', 'CA', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'IE',
-    'PT', 'FI', 'SE', 'NO', 'DK', 'CH', 'JP', 'SG', 'HK', 'NZ', 'MY', 'IN',
-    'BR', 'MX', 'AR', 'CL', 'CO', 'PE', 'ZA', 'AE', 'SA', 'EG', 'NG', 'KE', 'GH',
+    'US',
+    'GB',
+    'CA',
+    'AU',
+    'DE',
+    'FR',
+    'ES',
+    'IT',
+    'NL',
+    'BE',
+    'AT',
+    'IE',
+    'PT',
+    'FI',
+    'SE',
+    'NO',
+    'DK',
+    'CH',
+    'JP',
+    'SG',
+    'HK',
+    'NZ',
+    'MY',
+    'IN',
+    'BR',
+    'MX',
+    'AR',
+    'CL',
+    'CO',
+    'PE',
+    'ZA',
+    'AE',
+    'SA',
+    'EG',
+    'NG',
+    'KE',
+    'GH',
   ];
 
   constructor(config: StripeGatewayConfig) {
@@ -137,10 +198,7 @@ export class StripeGateway implements PaymentGateway {
     }
   }
 
-  async updateCustomer(
-    customerId: string,
-    input: UpdateCustomerInput
-  ): Promise<GatewayCustomer> {
+  async updateCustomer(customerId: string, input: UpdateCustomerInput): Promise<GatewayCustomer> {
     const params: Stripe.CustomerUpdateParams = {};
 
     if (input.email) params.email = input.email;
@@ -380,26 +438,29 @@ export class StripeGateway implements PaymentGateway {
   // ════════════════════════════════════════════════════════════════════════════
 
   async createCheckoutSession(input: CreateCheckoutInput): Promise<GatewayCheckoutSession> {
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = input.items.map(
-      (item) => ({
-        price_data: {
-          currency: input.currency.toLowerCase(),
-          product_data: {
-            name: item.name,
-            description: item.description,
-          },
-          unit_amount: item.amountCents,
-          ...(input.mode === 'subscription' && input.subscriptionData
-            ? {
-                recurring: {
-                  interval: input.subscriptionData.interval,
-                },
-              }
-            : {}),
+    const intervalMap: Record<string, Stripe.Price.Recurring.Interval> = {
+      monthly: 'month',
+      yearly: 'year',
+    };
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = input.items.map((item) => ({
+      price_data: {
+        currency: input.currency.toLowerCase(),
+        product_data: {
+          name: item.name,
+          description: item.description,
         },
-        quantity: item.quantity,
-      })
-    );
+        unit_amount: item.amountCents,
+        ...(input.mode === 'subscription' && input.subscriptionData
+          ? {
+              recurring: {
+                interval: intervalMap[input.subscriptionData.interval] ?? 'month',
+              },
+            }
+          : {}),
+      },
+      quantity: item.quantity,
+    }));
 
     const params: Stripe.Checkout.SessionCreateParams = {
       mode: input.mode,
@@ -448,11 +509,7 @@ export class StripeGateway implements PaymentGateway {
         return { verified: false, error: 'Missing stripe-signature header' };
       }
 
-      const event = this.stripe.webhooks.constructEvent(
-        payload,
-        signature,
-        this.webhookSecret
-      );
+      const event = this.stripe.webhooks.constructEvent(payload, signature, this.webhookSecret);
 
       return {
         verified: true,
@@ -504,7 +561,7 @@ export class StripeGateway implements PaymentGateway {
     return {
       id: pi.id,
       gatewayType: this.type,
-      customerId: typeof pi.customer === 'string' ? pi.customer : pi.customer?.id ?? '',
+      customerId: typeof pi.customer === 'string' ? pi.customer : (pi.customer?.id ?? ''),
       amountCents: pi.amount,
       currency: pi.currency.toUpperCase(),
       status: this.mapPaymentStatus(pi.status),
@@ -576,7 +633,7 @@ export class StripeGateway implements PaymentGateway {
       paymentId:
         typeof refund.payment_intent === 'string'
           ? refund.payment_intent
-          : refund.payment_intent?.id ?? '',
+          : (refund.payment_intent?.id ?? ''),
       amountCents: refund.amount,
       currency: refund.currency.toUpperCase(),
       status: this.mapRefundStatus(refund.status),
@@ -586,9 +643,9 @@ export class StripeGateway implements PaymentGateway {
     };
   }
 
-  private mapRefundStatus(status: Stripe.Refund.Status | null): RefundStatus {
+  private mapRefundStatus(status: string | null): RefundStatus {
     if (!status) return RefundStatus.PENDING;
-    const statusMap: Record<Stripe.Refund.Status, RefundStatus> = {
+    const statusMap: Record<string, RefundStatus> = {
       pending: RefundStatus.PENDING,
       succeeded: RefundStatus.SUCCEEDED,
       failed: RefundStatus.FAILED,
@@ -672,8 +729,7 @@ export class StripeGateway implements PaymentGateway {
 
   private isNotFoundError(error: unknown): boolean {
     return (
-      error instanceof Stripe.errors.StripeInvalidRequestError &&
-      error.code === 'resource_missing'
+      error instanceof Stripe.errors.StripeInvalidRequestError && error.code === 'resource_missing'
     );
   }
 }

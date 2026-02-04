@@ -151,22 +151,22 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
 
     const body = IssueLicenseSchema.parse(request.body);
 
-    const result = await licenseVaultService.issueLicense(
-      {
-        tenantId: body.tenantId,
-        type: body.type,
-        seats: body.seats,
-        features: body.features,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
-        notes: body.notes,
-        enterpriseDealId: body.enterpriseDealId,
-        contractId: body.contractId,
-        metadata: body.metadata,
-      },
-      ctx.userId,
-      ctx.ipAddress,
-      ctx.userAgent
-    );
+    const validDays = body.expiresAt
+      ? Math.ceil((new Date(body.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : 365;
+
+    const result = await licenseVaultService.issueLicense({
+      tenantId: body.tenantId,
+      type: body.type,
+      seats: body.seats,
+      validDays,
+      features: body.features,
+      enterpriseDealId: body.enterpriseDealId,
+      contractId: body.contractId,
+      issuedBy: ctx.userId,
+      notes: body.notes,
+      metadata: body.metadata,
+    });
 
     return reply.status(201).send({
       success: true,
@@ -287,7 +287,7 @@ export async function licenseVaultRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post('/vault/licenses/verify', async (request: FastifyRequest, reply: FastifyReply) => {
     const body = VerifyLicenseSchema.parse(request.body);
-    const ctx = getContext(request);
+    const _ctx = getContext(request);
 
     const result = await licenseVaultService.verifyLicense(body.licenseKey);
 

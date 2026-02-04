@@ -167,9 +167,10 @@ export async function pilotRoutes(fastify: FastifyInstance): Promise<void> {
 
       const result = await pilotProgramService.createPilot({
         ...body,
+        tenantId: body.tenantId!,
         startDate: body.startDate ? new Date(body.startDate) : undefined,
         createdBy: userId,
-      });
+      } as any);
 
       return reply.status(201).send({
         success: true,

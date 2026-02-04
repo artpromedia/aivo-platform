@@ -79,7 +79,7 @@ const PayoutIdParam = z.object({
 });
 
 const UpdatePayoutStatusSchema = z.object({
-  status: z.enum(['CALCULATED', 'APPROVED', 'PROCESSING', 'PAID', 'FAILED']),
+  status: z.enum(['PENDING', 'APPROVED', 'PAID', 'DISPUTED']),
   paidAt: z.coerce.date().optional(),
   paymentReference: z.string().max(255).optional(),
   notes: z.string().max(1000).optional(),
@@ -103,7 +103,7 @@ async function listEntitlements(
   const where: Record<string, unknown> = {};
   if (tenantId) where.tenantId = tenantId;
   if (marketplaceItemId) where.marketplaceItemId = marketplaceItemId;
-  if (status) where.status = status;
+  if (status) where.isActive = status === 'ACTIVE';
 
   const [entitlements, total] = await Promise.all([
     prisma.marketplaceEntitlement.findMany({
@@ -112,8 +112,8 @@ async function listEntitlements(
         contract: {
           select: { id: true, tenantId: true, status: true },
         },
-        contractLineItem: {
-          select: { id: true, sku: true, quantity: true },
+        lineItem: {
+          select: { id: true, sku: true, quantityCommitted: true },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -128,14 +128,15 @@ async function listEntitlements(
       id: e.id,
       tenantId: e.tenantId,
       contractId: e.contractId,
-      contractLineItemId: e.contractLineItemId,
+      lineItemId: e.lineItemId,
       marketplaceItemId: e.marketplaceItemId,
       marketplaceInstallationId: e.marketplaceInstallationId,
       sku: e.sku,
-      entitlementType: e.entitlementType,
-      seatLimit: e.seatLimit,
-      status: e.status,
-      expiresAt: e.expiresAt,
+      entitlementType:
+        (e.metadataJson as Record<string, unknown> | null)?.entitlementType ?? 'UNLIMITED',
+      seatLimit: e.quantity,
+      status: e.isActive ? 'ACTIVE' : 'REVOKED',
+      expiresAt: e.endDate,
       createdAt: e.createdAt,
       updatedAt: e.updatedAt,
     })),
@@ -170,11 +171,8 @@ async function checkEntitlement(
 
   const where: Record<string, unknown> = {
     tenantId,
-    status: 'ACTIVE',
-    OR: [
-      { expiresAt: null },
-      { expiresAt: { gt: new Date() } },
-    ],
+    isActive: true,
+    endDate: { gt: new Date() },
   };
 
   if (marketplaceItemId) where.marketplaceItemId = marketplaceItemId;
@@ -184,9 +182,9 @@ async function checkEntitlement(
     where,
     select: {
       id: true,
-      entitlementType: true,
-      seatLimit: true,
-      expiresAt: true,
+      metadataJson: true,
+      quantity: true,
+      endDate: true,
     },
   });
 
@@ -200,9 +198,10 @@ async function checkEntitlement(
   return reply.send({
     entitled: true,
     entitlementId: entitlement.id,
-    entitlementType: entitlement.entitlementType,
-    seatLimit: entitlement.seatLimit,
-    expiresAt: entitlement.expiresAt,
+    entitlementType:
+      (entitlement.metadataJson as Record<string, unknown> | null)?.entitlementType ?? 'UNLIMITED',
+    seatLimit: entitlement.quantity,
+    expiresAt: entitlement.endDate,
   });
 }
 
@@ -221,7 +220,7 @@ async function createEntitlement(
     where: {
       tenantId: body.tenantId,
       marketplaceItemId: body.marketplaceItemId,
-      status: 'ACTIVE',
+      isActive: true,
     },
   });
 
@@ -254,15 +253,21 @@ async function createEntitlement(
     data: {
       tenantId: body.tenantId,
       contractId: body.contractId,
-      contractLineItemId: body.contractLineItemId ?? null,
+      lineItemId: body.contractLineItemId ?? null,
       marketplaceItemId: body.marketplaceItemId,
       marketplaceInstallationId: body.marketplaceInstallationId,
       sku: body.sku,
-      entitlementType: body.entitlementType,
-      seatLimit: body.seatLimit ?? null,
-      expiresAt: body.expiresAt ?? null,
-      status: 'ACTIVE',
-      metadataJson: body.metadataJson ?? null,
+      featureKey: `MARKETPLACE_ITEM:${body.marketplaceItemId}`,
+      quantity: body.seatLimit ?? null,
+      startDate: new Date(),
+      endDate: body.expiresAt
+        ? new Date(body.expiresAt)
+        : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      isActive: true,
+      metadataJson: {
+        ...((body.metadataJson as Record<string, unknown>) ?? {}),
+        entitlementType: body.entitlementType,
+      },
     },
   });
 
@@ -272,8 +277,10 @@ async function createEntitlement(
     contractId: entitlement.contractId,
     marketplaceItemId: entitlement.marketplaceItemId,
     sku: entitlement.sku,
-    entitlementType: entitlement.entitlementType,
-    status: entitlement.status,
+    entitlementType:
+      (entitlement.metadataJson as Record<string, unknown> | null)?.entitlementType ??
+      body.entitlementType,
+    status: entitlement.isActive ? 'ACTIVE' : 'REVOKED',
     createdAt: entitlement.createdAt,
   });
 }
@@ -303,18 +310,18 @@ async function updateEntitlement(
   const updated = await prisma.marketplaceEntitlement.update({
     where: { id: entitlementId },
     data: {
-      ...(body.seatLimit !== undefined && { seatLimit: body.seatLimit }),
-      ...(body.expiresAt !== undefined && { expiresAt: body.expiresAt }),
-      ...(body.status && { status: body.status }),
+      ...(body.seatLimit !== undefined && { quantity: body.seatLimit }),
+      ...(body.expiresAt !== undefined && { endDate: body.expiresAt }),
+      ...(body.status && { isActive: body.status === 'ACTIVE' }),
       ...(body.metadataJson && { metadataJson: body.metadataJson }),
     },
   });
 
   return reply.send({
     id: updated.id,
-    status: updated.status,
-    seatLimit: updated.seatLimit,
-    expiresAt: updated.expiresAt,
+    status: updated.isActive ? 'ACTIVE' : 'REVOKED',
+    seatLimit: updated.quantity,
+    expiresAt: updated.endDate,
     updatedAt: updated.updatedAt,
   });
 }
@@ -341,7 +348,7 @@ async function revokeEntitlement(
     return reply.status(404).send({ error: 'Entitlement not found' });
   }
 
-  if (existing.status === 'REVOKED') {
+  if (!existing.isActive) {
     return reply.status(400).send({ error: 'Entitlement already revoked' });
   }
 
@@ -350,7 +357,7 @@ async function revokeEntitlement(
   const updated = await prisma.marketplaceEntitlement.update({
     where: { id: entitlementId },
     data: {
-      status: 'REVOKED',
+      isActive: false,
       metadataJson: {
         ...existingMetadata,
         revokedAt: new Date().toISOString(),
@@ -361,7 +368,7 @@ async function revokeEntitlement(
 
   return reply.send({
     id: updated.id,
-    status: updated.status,
+    status: updated.isActive ? 'ACTIVE' : 'REVOKED',
     revokedAt: new Date(),
   });
 }
@@ -407,15 +414,17 @@ async function getVendorRevenue(
   const offset = (page - 1) * limit;
 
   // Query the view
-  const data = await prisma.$queryRawUnsafe<{
-    vendor_id: string;
-    vendor_name: string;
-    sku: string;
-    period: Date;
-    gross_amount_cents: bigint;
-    share_percent: number;
-    vendor_amount_cents: bigint;
-  }[]>(
+  const data = await prisma.$queryRawUnsafe<
+    {
+      vendor_id: string;
+      vendor_name: string;
+      sku: string;
+      period: Date;
+      gross_amount_cents: bigint;
+      share_percent: number;
+      vendor_amount_cents: bigint;
+    }[]
+  >(
     `SELECT * FROM vw_vendor_revenue ${whereClause} ORDER BY period DESC, vendor_name ASC LIMIT ${limit} OFFSET ${offset}`,
     ...params
   );
@@ -434,7 +443,7 @@ async function getVendorRevenue(
       sku: row.sku,
       period: row.period,
       grossAmountCents: Number(row.gross_amount_cents),
-      sharePercent: Number(row.share_percent),
+      sharePercent: row.share_percent,
       vendorAmountCents: Number(row.vendor_amount_cents),
     })),
     pagination: {
@@ -466,12 +475,14 @@ async function getVendorRevenueSummary(
   }
 
   // Get revenue summary from view
-  const summary = await prisma.$queryRaw<{
-    total_gross: bigint;
-    total_vendor: bigint;
-    period_count: bigint;
-    distinct_skus: bigint;
-  }[]>`
+  const summary = await prisma.$queryRaw<
+    {
+      total_gross: bigint;
+      total_vendor: bigint;
+      period_count: bigint;
+      distinct_skus: bigint;
+    }[]
+  >`
     SELECT 
       COALESCE(SUM(gross_amount_cents), 0) as total_gross,
       COALESCE(SUM(vendor_amount_cents), 0) as total_vendor,
@@ -485,7 +496,7 @@ async function getVendorRevenueSummary(
   const pendingPayouts = await prisma.vendorPayout.findMany({
     where: {
       vendorId,
-      status: { in: ['CALCULATED', 'APPROVED', 'PROCESSING'] },
+      status: { in: ['PENDING', 'APPROVED'] },
     },
     orderBy: { periodEnd: 'desc' },
     take: 5,
@@ -558,16 +569,23 @@ async function createVendorPayout(
     });
   }
 
+  // Resolve vendor name from cache or use vendorId as fallback
+  const vendorCacheEntry = await prisma.vendorRevenueShareCache.findFirst({
+    where: { vendorId: body.vendorId },
+    select: { vendorName: true },
+  });
+  const vendorName = vendorCacheEntry?.vendorName ?? body.vendorId;
+
   const payout = await prisma.vendorPayout.create({
     data: {
       vendorId: body.vendorId,
+      vendorName,
       periodStart: body.periodStart,
       periodEnd: body.periodEnd,
-      grossAmountCents: body.grossAmountCents,
-      sharePercent: body.sharePercent,
+      grossRevenueCents: body.grossAmountCents,
+      vendorSharePercent: body.sharePercent,
       vendorAmountCents: body.vendorAmountCents,
-      currency: body.currency,
-      status: 'CALCULATED',
+      status: 'PENDING',
       notes: body.notes ?? null,
     },
   });
@@ -577,8 +595,8 @@ async function createVendorPayout(
     vendorId: payout.vendorId,
     periodStart: payout.periodStart,
     periodEnd: payout.periodEnd,
-    grossAmountCents: payout.grossAmountCents,
-    vendorAmountCents: payout.vendorAmountCents,
+    grossAmountCents: Number(payout.grossRevenueCents),
+    vendorAmountCents: Number(payout.vendorAmountCents),
     status: payout.status,
     createdAt: payout.createdAt,
   });
@@ -608,11 +626,10 @@ async function updatePayoutStatus(
 
   // Validate status transitions
   const validTransitions: Record<string, string[]> = {
-    CALCULATED: ['APPROVED', 'FAILED'],
-    APPROVED: ['PROCESSING', 'FAILED'],
-    PROCESSING: ['PAID', 'FAILED'],
+    PENDING: ['APPROVED', 'DISPUTED'],
+    APPROVED: ['PAID', 'DISPUTED'],
     PAID: [],
-    FAILED: ['CALCULATED'],
+    DISPUTED: ['PENDING'],
   };
 
   if (!validTransitions[existing.status]?.includes(body.status)) {
@@ -622,12 +639,15 @@ async function updatePayoutStatus(
   }
 
   const existingNotes = existing.notes ? `${existing.notes}\n` : '';
-  const newNotes = body.notes ? `${existingNotes}[${new Date().toISOString()}] ${body.notes}` : existing.notes;
+  const newNotes = body.notes
+    ? `${existingNotes}[${new Date().toISOString()}] ${body.notes}`
+    : existing.notes;
 
   const updated = await prisma.vendorPayout.update({
     where: { id: payoutId },
     data: {
-      status: body.status as 'CALCULATED' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'FAILED',
+      status: body.status as 'PENDING' | 'APPROVED' | 'PAID' | 'DISPUTED',
+      ...(body.status === 'APPROVED' && { approvedAt: new Date(), approvedBy: null }),
       ...(body.status === 'PAID' && { paidAt: body.paidAt ?? new Date() }),
       ...(body.paymentReference && { paymentReference: body.paymentReference }),
       ...(newNotes && { notes: newNotes }),

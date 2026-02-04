@@ -6,8 +6,9 @@
  */
 
 import type { ParentSku } from '@aivo/billing-common';
-import type { PrismaClient } from '../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import type { PrismaClient } from '../prisma.js';
 
 interface SubscriptionAccessInfo {
   hasActiveSubscription: boolean;
@@ -70,11 +71,11 @@ export async function internalBillingRoutes(
           subscriptions: {
             where: {
               status: {
-                in: ['active', 'trialing', 'past_due'],
+                in: ['ACTIVE', 'IN_TRIAL', 'PAST_DUE'],
               },
             },
             include: {
-              items: {
+              subscriptionItems: {
                 include: {
                   plan: true,
                 },
@@ -98,24 +99,29 @@ export async function internalBillingRoutes(
         } satisfies SubscriptionAccessInfo);
       }
 
-      const subscription = billingAccount.subscriptions[0];
-      const isActive = ['active', 'trialing'].includes(subscription.status);
-      const isPastDue = subscription.status === 'past_due';
+      const subscription = billingAccount.subscriptions[0]!;
+      const isActive = ['ACTIVE', 'IN_TRIAL'].includes(subscription.status);
+      const isPastDue = subscription.status === 'PAST_DUE';
 
-      // Check for limitedMode flag
-      const limitedMode = (billingAccount as { limitedMode?: boolean }).limitedMode ?? isPastDue;
+      // Check for limitedMode flag (derive from metadataJson since limitedMode is not a direct field)
+      const limitedMode =
+        (billingAccount.metadataJson as Record<string, unknown> | null)?.limitedMode === true ||
+        isPastDue;
 
       // Extract active SKUs from subscription items
       const activeSkus: ParentSku[] = [];
       const learnerSkus: Record<string, ParentSku[]> = {};
 
-      for (const item of subscription.items) {
-        const sku = item.plan?.metadata?.sku as ParentSku | undefined;
+      for (const item of subscription.subscriptionItems) {
+        const sku = (item.plan?.metadataJson as Record<string, unknown>)?.sku as
+          | ParentSku
+          | undefined;
         if (sku) {
           activeSkus.push(sku);
 
           // If item has learnerIds metadata, map to those learners
-          const learnerIds = (item as { metadata?: { learnerIds?: string[] } }).metadata?.learnerIds;
+          const learnerIds = (item as { metadata?: { learnerIds?: string[] } }).metadata
+            ?.learnerIds;
           if (learnerIds && Array.isArray(learnerIds)) {
             for (const learnerId of learnerIds) {
               if (!learnerSkus[learnerId]) {
@@ -208,7 +214,7 @@ export async function internalBillingRoutes(
       const billingAccount = await prisma.billingAccount.findFirst({
         where: { tenantId },
         select: {
-          limitedMode: true,
+          metadataJson: true,
         },
       });
 
@@ -219,8 +225,9 @@ export async function internalBillingRoutes(
         });
       }
 
-      // Type assertion for the extended schema field
-      const limitedMode = (billingAccount as { limitedMode?: boolean }).limitedMode ?? false;
+      // Derive limitedMode from metadataJson since it's not a direct field
+      const limitedMode =
+        (billingAccount.metadataJson as Record<string, unknown> | null)?.limitedMode === true;
 
       return reply.send({
         limitedMode,

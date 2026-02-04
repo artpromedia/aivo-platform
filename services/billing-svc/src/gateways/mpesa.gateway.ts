@@ -1,29 +1,29 @@
 /**
  * M-Pesa Payment Gateway Implementation
- * 
+ *
  * ⚠️ PRODUCTION STATUS: DISABLED (requires completion)
- * 
+ *
  * This implementation is ~90% complete but requires production hardening:
- * 
+ *
  * BLOCKERS FOR PRODUCTION:
  * 1. Transaction Storage: Currently uses in-memory Map (line 93)
  *    → Replace with Redis or PostgreSQL for persistence and scalability
- * 
+ *
  * 2. Credentials: Environment variables defined but values not configured
  *    → Obtain Safaricom production credentials (consumer key, secret, short code, passkey)
  *    → Configure ENABLE_MPESA=true in production environment
- * 
+ *
  * 3. Testing: No integration tests exist
  *    → Add STK Push flow tests (sandbox)
  *    → Test webhook callback handling
  *    → Test refund/reversal operations
  *    → Test error scenarios (timeout, cancellation, insufficient funds)
- * 
+ *
  * 4. Monitoring: Missing transaction monitoring and alerting
  *    → Add metrics for success/failure rates
  *    → Add alerts for high failure rates
  *    → Add latency tracking
- * 
+ *
  * ENABLEMENT PROCESS:
  * 1. Set ENABLE_MPESA=true in environment
  * 2. Configure all MPESA_* environment variables
@@ -31,38 +31,43 @@
  * 4. Add integration tests and run against sandbox
  * 5. Update COUNTRY_GATEWAY_MAP: KE → MPESA (gateway.factory.ts line 113)
  * 6. Deploy and monitor
- * 
+ *
  * M-Pesa is the leading mobile money platform in East Africa with support for:
  * - M-Pesa Express (STK Push) - Customer initiates from phone
  * - C2B (Customer to Business) - Customer sends to paybill/till
  * - B2C (Business to Customer) - Disbursements
  * - Transaction status queries
  * - Account balance queries
- * 
+ *
  * Regional Focus: Kenya, Tanzania, Mozambique, DRC, Lesotho, Ghana, Egypt
  * Primary Currency: KES (Kenya Shillings), TZS (Tanzania Shillings)
- * 
+ *
  * Safaricom M-Pesa API (Daraja Platform)
  */
 
 import type {
   PaymentGateway,
   CreateCustomerInput,
+  UpdateCustomerInput,
   CreatePaymentInput,
   CreateSubscriptionInput,
+  UpdateSubscriptionInput,
   CreateRefundInput,
   CreateCheckoutInput,
-  CustomerResult,
-  PaymentResult,
-  SubscriptionResult,
-  RefundResult,
-  CheckoutResult,
-  WebhookResult,
+  VerifyPaymentInput,
+  GatewayCustomer,
+  GatewayPayment,
+  GatewaySubscription,
+  GatewayRefund,
+  GatewayCheckoutSession,
+  WebhookVerificationResult,
+  PaymentVerificationResult,
+} from './payment-gateway.interface';
+import {
+  WebhookEventType,
   PaymentStatus,
-  SubscriptionGatewayStatus,
   RefundStatus,
   PaymentGatewayType,
-  GatewayCapabilities,
 } from './payment-gateway.interface';
 
 interface MpesaConfig {
@@ -99,47 +104,48 @@ interface MpesaStkQueryResponse {
   ResultDesc: string;
 }
 
-interface MpesaC2BResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-}
-
-interface MpesaTransactionStatusResponse {
-  ResponseCode: string;
-  ResponseDescription: string;
-  OriginatorConversationID: string;
-  ConversationID: string;
-}
-
-interface MpesaB2CResponse {
-  OriginatorConversationID: string;
-  ConversationID: string;
-  ResponseCode: string;
-  ResponseDescription: string;
-}
-
 // Store for tracking transactions (should use Redis/DB in production)
-const transactionStore = new Map<string, {
-  amount: number;
-  phone: string;
-  status: PaymentStatus;
-  checkoutRequestId?: string;
-  merchantRequestId?: string;
-  mpesaReceiptNumber?: string;
-}>();
+const transactionStore = new Map<
+  string,
+  {
+    amountCents: number;
+    phone: string;
+    customerId: string;
+    status: PaymentStatus;
+    checkoutRequestId?: string;
+    merchantRequestId?: string;
+    mpesaReceiptNumber?: string;
+    description?: string;
+    currency: string;
+    metadata: Record<string, string>;
+    createdAt: Date;
+  }
+>();
 
 export class MpesaGateway implements PaymentGateway {
-  readonly type: PaymentGatewayType = 'MPESA';
+  readonly type: PaymentGatewayType = PaymentGatewayType.MPESA;
+  readonly supportedCurrencies: string[] = ['KES', 'TZS'];
+  readonly supportedCountries: string[] = ['KE', 'TZ', 'MZ', 'CD', 'LS', 'GH', 'EG'];
   private readonly baseUrl: string;
   private readonly config: MpesaConfig;
   private accessToken: string | null = null;
-  private tokenExpiry: number = 0;
+  private tokenExpiry = 0;
 
   constructor(config: MpesaConfig) {
     this.config = config;
-    this.baseUrl = config.environment === 'production'
-      ? 'https://api.safaricom.co.ke'
-      : 'https://sandbox.safaricom.co.ke';
+    this.baseUrl =
+      config.environment === 'production'
+        ? 'https://api.safaricom.co.ke'
+        : 'https://sandbox.safaricom.co.ke';
+  }
+
+  isAvailable(): boolean {
+    return !!(
+      this.config.consumerKey &&
+      this.config.consumerSecret &&
+      this.config.shortCode &&
+      this.config.passKey
+    );
   }
 
   // ============================================
@@ -161,7 +167,7 @@ export class MpesaGateway implements PaymentGateway {
       {
         method: 'GET',
         headers: {
-          'Authorization': `Basic ${credentials}`,
+          Authorization: `Basic ${credentials}`,
         },
       }
     );
@@ -170,24 +176,21 @@ export class MpesaGateway implements PaymentGateway {
       throw new Error(`M-Pesa authentication failed: ${response.status}`);
     }
 
-    const data = await response.json() as MpesaAccessToken;
+    const data = (await response.json()) as MpesaAccessToken;
     this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + (parseInt(data.expires_in) * 1000) - 60000; // 1 min buffer
+    this.tokenExpiry = Date.now() + parseInt(data.expires_in) * 1000 - 60000; // 1 min buffer
 
     return this.accessToken;
   }
 
-  private async request<T>(
-    endpoint: string,
-    body: Record<string, unknown>
-  ): Promise<T> {
+  private async request<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
     const token = await this.getAccessToken();
     const url = `${this.baseUrl}${endpoint}`;
 
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -203,10 +206,11 @@ export class MpesaGateway implements PaymentGateway {
   }
 
   private generatePassword(): { password: string; timestamp: string } {
-    const timestamp = new Date().toISOString()
+    const timestamp = new Date()
+      .toISOString()
       .replace(/[-:T.Z]/g, '')
       .substring(0, 14);
-    
+
     const password = Buffer.from(
       `${this.config.shortCode}${this.config.passKey}${timestamp}`
     ).toString('base64');
@@ -217,7 +221,7 @@ export class MpesaGateway implements PaymentGateway {
   private formatPhoneNumber(phone: string): string {
     // Convert to 254XXXXXXXXX format
     let formatted = phone.replace(/\s+/g, '').replace(/[^0-9]/g, '');
-    
+
     if (formatted.startsWith('0')) {
       formatted = '254' + formatted.substring(1);
     } else if (formatted.startsWith('+254')) {
@@ -233,70 +237,91 @@ export class MpesaGateway implements PaymentGateway {
   // CUSTOMER MANAGEMENT
   // ============================================
 
-  async createCustomer(input: CreateCustomerInput): Promise<CustomerResult> {
+  async createCustomer(input: CreateCustomerInput): Promise<GatewayCustomer> {
     // M-Pesa doesn't have customer accounts - phone number is the identifier
     const customerId = `mpesa_${this.formatPhoneNumber(input.phone || '')}`;
 
     return {
-      success: true,
-      customerId,
+      id: customerId,
       gatewayType: this.type,
-      metadata: {
-        phone: input.phone,
-        email: input.email,
-        name: input.name,
-      },
+      email: input.email,
+      name: input.name,
+      phone: input.phone,
+      metadata: input.metadata
+        ? Object.fromEntries(
+            Object.entries(input.metadata).filter(
+              (entry): entry is [string, string] => entry[1] !== undefined
+            )
+          )
+        : {},
+      createdAt: new Date(),
+      rawResponse: null,
     };
   }
 
-  async getCustomer(customerId: string): Promise<CustomerResult> {
+  async getCustomer(customerId: string): Promise<GatewayCustomer | null> {
+    // M-Pesa uses phone numbers as customer identifiers; no remote lookup available
     return {
-      success: true,
-      customerId,
+      id: customerId,
       gatewayType: this.type,
+      email: '',
       metadata: {
         note: 'M-Pesa uses phone numbers as customer identifiers',
       },
+      createdAt: new Date(),
+      rawResponse: null,
     };
   }
 
-  async updateCustomer(customerId: string, input: Partial<CreateCustomerInput>): Promise<CustomerResult> {
+  async updateCustomer(customerId: string, input: UpdateCustomerInput): Promise<GatewayCustomer> {
     return {
-      success: true,
-      customerId,
+      id: customerId,
       gatewayType: this.type,
-      metadata: input,
+      email: input.email || '',
+      name: input.name,
+      phone: input.phone,
+      metadata: input.metadata || {},
+      createdAt: new Date(),
+      rawResponse: null,
     };
   }
 
-  async deleteCustomer(customerId: string): Promise<{ success: boolean }> {
-    return { success: true };
+  async deleteCustomer(_customerId: string): Promise<boolean> {
+    return true;
   }
 
   // ============================================
   // PAYMENT OPERATIONS - STK Push (Lipa na M-Pesa)
   // ============================================
 
-  async createPayment(input: CreatePaymentInput): Promise<PaymentResult> {
-    if (!input.phone) {
-      return {
-        success: false,
-        paymentId: '',
-        status: 'failed' as PaymentStatus,
-        gatewayType: this.type,
-        error: 'Phone number is required for M-Pesa payments',
-      };
+  async createPayment(input: CreatePaymentInput): Promise<GatewayPayment> {
+    const phone = input.metadata?.phone;
+    if (!phone) {
+      throw new Error(
+        'Phone number is required for M-Pesa payments. Provide it via metadata.phone'
+      );
     }
 
     const { password, timestamp } = this.generatePassword();
-    const phoneNumber = this.formatPhoneNumber(input.phone);
+    const phoneNumber = this.formatPhoneNumber(phone);
     const txRef = `mpesa_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
     // Store transaction for tracking
     transactionStore.set(txRef, {
-      amount: input.amount,
+      amountCents: input.amountCents,
       phone: phoneNumber,
-      status: 'pending',
+      customerId: input.customerId,
+      status: PaymentStatus.PENDING,
+      description: input.description,
+      currency: input.currency || 'KES',
+      metadata: input.metadata
+        ? Object.fromEntries(
+            Object.entries(input.metadata).filter(
+              (entry): entry is [string, string] => entry[1] !== undefined
+            )
+          )
+        : {},
+      createdAt: new Date(),
     });
 
     const payload = {
@@ -304,88 +329,81 @@ export class MpesaGateway implements PaymentGateway {
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
-      Amount: Math.round(input.amount / 100), // M-Pesa uses whole units
+      Amount: Math.round(input.amountCents / 100), // M-Pesa uses whole units
       PartyA: phoneNumber,
       PartyB: this.config.shortCode,
       PhoneNumber: phoneNumber,
-      CallBackURL: this.config.callbackUrl,
+      CallBackURL: input.callbackUrl || this.config.callbackUrl,
       AccountReference: input.metadata?.accountRef || 'AIVO',
       TransactionDesc: input.description?.substring(0, 20) || 'AIVO Payment',
     };
 
-    try {
-      const response = await this.request<MpesaStkPushResponse>(
-        '/mpesa/stkpush/v1/processrequest',
-        payload
-      );
+    const response = await this.request<MpesaStkPushResponse>(
+      '/mpesa/stkpush/v1/processrequest',
+      payload
+    );
 
-      if (response.ResponseCode === '0') {
-        // Update transaction store with M-Pesa IDs
-        const tx = transactionStore.get(txRef);
-        if (tx) {
-          tx.checkoutRequestId = response.CheckoutRequestID;
-          tx.merchantRequestId = response.MerchantRequestID;
-          transactionStore.set(txRef, tx);
-        }
-
-        return {
-          success: true,
-          paymentId: txRef,
-          status: 'pending' as PaymentStatus,
-          gatewayType: this.type,
-          gatewayPaymentId: response.CheckoutRequestID,
-          amount: input.amount,
-          currency: 'KES',
-          metadata: {
-            merchantRequestId: response.MerchantRequestID,
-            checkoutRequestId: response.CheckoutRequestID,
-            customerMessage: response.CustomerMessage,
-            note: 'STK Push sent to customer phone. Awaiting PIN entry.',
-          },
-        };
+    if (response.ResponseCode === '0') {
+      // Update transaction store with M-Pesa IDs
+      const tx = transactionStore.get(txRef);
+      if (tx) {
+        tx.checkoutRequestId = response.CheckoutRequestID;
+        tx.merchantRequestId = response.MerchantRequestID;
+        transactionStore.set(txRef, tx);
       }
 
       return {
-        success: false,
-        paymentId: txRef,
-        status: 'failed' as PaymentStatus,
+        id: txRef,
         gatewayType: this.type,
-        error: response.ResponseDescription,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        paymentId: txRef,
-        status: 'failed' as PaymentStatus,
-        gatewayType: this.type,
-        error: error instanceof Error ? error.message : 'M-Pesa STK Push failed',
+        customerId: input.customerId,
+        amountCents: input.amountCents,
+        currency: input.currency || 'KES',
+        status: PaymentStatus.PENDING,
+        description: input.description,
+        metadata: {
+          merchantRequestId: response.MerchantRequestID,
+          checkoutRequestId: response.CheckoutRequestID,
+          customerMessage: response.CustomerMessage,
+          note: 'STK Push sent to customer phone. Awaiting PIN entry.',
+        },
+        reference: response.CheckoutRequestID,
+        createdAt: new Date(),
+        rawResponse: response,
       };
     }
+
+    throw new Error(`M-Pesa STK Push failed: ${response.ResponseDescription}`);
   }
 
-  async verifyPayment(paymentId: string): Promise<PaymentResult> {
+  async verifyPayment(input: VerifyPaymentInput): Promise<PaymentVerificationResult> {
+    const paymentId = input.reference;
     const tx = transactionStore.get(paymentId);
-    
-    if (!tx || !tx.checkoutRequestId) {
-      return {
-        success: false,
-        paymentId,
-        status: 'failed' as PaymentStatus,
-        gatewayType: this.type,
-        error: 'Transaction not found',
-      };
+
+    if (!tx?.checkoutRequestId) {
+      throw new Error('Transaction not found');
     }
 
     // If already completed, return cached result
-    if (tx.status === 'succeeded') {
-      return {
-        success: true,
-        paymentId,
-        status: 'succeeded' as PaymentStatus,
+    if (tx.status === PaymentStatus.SUCCEEDED) {
+      const payment: GatewayPayment = {
+        id: paymentId,
         gatewayType: this.type,
-        gatewayPaymentId: tx.mpesaReceiptNumber,
-        amount: tx.amount,
-        currency: 'KES',
+        customerId: tx.customerId,
+        amountCents: tx.amountCents,
+        currency: tx.currency,
+        status: PaymentStatus.SUCCEEDED,
+        description: tx.description,
+        metadata: tx.metadata,
+        reference: tx.mpesaReceiptNumber,
+        paidAt: new Date(),
+        createdAt: tx.createdAt,
+        rawResponse: null,
+      };
+
+      return {
+        verified: true,
+        status: PaymentStatus.SUCCEEDED,
+        payment,
       };
     }
 
@@ -398,53 +416,60 @@ export class MpesaGateway implements PaymentGateway {
       CheckoutRequestID: tx.checkoutRequestId,
     };
 
-    try {
-      const response = await this.request<MpesaStkQueryResponse>(
-        '/mpesa/stkpushquery/v1/query',
-        payload
-      );
+    const response = await this.request<MpesaStkQueryResponse>(
+      '/mpesa/stkpushquery/v1/query',
+      payload
+    );
 
-      const status = this.mapResultCode(response.ResultCode);
-      tx.status = status;
-      transactionStore.set(paymentId, tx);
+    const status = this.mapResultCode(response.ResultCode);
+    tx.status = status;
+    transactionStore.set(paymentId, tx);
 
-      return {
-        success: status === 'succeeded',
-        paymentId,
-        status,
-        gatewayType: this.type,
-        gatewayPaymentId: tx.checkoutRequestId,
-        amount: tx.amount,
-        currency: 'KES',
-        metadata: {
-          resultCode: response.ResultCode,
-          resultDesc: response.ResultDesc,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        paymentId,
-        status: 'pending' as PaymentStatus,
-        gatewayType: this.type,
-        error: 'Query failed - transaction may still be processing',
-      };
-    }
-  }
-
-  async capturePayment(paymentId: string, amount?: number): Promise<PaymentResult> {
-    // M-Pesa payments are captured immediately
-    return this.verifyPayment(paymentId);
-  }
-
-  async cancelPayment(paymentId: string): Promise<PaymentResult> {
-    // M-Pesa doesn't support cancellation
-    return {
-      success: false,
-      paymentId,
-      status: 'failed' as PaymentStatus,
+    const payment: GatewayPayment = {
+      id: paymentId,
       gatewayType: this.type,
-      error: 'M-Pesa payments cannot be canceled. Use reversal for completed transactions.',
+      customerId: tx.customerId,
+      amountCents: tx.amountCents,
+      currency: tx.currency,
+      status,
+      description: tx.description,
+      metadata: {
+        ...tx.metadata,
+        resultCode: response.ResultCode,
+        resultDesc: response.ResultDesc,
+      },
+      reference: tx.checkoutRequestId,
+      paidAt: status === PaymentStatus.SUCCEEDED ? new Date() : undefined,
+      createdAt: tx.createdAt,
+      rawResponse: response,
+    };
+
+    return {
+      verified: status === PaymentStatus.SUCCEEDED,
+      status,
+      payment,
+    };
+  }
+
+  async getPayment(paymentId: string): Promise<GatewayPayment | null> {
+    const tx = transactionStore.get(paymentId);
+    if (!tx) {
+      return null;
+    }
+
+    return {
+      id: paymentId,
+      gatewayType: this.type,
+      customerId: tx.customerId,
+      amountCents: tx.amountCents,
+      currency: tx.currency,
+      status: tx.status,
+      description: tx.description,
+      metadata: tx.metadata,
+      reference: tx.mpesaReceiptNumber || tx.checkoutRequestId,
+      paidAt: tx.status === PaymentStatus.SUCCEEDED ? new Date() : undefined,
+      createdAt: tx.createdAt,
+      rawResponse: null,
     };
   }
 
@@ -452,83 +477,56 @@ export class MpesaGateway implements PaymentGateway {
   // SUBSCRIPTION MANAGEMENT
   // ============================================
 
-  async createSubscription(input: CreateSubscriptionInput): Promise<SubscriptionResult> {
+  async createSubscription(_input: CreateSubscriptionInput): Promise<GatewaySubscription> {
     // M-Pesa doesn't have native subscriptions
     // Implementation would require recurring payment scheduler
-    return {
-      success: false,
-      subscriptionId: '',
-      status: 'pending' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: 'M-Pesa subscriptions require external scheduling. Contact support for setup.',
-    };
+    throw new Error('M-Pesa subscriptions require external scheduling. Contact support for setup.');
   }
 
-  async getSubscription(subscriptionId: string): Promise<SubscriptionResult> {
-    return {
-      success: false,
-      subscriptionId,
-      status: 'pending' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: 'M-Pesa subscription lookup not implemented',
-    };
+  async getSubscription(_subscriptionId: string): Promise<GatewaySubscription | null> {
+    throw new Error('M-Pesa subscription lookup not implemented');
   }
 
   async updateSubscription(
-    subscriptionId: string,
-    input: Partial<CreateSubscriptionInput>
-  ): Promise<SubscriptionResult> {
-    return {
-      success: false,
-      subscriptionId,
-      status: 'pending' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: 'M-Pesa subscription updates not implemented',
-    };
+    _subscriptionId: string,
+    _input: UpdateSubscriptionInput
+  ): Promise<GatewaySubscription> {
+    throw new Error('M-Pesa subscription updates not implemented');
   }
 
-  async cancelSubscription(subscriptionId: string): Promise<SubscriptionResult> {
-    return {
-      success: false,
-      subscriptionId,
-      status: 'pending' as SubscriptionGatewayStatus,
-      gatewayType: this.type,
-      error: 'M-Pesa subscription cancellation not implemented',
-    };
+  async cancelSubscription(
+    _subscriptionId: string,
+    _options?: { immediate?: boolean }
+  ): Promise<GatewaySubscription> {
+    throw new Error('M-Pesa subscription cancellation not implemented');
+  }
+
+  async resumeSubscription(_subscriptionId: string): Promise<GatewaySubscription> {
+    throw new Error('M-Pesa subscription resume not implemented');
   }
 
   // ============================================
   // REFUND OPERATIONS (Reversal)
   // ============================================
 
-  async createRefund(input: CreateRefundInput): Promise<RefundResult> {
+  async createRefund(input: CreateRefundInput): Promise<GatewayRefund> {
     if (!this.config.initiatorName || !this.config.securityCredential) {
-      return {
-        success: false,
-        refundId: '',
-        status: 'failed' as RefundStatus,
-        gatewayType: this.type,
-        error: 'Reversal credentials not configured',
-      };
+      throw new Error('Reversal credentials not configured');
     }
 
     const tx = transactionStore.get(input.paymentId);
-    if (!tx || !tx.mpesaReceiptNumber) {
-      return {
-        success: false,
-        refundId: '',
-        status: 'failed' as RefundStatus,
-        gatewayType: this.type,
-        error: 'Original transaction not found or not completed',
-      };
+    if (!tx?.mpesaReceiptNumber) {
+      throw new Error('Original transaction not found or not completed');
     }
+
+    const refundAmountCents = input.amountCents ?? tx.amountCents;
 
     const payload = {
       Initiator: this.config.initiatorName,
       SecurityCredential: this.config.securityCredential,
       CommandID: 'TransactionReversal',
       TransactionID: tx.mpesaReceiptNumber,
-      Amount: input.amount ? Math.round(input.amount / 100) : Math.round(tx.amount / 100),
+      Amount: Math.round(refundAmountCents / 100),
       ReceiverParty: this.config.shortCode,
       ReceiverIdentifierType: '11', // Shortcode
       ResultURL: `${this.config.callbackUrl}/reversal/result`,
@@ -537,87 +535,68 @@ export class MpesaGateway implements PaymentGateway {
       Occasion: 'Reversal',
     };
 
-    try {
-      const response = await this.request<{
-        OriginatorConversationID: string;
-        ConversationID: string;
-        ResponseCode: string;
-        ResponseDescription: string;
-      }>('/mpesa/reversal/v1/request', payload);
+    const response = await this.request<{
+      OriginatorConversationID: string;
+      ConversationID: string;
+      ResponseCode: string;
+      ResponseDescription: string;
+    }>('/mpesa/reversal/v1/request', payload);
 
-      if (response.ResponseCode === '0') {
-        return {
-          success: true,
-          refundId: response.ConversationID,
-          status: 'pending' as RefundStatus,
-          gatewayType: this.type,
-          gatewayRefundId: response.OriginatorConversationID,
-          amount: input.amount || tx.amount,
-          metadata: {
-            note: 'Reversal initiated. Check status via callback.',
-          },
-        };
-      }
-
+    if (response.ResponseCode === '0') {
       return {
-        success: false,
-        refundId: '',
-        status: 'failed' as RefundStatus,
+        id: response.ConversationID,
         gatewayType: this.type,
-        error: response.ResponseDescription,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        refundId: '',
-        status: 'failed' as RefundStatus,
-        gatewayType: this.type,
-        error: error instanceof Error ? error.message : 'Reversal failed',
+        paymentId: input.paymentId,
+        amountCents: refundAmountCents,
+        currency: tx.currency,
+        status: RefundStatus.PENDING,
+        reason: input.reason,
+        createdAt: new Date(),
+        rawResponse: response,
       };
     }
+
+    throw new Error(`M-Pesa reversal failed: ${response.ResponseDescription}`);
   }
 
-  async getRefund(refundId: string): Promise<RefundResult> {
+  async getRefund(_refundId: string): Promise<GatewayRefund | null> {
     // Would need to implement transaction status query for reversals
-    return {
-      success: false,
-      refundId,
-      status: 'pending' as RefundStatus,
-      gatewayType: this.type,
-      error: 'Refund status query not implemented',
-    };
+    return null;
   }
 
   // ============================================
   // CHECKOUT SESSION
   // ============================================
 
-  async createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutResult> {
+  async createCheckoutSession(input: CreateCheckoutInput): Promise<GatewayCheckoutSession> {
     // M-Pesa doesn't have hosted checkout - generate STK push
-    const totalAmount = input.items.reduce(
-      (sum, item) => sum + (item.amount * item.quantity),
+    const totalAmountCents = input.items.reduce(
+      (sum, item) => sum + item.amountCents * item.quantity,
       0
     );
 
+    const phone = input.metadata?.phone;
+    if (!phone) {
+      throw new Error(
+        'Phone number is required for M-Pesa checkout. Provide it via metadata.phone'
+      );
+    }
+
     const paymentResult = await this.createPayment({
-      amount: totalAmount,
-      currency: 'KES',
-      customerId: input.customerId,
-      email: input.email,
-      phone: input.phone,
-      customerName: input.customerName,
-      description: input.items.map(i => i.name).join(', '),
+      amountCents: totalAmountCents,
+      currency: input.currency || 'KES',
+      customerId: input.customerId || '',
+      description: input.items.map((i) => i.name).join(', '),
       metadata: input.metadata,
+      callbackUrl: input.callbackUrl,
     });
 
     return {
-      success: paymentResult.success,
-      sessionId: paymentResult.paymentId,
+      id: paymentResult.id,
       gatewayType: this.type,
-      metadata: {
-        note: 'M-Pesa STK Push initiated. Check phone for payment prompt.',
-        checkoutRequestId: paymentResult.gatewayPaymentId,
-      },
+      url: '', // M-Pesa uses STK Push, no redirect URL
+      reference: paymentResult.reference,
+      rawResponse: paymentResult.rawResponse,
     };
   }
 
@@ -625,48 +604,63 @@ export class MpesaGateway implements PaymentGateway {
   // WEBHOOK HANDLING
   // ============================================
 
-  async verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
+  async verifyWebhook(
+    payload: string | Buffer,
+    _headers: Record<string, string>
+  ): Promise<WebhookVerificationResult> {
     // M-Pesa callbacks are IP-whitelisted, not signed
-    // In production, verify source IP
-    return true;
-  }
+    // In production, verify source IP via headers
+    const payloadStr = typeof payload === 'string' ? payload : payload.toString('utf-8');
 
-  async handleWebhook(payload: string, signature: string): Promise<WebhookResult> {
-    const data = JSON.parse(payload);
-    
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(payloadStr);
+    } catch {
+      return { verified: false, error: 'Invalid JSON payload' };
+    }
+
     // Handle STK Push callback
-    if (data.Body?.stkCallback) {
-      const callback = data.Body.stkCallback;
-      const checkoutRequestId = callback.CheckoutRequestID;
-      const resultCode = callback.ResultCode;
-      
+    if ((data.Body as Record<string, unknown>)?.stkCallback) {
+      const body = data.Body as Record<string, unknown>;
+      const callback = body.stkCallback as Record<string, unknown>;
+      const checkoutRequestId = callback.CheckoutRequestID as string;
+      const resultCode = callback.ResultCode as number;
+
       // Find and update transaction
       for (const [txRef, tx] of transactionStore.entries()) {
         if (tx.checkoutRequestId === checkoutRequestId) {
           const status = this.mapResultCode(String(resultCode));
           tx.status = status;
-          
+
           // Extract M-Pesa receipt if successful
-          if (resultCode === 0 && callback.CallbackMetadata?.Item) {
-            const receiptItem = callback.CallbackMetadata.Item.find(
-              (i: { Name: string; Value: unknown }) => i.Name === 'MpesaReceiptNumber'
-            );
+          const callbackMetadata = callback.CallbackMetadata as
+            | { Item?: { Name: string; Value: unknown }[] }
+            | undefined;
+          if (resultCode === 0 && callbackMetadata?.Item) {
+            const receiptItem = callbackMetadata.Item.find((i) => i.Name === 'MpesaReceiptNumber');
             if (receiptItem) {
-              tx.mpesaReceiptNumber = String(receiptItem.Value);
+              tx.mpesaReceiptNumber = receiptItem.Value as string;
             }
           }
-          
+
           transactionStore.set(txRef, tx);
 
           return {
-            success: true,
-            eventType: status === 'succeeded' ? 'payment.succeeded' : 'payment.failed',
-            gatewayType: this.type,
-            resourceId: txRef,
-            metadata: {
-              resultCode,
-              resultDesc: callback.ResultDesc,
-              mpesaReceiptNumber: tx.mpesaReceiptNumber,
+            verified: true,
+            event: {
+              id: txRef,
+              gatewayType: this.type,
+              eventType:
+                status === PaymentStatus.SUCCEEDED
+                  ? WebhookEventType.PAYMENT_SUCCESS
+                  : WebhookEventType.PAYMENT_FAILED,
+              data: {
+                resultCode,
+                resultDesc: callback.ResultDesc,
+                mpesaReceiptNumber: tx.mpesaReceiptNumber,
+              },
+              timestamp: new Date(),
+              rawEvent: data,
             },
           };
         }
@@ -674,26 +668,35 @@ export class MpesaGateway implements PaymentGateway {
     }
 
     // Handle C2B confirmation
-    if (data.TransactionType) {
+    if ((data as Record<string, unknown>).TransactionType) {
       return {
-        success: true,
-        eventType: 'payment.succeeded',
-        gatewayType: this.type,
-        resourceId: data.TransID,
-        metadata: {
-          transactionType: data.TransactionType,
-          amount: data.TransAmount,
-          phoneNumber: data.MSISDN,
-          billRefNumber: data.BillRefNumber,
+        verified: true,
+        event: {
+          id: (data.TransID as string) || '',
+          gatewayType: this.type,
+          eventType: WebhookEventType.PAYMENT_SUCCESS,
+          data: {
+            transactionType: data.TransactionType,
+            amount: data.TransAmount,
+            phoneNumber: data.MSISDN,
+            billRefNumber: data.BillRefNumber,
+          },
+          timestamp: new Date(),
+          rawEvent: data,
         },
       };
     }
 
     return {
-      success: true,
-      eventType: 'unknown',
-      gatewayType: this.type,
-      metadata: data,
+      verified: true,
+      event: {
+        id: '',
+        gatewayType: this.type,
+        eventType: WebhookEventType.UNKNOWN,
+        data,
+        timestamp: new Date(),
+        rawEvent: data,
+      },
     };
   }
 
@@ -708,31 +711,12 @@ export class MpesaGateway implements PaymentGateway {
     // 1032 = Request cancelled by user
     // 1037 = Timeout waiting for user input
     const codeMap: Record<string, PaymentStatus> = {
-      '0': 'succeeded',
-      '1': 'failed',
-      '1032': 'canceled',
-      '1037': 'failed',
+      '0': PaymentStatus.SUCCEEDED,
+      '1': PaymentStatus.FAILED,
+      '1032': PaymentStatus.CANCELED,
+      '1037': PaymentStatus.FAILED,
     };
-    return codeMap[resultCode] || 'pending';
-  }
-
-  getCapabilities(): GatewayCapabilities {
-    return {
-      supportedCurrencies: ['KES', 'TZS'],
-      supportedCountries: ['KE', 'TZ', 'MZ', 'CD', 'LS', 'GH', 'EG'],
-      supportedPaymentMethods: ['mobile_money'],
-      supportsRefunds: true,
-      supportsPartialRefunds: true,
-      supportsSubscriptions: false, // Requires external scheduler
-      supportsCheckout: false, // No hosted checkout
-      supportsWebhooks: true,
-      webhookEvents: [
-        'payment.succeeded',
-        'payment.failed',
-        'refund.succeeded',
-        'refund.failed',
-      ],
-    };
+    return codeMap[resultCode] || PaymentStatus.PENDING;
   }
 }
 

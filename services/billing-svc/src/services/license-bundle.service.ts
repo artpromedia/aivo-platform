@@ -9,8 +9,8 @@
 
 import { randomBytes } from 'node:crypto';
 
+import type { PrismaClient, Prisma } from '../../generated/prisma-client';
 import { getBundleConfig, type BundleType as ConfigBundleType } from '../config/plans.config';
-import type { PrismaClient } from '../../generated/prisma-client';
 
 // Type aliases matching Prisma enums
 type BundleType = 'FAMILY' | 'CLASSROOM' | 'DISTRICT_SEAT';
@@ -158,7 +158,9 @@ export class LicenseBundleService {
       );
 
       if (!response.ok) {
-        console.error(`Failed to align curriculum for learner ${learnerId}: ${response.statusText}`);
+        console.error(
+          `Failed to align curriculum for learner ${learnerId}: ${response.statusText}`
+        );
       }
     } catch (error) {
       console.error(`Error aligning curriculum for learner ${learnerId}:`, error);
@@ -1007,8 +1009,8 @@ export class LicenseBundleService {
         actorId: params.actorId,
         actorType: params.actorType,
         description: params.description,
-        previousValue: params.previousValue,
-        newValue: params.newValue,
+        previousValue: params.previousValue as Prisma.InputJsonValue,
+        newValue: params.newValue as Prisma.InputJsonValue,
       },
     });
   }

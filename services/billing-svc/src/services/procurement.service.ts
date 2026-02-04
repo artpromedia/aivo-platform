@@ -1,4 +1,3 @@
- 
 /**
  * Procurement Service
  *
@@ -6,7 +5,7 @@
  * Handles district procurement flows from initial quote through renewal.
  */
 
-import type { PrismaClient } from '../prisma.js';
+import type { PrismaClient, Prisma } from '../prisma.js';
 import {
   QuoteRepository,
   QuoteLineItemRepository,
@@ -146,9 +145,7 @@ export class ProcurementService {
     });
 
     type PriceBookEntryWithProduct = (typeof entries)[number];
-    const entryMap = new Map<string, PriceBookEntryWithProduct>(
-      entries.map((e) => [e.sku, e])
-    );
+    const entryMap = new Map<string, PriceBookEntryWithProduct>(entries.map((e) => [e.sku, e]));
 
     const lineItems: QuoteLineItem[] = [];
     for (const [i, item] of items.entries()) {
@@ -704,7 +701,7 @@ export class ProcurementService {
 
     await this.prisma.districtInvoice.update({
       where: { id: invoiceId },
-      data: { metadataJson: metadata },
+      data: { metadataJson: metadata as Prisma.InputJsonValue },
     });
 
     return this.invoiceRepo.updateStatus(invoiceId, DistrictInvoiceStatus.VOID);

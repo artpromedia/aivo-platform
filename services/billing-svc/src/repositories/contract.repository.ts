@@ -7,7 +7,8 @@
 
 import type { z } from 'zod';
 
-import { Prisma, prisma } from '../prisma.js';
+import type { Prisma } from '../prisma.js';
+import { prisma } from '../prisma.js';
 import type {
   Contract,
   ContractAllocation,
@@ -43,8 +44,8 @@ export class ProductRepository {
     return prisma.product.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ProductUncheckedCreateInput,
     }) as unknown as Product;
   }
 
@@ -94,7 +95,7 @@ export class ProductRepository {
       where: { id },
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as Product;
   }
@@ -122,8 +123,8 @@ export class PriceBookRepository {
     return prisma.priceBook.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.PriceBookUncheckedCreateInput,
     }) as unknown as PriceBook;
   }
 
@@ -176,7 +177,7 @@ export class PriceBookRepository {
       where: { id },
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as PriceBook;
   }
@@ -210,8 +211,8 @@ export class PriceBookEntryRepository {
     return prisma.priceBookEntry.create({
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.PriceBookEntryUncheckedCreateInput,
     }) as unknown as PriceBookEntry;
   }
 
@@ -247,7 +248,7 @@ export class PriceBookEntryRepository {
       where: { id },
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as PriceBookEntry;
   }
@@ -275,8 +276,8 @@ export class DistrictBillingProfileRepository {
       data: {
         ...data,
         billingAddressJson: data.billingAddressJson,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.DistrictBillingProfileUncheckedCreateInput,
     }) as unknown as DistrictBillingProfile;
   }
 
@@ -302,7 +303,7 @@ export class DistrictBillingProfileRepository {
    * Get profile by tenant ID.
    */
   async getByTenantId(tenantId: string): Promise<DistrictBillingProfile | null> {
-    return prisma.districtBillingProfile.findUnique({
+    return prisma.districtBillingProfile.findFirst({
       where: { tenantId },
     }) as unknown as DistrictBillingProfile | null;
   }
@@ -319,7 +320,7 @@ export class DistrictBillingProfileRepository {
       data: {
         ...data,
         billingAddressJson: data.billingAddressJson ?? undefined,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as DistrictBillingProfile;
   }
@@ -370,8 +371,8 @@ export class ContractRepository {
         contractNumber,
         status: 'DRAFT',
         totalValueCents: BigInt(0),
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ContractUncheckedCreateInput,
     }) as unknown as Contract;
   }
 
@@ -472,10 +473,7 @@ export class ContractRepository {
       where: { contractId: id },
     });
 
-    const totalValueCents = lineItems.reduce(
-      (sum, item) => sum + BigInt(item.totalValueCents),
-      BigInt(0)
-    );
+    const totalValueCents = lineItems.reduce((sum, item) => sum + item.totalValueCents, BigInt(0));
 
     return prisma.contract.update({
       where: { id },
@@ -491,7 +489,7 @@ export class ContractRepository {
       where: { id },
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as Contract;
   }
@@ -513,8 +511,8 @@ export class ContractLineItemRepository {
       data: {
         ...data,
         totalValueCents,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ContractLineItemUncheckedCreateInput,
     }) as unknown as ContractLineItem;
   }
 
@@ -570,7 +568,7 @@ export class ContractLineItemRepository {
       data: {
         ...data,
         totalValueCents,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as ContractLineItem;
   }
@@ -596,8 +594,8 @@ export class ContractAllocationRepository {
       data: {
         ...data,
         quantityUsed: 0,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ContractAllocationUncheckedCreateInput,
     }) as unknown as ContractAllocation;
   }
 
@@ -660,7 +658,7 @@ export class ContractAllocationRepository {
       where: { id },
       data: {
         ...data,
-        metadataJson: data.metadataJson ?? undefined,
+        metadataJson: (data.metadataJson ?? undefined) as Prisma.InputJsonValue,
       },
     }) as unknown as ContractAllocation;
   }
@@ -688,8 +686,8 @@ export class ContractEntitlementRepository {
       data: {
         ...data,
         isActive: true,
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ContractEntitlementUncheckedCreateInput,
     }) as unknown as ContractEntitlement;
   }
 
@@ -781,8 +779,8 @@ export class ContractInvoiceScheduleRepository {
         ...data,
         amountCents: BigInt(data.amountCents),
         status: 'PENDING',
-        metadataJson: data.metadataJson ?? null,
-      },
+        metadataJson: (data.metadataJson ?? null) as Prisma.InputJsonValue,
+      } as Prisma.ContractInvoiceScheduleUncheckedCreateInput,
     }) as unknown as ContractInvoiceSchedule;
   }
 

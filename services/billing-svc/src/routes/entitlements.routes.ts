@@ -7,6 +7,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import type { PlanFeatures, Plan } from '../config/plans.config.js';
 import { entitlementsService } from '../services/entitlements.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -18,7 +19,14 @@ const CheckFeatureSchema = z.object({
 });
 
 const CheckLimitSchema = z.object({
-  limitType: z.enum(['learners', 'teachers', 'storage', 'aiQueries', 'customModules']),
+  limitType: z.enum([
+    'sessionsPerMonth',
+    'storageGb',
+    'apiCallsPerMonth',
+    'contentItems',
+    'assessments',
+    'dataRetentionDays',
+  ]),
   currentUsage: z.number().int().min(0),
 });
 
@@ -89,7 +97,10 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
     const ctx = getContext(request);
     const { feature } = CheckFeatureSchema.parse(request.body);
 
-    const hasAccess = await entitlementsService.checkFeatureAccess(ctx.tenantId, feature);
+    const hasAccess = await entitlementsService.checkFeatureAccess(
+      ctx.tenantId,
+      feature as keyof PlanFeatures
+    );
 
     return reply.send({
       feature,
@@ -132,7 +143,7 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
     const query = request.query as { currentCount?: string };
     const currentCount = Number.parseInt(query.currentCount || '0', 10);
 
-    const canAdd = await entitlementsService.canAddLearner(ctx.tenantId, currentCount);
+    const canAdd = await entitlementsService.canAddLearner(ctx.tenantId);
 
     return reply.send({
       canAddLearner: canAdd,
@@ -154,7 +165,7 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
     const query = request.query as { currentCount?: string };
     const currentCount = Number.parseInt(query.currentCount || '0', 10);
 
-    const canAdd = await entitlementsService.canAddTeacher(ctx.tenantId, currentCount);
+    const canAdd = await entitlementsService.canAddTeacher(ctx.tenantId);
 
     return reply.send({
       canAddTeacher: canAdd,
@@ -194,8 +205,9 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
    */
   app.post('/entitlements/sync', async (request: FastifyRequest, reply: FastifyReply) => {
     const ctx = getContext(request);
+    const { plan } = (request.body as { plan?: string }) ?? {};
 
-    await entitlementsService.syncEntitlements(ctx.tenantId);
+    await entitlementsService.syncEntitlements(ctx.tenantId, (plan ?? 'FREE') as Plan);
 
     // Get updated entitlements
     const entitlements = await entitlementsService.getEntitlements(ctx.tenantId);
@@ -214,14 +226,17 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
    * POST /entitlements/invalidate-cache
    * Invalidate entitlements cache for tenant (internal use)
    */
-  app.post('/entitlements/invalidate-cache', async (request: FastifyRequest, reply: FastifyReply) => {
-    const ctx = getContext(request);
+  app.post(
+    '/entitlements/invalidate-cache',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const ctx = getContext(request);
 
-    entitlementsService.invalidateCache(ctx.tenantId);
+      entitlementsService.invalidateCache(ctx.tenantId);
 
-    return reply.send({
-      message: 'Cache invalidated successfully',
-      tenantId: ctx.tenantId,
-    });
-  });
+      return reply.send({
+        message: 'Cache invalidated successfully',
+        tenantId: ctx.tenantId,
+      });
+    }
+  );
 }

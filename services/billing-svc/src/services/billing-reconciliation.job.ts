@@ -462,10 +462,10 @@ export class BillingReconciliationJob {
     sub: ParentSubscriptionData
   ): Promise<boolean> {
     try {
-      // Get the most recent payment intent for this subscription
+      // Get the most recent paid invoice for this subscription's billing account
       const latestInvoice = await this.prisma.invoice.findFirst({
         where: {
-          subscriptionId: sub.subscriptionId,
+          billingAccountId: sub.billingAccountId,
           status: 'PAID',
         },
         orderBy: {
@@ -473,12 +473,12 @@ export class BillingReconciliationJob {
         },
         select: {
           id: true,
-          stripePaymentIntentId: true,
-          amountCents: true,
+          providerInvoiceId: true,
+          amountDueCents: true,
         },
       });
 
-      if (!latestInvoice?.stripePaymentIntentId) {
+      if (!latestInvoice?.providerInvoiceId) {
         console.warn(
           `[ReconciliationJob] No paid invoice found for subscription ${sub.subscriptionId}, cannot issue credit`
         );
@@ -487,24 +487,26 @@ export class BillingReconciliationJob {
 
       // Create a refund via Stripe
       const refund = await this.stripeService.createRefund(
-        latestInvoice.stripePaymentIntentId,
+        latestInvoice.providerInvoiceId,
         overlap.proRataCreditCents,
         'requested_by_customer'
       );
 
-      // Record the credit in our database
-      await this.prisma.credit.create({
+      // Record the credit as a payment event (no dedicated credit model)
+      await this.prisma.paymentEvent.create({
         data: {
+          provider: 'STRIPE',
+          eventType: 'credit.issued',
+          providerEventId: `credit_${refund.id}_${Date.now()}`,
           billingAccountId: sub.billingAccountId,
-          learnerId: overlap.learnerId,
-          amountCents: overlap.proRataCreditCents ?? 0,
-          reason: 'DISTRICT_OVERLAP',
-          sourceInvoiceId: latestInvoice.id,
-          stripeRefundId: refund.id,
-          status: 'ISSUED',
-          issuedAt: new Date(),
-          expiresAt: null,
-          metadataJson: {
+          payload: {
+            learnerId: overlap.learnerId,
+            amountCents: overlap.proRataCreditCents ?? 0,
+            reason: 'DISTRICT_OVERLAP',
+            sourceInvoiceId: latestInvoice.id,
+            stripeRefundId: refund.id,
+            status: 'ISSUED',
+            issuedAt: new Date().toISOString(),
             districtContractId: overlap.districtContractId,
             featureKey: overlap.featureKey,
             subscriptionId: sub.subscriptionId,
@@ -543,10 +545,8 @@ export class BillingReconciliationJob {
 
     // Convert to monthly equivalent for consistent comparison
     let monthlyPriceCents = plan.unitPriceCents;
-    if (plan.billingPeriod === 'ANNUAL') {
+    if (plan.billingPeriod === 'YEARLY') {
       monthlyPriceCents = Math.round(plan.unitPriceCents / 12);
-    } else if (plan.billingPeriod === 'QUARTERLY') {
-      monthlyPriceCents = Math.round(plan.unitPriceCents / 3);
     }
 
     // Per-feature monthly price (averaged)
