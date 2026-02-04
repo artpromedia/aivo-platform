@@ -5,9 +5,10 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/flutter_common.dart' hide Assessment, AssessmentType, AssessmentStatus, Question, SyncOperationType;
 
 import '../models/assessment.dart';
+import '../models/sync_operation.dart';
 import '../services/database/local_database.dart';
 import '../services/sync/sync_service.dart';
 import '../services/sync/connectivity_monitor.dart';
@@ -433,7 +434,7 @@ class AssessmentRepository {
       final assessments = items
           .map((a) => Assessment.fromJson(a as Map<String, dynamic>))
           .toList();
-      await db.cacheAssessments(assessments);
+      await db.cacheAssessments(assessments, classId: classId);
     } catch (e) {
       debugPrint('[AssessmentRepository] Background refresh error: $e');
     }
@@ -498,7 +499,7 @@ class AssessmentRepository {
         SyncOperation(
           id: 'create_assessment_$tempId',
           type: SyncOperationType.create,
-          entity: 'assessment',
+          entityType: 'assessment',
           entityId: tempId,
           data: {
             ...dto.toJson(),
@@ -555,7 +556,7 @@ class AssessmentRepository {
         SyncOperation(
           id: 'update_assessment_$assessmentId',
           type: SyncOperationType.update,
-          entity: 'assessment',
+          entityType: 'assessment',
           entityId: assessmentId,
           data: dto.toJson(),
           createdAt: DateTime.now(),
@@ -583,7 +584,7 @@ class AssessmentRepository {
         SyncOperation(
           id: 'delete_assessment_$assessmentId',
           type: SyncOperationType.delete,
-          entity: 'assessment',
+          entityType: 'assessment',
           entityId: assessmentId,
           data: const {},
           createdAt: DateTime.now(),
@@ -676,10 +677,6 @@ class AssessmentRepository {
     }
 
     final updatedQuestions = [...assessment.questions, question];
-    final totalPoints = updatedQuestions.fold<int>(
-      0,
-      (sum, q) => sum + q.points,
-    );
 
     return updateAssessment(
       assessmentId,
@@ -780,7 +777,10 @@ class AssessmentRepository {
     String assessmentId,
   ) async {
     if (!await connectivity.isOnline) {
-      return db.getAssessmentSubmissions(assessmentId);
+      final cached = await db.getAssessmentSubmissions(assessmentId);
+      return cached
+          .map((s) => AssessmentSubmission.fromJson(s as Map<String, dynamic>))
+          .toList();
     }
 
     try {
@@ -790,18 +790,23 @@ class AssessmentRepository {
       final submissions = items
           .map((s) => AssessmentSubmission.fromJson(s as Map<String, dynamic>))
           .toList();
-      await db.cacheAssessmentSubmissions(assessmentId, submissions);
+      await db.cacheAssessmentSubmissions(assessmentId, items);
       return submissions;
     } catch (e) {
       debugPrint('[AssessmentRepository] Error fetching submissions: $e');
-      return db.getAssessmentSubmissions(assessmentId);
+      final cached = await db.getAssessmentSubmissions(assessmentId);
+      return cached
+          .map((s) => AssessmentSubmission.fromJson(s as Map<String, dynamic>))
+          .toList();
     }
   }
 
   /// Get a single submission.
   Future<AssessmentSubmission?> fetchSubmission(String submissionId) async {
     if (!await connectivity.isOnline) {
-      return db.getSubmission(submissionId);
+      // Submissions are cached as part of the assessment submissions list
+      // For a direct lookup, we'd need to cache individual submissions
+      return null;
     }
 
     try {
@@ -812,7 +817,7 @@ class AssessmentRepository {
       return submission;
     } catch (e) {
       debugPrint('[AssessmentRepository] Error fetching submission: $e');
-      return db.getSubmission(submissionId);
+      return null;
     }
   }
 

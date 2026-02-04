@@ -564,6 +564,87 @@ class TeacherLocalDatabase {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
+  // ASSESSMENTS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /// Get all assessments for a class.
+  /// Assessments are stored with a class-prefixed key to allow filtering by class.
+  Future<List<Assessment>> getAssessmentsByClass(String classId) async {
+    final cached = await _db.getAllContentByType('assessment_class_$classId');
+    return cached
+        .map((c) => Assessment.fromJson(jsonDecode(c.jsonPayload) as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Get a single assessment by ID.
+  Future<Assessment?> getAssessment(String id) async {
+    // Search all assessment content types for the matching ID
+    final allContent = await _db.getAllContentByType('assessment');
+    for (final content in allContent) {
+      if (content.contentKey.endsWith('_$id')) {
+        return Assessment.fromJson(jsonDecode(content.jsonPayload) as Map<String, dynamic>);
+      }
+    }
+    // Also check class-prefixed types
+    final cached = await _getCachedValue('assessment_$id');
+    if (cached != null) {
+      return Assessment.fromJson(cached as Map<String, dynamic>);
+    }
+    return null;
+  }
+
+  /// Cache assessments for a specific class.
+  Future<void> cacheAssessments(List<Assessment> assessments, {String? classId}) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final expiresAt = DateTime.now().add(const Duration(days: 7)).millisecondsSinceEpoch;
+    for (final assessment in assessments) {
+      final jsonData = jsonEncode(assessment.toJson());
+      final contentType = classId != null ? 'assessment_class_$classId' : 'assessment';
+      await _db.upsertContent(fc.OfflineContent(
+        contentKey: 'assessment_${assessment.id}',
+        contentType: contentType,
+        subject: 'assessments',
+        gradeBand: 'K-12',
+        jsonPayload: jsonData,
+        mediaPathsJson: null,
+        sizeBytes: jsonData.length,
+        expiresAt: expiresAt,
+        createdAt: now,
+        lastAccessedAt: now,
+      ));
+      // Also cache individually for direct ID lookups
+      await _setCachedValue('assessment_${assessment.id}', assessment.toJson());
+    }
+  }
+
+  /// Delete an assessment from cache.
+  Future<void> deleteAssessment(String id) async {
+    await _db.deleteContentByKeys(['assessment_$id']);
+    await _deleteCachedValue('assessment_$id');
+  }
+
+  /// Get assessment results.
+  Future<dynamic> getAssessmentResults(String assessmentId) async {
+    return _getCachedValue('assessment_results_$assessmentId');
+  }
+
+  /// Cache assessment results.
+  Future<void> cacheAssessmentResults(String assessmentId, dynamic results) async {
+    await _setCachedValue('assessment_results_$assessmentId', results);
+  }
+
+  /// Get assessment submissions.
+  Future<List<dynamic>> getAssessmentSubmissions(String assessmentId) async {
+    final cached = await _getCachedValue('assessment_submissions_$assessmentId');
+    return cached != null ? cached as List<dynamic> : [];
+  }
+
+  /// Cache assessment submissions.
+  Future<void> cacheAssessmentSubmissions(String assessmentId, List<dynamic> submissions) async {
+    await _setCachedValue('assessment_submissions_$assessmentId', submissions);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
   // ASSIGNMENT CATEGORIES
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -648,6 +729,10 @@ class TeacherLocalDatabase {
       createdAt: now,
       lastAccessedAt: now,
     ));
+  }
+
+  Future<void> _deleteCachedValue(String key) async {
+    await _db.deleteContentByKeys([key]);
   }
 
   /// Get cached LMS connection status

@@ -2,6 +2,7 @@
 ///
 /// Authentication screen for parent app with enterprise SSO support.
 /// Addresses RE-AUDIT-003: Mobile Apps Still Lack Enterprise SSO
+library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

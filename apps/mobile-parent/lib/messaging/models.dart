@@ -1,6 +1,7 @@
 /// Messaging Models
 ///
 /// Data models for contextual messaging (Messaging 2.0).
+library;
 
 import 'package:flutter/foundation.dart';
 

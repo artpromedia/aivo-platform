@@ -308,6 +308,7 @@ final GoRouter appRouter = GoRouter(
       path: '/assessments/:id/results',
       builder: (context, state) => AssessmentResultsScreen(
         assessmentId: state.pathParameters['id']!,
+        assessmentName: state.uri.queryParameters['name'] ?? 'Assessment Results',
       ),
     ),
     GoRoute(
@@ -607,7 +608,7 @@ class _ActionPlanDetailScreenState extends State<_ActionPlanDetailScreen> {
                         ),
                         Chip(
                           label: Text(_plan.status),
-                          backgroundColor: AivoBrand.success.withOpacity(0.2),
+                          backgroundColor: AivoBrand.success.withValues(alpha: 0.2),
                         ),
                       ],
                     ),

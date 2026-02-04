@@ -5,6 +5,7 @@
 /// - Parental controls (screen time, content filter, subject access, safety)
 /// - PIN protection for sensitive operations
 /// - Settings synchronization
+library;
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

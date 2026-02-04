@@ -5,6 +5,7 @@
 /// - SSO domain lookup
 /// - Biometric authentication
 /// - Form validation
+library;
 // cspell:ignore Aivo
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

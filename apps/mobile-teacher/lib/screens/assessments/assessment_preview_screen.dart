@@ -7,15 +7,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/assessment.dart';
+import '../../providers/assessment_provider.dart';
 
 /// Screen for previewing an assessment as students will see it
 class AssessmentPreviewScreen extends ConsumerStatefulWidget {
   const AssessmentPreviewScreen({
-    required this.assessment,
+    this.assessment,
+    this.assessmentId,
     super.key,
-  });
+  }) : assert(assessment != null || assessmentId != null,
+            'Either assessment or assessmentId must be provided');
 
-  final Assessment assessment;
+  final Assessment? assessment;
+  final String? assessmentId;
 
   @override
   ConsumerState<AssessmentPreviewScreen> createState() =>
@@ -29,7 +33,36 @@ class _AssessmentPreviewScreenState
 
   @override
   Widget build(BuildContext context) {
-    final assessment = widget.assessment;
+    // If assessment object is provided directly, use it
+    if (widget.assessment != null) {
+      return _buildScreen(context, widget.assessment!);
+    }
+
+    // Otherwise, load via provider
+    final assessmentAsync = ref.watch(assessmentByIdProvider(widget.assessmentId!));
+
+    return assessmentAsync.when(
+      data: (assessment) {
+        if (assessment == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Preview')),
+            body: const Center(child: Text('Assessment not found')),
+          );
+        }
+        return _buildScreen(context, assessment);
+      },
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Preview')),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Scaffold(
+        appBar: AppBar(title: const Text('Preview')),
+        body: Center(child: Text('Error: $error')),
+      ),
+    );
+  }
+
+  Widget _buildScreen(BuildContext context, Assessment assessment) {
     final questions = assessment.questions;
 
     return Scaffold(
@@ -47,7 +80,7 @@ class _AssessmentPreviewScreenState
       ),
       body: _showInstructions
           ? _buildInstructionsPage(context, assessment)
-          : _buildQuestionPage(context, questions[_currentQuestionIndex]),
+          : _buildQuestionPage(context, questions[_currentQuestionIndex], questions.length),
       bottomNavigationBar: _showInstructions
           ? null
           : _buildNavigationBar(context, questions),
@@ -171,7 +204,7 @@ class _AssessmentPreviewScreenState
     );
   }
 
-  Widget _buildQuestionPage(BuildContext context, Question question) {
+  Widget _buildQuestionPage(BuildContext context, Question question, int totalQuestions) {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -190,7 +223,7 @@ class _AssessmentPreviewScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Question ${_currentQuestionIndex + 1} of ${widget.assessment.questions.length}',
+                    'Question ${_currentQuestionIndex + 1} of $totalQuestions',
                     style: theme.textTheme.labelMedium,
                   ),
                   Row(

@@ -682,7 +682,7 @@ class _HomeworkAndFocusSection extends StatelessWidget {
                       label: 'Sessions',
                     ),
                     _MiniStat(
-                      value: '${homework.avgStepsCompletedPerSession.toStringAsFixed(1)}',
+                      value: homework.avgStepsCompletedPerSession.toStringAsFixed(1),
                       label: 'Avg Steps',
                     ),
                     _MiniStat(

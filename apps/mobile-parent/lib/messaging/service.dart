@@ -1,6 +1,7 @@
 /// Messaging Service
 ///
 /// API client for messaging operations including contextual threads.
+library;
 
 import 'dart:async';
 

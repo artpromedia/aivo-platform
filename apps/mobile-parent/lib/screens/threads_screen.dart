@@ -1,6 +1,7 @@
 /// Threads Screen
 ///
 /// Displays contextual messaging threads grouped by learner.
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -2,6 +2,7 @@
 ///
 /// Type definitions for settings and parental controls.
 /// Mirrors the TypeScript types from @aivo/ts-types.
+library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
