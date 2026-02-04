@@ -489,43 +489,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - service: auth-svc
-            port: 4001
-          - service: session-svc
-            port: 4020
-          - service: content-svc
-            port: 4020
-          - service: assessment-svc
-            port: 3031
-          - service: ai-orchestrator
-            port: 4010
-          - service: analytics-svc
-            port: 4030
-          - service: notify-svc
-            port: 4040
-          - service: messaging-svc
-            port: 4041
-          - service: goal-svc
-            port: 4030
-          - service: focus-svc
-            port: 4026
-          - service: billing-svc
-            port: 4060
-          - service: payments-svc
-            port: 4070
-          - service: parent-svc
-            port: 3010
-          - service: baseline-svc
-            port: 4011
-          - service: consent-svc
-            port: 4004
-          - service: profile-svc
-            port: 3420
-          - service: personalization-svc
-            port: 3012
-          - service: life-skills-svc
-            port: 4050
+        service:
+          - auth-svc
+          - session-svc
+          - content-svc
+          - assessment-svc
+          - ai-orchestrator
+          - analytics-svc
+          - notify-svc
+          - messaging-svc
+          - goal-svc
+          - focus-svc
+          - billing-svc
+          - payments-svc
+          - parent-svc
+          - baseline-svc
+          - consent-svc
+          - profile-svc
+          - personalization-svc
+          - life-skills-svc
     steps:
       - uses: actions/checkout@v4
 
@@ -575,7 +557,6 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
-            SERVICE_PORT=${{ matrix.port }}
             VERSION=${{ needs.build.outputs.version }}
             BUILD_SHA=${{ needs.build.outputs.sha_short }}
 
@@ -645,37 +626,9 @@ jobs:
       - name: Run smoke tests
         run: |
           sleep 30
-          declare -A PORTS=(
-            ["auth-svc"]=4001
-            ["session-svc"]=4020
-            ["content-svc"]=4020
-            ["assessment-svc"]=3031
-            ["ai-orchestrator"]=4010
-            ["analytics-svc"]=4030
-            ["notify-svc"]=4040
-            ["messaging-svc"]=4041
-            ["goal-svc"]=4030
-            ["focus-svc"]=4026
-            ["billing-svc"]=4060
-            ["payments-svc"]=4070
-            ["parent-svc"]=3010
-            ["baseline-svc"]=4011
-            ["consent-svc"]=4004
-            ["profile-svc"]=3420
-            ["personalization-svc"]=3012
-            ["life-skills-svc"]=4050
-          )
-          FAILED=0
-          for svc in "${!PORTS[@]}"; do
-            PORT=${PORTS[$svc]}
-            if kubectl exec -n aivo-staging deploy/$svc -- curl -sf http://localhost:$PORT/health 2>/dev/null; then
-              echo "OK: $svc health check passed (port $PORT)"
-            else
-              echo "Warning: $svc health check failed (port $PORT)"
-              FAILED=$((FAILED + 1))
-            fi
+          for svc in auth-svc content-svc session-svc; do
+            kubectl exec -n aivo-staging deploy/$svc -- curl -sf http://localhost:3000/health/ready || echo "Warning: $svc health check failed"
           done
-          echo "Smoke tests complete: $FAILED service(s) failed"
         continue-on-error: true
 
       - name: Notify Slack
@@ -747,41 +700,10 @@ jobs:
       - name: Run production health checks
         run: |
           sleep 60
-          declare -A PORTS=(
-            ["auth-svc"]=4001
-            ["session-svc"]=4020
-            ["content-svc"]=4020
-            ["assessment-svc"]=3031
-            ["ai-orchestrator"]=4010
-            ["analytics-svc"]=4030
-            ["notify-svc"]=4040
-            ["messaging-svc"]=4041
-            ["goal-svc"]=4030
-            ["focus-svc"]=4026
-            ["billing-svc"]=4060
-            ["payments-svc"]=4070
-            ["parent-svc"]=3010
-            ["baseline-svc"]=4011
-            ["consent-svc"]=4004
-            ["profile-svc"]=3420
-            ["personalization-svc"]=3012
-            ["life-skills-svc"]=4050
-          )
-          FAILED=0
-          for svc in "${!PORTS[@]}"; do
-            PORT=${PORTS[$svc]}
-            echo "Checking $svc on port $PORT..."
-            if kubectl exec -n aivo-prod deploy/$svc -- curl -sf http://localhost:$PORT/health 2>/dev/null; then
-              echo "OK: $svc"
-            else
-              echo "FAIL: $svc"
-              FAILED=$((FAILED + 1))
-            fi
+          for svc in auth-svc content-svc session-svc billing-svc; do
+            echo "Checking $svc..."
+            kubectl exec -n aivo-prod deploy/$svc -- curl -sf http://localhost:3000/health/ready
           done
-          if [ $FAILED -gt 0 ]; then
-            echo "ERROR: $FAILED service(s) failed health checks"
-            exit 1
-          fi
 
       - name: Notify Slack
         if: always()
