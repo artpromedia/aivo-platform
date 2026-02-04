@@ -4,7 +4,7 @@
  * Publishes events when messages are sent, read, etc.
  */
 
-import { NatsTransport } from '@aivo/events';
+import { NatsTransport, type BaseEvent } from '@aivo/events';
 import { config } from '../config.js';
 
 let publisher: NatsTransport | null = null;
@@ -16,7 +16,9 @@ async function publishEvent(
 ): Promise<void> {
   if (!publisher) return;
 
-  await publisher.publish({
+  type MessagingEvent = BaseEvent & { payload: Record<string, unknown> };
+
+  await publisher.publish<MessagingEvent>({
     tenantId,
     eventType,
     eventVersion: '1.0.0',
