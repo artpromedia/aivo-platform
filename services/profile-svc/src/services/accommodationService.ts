@@ -63,7 +63,7 @@ export async function createAccommodation(
   // Get profile ID if exists
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      learnerId_tenantId: { tenantId, learnerId },
+      tenantId_learnerId: { tenantId, learnerId },
     },
     select: { id: true },
   });
