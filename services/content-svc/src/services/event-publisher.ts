@@ -68,8 +68,7 @@ class ContentEventPublisherService {
       this.publisher = new NatsTransport({
         servers: config.nats.servers,
         serviceName: 'content-svc',
-        serviceVersion:
-          process.env.SERVICE_VERSION ?? process.env.npm_package_version ?? '0.1.0',
+        serviceVersion: process.env.SERVICE_VERSION ?? process.env.npm_package_version ?? '0.1.0',
         name: 'content-svc',
         token: config.nats.token,
         user: config.nats.user,
@@ -141,7 +140,7 @@ class ContentEventPublisherService {
           tenantId: data.tenantId,
           eventType: 'content.ingestion',
           eventVersion: '1.0.0',
-          payload,
+          metadata: payload,
         });
         console.log(`[content-svc] Published file ingestion job: ${data.jobId}`);
         return { success: true };
@@ -195,7 +194,7 @@ class ContentEventPublisherService {
           tenantId: data.tenantId,
           eventType: 'content.ai_draft',
           eventVersion: '1.0.0',
-          payload,
+          metadata: payload,
         });
         console.log(`[content-svc] Published AI draft job: ${data.jobId}`);
         return { success: true };

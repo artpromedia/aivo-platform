@@ -9,14 +9,15 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import type { SocialStoryCategory, LearningObjectGradeBand } from '../prisma-types.js';
+import * as socialStoryService from '../social-stories/social-story.service.js';
+import { seedBuiltInStories } from '../social-stories/story-templates.js';
 import { SentenceTypeEnum } from '../social-stories/types.js';
 import type {
   StoryTriggerType,
   StoryPage,
+  StoryInteraction,
   TranslatedStoryContent,
 } from '../social-stories/types.js';
-import * as socialStoryService from '../social-stories/social-story.service.js';
-import { seedBuiltInStories } from '../social-stories/story-templates.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -183,17 +184,24 @@ function mapStoryPages(pages: StoryPageInput[]): StoryPage[] {
     })),
     visual: p.visual
       ? {
-        id: p.visual.id ?? `visual-${idx}`,
-        type: p.visual.type ?? 'IMAGE',
-        url: p.visual.url ?? '',
-        altText: p.visual.altText ?? '',
-        style: p.visual.style ?? 'PHOTOGRAPHS',
-        position: p.visual.position ?? 'CENTER',
-        aspectRatio: p.visual.aspectRatio,
-        variants: p.visual.variants,
-      }
+          id: p.visual.id ?? `visual-${idx}`,
+          type: p.visual.type ?? 'IMAGE',
+          url: p.visual.url ?? '',
+          altText: p.visual.altText ?? '',
+          style: p.visual.style ?? 'PHOTOGRAPHS',
+          position: p.visual.position ?? 'CENTER',
+          aspectRatio: p.visual.aspectRatio,
+          variants: p.visual.variants,
+        }
       : undefined,
-    interactions: p.interactions,
+    interactions: p.interactions?.map(
+      (i): StoryInteraction => ({
+        id: i.id,
+        type: i.type,
+        config: i.config,
+        required: i.required,
+      })
+    ),
     backgroundColor: p.backgroundColor,
     transitionEffect: p.transitionEffect,
     audioNarration: p.audioNarration,
@@ -627,7 +635,10 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'Tenant ID required' });
       }
 
-      const preferences = await socialStoryService.getLearnerPreferences(userTenantId, request.params.learnerId);
+      const preferences = await socialStoryService.getLearnerPreferences(
+        userTenantId,
+        request.params.learnerId
+      );
 
       return reply.send(preferences ?? { learnerId: request.params.learnerId });
     }
@@ -784,23 +795,26 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const assignment = await socialStoryService.createAssignment({
-        storyId: parseResult.data.storyId!,
-        learnerId: parseResult.data.learnerId!,
-        priority: parseResult.data.priority,
-        isRequired: parseResult.data.isRequired,
-        showBefore: parseResult.data.showBefore,
-        showAfter: parseResult.data.showAfter,
-        scheduledTimes: parseResult.data.scheduledTimes?.map(t => ({
-          dayOfWeek: t.dayOfWeek,
-          timeOfDay: t.timeOfDay ?? '09:00',
-          timezone: t.timezone ?? 'America/New_York',
-        })),
-        maxDailyViews: parseResult.data.maxDailyViews,
-        minHoursBetween: parseResult.data.minHoursBetween,
-        expiresAt: parseResult.data.expiresAt,
-        notes: parseResult.data.notes,
-      }, user.sub);
+      const assignment = await socialStoryService.createAssignment(
+        {
+          storyId: parseResult.data.storyId!,
+          learnerId: parseResult.data.learnerId!,
+          priority: parseResult.data.priority,
+          isRequired: parseResult.data.isRequired,
+          showBefore: parseResult.data.showBefore,
+          showAfter: parseResult.data.showAfter,
+          scheduledTimes: parseResult.data.scheduledTimes?.map((t) => ({
+            dayOfWeek: t.dayOfWeek,
+            timeOfDay: t.timeOfDay ?? '09:00',
+            timezone: t.timezone ?? 'America/New_York',
+          })),
+          maxDailyViews: parseResult.data.maxDailyViews,
+          minHoursBetween: parseResult.data.minHoursBetween,
+          expiresAt: parseResult.data.expiresAt,
+          notes: parseResult.data.notes,
+        },
+        user.sub
+      );
 
       return reply.status(201).send(assignment);
     }
@@ -844,25 +858,22 @@ export async function socialStoriesRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const assignment = await socialStoryService.updateAssignment(
-        request.params.id,
-        {
-          priority: parseResult.data.priority,
-          isRequired: parseResult.data.isRequired,
-          showBefore: parseResult.data.showBefore,
-          showAfter: parseResult.data.showAfter,
-          scheduledTimes: parseResult.data.scheduledTimes?.map(t => ({
-            dayOfWeek: t.dayOfWeek,
-            timeOfDay: t.timeOfDay ?? '09:00',
-            timezone: t.timezone ?? 'America/New_York',
-          })),
-          maxDailyViews: parseResult.data.maxDailyViews,
-          minHoursBetween: parseResult.data.minHoursBetween,
-          isActive: parseResult.data.isActive,
-          expiresAt: parseResult.data.expiresAt,
-          notes: parseResult.data.notes,
-        }
-      );
+      const assignment = await socialStoryService.updateAssignment(request.params.id, {
+        priority: parseResult.data.priority,
+        isRequired: parseResult.data.isRequired,
+        showBefore: parseResult.data.showBefore,
+        showAfter: parseResult.data.showAfter,
+        scheduledTimes: parseResult.data.scheduledTimes?.map((t) => ({
+          dayOfWeek: t.dayOfWeek,
+          timeOfDay: t.timeOfDay ?? '09:00',
+          timezone: t.timezone ?? 'America/New_York',
+        })),
+        maxDailyViews: parseResult.data.maxDailyViews,
+        minHoursBetween: parseResult.data.minHoursBetween,
+        isActive: parseResult.data.isActive,
+        expiresAt: parseResult.data.expiresAt,
+        notes: parseResult.data.notes,
+      });
 
       return reply.send(assignment);
     }
