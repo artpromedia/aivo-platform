@@ -104,6 +104,15 @@ export enum BillingEventType {
   PAYMENT_METHOD_ATTACHED = 'billing.payment_method.attached',
   PAYMENT_METHOD_DETACHED = 'billing.payment_method.detached',
   PAYMENT_METHOD_EXPIRING = 'billing.payment_method.expiring',
+
+  // Reminder Events
+  REMINDER_TRIAL_ENDING = 'billing.reminder.trial_ending',
+  REMINDER_PILOT_ENDING = 'billing.reminder.pilot_ending',
+
+  // Trial Lifecycle Events
+  TRIAL_CONVERTED = 'billing.trial.converted',
+  TRIAL_PAYMENT_CHARGE_NOTICE = 'billing.trial.payment_charge_notice',
+  TRIAL_CANCELLED = 'billing.trial.cancelled',
 }
 
 // Alias for backwards compatibility

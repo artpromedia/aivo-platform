@@ -26,12 +26,10 @@ import type {
   PaymentVerificationResult,
   UpdateCustomerInput,
   UpdateSubscriptionInput,
-} from '../gateways/index.js';
-import {
-  getPaymentGateway,
   PaymentGatewayType,
-  PaymentStatus,
 } from '../gateways/index.js';
+import { getPaymentGateway, PaymentStatus } from '../gateways/index.js';
+import type { PaymentProvider } from '../prisma.js';
 import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -85,7 +83,7 @@ export class UnifiedPaymentService {
         where: {
           tenantId: context.tenantId,
           ownerUserId: context.userId,
-          provider: gateway.type as string,
+          provider: gateway.type as unknown as PaymentProvider,
         },
       });
 
@@ -120,14 +118,14 @@ export class UnifiedPaymentService {
           ownerUserId: context.userId,
           accountType: 'PARENT_CONSUMER',
           displayName: input.name ?? input.email,
-          provider: gateway.type as string,
+          provider: gateway.type as unknown as PaymentProvider,
           providerCustomerId: customer.id,
           defaultCurrency: context.currency,
           billingEmail: input.email,
         },
         update: {
           providerCustomerId: customer.id,
-          provider: gateway.type as string,
+          provider: gateway.type as unknown as PaymentProvider,
         },
       });
 
@@ -559,10 +557,7 @@ export class UnifiedPaymentService {
     return map[status] ?? 'unknown';
   }
 
-  private async getBillingAccountId(
-    tenantId: string,
-    userId: string
-  ): Promise<string | undefined> {
+  private async getBillingAccountId(tenantId: string, userId: string): Promise<string | undefined> {
     const account = await prisma.billingAccount.findFirst({
       where: { tenantId, ownerUserId: userId },
       select: { id: true },

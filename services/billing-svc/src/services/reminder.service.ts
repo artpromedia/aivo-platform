@@ -8,7 +8,7 @@
  * - Conversion opportunities
  */
 
-import { billingEventPublisher } from '../events/billing.publisher.js';
+import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -138,7 +138,7 @@ class ReminderService {
           chargeAmountCents,
           emailAddress,
           trialEndDate,
-          metadataJson: metadata ?? {},
+          metadataJson: (metadata ?? {}) as Record<string, string>,
         },
       });
       reminderIds.push(result.id);
@@ -535,8 +535,8 @@ class ReminderService {
 
     // Publish event for notify-svc to pick up
     await billingEventPublisher.publish(
-      'billing.reminder.trial_ending',
-      { id: reminder.tenantId, name: 'billing' },
+      BillingEventType.REMINDER_TRIAL_ENDING,
+      { tenantId: reminder.tenantId },
       {
         reminderId: reminder.id,
         subscriptionId: reminder.subscriptionId,
@@ -590,8 +590,8 @@ class ReminderService {
 
     // Publish event for notify-svc to pick up
     await billingEventPublisher.publish(
-      'billing.reminder.pilot_ending',
-      { id: pilot.tenantId, name: 'billing' },
+      BillingEventType.REMINDER_PILOT_ENDING,
+      { tenantId: pilot.tenantId },
       {
         reminderId: reminder.id,
         pilotId: reminder.pilotId,

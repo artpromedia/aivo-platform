@@ -10,7 +10,7 @@
 
 import Stripe from 'stripe';
 
-import { billingEventPublisher } from '../events/billing.publisher.js';
+import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 import { prisma } from '../prisma.js';
 
 import { reminderService } from './reminder.service.js';
@@ -61,7 +61,7 @@ class TrialConversionService {
 
   constructor() {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-      apiVersion: '2025-04-30.basil',
+      apiVersion: '2025-02-24.acacia',
     });
   }
 
@@ -82,10 +82,10 @@ class TrialConversionService {
       const reminderResult = await reminderService.scheduleTrialReminders({
         subscriptionId: data.subscriptionId,
         tenantId: data.tenantId,
-        customerId: data.customerId,
-        userEmail: data.userEmail,
+        userId: data.customerId,
         trialEndDate: data.trialEndDate,
-        hasPaymentMethodOnFile: false,
+        hasPaymentMethod: false,
+        emailAddress: data.userEmail,
       });
 
       return {
@@ -189,7 +189,8 @@ class TrialConversionService {
       await reminderService.updateTrialRemindersPaymentStatus(params.subscriptionId, true);
 
       // Publish event
-      await billingEventPublisher.publish('PAYMENT_METHOD_ATTACHED', {
+      await billingEventPublisher.publish({
+        type: BillingEventType.PAYMENT_METHOD_ATTACHED,
         subscriptionId: params.subscriptionId,
         customerId: subscription.customer as string,
         paymentMethodId: params.paymentMethodId,
@@ -228,7 +229,8 @@ class TrialConversionService {
       // Update reminders back to trial-ending notices
       await reminderService.updateTrialRemindersPaymentStatus(subscriptionId, false);
 
-      await billingEventPublisher.publish('PAYMENT_METHOD_REMOVED', {
+      await billingEventPublisher.publish({
+        type: BillingEventType.PAYMENT_METHOD_DETACHED,
         subscriptionId,
       });
 
@@ -294,10 +296,13 @@ class TrialConversionService {
           // Record redemption
           await prisma.promotionalPricingRedemption.create({
             data: {
-              pricingId: promoRule.id,
+              pricing: { connect: { id: promoRule.id } },
               tenantId: subscription.metadata.tenantId ?? 'unknown',
               subscriptionId: params.subscriptionId,
               redeemedBy: params.convertedBy ?? 'system',
+              originalPriceCents: 0,
+              finalPriceCents: 0,
+              discountCents: 0,
             },
           });
 
@@ -342,7 +347,8 @@ class TrialConversionService {
       const invoice = invoices.data[0];
 
       // Publish conversion event
-      await billingEventPublisher.publish('TRIAL_CONVERTED', {
+      await billingEventPublisher.publish({
+        type: BillingEventType.TRIAL_CONVERTED,
         subscriptionId: params.subscriptionId,
         customerId: subscription.customer as string,
         invoiceId: invoice?.id,
@@ -470,7 +476,8 @@ class TrialConversionService {
         }
 
         // Still in trial but reminder was missed - send it now
-        await billingEventPublisher.publish('TRIAL_PAYMENT_CHARGE_NOTICE', {
+        await billingEventPublisher.publish({
+          type: BillingEventType.TRIAL_PAYMENT_CHARGE_NOTICE,
           subscriptionId: reminder.subscriptionId,
           userId: reminder.userId,
           emailAddress: reminder.emailAddress,
@@ -525,7 +532,8 @@ class TrialConversionService {
         },
       });
 
-      await billingEventPublisher.publish('TRIAL_CANCELLED', {
+      await billingEventPublisher.publish({
+        type: BillingEventType.TRIAL_CANCELLED,
         subscriptionId,
         reason,
       });

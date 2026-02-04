@@ -24,9 +24,9 @@ const checkNoMockData = (files) => {
     mockFiles.forEach(f => console.error(`   - ${f}`));
     console.error('\nMock data files should not be committed to production.');
     console.error('Use real API hooks instead.\n');
-    return 'exit 1';
+    return 'false';
   }
-  return 'exit 0';
+  return 'true';
 };
 
 // Filter out files from directories that ESLint should ignore

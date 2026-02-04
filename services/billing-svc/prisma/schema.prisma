@@ -60,6 +60,13 @@ enum PaymentProvider {
   STRIPE          // Stripe payment processor
   MANUAL_INVOICE  // Manual invoicing (for districts)
   TEST_FAKE       // Test/fake provider for development
+  PAYSTACK        // Paystack (Africa)
+  RAZORPAY        // Razorpay (India)
+  MERCADO_PAGO    // MercadoPago (Latin America)
+  FLUTTERWAVE     // Flutterwave (Africa)
+  PAYU            // PayU (India, Latin America, Eastern Europe)
+  MPESA           // M-Pesa (East Africa mobile money)
+  PAYTM           // Paytm (India)
 }
 
 /// Billing period for contract pricing and line items
@@ -209,7 +216,8 @@ model BillingAccount {
   billingInstruments    BillingInstrument[]
   invoices              Invoice[]
   districtProfile       DistrictBillingProfile?
-  
+  paymentTransactions   PaymentTransaction[]
+
   @@index([tenantId, accountType])
   @@index([providerCustomerId])
   @@map("billing_accounts")
@@ -3516,4 +3524,71 @@ model DunningRecord {
   @@index([tenantId])
   @@index([resolvedAt])
   @@map("dunning_records")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PAYMENT TRANSACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks payment transactions across all gateways
+model PaymentTransaction {
+  /// Unique transaction identifier
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Associated billing account
+  billingAccountId      String          @map("billing_account_id") @db.Uuid
+
+  /// Payment gateway used
+  gateway               PaymentProvider
+
+  /// Gateway-specific transaction ID
+  gatewayTransactionId  String?         @map("gateway_transaction_id") @db.VarChar(255)
+
+  /// Gateway-specific customer ID
+  gatewayCustomerId     String?         @map("gateway_customer_id") @db.VarChar(255)
+
+  /// Transaction type: 'payment', 'subscription', 'refund'
+  type                  String          @db.VarChar(50)
+
+  /// Transaction status
+  status                String          @db.VarChar(50)
+
+  /// Amount in cents
+  amountCents           Int             @map("amount_cents")
+
+  /// Currency code (e.g., 'USD')
+  currency              String          @db.VarChar(3)
+
+  /// Country code (e.g., 'US')
+  countryCode           String?         @map("country_code") @db.VarChar(2)
+
+  /// Payment method type (e.g., 'card', 'bank_transfer', 'mobile_money')
+  paymentMethod         String?         @map("payment_method") @db.VarChar(50)
+
+  /// Additional metadata
+  metadata              Json?
+
+  /// Error code if failed
+  errorCode             String?         @map("error_code") @db.VarChar(100)
+
+  /// Error message if failed
+  errorMessage          String?         @map("error_message")
+
+  /// Raw gateway response
+  gatewayResponse       Json?           @map("gateway_response")
+
+  /// Idempotency key for deduplication
+  idempotencyKey        String?         @unique @map("idempotency_key") @db.VarChar(255)
+
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  completedAt           DateTime?       @map("completed_at") @db.Timestamptz
+
+  // Relations
+  billingAccount        BillingAccount  @relation(fields: [billingAccountId], references: [id], onDelete: Cascade)
+
+  @@index([billingAccountId])
+  @@index([gateway])
+  @@index([status])
+  @@map("payment_transactions")
 }
