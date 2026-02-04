@@ -29,7 +29,7 @@ export async function getProfile(
 ): Promise<ProfileWithAccommodations | null> {
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
     include: {
       accommodations: {
@@ -80,7 +80,7 @@ export async function createProfile(
   // Check if profile already exists
   const existing = await prisma.learnerProfile.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
   });
 
@@ -137,7 +137,7 @@ export async function updateProfile(
   // Get existing profile
   const existing = await prisma.learnerProfile.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
   });
 
@@ -236,7 +236,7 @@ export async function getProfileForAi(
 ): Promise<ProfileForAi | null> {
   const profile = await prisma.learnerProfile.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
     include: {
       accommodations: {

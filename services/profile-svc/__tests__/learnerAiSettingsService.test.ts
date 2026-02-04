@@ -202,7 +202,7 @@ describe('LearnerAiSettingsService', () => {
       expect(result.aiEnabled).toBe(false);
       expect(mockPrisma.learnerAiSettings.upsert).toHaveBeenCalledWith({
         where: {
-          tenantId_learnerId: { tenantId, learnerId },
+          learnerId_tenantId: { tenantId, learnerId },
         },
         create: expect.objectContaining({
           tenantId,

@@ -63,7 +63,7 @@ export async function getLearnerAiSettings(
 ): Promise<LearnerAiSettings> {
   const settings = await prisma.learnerAiSettings.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
   });
 
@@ -135,7 +135,7 @@ export async function updateLearnerAiSettings(
   // Get existing settings
   const existing = await prisma.learnerAiSettings.findUnique({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
   });
 
@@ -151,7 +151,7 @@ export async function updateLearnerAiSettings(
   // Upsert settings
   const settings = await prisma.learnerAiSettings.upsert({
     where: {
-      tenantId_learnerId: { tenantId, learnerId },
+      learnerId_tenantId: { tenantId, learnerId },
     },
     create: {
       tenantId,

@@ -61,7 +61,7 @@ describe('ProfileService', () => {
       expect(result).toBeNull();
       expect(mockPrisma.learnerProfile.findUnique).toHaveBeenCalledWith({
         where: {
-          tenantId_learnerId: { tenantId, learnerId },
+          learnerId_tenantId: { tenantId, learnerId },
         },
         include: {
           accommodations: {
@@ -665,7 +665,7 @@ describe('ProfileService', () => {
       // Verify the query filters for active accommodations
       expect(mockPrisma.learnerProfile.findUnique).toHaveBeenCalledWith({
         where: {
-          tenantId_learnerId: { tenantId, learnerId },
+          learnerId_tenantId: { tenantId, learnerId },
         },
         include: {
           accommodations: {
