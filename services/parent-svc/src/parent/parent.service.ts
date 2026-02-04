@@ -125,11 +125,7 @@ export class ParentService {
     // Send invite email
     await this.sendInviteEmail(invite);
 
-    metrics.increment('parent.invite.created');
-    logger.info('Parent invite created', {
-      studentId: dto.studentId,
-      invitedBy: teacherId,
-    });
+    logger.info({ studentId: dto.studentId, invitedBy: teacherId }, 'Parent invite created');
 
     return {
       inviteCode,
@@ -188,7 +184,7 @@ export class ParentService {
           status: ParentStatus.ACTIVE,
           emailVerified: false,
           digestFrequency: DigestFrequency.WEEKLY,
-          notificationPreferences: this.getDefaultNotificationPreferences(),
+          notificationPreferences: this.getDefaultNotificationPreferences() as unknown as Record<string, unknown>,
         },
       });
 
@@ -251,7 +247,6 @@ export class ParentService {
       isNewParent,
     });
 
-    metrics.increment('parent.invite.accepted');
 
     return {
       parent: this.toParentProfile(parent),
@@ -333,7 +328,7 @@ export class ParentService {
         language: dto.language,
         timezone: dto.timezone,
         digestFrequency: dto.digestFrequency,
-        notificationPreferences: dto.notifications,
+        notificationPreferences: dto.notifications as unknown as Record<string, unknown>,
         updatedAt: new Date(),
       },
     });
@@ -342,7 +337,7 @@ export class ParentService {
       language: parent.language,
       timezone: parent.timezone,
       digestFrequency: parent.digestFrequency as DigestFrequency,
-      notifications: parent.notificationPreferences as NotificationPreferences,
+      notifications: parent.notificationPreferences as unknown as NotificationPreferences,
     };
   }
 
@@ -724,11 +719,6 @@ export class ParentService {
         ipAddress: options.ipAddress,
         userAgent: options.userAgent,
         revokedAt,
-        metadata: {
-          reason: options.reason ?? 'Parent requested link removal',
-          studentName: `${link.student.givenName} ${link.student.familyName}`,
-          ferpaCompliance: true,
-        },
       },
     });
 
@@ -740,12 +730,7 @@ export class ParentService {
       reason: options.reason ?? 'Parent requested removal',
     });
 
-    metrics.increment('parent.child_link.removed');
-    logger.info('Parent-child link removed', {
-      parentId,
-      studentId,
-      reason: options.reason ?? 'Parent requested removal',
-    });
+    logger.info({ parentId, studentId, reason: options.reason ?? 'Parent requested removal' }, 'Parent-child link removed');
 
     return {
       success: true,
@@ -852,12 +837,7 @@ export class ParentService {
       granted: dto.granted,
     });
 
-    logger.info('Consent recorded', {
-      parentId,
-      studentId: dto.studentId,
-      consentType: dto.consentType,
-      granted: dto.granted,
-    });
+    logger.info({ parentId, studentId: dto.studentId, consentType: dto.consentType, granted: dto.granted }, 'Consent recorded');
 
     return {
       id: consent.id,
@@ -934,11 +914,7 @@ export class ParentService {
 
       return await response.json();
     } catch (error) {
-      logger.error('Failed to get difficulty recommendations', {
-        parentId,
-        studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty recommendations');
       throw error;
     }
   }
@@ -994,11 +970,7 @@ export class ParentService {
 
       return result;
     } catch (error) {
-      logger.error('Failed to respond to recommendation', {
-        parentId,
-        recommendationId: dto.recommendationId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, recommendationId: dto.recommendationId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to respond to recommendation');
       throw error;
     }
   }
@@ -1036,11 +1008,7 @@ export class ParentService {
         levels: data.levels,
       };
     } catch (error) {
-      logger.error('Failed to get difficulty levels', {
-        parentId,
-        studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty levels');
       throw error;
     }
   }
@@ -1084,20 +1052,11 @@ export class ParentService {
 
       const result = await response.json();
 
-      logger.info('Parent set domain difficulty', {
-        parentId,
-        studentId: dto.studentId,
-        domain: dto.domain,
-        level: dto.level,
-      });
+      logger.info({ parentId, studentId: dto.studentId, domain: dto.domain, level: dto.level }, 'Parent set domain difficulty');
 
       return result;
     } catch (error) {
-      logger.error('Failed to set domain difficulty', {
-        parentId,
-        studentId: dto.studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId: dto.studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to set domain difficulty');
       throw error;
     }
   }
@@ -1142,11 +1101,7 @@ export class ParentService {
         preferences: data.preferences,
       };
     } catch (error) {
-      logger.error('Failed to get difficulty preferences', {
-        parentId,
-        studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty preferences');
       throw error;
     }
   }
@@ -1194,18 +1149,11 @@ export class ParentService {
 
       const result = await response.json();
 
-      logger.info('Parent updated difficulty preferences', {
-        parentId,
-        studentId: dto.studentId,
-      });
+      logger.info({ parentId, studentId: dto.studentId }, 'Parent updated difficulty preferences');
 
       return result;
     } catch (error) {
-      logger.error('Failed to update difficulty preferences', {
-        parentId,
-        studentId: dto.studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId: dto.studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update difficulty preferences');
       throw error;
     }
   }
@@ -1250,11 +1198,7 @@ export class ParentService {
 
       return await response.json();
     } catch (error) {
-      logger.error('Failed to get difficulty history', {
-        parentId,
-        studentId,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty history');
       throw error;
     }
   }
