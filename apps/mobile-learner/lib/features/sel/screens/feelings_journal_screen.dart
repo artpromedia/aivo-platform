@@ -92,6 +92,24 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
           await _loadEntries();
           if (dialogContext.mounted) Navigator.pop(dialogContext);
         },
+        onEdit: () {
+          Navigator.pop(dialogContext);
+          _openEditEntry(entry);
+        },
+      ),
+    );
+  }
+
+  void _openEditEntry(JournalEntry entry) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _JournalEntryEditor(
+          learnerId: widget.learnerId,
+          selService: _selService!,
+          onSaved: _loadEntries,
+          existingEntry: entry,
+        ),
       ),
     );
   }
@@ -350,13 +368,17 @@ class _JournalEntryEditor extends StatefulWidget {
   final SELService selService;
   final VoidCallback onSaved;
 
-  // TODO: Add existingEntry field when implementing edit-entry feature
+  /// Existing entry to edit (null for new entry)
+  final JournalEntry? existingEntry;
 
   const _JournalEntryEditor({
     required this.learnerId,
     required this.selService,
     required this.onSaved,
+    this.existingEntry,
   });
+
+  bool get isEditing => existingEntry != null;
 
   @override
   State<_JournalEntryEditor> createState() => _JournalEntryEditorState();
@@ -404,11 +426,20 @@ class _JournalEntryEditorState extends State<_JournalEntryEditor> {
     setState(() => _isSaving = true);
 
     try {
-      await widget.selService.createJournalEntry(
-        content: _contentController.text.trim(),
-        mood: _selectedMood,
-        tags: _selectedTags.isNotEmpty ? _selectedTags.toList() : null,
-      );
+      if (widget.isEditing) {
+        await widget.selService.updateJournalEntry(
+          entryId: widget.existingEntry!.id,
+          content: _contentController.text.trim(),
+          mood: _selectedMood,
+          tags: _selectedTags.isNotEmpty ? _selectedTags.toList() : null,
+        );
+      } else {
+        await widget.selService.createJournalEntry(
+          content: _contentController.text.trim(),
+          mood: _selectedMood,
+          tags: _selectedTags.isNotEmpty ? _selectedTags.toList() : null,
+        );
+      }
 
       widget.onSaved();
       if (mounted) Navigator.pop(context);
@@ -618,10 +649,12 @@ class _JournalEntryEditorState extends State<_JournalEntryEditor> {
 class _JournalEntryViewer extends StatelessWidget {
   final JournalEntry entry;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   const _JournalEntryViewer({
     required this.entry,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -680,6 +713,10 @@ class _JournalEntryViewer extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined, color: AivoBrand.primary),
+                      onPressed: onEdit,
                     ),
                     IconButton(
                       icon: Icon(Icons.delete_outline, color: AivoBrand.error),

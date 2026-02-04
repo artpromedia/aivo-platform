@@ -299,6 +299,31 @@ class SELService {
     }
   }
 
+  /// Update a journal entry
+  Future<JournalEntry> updateJournalEntry({
+    required String entryId,
+    required String content,
+    Mood? mood,
+    List<String>? tags,
+  }) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/sel/journal/$entryId'),
+      headers: _headers,
+      body: json.encode({
+        'content': content,
+        if (mood != null) 'mood': mood.name,
+        if (tags != null) 'tags': tags,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw SELException('Failed to update journal entry');
+    }
+
+    final data = json.decode(response.body);
+    return JournalEntry.fromJson(data['data'] ?? data);
+  }
+
   // ==========================================================================
   // PROGRESS
   // ==========================================================================
