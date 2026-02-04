@@ -18,7 +18,7 @@ import {
 import { Response } from 'express';
 import { ParentService } from '../parent/parent.service.js';
 import { PdfReportService } from './pdf-report.service.js';
-import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
 
 @Controller('reports')
 export class ReportsController {

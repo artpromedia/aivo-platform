@@ -346,6 +346,16 @@ export class ParentService {
     };
   }
 
+  /**
+   * Update parent privacy settings (alias for preferences)
+   */
+  async updatePrivacySettings(
+    parentId: string,
+    dto: UpdateParentPreferencesDto
+  ): Promise<ParentPreferences> {
+    return this.updatePreferences(parentId, dto);
+  }
+
   // ============================================================================
   // STUDENT PROGRESS
   // ============================================================================

@@ -18,7 +18,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ParentService } from './parent.service.js';
-import { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
+import type { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
 import {
   CreateConsentInput,
   UpdatePrivacySettingsInput,
@@ -114,8 +114,7 @@ export class ParentController {
     @Param('studentId') studentId: string,
     @Body() body: CreateConsentInput
   ) {
-    return this.parentService.recordConsent({
-      parentId: req.parent.id,
+    return this.parentService.recordConsent(req.parent.id, {
       studentId,
       ...body,
     });

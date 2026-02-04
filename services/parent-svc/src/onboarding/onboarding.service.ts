@@ -8,12 +8,11 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { LocationInput, RegisterLearnerInput } from './onboarding.types.js';
 import {
-  LocationInput,
   DistrictInfo,
   CurriculumInfo,
   OnboardingLocationResult,
-  RegisterLearnerInput,
   RegisterLearnerResult,
   OnboardingStatus,
 } from './onboarding.types.js';

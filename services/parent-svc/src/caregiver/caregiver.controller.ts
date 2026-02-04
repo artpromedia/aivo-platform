@@ -19,7 +19,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CaregiverService } from './caregiver.service.js';
-import { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
+import type { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
 import {
   CreateCaregiverInviteDto,
   AcceptCaregiverInviteDto,

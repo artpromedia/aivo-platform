@@ -17,8 +17,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { OnboardingService } from './onboarding.service.js';
-import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
-import {
+import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import type {
   LocationInput,
   RegisterLearnerInput,
 } from './onboarding.types.js';

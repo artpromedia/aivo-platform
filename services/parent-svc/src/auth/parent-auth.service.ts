@@ -12,7 +12,7 @@ import { CryptoService } from '../crypto/crypto.service.js';
 import { NotificationService } from '../notification/notification.service.js';
 import { config } from '../config.js';
 
-interface LoginResult {
+export interface LoginResult {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;

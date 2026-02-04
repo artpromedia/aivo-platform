@@ -15,7 +15,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HomeworkService } from './homework.service.js';
-import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
 
 @Controller('homework')
 export class HomeworkController {

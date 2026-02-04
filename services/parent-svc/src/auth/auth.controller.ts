@@ -15,7 +15,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ParentAuthService } from './parent-auth.service.js';
-import { ParentAuthRequest } from './parent-auth.middleware.js';
+import type { ParentAuthRequest } from './parent-auth.middleware.js';
 
 @Controller('auth')
 export class AuthController {

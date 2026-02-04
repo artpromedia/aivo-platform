@@ -17,7 +17,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { MessagingService } from './messaging.service.js';
-import { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
 import { SendMessageInput } from './messaging.types.js';
 
 @Controller('messages')

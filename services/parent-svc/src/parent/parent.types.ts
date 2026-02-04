@@ -156,6 +156,24 @@ export class UpdateParentPreferencesDto {
   notifications?: NotificationPreferences;
 }
 
+export class UpdatePrivacySettingsInput extends UpdateParentPreferencesDto {}
+
+export class CreateConsentInput {
+  @IsEnum(ConsentType)
+  consentType!: ConsentType;
+
+  @IsBoolean()
+  granted!: boolean;
+
+  @IsString()
+  @IsOptional()
+  ipAddress?: string;
+
+  @IsString()
+  @IsOptional()
+  userAgent?: string;
+}
+
 export class RecordConsentDto {
   @IsUUID()
   studentId!: string;

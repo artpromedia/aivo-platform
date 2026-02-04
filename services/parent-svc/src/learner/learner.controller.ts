@@ -22,7 +22,7 @@ import jwt from 'jsonwebtoken';
 
 import { PrismaClient } from '../../generated/prisma-client/index.js';
 import { config } from '../config.js';
-import { LearnerAuthRequest } from '../auth/learner-auth.middleware.js';
+import type { LearnerAuthRequest } from '../auth/learner-auth.middleware.js';
 
 const prisma = new PrismaClient();
 
