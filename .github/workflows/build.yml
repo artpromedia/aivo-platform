@@ -19,7 +19,7 @@ env:
   REGISTRY: gcr.io
   PROJECT_ID: aivo-platform
   NODE_VERSION: '20.19.4'
-  PNPM_VERSION: '8'
+  PNPM_VERSION: '9.12.0'
   FLUTTER_VERSION: '3.16.x'
 
 jobs:
@@ -93,12 +93,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io
+        run: gcloud auth configure-docker gcr.io --quiet
 
       - name: Extract metadata
         id: meta
@@ -111,7 +111,7 @@ jobs:
             type=sha,prefix=sha-
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: services/${{ matrix.service }}/Dockerfile
@@ -134,7 +134,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
@@ -210,7 +210,7 @@ jobs:
             --build-name=${{ needs.prepare.outputs.version }}
 
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-android-${{ needs.prepare.outputs.version }}
           path: |
@@ -220,7 +220,7 @@ jobs:
 
       - name: Upload iOS artifacts
         if: needs.prepare.outputs.is_release == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-ios-${{ needs.prepare.outputs.version }}
           path: apps/${{ matrix.app }}/build/ios/iphoneos/
@@ -255,7 +255,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -265,7 +265,7 @@ jobs:
         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
       - name: Setup pnpm cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -283,7 +283,7 @@ jobs:
           NEXT_PUBLIC_VERSION: ${{ needs.prepare.outputs.version }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.app }}-${{ needs.prepare.outputs.version }}
           path: apps/${{ matrix.app }}/.next
