@@ -99,7 +99,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   }
 
   Future<void> _showFeedbackDialog() async {
-    final gradeBand = ref.read(gradeThemeControllerProvider);
+    final gradeBand = ref.read(gradeBandProvider);
     final theme = Theme.of(context);
 
     return showDialog<void>(
@@ -181,7 +181,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gradeBand = ref.watch(gradeThemeControllerProvider);
+    final gradeBand = ref.watch(gradeBandProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -313,7 +313,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(

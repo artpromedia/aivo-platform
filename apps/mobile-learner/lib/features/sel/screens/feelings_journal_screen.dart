@@ -85,12 +85,12 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _JournalEntryViewer(
+      builder: (dialogContext) => _JournalEntryViewer(
         entry: entry,
         onDelete: () async {
           await _selService!.deleteJournalEntry(entry.id);
           await _loadEntries();
-          if (mounted) Navigator.pop(context);
+          if (mounted) Navigator.pop(dialogContext);
         },
       ),
     );
@@ -135,7 +135,7 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Center(
@@ -271,7 +271,7 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -356,7 +356,6 @@ class _JournalEntryEditor extends StatefulWidget {
     required this.learnerId,
     required this.selService,
     required this.onSaved,
-    // ignore: unused_formal_parameter
     this.existingEntry,
   });
 
@@ -547,7 +546,7 @@ class _JournalEntryEditorState extends State<_JournalEntryEditor> {
                       }
                     });
                   },
-                  selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                  selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                 );
               }).toList(),
             ),
@@ -742,7 +741,7 @@ class _JournalEntryViewer extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.1),
+                              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(

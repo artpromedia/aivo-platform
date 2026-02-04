@@ -30,7 +30,7 @@ class _DesignSystemGalleryScreenState extends ConsumerState<DesignSystemGalleryS
 
   @override
   Widget build(BuildContext context) {
-    final band = ref.watch(gradeThemeControllerProvider);
+    final band = ref.watch(gradeBandProvider);
     final controller = ref.read(gradeThemeControllerProvider.notifier);
     final theme = ref.watch(gradeThemeProvider);
 

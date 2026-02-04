@@ -7,6 +7,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   go_router: ^14.2.0
   flutter_riverpod: ^2.5.1
   provider: ^6.1.2
@@ -29,6 +31,7 @@ dependencies:
   intl: ^0.20.2
   app_links: ^6.3.3
   image_picker: ^1.0.7
+  google_fonts: ^6.2.1
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:
