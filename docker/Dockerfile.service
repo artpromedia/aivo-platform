@@ -24,10 +24,13 @@ ARG SERVICE_NAME
 COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
 
 # Prepare entrypoint (fallback if service script is missing)
+# All current services use dist/index.js as their entry point
 RUN if [ -f "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" ]; then \
             cp "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" /app/docker-entrypoint.sh; \
-        else \
+        elif [ -f "services/${SERVICE_NAME}/src/main.ts" ]; then \
             printf '#!/bin/sh\nexec node dist/main.js\n' > /app/docker-entrypoint.sh; \
+        else \
+            printf '#!/bin/sh\nexec node dist/index.js\n' > /app/docker-entrypoint.sh; \
         fi
 
 # Install dependencies
@@ -39,8 +42,8 @@ RUN if [ -f "services/${SERVICE_NAME}/prisma/schema.prisma" ]; then \
       cd services/${SERVICE_NAME} && npx prisma generate --schema=prisma/schema.prisma; \
     fi
 
-# Build the service
-RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
+# Build the service and its workspace dependencies
+RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}..."
 
 # Prune dev dependencies
 RUN pnpm prune --prod
@@ -68,16 +71,19 @@ COPY --from=builder --chown=nodejs:nodejs /app/docker-entrypoint.sh /usr/local/b
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Set environment variables
+# Service-specific port configuration
+# Each service defines its own default port in config.ts; this ARG allows
+# the CI pipeline to set the correct port per service at build time.
+ARG SERVICE_PORT=3000
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=${SERVICE_PORT}
 
-# Expose port
-EXPOSE 3000
+# Expose the service port
+EXPOSE ${SERVICE_PORT}
 
-# Health check
+# Health check using the correct service port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
 
 # Switch to non-root user
 USER nodejs

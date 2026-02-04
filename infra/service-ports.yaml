@@ -1,0 +1,33 @@
+# =============================================================================
+# AIVO Platform - Centralized Service Port Configuration
+# =============================================================================
+# This file is the single source of truth for service port assignments.
+# It is referenced by:
+#   - docker/Dockerfile.service (via SERVICE_PORT build arg)
+#   - .github/workflows/ci-unified.yml (matrix port values)
+#   - Kubernetes deployment manifests (containerPort, probes)
+#   - Smoke test / health check scripts
+#
+# When adding a new service or changing a port, update this file AND
+# the corresponding entries in ci-unified.yml and K8s manifests.
+# =============================================================================
+
+services:
+  auth-svc: 4001
+  session-svc: 4020
+  content-svc: 4020
+  assessment-svc: 3031
+  ai-orchestrator: 4010
+  analytics-svc: 4030
+  notify-svc: 4040
+  messaging-svc: 4041
+  goal-svc: 4030
+  focus-svc: 4026
+  billing-svc: 4060
+  payments-svc: 4070
+  parent-svc: 3010
+  baseline-svc: 4011
+  consent-svc: 4004
+  profile-svc: 3420
+  personalization-svc: 3012
+  life-skills-svc: 4050
