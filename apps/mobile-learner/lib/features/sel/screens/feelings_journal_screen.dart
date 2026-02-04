@@ -90,7 +90,7 @@ class _FeelingsJournalScreenState extends State<FeelingsJournalScreen> {
         onDelete: () async {
           await _selService!.deleteJournalEntry(entry.id);
           await _loadEntries();
-          if (mounted) Navigator.pop(dialogContext);
+          if (dialogContext.mounted) Navigator.pop(dialogContext);
         },
       ),
     );
@@ -349,14 +349,13 @@ class _JournalEntryEditor extends StatefulWidget {
   final String learnerId;
   final SELService selService;
   final VoidCallback onSaved;
-  /// Reserved for future edit-entry feature
-  final JournalEntry? existingEntry;
+
+  // TODO: Add existingEntry field when implementing edit-entry feature
 
   const _JournalEntryEditor({
     required this.learnerId,
     required this.selService,
     required this.onSaved,
-    this.existingEntry,
   });
 
   @override
