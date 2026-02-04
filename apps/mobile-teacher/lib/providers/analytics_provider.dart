@@ -536,3 +536,125 @@ final engagementRecommendationsProvider =
   final repository = ref.watch(analyticsRepositoryProvider);
   return repository.fetchEngagementRecommendations(studentId);
 });
+
+// ============================================================================
+// Analytics Dashboard Providers (Sprint 8)
+// ============================================================================
+
+/// Selected analytics period state.
+final selectedAnalyticsPeriodProvider = StateProvider<AnalyticsPeriod>((ref) {
+  return AnalyticsPeriod.week;
+});
+
+/// Analytics dashboard data provider.
+final analyticsDashboardProvider =
+    FutureProvider.family<AnalyticsDashboardState, String>(
+        (ref, classId) async {
+  final repository = ref.watch(analyticsRepositoryProvider);
+  final period = ref.watch(selectedAnalyticsPeriodProvider);
+  final dateRange = period.getDateRange();
+
+  try {
+    // Fetch all dashboard data in parallel
+    final results = await Future.wait([
+      repository.fetchClassEngagement(classId, dateRange),
+      repository.fetchEngagementByContent(classId),
+    ]);
+
+    final classEngagement = results[0] as ClassEngagement?;
+
+    // Build dashboard state from available data
+    return AnalyticsDashboardState(
+      classAnalytics: classEngagement != null
+          ? ClassAnalytics(
+              classId: classId,
+              averageGrade: classEngagement.averageEngagementScore * 100,
+              overallPerformance: classEngagement.averageEngagementScore * 100,
+              totalStudents: classEngagement.totalStudents,
+              activeStudents: classEngagement.activeStudents,
+              participationRate: classEngagement.participationRate,
+              completionMetrics: const CompletionMetrics(
+                totalAssignments: 0,
+                completedAssignments: 0,
+                totalAssessments: 0,
+                completedAssessments: 0,
+                onTimeSubmissionRate: 0.0,
+                overdueCount: 0,
+              ),
+              performanceTrend: const [],
+              trendDirection: classEngagement.trend,
+            )
+          : null,
+      subjectPerformance: const [],
+      topStudents: const [],
+      strugglingStudents: const [],
+      insights: const [],
+    );
+  } catch (e) {
+    return AnalyticsDashboardState(error: e.toString());
+  }
+});
+
+/// Analytics export state notifier.
+class AnalyticsExportNotifier extends StateNotifier<AnalyticsExportState> {
+  AnalyticsExportNotifier(this._repository) : super(const AnalyticsExportState());
+
+  final AnalyticsRepository _repository;
+
+  /// Export analytics as PDF.
+  Future<void> exportPdf(
+    String classId, {
+    required AnalyticsPeriod period,
+    bool includeStudentDetails = true,
+  }) async {
+    state = state.copyWith(isExporting: true, error: null, downloadUrl: null);
+
+    try {
+      // In a real implementation, this would call the API to generate PDF
+      await Future.delayed(const Duration(seconds: 2));
+      state = state.copyWith(
+        isExporting: false,
+        downloadUrl: 'https://example.com/reports/$classId.pdf',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isExporting: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Export analytics as CSV.
+  Future<void> exportCsv(
+    String classId, {
+    required AnalyticsPeriod period,
+  }) async {
+    state = state.copyWith(isExporting: true, error: null, downloadUrl: null);
+
+    try {
+      // In a real implementation, this would call the API to generate CSV
+      await Future.delayed(const Duration(seconds: 1));
+      state = state.copyWith(
+        isExporting: false,
+        downloadUrl: 'https://example.com/reports/$classId.csv',
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isExporting: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// Clear export state.
+  void clearState() {
+    state = const AnalyticsExportState();
+  }
+}
+
+/// Analytics export state provider.
+final analyticsExportProvider =
+    StateNotifierProvider<AnalyticsExportNotifier, AnalyticsExportState>((ref) {
+  final repository = ref.watch(analyticsRepositoryProvider);
+  return AnalyticsExportNotifier(repository);
+});

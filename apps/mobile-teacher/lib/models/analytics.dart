@@ -1430,3 +1430,386 @@ enum RecommendationCategory {
   accessibility,
   motivation,
 }
+
+// ============================================================================
+// Analytics Dashboard Models (Sprint 8)
+// ============================================================================
+
+/// Analytics time period for filtering.
+enum AnalyticsPeriod {
+  day('Today'),
+  week('This Week'),
+  month('This Month'),
+  semester('This Semester'),
+  year('This Year'),
+  custom('Custom');
+
+  const AnalyticsPeriod(this.label);
+  final String label;
+
+  /// Get date range for this period.
+  DateRange getDateRange() {
+    final now = DateTime.now();
+    switch (this) {
+      case AnalyticsPeriod.day:
+        return DateRange(
+          start: DateTime(now.year, now.month, now.day),
+          end: now,
+        );
+      case AnalyticsPeriod.week:
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        return DateRange(
+          start: DateTime(weekStart.year, weekStart.month, weekStart.day),
+          end: now,
+        );
+      case AnalyticsPeriod.month:
+        return DateRange(
+          start: DateTime(now.year, now.month, 1),
+          end: now,
+        );
+      case AnalyticsPeriod.semester:
+        // Assume semester is ~4 months
+        return DateRange(
+          start: DateTime(now.year, now.month - 4, 1),
+          end: now,
+        );
+      case AnalyticsPeriod.year:
+        return DateRange(
+          start: DateTime(now.year, 1, 1),
+          end: now,
+        );
+      case AnalyticsPeriod.custom:
+        // Return last 30 days as default for custom
+        return DateRange(
+          start: now.subtract(const Duration(days: 30)),
+          end: now,
+        );
+    }
+  }
+}
+
+/// Export format options.
+enum AnalyticsExportFormat {
+  pdf('PDF Report'),
+  csv('CSV Data'),
+  excel('Excel Spreadsheet');
+
+  const AnalyticsExportFormat(this.label);
+  final String label;
+}
+
+/// Priority level for analytics insights.
+enum InsightPriority {
+  low,
+  medium,
+  high,
+  critical,
+}
+
+/// Type of analytics insight.
+enum InsightType {
+  performance,
+  engagement,
+  attendance,
+  trend,
+  recommendation,
+  alert,
+  atRisk,
+  achievement,
+  general,
+}
+
+/// An analytics insight or recommendation.
+@immutable
+class AnalyticsInsight {
+  const AnalyticsInsight({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.priority,
+    required this.type,
+    this.actionLabel,
+    this.actionRoute,
+    this.createdAt,
+    this.relatedStudentIds = const [],
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final InsightPriority priority;
+  final InsightType type;
+  final String? actionLabel;
+  final String? actionRoute;
+  final DateTime? createdAt;
+  final List<String> relatedStudentIds;
+
+  factory AnalyticsInsight.fromJson(Map<String, dynamic> json) {
+    return AnalyticsInsight(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      priority: InsightPriority.values.firstWhere(
+        (e) => e.name == json['priority'],
+        orElse: () => InsightPriority.medium,
+      ),
+      type: InsightType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => InsightType.recommendation,
+      ),
+      actionLabel: json['actionLabel'] as String?,
+      actionRoute: json['actionRoute'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+      relatedStudentIds: (json['relatedStudentIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+    );
+  }
+}
+
+/// Subject performance data.
+@immutable
+class SubjectPerformance {
+  const SubjectPerformance({
+    required this.subjectId,
+    required this.subjectName,
+    required this.averageScore,
+    required this.studentCount,
+    this.trend = TrendDirection.stable,
+    this.color,
+  });
+
+  final String subjectId;
+  final String subjectName;
+  final double averageScore;
+  final int studentCount;
+  final TrendDirection trend;
+  final int? color;
+
+  factory SubjectPerformance.fromJson(Map<String, dynamic> json) {
+    return SubjectPerformance(
+      subjectId: json['subjectId'] as String,
+      subjectName: json['subjectName'] as String,
+      averageScore: (json['averageScore'] as num).toDouble(),
+      studentCount: json['studentCount'] as int,
+      trend: TrendDirection.values.firstWhere(
+        (e) => e.name == json['trend'],
+        orElse: () => TrendDirection.stable,
+      ),
+      color: json['color'] as int?,
+    );
+  }
+}
+
+/// Student analytics profile for rankings.
+@immutable
+class StudentAnalyticsProfile {
+  const StudentAnalyticsProfile({
+    required this.studentId,
+    required this.studentName,
+    required this.averageGrade,
+    required this.participationRate,
+    this.trend = TrendDirection.stable,
+    this.photoUrl,
+    this.rank,
+    this.improvementAreas = const [],
+  });
+
+  final String studentId;
+  final String studentName;
+  final double averageGrade;
+  final double participationRate;
+  final TrendDirection trend;
+  final String? photoUrl;
+  final int? rank;
+  final List<String> improvementAreas;
+
+  factory StudentAnalyticsProfile.fromJson(Map<String, dynamic> json) {
+    return StudentAnalyticsProfile(
+      studentId: json['studentId'] as String,
+      studentName: json['studentName'] as String,
+      averageGrade: (json['averageGrade'] as num).toDouble(),
+      participationRate: (json['participationRate'] as num).toDouble(),
+      trend: TrendDirection.values.firstWhere(
+        (e) => e.name == json['trend'],
+        orElse: () => TrendDirection.stable,
+      ),
+      photoUrl: json['photoUrl'] as String?,
+      rank: json['rank'] as int?,
+      improvementAreas: (json['improvementAreas'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+    );
+  }
+}
+
+/// Completion metrics for assignments and assessments.
+@immutable
+class CompletionMetrics {
+  const CompletionMetrics({
+    required this.totalAssignments,
+    required this.completedAssignments,
+    required this.totalAssessments,
+    required this.completedAssessments,
+    required this.onTimeSubmissionRate,
+    required this.overdueCount,
+  });
+
+  final int totalAssignments;
+  final int completedAssignments;
+  final int totalAssessments;
+  final int completedAssessments;
+  final double onTimeSubmissionRate;
+  final int overdueCount;
+
+  double get assignmentCompletionRate =>
+      totalAssignments > 0 ? completedAssignments / totalAssignments : 0.0;
+
+  double get assessmentCompletionRate =>
+      totalAssessments > 0 ? completedAssessments / totalAssessments : 0.0;
+
+  factory CompletionMetrics.fromJson(Map<String, dynamic> json) {
+    return CompletionMetrics(
+      totalAssignments: json['totalAssignments'] as int,
+      completedAssignments: json['completedAssignments'] as int,
+      totalAssessments: json['totalAssessments'] as int,
+      completedAssessments: json['completedAssessments'] as int,
+      onTimeSubmissionRate: (json['onTimeSubmissionRate'] as num).toDouble(),
+      overdueCount: json['overdueCount'] as int,
+    );
+  }
+}
+
+/// Class-level analytics data.
+@immutable
+class ClassAnalytics {
+  const ClassAnalytics({
+    required this.classId,
+    required this.averageGrade,
+    required this.overallPerformance,
+    required this.totalStudents,
+    required this.activeStudents,
+    required this.participationRate,
+    required this.completionMetrics,
+    required this.performanceTrend,
+    this.trendDirection = TrendDirection.stable,
+  });
+
+  final String classId;
+  final double averageGrade;
+  final double overallPerformance;
+  final int totalStudents;
+  final int activeStudents;
+  final double participationRate;
+  final CompletionMetrics completionMetrics;
+  final List<TimeSeriesDataPoint> performanceTrend;
+  final TrendDirection trendDirection;
+
+  factory ClassAnalytics.fromJson(Map<String, dynamic> json) {
+    return ClassAnalytics(
+      classId: json['classId'] as String,
+      averageGrade: (json['averageGrade'] as num).toDouble(),
+      overallPerformance: (json['overallPerformance'] as num).toDouble(),
+      totalStudents: json['totalStudents'] as int,
+      activeStudents: json['activeStudents'] as int,
+      participationRate: (json['participationRate'] as num).toDouble(),
+      completionMetrics: CompletionMetrics.fromJson(
+        json['completionMetrics'] as Map<String, dynamic>,
+      ),
+      performanceTrend: (json['performanceTrend'] as List<dynamic>)
+          .map((e) => TimeSeriesDataPoint.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      trendDirection: TrendDirection.values.firstWhere(
+        (e) => e.name == json['trendDirection'],
+        orElse: () => TrendDirection.stable,
+      ),
+    );
+  }
+}
+
+/// State for analytics dashboard.
+@immutable
+class AnalyticsDashboardState {
+  const AnalyticsDashboardState({
+    this.classAnalytics,
+    this.subjectPerformance = const [],
+    this.topStudents = const [],
+    this.strugglingStudents = const [],
+    this.insights = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  final ClassAnalytics? classAnalytics;
+  final List<SubjectPerformance> subjectPerformance;
+  final List<StudentAnalyticsProfile> topStudents;
+  final List<StudentAnalyticsProfile> strugglingStudents;
+  final List<AnalyticsInsight> insights;
+  final bool isLoading;
+  final String? error;
+
+  factory AnalyticsDashboardState.fromJson(Map<String, dynamic> json) {
+    return AnalyticsDashboardState(
+      classAnalytics: json['classAnalytics'] != null
+          ? ClassAnalytics.fromJson(
+              json['classAnalytics'] as Map<String, dynamic>)
+          : null,
+      subjectPerformance: (json['subjectPerformance'] as List<dynamic>?)
+              ?.map(
+                  (e) => SubjectPerformance.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      topStudents: (json['topStudents'] as List<dynamic>?)
+              ?.map((e) =>
+                  StudentAnalyticsProfile.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      strugglingStudents: (json['strugglingStudents'] as List<dynamic>?)
+              ?.map((e) =>
+                  StudentAnalyticsProfile.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      insights: (json['insights'] as List<dynamic>?)
+              ?.map((e) => AnalyticsInsight.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+}
+
+/// Style options for period selector.
+enum PeriodSelectorStyle {
+  segmented,
+  dropdown,
+  chips,
+}
+
+/// State for analytics export.
+@immutable
+class AnalyticsExportState {
+  const AnalyticsExportState({
+    this.isExporting = false,
+    this.downloadUrl,
+    this.error,
+  });
+
+  final bool isExporting;
+  final String? downloadUrl;
+  final String? error;
+
+  AnalyticsExportState copyWith({
+    bool? isExporting,
+    String? downloadUrl,
+    String? error,
+  }) {
+    return AnalyticsExportState(
+      isExporting: isExporting ?? this.isExporting,
+      downloadUrl: downloadUrl,
+      error: error,
+    );
+  }
+}
