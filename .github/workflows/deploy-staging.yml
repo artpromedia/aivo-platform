@@ -15,9 +15,9 @@ on:
         default: 'latest'
 
 env:
-  GKE_CLUSTER: aivo-staging
+  GKE_CLUSTER: aivo-gke-staging
   GKE_ZONE: us-central1
-  PROJECT_ID: aivo-platform
+  PROJECT_ID: aivo-learning
   NAMESPACE: aivo-staging
 
 jobs:
