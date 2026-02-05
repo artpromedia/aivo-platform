@@ -42,8 +42,8 @@ RUN if [ -f "services/${SERVICE_NAME}/prisma/schema.prisma" ]; then \
 # Build the service
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
-# Prune dev dependencies
-RUN pnpm prune --prod
+# Use pnpm deploy to create production bundle
+RUN pnpm deploy --filter="@aivo/${SERVICE_NAME}" --prod /deploy
 
 # Stage 2: Runner
 FROM node:20.18.1-alpine AS runner
@@ -57,12 +57,11 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Copy built application
+# Copy production bundle from pnpm deploy
 ARG SERVICE_NAME
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/package.json ./
+COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Copy scripts
 COPY --from=builder --chown=nodejs:nodejs /app/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
