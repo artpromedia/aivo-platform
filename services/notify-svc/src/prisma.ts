@@ -5,12 +5,11 @@
 import { PrismaClient } from '../generated/prisma-client/index.js';
 
 export type { PrismaClient } from '../generated/prisma-client/index.js';
+export { Prisma } from '../generated/prisma-client/index.js';
 
 export const prisma = new PrismaClient({
   log:
-    process.env.NODE_ENV === 'development'
-      ? ['query', 'info', 'warn', 'error']
-      : ['warn', 'error'],
+    process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['warn', 'error'],
 });
 
 export type {
@@ -22,6 +21,8 @@ export type {
   NotificationQueue,
   EmailLog,
   EmailSuppression,
+  SmsLog,
+  SmsConsent,
 } from '../generated/prisma-client/index.js';
 
 export {
@@ -33,4 +34,7 @@ export {
   EmailStatus,
   EmailProvider,
   EmailCategory,
+  SmsConsentType,
+  SmsConsentMethod,
+  SmsStatus,
 } from '../generated/prisma-client/index.js';

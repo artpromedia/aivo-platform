@@ -5,16 +5,10 @@
  * Note: ESLint unsafe warnings are expected until Prisma migration is run.
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-
-import type { PrismaClient } from '../prisma.js';
 import type { NatsConnection, Subscription } from 'nats';
 import { StringCodec } from 'nats';
+
+import type { PrismaClient } from '../prisma.js';
 
 import type { NotificationAggregator } from './notification-aggregator.js';
 import type { ChannelManager } from './notification-channels.js';
@@ -40,7 +34,7 @@ import { UrgencyClassifier } from './urgency-classifier.js';
 interface ParentInfo {
   parentId: string;
   learnerId: string;
-  learnerName: string;
+  learnerName?: string;
 }
 
 interface NotificationResult {
@@ -239,7 +233,7 @@ export class ParentNotificationService {
         ParentNotificationCategory.EMOTIONAL_STATE,
         'state_change',
         {
-          state: event.currentState,
+          state: event.state,
           intensity: event.intensity,
           urgency: event.urgency,
         }
@@ -248,15 +242,15 @@ export class ParentNotificationService {
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: event.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: event.tenantId,
         category: ParentNotificationCategory.EMOTIONAL_STATE,
-        event: event.currentState === 'meltdown_risk' ? 'meltdown_risk' : 'state_change',
-        urgency,
+        event: event.state === 'meltdown_risk' ? 'meltdown_risk' : 'state_change',
         data: {
-          state: event.currentState,
-          previousState: event.previousState,
-          intensity: event.intensity,
+          learnerName: parent.learnerName ?? '',
+          urgency,
+          state: event.state,
           trend: event.trend,
+          intensity: event.intensity,
           sessionId: event.sessionId,
         },
       });
@@ -273,23 +267,23 @@ export class ParentNotificationService {
       const urgency = this.urgencyClassifier.classify(
         ParentNotificationCategory.SESSION_ACTIVITY,
         'session_complete',
-        { durationMinutes: event.durationMinutes }
+        { durationMinutes: event.summary.durationMinutes }
       );
 
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: event.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: event.tenantId,
         category: ParentNotificationCategory.SESSION_ACTIVITY,
         event: 'session_complete',
-        urgency,
         data: {
+          learnerName: parent.learnerName ?? '',
+          urgency,
           sessionId: event.sessionId,
-          subject: event.subject,
-          durationMinutes: event.durationMinutes,
-          activitiesCompleted: event.activitiesCompleted,
-          focusScore: event.focusScore,
-          emotionalJourney: event.emotionalJourney,
+          durationMinutes: event.summary.durationMinutes,
+          contentCompleted: event.summary.contentCompleted,
+          xpEarned: event.summary.xpEarned,
+          emotionalSummary: event.summary.emotionalSummary,
         },
       });
     }
@@ -312,12 +306,15 @@ export class ParentNotificationService {
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: event.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: event.tenantId,
         category: ParentNotificationCategory.ACHIEVEMENT,
         event:
           eventName === 'earned' ? 'badge_earned' : eventName === 'up' ? 'level_up' : eventName,
-        urgency,
-        data: event,
+        data: {
+          ...(event as unknown as Record<string, unknown>),
+          learnerName: parent.learnerName ?? '',
+          urgency,
+        },
       });
     }
   }
@@ -332,22 +329,23 @@ export class ParentNotificationService {
       // Safety concerns are always high priority
       const urgency = this.urgencyClassifier.classify(
         ParentNotificationCategory.SAFETY_CONCERN,
-        event.type,
+        event.concernType,
         { severity: event.severity }
       );
 
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: event.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: event.tenantId,
         category: ParentNotificationCategory.SAFETY_CONCERN,
-        event: event.type === 'crisis' ? 'crisis_detected' : 'content_flag',
-        urgency,
+        event: event.concernType === 'crisis' ? 'crisis_detected' : 'content_flag',
         data: {
-          alertId: event.alertId,
-          type: event.type,
+          learnerName: parent.learnerName ?? '',
+          urgency,
+          sessionId: event.sessionId,
+          concernType: event.concernType,
           severity: event.severity,
-          description: event.description,
+          details: event.details,
         },
       });
     }
@@ -369,11 +367,14 @@ export class ParentNotificationService {
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: data.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: data.tenantId,
         category: ParentNotificationCategory.GOAL_UPDATE,
         event: `goal_${event}`,
-        urgency,
-        data,
+        data: {
+          ...(data as unknown as Record<string, unknown>),
+          learnerName: parent.learnerName ?? '',
+          urgency,
+        },
       });
     }
   }
@@ -391,11 +392,14 @@ export class ParentNotificationService {
       await this.createNotification({
         parentId: parent.parentId,
         learnerId: data.learnerId,
-        learnerName: parent.learnerName,
+        tenantId: (data.tenantId as string) ?? '',
         category: ParentNotificationCategory.CARE_TEAM,
         event,
-        urgency: ParentNotificationUrgency.MEDIUM,
-        data,
+        data: {
+          ...data,
+          learnerName: parent.learnerName ?? '',
+          urgency: ParentNotificationUrgency.MEDIUM,
+        },
       });
     }
   }
@@ -404,11 +408,17 @@ export class ParentNotificationService {
    * Create a notification
    */
   async createNotification(payload: NotificationPayload): Promise<NotificationResult> {
+    // Extract urgency and learnerName from data (callers place them there)
+    const urgency =
+      (payload.data.urgency as ParentNotificationUrgency) ?? ParentNotificationUrgency.MEDIUM;
+    const learnerName = (payload.data.learnerName as string) ?? '';
+
     // Get preferences
     const preferences = await this.preferencesService.getOrCreatePreferences(
+      payload.tenantId,
       payload.parentId,
       payload.learnerId,
-      payload.learnerName
+      learnerName
     );
 
     // Check if category is enabled
@@ -422,10 +432,7 @@ export class ParentNotificationService {
 
     // Check if urgency meets threshold
     const categorySettings = preferences.categorySettings[payload.category];
-    if (
-      categorySettings &&
-      !meetsUrgencyThreshold(payload.urgency, categorySettings.minimumUrgency)
-    ) {
+    if (categorySettings && !meetsUrgencyThreshold(urgency, categorySettings.minimumUrgency)) {
       return {
         notificationId: '',
         status: 'filtered',
@@ -435,7 +442,7 @@ export class ParentNotificationService {
 
     // Generate content using template
     const content = this.templates.generate(payload.category, payload.event, {
-      learnerName: payload.learnerName,
+      learnerName,
       learnerId: payload.learnerId,
       parentId: payload.parentId,
       ...payload.data,
@@ -446,15 +453,18 @@ export class ParentNotificationService {
       data: {
         parentId: payload.parentId,
         learnerId: payload.learnerId,
-        learnerName: payload.learnerName,
+        tenantId: payload.tenantId,
         category: payload.category,
-        event: payload.event,
-        urgency: payload.urgency,
+        sourceEvent: payload.event,
+        urgency,
         title: content.title,
         body: content.body,
-        data: payload.data as object,
-        richContent: (content.richContent as object) ?? null,
-        deepLink: content.deepLink,
+        richContent: {
+          ...((content.richContent as object) ?? {}),
+          ...(payload.data as object),
+          learnerName,
+        } as object,
+        actionUrl: content.actionUrl ?? content.deepLink,
         status: ParentNotificationStatus.PENDING,
       },
     });
@@ -464,7 +474,7 @@ export class ParentNotificationService {
       notification.id,
       payload.parentId,
       payload.learnerId,
-      payload.urgency
+      urgency
     );
 
     if (!scheduleResult.scheduled) {
@@ -528,6 +538,7 @@ export class ParentNotificationService {
     }
 
     const preferences = await this.preferencesService.getPreferences(
+      notification.tenantId,
       notification.parentId,
       notification.learnerId
     );
@@ -546,25 +557,26 @@ export class ParentNotificationService {
       await this.prisma.parentNotificationQueue.update({
         where: { id: notificationId },
         data: {
-          status: ParentNotificationStatus.FILTERED,
+          status: ParentNotificationStatus.CANCELLED,
         },
       });
       return;
     }
 
     // Prepare content
+    const richContent = notification.richContent as Record<string, unknown> | undefined;
     const content = {
       title: notification.title,
       body: notification.body,
       category: notification.category,
       urgency: notification.urgency,
       learnerId: notification.learnerId,
-      learnerName: notification.learnerName,
+      learnerName: (richContent?.learnerName as string) ?? '',
       notificationId: notification.id,
-      deepLink: notification.deepLink ?? undefined,
-      richContent: notification.richContent as Record<string, unknown> | undefined,
-      recipientEmail: preferences.email,
-      recipientPhone: preferences.phoneNumber,
+      deepLink: notification.actionUrl ?? undefined,
+      richContent,
+      recipientEmail: preferences.emailAddress,
+      recipientPhone: preferences.smsPhoneNumber,
     };
 
     // Send through channels
@@ -626,7 +638,6 @@ export class ParentNotificationService {
       select: {
         parentId: true,
         learnerId: true,
-        learnerName: true,
       },
     });
 
@@ -635,7 +646,6 @@ export class ParentNotificationService {
     return relationships.map((r) => ({
       parentId: r.parentId,
       learnerId: r.learnerId,
-      learnerName: r.learnerName,
     }));
   }
 
@@ -645,11 +655,12 @@ export class ParentNotificationService {
   async sendManualNotification(
     parentId: string,
     learnerId: string,
+    tenantId: string,
     category: ParentNotificationCategory,
     event: string,
     data: Record<string, unknown>
   ): Promise<NotificationResult> {
-    const preferences = await this.preferencesService.getPreferences(parentId, learnerId);
+    const preferences = await this.preferencesService.getPreferences(tenantId, parentId, learnerId);
     if (!preferences) {
       return {
         notificationId: '',
@@ -663,11 +674,14 @@ export class ParentNotificationService {
     return this.createNotification({
       parentId,
       learnerId,
-      learnerName: preferences.learnerName,
+      tenantId: preferences.tenantId,
       category,
       event,
-      urgency,
-      data,
+      data: {
+        ...data,
+        learnerName: preferences.learnerName ?? '',
+        urgency,
+      },
     });
   }
 

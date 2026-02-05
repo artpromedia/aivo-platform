@@ -104,8 +104,8 @@ export async function getLearnerAiSettings(
   return {
     aiEnabled: isTemporarilyDisabled ? false : settings.aiEnabled,
     aiDisabledReason: isTemporarilyDisabled
-      ? settings.temporaryDisableReason ?? 'Temporarily disabled'
-      : settings.disabledReasonText ?? undefined,
+      ? (settings.temporaryDisableReason ?? 'Temporarily disabled')
+      : (settings.disabledReasonText ?? undefined),
     disabledBy: settings.disabledByUserId ?? undefined,
     disabledAt: settings.disabledAt ?? undefined,
     tutorEnabled: settings.tutorEnabled,
@@ -173,10 +173,22 @@ export async function updateLearnerAiSettings(
     },
     update: {
       aiEnabled: data.aiEnabled ?? existing?.aiEnabled,
-      disabledReason: isDisabling ? data.disabledReason : isEnabling ? null : existing?.disabledReason,
-      disabledReasonText: isDisabling ? data.disabledReasonText : isEnabling ? null : existing?.disabledReasonText,
+      disabledReason: isDisabling
+        ? data.disabledReason
+        : isEnabling
+          ? null
+          : existing?.disabledReason,
+      disabledReasonText: isDisabling
+        ? data.disabledReasonText
+        : isEnabling
+          ? null
+          : existing?.disabledReasonText,
       disabledAt: isDisabling ? now : isEnabling ? null : existing?.disabledAt,
-      disabledByUserId: isDisabling ? context.userId : isEnabling ? null : existing?.disabledByUserId,
+      disabledByUserId: isDisabling
+        ? context.userId
+        : isEnabling
+          ? null
+          : existing?.disabledByUserId,
       disabledByRole: isDisabling ? context.userRole : isEnabling ? null : existing?.disabledByRole,
       tutorEnabled: data.tutorEnabled ?? existing?.tutorEnabled,
       homeworkHelperEnabled: data.homeworkHelperEnabled ?? existing?.homeworkHelperEnabled,
@@ -326,14 +338,13 @@ export async function getBulkLearnerAiSettings(
 
   // Add found settings
   for (const s of settings) {
-    const isTemporarilyDisabled =
-      s.temporaryDisableUntil && new Date() < s.temporaryDisableUntil;
+    const isTemporarilyDisabled = s.temporaryDisableUntil && new Date() < s.temporaryDisableUntil;
 
     settingsMap.set(s.learnerId, {
       aiEnabled: isTemporarilyDisabled ? false : s.aiEnabled,
       aiDisabledReason: isTemporarilyDisabled
-        ? s.temporaryDisableReason ?? 'Temporarily disabled'
-        : s.disabledReasonText ?? undefined,
+        ? (s.temporaryDisableReason ?? 'Temporarily disabled')
+        : (s.disabledReasonText ?? undefined),
       disabledBy: s.disabledByUserId ?? undefined,
       disabledAt: s.disabledAt ?? undefined,
       tutorEnabled: s.tutorEnabled,

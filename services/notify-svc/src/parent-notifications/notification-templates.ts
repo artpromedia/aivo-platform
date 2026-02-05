@@ -4,14 +4,9 @@
  * Templates for different notification categories.
  */
 
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-base-to-string */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import {
   ParentNotificationCategory,
-  type ParentNotificationUrgency,
+  ParentNotificationUrgency,
   type NotificationContent,
   type NotificationRichContent,
   formatEmotionalState,
@@ -101,8 +96,8 @@ const templates: Record<
       title: `🏆 ${data.learnerName} earned a badge!`,
       body: `Congratulations! ${data.learnerName} earned the "${data.badgeName}" badge.`,
       richContent: {
-        image: data.badgeImage as string | undefined,
-      },
+        headline: data.badgeName as string | undefined,
+      } as NotificationRichContent,
       deepLink: `aivo://learner/${data.learnerId}/achievements`,
     }),
 
@@ -146,13 +141,10 @@ const templates: Record<
         title: `✔️ ${data.learnerName} finished learning`,
         body: `${data.learnerName} completed a ${minutes}-minute ${data.subject} session with ${activitiesCompleted} activities.`,
         richContent: {
-          sessionSummary: {
-            duration: minutes,
-            activitiesCompleted,
-            focusScore: data.focusScore as number | undefined,
-            emotionalJourney: data.emotionalJourney as string[] | undefined,
-          },
-        },
+          headline: `${minutes}-minute session`,
+          details: `${activitiesCompleted} activities completed`,
+          highlights: data.emotionalJourney as string[] | undefined,
+        } as NotificationRichContent,
         deepLink: `aivo://learner/${data.learnerId}/sessions/${data.sessionId}`,
       };
     },
@@ -175,13 +167,9 @@ const templates: Record<
       title: `📊 ${data.learnerName}'s weekly progress`,
       body: `${data.learnerName} completed ${data.sessionsCompleted} sessions this week with ${data.totalMinutes} minutes of learning.`,
       richContent: {
-        progressSummary: {
-          period: 'weekly',
-          sessions: data.sessionsCompleted as number,
-          minutes: data.totalMinutes as number,
-          achievements: data.achievementsEarned as number,
-        },
-      },
+        headline: 'Weekly Progress',
+        details: `${data.sessionsCompleted} sessions, ${data.totalMinutes} minutes, ${data.achievementsEarned} achievements`,
+      } as NotificationRichContent,
       deepLink: `aivo://learner/${data.learnerId}/progress/weekly`,
     }),
 
@@ -195,11 +183,8 @@ const templates: Record<
       title: `${data.learnerName} may need help with ${data.skillName}`,
       body: `${data.learnerName} has been struggling with ${data.skillName} for the past ${data.dayCount} days. Consider discussing with their teacher.`,
       richContent: {
-        actionButtons: [
-          { label: 'Contact Teacher', action: 'contact_teacher' },
-          { label: 'View Details', action: 'view_details' },
-        ],
-      },
+        actionItems: ['Contact Teacher', 'View Details'],
+      } as NotificationRichContent,
       deepLink: `aivo://learner/${data.learnerId}/progress`,
     }),
   },
@@ -209,11 +194,8 @@ const templates: Record<
       title: `🚨 Safety alert for ${data.learnerName}`,
       body: `${data.description ?? 'A safety concern was detected during the session.'}`,
       richContent: {
-        actionButtons: [
-          { label: 'View Details', action: 'view_details' },
-          { label: 'Contact Support', action: 'contact_support' },
-        ],
-      },
+        actionItems: ['View Details', 'Contact Support'],
+      } as NotificationRichContent,
       deepLink: `aivo://safety/alert/${data.alertId}`,
     }),
 
@@ -221,11 +203,8 @@ const templates: Record<
       title: `🆘 Immediate attention needed for ${data.learnerName}`,
       body: `${data.description ?? 'A crisis situation has been detected. Please check on your child immediately.'}`,
       richContent: {
-        actionButtons: [
-          { label: 'Call Now', action: 'call_emergency' },
-          { label: 'View Details', action: 'view_details' },
-        ],
-      },
+        actionItems: ['Call Now', 'View Details'],
+      } as NotificationRichContent,
       deepLink: `aivo://safety/crisis/${data.alertId}`,
     }),
   },
@@ -369,7 +348,7 @@ export class NotificationTemplates {
       title: `${categoryLabels[category]} for ${data.learnerName}`,
       body: event.replace(/_/g, ' '),
       category,
-      urgency: 'medium',
+      urgency: ParentNotificationUrgency.MEDIUM,
       learnerId: data.learnerId,
       learnerName: data.learnerName,
     };
@@ -382,31 +361,33 @@ export class NotificationTemplates {
     category: ParentNotificationCategory,
     event: string,
     data: TemplateData
-  ): string {
+  ): ParentNotificationUrgency {
     // Safety concerns are always high priority
     if (category === ParentNotificationCategory.SAFETY_CONCERN) {
-      return event === 'crisis_detected' ? 'critical' : 'high';
+      return event === 'crisis_detected'
+        ? ParentNotificationUrgency.CRITICAL
+        : ParentNotificationUrgency.HIGH;
     }
 
     // Emotional state depends on the state
     if (category === ParentNotificationCategory.EMOTIONAL_STATE) {
       const state = (data.state as string)?.toLowerCase() ?? '';
       if (['meltdown', 'shutdown', 'meltdown_risk', 'crisis'].includes(state)) {
-        return 'critical';
+        return ParentNotificationUrgency.CRITICAL;
       }
       if (['anxious', 'overwhelmed', 'distressed'].includes(state)) {
-        return 'high';
+        return ParentNotificationUrgency.HIGH;
       }
-      return 'medium';
+      return ParentNotificationUrgency.MEDIUM;
     }
 
     // Most achievements are low priority
     if (category === ParentNotificationCategory.ACHIEVEMENT) {
-      return 'low';
+      return ParentNotificationUrgency.LOW;
     }
 
     // Default to medium
-    return 'medium';
+    return ParentNotificationUrgency.MEDIUM;
   }
 
   /**

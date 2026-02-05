@@ -9,7 +9,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { sendTemplatedEmail } from '../channels/email/email.service.js';
-import type { SupportedLocale } from '../channels/email/types.js';
+import type { EmailTemplateContext, SupportedLocale } from '../channels/email/types.js';
+import { config } from '../config.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -47,10 +48,18 @@ export async function registerEmailRoutes(fastify: FastifyInstance): Promise<voi
       try {
         const body = SendEmailSchema.parse(request.body);
 
+        const context: EmailTemplateContext = {
+          appName: 'Aivo',
+          appUrl: config.appUrl,
+          supportEmail: 'support@aivolearning.com',
+          currentYear: new Date().getFullYear(),
+          ...body.context,
+        };
+
         const result = await sendTemplatedEmail({
           templateName: body.templateName,
           to: body.to,
-          context: body.context,
+          context,
           locale: (body.locale || 'en') as SupportedLocale,
           category: body.category,
           tags: body.tags,

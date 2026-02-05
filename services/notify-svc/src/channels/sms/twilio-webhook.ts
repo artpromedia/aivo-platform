@@ -7,11 +7,11 @@
  * - Webhook signature validation
  */
 
-import type { PrismaClient } from '../../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import Twilio from 'twilio';
 
 import { config } from '../../config.js';
+import type { SmsStatus as PrismaSmsStatus, PrismaClient } from '../../prisma.js';
 
 import { smsConsentService } from './sms-consent.js';
 import { renderSmsTemplate } from './sms-templates.js';
@@ -119,7 +119,7 @@ async function handleStatusCallback(
     const updated = await context.prisma.smsLog.updateMany({
       where: { messageId: MessageSid },
       data: {
-        status,
+        status: status as unknown as PrismaSmsStatus,
         errorCode: ErrorCode,
         errorMessage: ErrorMessage,
         deliveredAt: status === 'DELIVERED' ? new Date() : undefined,
@@ -299,7 +299,7 @@ function mapTwilioStatus(twilioStatus: string): SmsStatus {
     read: 'READ',
   };
 
-  return statusMap[twilioStatus.toLowerCase()] || 'UNKNOWN';
+  return statusMap[twilioStatus.toLowerCase()] || 'FAILED';
 }
 
 function maskPhone(phone: string): string {

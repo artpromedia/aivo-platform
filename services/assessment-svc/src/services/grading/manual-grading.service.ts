@@ -18,11 +18,11 @@ import type {
   GradingQueueItem,
   GradingSummary,
   QuestionResponse,
+  QuestionAnswer,
   ResponseStatus,
 } from '../../types/assessment.types.js';
 
 import { rubricService } from './rubric.service.js';
-
 
 // ============================================================================
 // TYPES
@@ -97,10 +97,7 @@ export class ManualGradingService {
       },
       status,
       question: {
-        OR: [
-          { type: 'ESSAY' },
-          { type: 'SHORT_ANSWER' },
-        ],
+        OR: [{ type: 'ESSAY' }, { type: 'SHORT_ANSWER' }],
       },
     };
 
@@ -131,16 +128,16 @@ export class ManualGradingService {
           attempt: {
             select: blindGrading
               ? {
-                id: true,
-                assessmentId: true,
-                assessment: { select: { id: true, title: true, type: true } },
-              }
+                  id: true,
+                  assessmentId: true,
+                  assessment: { select: { id: true, title: true, type: true } },
+                }
               : {
-                id: true,
-                assessmentId: true,
-                assessment: { select: { id: true, title: true, type: true } },
-                userId: true,
-              },
+                  id: true,
+                  assessmentId: true,
+                  assessment: { select: { id: true, title: true, type: true } },
+                  userId: true,
+                },
           },
           gradingRecords: {
             orderBy: { gradedAt: 'desc' },
@@ -164,15 +161,13 @@ export class ManualGradingService {
       assessmentName: response.attempt.assessment.title,
       questionType: response.question.type,
       questionStem: response.question.stem,
-      answer: response.response,
+      answer: (response.response ?? undefined) as QuestionAnswer | undefined,
       maxPoints: response.maxPoints,
       pointsAwarded: response.pointsEarned ?? undefined,
       status: response.status as ResponseStatus,
-      studentId: blindGrading ? undefined : response.attempt.userId,
+      studentId: blindGrading ? undefined : (response.attempt as any).userId,
       submittedAt: response.answeredAt ?? response.startedAt,
-      rubric: response.question.rubric
-        ? this.mapRubric(response.question.rubric)
-        : undefined,
+      rubric: response.question.rubric ? this.mapRubric(response.question.rubric) : undefined,
     }));
 
     // Get summary counts
@@ -242,16 +237,14 @@ export class ManualGradingService {
       assessmentName: response.attempt.assessment.title,
       questionType: response.question.type,
       questionStem: response.question.stem,
-      answer: response.response,
+      answer: (response.response ?? undefined) as QuestionAnswer | undefined,
       maxPoints: response.maxPoints,
       pointsAwarded: response.pointsEarned ?? undefined,
       feedback: response.feedback ?? undefined,
       status: response.status as ResponseStatus,
       studentId: blindGrading ? undefined : response.attempt.userId,
       submittedAt: response.answeredAt ?? response.startedAt,
-      rubric: response.question.rubric
-        ? this.mapRubric(response.question.rubric)
-        : undefined,
+      rubric: response.question.rubric ? this.mapRubric(response.question.rubric) : undefined,
       rubricScores: response.rubricScores as Record<string, number> | undefined,
       gradingHistory: response.gradingRecords.map((record) => ({
         gradedBy: record.graderId,
@@ -288,17 +281,12 @@ export class ManualGradingService {
 
     // Validate points
     if (input.pointsAwarded < 0 || input.pointsAwarded > response.maxPoints) {
-      throw new Error(
-        `Points must be between 0 and ${response.maxPoints}`
-      );
+      throw new Error(`Points must be between 0 and ${response.maxPoints}`);
     }
 
     // Validate rubric scores if provided
     if (input.rubricScores && response.question.rubric) {
-      this.validateRubricScores(
-        input.rubricScores,
-        response.question.rubric.criteria
-      );
+      this.validateRubricScores(input.rubricScores, response.question.rubric.criteria);
     }
 
     // Create grading record
@@ -387,11 +375,7 @@ export class ManualGradingService {
   /**
    * Flag a response for review
    */
-  async flagResponse(
-    responseId: string,
-    flaggedBy: string,
-    reason?: string
-  ): Promise<void> {
+  async flagResponse(responseId: string, flaggedBy: string, reason?: string): Promise<void> {
     await prisma.questionResponse.update({
       where: { id: responseId },
       data: {
@@ -422,20 +406,14 @@ export class ManualGradingService {
   /**
    * Get grading summary for an assessment
    */
-  async getGradingSummary(
-    assessmentId: string,
-    tenantId: string
-  ): Promise<GradingSummary> {
+  async getGradingSummary(assessmentId: string, tenantId: string): Promise<GradingSummary> {
     const assessment = await prisma.assessment.findFirst({
       where: { id: assessmentId, tenantId },
       include: {
         questions: {
           where: {
             question: {
-              OR: [
-                { type: 'ESSAY' },
-                { type: 'SHORT_ANSWER' },
-              ],
+              OR: [{ type: 'ESSAY' }, { type: 'SHORT_ANSWER' }],
             },
           },
           include: {
@@ -448,10 +426,7 @@ export class ManualGradingService {
             responses: {
               where: {
                 question: {
-                  OR: [
-                    { type: 'ESSAY' },
-                    { type: 'SHORT_ANSWER' },
-                  ],
+                  OR: [{ type: 'ESSAY' }, { type: 'SHORT_ANSWER' }],
                 },
               },
             },
@@ -472,9 +447,7 @@ export class ManualGradingService {
     // Per-question breakdown
     const byQuestion = assessment.questions.map((assessmentQuestion) => {
       const question = assessmentQuestion.question;
-      const questionResponses = allResponses.filter(
-        (r) => r.questionId === question.id
-      );
+      const questionResponses = allResponses.filter((r) => r.questionId === question.id);
       return {
         questionId: question.id,
         questionStem: question.stem,
@@ -488,8 +461,7 @@ export class ManualGradingService {
     const graderCounts: Record<string, number> = {};
     for (const response of allResponses) {
       if (response.gradedBy) {
-        graderCounts[response.gradedBy] =
-          (graderCounts[response.gradedBy] ?? 0) + 1;
+        graderCounts[response.gradedBy] = (graderCounts[response.gradedBy] ?? 0) + 1;
       }
     }
 
@@ -581,14 +553,8 @@ export class ManualGradingService {
     );
 
     if (allGraded && attempt.status === 'SUBMITTED') {
-      const pointsEarned = attempt.responses.reduce(
-        (sum, r) => sum + (r.pointsEarned ?? 0),
-        0
-      );
-      const pointsPossible = attempt.responses.reduce(
-        (sum, r) => sum + r.maxPoints,
-        0
-      );
+      const pointsEarned = attempt.responses.reduce((sum, r) => sum + (r.pointsEarned ?? 0), 0);
+      const pointsPossible = attempt.responses.reduce((sum, r) => sum + r.maxPoints, 0);
       const score = pointsPossible > 0 ? (pointsEarned / pointsPossible) * 100 : 0;
 
       await client.attempt.update({

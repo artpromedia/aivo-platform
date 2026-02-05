@@ -1,6 +1,6 @@
 /**
  * Randomization Service
- * 
+ *
  * Handles question and answer randomization for assessments:
  * - Question order shuffling
  * - Answer option shuffling
@@ -66,33 +66,27 @@ export class RandomizationService {
     // Handle question pools
     if (config.questionPools?.length) {
       const poolQuestions: Question[] = [];
-      
+
       for (const pool of config.questionPools) {
         const availableIds = new Set(pool.questionIds);
-        const poolCandidates = questions.filter(q => availableIds.has(q.id));
-        
+        const poolCandidates = questions.filter((q) => availableIds.has(q.id));
+
         // Randomly select questions from pool
-        const selected = this.selectFromPool(
-          poolCandidates,
-          pool.selectCount,
-          random
-        );
-        
-        poolSelections[pool.poolId] = selected.map(q => q.id);
+        const selected = this.selectFromPool(poolCandidates, pool.selectCount, random);
+
+        poolSelections[pool.poolId] = selected.map((q) => q.id);
         poolQuestions.push(...selected);
       }
 
       // Add non-pool questions
-      const pooledIds = new Set(
-        config.questionPools.flatMap(p => p.questionIds)
-      );
-      const nonPoolQuestions = questions.filter(q => !pooledIds.has(q.id));
-      
+      const pooledIds = new Set(config.questionPools.flatMap((p) => p.questionIds));
+      const nonPoolQuestions = questions.filter((q) => !pooledIds.has(q.id));
+
       selectedQuestions = [...nonPoolQuestions, ...poolQuestions];
     }
 
     // Shuffle question order if enabled
-    let questionOrder = selectedQuestions.map(q => q.id);
+    let questionOrder = selectedQuestions.map((q) => q.id);
     if (config.shuffleQuestions) {
       questionOrder = this.shuffleArray(questionOrder, random);
     }
@@ -121,43 +115,37 @@ export class RandomizationService {
   /**
    * Apply randomization to questions for display
    */
-  applyRandomization(
-    questions: Question[],
-    randomization: RandomizedAssessment
-  ): Question[] {
+  applyRandomization(questions: Question[], randomization: RandomizedAssessment): Question[] {
     // Order questions
-    const questionMap = new Map(questions.map(q => [q.id, q]));
+    const questionMap = new Map(questions.map((q) => [q.id, q]));
     const orderedQuestions = randomization.questionOrder
-      .map(id => questionMap.get(id))
+      .map((id) => questionMap.get(id))
       .filter((q): q is Question => q !== undefined);
 
     // Shuffle options within each question
-    return orderedQuestions.map(question => {
+    return orderedQuestions.map((question) => {
       const optionOrder = randomization.answerOrders[question.id];
-      if (!optionOrder || !question.options?.length) {
+      const questionOptions = (question as any).options as unknown[] | undefined;
+      if (!optionOrder || !questionOptions?.length) {
         return question;
       }
 
       // Reorder options based on shuffle
-      const shuffledOptions = optionOrder.map(i => question.options![i]);
-      
+      const shuffledOptions = optionOrder.map((i) => questionOptions[i]);
+
       return {
         ...question,
         options: shuffledOptions,
         // Store original indices for answer mapping
         _optionMapping: optionOrder,
-      } as Question;
+      } as unknown as Question;
     });
   }
 
   /**
    * Map student answer back to original option indices
    */
-  mapAnswerToOriginal(
-    questionId: string,
-    answer: any,
-    randomization: RandomizedAssessment
-  ): any {
+  mapAnswerToOriginal(questionId: string, answer: any, randomization: RandomizedAssessment): any {
     const optionOrder = randomization.answerOrders[questionId];
     if (!optionOrder) return answer;
 
@@ -167,9 +155,7 @@ export class RandomizationService {
       return optionOrder[answer];
     } else if (Array.isArray(answer)) {
       // Multiple option indices
-      return answer.map(i => 
-        typeof i === 'number' ? optionOrder[i] : i
-      );
+      return answer.map((i) => (typeof i === 'number' ? optionOrder[i] : i));
     } else if (typeof answer === 'object' && answer.selectedOption !== undefined) {
       // Object with selectedOption
       return {
@@ -203,9 +189,7 @@ export class RandomizationService {
   /**
    * Retrieve stored randomization for an attempt
    */
-  async getStoredRandomization(
-    attemptId: string
-  ): Promise<RandomizedAssessment | null> {
+  async getStoredRandomization(attemptId: string): Promise<RandomizedAssessment | null> {
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },
       select: {
@@ -251,9 +235,9 @@ export class RandomizationService {
           assessmentId,
           name: pool.name,
           questionIds: pool.questionIds,
-          selectCount: pool.selectCount,
+          pickCount: pool.selectCount,
           orderIndex: i,
-          points: pool.points,
+          pointsPerQuestion: pool.points,
         },
       });
     }
@@ -262,20 +246,18 @@ export class RandomizationService {
   /**
    * Get question pools for an assessment
    */
-  async getQuestionPools(
-    assessmentId: string
-  ): Promise<QuestionPoolConfig[]> {
+  async getQuestionPools(assessmentId: string): Promise<QuestionPoolConfig[]> {
     const pools = await prisma.assessmentQuestionPool.findMany({
       where: { assessmentId },
       orderBy: { orderIndex: 'asc' },
     });
 
-    return pools.map(pool => ({
+    return pools.map((pool) => ({
       poolId: pool.id,
       poolName: pool.name,
       questionIds: pool.questionIds as string[],
-      selectCount: pool.selectCount,
-      points: pool.points,
+      selectCount: pool.pickCount,
+      points: pool.pointsPerQuestion,
     }));
   }
 
@@ -292,10 +274,8 @@ export class RandomizationService {
     }
 
     // Simple mulberry32 PRNG
-    const seedValue = this.hashString(
-      `${seed.attemptId}-${seed.timestamp}-${seed.userId}`
-    );
-    
+    const seedValue = this.hashString(`${seed.attemptId}-${seed.timestamp}-${seed.userId}`);
+
     let state = seedValue;
     return () => {
       state |= 0;
@@ -313,7 +293,7 @@ export class RandomizationService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash |= 0;
     }
     return Math.abs(hash);
@@ -334,13 +314,9 @@ export class RandomizationService {
   /**
    * Randomly select items from a pool
    */
-  private selectFromPool<T>(
-    items: T[],
-    count: number,
-    random: () => number
-  ): T[] {
+  private selectFromPool<T>(items: T[], count: number, random: () => number): T[] {
     if (count >= items.length) return [...items];
-    
+
     const shuffled = this.shuffleArray(items, random);
     return shuffled.slice(0, count);
   }
@@ -349,11 +325,7 @@ export class RandomizationService {
    * Check if question type supports option shuffling
    */
   private canShuffleOptions(question: Question): boolean {
-    const shuffleableTypes = [
-      'MULTIPLE_CHOICE',
-      'MULTIPLE_SELECT',
-      'MATCHING',
-    ];
+    const shuffleableTypes = ['MULTIPLE_CHOICE', 'MULTIPLE_SELECT', 'MATCHING'];
     return shuffleableTypes.includes(question.type);
   }
 
@@ -361,8 +333,9 @@ export class RandomizationService {
    * Get the number of options for a question
    */
   private getOptionCount(question: Question): number {
-    if (question.options?.length) {
-      return question.options.length;
+    const questionOptions = (question as any).options as unknown[] | undefined;
+    if (questionOptions?.length) {
+      return questionOptions.length;
     }
     if (question.type === 'MATCHING' && question.pairs?.length) {
       return question.pairs.length;

@@ -7,10 +7,10 @@
 import { EventPublisher } from '@aivo/events';
 
 import { config } from '../config.js';
+import { DeliveryChannel, NotificationType, NotificationPriority } from '../prisma.js';
+import * as deliveryService from '../services/deliveryService.js';
 import * as notificationService from '../services/notificationService.js';
 import * as preferenceService from '../services/preferenceService.js';
-import * as deliveryService from '../services/deliveryService.js';
-import { DeliveryChannel, NotificationType, NotificationPriority } from '../prisma.js';
 
 // Event types we subscribe to
 const SUBSCRIBED_EVENTS = [
@@ -39,9 +39,10 @@ export async function startEventConsumer(): Promise<void> {
   }
 
   publisher = new EventPublisher({
-    natsUrl: config.nats.url,
-    clientId: 'notify-svc',
-    stream: 'NOTIFICATIONS',
+    servers: config.nats.url,
+    name: 'notify-svc',
+    serviceName: 'notify-svc',
+    serviceVersion: '1.0.0',
   });
 
   await publisher.connect();
@@ -57,7 +58,7 @@ export async function startEventConsumer(): Promise<void> {
 
 export async function stopEventConsumer(): Promise<void> {
   if (publisher) {
-    await publisher.disconnect();
+    await publisher.close();
     publisher = null;
   }
 }
@@ -66,7 +67,10 @@ export async function stopEventConsumer(): Promise<void> {
 // EVENT HANDLERS
 // ══════════════════════════════════════════════════════════════════════════════
 
-export async function handleEvent(eventType: SubscribedEvent, payload: EventPayload): Promise<void> {
+export async function handleEvent(
+  eventType: SubscribedEvent,
+  payload: EventPayload
+): Promise<void> {
   switch (eventType) {
     case 'goal.completed':
       await handleGoalCompleted(payload);
@@ -194,7 +198,8 @@ async function handleAchievementUnlocked(payload: EventPayload): Promise<void> {
 }
 
 async function handleMessageReceived(payload: EventPayload): Promise<void> {
-  const { tenantId, recipientId, senderId, senderName, conversationId, messagePreview } = payload as any;
+  const { tenantId, recipientId, senderId, senderName, conversationId, messagePreview } =
+    payload as any;
 
   // Check preferences before creating notification
   const prefs = await preferenceService.getPreferences(tenantId, recipientId);

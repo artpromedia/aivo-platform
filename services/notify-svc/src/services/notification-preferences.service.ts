@@ -78,7 +78,7 @@ export async function getOrCreatePreferences(
   tenantId: string
 ): Promise<UserPreferences> {
   let preferences = await prisma.notificationPreference.findUnique({
-    where: { userId },
+    where: { tenantId_userId: { tenantId, userId } },
   });
 
   if (!preferences) {
@@ -104,9 +104,12 @@ export async function getOrCreatePreferences(
 /**
  * Get preferences for a user (returns null if not found)
  */
-export async function getPreferences(userId: string): Promise<UserPreferences | null> {
+export async function getPreferences(
+  userId: string,
+  tenantId: string
+): Promise<UserPreferences | null> {
   const preferences = await prisma.notificationPreference.findUnique({
-    where: { userId },
+    where: { tenantId_userId: { tenantId, userId } },
   });
 
   return preferences ? mapToUserPreferences(preferences) : null;
@@ -132,7 +135,7 @@ export async function updatePreferences(
   }
 
   const updated = await prisma.notificationPreference.update({
-    where: { userId },
+    where: { tenantId_userId: { tenantId, userId } },
     data: {
       ...(input.inAppEnabled !== undefined && { inAppEnabled: input.inAppEnabled }),
       ...(input.pushEnabled !== undefined && { pushEnabled: input.pushEnabled }),
@@ -158,10 +161,10 @@ export async function updatePreferences(
 /**
  * Delete preferences for a user
  */
-export async function deletePreferences(userId: string): Promise<boolean> {
+export async function deletePreferences(userId: string, tenantId: string): Promise<boolean> {
   try {
     await prisma.notificationPreference.delete({
-      where: { userId },
+      where: { tenantId_userId: { tenantId, userId } },
     });
     return true;
   } catch {
@@ -218,7 +221,7 @@ export async function makeDeliveryDecision(
 
     // Route to parent
     recipientUserId = coppaConfig.parentUserId;
-    const parentPrefs = await getPreferences(coppaConfig.parentUserId);
+    const parentPrefs = await getPreferences(coppaConfig.parentUserId, tenantId);
     if (parentPrefs) {
       recipientPreferences = parentPrefs;
     }
@@ -390,7 +393,7 @@ export async function getParentPreferencesForLearner(
     return { parentId: null, preferences: null };
   }
 
-  const preferences = await getPreferences(parentPrefs.parentId);
+  const preferences = await getPreferences(parentPrefs.parentId, tenantId);
 
   return {
     parentId: parentPrefs.parentId,

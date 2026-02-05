@@ -6,10 +6,12 @@
  */
 
 import { createLogger } from '@aivo/ts-api-utils';
-import type { PrismaClient } from '../prisma.js';
 import type { App as FirebaseApp } from 'firebase-admin/app';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
+
+import { NotificationPriority } from '../prisma.js';
+import type { PrismaClient, Prisma } from '../prisma.js';
 
 const logger = createLogger('notification-channels');
 
@@ -111,7 +113,7 @@ export class PushChannel implements NotificationChannel {
       const tokens = await this.prisma.deviceToken.findMany({
         where: {
           userId: parentId,
-          active: true,
+          isActive: true,
         },
       });
 
@@ -225,7 +227,7 @@ export class PushChannel implements NotificationChannel {
             this.prisma.deviceToken
               .updateMany({
                 where: { token: tokens[idx] },
-                data: { active: false },
+                data: { isActive: false },
               })
               .catch((err) => {
                 logger.warn('Failed to deactivate invalid token', { err, token: tokens[idx] });
@@ -570,20 +572,21 @@ export class InAppChannel implements NotificationChannel {
       // Create in-app notification record
       const notification = await this.prisma.notification.create({
         data: {
-          userId: parentId,
-          type: 'parent_notification',
+          recipientId: parentId,
+          tenantId: '', // TODO: pass tenantId through NotificationContent
+          type: 'ALERT',
           title: content.title,
           body: content.body,
-          data: {
+          actionData: {
             category: content.category,
             urgency: content.urgency,
             learnerId: content.learnerId,
             learnerName: content.learnerName,
             deepLink: content.deepLink,
             richContent: content.richContent,
-          },
+          } as unknown as Prisma.InputJsonValue,
           priority: this.mapUrgencyToPriority(content.urgency),
-          read: false,
+          isRead: false,
         },
       });
 
@@ -603,16 +606,16 @@ export class InAppChannel implements NotificationChannel {
     }
   }
 
-  private mapUrgencyToPriority(urgency: string): string {
+  private mapUrgencyToPriority(urgency: string): NotificationPriority {
     switch (urgency) {
       case 'critical':
-        return 'URGENT';
+        return NotificationPriority.URGENT;
       case 'high':
-        return 'HIGH';
+        return NotificationPriority.HIGH;
       case 'medium':
-        return 'NORMAL';
+        return NotificationPriority.NORMAL;
       default:
-        return 'LOW';
+        return NotificationPriority.LOW;
     }
   }
 }
@@ -671,7 +674,13 @@ export class ChannelManager {
         results.push(result);
 
         // Log delivery attempt
-        await this.logDelivery(parentId, content.notificationId ?? '', result);
+        await this.logDelivery(
+          parentId,
+          content.notificationId ?? '',
+          result,
+          content.learnerId ?? '',
+          '' // TODO: pass tenantId through NotificationContent
+        );
       }
     }
 
@@ -684,7 +693,9 @@ export class ChannelManager {
   private async logDelivery(
     parentId: string,
     notificationId: string,
-    result: DeliveryResult
+    result: DeliveryResult,
+    learnerId: string,
+    tenantId: string
   ): Promise<void> {
     if (!notificationId) return;
 
@@ -692,14 +703,16 @@ export class ChannelManager {
       data: {
         notificationId,
         parentId,
+        learnerId,
+        tenantId,
         channel: result.channel,
         status: result.success
           ? ParentNotificationStatus.DELIVERED
           : ParentNotificationStatus.FAILED,
-        messageId: result.messageId,
-        error: result.error,
+        errorMessage: result.error ?? null,
         deliveredAt: result.success ? result.timestamp : null,
-        failedAt: result.success ? null : result.timestamp,
+        sentAt: result.timestamp,
+        metadata: result.messageId ? { messageId: result.messageId } : undefined,
       },
     });
   }
