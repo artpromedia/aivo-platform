@@ -9,8 +9,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Reference the base configuration
+# TEMP (2026-02-05): Limit staging overlay to ai-orchestrator only.
+# Revert by restoring the single line below and removing the explicit resources list.
+#   - ../../base
 resources:
-  - ../../base
+  - ../../base/namespace.yaml
+  - ../../base/ai-orchestrator.yaml
 
 # Override namespace for staging
 namespace: aivo-staging

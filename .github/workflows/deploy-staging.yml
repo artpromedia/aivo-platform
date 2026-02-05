@@ -71,33 +71,10 @@ jobs:
         run: |
           cd infra/k8s/overlays/staging
 
-          # Core services deployed in base kustomization
+          # TEMP (2026-02-05): Only update ai-orchestrator image in staging.
+          # Revert by restoring the full SERVICES list for all services.
           SERVICES=(
-            # Authentication & User Management
-            "auth-svc"
-            "session-svc"
-            "consent-svc"
-            "profile-svc"
-            # Content & Learning
-            "content-svc"
-            "assessment-svc"
-            "personalization-svc"
-            "life-skills-svc"
-            # AI & Analytics
             "ai-orchestrator"
-            "analytics-svc"
-            # Communication
-            "notify-svc"
-            "messaging-svc"
-            # Goal & Focus
-            "goal-svc"
-            "focus-svc"
-            # Billing & Payments
-            "billing-svc"
-            "payments-svc"
-            # Parent Portal
-            "parent-svc"
-            "baseline-svc"
           )
 
           for service in "${SERVICES[@]}"; do
@@ -114,10 +91,9 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Waiting for rollout"
-          # Wait for all deployments to be ready
-          for deployment in $(kubectl get deployments -n ${{ env.NAMESPACE }} -o name); do
-            kubectl rollout status $deployment -n ${{ env.NAMESPACE }} --timeout=600s
-          done
+          # TEMP (2026-02-05): Only wait for ai-orchestrator rollout in staging.
+          # Revert by restoring the loop over all deployments.
+          kubectl rollout status deployment/ai-orchestrator -n ${{ env.NAMESPACE }} --timeout=600s
           echo "::endgroup::"
 
       - name: Verify deployment
