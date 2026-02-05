@@ -23,6 +23,7 @@ import { registerFederatedLearningRoutes } from './routes/federated-learning.js'
 import { registerFineTuningRoutes } from './routes/fine-tuning.js';
 import gameGenerationRoutes from './routes/game-generation.js';
 import generationRoutes from './routes/generation.js';
+import { healthRoutes } from './routes/health.js';
 import iepGenerationRoutes from './routes/iep-generation.js';
 import { registerInternalRoutes } from './routes/internal.js';
 import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
@@ -44,20 +45,27 @@ export interface AppOptions {
 export function createApp(options: AppOptions = {}) {
   const app = Fastify({ logger: true });
 
-  const store = options.store ?? createAgentConfigStore(config.databaseUrl);
+  // Database-dependent services are only initialized if DATABASE_URL is provided
+  const hasDatabaseUrl = !!config.databaseUrl;
+
+  const store =
+    options.store ?? (hasDatabaseUrl ? createAgentConfigStore(config.databaseUrl) : null);
   const registry =
     options.registry ??
-    new AgentConfigRegistry(store, { cacheTtlMs: config.agentConfigCacheTtlMs });
-  const telemetryStore = options.telemetryStore ?? createTelemetryStore(config.databaseUrl);
+    (store ? new AgentConfigRegistry(store, { cacheTtlMs: config.agentConfigCacheTtlMs }) : null);
+  const telemetryStore =
+    options.telemetryStore ?? (hasDatabaseUrl ? createTelemetryStore(config.databaseUrl) : null);
 
   // Initialize PolicyEnforcer singleton for policy enforcement in the AI pipeline
   // This creates a shared Pool for policy lookups
-  const policyPool = new Pool({ connectionString: config.databaseUrl });
-  const policyEnforcer = options.policyEnforcer ?? createPolicyEnforcer(policyPool);
+  const policyPool = hasDatabaseUrl ? new Pool({ connectionString: config.databaseUrl }) : null;
+  const policyEnforcer =
+    options.policyEnforcer ?? (policyPool ? createPolicyEnforcer(policyPool) : null);
 
   // Initialize AI safety and monitoring services
-  const incidentService = options.incidentService ?? new IncidentService(policyPool);
-  const usageTracker = options.usageTracker ?? new UsageTracker(policyPool);
+  const incidentService =
+    options.incidentService ?? (policyPool ? new IncidentService(policyPool) : null);
+  const usageTracker = options.usageTracker ?? (policyPool ? new UsageTracker(policyPool) : null);
 
   // Initialize Redis for caching and pub/sub
   const redis = new Redis(config.redisUrl || 'redis://localhost:6379');
@@ -100,44 +108,55 @@ export function createApp(options: AppOptions = {}) {
     reply.header('x-correlation-id', correlationId);
   });
 
-  app.register(registerInternalRoutes, { prefix: '/internal', registry, store, telemetryStore });
+  // Health check routes (must be registered early, before dependencies are initialized)
+  app.register(healthRoutes);
 
-  // Admin stats routes for compliance dashboard
-  app.register(registerAdminStatsRoutes, { pool: policyPool });
+  // Only register database-dependent routes if database is available
+  if (registry && store && telemetryStore) {
+    app.register(registerInternalRoutes, { prefix: '/internal', registry, store, telemetryStore });
 
-  // Teacher AI transparency routes (HIGH-001)
-  app.register(registerTeacherTransparencyRoutes, { pool: policyPool });
+    // Social story AI personalization routes (ND-1.2)
+    app.register(socialStoryRoutes, { registry, telemetryStore });
+  }
 
-  // Brain update routes for virtual brain synchronization
-  app.register(registerBrainRoutes, { prefix: '/internal/ai/brain', pool: policyPool });
+  if (policyPool) {
+    // Admin stats routes for compliance dashboard
+    app.register(registerAdminStatsRoutes, { pool: policyPool });
 
-  // Social story AI personalization routes (ND-1.2)
-  app.register(socialStoryRoutes, { registry, telemetryStore });
+    // Teacher AI transparency routes (HIGH-001)
+    app.register(registerTeacherTransparencyRoutes, { pool: policyPool });
 
-  // Emotional state detection and intervention routes (ND-2.3)
-  app.register(emotionalStateRoutes, { prefix: '/emotional-state', pool: policyPool });
+    // Brain update routes for virtual brain synchronization
+    app.register(registerBrainRoutes, { prefix: '/internal/ai/brain', pool: policyPool });
+
+    // Emotional state detection and intervention routes (ND-2.3)
+    app.register(emotionalStateRoutes, { prefix: '/emotional-state', pool: policyPool });
+
+    // Prompt Debugging Dashboard API routes
+    app.register(registerPromptDebuggingRoutes, { pool: policyPool, redis });
+
+    // RLHF Fine-Tuning API routes
+    app.register(registerFineTuningRoutes, { pool: policyPool, redis });
+
+    // Federated Prompt Learning API routes
+    app.register(registerFederatedLearningRoutes, { pool: policyPool, redis });
+  }
 
   // Create LLM Orchestrator for AI services (configured via environment variables)
   // Primary: Google, Fallbacks: OpenAI, Anthropic, Ollama (local dev only)
   const llmOrchestrator = createLLMOrchestratorFromEnv();
 
-  // AI Content Generation routes
-  app.register(generationRoutes, { pool: policyPool, llmOrchestrator });
+  // AI routes that work without database
+  if (policyPool) {
+    // AI Content Generation routes
+    app.register(generationRoutes, { pool: policyPool, llmOrchestrator });
+  }
 
   // AI-Generated Adaptive Games routes
   app.register(gameGenerationRoutes, { llmOrchestrator });
 
   // AI-Powered IEP Goal Generation routes (Sprint 1.3 - Real AI integration)
   app.register(iepGenerationRoutes, { prefix: '/iep', llmOrchestrator });
-
-  // Prompt Debugging Dashboard API routes
-  app.register(registerPromptDebuggingRoutes, { pool: policyPool, redis });
-
-  // RLHF Fine-Tuning API routes
-  app.register(registerFineTuningRoutes, { pool: policyPool, redis });
-
-  // Federated Prompt Learning API routes
-  app.register(registerFederatedLearningRoutes, { pool: policyPool, redis });
 
   app.addHook('onError', async (request, reply, error) => {
     const correlationId = (request as FastifyRequest & { correlationId?: string }).correlationId;
@@ -153,14 +172,16 @@ export function createApp(options: AppOptions = {}) {
   app.decorate('usageTracker', usageTracker);
 
   app.addHook('onClose', async () => {
-    if (typeof store.dispose === 'function') {
+    if (store && typeof store.dispose === 'function') {
       await store.dispose();
     }
-    if (typeof telemetryStore.dispose === 'function') {
+    if (telemetryStore && typeof telemetryStore.dispose === 'function') {
       await telemetryStore.dispose();
     }
     // Clean up policy pool
-    await policyPool.end();
+    if (policyPool) {
+      await policyPool.end();
+    }
     // Clean up Redis connection
     await redis.quit();
   });
