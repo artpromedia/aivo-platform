@@ -20,7 +20,7 @@ async function publishEvent(
     tenantId,
     eventType,
     eventVersion: '1.0.0',
-    payload,
+    metadata: payload,
   });
 }
 
