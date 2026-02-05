@@ -15,8 +15,8 @@ import { z } from 'zod';
 import { getConfigurationManager } from '../config/providers.config.js';
 import type {
   BaseProviderAdapter,
-  type ChatRequest,
-  type ChatResponse,
+  ChatRequest,
+  ChatResponse,
 } from '../providers/adapters/base.adapter.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
