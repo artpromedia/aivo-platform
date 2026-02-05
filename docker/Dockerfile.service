@@ -27,7 +27,7 @@ COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
 RUN if [ -f "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" ]; then \
             cp "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" /app/docker-entrypoint.sh; \
         else \
-            printf '#!/bin/sh\nexec node dist/main.js\n' > /app/docker-entrypoint.sh; \
+            printf '#!/bin/sh\nif [ -f dist/main.js ]; then\n  exec node dist/main.js\nelif [ -f dist/src/main.js ]; then\n  exec node dist/src/main.js\nelse\n  echo "No main.js found in dist" 1>&2\n  ls -R dist 1>&2\n  exit 1\nfi\n' > /app/docker-entrypoint.sh; \
         fi
 
 # Install dependencies
