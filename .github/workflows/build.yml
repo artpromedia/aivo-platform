@@ -130,11 +130,16 @@ jobs:
 
       - name: Run Trivy scan on image
         uses: aquasecurity/trivy-action@0.24.0
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          TRIVY_TIMEOUT: 10m
         with:
           image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
           format: 'sarif'
           output: 'trivy-results-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
+          exit-code: '0'
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3

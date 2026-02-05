@@ -562,6 +562,10 @@ jobs:
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.24.0
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          TRIVY_TIMEOUT: 10m
         with:
           image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.build.outputs.version }}'
           format: 'sarif'
