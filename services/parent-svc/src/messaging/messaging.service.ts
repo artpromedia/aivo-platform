@@ -119,11 +119,7 @@ export class MessagingService {
         },
       });
 
-      logger.info('Conversation created', {
-        conversationId: conversation.id,
-        parentId,
-        teacherId: dto.teacherId,
-      });
+      logger.info(`Conversation created: ${conversation.id} between parent ${parentId} and teacher ${dto.teacherId}`);
     }
 
     return this.toConversation(conversation);
@@ -188,7 +184,7 @@ export class MessagingService {
         senderType,
         content: dto.content,
         contentHtml: this.sanitizeHtml(dto.content),
-        attachments: dto.attachments,
+        attachments: dto.attachments as any,
         status: MessageStatus.SENT,
         moderationScore: moderationResult.score,
       },
@@ -235,7 +231,7 @@ export class MessagingService {
       senderType,
     });
 
-    metrics.increment('message.sent', { senderType });
+    metrics.counter('message.sent').inc();
 
     return this.toMessage(message);
   }
@@ -520,11 +516,7 @@ export class MessagingService {
       },
     });
 
-    logger.warn('Message reported', {
-      messageId: dto.messageId,
-      reporterId: userId,
-      reason: dto.reason,
-    });
+    logger.warn(`Message reported: ${dto.messageId} by user ${userId}, reason: ${dto.reason}`);
   }
 
   /**
