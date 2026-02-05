@@ -12,6 +12,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import type { AIModel, AIProvider, ModelStatus } from '../registry.js';
+
 import {
   BaseProviderAdapter,
   type BaseAdapterConfig,
@@ -218,7 +219,14 @@ export class AnthropicAdapter extends BaseProviderAdapter {
 
     try {
       const anthropicRequest = this.transformRequest(request);
-      const response = await this.client.messages.create(anthropicRequest) as Anthropic.Message;
+      const response = await this.client.messages.create({
+        ...anthropicRequest,
+        stream: false,
+      });
+
+      if (!('content' in response)) {
+        throw new Error('Unexpected streaming response for non-streaming request.');
+      }
 
       const result = this.transformResponse(response);
       this.recordMetrics(startTime, result, request);
@@ -396,7 +404,10 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         params.tool_choice = { type: 'auto' };
       } else if (request.toolChoice === 'required') {
         params.tool_choice = { type: 'any' };
-      } else if (typeof request.toolChoice === 'object' && 'function' in (request.toolChoice as Record<string, unknown>)) {
+      } else if (
+        typeof request.toolChoice === 'object' &&
+        'function' in (request.toolChoice as Record<string, unknown>)
+      ) {
         const tc = request.toolChoice as { function: { name: string } };
         params.tool_choice = { type: 'tool', name: tc.function.name };
       }
@@ -422,13 +433,14 @@ export class AnthropicAdapter extends BaseProviderAdapter {
     const toolUseBlocks = response.content.filter(
       (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
     );
-    const toolCalls = toolUseBlocks.length > 0
-      ? toolUseBlocks.map((block) => ({
-          id: block.id,
-          name: block.name,
-          arguments: block.input as Record<string, unknown>,
-        }))
-      : undefined;
+    const toolCalls =
+      toolUseBlocks.length > 0
+        ? toolUseBlocks.map((block) => ({
+            id: block.id,
+            name: block.name,
+            arguments: block.input as Record<string, unknown>,
+          }))
+        : undefined;
 
     return {
       content,
@@ -452,7 +464,11 @@ export class AnthropicAdapter extends BaseProviderAdapter {
   private createTypedError(error: unknown): Error {
     // Handle Anthropic SDK errors
     if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status: number; message: string; headers?: Record<string, string> };
+      const apiError = error as {
+        status: number;
+        message: string;
+        headers?: Record<string, string>;
+      };
 
       if (apiError.status === 429) {
         const retryAfter = apiError.headers?.['retry-after'];
@@ -515,4 +531,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
 }
 
 // Register the adapter factory
-registerAdapterFactory('anthropic', (config) => new AnthropicAdapter(config as AnthropicAdapterConfig));
+registerAdapterFactory(
+  'anthropic',
+  (config) => new AnthropicAdapter(config as AnthropicAdapterConfig)
+);

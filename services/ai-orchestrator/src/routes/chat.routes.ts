@@ -12,19 +12,19 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type { LLMMessage } from '../providers/llm-provider.interface.js';
-import { getProviderRegistry, type ModelCapabilities } from '../providers/registry.js';
-import {
+import { getConfigurationManager } from '../config/providers.config.js';
+import type {
   BaseProviderAdapter,
   type ChatRequest,
   type ChatResponse,
 } from '../providers/adapters/base.adapter.js';
-import { getCircuitBreakerRegistry } from '../routing/circuit-breaker.js';
-import { getPriorityRouter, type RoutingRequest } from '../routing/priority-router.js';
-import { getFailoverHandler, FailoverExhaustedError } from '../routing/failover-handler.js';
-import { getCostCalculator } from '../routing/cost-calculator.js';
-import { getConfigurationManager } from '../config/providers.config.js';
+import type { LLMMessage } from '../providers/llm-provider.interface.js';
 import { incrementCounter, recordHistogram } from '../providers/metrics-helper.js';
+import { getProviderRegistry, type ModelCapabilities } from '../providers/registry.js';
+import { getCircuitBreakerRegistry } from '../routing/circuit-breaker.js';
+import { getCostCalculator } from '../routing/cost-calculator.js';
+import { getFailoverHandler, FailoverExhaustedError } from '../routing/failover-handler.js';
+import { getPriorityRouter, type RoutingRequest } from '../routing/priority-router.js';
 
 // Import adapters to ensure they're registered
 import '../providers/adapters/openai.adapter.js';
@@ -43,31 +43,39 @@ const messageSchema = z.object({
   content: z.string(),
   name: z.string().optional(),
   toolCallId: z.string().optional(),
-  toolCalls: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    arguments: z.record(z.unknown()),
-  })).optional(),
+  toolCalls: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        arguments: z.record(z.unknown()),
+      })
+    )
+    .optional(),
 });
 
 const chatRequestSchema = z.object({
   messages: z.array(messageSchema).min(1),
-  options: z.object({
-    preferredProvider: z.string().optional(),
-    preferredModel: z.string().optional(),
-    maxCost: z.number().positive().optional(),
-    maxLatency: z.number().positive().optional(),
-    stream: z.boolean().optional(),
-    temperature: z.number().min(0).max(2).optional(),
-    maxTokens: z.number().positive().optional(),
-    topP: z.number().min(0).max(1).optional(),
-    stop: z.array(z.string()).optional(),
-    tools: z.array(z.unknown()).optional(),
-    toolChoice: z.unknown().optional(),
-    responseFormat: z.object({
-      type: z.enum(['text', 'json_object']),
-    }).optional(),
-  }).optional(),
+  options: z
+    .object({
+      preferredProvider: z.string().optional(),
+      preferredModel: z.string().optional(),
+      maxCost: z.number().positive().optional(),
+      maxLatency: z.number().positive().optional(),
+      stream: z.boolean().optional(),
+      temperature: z.number().min(0).max(2).optional(),
+      maxTokens: z.number().positive().optional(),
+      topP: z.number().min(0).max(1).optional(),
+      stop: z.array(z.string()).optional(),
+      tools: z.array(z.unknown()).optional(),
+      toolChoice: z.unknown().optional(),
+      responseFormat: z
+        .object({
+          type: z.enum(['text', 'json_object']),
+        })
+        .optional(),
+    })
+    .optional(),
   tenantId: z.string().min(1),
 });
 
@@ -108,11 +116,11 @@ interface ChatResponseBody {
     failoverOccurred: boolean;
     cached: boolean;
   };
-  toolCalls?: Array<{
+  toolCalls?: {
     id: string;
     name: string;
     arguments: Record<string, unknown>;
-  }>;
+  }[];
 }
 
 interface ModelInfo {
@@ -154,7 +162,7 @@ async function getOrCreateAdapter(providerId: string): Promise<BaseProviderAdapt
   const configManager = getConfigurationManager();
   const providerConfig = configManager.getProviderConfig(providerId);
 
-  if (!providerConfig || !providerConfig.enabled) {
+  if (!providerConfig?.enabled) {
     return null;
   }
 
@@ -216,57 +224,62 @@ export const chatRoutes: FastifyPluginAsync = async (app, _opts) => {
    * POST /api/v1/ai/chat
    * Unified chat completion with automatic routing and failover
    */
-  app.post<{ Body: ChatRequestBody }>('/api/v1/ai/chat', {
-    schema: {
-      body: chatRequestSchema,
+  app.post<{ Body: ChatRequestBody }>(
+    '/api/v1/ai/chat',
+    {
+      schema: {
+        body: chatRequestSchema,
+      },
     },
-  }, async (request, reply) => {
-    const startTime = Date.now();
-    const body = request.body;
+    async (request, reply) => {
+      const startTime = Date.now();
+      const body = request.body;
 
-    // Check if streaming is requested
-    if (body.options?.stream) {
-      return reply.redirect('/api/v1/ai/chat/stream');
-    }
-
-    try {
-      const router = getPriorityRouter();
-      const failoverHandler = getFailoverHandler();
-      const costCalculator = getCostCalculator();
-
-      // Build routing request
-      const routingRequest: RoutingRequest = {
-        capability: 'chat',
-        preferredProvider: body.options?.preferredProvider,
-        preferredModel: body.options?.preferredModel,
-        maxCostPerRequest: body.options?.maxCost,
-        maxLatencyMs: body.options?.maxLatency,
-        requireStreaming: false,
-        tenantId: body.tenantId,
-      };
-
-      // Check budget
-      const estimatedInputTokens = body.messages.reduce(
-        (sum, m) => sum + Math.ceil(m.content.length / 4),
-        0
-      );
-      const estimatedCost = 0.001 * (estimatedInputTokens / 1000); // Rough estimate
-
-      if (!costCalculator.isWithinBudget(body.tenantId, estimatedCost)) {
-        return reply.status(402).send({
-          error: 'Budget exceeded',
-          message: 'Your usage has exceeded the configured budget limits',
-        });
+      // Check if streaming is requested
+      if (body.options?.stream) {
+        return reply.redirect('/api/v1/ai/chat/stream');
       }
 
-      // Execute with failover
-      const result = await failoverHandler.executeWithFailover(
-        routingRequest,
-        async (model) => {
+      try {
+        const router = getPriorityRouter();
+        const failoverHandler = getFailoverHandler();
+        const costCalculator = getCostCalculator();
+
+        // Build routing request
+        const routingRequest: RoutingRequest = {
+          capability: 'chat',
+          preferredProvider: body.options?.preferredProvider,
+          preferredModel: body.options?.preferredModel,
+          maxCostPerRequest: body.options?.maxCost,
+          maxLatencyMs: body.options?.maxLatency,
+          requireStreaming: false,
+          tenantId: body.tenantId,
+        };
+
+        // Check budget
+        const estimatedInputTokens = body.messages.reduce(
+          (sum, m) => sum + Math.ceil(m.content.length / 4),
+          0
+        );
+        const estimatedCost = 0.001 * (estimatedInputTokens / 1000); // Rough estimate
+
+        if (!costCalculator.isWithinBudget(body.tenantId, estimatedCost)) {
+          return reply.status(402).send({
+            error: 'Budget exceeded',
+            message: 'Your usage has exceeded the configured budget limits',
+          });
+        }
+
+        // Execute with failover
+        const result = await failoverHandler.executeWithFailover(routingRequest, async (model) => {
           const adapter = await getOrCreateAdapter(model.providerId);
           if (!adapter) {
             throw new Error(`No adapter available for provider: ${model.providerId}`);
           }
+
+          const responseFormat = body.options?.responseFormat?.type
+            ? { type: body.options.responseFormat.type }
+            : undefined;
 
           const chatRequest: ChatRequest = {
             messages: body.messages as LLMMessage[],
@@ -277,7 +290,7 @@ export const chatRoutes: FastifyPluginAsync = async (app, _opts) => {
             stop: body.options?.stop,
             tools: body.options?.tools,
             toolChoice: body.options?.toolChoice,
-            responseFormat: body.options?.responseFormat as { type: 'text' | 'json_object' } | undefined,
+            responseFormat,
             metadata: {
               tenantId: body.tenantId,
               correlationId: request.headers['x-correlation-id'] as string,
@@ -296,205 +309,216 @@ export const chatRoutes: FastifyPluginAsync = async (app, _opts) => {
           );
 
           return { response, model };
+        });
+
+        const { response, model } = result.result as {
+          response: ChatResponse;
+          model: typeof result.finalModel;
+        };
+        const latencyMs = Date.now() - startTime;
+
+        // Calculate cost
+        const costEstimate = costCalculator.estimateCost(
+          model,
+          response.usage.promptTokens,
+          response.usage.completionTokens
+        );
+
+        // Build response
+        const responseBody: ChatResponseBody = {
+          content: response.content,
+          model: response.model,
+          provider: response.provider,
+          usage: response.usage,
+          finishReason: response.finishReason,
+          latencyMs,
+          cost: {
+            estimated: costEstimate.totalCost,
+            currency: 'USD',
+          },
+          metadata: {
+            attemptedModels: result.attemptedModels,
+            failoverOccurred: result.failoverOccurred,
+            cached: false,
+          },
+          toolCalls: response.toolCalls,
+        };
+
+        // Record metrics
+        recordHistogram('chat.latency_ms', latencyMs, {
+          provider: response.provider,
+          tenant_id: body.tenantId,
+        });
+
+        incrementCounter('chat.requests', {
+          provider: response.provider,
+          model: response.model,
+          tenant_id: body.tenantId,
+        });
+
+        return reply.status(200).send(responseBody);
+      } catch (error) {
+        const latencyMs = Date.now() - startTime;
+
+        incrementCounter('chat.errors', {
+          error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+          tenant_id: body.tenantId,
+        });
+
+        if (error instanceof FailoverExhaustedError) {
+          return reply.status(503).send({
+            error: 'Service unavailable',
+            message: 'All AI providers are currently unavailable',
+            attemptedModels: error.attemptedModels,
+            errors: error.errors,
+            latencyMs,
+          });
         }
-      );
 
-      const { response, model } = result.result as { response: ChatResponse; model: typeof result.finalModel };
-      const latencyMs = Date.now() - startTime;
-
-      // Calculate cost
-      const costEstimate = costCalculator.estimateCost(
-        model,
-        response.usage.promptTokens,
-        response.usage.completionTokens
-      );
-
-      // Build response
-      const responseBody: ChatResponseBody = {
-        content: response.content,
-        model: response.model,
-        provider: response.provider,
-        usage: response.usage,
-        finishReason: response.finishReason,
-        latencyMs,
-        cost: {
-          estimated: costEstimate.totalCost,
-          currency: 'USD',
-        },
-        metadata: {
-          attemptedModels: result.attemptedModels,
-          failoverOccurred: result.failoverOccurred,
-          cached: false,
-        },
-        toolCalls: response.toolCalls,
-      };
-
-      // Record metrics
-      recordHistogram('chat.latency_ms', latencyMs, {
-        provider: response.provider,
-        tenant_id: body.tenantId,
-      });
-
-      incrementCounter('chat.requests', {
-        provider: response.provider,
-        model: response.model,
-        tenant_id: body.tenantId,
-      });
-
-      return reply.status(200).send(responseBody);
-    } catch (error) {
-      const latencyMs = Date.now() - startTime;
-
-      incrementCounter('chat.errors', {
-        error_type: error instanceof Error ? error.constructor.name : 'Unknown',
-        tenant_id: body.tenantId,
-      });
-
-      if (error instanceof FailoverExhaustedError) {
-        return reply.status(503).send({
-          error: 'Service unavailable',
-          message: 'All AI providers are currently unavailable',
-          attemptedModels: error.attemptedModels,
-          errors: error.errors,
+        console.error('Chat request failed:', error);
+        return reply.status(500).send({
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error',
           latencyMs,
         });
       }
-
-      console.error('Chat request failed:', error);
-      return reply.status(500).send({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        latencyMs,
-      });
     }
-  });
+  );
 
   /**
    * POST /api/v1/ai/chat/stream
    * Streaming chat completion with SSE
    */
-  app.post<{ Body: ChatRequestBody }>('/api/v1/ai/chat/stream', {
-    schema: {
-      body: chatRequestSchema,
+  app.post<{ Body: ChatRequestBody }>(
+    '/api/v1/ai/chat/stream',
+    {
+      schema: {
+        body: chatRequestSchema,
+      },
     },
-  }, async (request, reply) => {
-    const body = request.body;
-
-    try {
-      const router = getPriorityRouter();
-      const costCalculator = getCostCalculator();
-
-      // Build routing request
-      const routingRequest: RoutingRequest = {
-        capability: 'chat',
-        preferredProvider: body.options?.preferredProvider,
-        preferredModel: body.options?.preferredModel,
-        requireStreaming: true,
-        tenantId: body.tenantId,
-      };
-
-      // Select model
-      const routingResult = await router.selectModel(routingRequest);
-      const model = routingResult.model;
-
-      const adapter = await getOrCreateAdapter(model.providerId);
-      if (!adapter) {
-        return reply.status(503).send({
-          error: 'Provider unavailable',
-          message: `No adapter available for provider: ${model.providerId}`,
-        });
-      }
-
-      const chatRequest: ChatRequest = {
-        messages: body.messages as LLMMessage[],
-        model: model.id,
-        temperature: body.options?.temperature,
-        maxTokens: body.options?.maxTokens,
-        topP: body.options?.topP,
-        stop: body.options?.stop,
-        stream: true,
-        metadata: {
-          tenantId: body.tenantId,
-          correlationId: request.headers['x-correlation-id'] as string,
-        },
-      };
-
-      // Set SSE headers
-      reply.raw.setHeader('Content-Type', 'text/event-stream');
-      reply.raw.setHeader('Cache-Control', 'no-cache');
-      reply.raw.setHeader('Connection', 'keep-alive');
-      reply.raw.setHeader('X-Accel-Buffering', 'no');
-
-      let totalContent = '';
-      let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    async (request, reply) => {
+      const body = request.body;
 
       try {
-        for await (const chunk of adapter.chatStream(chatRequest)) {
-          totalContent += chunk.content;
+        const router = getPriorityRouter();
+        const costCalculator = getCostCalculator();
 
-          if (chunk.usage) {
-            usage = chunk.usage;
-          }
-
-          const event = {
-            content: chunk.content,
-            done: chunk.done,
-            model: model.id,
-            provider: model.providerId,
-          };
-
-          reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
-
-          if (chunk.done) {
-            // Track usage
-            costCalculator.trackUsage(
-              body.tenantId,
-              model,
-              usage.promptTokens,
-              usage.completionTokens,
-              { agentType: 'chat-stream' }
-            );
-
-            // Send final event with usage info
-            const finalEvent = {
-              done: true,
-              usage,
-              cost: costCalculator.estimateCost(model, usage.promptTokens, usage.completionTokens),
-            };
-            reply.raw.write(`data: ${JSON.stringify(finalEvent)}\n\n`);
-          }
-        }
-      } catch (streamError) {
-        const errorEvent = {
-          error: true,
-          message: streamError instanceof Error ? streamError.message : 'Stream error',
+        // Build routing request
+        const routingRequest: RoutingRequest = {
+          capability: 'chat',
+          preferredProvider: body.options?.preferredProvider,
+          preferredModel: body.options?.preferredModel,
+          requireStreaming: true,
+          tenantId: body.tenantId,
         };
-        reply.raw.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+
+        // Select model
+        const routingResult = await router.selectModel(routingRequest);
+        const model = routingResult.model;
+
+        const adapter = await getOrCreateAdapter(model.providerId);
+        if (!adapter) {
+          return reply.status(503).send({
+            error: 'Provider unavailable',
+            message: `No adapter available for provider: ${model.providerId}`,
+          });
+        }
+
+        const chatRequest: ChatRequest = {
+          messages: body.messages as LLMMessage[],
+          model: model.id,
+          temperature: body.options?.temperature,
+          maxTokens: body.options?.maxTokens,
+          topP: body.options?.topP,
+          stop: body.options?.stop,
+          stream: true,
+          metadata: {
+            tenantId: body.tenantId,
+            correlationId: request.headers['x-correlation-id'] as string,
+          },
+        };
+
+        // Set SSE headers
+        reply.raw.setHeader('Content-Type', 'text/event-stream');
+        reply.raw.setHeader('Cache-Control', 'no-cache');
+        reply.raw.setHeader('Connection', 'keep-alive');
+        reply.raw.setHeader('X-Accel-Buffering', 'no');
+
+        let totalContent = '';
+        let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
+        try {
+          for await (const chunk of adapter.chatStream(chatRequest)) {
+            totalContent += chunk.content;
+
+            if (chunk.usage) {
+              usage = chunk.usage;
+            }
+
+            const event = {
+              content: chunk.content,
+              done: chunk.done,
+              model: model.id,
+              provider: model.providerId,
+            };
+
+            reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
+
+            if (chunk.done) {
+              // Track usage
+              costCalculator.trackUsage(
+                body.tenantId,
+                model,
+                usage.promptTokens,
+                usage.completionTokens,
+                { agentType: 'chat-stream' }
+              );
+
+              // Send final event with usage info
+              const finalEvent = {
+                done: true,
+                usage,
+                cost: costCalculator.estimateCost(
+                  model,
+                  usage.promptTokens,
+                  usage.completionTokens
+                ),
+              };
+              reply.raw.write(`data: ${JSON.stringify(finalEvent)}\n\n`);
+            }
+          }
+        } catch (streamError) {
+          const errorEvent = {
+            error: true,
+            message: streamError instanceof Error ? streamError.message : 'Stream error',
+          };
+          reply.raw.write(`data: ${JSON.stringify(errorEvent)}\n\n`);
+        }
+
+        reply.raw.write('data: [DONE]\n\n');
+        reply.raw.end();
+
+        incrementCounter('chat.stream_requests', {
+          provider: model.providerId,
+          model: model.id,
+          tenant_id: body.tenantId,
+        });
+
+        return reply;
+      } catch (error) {
+        incrementCounter('chat.stream_errors', {
+          error_type: error instanceof Error ? error.constructor.name : 'Unknown',
+          tenant_id: body.tenantId,
+        });
+
+        console.error('Stream chat request failed:', error);
+        return reply.status(500).send({
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
       }
-
-      reply.raw.write('data: [DONE]\n\n');
-      reply.raw.end();
-
-      incrementCounter('chat.stream_requests', {
-        provider: model.providerId,
-        model: model.id,
-        tenant_id: body.tenantId,
-      });
-
-      return reply;
-    } catch (error) {
-      incrementCounter('chat.stream_errors', {
-        error_type: error instanceof Error ? error.constructor.name : 'Unknown',
-        tenant_id: body.tenantId,
-      });
-
-      console.error('Stream chat request failed:', error);
-      return reply.status(500).send({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
     }
-  });
+  );
 
   /**
    * GET /api/v1/ai/models
@@ -504,9 +528,9 @@ export const chatRoutes: FastifyPluginAsync = async (app, _opts) => {
     const query = modelsQuerySchema.parse(request.query);
     const registry = getProviderRegistry();
 
-    let models = registry.getAllProviders().flatMap((provider) =>
-      provider.models.filter((m) => m.isEnabled)
-    );
+    let models = registry
+      .getAllProviders()
+      .flatMap((provider) => provider.models.filter((m) => m.isEnabled));
 
     // Filter by capability
     if (query.capability) {
