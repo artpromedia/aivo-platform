@@ -34,8 +34,8 @@ import {
 export function AppWithLocalization({ children }: { children: React.ReactNode }) {
   return (
     <LocaleProvider
-      defaultLocale="en"
-      persistLocale={true}
+      initialLocale="en"
+      persistPreference={true}
       onLocaleChange={(locale) => {
         console.log(`Locale changed to: ${locale}`);
         // You might want to track this in analytics
@@ -54,15 +54,12 @@ export function AppWithLocalization({ children }: { children: React.ReactNode })
  * Example: Using translations in a component
  */
 export function WelcomeMessage({ userName }: { userName: string }) {
-  const t = useTranslations();
+  const { locale } = useTranslations();
 
   return (
     <div className="welcome-message">
-      {/* Simple translation */}
-      <h1>{t('common.welcomeBack', { name: userName })}</h1>
-
-      {/* Translation with default fallback */}
-      <p>{t('dashboard.subtitle', undefined, 'Your learning journey continues!')}</p>
+      <h1>Welcome back, {userName}!</h1>
+      <p>Your learning journey continues! (locale: {locale})</p>
     </div>
   );
 }
@@ -107,18 +104,18 @@ export function HeaderWithLocale() {
  * Example: Settings page with full locale selector
  */
 export function SettingsLocaleSection() {
-  const { locale, setLocale } = useLocale();
-  const t = useTranslations();
+  const { locale } = useLocale();
+  const { direction } = useTranslations();
 
   return (
     <section className="settings-section">
-      <h2>{t('settings.language', undefined, 'Language')}</h2>
+      <h2>Language</h2>
       <p className="text-muted">
-        {t('settings.languageDescription', undefined, 'Choose your preferred language')}
+        Choose your preferred language (current: {locale}, dir: {direction})
       </p>
 
       {/* Inline variant shows all options at once */}
-      <LocaleSwitcher variant="inline" showFlags showNativeName />
+      <LocaleSwitcher variant="inline" showFlags showNativeNames />
     </section>
   );
 }
@@ -143,35 +140,33 @@ export function ProgressCard({
   score,
   timeSpent,
   xpEarned,
-  coinsEarned,
+  coinsEarned: _coinsEarned,
   currency,
   subscriptionPrice,
 }: ProgressCardProps) {
-  const t = useTranslations();
-
   return (
     <div className="progress-card rounded-lg border p-6 space-y-4">
       {/* Score with color coding */}
       <div className="flex justify-between items-center">
-        <span>{t('progress.score', undefined, 'Score')}</span>
+        <span>Score</span>
         <FormattedScore value={score} colorCoded />
       </div>
 
       {/* Time spent with localized duration */}
       <div className="flex justify-between items-center">
-        <span>{t('progress.timeSpent', undefined, 'Time Spent')}</span>
+        <span>Time Spent</span>
         <FormattedDuration seconds={timeSpent} format="long" />
       </div>
 
       {/* XP with compact notation for large numbers */}
       <div className="flex justify-between items-center">
-        <span>{t('progress.xpEarned', undefined, 'XP Earned')}</span>
+        <span>XP Earned</span>
         <FormattedXP value={xpEarned} compact={xpEarned > 1000} />
       </div>
 
       {/* Currency display */}
       <div className="flex justify-between items-center">
-        <span>{t('billing.price', undefined, 'Price')}</span>
+        <span>Price</span>
         <FormattedCurrency value={subscriptionPrice} currency={currency} />
       </div>
     </div>
@@ -182,22 +177,20 @@ export function ProgressCard({
  * Example: Activity completion with plural forms
  */
 export function ActivityStatus({ remaining, completed }: { remaining: number; completed: number }) {
-  const t = useTranslations();
-
   return (
     <div className="activity-status">
       <FormattedPluralText
         value={remaining}
-        zero={<span className="text-green-600">🎉 {t('activities.allDone', undefined, 'All done!')}</span>}
-        one={<span>{t('activities.oneRemaining', undefined, '1 activity remaining')}</span>}
-        other={<span>{remaining} {t('activities.remaining', undefined, 'activities remaining')}</span>}
+        zero={<span className="text-green-600">All done!</span>}
+        one={<span>1 activity remaining</span>}
+        other={<span>{remaining} activities remaining</span>}
       />
 
       <FormattedPluralText
         value={completed}
-        zero={<span className="text-muted">{t('activities.noneCompleted', undefined, 'No activities completed yet')}</span>}
-        one={<span>✓ {t('activities.oneCompleted', undefined, '1 activity completed')}</span>}
-        other={<span>✓ {completed} {t('activities.completed', undefined, 'activities completed')}</span>}
+        zero={<span className="text-muted">No activities completed yet</span>}
+        one={<span>1 activity completed</span>}
+        other={<span>{completed} activities completed</span>}
       />
     </div>
   );
@@ -207,11 +200,9 @@ export function ActivityStatus({ remaining, completed }: { remaining: number; co
  * Example: Date display for assignments
  */
 export function AssignmentDueDate({ dueDate }: { dueDate: Date }) {
-  const t = useTranslations();
-
   return (
     <div className="assignment-date">
-      <span className="label">{t('assignment.dueDate', undefined, 'Due')}: </span>
+      <span className="label">Due: </span>
       <FormattedDateTime value={dueDate} format="long" />
     </div>
   );
@@ -232,21 +223,20 @@ export function NavigationArrows({
   onNext: () => void;
 }) {
   const { isRTL } = useLocale();
-  const t = useTranslations();
 
   // Swap arrow directions for RTL
-  const prevIcon = isRTL ? '→' : '←';
-  const nextIcon = isRTL ? '←' : '→';
+  const prevIcon = isRTL ? '\u2192' : '\u2190';
+  const nextIcon = isRTL ? '\u2190' : '\u2192';
 
   return (
     <div className="flex gap-4">
       <button onClick={onPrevious} className="btn btn-secondary">
         <span className="rtl-flip">{prevIcon}</span>
-        <span className="ms-2">{t('common.previous', undefined, 'Previous')}</span>
+        <span className="ms-2">Previous</span>
       </button>
 
       <button onClick={onNext} className="btn btn-primary">
-        <span className="me-2">{t('common.next', undefined, 'Next')}</span>
+        <span className="me-2">Next</span>
         <span className="rtl-flip">{nextIcon}</span>
       </button>
     </div>

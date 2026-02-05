@@ -13,28 +13,21 @@
  */
 
 import type { ReactNode } from 'react';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { IntlProvider } from 'react-intl';
 
 // Import i18n utilities and types
-import type { Locale, LocaleMetadata, TranslationMessages } from '@aivo/i18n';
+import type { Locale, LocaleMetadata, TranslationMessages } from '../lib/i18n-types';
+export type { TranslationMessages } from '../lib/i18n-types';
 import {
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
-  RTL_LOCALES,
   LOCALE_METADATA,
   getMessages,
   getBrowserLocale,
   getSupportedLocale,
   isRTLLocale,
-} from '@aivo/i18n';
+} from '../lib/i18n-types';
 
 const LOCALE_STORAGE_KEY = 'aivo-locale';
 
@@ -86,11 +79,11 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
  */
 function groupLocalesByRegion(): Record<string, Locale[]> {
   const regions: Record<string, Locale[]> = {
-    'Americas': ['en', 'es', 'pt-BR'],
-    'Europe': ['fr', 'de', 'it', 'nl', 'ru'],
-    'Asia': ['zh', 'ja', 'ko', 'hi', 'id'],
+    Americas: ['en', 'es', 'pt-BR'],
+    Europe: ['fr', 'de', 'it', 'nl', 'ru'],
+    Asia: ['zh', 'ja', 'ko', 'hi', 'id'],
     'Middle East': ['ar', 'tr'],
-    'Africa': ['sw'],
+    Africa: ['sw'],
   };
   return regions;
 }
@@ -163,7 +156,7 @@ export function LocaleProvider({
     // 3. Detect from browser
     if (detectBrowserLocale) {
       const browserLocale = getBrowserLocale();
-      const supported = getSupportedLocale(browserLocale);
+      const supported = browserLocale ? getSupportedLocale(browserLocale) : null;
       if (supported) return supported as Locale;
     }
 
@@ -268,7 +261,7 @@ export function LocaleProvider({
         locale={locale}
         messages={messages}
         defaultLocale={DEFAULT_LOCALE}
-        onError={(err) => {
+        onError={(err: { code: string; message: string }) => {
           // Ignore missing translation errors in development
           if (err.code === 'MISSING_TRANSLATION') {
             console.debug(`Missing translation: ${err.message}`);

@@ -3,7 +3,10 @@ export { cn } from './lib/utils';
 
 // Legacy theme exports (for backward compatibility)
 export { createGradeThemePlugin } from './tailwind/gradeThemePlugin';
-export { GradeThemeProvider as LegacyGradeThemeProvider, useGradeTheme as useLegacyGradeTheme } from './theme/grade-theme';
+export {
+  GradeThemeProvider as LegacyGradeThemeProvider,
+  useGradeTheme as useLegacyGradeTheme,
+} from './theme/grade-theme';
 export { AccessibilityProvider, useAccessibility } from './theme/accessibility';
 export type { GradeBand } from './theme/tokens';
 
@@ -20,11 +23,7 @@ export type {
 } from './providers/GradeThemeProvider';
 
 // Localization System
-export {
-  LocaleProvider,
-  useLocale,
-  useTranslations,
-} from './providers/LocaleProvider';
+export { LocaleProvider, useLocale, useTranslations } from './providers/LocaleProvider';
 export type {
   LocaleProviderProps,
   LocaleContextValue,
@@ -43,11 +42,7 @@ export {
   gradeThemes,
   defaultTheme,
 } from './themes/grade-themes';
-export type {
-  GradeTheme,
-  SensoryProfile,
-  GradeLevel,
-} from './themes/grade-themes';
+export type { GradeTheme, SensoryProfile, GradeLevel } from './themes/grade-themes';
 
 // CSS Variables System
 export {
@@ -158,7 +153,12 @@ export {
   SelectValue,
 } from './components/ui/select';
 export { Progress } from './components/ui/progress';
-export type { ProgressProps, ProgressVariant, ProgressSize, ProgressColor } from './components/ui/progress';
+export type {
+  ProgressProps,
+  ProgressVariant,
+  ProgressSize,
+  ProgressColor,
+} from './components/ui/progress';
 export {
   Accordion,
   AccordionContent,
@@ -275,8 +275,7 @@ export {
   ConsentPreferenceCenter,
   ConsentManagerButton,
   useConsent,
-  type ConsentState,
-  type ConsentActions,
+  type ConsentStatus,
   type ConsentContextValue,
   type ConsentPreferences,
   type ConsentBannerProps,

@@ -11,14 +11,17 @@
  * - RTL-aware layout
  */
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
+import type { Locale } from '../lib/i18n-types';
+import { LOCALE_METADATA } from '../lib/i18n-types';
 import { useLocale } from '../providers/LocaleProvider';
-import type { Locale } from '@aivo/i18n';
-import { LOCALE_METADATA } from '@aivo/i18n';
+
+export type LocaleSwitcherVariant = 'dropdown' | 'inline' | 'compact';
 
 export interface LocaleSwitcherProps {
   /** Visual variant */
-  variant?: 'dropdown' | 'inline' | 'compact';
+  variant?: LocaleSwitcherVariant;
   /** Show flags */
   showFlags?: boolean;
   /** Show native language names */
