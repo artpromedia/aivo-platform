@@ -6,7 +6,7 @@
 
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';
 import { NotificationService } from '../notification/notification.service.js';
@@ -52,18 +52,15 @@ export class ParentAuthService {
     });
 
     if (!parent) {
-      metrics.increment('auth.login_failed', { reason: 'not_found' });
       throw new UnauthorizedException('Invalid email or password');
     }
 
     if (parent.status !== 'active') {
-      metrics.increment('auth.login_failed', { reason: 'inactive' });
       throw new UnauthorizedException('Account is not active');
     }
 
     const validPassword = await this.crypto.verifyPassword(password, parent.passwordHash);
     if (!validPassword) {
-      metrics.increment('auth.login_failed', { reason: 'invalid_password' });
       throw new UnauthorizedException('Invalid email or password');
     }
 
@@ -77,7 +74,6 @@ export class ParentAuthService {
     const accessToken = this.generateAccessToken(parent.id);
     const refreshToken = await this.generateRefreshToken(parent.id);
 
-    metrics.increment('auth.login_success');
 
     return {
       accessToken,
@@ -185,7 +181,6 @@ export class ParentAuthService {
     const accessToken = this.generateAccessToken(parent.id);
     const refreshToken = await this.generateRefreshToken(parent.id);
 
-    metrics.increment('auth.register_success');
     logger.info('Parent registered', { parentId: parent.id });
 
     return {

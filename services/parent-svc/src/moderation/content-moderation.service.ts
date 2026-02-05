@@ -9,7 +9,7 @@
  */
 
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import {
   ComprehendClient,
   DetectSentimentCommand,
@@ -112,9 +112,9 @@ export class ContentModerationService implements OnModuleInit {
         },
       });
 
-      logger.info('Content moderation initialized with AWS Comprehend', {
+      logger.info({
         region: config.awsRegion,
-      });
+      }, 'Content moderation initialized with AWS Comprehend');
     } else if (provider === 'perspective') {
       if (!config.moderationApiKey) {
         logger.warn('Perspective API configured but API key missing');
@@ -133,7 +133,6 @@ export class ContentModerationService implements OnModuleInit {
    * Check content for inappropriate material
    */
   async checkContent(content: string): Promise<ModerationResult> {
-    const startTime = Date.now();
     const flaggedCategories: string[] = [];
     let score = 0;
     const details: Record<string, number> = {};
@@ -165,24 +164,15 @@ export class ContentModerationService implements OnModuleInit {
         }
       }
 
-      const duration = Date.now() - startTime;
-      metrics.histogram('moderation.duration_ms', duration);
-      metrics.increment('moderation.checks', {
-        provider: config.moderationProvider,
-      });
-
       // Threshold for blocking content (0.5 = 50% confidence)
       const approved = score < 0.5;
 
       if (!approved) {
-        logger.warn('Content moderation blocked message', {
+        logger.warn({
           score,
           categories: flaggedCategories,
           provider: config.moderationProvider,
-        });
-        metrics.increment('moderation.blocked', {
-          provider: config.moderationProvider,
-        });
+        }, 'Content moderation blocked message');
       }
 
       return {
@@ -193,10 +183,7 @@ export class ContentModerationService implements OnModuleInit {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Content moderation failed', { error: message });
-      metrics.increment('moderation.errors', {
-        provider: config.moderationProvider,
-      });
+      logger.error({ error: message }, 'Content moderation failed');
 
       // Fail open - allow content if moderation fails (but log for review)
       return { approved: true, score: 0 };
@@ -295,10 +282,10 @@ export class ContentModerationService implements OnModuleInit {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error('Perspective API error', {
+        logger.error({
           status: response.status,
           error: errorText,
-        });
+        }, 'Perspective API error');
         return null;
       }
 
@@ -333,9 +320,9 @@ export class ContentModerationService implements OnModuleInit {
         details,
       };
     } catch (error) {
-      logger.error('Perspective API request failed', {
+      logger.error({
         error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      }, 'Perspective API request failed');
       return null;
     }
   }
@@ -416,9 +403,9 @@ export class ContentModerationService implements OnModuleInit {
         details,
       };
     } catch (error) {
-      logger.error('AWS Comprehend request failed', {
+      logger.error({
         error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      }, 'AWS Comprehend request failed');
       return null;
     }
   }

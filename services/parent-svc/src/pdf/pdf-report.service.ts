@@ -6,7 +6,7 @@
 
 import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { I18nService } from '../i18n/i18n.service.js';
 import { ProgressReport, WeeklySummary } from '../parent/parent.types.js';
 
@@ -52,7 +52,6 @@ export class PdfReportService {
         doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
         doc.on('end', () => {
           const buffer = Buffer.concat(chunks);
-          metrics.increment('pdf.generated', { type: 'progress' });
           resolve(buffer);
         });
         doc.on('error', reject);
@@ -140,7 +139,6 @@ export class PdfReportService {
         doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
         doc.on('end', () => {
           const buffer = Buffer.concat(chunks);
-          metrics.increment('pdf.generated', { type: 'weekly' });
           resolve(buffer);
         });
         doc.on('error', reject);

@@ -8,7 +8,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { createTransport, type Transporter } from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { config } from '../config.js';
 
 interface SendEmailOptions {
@@ -36,10 +36,10 @@ export class EmailService implements OnModuleInit {
         },
       });
 
-      logger.info('Email transporter initialized', {
+      logger.info({
         host: config.smtpHost,
         port: config.smtpPort,
-      });
+      }, 'Email transporter initialized');
     } else if (config.environment === 'production') {
       logger.warn(
         'SMTP not configured in production - emails will not be sent. ' +
@@ -57,11 +57,11 @@ export class EmailService implements OnModuleInit {
     try {
       // In development without SMTP, just log the email
       if (config.environment === 'development' && !this.transporter) {
-        logger.info('Email sent (dev mode - no SMTP configured)', {
+        logger.info({
           to,
           subject,
           tags,
-        });
+        }, 'Email sent (dev mode - no SMTP configured)');
 
         return { messageId: `dev-${Date.now()}` };
       }
@@ -69,7 +69,7 @@ export class EmailService implements OnModuleInit {
       // Verify transporter is configured for production
       if (!this.transporter) {
         const errorMsg = 'Email transporter not configured';
-        logger.error(errorMsg, { to, subject });
+        logger.error({ to, subject }, errorMsg);
         throw new Error(errorMsg);
       }
 
@@ -83,24 +83,21 @@ export class EmailService implements OnModuleInit {
         headers: tags?.length ? { 'X-Email-Tags': tags.join(',') } : undefined,
       });
 
-      logger.info('Email sent successfully', {
+      logger.info({
         to,
         subject,
         messageId: result.messageId,
         tags,
-      });
-
-      metrics.increment('email.sent', { template: tags?.[0] || 'unknown' });
+      }, 'Email sent successfully');
 
       return { messageId: result.messageId };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to send email', {
+      logger.error({
         to,
         subject,
         error: message,
-      });
-      metrics.increment('email.failed');
+      }, 'Failed to send email');
       throw error;
     }
   }

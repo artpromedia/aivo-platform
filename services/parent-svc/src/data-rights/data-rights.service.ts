@@ -8,7 +8,7 @@
  * Created: January 2026 - Enterprise QA Audit requirement
  */
 
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -152,7 +152,6 @@ export class DataRightsService {
     // Log the export for audit
     await this.logDataExport(studentId, parentId, exportId);
 
-    metrics.increment('data_rights.export.generated', { tenant_id: tenantId });
     logger.info('Data export generated', { studentId, parentId, exportId });
 
     return {
@@ -386,7 +385,6 @@ export class DataRightsService {
       reason: params.reason,
     });
 
-    metrics.increment('data_rights.deletion.requested', { tenant_id: params.tenantId });
     logger.info('Data deletion request created', {
       requestId: request.id,
       studentId: params.studentId,

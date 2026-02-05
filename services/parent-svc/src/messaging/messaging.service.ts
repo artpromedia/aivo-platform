@@ -11,7 +11,8 @@
 
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationService } from '../notification/notification.service.js';
 import { ContentModerationService } from '../moderation/content-moderation.service.js';
@@ -119,7 +120,11 @@ export class MessagingService {
         },
       });
 
-      logger.info(`Conversation created: ${conversation.id} between parent ${parentId} and teacher ${dto.teacherId}`);
+      logger.info({
+        conversationId: conversation.id,
+        parentId,
+        teacherId: dto.teacherId,
+      }, 'Conversation created');
     }
 
     return this.toConversation(conversation);
@@ -184,7 +189,7 @@ export class MessagingService {
         senderType,
         content: dto.content,
         contentHtml: this.sanitizeHtml(dto.content),
-        attachments: dto.attachments as any,
+        attachments: dto.attachments as unknown as Prisma.InputJsonValue,
         status: MessageStatus.SENT,
         moderationScore: moderationResult.score,
       },
@@ -230,8 +235,6 @@ export class MessagingService {
       senderId,
       senderType,
     });
-
-    metrics.counter('message.sent').inc();
 
     return this.toMessage(message);
   }
@@ -516,7 +519,11 @@ export class MessagingService {
       },
     });
 
-    logger.warn(`Message reported: ${dto.messageId} by user ${userId}, reason: ${dto.reason}`);
+    logger.warn({
+      messageId: dto.messageId,
+      reporterId: userId,
+      reason: dto.reason,
+    }, 'Message reported');
   }
 
   /**

@@ -6,7 +6,7 @@
  */
 
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { config } from '../config.js';
 
@@ -141,7 +141,6 @@ export class HomeworkService {
       }
 
       const data = await response.json();
-      metrics.increment('parent.homework.list', { status: 'success' });
 
       return {
         submissions: data.submissions || [],
@@ -149,7 +148,6 @@ export class HomeworkService {
       };
     } catch (error) {
       logger.error('Failed to fetch student homework', { error, studentId, parentId });
-      metrics.increment('parent.homework.list', { status: 'error' });
       throw error;
     }
   }
@@ -184,11 +182,9 @@ export class HomeworkService {
         throw new Error(`Homework service returned ${response.status}`);
       }
 
-      metrics.increment('parent.homework.detail', { status: 'success' });
       return response.json();
     } catch (error) {
       logger.error('Failed to fetch homework detail', { error, studentId, homeworkId });
-      metrics.increment('parent.homework.detail', { status: 'error' });
       throw error;
     }
   }
@@ -234,11 +230,9 @@ export class HomeworkService {
         throw new Error(`Homework service returned ${response.status}`);
       }
 
-      metrics.increment('parent.homework.summary', { status: 'success' });
       return response.json();
     } catch (error) {
       logger.error('Failed to fetch homework summary', { error, studentId, parentId });
-      metrics.increment('parent.homework.summary', { status: 'error' });
       throw error;
     }
   }
@@ -280,11 +274,9 @@ export class HomeworkService {
         throw new Error(`Homework service returned ${response.status}`);
       }
 
-      metrics.increment('parent.homework.trends', { status: 'success' });
       return response.json();
     } catch (error) {
       logger.error('Failed to fetch homework trends', { error, studentId, parentId });
-      metrics.increment('parent.homework.trends', { status: 'error' });
       throw error;
     }
   }
@@ -369,7 +361,6 @@ export class HomeworkService {
       })
     );
 
-    metrics.increment('parent.homework.overview', { status: 'success' });
     return { children: childrenData };
   }
 }
