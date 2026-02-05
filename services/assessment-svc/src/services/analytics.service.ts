@@ -1,6 +1,6 @@
 /**
  * Assessment Analytics Service
- * 
+ *
  * Provides comprehensive analytics for assessments:
  * - Item analysis (difficulty, discrimination)
  * - Score distributions
@@ -11,9 +11,10 @@
  */
 
 import { prisma } from '../prisma.js';
-import type { Question as PrismaQuestion, QuestionType } from '@prisma/client';
+import type { Question as PrismaQuestion, Prisma } from '../prisma.js';
 
 type AnalyticsQuestion = PrismaQuestion;
+type QuestionType = PrismaQuestion['type'];
 
 // Local types for analytics service (separate from the shared types)
 export interface AssessmentAnalyticsResult {
@@ -107,10 +108,10 @@ export interface StandardsMastery {
   questionCount: number;
   averageMastery: number; // 0-100
   studentMasteryBreakdown: {
-    mastered: number;    // >= 80%
+    mastered: number; // >= 80%
     approaching: number; // 60-79%
-    developing: number;  // 40-59%
-    beginning: number;   // < 40%
+    developing: number; // 40-59%
+    beginning: number; // < 40%
   };
 }
 
@@ -158,46 +159,38 @@ export class AnalyticsService {
 
     const attempts = assessment.attempts;
     const questionItems = assessment.questions.map((q) => q.question);
-    const responses = attempts.flatMap(a => a.responses);
+    const responses = attempts.flatMap((a) => a.responses);
 
     // Score distribution
-    const scores = attempts.map(a => a.score ?? 0);
+    const scores = attempts.map((a) => a.score ?? 0);
     const scoreDistribution = this.calculateScoreDistribution(scores);
 
     // Reliability metrics
-    const reliability = this.calculateReliability(
-      attempts,
-      questionItems
-    );
+    const reliability = this.calculateReliability(attempts, questionItems);
 
     // Item analysis
-    const itemAnalyses = await this.calculateItemAnalysis(
-      questionItems,
-      responses,
-      attempts
-    );
+    const itemAnalyses = await this.calculateItemAnalysis(questionItems, responses, attempts);
 
     // Question effectiveness
     const effectiveQuestions = itemAnalyses.filter(
-      i => i.discrimination >= 0.3 && i.difficulty >= 0.2 && i.difficulty <= 0.8
+      (i) => i.discrimination >= 0.3 && i.difficulty >= 0.2 && i.difficulty <= 0.8
     ).length;
 
     // Time analysis
     const completionTimes = attempts
-      .filter(a => a.startedAt && a.submittedAt)
-      .map(a => (a.submittedAt!.getTime() - a.startedAt!.getTime()) / 1000);
-    
-    const avgCompletionTime = completionTimes.length > 0
-      ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
-      : 0;
+      .filter((a) => a.startedAt && a.submittedAt)
+      .map((a) => (a.submittedAt!.getTime() - a.startedAt!.getTime()) / 1000);
+
+    const avgCompletionTime =
+      completionTimes.length > 0
+        ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
+        : 0;
 
     // Completion rate
     const totalAttempts = await prisma.attempt.count({
       where: { assessmentId },
     });
-    const completionRate = totalAttempts > 0
-      ? (attempts.length / totalAttempts) * 100
-      : 0;
+    const completionRate = totalAttempts > 0 ? (attempts.length / totalAttempts) * 100 : 0;
 
     return {
       assessmentId,
@@ -227,14 +220,10 @@ export class AnalyticsService {
     const analyses: ItemAnalysis[] = [];
 
     // Calculate total scores for point-biserial
-    const attemptScores = new Map(
-      attempts.map(a => [a.id, a.score ?? 0])
-    );
+    const attemptScores = new Map(attempts.map((a) => [a.id, a.score ?? 0]));
 
     for (const question of questions) {
-      const questionResponses = responses.filter(
-        r => r.questionId === question.id
-      );
+      const questionResponses = responses.filter((r) => r.questionId === question.id);
 
       if (questionResponses.length === 0) {
         analyses.push(this.createEmptyItemAnalysis(question));
@@ -242,33 +231,23 @@ export class AnalyticsService {
       }
 
       // Calculate difficulty (p-value)
-      const correctCount = questionResponses.filter(
-        r => r.pointsEarned === r.maxPoints
-      ).length;
+      const correctCount = questionResponses.filter((r) => r.pointsEarned === r.maxPoints).length;
       const difficulty = correctCount / questionResponses.length;
 
       // Calculate discrimination (point-biserial)
-      const discrimination = this.calculatePointBiserial(
-        questionResponses,
-        attemptScores
-      );
+      const discrimination = this.calculatePointBiserial(questionResponses, attemptScores);
 
       // Calculate time
       const times = questionResponses
-        .filter(r => r.timeSpentSeconds)
-        .map(r => r.timeSpentSeconds);
-      const avgTime = times.length > 0
-        ? times.reduce((a: number, b: number) => a + b, 0) / times.length
-        : 0;
+        .filter((r) => r.timeSpentSeconds)
+        .map((r) => r.timeSpentSeconds);
+      const avgTime =
+        times.length > 0 ? times.reduce((a: number, b: number) => a + b, 0) / times.length : 0;
 
       // Option analysis for multiple choice
       let optionAnalysis: OptionAnalysis[] | undefined;
       if (['MULTIPLE_CHOICE', 'MULTIPLE_SELECT'].includes(question.type)) {
-        optionAnalysis = this.calculateOptionAnalysis(
-          question,
-          questionResponses,
-          attemptScores
-        );
+        optionAnalysis = this.calculateOptionAnalysis(question, questionResponses, attemptScores);
       }
 
       // Check for flagged conditions
@@ -288,16 +267,11 @@ export class AnalyticsService {
         discriminationCategory: this.categorizeDiscrimination(discrimination),
         attemptsCount: questionResponses.length,
         correctCount,
-        incorrectCount: questionResponses.filter(
-          r => r.pointsEarned === 0
-        ).length,
-        skippedCount: questionResponses.filter(
-          r => r.status === 'not_answered'
-        ).length,
-        averageScore: questionResponses.reduce(
-          (sum, r) => sum + (r.pointsEarned ?? 0),
-          0
-        ) / questionResponses.length,
+        incorrectCount: questionResponses.filter((r) => r.pointsEarned === 0).length,
+        skippedCount: questionResponses.filter((r) => r.status === 'not_answered').length,
+        averageScore:
+          questionResponses.reduce((sum, r) => sum + (r.pointsEarned ?? 0), 0) /
+          questionResponses.length,
         averageTimeSeconds: avgTime,
         optionAnalysis,
         flagged,
@@ -326,9 +300,8 @@ export class AnalyticsService {
     const mean = sum / n;
 
     // Median
-    const median = n % 2 === 0
-      ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
-      : sorted[Math.floor(n / 2)];
+    const median =
+      n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
 
     // Mode
     const counts = new Map<number, number>();
@@ -345,16 +318,16 @@ export class AnalyticsService {
     }
 
     // Standard deviation
-    const squaredDiffs = sorted.map(s => Math.pow(s - mean, 2));
+    const squaredDiffs = sorted.map((s) => Math.pow(s - mean, 2));
     const variance = squaredDiffs.reduce((a, b) => a + b, 0) / n;
     const standardDeviation = Math.sqrt(variance);
 
     // Skewness
-    const cubedDiffs = sorted.map(s => Math.pow((s - mean) / standardDeviation, 3));
+    const cubedDiffs = sorted.map((s) => Math.pow((s - mean) / standardDeviation, 3));
     const skewness = cubedDiffs.reduce((a, b) => a + b, 0) / n;
 
     // Kurtosis
-    const fourthDiffs = sorted.map(s => Math.pow((s - mean) / standardDeviation, 4));
+    const fourthDiffs = sorted.map((s) => Math.pow((s - mean) / standardDeviation, 4));
     const kurtosis = fourthDiffs.reduce((a, b) => a + b, 0) / n - 3;
 
     // Percentiles
@@ -385,10 +358,7 @@ export class AnalyticsService {
   /**
    * Calculate reliability metrics
    */
-  calculateReliability(
-    attempts: any[],
-    questions: AnalyticsQuestion[]
-  ): ReliabilityMetrics {
+  calculateReliability(attempts: any[], questions: AnalyticsQuestion[]): ReliabilityMetrics {
     if (attempts.length < 2 || questions.length < 2) {
       return this.createEmptyReliability(questions.length, attempts.length);
     }
@@ -398,13 +368,9 @@ export class AnalyticsService {
     for (const attempt of attempts) {
       const row: number[] = [];
       for (const question of questions) {
-        const response = attempt.responses?.find(
-          (r: any) => r.questionId === question.id
-        );
+        const response = attempt.responses?.find((r: any) => r.questionId === question.id);
         // Normalize to 0-1
-        const score = response
-          ? (response.pointsEarned ?? 0) / response.maxPoints
-          : 0;
+        const score = response ? (response.pointsEarned ?? 0) / response.maxPoints : 0;
         row.push(score);
       }
       matrix.push(row);
@@ -420,7 +386,7 @@ export class AnalyticsService {
     const splitHalf = this.calculateSplitHalfReliability(matrix);
 
     // Standard Error of Measurement
-    const totalScores = matrix.map(row => row.reduce((a, b) => a + b, 0));
+    const totalScores = matrix.map((row) => row.reduce((a, b) => a + b, 0));
     const scoreSD = this.standardDeviation(totalScores);
     const sem = scoreSD * Math.sqrt(1 - cronbachAlpha);
 
@@ -437,9 +403,7 @@ export class AnalyticsService {
   /**
    * Generate question-level analytics
    */
-  async generateQuestionAnalytics(
-    questionId: string
-  ): Promise<QuestionAnalyticsResult> {
+  async generateQuestionAnalytics(questionId: string): Promise<QuestionAnalyticsResult> {
     const question = await prisma.question.findUnique({
       where: { id: questionId },
     });
@@ -462,33 +426,26 @@ export class AnalyticsService {
     }
 
     // Calculate metrics
-    const correctCount = responses.filter(
-      r => r.pointsEarned === r.maxPoints
-    ).length;
+    const correctCount = responses.filter((r) => r.pointsEarned === r.maxPoints).length;
     const difficulty = correctCount / responses.length;
 
     const attemptScores = new Map<string, number>(
-      responses.map(r => [r.attemptId as string, (r.attempt?.score ?? 0) as number])
+      responses.map((r) => [r.attemptId as string, (r.attempt?.score ?? 0) as number])
     );
     const discrimination = this.calculatePointBiserial(responses, attemptScores);
 
     const times = responses
-      .filter(r => r.timeSpentSeconds)
-      .map(r => r.timeSpentSeconds as number);
-    const avgTime = times.length > 0
-      ? times.reduce((a, b) => a + b, 0) / times.length
-      : 0;
+      .filter((r) => r.timeSpentSeconds)
+      .map((r) => r.timeSpentSeconds as number);
+    const avgTime = times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
 
     return {
       questionId,
       attemptsCount: responses.length,
       correctCount,
-      incorrectCount: responses.filter(r => r.pointsEarned === 0).length,
-      skippedCount: responses.filter(r => r.status === 'not_answered').length,
-      averageScore: responses.reduce(
-        (sum, r) => sum + (r.pointsEarned ?? 0),
-        0
-      ) / responses.length,
+      incorrectCount: responses.filter((r) => r.pointsEarned === 0).length,
+      skippedCount: responses.filter((r) => r.status === 'not_answered').length,
+      averageScore: responses.reduce((sum, r) => sum + (r.pointsEarned ?? 0), 0) / responses.length,
       averageTimeSeconds: avgTime,
       difficulty,
       discrimination,
@@ -499,9 +456,7 @@ export class AnalyticsService {
   /**
    * Calculate standards mastery for an assessment
    */
-  async calculateStandardsMastery(
-    assessmentId: string
-  ): Promise<StandardsMastery[]> {
+  async calculateStandardsMastery(assessmentId: string): Promise<StandardsMastery[]> {
     const assessment = await prisma.assessment.findUnique({
       where: { id: assessmentId },
       include: {
@@ -552,9 +507,7 @@ export class AnalyticsService {
     const results: StandardsMastery[] = [];
 
     for (const [standardId, questionIds] of standardQuestions) {
-      const standard = assessment.standards.find(
-        s => s.standardId === standardId
-      )?.standard;
+      const standard = assessment.standards.find((s) => s.standardId === standardId)?.standard;
 
       if (!standard) continue;
 
@@ -562,27 +515,22 @@ export class AnalyticsService {
       const studentMasteries: number[] = [];
 
       for (const attempt of assessment.attempts) {
-        const relevantResponses = attempt.responses.filter(
-          r => questionIds.includes(r.questionId)
+        const relevantResponses = attempt.responses.filter((r) =>
+          questionIds.includes(r.questionId)
         );
 
         if (relevantResponses.length === 0) continue;
 
-        const earned = relevantResponses.reduce(
-          (sum, r) => sum + (r.pointsEarned ?? 0),
-          0
-        );
-        const max = relevantResponses.reduce(
-          (sum, r) => sum + r.maxPoints,
-          0
-        );
+        const earned = relevantResponses.reduce((sum, r) => sum + (r.pointsEarned ?? 0), 0);
+        const max = relevantResponses.reduce((sum, r) => sum + r.maxPoints, 0);
         const mastery = max > 0 ? (earned / max) * 100 : 0;
         studentMasteries.push(mastery);
       }
 
-      const avgMastery = studentMasteries.length > 0
-        ? studentMasteries.reduce((a, b) => a + b, 0) / studentMasteries.length
-        : 0;
+      const avgMastery =
+        studentMasteries.length > 0
+          ? studentMasteries.reduce((a, b) => a + b, 0) / studentMasteries.length
+          : 0;
 
       results.push({
         standardId,
@@ -591,10 +539,10 @@ export class AnalyticsService {
         questionCount: questionIds.length,
         averageMastery: avgMastery,
         studentMasteryBreakdown: {
-          mastered: studentMasteries.filter(m => m >= 80).length,
-          approaching: studentMasteries.filter(m => m >= 60 && m < 80).length,
-          developing: studentMasteries.filter(m => m >= 40 && m < 60).length,
-          beginning: studentMasteries.filter(m => m < 40).length,
+          mastered: studentMasteries.filter((m) => m >= 80).length,
+          approaching: studentMasteries.filter((m) => m >= 60 && m < 80).length,
+          developing: studentMasteries.filter((m) => m >= 40 && m < 60).length,
+          beginning: studentMasteries.filter((m) => m < 40).length,
         },
       });
     }
@@ -620,7 +568,7 @@ export class AnalyticsService {
         averageScore: analytics.averageScore,
         medianScore: analytics.medianScore,
         standardDeviation: analytics.scoreDistribution.standardDeviation,
-        scoreDistribution: analytics.scoreDistribution as unknown as Record<string, unknown>,
+        scoreDistribution: analytics.scoreDistribution as unknown as Prisma.InputJsonValue,
         cronbachAlpha: analytics.reliability.cronbachAlpha,
         standardError: analytics.reliability.sem,
         lastCalculated: analytics.generatedAt,
@@ -634,7 +582,7 @@ export class AnalyticsService {
         averageScore: analytics.averageScore,
         medianScore: analytics.medianScore,
         standardDeviation: analytics.scoreDistribution.standardDeviation,
-        scoreDistribution: analytics.scoreDistribution as unknown as Record<string, unknown>,
+        scoreDistribution: analytics.scoreDistribution as unknown as Prisma.InputJsonValue,
         cronbachAlpha: analytics.reliability.cronbachAlpha,
         standardError: analytics.reliability.sem,
         lastCalculated: analytics.generatedAt,
@@ -678,10 +626,7 @@ export class AnalyticsService {
   // HELPERS
   // ============================================================================
 
-  private calculatePointBiserial(
-    responses: any[],
-    attemptScores: Map<string, number>
-  ): number {
+  private calculatePointBiserial(responses: any[], attemptScores: Map<string, number>): number {
     if (responses.length < 2) return 0;
 
     // Get pass/fail for this question
@@ -704,7 +649,7 @@ export class AnalyticsService {
     const meanPass = passScores.reduce((a, b) => a + b, 0) / passScores.length;
     const meanFail = failScores.reduce((a, b) => a + b, 0) / failScores.length;
 
-    const allScores = responses.map(r => attemptScores.get(r.attemptId) ?? 0);
+    const allScores = responses.map((r) => attemptScores.get(r.attemptId) ?? 0);
     const sd = this.standardDeviation(allScores);
 
     if (sd === 0) return 0;
@@ -725,7 +670,7 @@ export class AnalyticsService {
     const correctIndex = questionAny.correctOption ?? questionAny.correctAnswer;
 
     return options.map((opt, idx) => {
-      const selected = responses.filter(r => {
+      const selected = responses.filter((r) => {
         const answer = r.response;
         if (typeof answer === 'number') return answer === idx;
         if (answer?.selectedOption !== undefined) return answer.selectedOption === idx;
@@ -733,18 +678,17 @@ export class AnalyticsService {
       });
 
       // Calculate point-biserial for this option
-      const selectedScores = selected.map(
-        r => attemptScores.get(r.attemptId) ?? 0
-      );
+      const selectedScores = selected.map((r) => attemptScores.get(r.attemptId) ?? 0);
       const notSelectedScores = responses
-        .filter(r => !selected.includes(r))
-        .map(r => attemptScores.get(r.attemptId) ?? 0);
+        .filter((r) => !selected.includes(r))
+        .map((r) => attemptScores.get(r.attemptId) ?? 0);
 
       let pointBiserial = 0;
       if (selectedScores.length > 0 && notSelectedScores.length > 0) {
         const meanSelected = selectedScores.reduce((a, b) => a + b, 0) / selectedScores.length;
-        const meanNotSelected = notSelectedScores.reduce((a, b) => a + b, 0) / notSelectedScores.length;
-        const allScores = responses.map(r => attemptScores.get(r.attemptId) ?? 0);
+        const meanNotSelected =
+          notSelectedScores.reduce((a, b) => a + b, 0) / notSelectedScores.length;
+        const allScores = responses.map((r) => attemptScores.get(r.attemptId) ?? 0);
         const sd = this.standardDeviation(allScores);
         if (sd > 0) {
           const p = selectedScores.length / responses.length;
@@ -772,12 +716,12 @@ export class AnalyticsService {
     // Item variances
     const itemVariances: number[] = [];
     for (let j = 0; j < k; j++) {
-      const itemScores = matrix.map(row => row[j]);
+      const itemScores = matrix.map((row) => row[j]);
       itemVariances.push(this.variance(itemScores));
     }
 
     // Total score variance
-    const totalScores = matrix.map(row => row.reduce((a, b) => a + b, 0));
+    const totalScores = matrix.map((row) => row.reduce((a, b) => a + b, 0));
     const totalVariance = this.variance(totalScores);
 
     if (totalVariance === 0) return 0;
@@ -796,14 +740,14 @@ export class AnalyticsService {
     // Sum of p*q for each item
     let sumPQ = 0;
     for (let j = 0; j < k; j++) {
-      const itemScores = matrix.map(row => row[j]);
-      const p = itemScores.filter(s => s === 1).length / n;
+      const itemScores = matrix.map((row) => row[j]);
+      const p = itemScores.filter((s) => s === 1).length / n;
       const q = 1 - p;
       sumPQ += p * q;
     }
 
     // Total score variance
-    const totalScores = matrix.map(row => row.reduce((a, b) => a + b, 0));
+    const totalScores = matrix.map((row) => row.reduce((a, b) => a + b, 0));
     const totalVariance = this.variance(totalScores);
 
     if (totalVariance === 0) return 0;
@@ -820,7 +764,8 @@ export class AnalyticsService {
     const evenScores: number[] = [];
 
     for (const row of matrix) {
-      let odd = 0, even = 0;
+      let odd = 0,
+        even = 0;
       for (let j = 0; j < k; j++) {
         if (j % 2 === 0) even += row[j];
         else odd += row[j];
@@ -906,10 +851,12 @@ export class AnalyticsService {
 
     // Check for distractors that outperform correct answer
     if (optionAnalysis) {
-      const correct = optionAnalysis.find(o => o.isCorrect);
+      const correct = optionAnalysis.find((o) => o.isCorrect);
       for (const opt of optionAnalysis) {
         if (!opt.isCorrect && correct && opt.pointBiserial > correct.pointBiserial) {
-          reasons.push(`Distractor "${opt.optionText}" has higher point-biserial than correct answer`);
+          reasons.push(
+            `Distractor "${opt.optionText}" has higher point-biserial than correct answer`
+          );
         }
       }
     }
@@ -936,7 +883,7 @@ export class AnalyticsService {
       const bucketMin = min + i * bucketSize;
       const bucketMax = min + (i + 1) * bucketSize;
       const count = sorted.filter(
-        v => v >= bucketMin && (i === buckets - 1 ? v <= bucketMax : v < bucketMax)
+        (v) => v >= bucketMin && (i === buckets - 1 ? v <= bucketMax : v < bucketMax)
       ).length;
       histogram.push({ min: bucketMin, max: bucketMax, count });
     }
