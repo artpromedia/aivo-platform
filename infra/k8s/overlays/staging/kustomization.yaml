@@ -27,51 +27,51 @@ commonAnnotations:
 
 # Image configuration - use GCR registry
 # Note: Image tags are set dynamically by the CI/CD pipeline using:
-#   kustomize edit set image gcr.io/aivo-platform/<service>=gcr.io/aivo-platform/<service>:<tag>
+#   kustomize edit set image gcr.io/aivo-learning/<service>=gcr.io/aivo-learning/<service>:<tag>
 images:
   # Authentication & User Management
   - name: aivo/auth-svc
-    newName: gcr.io/aivo-platform/auth-svc
+    newName: gcr.io/aivo-learning/auth-svc
   - name: aivo/session-svc
-    newName: gcr.io/aivo-platform/session-svc
+    newName: gcr.io/aivo-learning/session-svc
   - name: aivo/consent-svc
-    newName: gcr.io/aivo-platform/consent-svc
+    newName: gcr.io/aivo-learning/consent-svc
   - name: aivo/profile-svc
-    newName: gcr.io/aivo-platform/profile-svc
+    newName: gcr.io/aivo-learning/profile-svc
   # Content & Learning
   - name: aivo/content-svc
-    newName: gcr.io/aivo-platform/content-svc
+    newName: gcr.io/aivo-learning/content-svc
   - name: aivo/assessment-svc
-    newName: gcr.io/aivo-platform/assessment-svc
+    newName: gcr.io/aivo-learning/assessment-svc
   - name: aivo/personalization-svc
-    newName: gcr.io/aivo-platform/personalization-svc
+    newName: gcr.io/aivo-learning/personalization-svc
   - name: aivo/life-skills-svc
-    newName: gcr.io/aivo-platform/life-skills-svc
+    newName: gcr.io/aivo-learning/life-skills-svc
   # AI & Analytics
   - name: aivo/ai-orchestrator
-    newName: gcr.io/aivo-platform/ai-orchestrator
+    newName: gcr.io/aivo-learning/ai-orchestrator
   - name: aivo/analytics-svc
-    newName: gcr.io/aivo-platform/analytics-svc
+    newName: gcr.io/aivo-learning/analytics-svc
   # Communication
   - name: aivo/notify-svc
-    newName: gcr.io/aivo-platform/notify-svc
+    newName: gcr.io/aivo-learning/notify-svc
   - name: aivo/messaging-svc
-    newName: gcr.io/aivo-platform/messaging-svc
+    newName: gcr.io/aivo-learning/messaging-svc
   # Goal & Focus
   - name: aivo/goal-svc
-    newName: gcr.io/aivo-platform/goal-svc
+    newName: gcr.io/aivo-learning/goal-svc
   - name: aivo/focus-svc
-    newName: gcr.io/aivo-platform/focus-svc
+    newName: gcr.io/aivo-learning/focus-svc
   # Billing & Payments
   - name: aivo/billing-svc
-    newName: gcr.io/aivo-platform/billing-svc
+    newName: gcr.io/aivo-learning/billing-svc
   - name: aivo/payments-svc
-    newName: gcr.io/aivo-platform/payments-svc
+    newName: gcr.io/aivo-learning/payments-svc
   # Parent Portal
   - name: aivo/parent-svc
-    newName: gcr.io/aivo-platform/parent-svc
+    newName: gcr.io/aivo-learning/parent-svc
   - name: aivo/baseline-svc
-    newName: gcr.io/aivo-platform/baseline-svc
+    newName: gcr.io/aivo-learning/baseline-svc
 
 # Patches for staging-specific configuration
 patches:
