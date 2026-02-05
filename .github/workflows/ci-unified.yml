@@ -609,30 +609,26 @@ jobs:
 
       - name: Deploy to staging
         run: |
-          cd infra/k8s/overlays/staging
-          
-          # Update image tags for all services
-          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
-                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
-                    profile-svc personalization-svc life-skills-svc)
-          
-          for svc in "${SERVICES[@]}"; do
-            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha }}
-          done
-          
-          # Apply to cluster
-          kustomize build . | kubectl apply -f -
-          
+          # TEMP (2026-02-05): Deploy only ai-orchestrator in staging.
+          # Revert by restoring the full kustomize overlay build and rollout loop.
+
+          # Apply namespace + ai-orchestrator only
+          kubectl apply -f infra/k8s/base/namespace.yaml
+          kubectl apply -f infra/k8s/base/ai-orchestrator.yaml
+
+          # Pin image tag for ai-orchestrator
+          kubectl -n aivo-staging set image deployment/ai-orchestrator \
+            ai-orchestrator=gcr.io/${{ env.PROJECT_ID }}/ai-orchestrator:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha }}
+
           # Wait for rollout
-          kubectl rollout status deployment --all -n aivo-staging --timeout=600s
+          kubectl rollout status deployment/ai-orchestrator -n aivo-staging --timeout=600s
 
       - name: Run smoke tests
         run: |
+          # TEMP (2026-02-05): Only smoke-test ai-orchestrator
           sleep 30
-          for svc in auth-svc content-svc session-svc; do
-            kubectl exec -n aivo-staging deploy/$svc -- curl -sf http://localhost:3000/health/ready || echo "Warning: $svc health check failed"
-          done
+          kubectl exec -n aivo-staging deploy/ai-orchestrator -- \
+            curl -sf http://localhost:3000/health/ready || echo "Warning: ai-orchestrator health check failed"
         continue-on-error: true
 
       - name: Notify Slack
