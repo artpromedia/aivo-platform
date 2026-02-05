@@ -42,11 +42,14 @@ jobs:
       - name: Determine services to build
         id: services
         run: |
+          # Fixed list of core services (same as ci-unified.yml)
+          CORE_SERVICES='["auth-svc","session-svc","content-svc","assessment-svc","ai-orchestrator","analytics-svc","notify-svc","messaging-svc","goal-svc","focus-svc","billing-svc","payments-svc","parent-svc","baseline-svc","consent-svc","profile-svc","personalization-svc","life-skills-svc"]'
+
           if [[ "${{ github.event.inputs.services }}" == "all" ]] || [[ -z "${{ github.event.inputs.services }}" ]]; then
-            # Get all services with Dockerfiles
-            SERVICES=$(find services -maxdepth 2 -name "Dockerfile" -exec dirname {} \; | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            # Use fixed list of core services
+            SERVICES="$CORE_SERVICES"
           else
-            # Parse input
+            # Parse input for specific services
             SERVICES=$(echo "${{ github.event.inputs.services }}" | tr ',' '\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
           fi
           echo "list=$SERVICES" >> $GITHUB_OUTPUT
