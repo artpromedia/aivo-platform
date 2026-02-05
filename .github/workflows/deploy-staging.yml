@@ -16,7 +16,7 @@ on:
 
 env:
   GKE_CLUSTER: aivo-gke-staging
-  GKE_ZONE: us-central1
+  GKE_ZONE: us-central1-c
   PROJECT_ID: aivo-learning
   NAMESPACE: aivo-staging
 
