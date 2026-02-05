@@ -113,6 +113,25 @@ patches:
         path: /spec/replicas
         value: 1
 
+  # TEMP (2026-02-05): Lower ai-orchestrator resources for staging capacity.
+  # Revert by removing this patch block to restore base requests/limits.
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "200m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
+
   # Reduce HPA max replicas for staging
   - target:
       kind: HorizontalPodAutoscaler
