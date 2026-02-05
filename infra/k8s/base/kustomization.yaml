@@ -17,27 +17,27 @@ resources:
   # Namespace
   - namespace.yaml
   # Core authentication and user services
-  - ../deployments/auth-svc.yaml
-  - ../deployments/session-svc.yaml
-  - ../deployments/consent-svc.yaml
-  - ../deployments/profile-svc.yaml
+  - auth-svc.yaml
+  - session-svc.yaml
+  - consent-svc.yaml
+  - profile-svc.yaml
   # Content and learning services
-  - ../deployments/content-svc.yaml
-  - ../deployments/assessment-svc.yaml
-  - ../deployments/personalization-svc.yaml
-  - ../deployments/life-skills-svc.yaml
+  - content-svc.yaml
+  - assessment-svc.yaml
+  - personalization-svc.yaml
+  - life-skills-svc.yaml
   # AI and analytics
-  - ../deployments/ai-orchestrator.yaml
-  - ../deployments/analytics-svc.yaml
+  - ai-orchestrator.yaml
+  - analytics-svc.yaml
   # Communication services
-  - ../deployments/notify-svc.yaml
-  - ../deployments/messaging-svc.yaml
+  - notify-svc.yaml
+  - messaging-svc.yaml
   # Goal and focus tracking
-  - ../deployments/goal-svc.yaml
-  - ../deployments/focus-svc.yaml
+  - goal-svc.yaml
+  - focus-svc.yaml
   # Billing and payments
-  - ../deployments/billing-svc.yaml
-  - ../deployments/payments-svc.yaml
+  - billing-svc.yaml
+  - payments-svc.yaml
   # Parent portal
-  - ../deployments/parent-svc.yaml
-  - ../deployments/baseline-svc.yaml
+  - parent-svc.yaml
+  - baseline-svc.yaml

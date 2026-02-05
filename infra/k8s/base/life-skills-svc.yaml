@@ -1,0 +1,180 @@
+# ============================================================================
+# Life Skills Service Kubernetes Deployment
+# ============================================================================
+# Deployment for the life skills learning module service
+# ============================================================================
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: life-skills-svc-config
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: life-skills-svc
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3000"
+  HOST: "0.0.0.0"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: life-skills-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: life-skills-svc
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: life-skills-svc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: life-skills-svc
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: life-skills-svc
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: life-skills-svc
+          image: aivo/life-skills-svc:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: life-skills-svc-config
+
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: life-skills-svc-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: nats-url
+            - name: AI_ORCHESTRATOR_URL
+              value: "http://ai-orchestrator:3000"
+            - name: PROFILE_SVC_URL
+              value: "http://profile-svc:3000"
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: life-skills-svc
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: life-skills-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: life-skills-svc
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: life-skills-svc
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: life-skills-svc
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: life-skills-svc
