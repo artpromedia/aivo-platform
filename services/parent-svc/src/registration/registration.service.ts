@@ -15,7 +15,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';
 import { EmailService } from '../email/email.service.js';
@@ -160,7 +160,6 @@ export class RegistrationService {
     // Send verification email
     await this.sendVerificationEmail(registration);
 
-    metrics.increment('registration.started');
     logger.info('Caregiver registration started', {
       registrationId: registration.id,
       email: registration.email,
@@ -258,7 +257,6 @@ export class RegistrationService {
       userAgent: context.userAgent,
     });
 
-    metrics.increment('registration.email_verified');
     logger.info('Caregiver email verified', { registrationId: registration.id });
 
     return {
@@ -316,7 +314,6 @@ export class RegistrationService {
       userAgent: context.userAgent,
     });
 
-    metrics.increment('registration.verification_resent');
 
     return {
       success: true,
@@ -435,7 +432,6 @@ export class RegistrationService {
         break;
     }
 
-    metrics.increment('registration.learner_link_created');
     logger.info('Learner link request created', {
       registrationId,
       linkRequestId: linkRequest.id,
@@ -541,7 +537,6 @@ export class RegistrationService {
     // Check if all links are approved and finalize if so
     await this.checkAndFinalizeRegistration(linkRequest.registrationId, context);
 
-    metrics.increment('registration.learner_code_verified');
     logger.info('Learner code verified', {
       linkRequestId,
       learnerId: schoolCode.learnerId,
@@ -805,7 +800,6 @@ export class RegistrationService {
       },
     });
 
-    metrics.increment('registration.school_code_generated');
     logger.info('Parent verification code generated', {
       schoolId,
       learnerId,
@@ -866,7 +860,6 @@ export class RegistrationService {
     // Check if all links are approved and finalize if so
     await this.checkAndFinalizeRegistration(linkRequest.registrationId, context);
 
-    metrics.increment('registration.link_approved');
     logger.info('Link request approved', { requestId, approvedById });
   }
 
@@ -910,7 +903,6 @@ export class RegistrationService {
     // Notify caregiver
     await this.notifyLinkRejected(linkRequest, reason);
 
-    metrics.increment('registration.link_rejected');
     logger.info('Link request rejected', { requestId, rejectedById, reason });
   }
 
@@ -1026,7 +1018,6 @@ export class RegistrationService {
       learnerIds: approvedLinks.map((l) => l.learnerId).filter(Boolean),
     });
 
-    metrics.increment('registration.completed');
     logger.info('Caregiver registration completed', {
       registrationId: registration.id,
       caregiverId: caregiver.id,

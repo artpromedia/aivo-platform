@@ -13,7 +13,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   FamilyDashboardResponse,
@@ -70,7 +70,6 @@ export class FamilyService {
       }),
     );
 
-    metrics.increment('family.dashboard_viewed');
 
     return {
       caregiver: this.formatCaregiverSummary(caregiver),

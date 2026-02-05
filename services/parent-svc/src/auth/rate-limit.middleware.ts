@@ -6,7 +6,7 @@
 
 import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { config } from '../config.js';
 
 interface RateLimitEntry {
@@ -67,7 +67,6 @@ export class RateLimitMiddleware implements NestMiddleware {
         count: entry.count,
       });
 
-      metrics.increment('rate_limit.exceeded', { category });
 
       throw new HttpException(
         {

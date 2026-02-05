@@ -11,7 +11,8 @@
 
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
+import { Prisma } from '../../generated/prisma-client/index.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';
 import { NotificationService } from '../notification/notification.service.js';
@@ -184,7 +185,7 @@ export class ParentService {
           status: ParentStatus.ACTIVE,
           emailVerified: false,
           digestFrequency: DigestFrequency.WEEKLY,
-          notificationPreferences: this.getDefaultNotificationPreferences() as unknown as Record<string, unknown>,
+          notificationPreferences: this.getDefaultNotificationPreferences() as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -328,7 +329,7 @@ export class ParentService {
         language: dto.language,
         timezone: dto.timezone,
         digestFrequency: dto.digestFrequency,
-        notificationPreferences: dto.notifications as unknown as Record<string, unknown>,
+        notificationPreferences: dto.notifications as unknown as Prisma.InputJsonValue,
         updatedAt: new Date(),
       },
     });

@@ -7,7 +7,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { I18nService } from '../i18n/i18n.service.js';
 import { EmailService } from '../email/email.service.js';
@@ -92,23 +92,19 @@ export class WeeklyDigestService {
           sent++;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          logger.error('Failed to send digest to parent', {
+          logger.error({
             parentId: parent.id,
             error: message,
-          });
+          }, 'Failed to send digest to parent');
           failed++;
         }
       }
 
       const duration = Date.now() - startTime;
-      logger.info('Weekly digest job completed', { sent, failed, duration });
-      metrics.histogram('digest.weekly.duration_ms', duration);
-      metrics.increment('digest.weekly.sent', { count: String(sent) });
-      metrics.increment('digest.weekly.failed', { count: String(failed) });
+      logger.info({ sent, failed, duration }, 'Weekly digest job completed');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Weekly digest job failed', { error: message });
-      metrics.increment('digest.weekly.job_failed');
+      logger.error({ error: message }, 'Weekly digest job failed');
     }
   }
 

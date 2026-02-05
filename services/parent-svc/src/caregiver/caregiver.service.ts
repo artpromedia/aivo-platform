@@ -16,7 +16,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger, metrics } from '@aivo/ts-observability';
+import { logger } from '@aivo/ts-observability';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CryptoService } from '../crypto/crypto.service.js';
 import { NotificationService } from '../notification/notification.service.js';
@@ -179,7 +179,6 @@ export class CaregiverService {
     // Send invite email
     await this.sendCaregiverInviteEmail(invite, parentLink.parent, parentLink.student);
 
-    metrics.increment('caregiver.invite.created');
     logger.info('Caregiver invite created', {
       studentId: dto.studentId,
       invitedBy: parentId,
@@ -300,7 +299,6 @@ export class CaregiverService {
     // Notify parent that caregiver accepted
     await this.notifyParentOfAcceptance(invite.invitedByParentId, caregiver, invite.student);
 
-    metrics.increment('caregiver.invite.accepted');
     logger.info('Caregiver invite accepted', {
       studentId: invite.studentId,
       caregiverId: caregiver.id,
@@ -371,7 +369,6 @@ export class CaregiverService {
       caregiverEmail: invite.caregiverEmail,
     });
 
-    metrics.increment('caregiver.invite.resent');
   }
 
   /**
@@ -399,7 +396,6 @@ export class CaregiverService {
       data: { status: CaregiverInviteStatus.REVOKED },
     });
 
-    metrics.increment('caregiver.invite.cancelled');
   }
 
   // ============================================================================
@@ -471,7 +467,6 @@ export class CaregiverService {
       newValue: newPermissions,
     });
 
-    metrics.increment('caregiver.permissions.updated');
 
     return this.formatCaregiverStudentLink(updatedLink);
   }
@@ -541,7 +536,6 @@ export class CaregiverService {
     // Notify caregiver
     await this.notifyCaregiverOfRevocation(caregiverLink.caregiver, dto.studentId);
 
-    metrics.increment('caregiver.access.revoked');
 
     this.eventEmitter.emit('caregiver.unlinked', {
       caregiverId: dto.caregiverId,
