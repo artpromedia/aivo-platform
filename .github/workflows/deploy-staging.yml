@@ -114,7 +114,10 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Waiting for rollout"
-          kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=600s
+          # Wait for all deployments to be ready
+          for deployment in $(kubectl get deployments -n ${{ env.NAMESPACE }} -o name); do
+            kubectl rollout status $deployment -n ${{ env.NAMESPACE }} --timeout=600s
+          done
           echo "::endgroup::"
 
       - name: Verify deployment
