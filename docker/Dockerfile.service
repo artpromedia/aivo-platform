@@ -60,6 +60,7 @@ RUN apk add --no-cache dumb-init
 # Copy built application
 ARG SERVICE_NAME
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/package.json ./
 

@@ -391,7 +391,7 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          SHA_SHORT=$(git rev-parse --short HEAD)
+          SHA_SHORT=$(git rev-parse --short=8 HEAD)
           
           if [[ "${{ github.event_name }}" == "release" ]]; then
             VERSION="${{ github.event.release.tag_name }}"

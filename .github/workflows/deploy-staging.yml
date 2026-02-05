@@ -59,7 +59,7 @@ jobs:
           if [[ -n "${{ github.event.inputs.version }}" && "${{ github.event.inputs.version }}" != "latest" ]]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION="main-$(git rev-parse --short HEAD)"
+            VERSION="main-$(git rev-parse --short=8 HEAD)"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Deploying version: $VERSION"
