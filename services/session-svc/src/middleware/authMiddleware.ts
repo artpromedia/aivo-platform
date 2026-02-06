@@ -23,7 +23,7 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
 
     // Health check stays public
     const path = request.routeOptions.url ?? '';
-    if (path === '/health') return;
+    if (path.startsWith('/health')) return;
 
     // Everything else requires a valid bearer token
     await auth(request, reply);
@@ -31,5 +31,4 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   done();
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const authMiddleware = fp(authPlugin as any);
