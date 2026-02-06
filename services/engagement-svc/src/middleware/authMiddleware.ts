@@ -29,7 +29,7 @@ function authPlugin(
 
     // Health check stays public
     const path = request.routeOptions.url ?? '';
-    if (path === '/health' || path === '/ready') return undefined;
+    if (path.startsWith('/health') || path === '/ready') return undefined;
 
     // Internal service routes
     if (path.startsWith('/internal/')) {

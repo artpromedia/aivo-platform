@@ -19,7 +19,7 @@ declare global {
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   // Skip auth for health check
-  if (req.path === '/health') {
+  if (req.path.startsWith('/health')) {
     next();
     return;
   }
