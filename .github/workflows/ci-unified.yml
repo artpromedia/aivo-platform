@@ -586,7 +586,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [docker]
+    needs: [build, docker]
     if: github.ref == 'refs/heads/main' || inputs.deploy_environment == 'staging'
     environment: staging
     steps:
@@ -627,7 +627,7 @@ jobs:
 
           # Pin image tag for ai-orchestrator
           kubectl -n aivo-staging set image deployment/ai-orchestrator \
-            ai-orchestrator=gcr.io/${{ env.PROJECT_ID }}/ai-orchestrator:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha }}
+            ai-orchestrator=gcr.io/${{ env.PROJECT_ID }}/ai-orchestrator:${{ needs.build.outputs.version }}
 
           # TEMP (2026-02-05): Keep HPA at 1-2 replicas for staging capacity.
           # Revert by removing this patch to restore base HPA settings.
