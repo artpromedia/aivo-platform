@@ -130,6 +130,13 @@ spec:
 
             # Add service-specific secrets here
 
+            # Session service URL (required)
+            - name: SESSION_SVC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: session-svc-url
+
           resources:
             requests:
               cpu: "100m"
