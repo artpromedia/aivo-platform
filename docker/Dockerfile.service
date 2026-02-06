@@ -39,6 +39,9 @@ RUN if [ -f "services/${SERVICE_NAME}/prisma/schema.prisma" ]; then \
       cd services/${SERVICE_NAME} && npx prisma generate --schema=prisma/schema.prisma; \
     fi
 
+# Ensure generated Prisma client path exists for runtime COPY
+RUN mkdir -p /app/services/${SERVICE_NAME}/generated/prisma-client
+
 # Build the service
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
@@ -61,6 +64,7 @@ RUN apk add --no-cache dumb-init
 ARG SERVICE_NAME
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/generated/prisma-client ./generated/prisma-client
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Copy scripts
