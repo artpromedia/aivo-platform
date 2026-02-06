@@ -609,40 +609,56 @@ jobs:
 
       - name: Deploy to staging
         run: |
-          # TEMP (2026-02-05): Deploy only ai-orchestrator in staging.
-          # Revert by restoring the full kustomize overlay build and rollout loop.
-
           # Ensure staging namespace exists
           kubectl create namespace aivo-staging --dry-run=client -o yaml | kubectl apply -f -
 
-          # Apply ai-orchestrator manifest into aivo-staging
-          # (Base manifests use namespace: aivo, so we rewrite to aivo-staging here.)
-          sed "s/namespace: aivo/namespace: aivo-staging/g" infra/k8s/base/ai-orchestrator.yaml | \
-            kubectl apply -f -
+          # Services to deploy
+          SERVICES=("ai-orchestrator" "auth-svc" "session-svc")
 
-          # TEMP (2026-02-05): Scale down other deployments in staging to free CPU.
-          # Revert by removing this block when full staging is restored.
-          kubectl -n aivo-staging get deploy -o name | grep -v ai-orchestrator | \
-            xargs -r kubectl -n aivo-staging scale --replicas=0
+          # Apply manifests and pin image tags
+          for svc in "${SERVICES[@]}"; do
+            echo "Deploying $svc..."
+            sed "s/namespace: aivo/namespace: aivo-staging/g" infra/k8s/base/${svc}.yaml | \
+              kubectl apply -f -
+            kubectl -n aivo-staging set image deployment/${svc} \
+              ${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.build.outputs.version }}
+          done
 
-          # Pin image tag for ai-orchestrator
-          kubectl -n aivo-staging set image deployment/ai-orchestrator \
-            ai-orchestrator=gcr.io/${{ env.PROJECT_ID }}/ai-orchestrator:${{ needs.build.outputs.version }}
+          # Scale down services not in the deploy list to free CPU
+          for deploy in $(kubectl -n aivo-staging get deploy -o name); do
+            name=${deploy#deployment.apps/}
+            if [[ ! " ${SERVICES[*]} " =~ " ${name} " ]]; then
+              kubectl -n aivo-staging scale ${deploy} --replicas=0 2>/dev/null || true
+            fi
+          done
 
-          # TEMP (2026-02-05): Keep HPA at 1-2 replicas for staging capacity.
-          # Revert by removing this patch to restore base HPA settings.
-          kubectl -n aivo-staging patch hpa ai-orchestrator --type merge \
-            -p '{"spec":{"minReplicas":1,"maxReplicas":2}}'
+          # Keep HPAs at 1-2 replicas for staging capacity
+          for svc in "${SERVICES[@]}"; do
+            kubectl -n aivo-staging patch hpa ${svc} --type merge \
+              -p '{"spec":{"minReplicas":1,"maxReplicas":2}}' 2>/dev/null || true
+          done
 
-          # Wait for rollout
-          kubectl rollout status deployment/ai-orchestrator -n aivo-staging --timeout=600s
+          # Wait for rollouts
+          for svc in "${SERVICES[@]}"; do
+            echo "Waiting for $svc rollout..."
+            kubectl rollout status deployment/${svc} -n aivo-staging --timeout=600s
+          done
 
       - name: Run smoke tests
         run: |
-          # TEMP (2026-02-05): Only smoke-test ai-orchestrator
           sleep 30
-          kubectl exec -n aivo-staging deploy/ai-orchestrator -- \
-            curl -sf http://localhost:3000/health/ready || echo "Warning: ai-orchestrator health check failed"
+          SERVICES=("ai-orchestrator" "auth-svc" "session-svc")
+          FAILED=0
+          for svc in "${SERVICES[@]}"; do
+            if kubectl exec -n aivo-staging deploy/${svc} -- \
+              curl -sf http://localhost:3000/health/ready 2>/dev/null; then
+              echo "OK: $svc"
+            else
+              echo "Warning: $svc health check failed"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+          echo "Smoke tests complete: $FAILED service(s) failed"
         continue-on-error: true
 
       - name: Notify Slack

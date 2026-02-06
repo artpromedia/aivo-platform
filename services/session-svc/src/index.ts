@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { config } from './config.js';
-import { prisma } from './prisma.js';
+
+const hasDatabaseUrl = !!process.env.DATABASE_URL;
 
 async function main(): Promise<void> {
   const app = await buildApp();
@@ -9,7 +10,10 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully...`);
     await app.close();
-    await prisma.$disconnect();
+    if (hasDatabaseUrl) {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$disconnect();
+    }
     process.exit(0);
   };
 
@@ -21,7 +25,10 @@ async function main(): Promise<void> {
     app.log.info(`session-svc listening on port ${config.port}`);
   } catch (err) {
     app.log.error(err);
-    await prisma.$disconnect();
+    if (hasDatabaseUrl) {
+      const { prisma } = await import('./prisma.js');
+      await prisma.$disconnect();
+    }
     process.exit(1);
   }
 }

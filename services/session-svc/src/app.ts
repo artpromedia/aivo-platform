@@ -1,14 +1,15 @@
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
-import rateLimit from '@fastify/rate-limit';
-import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
-import { sessionRoutes } from './routes/sessions.js';
-import { scheduleRoutes } from './routes/schedules.js';
-import { transitionRoutes } from './transitions/transition.routes.js';
+import { healthRoutes } from './routes/health.js';
 import { predictabilityRoutes } from './routes/predictability.js';
+import { scheduleRoutes } from './routes/schedules.js';
+import { sessionRoutes } from './routes/sessions.js';
+import { transitionRoutes } from './transitions/transition.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -21,67 +22,15 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   });
 
-  // Health check (unauthenticated)
-  app.get('/health', async () => {
-    const startTime = Date.now();
-    let dbStatus = 'healthy';
-    let dbLatencyMs = 0;
-    let dbError: string | undefined;
-
-    try {
-      const { prisma } = await import('./prisma.js');
-      await prisma.$queryRaw`SELECT 1 as health_check`;
-      dbLatencyMs = Date.now() - startTime;
-      if (dbLatencyMs > 1000) {
-        dbStatus = 'unhealthy';
-      } else if (dbLatencyMs > 500) {
-        dbStatus = 'degraded';
-      }
-    } catch (error) {
-      dbStatus = 'unhealthy';
-      dbLatencyMs = Date.now() - startTime;
-      dbError = error instanceof Error ? error.message : 'Unknown error';
-    }
-
-    return {
-      status: dbStatus === 'unhealthy' ? 'unhealthy' : 'healthy',
-      service: 'session-svc',
-      version: '1.0.0',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      database: {
-        status: dbStatus,
-        latencyMs: dbLatencyMs,
-        error: dbError,
-      },
-    };
-  });
-
-  app.get('/ready', async (_request, reply) => {
-    try {
-      const { prisma } = await import('./prisma.js');
-      await prisma.$queryRaw`SELECT 1 as ready_check`;
-      return reply.send({ status: 'ready', service: 'session-svc' });
-    } catch (error) {
-      return reply.status(503).send({
-        status: 'not ready',
-        service: 'session-svc',
-        error: error instanceof Error ? error.message : 'Database unavailable',
-      });
-    }
-  });
-
-  // Readiness check (unauthenticated) - can add DB ping later
-  app.get('/ready', async () => {
-    return { status: 'ok', service: 'session-svc' };
-  });
+  // Health check routes (must be registered early, before auth middleware)
+  await app.register(healthRoutes);
 
   // JWT auth for all other routes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   await app.register(authMiddleware as any);
 
   // Rate limiting
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   await app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('session-svc'));
 
   // Register session routes

@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
-import { prisma } from './prisma.js';
+
+const hasDatabaseUrl = !!process.env.DATABASE_URL;
 
 async function main() {
   const app = createApp();
@@ -10,7 +11,10 @@ async function main() {
     app.log.info(`Received ${signal}, shutting down gracefully...`);
     try {
       await app.close();
-      await prisma.$disconnect();
+      if (hasDatabaseUrl) {
+        const { prisma } = await import('./prisma.js');
+        await prisma.$disconnect();
+      }
       app.log.info('Graceful shutdown completed');
       process.exit(0);
     } catch (err) {

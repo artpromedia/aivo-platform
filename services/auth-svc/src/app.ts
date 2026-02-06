@@ -1,11 +1,12 @@
-import cors from '@fastify/cors';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerDemoRoutes } from './routes/demo.js';
+import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
 import { registerSsoRoutes } from './routes/sso.js';
 
@@ -13,7 +14,7 @@ export function createApp() {
   const app = Fastify({ logger: true });
 
   // CORS configuration for local development
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   void app.register(cors as any, {
     origin: [
       'http://localhost:3000',
@@ -45,10 +46,8 @@ export function createApp() {
     }
   );
 
-  // Root-level health check for container orchestration
-  app.get('/health', async (_request, reply) => {
-    return reply.status(200).send({ status: 'ok', service: 'auth-svc' });
-  });
+  // Health check routes (must be registered early, before auth middleware)
+  void app.register(healthRoutes as any);
 
   void app.register(authMiddleware as any);
 
