@@ -621,6 +621,8 @@ jobs:
           # Apply manifests and pin image tags
           for svc in "${SERVICES[@]}"; do
             echo "Deploying $svc..."
+            # Delete existing deployment to avoid immutable selector errors
+            kubectl -n aivo-staging delete deployment/${svc} --ignore-not-found
             sed "s/namespace: aivo/namespace: aivo-staging/g" infra/k8s/base/${svc}.yaml | \
               kubectl apply -f -
             kubectl -n aivo-staging set image deployment/${svc} \
