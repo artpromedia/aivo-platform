@@ -646,7 +646,7 @@ jobs:
         continue-on-error: true
 
       - name: Notify Slack
-        if: always()
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -720,7 +720,7 @@ jobs:
           done
 
       - name: Notify Slack
-        if: always()
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}

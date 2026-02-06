@@ -139,3 +139,18 @@ patches:
       - op: replace
         path: /spec/maxReplicas
         value: 5
+
+  # Allow ai-orchestrator to reach Memorystore Redis (staging)
+  - target:
+      kind: NetworkPolicy
+      name: ai-orchestrator-network-policy
+    patch: |-
+      - op: add
+        path: /spec/egress/-
+        value:
+          to:
+            - ipBlock:
+                cidr: 10.234.111.187/32
+          ports:
+            - protocol: TCP
+              port: 6379

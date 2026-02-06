@@ -806,7 +806,7 @@ jobs:
           echo "| Security | ${{ needs.security-tests.result }} |" >> report.md
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |

@@ -690,6 +690,7 @@ jobs:
     
     steps:
       - name: Send Slack notification on failure
+        if: secrets.SLACK_BOT_TOKEN != ''
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ vars.SLACK_CHANNEL_CI_ALERTS }}

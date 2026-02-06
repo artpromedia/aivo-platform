@@ -290,7 +290,7 @@ jobs:
           echo "Completed: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
       - name: Notify on success
-        if: success()
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
@@ -326,7 +326,7 @@ jobs:
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Notify on failure
-        if: failure()
+        if: failure() && secrets.SLACK_ALERT_WEBHOOK_URL != ''
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
