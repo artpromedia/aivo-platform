@@ -57,8 +57,8 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and OpenSSL 1.1 compatibility for Prisma
+RUN apk add --no-cache dumb-init openssl1.1-compat
 
 # Copy production bundle from pnpm deploy
 ARG SERVICE_NAME
