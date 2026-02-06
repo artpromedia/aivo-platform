@@ -20,8 +20,12 @@ import type {
   SessionActivity,
   ScheduleTemplateItem,
   VisualSchedule,
-} from './schedule.types';
-import { ACTIVITY_BREAKDOWNS, ACTIVITY_TYPE_ICONS, ACTIVITY_TYPE_COLORS } from './schedule.types';
+} from './schedule.types.js';
+import {
+  ACTIVITY_BREAKDOWNS,
+  ACTIVITY_TYPE_ICONS,
+  ACTIVITY_TYPE_COLORS,
+} from './schedule.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SERVICE INTERFACE

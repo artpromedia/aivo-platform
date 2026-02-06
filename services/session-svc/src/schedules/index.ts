@@ -4,6 +4,6 @@
  * Re-exports all schedule-related types, services, and utilities.
  */
 
-export * from './schedule.types';
-export * from './schedule.service';
-export * from './schedule-builder';
+export * from './schedule.types.js';
+export * from './schedule.service.js';
+export * from './schedule-builder.js';

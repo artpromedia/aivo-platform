@@ -5,8 +5,8 @@
  * Makes it easy to programmatically create schedules with proper defaults.
  */
 
-import type { ScheduleItem, ScheduleItemType, ScheduleTemplateItem } from './schedule.types';
-import { ACTIVITY_TYPE_ICONS, ACTIVITY_TYPE_COLORS } from './schedule.types';
+import type { ScheduleItem, ScheduleItemType, ScheduleTemplateItem } from './schedule.types.js';
+import { ACTIVITY_TYPE_ICONS, ACTIVITY_TYPE_COLORS } from './schedule.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SCHEDULE ITEM BUILDER
