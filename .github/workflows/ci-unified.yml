@@ -613,7 +613,10 @@ jobs:
           kubectl create namespace aivo-staging --dry-run=client -o yaml | kubectl apply -f -
 
           # Services to deploy
-          SERVICES=("ai-orchestrator" "auth-svc" "session-svc")
+          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    profile-svc personalization-svc life-skills-svc)
 
           # Apply manifests and pin image tags
           for svc in "${SERVICES[@]}"; do
@@ -647,7 +650,10 @@ jobs:
       - name: Run smoke tests
         run: |
           sleep 30
-          SERVICES=("ai-orchestrator" "auth-svc" "session-svc")
+          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    profile-svc personalization-svc life-skills-svc)
           FAILED=0
           for svc in "${SERVICES[@]}"; do
             if kubectl exec -n aivo-staging deploy/${svc} -- \
