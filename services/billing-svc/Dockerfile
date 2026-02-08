@@ -45,6 +45,7 @@ RUN apk add --no-cache dumb-init openssl
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/billing-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/billing-svc/generated ./generated
 COPY --from=builder --chown=nodejs:nodejs /app/services/billing-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
