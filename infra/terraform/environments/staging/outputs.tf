@@ -33,18 +33,18 @@ output "cloudsql_instance_name" {
 
 output "cloudsql_connection_name" {
   description = "Cloud SQL connection name"
-  value       = module.cloudsql.connection_name
+  value       = module.cloudsql.instance_connection_name
 }
 
 output "cloudsql_private_ip" {
   description = "Cloud SQL private IP"
-  value       = module.cloudsql.private_ip
+  value       = module.cloudsql.private_ip_address
   sensitive   = true
 }
 
 output "cloudsql_read_replica_ip" {
   description = "Cloud SQL read replica private IP"
-  value       = module.cloudsql.read_replica_private_ip
+  value       = try(module.cloudsql.read_replica_ips[0], null)
   sensitive   = true
 }
 
@@ -59,7 +59,7 @@ output "redis_cache_host" {
 
 output "redis_session_host" {
   description = "Redis session host"
-  value       = module.redis.session_host
+  value       = module.redis.sessions_host
 }
 
 output "redis_pubsub_host" {
@@ -77,7 +77,7 @@ output "storage_buckets" {
     content_assets = module.storage.content_assets_bucket_name
     user_uploads   = module.storage.user_uploads_bucket_name
     static_assets  = module.storage.static_assets_bucket_name
-    backups        = module.storage.backup_bucket_name
+    backups        = module.storage.backups_bucket_name
   }
 }
 

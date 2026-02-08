@@ -49,6 +49,7 @@ RUN apk add --no-cache dumb-init openssl
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/generated ./generated
 COPY --from=builder --chown=nodejs:nodejs /app/services/payments-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
@@ -69,4 +70,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/index.js"]

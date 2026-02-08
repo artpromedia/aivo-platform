@@ -8,6 +8,7 @@
 # Main Cache Instance
 # -----------------------------------------------------------------------------
 resource "google_redis_instance" "cache" {
+  project        = var.project_id
   name           = "${var.project_prefix}-redis-cache-${var.environment}"
   tier           = var.environment == "production" ? "STANDARD_HA" : "BASIC"
   memory_size_gb = var.cache_memory_size_gb
@@ -54,6 +55,7 @@ resource "google_redis_instance" "cache" {
 # Session Store Instance (Separate for Isolation)
 # -----------------------------------------------------------------------------
 resource "google_redis_instance" "sessions" {
+  project        = var.project_id
   name           = "${var.project_prefix}-redis-sessions-${var.environment}"
   tier           = var.environment == "production" ? "STANDARD_HA" : "BASIC"
   memory_size_gb = var.session_memory_size_gb
@@ -95,6 +97,7 @@ resource "google_redis_instance" "sessions" {
 # Pub/Sub Instance for Real-time Events (Optional)
 # -----------------------------------------------------------------------------
 resource "google_redis_instance" "pubsub" {
+  project        = var.project_id
   count = var.enable_pubsub_redis ? 1 : 0
 
   name           = "${var.project_prefix}-redis-pubsub-${var.environment}"
@@ -139,6 +142,7 @@ resource "google_redis_instance" "pubsub" {
 # Store Redis Connection Info in Secret Manager
 # -----------------------------------------------------------------------------
 resource "google_secret_manager_secret" "cache_connection" {
+  project        = var.project_id
   secret_id = "redis-cache-connection-${var.environment}"
 
   labels = {
@@ -153,6 +157,7 @@ resource "google_secret_manager_secret" "cache_connection" {
 
 resource "google_secret_manager_secret_version" "cache_connection" {
   secret = google_secret_manager_secret.cache_connection.id
+
   secret_data = jsonencode({
     host = google_redis_instance.cache.host
     port = google_redis_instance.cache.port
@@ -161,6 +166,7 @@ resource "google_secret_manager_secret_version" "cache_connection" {
 }
 
 resource "google_secret_manager_secret" "sessions_connection" {
+  project        = var.project_id
   secret_id = "redis-sessions-connection-${var.environment}"
 
   labels = {

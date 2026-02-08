@@ -33,3 +33,13 @@ variable "cdn_domains" {
   description = "CDN domains"
   type        = list(string)
 }
+
+variable "project_prefix" {
+  description = "Prefijo del proyecto"
+  type        = string
+}
+
+variable "k8s_namespace" {
+  description = "Namespace de Kubernetes"
+  type        = string
+}

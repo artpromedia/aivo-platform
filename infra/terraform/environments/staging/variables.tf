@@ -1,14 +1,10 @@
-# =============================================================================
-# AIVO Platform - Staging Environment Variables
-# =============================================================================
-
 variable "project_id" {
   description = "GCP project ID for staging environment"
   type        = string
 }
 
 variable "region" {
-  description = "GCP region"
+  description = "GCP region for staging"
   type        = string
   default     = "us-central1"
 }
@@ -19,20 +15,19 @@ variable "alert_email" {
 }
 
 variable "slack_webhook_url" {
-  description = "Slack webhook URL for notifications"
+  description = "Slack webhook URL"
   type        = string
   default     = ""
-  sensitive   = true
+}
+
+variable "enable_cdn" {
+  description = "Enable CDN"
+  type        = bool
+  default     = false
 }
 
 variable "cors_origins" {
   description = "Allowed CORS origins"
   type        = list(string)
-  default     = ["https://staging.aivo.io"]
-}
-
-variable "enable_cdn" {
-  description = "Enable CDN for staging"
-  type        = bool
-  default     = false
+  default     = ["https://staging.aivo.io", "https://api.staging.aivo.io"]
 }

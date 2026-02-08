@@ -88,13 +88,13 @@ resource "google_container_cluster" "primary" {
   }
 
   # Maintenance window (weekends, early morning)
-  maintenance_policy {
-    recurring_window {
-      start_time = "2024-01-01T04:00:00Z"
-      end_time   = "2024-01-01T08:00:00Z"
-      recurrence = "FREQ=WEEKLY;BYDAY=SA,SU"
-    }
-  }
+  # maintenance_policy {
+  #  recurring_window {
+  #    start_time = "2024-01-01T04:00:00Z"
+  #    end_time   = "2024-01-01T08:00:00Z"
+  #    recurrence = "FREQ=WEEKLY;BYDAY=SA,SU"
+  #  }
+  #}
 
   # Release channel
   release_channel {
@@ -189,7 +189,7 @@ resource "google_container_node_pool" "application" {
   node_config {
     machine_type = var.app_machine_type
     disk_size_gb = var.app_disk_size
-    disk_type    = "pd-ssd"
+    disk_type    = "pd-balanced"
     spot         = var.environment == "dev" ? true : false
 
     # Use Container-Optimized OS
@@ -260,7 +260,7 @@ resource "google_container_node_pool" "system" {
   node_config {
     machine_type = var.environment == "production" ? "e2-standard-4" : "e2-standard-2"
     disk_size_gb = 50
-    disk_type    = "pd-ssd"
+    disk_type    = "pd-balanced"
     spot         = var.environment == "dev"
 
     image_type = "COS_CONTAINERD"
@@ -321,8 +321,8 @@ resource "google_container_node_pool" "ai_workloads" {
 
   node_config {
     machine_type = var.ai_machine_type
-    disk_size_gb = 100
-    disk_type    = "pd-ssd"
+    disk_size_gb = 50
+    disk_type    = "pd-balanced"
 
     image_type = "COS_CONTAINERD"
 
