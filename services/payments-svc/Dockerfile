@@ -69,4 +69,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/index.js"]

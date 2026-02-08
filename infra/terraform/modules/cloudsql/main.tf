@@ -40,7 +40,7 @@ resource "google_sql_database_instance" "primary" {
     ip_configuration {
       ipv4_enabled    = false
       private_network = var.vpc_id
-      require_ssl     = true
+      #require_ssl     = true
       
       dynamic "authorized_networks" {
         for_each = var.authorized_networks
@@ -143,12 +143,12 @@ resource "google_sql_database_instance" "read_replica" {
     ip_configuration {
       ipv4_enabled    = false
       private_network = var.vpc_id
-      require_ssl     = true
+      #require_ssl     = true
     }
 
     database_flags {
       name  = "max_connections"
-      value = "200"
+      value = var.environment == "production" ? "500" : "100"
     }
 
     user_labels = {

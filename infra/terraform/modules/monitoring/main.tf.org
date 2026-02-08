@@ -1,18 +1,3 @@
-# -----------------------------------------------------------------------------
-# Log-Based Metric: HTTP 5xx
-# -----------------------------------------------------------------------------
-resource "google_logging_metric" "http_status_5xx" {
-  name        = "http_status_5xx"
-  description = "Count of HTTP 5xx responses"
-
-  filter = <<-EOT
-resource.type="k8s_container"
-AND httpRequest.status>=500
-  EOT
-  lifecycle {
-    ignore_changes = [name]
-  }
-}
 # =============================================================================
 # AIVO Platform - Monitoring Module
 # =============================================================================
@@ -381,7 +366,6 @@ resource "google_monitoring_alert_policy" "redis_memory_high" {
 
 resource "google_monitoring_alert_policy" "error_rate_high" {
   display_name = "High Error Rate - ${var.environment}"
-  depends_on = [google_logging_metric.http_status_5xx]
   combiner     = "OR"
 
   conditions {
@@ -497,9 +481,7 @@ resource "google_logging_project_sink" "app_errors" {
   }
 }
 
-# -----------------------------------------------------------------------------
-# Logging Metric: HTTP 5xx
-# -----------------------------------------------------------------------------
+
 
 # -----------------------------------------------------------------------------
 # Custom Log-Based Metrics

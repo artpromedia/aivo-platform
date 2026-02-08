@@ -14,9 +14,10 @@ terraform {
 # -----------------------------------------------------------------------------
 
 locals {
-  environment = "production"
-  project_id  = var.project_id
-  region      = var.region
+  environment    = "production"
+  project_id     = var.project_id
+  region         = var.region
+  project_prefix = "aivo"
 }
 
 # -----------------------------------------------------------------------------
@@ -26,14 +27,15 @@ locals {
 module "networking" {
   source = "../../modules/networking"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  vpc_cidr_range      = "10.20.0.0/16"
-  pods_cidr_range     = "10.120.0.0/14"
-  services_cidr_range = "10.124.0.0/20"
-  master_cidr_range   = "10.125.0.0/28"
+  main_cidr     = "10.10.0.0/16"
+  pods_cidr     = "10.108.0.0/14"
+  services_cidr = "10.112.0.0/20"
+  master_cidr   = "10.115.0.0/28"
 }
 
 # -----------------------------------------------------------------------------
@@ -43,39 +45,46 @@ module "networking" {
 module "gke" {
   source = "../../modules/gke"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
+
+  # Producción: multi-zona para HA
+  node_zones = ["us-central1-a", "us-central1-b", "us-central1-f"]
 
   vpc_id                        = module.networking.vpc_id
   subnet_id                     = module.networking.subnet_id
   pods_secondary_range_name     = module.networking.pods_secondary_range_name
   services_secondary_range_name = module.networking.services_secondary_range_name
-  master_ipv4_cidr_block        = "10.125.0.0/28"
 
-  # Production sizing - high availability
-  app_pool_min_count = 3
-  app_pool_max_count = 20
-  app_machine_type   = "e2-standard-8"
+  # IMPORTANTE: CIDR distinto a staging
+  master_cidr            = "10.125.0.0/28"
+  private_vpc_connection = module.networking.private_vpc_connection
 
-  system_pool_min_count = 2
-  system_pool_max_count = 5
-  system_machine_type   = "e2-standard-4"
+  # Service Account (del módulo IAM)
+  gke_service_account_email = module.iam.gke_nodes_service_account_email
 
-  # GPU nodes for AI workloads
-  enable_gpu_pool    = true
-  gpu_pool_min_count = 0
-  gpu_pool_max_count = 5
-  gpu_machine_type   = "n1-standard-8"
-  gpu_type           = "nvidia-tesla-t4"
-  gpu_count          = 1
+  # App pool (PROD): autoscaling. En tu módulo, si environment == production,
+  # el node_count se vuelve null automáticamente.
+  app_machine_type = "e2-standard-4"
+  app_node_count   = null
+  app_min_nodes    = 3
+  app_max_nodes    = 20
 
-  # No spot instances in production
-  spot_instances = false
+  # Para evitar repetir el problema de cuota SSD_TOTAL_GB:
+  # deja 50GB y PD-BALANCED (ya lo arreglaste en el módulo)
+  app_disk_size = 50
 
-  depends_on = [module.networking]
+  # GPU pool: normalmente OFF en prod al inicio, se activa cuando esté todo estable
+  enable_gpu_pool = false
+  ai_machine_type = "n1-standard-4"
+  ai_max_nodes    = 1
+  gpu_type        = "nvidia-tesla-t4"
+  gpu_count       = 1
+
+  depends_on = [module.networking, module.iam]
 }
-
 # -----------------------------------------------------------------------------
 # Cloud SQL Module
 # -----------------------------------------------------------------------------
@@ -87,38 +96,39 @@ module "cloudsql" {
   region      = local.region
   environment = local.environment
 
-  vpc_id                     = module.networking.vpc_id
-  private_service_connection = module.networking.private_service_connection
+  vpc_id = module.networking.vpc_id
+  #private_service_connection = module.networking.private_vpc_connection
 
+  private_vpc_connection = module.networking.private_vpc_connection
   # Production sizing - high availability
-  db_tier             = "db-custom-8-32768"
-  db_disk_size        = 500
-  availability_type   = "REGIONAL"
-  enable_read_replica = true
-  read_replica_count  = 2
+  db_tier = "db-custom-8-32768"
+  #db_disk_size        = 500
+  #availability_type   = "REGIONAL"
+  #enable_read_replica = true
+  read_replica_count = 2
 
-  database_flags = {
-    max_connections        = 500
-    log_min_duration_statement = 1000
-    log_checkpoints        = "on"
-    log_connections        = "on"
-    log_disconnections     = "on"
-  }
+  #database_flags = {
+  # max_connections            = 500
+  # log_min_duration_statement = 1000
+  # log_checkpoints            = "on"
+  # log_connections            = "on"
+  # log_disconnections         = "on"
+  #}
 
   # Point-in-time recovery
-  backup_configuration = {
-    enabled                        = true
-    point_in_time_recovery_enabled = true
-    start_time                     = "03:00"
-    transaction_log_retention_days = 7
-    retained_backups               = 30
-  }
+  #backup_configuration = {
+  # enabled                        = true
+  # point_in_time_recovery_enabled = true
+  # start_time                     = "03:00"
+  # transaction_log_retention_days = 7
+  # retained_backups               = 30
+  #}
 
-  maintenance_window = {
-    day          = 7 # Sunday
-    hour         = 4
-    update_track = "stable"
-  }
+  #maintenance_window = {
+  #  day          = 7 # Sunday
+  #  hour         = 4
+  #  update_track = "stable"
+  #}
 
   depends_on = [module.networking]
 }
@@ -128,29 +138,24 @@ module "cloudsql" {
 # -----------------------------------------------------------------------------
 
 module "redis" {
-  source = "../../modules/redis"
+  source         = "../../modules/redis"
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  vpc_id                 = module.networking.vpc_id
+  private_vpc_connection = module.networking.private_vpc_connection
 
-  vpc_id = module.networking.vpc_id
-
-  # Production sizing - high availability
-  cache_memory_size_gb   = 10
-  session_memory_size_gb = 5
-  enable_pubsub_instance = true
-  pubsub_memory_size_gb  = 5
-  tier                   = "STANDARD_HA"
-
-  # Redis persistence for production
-  persistence_config = {
-    persistence_mode    = "RDB"
-    rdb_snapshot_period = "ONE_HOUR"
-  }
+  # Staging sizing
+  cache_memory_size_gb   = 2
+  session_memory_size_gb = 2
+  enable_pubsub_redis    = true
+  pubsub_memory_size_gb  = 1
 
   depends_on = [module.networking]
 }
+
 
 # -----------------------------------------------------------------------------
 # Storage Module
@@ -163,15 +168,15 @@ module "storage" {
   region      = local.region
   environment = local.environment
 
-  cors_origins = var.cors_origins
+  #  cors_origins = var.cors_origins
 
   # Object versioning for production
-  enable_versioning = true
+  #  enable_versioning = true
 
   # Longer retention for backups
-  backup_retention_days = 365
+  #  backup_retention_days = 365
 
-  create_terraform_state_bucket = false
+  #  create_terraform_state_bucket = false
 }
 
 # -----------------------------------------------------------------------------
@@ -216,7 +221,7 @@ module "monitoring" {
   slack_channel     = "#aivo-production-alerts"
   api_domain        = "api.aivo.io"
   web_domain        = "app.aivo.io"
-  audit_log_bucket  = module.storage.backup_bucket_name
+  audit_log_bucket  = module.storage.backups_bucket_name
   k8s_namespace     = "aivo"
 
   cloudsql_max_connections = 500

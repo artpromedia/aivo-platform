@@ -14,9 +14,10 @@ terraform {
 # -----------------------------------------------------------------------------
 
 locals {
-  environment = "staging"
-  project_id  = var.project_id
-  region      = var.region
+  environment    = "staging"
+  project_id     = var.project_id
+  region         = var.region
+  project_prefix = "aivo"
 }
 
 # -----------------------------------------------------------------------------
@@ -26,16 +27,16 @@ locals {
 module "networking" {
   source = "../../modules/networking"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  vpc_cidr_range      = "10.10.0.0/16"
-  pods_cidr_range     = "10.110.0.0/14"
-  services_cidr_range = "10.114.0.0/20"
-  master_cidr_range   = "10.115.0.0/28"
+  main_cidr     = "10.10.0.0/16"
+  pods_cidr     = "10.108.0.0/14"
+  services_cidr = "10.112.0.0/20"
+  master_cidr   = "10.115.0.0/28"
 }
-
 # -----------------------------------------------------------------------------
 # GKE Module
 # -----------------------------------------------------------------------------
@@ -43,37 +44,40 @@ module "networking" {
 module "gke" {
   source = "../../modules/gke"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
+
+  # Zonas (staging en us-central1-c, prod podría usar varias)
+  node_zones = ["us-central1-c"]
 
   vpc_id                        = module.networking.vpc_id
   subnet_id                     = module.networking.subnet_id
   pods_secondary_range_name     = module.networking.pods_secondary_range_name
   services_secondary_range_name = module.networking.services_secondary_range_name
-  master_ipv4_cidr_block        = "10.115.0.0/28"
 
-  # Staging sizing - mirrors production structure at smaller scale
-  app_pool_min_count = 2
-  app_pool_max_count = 5
-  app_machine_type   = "e2-standard-4"
+  master_cidr            = "10.115.0.0/28"
+  private_vpc_connection = module.networking.private_vpc_connection
 
-  system_pool_min_count = 1
-  system_pool_max_count = 3
-  system_machine_type   = "e2-standard-2"
+  # Service Account (debe venir del módulo IAM)
+  gke_service_account_email = module.iam.gke_nodes_service_account_email
+  # App pool (staging)
+  app_machine_type = "e2-standard-4"
+  app_node_count   = 2
+  app_min_nodes    = 2
+  app_max_nodes    = 5
+  app_disk_size    = 50
 
-  # Limited GPU for testing
-  enable_gpu_pool     = true
-  gpu_pool_min_count  = 0
-  gpu_pool_max_count  = 1
-  gpu_machine_type    = "n1-standard-4"
-  gpu_type            = "nvidia-tesla-t4"
-  gpu_count           = 1
-  spot_instances      = true
+  # GPU pool (si lo quieres en staging)
+  enable_gpu_pool = true
+  ai_machine_type = "n1-standard-4"
+  ai_max_nodes    = 1
+  gpu_type        = "nvidia-tesla-t4"
+  gpu_count       = 1
 
-  depends_on = [module.networking]
+  depends_on = [module.networking, module.iam]
 }
-
 # -----------------------------------------------------------------------------
 # Cloud SQL Module
 # -----------------------------------------------------------------------------
@@ -81,27 +85,32 @@ module "gke" {
 module "cloudsql" {
   source = "../../modules/cloudsql"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  vpc_id                     = module.networking.vpc_id
-  private_service_connection = module.networking.private_service_connection
+  vpc_id                 = module.networking.vpc_id
+  private_vpc_connection = module.networking.private_vpc_connection
 
   # Staging sizing - moderate
-  db_tier             = "db-custom-4-8192"
-  db_disk_size        = 100
-  availability_type   = "REGIONAL"
-  enable_read_replica = true
-  read_replica_count  = 1
+  db_tier            = "db-custom-4-8192"
+  disk_size          = 100
+  read_replica_count = 1
 
-  database_flags = {
-    max_connections = 250
-  }
+  # Opcional: si el módulo soporta réplicas separadas por tier, define esto
+  # replica_tier = "db-custom-2-4096"
+
+  # Opcional: si quieres restringir redes autorizadas (si el módulo crea IP pública)
+  # authorized_networks = [
+  #   { name = "office", value = "X.X.X.X/32" }
+  # ]
+
+  # Opcional: si el módulo crea DBs por lista/mapa (depende de cómo esté definida)
+  # service_databases = ["odoo", "n8n"]
 
   depends_on = [module.networking]
 }
-
 # -----------------------------------------------------------------------------
 # Redis Module
 # -----------------------------------------------------------------------------
@@ -109,22 +118,21 @@ module "cloudsql" {
 module "redis" {
   source = "../../modules/redis"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  vpc_id = module.networking.vpc_id
+  vpc_id                 = module.networking.vpc_id
+  private_vpc_connection = module.networking.private_vpc_connection
 
   # Staging sizing
   cache_memory_size_gb   = 2
   session_memory_size_gb = 2
-  enable_pubsub_instance = true
+  enable_pubsub_redis    = true
   pubsub_memory_size_gb  = 1
-  tier                   = "STANDARD_HA"
 
   depends_on = [module.networking]
 }
-
 # -----------------------------------------------------------------------------
 # Storage Module
 # -----------------------------------------------------------------------------
@@ -132,13 +140,13 @@ module "redis" {
 module "storage" {
   source = "../../modules/storage"
 
-  project_id  = local.project_id
-  region      = local.region
-  environment = local.environment
+  project_id     = local.project_id
+  project_prefix = local.project_prefix
+  region         = local.region
+  environment    = local.environment
 
-  cors_origins = var.cors_origins
-
-  create_terraform_state_bucket = false
+  allowed_origins     = var.cors_origins
+  create_state_bucket = false
 }
 
 # -----------------------------------------------------------------------------
@@ -178,13 +186,13 @@ module "monitoring" {
   project_id  = local.project_id
   environment = local.environment
 
-  alert_email      = var.alert_email
+  alert_email       = var.alert_email
   slack_webhook_url = var.slack_webhook_url
-  slack_channel    = "#aivo-staging-alerts"
-  api_domain       = "api.staging.aivo.io"
-  web_domain       = "staging.aivo.io"
-  audit_log_bucket = module.storage.backup_bucket_name
-  k8s_namespace    = "aivo-staging"
+  slack_channel     = "#aivo-staging-alerts"
+  api_domain        = "api.staging.aivo.io"
+  web_domain        = "staging.aivo.io"
+  audit_log_bucket  = module.storage.backups_bucket_name
+  k8s_namespace     = "aivo-staging"
 
   cloudsql_max_connections = 250
 
