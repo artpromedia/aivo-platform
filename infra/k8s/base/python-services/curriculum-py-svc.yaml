@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curriculum-py-svc
+  namespace: aivo-prod
+  labels:
+    app: curriculum-py-svc
+    tier: python-light
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: curriculum-py-svc
+  template:
+    metadata:
+      labels:
+        app: curriculum-py-svc
+        tier: python-light
+    spec:
+      containers:
+        - name: curriculum-py-svc
+          image: aivo/curriculum-py-svc
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: python-ai-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: python-ai-secrets
+                  key: curriculum-database-url
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: curriculum-py-svc
+  namespace: aivo-prod
+spec:
+  selector:
+    app: curriculum-py-svc
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -93,7 +93,19 @@ jobs:
             parent-svc baseline-svc
           )
 
-          for svc in "${SERVICES[@]}"; do
+          PY_SERVICES=(
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+          )
+
+          ALL_SERVICES=("${SERVICES[@]}" "${PY_SERVICES[@]}")
+
+          for svc in "${ALL_SERVICES[@]}"; do
             IMAGE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}"
             echo -n "Checking ${svc}... "
 
@@ -114,7 +126,7 @@ jobs:
           fi
 
           echo ""
-          echo "✅ All 18 images verified for ${VERSION}"
+          echo "✅ All 38 images verified for ${VERSION}"
 
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 2: Manual Approval Gate
@@ -307,8 +319,20 @@ jobs:
               parent-svc baseline-svc
             )
 
+            PY_SERVICES=(
+              ai-inference-svc training-svc ml-recommendation-svc
+              brain-engine python-api-gateway vision-analysis-svc
+              speech-analysis-svc accessibility-ai-svc question-generation-svc
+              writing-assessment-svc content-intelligence-svc cognitive-load-svc
+              knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+              specialized-support-svc rl-tutoring-svc peer-learning-svc
+              curriculum-py-svc grading-engine
+            )
+
+            ALL_SERVICES=("${SERVICES[@]}" "${PY_SERVICES[@]}")
+
             # Update all image tags
-            for svc in "${SERVICES[@]}"; do
+            for svc in "${ALL_SERVICES[@]}"; do
               echo "  Image: aivo-${svc}:${VERSION}"
               kustomize edit set image \
                 "aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}"

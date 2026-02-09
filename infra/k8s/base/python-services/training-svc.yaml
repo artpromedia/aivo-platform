@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-svc
+  namespace: aivo-prod
+  labels:
+    app: training-svc
+    tier: python-heavy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-svc
+  template:
+    metadata:
+      labels:
+        app: training-svc
+        tier: python-heavy
+    spec:
+      containers:
+        - name: training-svc
+          image: aivo/training-svc
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: python-ai-secrets
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: python-ai-secrets
+                  key: training-database-url
+            - name: DEVICE
+              value: "cpu"
+            - name: LORA_DEVICE
+              value: "cpu"
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: 6Gi
+            limits:
+              cpu: "4000m"
+              memory: 8Gi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/training/health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v1/training/health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: model-cache
+              mountPath: /app/models
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-svc
+  namespace: aivo-prod
+spec:
+  selector:
+    app: training-svc
+  ports:
+    - port: 8000
+      targetPort: 8000

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accessibility-ai-svc
+  namespace: aivo-prod
+  labels:
+    app: accessibility-ai-svc
+    tier: python-heavy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: accessibility-ai-svc
+  template:
+    metadata:
+      labels:
+        app: accessibility-ai-svc
+        tier: python-heavy
+    spec:
+      containers:
+        - name: accessibility-ai-svc
+          image: aivo/accessibility-ai-svc
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: python-ai-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2000m"
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: model-cache
+              mountPath: /app/models
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: accessibility-ai-svc
+  namespace: aivo-prod
+spec:
+  selector:
+    app: accessibility-ai-svc
+  ports:
+    - port: 8000
+      targetPort: 8000

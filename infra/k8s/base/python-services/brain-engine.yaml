@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: brain-engine
+  namespace: aivo-prod
+  labels:
+    app: brain-engine
+    tier: python-light
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: brain-engine
+  template:
+    metadata:
+      labels:
+        app: brain-engine
+        tier: python-light
+    spec:
+      containers:
+        - name: brain-engine
+          image: aivo/brain-engine
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: python-ai-secrets
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: brain-engine
+  namespace: aivo-prod
+spec:
+  selector:
+    app: brain-engine
+  ports:
+    - port: 8080
+      targetPort: 8080

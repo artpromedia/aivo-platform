@@ -46,3 +46,28 @@ resources:
   # Parent portal
   - parent-svc.yaml
   - baseline-svc.yaml
+
+  # ── Python AI/ML Services ──────────────────────────────────────────────────
+  # 🔴 Heavy (large model loading — pin to i9-9900K via nodeSelector)
+  - python-services/training-svc.yaml
+  - python-services/vision-analysis-svc.yaml
+  - python-services/accessibility-ai-svc.yaml
+  - python-services/question-generation-svc.yaml
+  # 🟡 Medium (smaller models — scikit-learn, sentence-transformers)
+  - python-services/ml-recommendation-svc.yaml
+  - python-services/speech-analysis-svc.yaml
+  - python-services/writing-assessment-svc.yaml
+  - python-services/content-intelligence-svc.yaml
+  - python-services/knowledge-graph-svc.yaml
+  - python-services/multimodal-analytics-svc.yaml
+  - python-services/document-intelligence-svc.yaml
+  - python-services/peer-learning-svc.yaml
+  - python-services/grading-engine.yaml
+  # 🟢 Light (API proxies, math-only, minimal resources)
+  - python-services/ai-inference-svc.yaml
+  - python-services/brain-engine.yaml
+  - python-services/python-api-gateway.yaml
+  - python-services/specialized-support-svc.yaml
+  - python-services/rl-tutoring-svc.yaml
+  - python-services/cognitive-load-svc.yaml
+  - python-services/curriculum-py-svc.yaml

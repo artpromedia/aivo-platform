@@ -77,6 +77,68 @@ images:
     newName: ghcr.io/artpromedia/aivo-baseline-svc
     newTag: latest
 
+  # ── Python AI/ML Services ──
+  - name: aivo/ai-inference-svc
+    newName: ghcr.io/artpromedia/aivo-ai-inference-svc
+    newTag: latest
+  - name: aivo/training-svc
+    newName: ghcr.io/artpromedia/aivo-training-svc
+    newTag: latest
+  - name: aivo/ml-recommendation-svc
+    newName: ghcr.io/artpromedia/aivo-ml-recommendation-svc
+    newTag: latest
+  - name: aivo/brain-engine
+    newName: ghcr.io/artpromedia/aivo-brain-engine
+    newTag: latest
+  - name: aivo/python-api-gateway
+    newName: ghcr.io/artpromedia/aivo-python-api-gateway
+    newTag: latest
+  - name: aivo/vision-analysis-svc
+    newName: ghcr.io/artpromedia/aivo-vision-analysis-svc
+    newTag: latest
+  - name: aivo/speech-analysis-svc
+    newName: ghcr.io/artpromedia/aivo-speech-analysis-svc
+    newTag: latest
+  - name: aivo/accessibility-ai-svc
+    newName: ghcr.io/artpromedia/aivo-accessibility-ai-svc
+    newTag: latest
+  - name: aivo/question-generation-svc
+    newName: ghcr.io/artpromedia/aivo-question-generation-svc
+    newTag: latest
+  - name: aivo/writing-assessment-svc
+    newName: ghcr.io/artpromedia/aivo-writing-assessment-svc
+    newTag: latest
+  - name: aivo/content-intelligence-svc
+    newName: ghcr.io/artpromedia/aivo-content-intelligence-svc
+    newTag: latest
+  - name: aivo/cognitive-load-svc
+    newName: ghcr.io/artpromedia/aivo-cognitive-load-svc
+    newTag: latest
+  - name: aivo/knowledge-graph-svc
+    newName: ghcr.io/artpromedia/aivo-knowledge-graph-svc
+    newTag: latest
+  - name: aivo/multimodal-analytics-svc
+    newName: ghcr.io/artpromedia/aivo-multimodal-analytics-svc
+    newTag: latest
+  - name: aivo/document-intelligence-svc
+    newName: ghcr.io/artpromedia/aivo-document-intelligence-svc
+    newTag: latest
+  - name: aivo/specialized-support-svc
+    newName: ghcr.io/artpromedia/aivo-specialized-support-svc
+    newTag: latest
+  - name: aivo/rl-tutoring-svc
+    newName: ghcr.io/artpromedia/aivo-rl-tutoring-svc
+    newTag: latest
+  - name: aivo/peer-learning-svc
+    newName: ghcr.io/artpromedia/aivo-peer-learning-svc
+    newTag: latest
+  - name: aivo/curriculum-py-svc
+    newName: ghcr.io/artpromedia/aivo-curriculum-py-svc
+    newTag: latest
+  - name: aivo/grading-engine
+    newName: ghcr.io/artpromedia/aivo-grading-engine
+    newTag: latest
+
 patches:
   # NODE_ENV=staging
   - target:

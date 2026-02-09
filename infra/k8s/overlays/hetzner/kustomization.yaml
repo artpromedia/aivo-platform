@@ -91,6 +91,71 @@ images:
     newName: ghcr.io/artpromedia/aivo-baseline-svc
     newTag: latest
 
+  # ── Python AI/ML Services ──────────────────────────────────────────────────
+  # 🔴 Heavy (large model loading)
+  - name: aivo/training-svc
+    newName: ghcr.io/artpromedia/aivo-training-svc
+    newTag: latest
+  - name: aivo/vision-analysis-svc
+    newName: ghcr.io/artpromedia/aivo-vision-analysis-svc
+    newTag: latest
+  - name: aivo/accessibility-ai-svc
+    newName: ghcr.io/artpromedia/aivo-accessibility-ai-svc
+    newTag: latest
+  - name: aivo/question-generation-svc
+    newName: ghcr.io/artpromedia/aivo-question-generation-svc
+    newTag: latest
+  # 🟡 Medium (smaller models)
+  - name: aivo/ml-recommendation-svc
+    newName: ghcr.io/artpromedia/aivo-ml-recommendation-svc
+    newTag: latest
+  - name: aivo/speech-analysis-svc
+    newName: ghcr.io/artpromedia/aivo-speech-analysis-svc
+    newTag: latest
+  - name: aivo/writing-assessment-svc
+    newName: ghcr.io/artpromedia/aivo-writing-assessment-svc
+    newTag: latest
+  - name: aivo/content-intelligence-svc
+    newName: ghcr.io/artpromedia/aivo-content-intelligence-svc
+    newTag: latest
+  - name: aivo/knowledge-graph-svc
+    newName: ghcr.io/artpromedia/aivo-knowledge-graph-svc
+    newTag: latest
+  - name: aivo/multimodal-analytics-svc
+    newName: ghcr.io/artpromedia/aivo-multimodal-analytics-svc
+    newTag: latest
+  - name: aivo/document-intelligence-svc
+    newName: ghcr.io/artpromedia/aivo-document-intelligence-svc
+    newTag: latest
+  - name: aivo/peer-learning-svc
+    newName: ghcr.io/artpromedia/aivo-peer-learning-svc
+    newTag: latest
+  - name: aivo/grading-engine
+    newName: ghcr.io/artpromedia/aivo-grading-engine
+    newTag: latest
+  # 🟢 Light (API proxies, math only)
+  - name: aivo/ai-inference-svc
+    newName: ghcr.io/artpromedia/aivo-ai-inference-svc
+    newTag: latest
+  - name: aivo/brain-engine
+    newName: ghcr.io/artpromedia/aivo-brain-engine
+    newTag: latest
+  - name: aivo/python-api-gateway
+    newName: ghcr.io/artpromedia/aivo-python-api-gateway
+    newTag: latest
+  - name: aivo/specialized-support-svc
+    newName: ghcr.io/artpromedia/aivo-specialized-support-svc
+    newTag: latest
+  - name: aivo/rl-tutoring-svc
+    newName: ghcr.io/artpromedia/aivo-rl-tutoring-svc
+    newTag: latest
+  - name: aivo/cognitive-load-svc
+    newName: ghcr.io/artpromedia/aivo-cognitive-load-svc
+    newTag: latest
+  - name: aivo/curriculum-py-svc
+    newName: ghcr.io/artpromedia/aivo-curriculum-py-svc
+    newTag: latest
+
 patches:
   # ── ConfigMap: NODE_ENV=production ──
   - target:
@@ -175,7 +240,351 @@ patches:
         path: /spec/replicas
         value: 2
 
-  # ── Schedule app pods on app nodes only (not on database node) ──
+  # ══════════════════════════════════════════════════════════════════════════════
+  # Python AI/ML Services — Tiered Resource Allocation
+  # ══════════════════════════════════════════════════════════════════════════════
+  #
+  # 🔴 HEAVY: Load large models (PyTorch, transformers) — pin to i9-9900K
+  # 🟡 MEDIUM: Smaller models (scikit-learn, sentence-transformers)
+  # 🟢 LIGHT: API proxies and math-only services
+  #
+  # Total Python budget: ~5.5 CPU cores, ~23.5 Gi RAM (requests)
+  # Both app servers have 8+ cores and 128GB RAM — plenty of headroom.
+
+  # ── 🔴 HEAVY: training-svc (DKT LSTM + phi-2 LoRA fine-tuning ~5GB) ──────
+  - target:
+      kind: Deployment
+      name: training-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "1000m"
+            memory: "6Gi"
+          limits:
+            cpu: "4000m"
+            memory: "8Gi"
+  - target:
+      kind: Deployment
+      name: training-svc
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          aivo.ai/workload: ml-heavy
+
+  # ── 🔴 HEAVY: vision-analysis-svc (TrOCR + EasyOCR + MediaPipe) ──────────
+  - target:
+      kind: Deployment
+      name: vision-analysis-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "500m"
+            memory: "3Gi"
+          limits:
+            cpu: "2000m"
+            memory: "6Gi"
+  - target:
+      kind: Deployment
+      name: vision-analysis-svc
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          aivo.ai/workload: ml-heavy
+
+  # ── 🔴 HEAVY: accessibility-ai-svc (local Whisper + Coqui TTS) ───────────
+  - target:
+      kind: Deployment
+      name: accessibility-ai-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+  - target:
+      kind: Deployment
+      name: accessibility-ai-svc
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          aivo.ai/workload: ml-heavy
+
+  # ── 🔴 HEAVY: question-generation-svc (T5 + Bloom classifier) ────────────
+  - target:
+      kind: Deployment
+      name: question-generation-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+  - target:
+      kind: Deployment
+      name: question-generation-svc
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          aivo.ai/workload: ml-heavy
+
+  # ── 🟡 MEDIUM: speech-analysis-svc (CNN+BiLSTM PyTorch) ──────────────────
+  - target:
+      kind: Deployment
+      name: speech-analysis-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+
+  # ── 🟡 MEDIUM: writing-assessment-svc ─────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: writing-assessment-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+
+  # ── 🟡 MEDIUM: content-intelligence-svc ───────────────────────────────────
+  - target:
+      kind: Deployment
+      name: content-intelligence-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+
+  # ── 🟡 MEDIUM: knowledge-graph-svc ────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: knowledge-graph-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+
+  # ── 🟡 MEDIUM: multimodal-analytics-svc ───────────────────────────────────
+  - target:
+      kind: Deployment
+      name: multimodal-analytics-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+          limits:
+            cpu: "1500m"
+            memory: "3Gi"
+
+  # ── 🟡 MEDIUM: ml-recommendation-svc ──────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: ml-recommendation-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # ── 🟡 MEDIUM: document-intelligence-svc ──────────────────────────────────
+  - target:
+      kind: Deployment
+      name: document-intelligence-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # ── 🟡 MEDIUM: peer-learning-svc ──────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: peer-learning-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # ── 🟡 MEDIUM: grading-engine ─────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: grading-engine
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+
+  # ── 🟢 LIGHT: ai-inference-svc (external API proxy only) ─────────────────
+  - target:
+      kind: Deployment
+      name: ai-inference-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── 🟢 LIGHT: brain-engine (numpy/scipy math) ────────────────────────────
+  - target:
+      kind: Deployment
+      name: brain-engine
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── 🟢 LIGHT: python-api-gateway ─────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: python-api-gateway
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── 🟢 LIGHT: specialized-support-svc ────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: specialized-support-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── 🟢 LIGHT: rl-tutoring-svc ────────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: rl-tutoring-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── 🟢 LIGHT: cognitive-load-svc ─────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: cognitive-load-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+
+  # ── 🟢 LIGHT: curriculum-py-svc ──────────────────────────────────────────
+  - target:
+      kind: Deployment
+      name: curriculum-py-svc
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+  # ── Schedule TypeScript app pods on app/ml nodes (not database node) ──
+  # Python ML services already have nodeSelector targeting aivo-ml1
   - target:
       kind: Deployment
     patch: |-
@@ -190,6 +599,7 @@ patches:
                       operator: In
                       values:
                         - app
+                        - ml
 
 # Production config
 configMapGenerator:

@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: question-generation-svc
+  namespace: aivo-prod
+  labels:
+    app: question-generation-svc
+    tier: python-heavy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question-generation-svc
+  template:
+    metadata:
+      labels:
+        app: question-generation-svc
+        tier: python-heavy
+    spec:
+      containers:
+        - name: question-generation-svc
+          image: aivo/question-generation-svc
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: python-ai-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "2000m"
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: model-cache
+              mountPath: /app/models
+      volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: question-generation-svc
+  namespace: aivo-prod
+spec:
+  selector:
+    app: question-generation-svc
+  ports:
+    - port: 8000
+      targetPort: 8000

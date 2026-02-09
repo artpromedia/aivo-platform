@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Install system dependencies for audio processing (sorted alphabetically)
 RUN apt-get update && apt-get install -y \
+    curl \
     ffmpeg \
     libportaudio2 \
     libsndfile1 \
