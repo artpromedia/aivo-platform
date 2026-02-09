@@ -1,0 +1,142 @@
+# =============================================================================
+# AIVO Platform — Hetzner Staging Overlay
+# =============================================================================
+# Staging on K3s — runs on Server 3 (64GB) in aivo-staging namespace.
+# Minimal replicas, lower resource limits.
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: aivo-staging
+
+commonLabels:
+  environment: staging
+  platform: hetzner
+
+commonAnnotations:
+  deployment.kubernetes.io/environment: staging
+
+# ── Images: GHCR ──
+images:
+  - name: aivo/auth-svc
+    newName: ghcr.io/artpromedia/aivo-auth-svc
+    newTag: latest
+  - name: aivo/session-svc
+    newName: ghcr.io/artpromedia/aivo-session-svc
+    newTag: latest
+  - name: aivo/consent-svc
+    newName: ghcr.io/artpromedia/aivo-consent-svc
+    newTag: latest
+  - name: aivo/profile-svc
+    newName: ghcr.io/artpromedia/aivo-profile-svc
+    newTag: latest
+  - name: aivo/content-svc
+    newName: ghcr.io/artpromedia/aivo-content-svc
+    newTag: latest
+  - name: aivo/assessment-svc
+    newName: ghcr.io/artpromedia/aivo-assessment-svc
+    newTag: latest
+  - name: aivo/personalization-svc
+    newName: ghcr.io/artpromedia/aivo-personalization-svc
+    newTag: latest
+  - name: aivo/life-skills-svc
+    newName: ghcr.io/artpromedia/aivo-life-skills-svc
+    newTag: latest
+  - name: aivo/ai-orchestrator
+    newName: ghcr.io/artpromedia/aivo-ai-orchestrator
+    newTag: latest
+  - name: aivo/analytics-svc
+    newName: ghcr.io/artpromedia/aivo-analytics-svc
+    newTag: latest
+  - name: aivo/notify-svc
+    newName: ghcr.io/artpromedia/aivo-notify-svc
+    newTag: latest
+  - name: aivo/messaging-svc
+    newName: ghcr.io/artpromedia/aivo-messaging-svc
+    newTag: latest
+  - name: aivo/goal-svc
+    newName: ghcr.io/artpromedia/aivo-goal-svc
+    newTag: latest
+  - name: aivo/focus-svc
+    newName: ghcr.io/artpromedia/aivo-focus-svc
+    newTag: latest
+  - name: aivo/billing-svc
+    newName: ghcr.io/artpromedia/aivo-billing-svc
+    newTag: latest
+  - name: aivo/payments-svc
+    newName: ghcr.io/artpromedia/aivo-payments-svc
+    newTag: latest
+  - name: aivo/parent-svc
+    newName: ghcr.io/artpromedia/aivo-parent-svc
+    newTag: latest
+  - name: aivo/baseline-svc
+    newName: ghcr.io/artpromedia/aivo-baseline-svc
+    newTag: latest
+
+patches:
+  # NODE_ENV=staging
+  - target:
+      kind: ConfigMap
+    patch: |-
+      - op: replace
+        path: /data/NODE_ENV
+        value: "staging"
+
+  # GHCR pull secret
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ghcr-pull-secret
+
+  # All services: 1 replica for staging
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+
+  # Low resource limits (staging fits on Server 3 — 64GB)
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "25m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "64Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "250m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "256Mi"
+
+  # AI Orchestrator needs more memory even in staging
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"
+
+  # Pin staging pods to Server 3
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value:
+          kubernetes.io/hostname: aivo-app2

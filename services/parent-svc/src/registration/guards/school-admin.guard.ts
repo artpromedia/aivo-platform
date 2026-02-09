@@ -5,6 +5,7 @@
  * with access to the specified school.
  */
 
+import { logger } from '@aivo/ts-observability';
 import {
   Injectable,
   CanActivate,
@@ -12,9 +13,9 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { verify } from 'jsonwebtoken';
-import { logger } from '@aivo/ts-observability';
+
 import { config } from '../../config.js';
 
 interface JwtPayload {
@@ -122,13 +123,11 @@ export class SchoolAdminPermissionGuard implements CanActivate {
     }
 
     // Check specific permission
-    if (user.permissions && user.permissions.includes(this.requiredPermission)) {
+    if (user.permissions?.includes(this.requiredPermission)) {
       return true;
     }
 
-    throw new ForbiddenException(
-      `Missing required permission: ${this.requiredPermission}`,
-    );
+    throw new ForbiddenException(`Missing required permission: ${this.requiredPermission}`);
   }
 }
 

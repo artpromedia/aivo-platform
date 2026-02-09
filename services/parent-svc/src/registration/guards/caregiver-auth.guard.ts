@@ -5,6 +5,7 @@
  * Attaches caregiver info to the request object.
  */
 
+import { logger } from '@aivo/ts-observability';
 import {
   Injectable,
   CanActivate,
@@ -12,11 +13,11 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { verify } from 'jsonwebtoken';
-import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../../prisma/prisma.service.js';
+
 import { config } from '../../config.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 interface JwtPayload {
   sub: string;

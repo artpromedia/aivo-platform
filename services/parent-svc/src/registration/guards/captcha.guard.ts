@@ -5,14 +5,10 @@
  * Supports Google reCAPTCHA v2 and v3.
  */
 
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  BadRequestException,
-} from '@nestjs/common';
-import { Request } from 'express';
 import { logger } from '@aivo/ts-observability';
+import { Injectable, CanActivate, ExecutionContext, BadRequestException } from '@nestjs/common';
+import type { Request } from 'express';
+
 import { config } from '../../config.js';
 
 interface RecaptchaResponse {

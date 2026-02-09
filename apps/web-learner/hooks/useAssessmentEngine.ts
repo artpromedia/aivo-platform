@@ -99,18 +99,15 @@ export interface AssessmentState {
 /**
  * Helper to track assessment service errors for monitoring
  */
-function trackAssessmentError(
-  reason: string,
-  details: Record<string, unknown>
-): void {
+function trackAssessmentError(reason: string, details: Record<string, unknown>): void {
   // Log error for monitoring
   console.error('[Assessment] Service error:', { reason, ...details });
 
   // Report to analytics if available
-  if (typeof window !== 'undefined' && (window as Record<string, unknown>).analytics) {
+  if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).analytics) {
     try {
       (
-        (window as Record<string, unknown>).analytics as {
+        (window as unknown as Record<string, unknown>).analytics as {
           track: (event: string, data: Record<string, unknown>) => void;
         }
       ).track('assessment_service_error', {
@@ -182,7 +179,8 @@ export function useAssessmentEngine() {
         setAssessmentState((prev) => ({
           ...prev,
           isLoading: false,
-          error: 'Unable to connect to assessment service. Please check your connection and try again.',
+          error:
+            'Unable to connect to assessment service. Please check your connection and try again.',
         }));
 
         throw error;
@@ -194,7 +192,7 @@ export function useAssessmentEngine() {
   const getNextQuestion = useCallback(
     async (sessionId: string): Promise<AssessmentQuestion | null> => {
       const { session } = assessmentState;
-      if (!session || session.id !== sessionId) return null;
+      if (session?.id !== sessionId) return null;
 
       const nextIndex = session.currentQuestionIndex + 1;
       if (nextIndex >= session.questions.length) {
@@ -205,9 +203,7 @@ export function useAssessmentEngine() {
 
       setAssessmentState((prev) => ({
         ...prev,
-        session: prev.session
-          ? { ...prev.session, currentQuestionIndex: nextIndex }
-          : null,
+        session: prev.session ? { ...prev.session, currentQuestionIndex: nextIndex } : null,
         currentQuestion: nextQuestion,
       }));
 
@@ -223,7 +219,7 @@ export function useAssessmentEngine() {
       answer: number | string | null
     ): Promise<{ correct: boolean; explanation?: string }> => {
       const { session } = assessmentState;
-      if (!session || session.id !== sessionId) {
+      if (session?.id !== sessionId) {
         return { correct: false };
       }
 
@@ -290,7 +286,7 @@ export function useAssessmentEngine() {
   const completeAssessment = useCallback(
     async (sessionId: string): Promise<AssessmentResult> => {
       const { session } = assessmentState;
-      if (!session || session.id !== sessionId) {
+      if (session?.id !== sessionId) {
         throw new Error('Invalid session');
       }
 
@@ -322,9 +318,7 @@ export function useAssessmentEngine() {
         const result = await response.json();
         setAssessmentState((prev) => ({
           ...prev,
-          session: prev.session
-            ? { ...prev.session, status: 'completed' }
-            : null,
+          session: prev.session ? { ...prev.session, status: 'completed' } : null,
           result,
           isLoading: false,
           error: null,

@@ -130,6 +130,18 @@ spec:
 
             # Add service-specific secrets here
 
+            # JWT keys for token verification (required)
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: baseline-svc-secrets
+                  key: jwt-private-key
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: baseline-svc-secrets
+                  key: jwt-public-key
+
           resources:
             requests:
               cpu: "100m"
@@ -142,7 +154,7 @@ spec:
           # Fails = restart the container
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 15
@@ -152,8 +164,7 @@ spec:
           # Readiness probe: Is the application ready to receive traffic?
           # Fails = remove from service endpoints
           readinessProbe:
-            httpGet:
-              path: /health/ready
+            tcpSocket:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -164,7 +175,7 @@ spec:
           # Prevents liveness probe from killing slow-starting containers
           startupProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5

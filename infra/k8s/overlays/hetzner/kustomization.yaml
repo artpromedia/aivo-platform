@@ -1,0 +1,202 @@
+# =============================================================================
+# AIVO Platform — Hetzner Production Overlay
+# =============================================================================
+# Kustomize overlay for Hetzner K3s deployment (3 bare-metal servers).
+# Images come from GHCR (ghcr.io/artpromedia/aivo-*) instead of GCR.
+# Database runs on Server 1 (10.0.0.1) — not in-cluster.
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - ingress.yaml
+
+namespace: aivo-prod
+
+commonLabels:
+  environment: production
+  platform: hetzner
+  app.kubernetes.io/environment: production
+
+commonAnnotations:
+  deployment.kubernetes.io/environment: production
+  deployment.kubernetes.io/platform: hetzner
+  prometheus.io/scrape: "true"
+
+# ── Images: GHCR instead of GCR ──
+# Tags are set dynamically by CI/CD:
+#   kustomize edit set image aivo/<svc>=ghcr.io/artpromedia/aivo-<svc>:<tag>
+images:
+  # Authentication & User Management
+  - name: aivo/auth-svc
+    newName: ghcr.io/artpromedia/aivo-auth-svc
+    newTag: latest
+  - name: aivo/session-svc
+    newName: ghcr.io/artpromedia/aivo-session-svc
+    newTag: latest
+  - name: aivo/consent-svc
+    newName: ghcr.io/artpromedia/aivo-consent-svc
+    newTag: latest
+  - name: aivo/profile-svc
+    newName: ghcr.io/artpromedia/aivo-profile-svc
+    newTag: latest
+  # Content & Learning
+  - name: aivo/content-svc
+    newName: ghcr.io/artpromedia/aivo-content-svc
+    newTag: latest
+  - name: aivo/assessment-svc
+    newName: ghcr.io/artpromedia/aivo-assessment-svc
+    newTag: latest
+  - name: aivo/personalization-svc
+    newName: ghcr.io/artpromedia/aivo-personalization-svc
+    newTag: latest
+  - name: aivo/life-skills-svc
+    newName: ghcr.io/artpromedia/aivo-life-skills-svc
+    newTag: latest
+  # AI & Analytics
+  - name: aivo/ai-orchestrator
+    newName: ghcr.io/artpromedia/aivo-ai-orchestrator
+    newTag: latest
+  - name: aivo/analytics-svc
+    newName: ghcr.io/artpromedia/aivo-analytics-svc
+    newTag: latest
+  # Communication
+  - name: aivo/notify-svc
+    newName: ghcr.io/artpromedia/aivo-notify-svc
+    newTag: latest
+  - name: aivo/messaging-svc
+    newName: ghcr.io/artpromedia/aivo-messaging-svc
+    newTag: latest
+  # Goal & Focus
+  - name: aivo/goal-svc
+    newName: ghcr.io/artpromedia/aivo-goal-svc
+    newTag: latest
+  - name: aivo/focus-svc
+    newName: ghcr.io/artpromedia/aivo-focus-svc
+    newTag: latest
+  # Billing & Payments
+  - name: aivo/billing-svc
+    newName: ghcr.io/artpromedia/aivo-billing-svc
+    newTag: latest
+  - name: aivo/payments-svc
+    newName: ghcr.io/artpromedia/aivo-payments-svc
+    newTag: latest
+  # Parent Portal
+  - name: aivo/parent-svc
+    newName: ghcr.io/artpromedia/aivo-parent-svc
+    newTag: latest
+  - name: aivo/baseline-svc
+    newName: ghcr.io/artpromedia/aivo-baseline-svc
+    newTag: latest
+
+patches:
+  # ── ConfigMap: NODE_ENV=production ──
+  - target:
+      kind: ConfigMap
+    patch: |-
+      - op: replace
+        path: /data/NODE_ENV
+        value: "production"
+
+  # ── All services: imagePullSecrets for GHCR ──
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ghcr-pull-secret
+
+  # ── Resource limits (right-sized for i7-8700 servers) ──
+  # Default: conservative for most services
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "50m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "128Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+
+  # ── AI Orchestrator: more resources (handles LLM response streaming) ──
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "200m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
+
+  # ── Replica counts ──
+  - target:
+      kind: Deployment
+      name: auth-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: content-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: session-svc
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # ── Schedule app pods on app nodes only (not on database node) ──
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/affinity
+        value:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: role
+                      operator: In
+                      values:
+                        - app
+
+# Production config
+configMapGenerator:
+  - name: hetzner-production-config
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      - ENABLE_METRICS=true
+      - ENABLE_TRACING=true

@@ -11,8 +11,8 @@
 
 import { logger, metrics } from '@aivo/ts-observability';
 
-import { redisClient } from '../config';
-import { prisma } from '../prisma';
+import { redisClient } from '../config.js';
+import { prisma } from '../prisma.js';
 
 // =====================
 // Type Definitions
@@ -416,9 +416,18 @@ export async function getSkillMasteryMatrix(
   });
 
   // Extract unique skills from skill breakdowns
-  const skillsSet = new Map<string, { skillId: string; skillName: string; domain: string; standardId?: string }>();
+  const skillsSet = new Map<
+    string,
+    { skillId: string; skillName: string; domain: string; standardId?: string }
+  >();
   for (const snapshot of latestSnapshots) {
-    const skillBreakdown = snapshot.skillBreakdown as { skillId: string; skillName: string; domain: string; standardId?: string; mastery: number }[];
+    const skillBreakdown = snapshot.skillBreakdown as {
+      skillId: string;
+      skillName: string;
+      domain: string;
+      standardId?: string;
+      mastery: number;
+    }[];
     if (Array.isArray(skillBreakdown)) {
       for (const skill of skillBreakdown) {
         if (!domainFilter || skill.domain === domainFilter) {
@@ -446,7 +455,12 @@ export async function getSkillMasteryMatrix(
     > = {};
 
     if (snapshot && Array.isArray(snapshot.skillBreakdown)) {
-      const skillBreakdown = (snapshot.skillBreakdown as unknown) as { skillId: string; mastery: number; trend?: string; attempts?: number }[];
+      const skillBreakdown = snapshot.skillBreakdown as unknown as {
+        skillId: string;
+        mastery: number;
+        trend?: string;
+        attempts?: number;
+      }[];
       for (const skillData of skillBreakdown) {
         if (skills.some((s) => s.skillId === skillData.skillId)) {
           masteryBySkill[skillData.skillId] = {
@@ -670,7 +684,12 @@ export async function getIEPProgressReport(classId: string, teacherId: string) {
         targetDate: g.targetDate,
         currentProgress: g.currentProgress,
         expectedProgress: g.expectedProgress,
-        status: g.status.toLowerCase().replace('_', '-') as 'on-track' | 'behind' | 'at-risk' | 'completed' | 'discontinued',
+        status: g.status.toLowerCase().replace('_', '-') as
+          | 'on-track'
+          | 'behind'
+          | 'at-risk'
+          | 'completed'
+          | 'discontinued',
         recentProgress: g.progressRecords.map((p) => ({
           date: p.recordedAt,
           value: p.progressValue,
@@ -679,10 +698,11 @@ export async function getIEPProgressReport(classId: string, teacherId: string) {
         relatedSkill: g.relatedSkillName,
       }));
 
-      const goalsAtRisk = goals.filter((g) => g.status === 'at-risk' || g.status === 'behind').length;
-      const avgProgress = goals.length > 0
-        ? goals.reduce((sum, g) => sum + g.currentProgress, 0) / goals.length
-        : 0;
+      const goalsAtRisk = goals.filter(
+        (g) => g.status === 'at-risk' || g.status === 'behind'
+      ).length;
+      const avgProgress =
+        goals.length > 0 ? goals.reduce((sum, g) => sum + g.currentProgress, 0) / goals.length : 0;
 
       return {
         studentId: e.student.id,
@@ -700,7 +720,8 @@ export async function getIEPProgressReport(classId: string, teacherId: string) {
 
   const totalGoals = studentsWithIEP.reduce((sum, s) => sum + s.goals.length, 0);
   const goalsOnTrack = studentsWithIEP.reduce(
-    (sum, s) => sum + s.goals.filter((g) => g.status === 'on-track' || g.status === 'completed').length,
+    (sum, s) =>
+      sum + s.goals.filter((g) => g.status === 'on-track' || g.status === 'completed').length,
     0
   );
   const goalsAtRiskTotal = studentsWithIEP.reduce((sum, s) => sum + s.goalsAtRisk, 0);
@@ -809,7 +830,12 @@ export async function getStudentAnalytics(
   }
 
   // Extract skill mastery from snapshot
-  const skillBreakdown = (latestSnapshot?.skillBreakdown ?? []) as { skillId: string; skillName: string; mastery: number; trend?: string }[];
+  const skillBreakdown = (latestSnapshot?.skillBreakdown ?? []) as {
+    skillId: string;
+    skillName: string;
+    mastery: number;
+    trend?: string;
+  }[];
   const strengthAreas = skillBreakdown.filter((s) => s.mastery >= 0.8).map((s) => s.skillName);
   const growthAreas = skillBreakdown.filter((s) => s.mastery < 0.5).map((s) => s.skillName);
 
@@ -817,11 +843,14 @@ export async function getStudentAnalytics(
   const completedSessions = student.sessions.filter((s) => s.status === 'completed');
   const totalLearningTime = completedSessions.reduce((sum, s) => {
     if (s.endTime) {
-      return sum + Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000);
+      return (
+        sum + Math.round((new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 60000)
+      );
     }
     return sum;
   }, 0);
-  const avgSessionLength = completedSessions.length > 0 ? totalLearningTime / completedSessions.length : 0;
+  const avgSessionLength =
+    completedSessions.length > 0 ? totalLearningTime / completedSessions.length : 0;
 
   return {
     studentId,
@@ -831,7 +860,11 @@ export async function getStudentAnalytics(
     masteryTrend,
     engagementLevel,
     riskLevel,
-    riskFactors: (latestSnapshot?.riskFactors ?? []) as { factor: string; severity: number; description: string }[],
+    riskFactors: (latestSnapshot?.riskFactors ?? []) as {
+      factor: string;
+      severity: number;
+      description: string;
+    }[],
     totalLearningTime,
     averageSessionLength: Math.round(avgSessionLength),
     sessionsCompleted: completedSessions.length,
@@ -851,13 +884,14 @@ export async function getStudentAnalytics(
       hintUsageRate: 0, // Would need to query session events
       correctFirstAttemptRate: 0, // Would need to query session events
     },
-    iepProgress: iepGoals.length > 0
-      ? {
-          goalsCount: iepGoals.length,
-          onTrack: iepGoals.filter((g) => g.status === 'ON_TRACK').length,
-          atRisk: iepGoals.filter((g) => g.status === 'AT_RISK' || g.status === 'BEHIND').length,
-        }
-      : undefined,
+    iepProgress:
+      iepGoals.length > 0
+        ? {
+            goalsCount: iepGoals.length,
+            onTrack: iepGoals.filter((g) => g.status === 'ON_TRACK').length,
+            atRisk: iepGoals.filter((g) => g.status === 'AT_RISK' || g.status === 'BEHIND').length,
+          }
+        : undefined,
     activeAccommodations: accommodations.map((a) => ({
       type: a.accommodationType,
       description: a.description,
@@ -937,7 +971,9 @@ export async function getEngagementAnalytics(
 
   const avgTimeOnTask = completedSessions.length > 0 ? totalDuration / completedSessions.length : 0;
   const completionRate = allSessions.length > 0 ? completedSessions.length / allSessions.length : 0;
-  const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const daysInPeriod = Math.ceil(
+    (endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
+  );
   const avgSessionsPerWeek = daysInPeriod > 0 ? allSessions.length / daysInPeriod : 0;
 
   // Calculate engagement distribution from snapshots
@@ -951,7 +987,8 @@ export async function getEngagementAnalytics(
 
   for (const student of students) {
     const engagementValue = engagementMap.get(student.id);
-    const engagement = typeof engagementValue === 'number' ? engagementValue : Number(engagementValue ?? 0);
+    const engagement =
+      typeof engagementValue === 'number' ? engagementValue : Number(engagementValue ?? 0);
     if (engagement >= 0.8) distribution.highlyEngaged++;
     else if (engagement >= 0.6) distribution.engaged++;
     else if (engagement >= 0.4) distribution.passive++;
@@ -975,7 +1012,8 @@ export async function getEngagementAnalytics(
     const existing = sessionsByDay.get(day) || { count: 0, totalDuration: 0 };
     existing.count++;
     if (session.endTime) {
-      existing.totalDuration += (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000;
+      existing.totalDuration +=
+        (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000;
     }
     sessionsByDay.set(day, existing);
   }
@@ -1057,7 +1095,10 @@ function calculateTrendFromHistory(
     return {
       direction: 'stable',
       percentChange: 0,
-      dataPoints: dataPoints.length > 0 ? dataPoints : [{ date: new Date().toISOString().split('T')[0], value: currentValue }],
+      dataPoints:
+        dataPoints.length > 0
+          ? dataPoints
+          : [{ date: new Date().toISOString().split('T')[0], value: currentValue }],
     };
   }
 

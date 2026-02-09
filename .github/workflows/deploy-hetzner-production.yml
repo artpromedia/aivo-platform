@@ -1,0 +1,514 @@
+# .github/workflows/deploy-hetzner-production.yml
+# =============================================================================
+# AIVO Platform — Deploy to Hetzner Production
+# =============================================================================
+# Deploys a validated release to K3s production on Hetzner.
+# Includes: image verification → manual approval → canary (10%) → full rollout
+# → smoke tests → DB migrations → Slack notification.
+# =============================================================================
+
+name: Deploy to Hetzner (Production)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to deploy (e.g. v1.2.3)'
+        required: true
+      skip_approval:
+        description: 'Skip manual approval (emergency only)'
+        required: false
+        type: boolean
+        default: false
+      skip_canary:
+        description: 'Skip canary phase (emergency only)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: hetzner-production
+  cancel-in-progress: false   # Never cancel production deploys
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/artpromedia
+  NAMESPACE: aivo-prod
+  NODE_VERSION: '20.19.4'
+  PNPM_VERSION: '9.12.0'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 1: Validate Release
+  # ══════════════════════════════════════════════════════════════════════════
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+
+          # Validate format
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid version: $VERSION (expected vX.Y.Z or vX.Y.Z-suffix)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Version: $VERSION"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify all images exist in GHCR
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          MISSING=0
+
+          SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+          )
+
+          for svc in "${SERVICES[@]}"; do
+            IMAGE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}"
+            echo -n "Checking ${svc}... "
+
+            # Use docker manifest inspect to verify image exists
+            if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+              echo "✅"
+            else
+              echo "❌ MISSING"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+
+          if [[ $MISSING -gt 0 ]]; then
+            echo ""
+            echo "❌ ${MISSING} image(s) missing. Build them first with the staging pipeline."
+            echo "   Ensure the release tag matches the image tags in GHCR."
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All 18 images verified for ${VERSION}"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 2: Manual Approval Gate
+  # ══════════════════════════════════════════════════════════════════════════
+  approval:
+    name: Production Approval
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ !inputs.skip_approval }}
+    environment: production-approval
+    steps:
+      - name: Approval recorded
+        run: |
+          echo "🔐 Production deployment approved"
+          echo "   Version: ${{ needs.validate.outputs.version }}"
+          echo "   Approved by: ${{ github.actor }}"
+          echo "   Time: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 3: Canary Deployment (10% traffic for 5 minutes)
+  # ══════════════════════════════════════════════════════════════════════════
+  canary:
+    name: Canary Deployment
+    runs-on: ubuntu-latest
+    needs: [validate, approval]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped') &&
+      !inputs.skip_canary
+    steps:
+      - name: Deploy canary pods
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_APP1_HOST }}
+          username: deploy
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            VERSION="${{ needs.validate.outputs.version }}"
+            NS="aivo-prod"
+
+            echo "═══ Canary deploy: $VERSION ═══"
+
+            # Deploy canary for critical services (1 pod each alongside production)
+            CANARY_SERVICES=(auth-svc content-svc session-svc ai-orchestrator)
+
+            for svc in "${CANARY_SERVICES[@]}"; do
+              echo "Creating canary for ${svc}..."
+              cat <<EOF | kubectl apply -f -
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: ${svc}-canary
+              namespace: ${NS}
+              labels:
+                app: ${svc}
+                deployment-type: canary
+                version: ${VERSION}
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: ${svc}
+                  deployment-type: canary
+              template:
+                metadata:
+                  labels:
+                    app: ${svc}
+                    deployment-type: canary
+                    version: ${VERSION}
+                spec:
+                  containers:
+                    - name: ${svc}
+                      image: ghcr.io/artpromedia/aivo-${svc}:${VERSION}
+                      ports:
+                        - containerPort: 3000
+                      livenessProbe:
+                        httpGet:
+                          path: /health
+                          port: 3000
+                        initialDelaySeconds: 15
+                        periodSeconds: 10
+                      readinessProbe:
+                        httpGet:
+                          path: /health
+                          port: 3000
+                        initialDelaySeconds: 5
+                        periodSeconds: 5
+                      envFrom:
+                        - secretRef:
+                            name: shared-secrets
+                      resources:
+                        requests:
+                          cpu: 100m
+                          memory: 256Mi
+                        limits:
+                          cpu: 500m
+                          memory: 512Mi
+                  imagePullSecrets:
+                    - name: ghcr-pull-secret
+            EOF
+            done
+
+            # Wait for canary pods to be ready
+            for svc in "${CANARY_SERVICES[@]}"; do
+              echo "Waiting for ${svc}-canary..."
+              kubectl rollout status "deployment/${svc}-canary" -n "$NS" --timeout=180s
+            done
+
+            echo ""
+            echo "✅ Canary pods running. Monitoring for 5 minutes..."
+            sleep 300
+
+            # Health check canary pods
+            UNHEALTHY=0
+            for svc in "${CANARY_SERVICES[@]}"; do
+              STATUS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+                -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+              RESTARTS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+                -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' 2>/dev/null || echo "0")
+
+              if [[ "$STATUS" != "Running" || "$RESTARTS" -gt 2 ]]; then
+                echo "❌ ${svc}-canary: status=${STATUS}, restarts=${RESTARTS}"
+                UNHEALTHY=$((UNHEALTHY + 1))
+              else
+                echo "✅ ${svc}-canary: healthy"
+              fi
+            done
+
+            if [[ $UNHEALTHY -gt 0 ]]; then
+              echo ""
+              echo "❌ Canary failed! Rolling back canary pods..."
+              for svc in "${CANARY_SERVICES[@]}"; do
+                kubectl delete deployment "${svc}-canary" -n "$NS" --ignore-not-found
+              done
+              exit 1
+            fi
+
+            echo ""
+            echo "✅ Canary healthy. Proceeding to full rollout."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 4: Full Production Rollout
+  # ══════════════════════════════════════════════════════════════════════════
+  deploy:
+    name: Full Production Rollout
+    runs-on: ubuntu-latest
+    needs: [validate, approval, canary]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped') &&
+      (needs.canary.result == 'success' || needs.canary.result == 'skipped')
+    environment:
+      name: production
+      url: https://api.aivolearning.com/health
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Full rollout via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_APP1_HOST }}
+          username: deploy
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            VERSION="${{ needs.validate.outputs.version }}"
+            NS="aivo-prod"
+
+            echo "════════════════════════════════════════"
+            echo "  PRODUCTION ROLLOUT: AIVO $VERSION"
+            echo "════════════════════════════════════════"
+
+            cd /opt/aivo
+            git fetch origin main
+            git checkout main
+            git pull origin main
+
+            cd infra/k8s/overlays/hetzner
+
+            SERVICES=(
+              auth-svc session-svc consent-svc profile-svc
+              content-svc assessment-svc personalization-svc life-skills-svc
+              ai-orchestrator analytics-svc notify-svc messaging-svc
+              goal-svc focus-svc billing-svc payments-svc
+              parent-svc baseline-svc
+            )
+
+            # Update all image tags
+            for svc in "${SERVICES[@]}"; do
+              echo "  Image: aivo-${svc}:${VERSION}"
+              kustomize edit set image \
+                "aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}"
+            done
+
+            # Apply manifests
+            echo ""
+            echo "Applying production manifests..."
+            kustomize build . | kubectl apply -f -
+
+            # Wait for all rollouts (15-minute timeout)
+            echo ""
+            echo "Waiting for rollouts..."
+            kubectl rollout status deployment --all -n "$NS" --timeout=900s
+
+            # Remove canary pods
+            echo ""
+            echo "Cleaning up canary deployments..."
+            kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
+
+            echo ""
+            echo "═══ Final Pod Status ═══"
+            kubectl get pods -n "$NS" -o wide
+
+            echo ""
+            echo "═══ Deployment Status ═══"
+            kubectl get deployments -n "$NS"
+
+      - name: Smoke tests
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_APP1_HOST }}
+          username: deploy
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            echo "Waiting 60s for services to stabilize..."
+            sleep 60
+
+            NS="aivo-prod"
+            FAILED=0
+            TOTAL=0
+
+            SERVICES=(
+              auth-svc session-svc consent-svc profile-svc
+              content-svc assessment-svc ai-orchestrator
+              analytics-svc notify-svc billing-svc
+              parent-svc
+            )
+
+            for svc in "${SERVICES[@]}"; do
+              TOTAL=$((TOTAL + 1))
+              if kubectl exec -n "$NS" "deploy/${svc}" -- \
+                curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
+                echo "✅ ${svc}"
+              else
+                echo "❌ ${svc}"
+                FAILED=$((FAILED + 1))
+              fi
+            done
+
+            echo ""
+            echo "Results: $((TOTAL - FAILED))/${TOTAL} healthy"
+
+            if [[ $FAILED -gt 3 ]]; then
+              echo "🚨 More than 3 services unhealthy — investigate immediately!"
+              exit 1
+            fi
+
+      - name: Notify success
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🚀 *Hetzner Production Deploy Successful*",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 *AIVO Production Deployed to Hetzner*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Deployed by:* ${{ github.actor }}\n*Time:* <!date^${{ github.event.created_at || 'now' }}^{date_short_pretty} at {time}|just now>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify failure
+        if: failure() && secrets.SLACK_ALERT_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🚨 HETZNER PRODUCTION DEPLOY FAILED",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *PRODUCTION DEPLOY FAILED*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>\n\n@channel Investigate immediately!"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 5: Database Migrations (post-deploy)
+  # ══════════════════════════════════════════════════════════════════════════
+  migrations:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: [validate, deploy]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Prisma migrations via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_APP1_HOST }}
+          username: deploy
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+            VERSION="${{ needs.validate.outputs.version }}"
+            NS="aivo-prod"
+            RUN_ID="${{ github.run_number }}"
+
+            echo "═══ Running DB Migrations ═══"
+
+            # Run migration as a Kubernetes Job using the auth-svc image
+            # (it contains Prisma CLI and all migration files)
+            cat <<EOF | kubectl apply -f -
+            apiVersion: batch/v1
+            kind: Job
+            metadata:
+              name: db-migrate-${RUN_ID}
+              namespace: ${NS}
+            spec:
+              ttlSecondsAfterFinished: 600
+              backoffLimit: 2
+              template:
+                spec:
+                  restartPolicy: Never
+                  containers:
+                    - name: migrate
+                      image: ghcr.io/artpromedia/aivo-auth-svc:${VERSION}
+                      command: ["npx", "prisma", "migrate", "deploy"]
+                      envFrom:
+                        - secretRef:
+                            name: shared-secrets
+                        - secretRef:
+                            name: auth-svc-secrets
+                      resources:
+                        requests:
+                          memory: "256Mi"
+                          cpu: "100m"
+                        limits:
+                          memory: "512Mi"
+                          cpu: "500m"
+                  imagePullSecrets:
+                    - name: ghcr-pull-secret
+            EOF
+
+            # Wait for migration job to complete
+            echo "Waiting for migration job..."
+            kubectl wait --for=condition=complete "job/db-migrate-${RUN_ID}" \
+              -n "$NS" --timeout=600s
+
+            echo ""
+            echo "═══ Migration Logs ═══"
+            kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
+
+            # Cleanup
+            kubectl delete "job/db-migrate-${RUN_ID}" -n "$NS" --ignore-not-found
+
+            echo ""
+            echo "✅ Migrations complete"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 6: Create GitHub Deployment Record
+  # ══════════════════════════════════════════════════════════════════════════
+  record:
+    name: Create Deployment Record
+    runs-on: ubuntu-latest
+    needs: [validate, deploy]
+    if: success()
+    steps:
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          ref: ${{ needs.validate.outputs.version }}
+          description: "Hetzner production deployment of ${{ needs.validate.outputs.version }}"

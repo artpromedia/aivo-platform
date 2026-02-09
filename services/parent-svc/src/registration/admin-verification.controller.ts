@@ -18,12 +18,10 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
+
 import { RegistrationService } from './registration.service.js';
-import {
-  UpdateLinkRequestDto,
-  VerificationStatus,
-} from './registration.types.js';
+import { UpdateLinkRequestDto, VerificationStatus } from './registration.types.js';
 
 // This interface should match your auth middleware
 interface AuthenticatedRequest extends Request {
@@ -51,9 +49,9 @@ export class AdminVerificationController {
     @Param('schoolId') schoolId: string,
     @Query('status') status?: VerificationStatus,
     @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit?: string
   ): Promise<{
-    requests: Array<{
+    requests: {
       id: string;
       registrationId: string;
       caregiverName: string;
@@ -71,7 +69,7 @@ export class AdminVerificationController {
       verificationStatus: string;
       createdAt: Date;
       matchedLearner?: { id: string; name: string; grade?: string };
-    }>;
+    }[];
     total: number;
     page: number;
     limit: number;
@@ -92,7 +90,7 @@ export class AdminVerificationController {
   async updateLinkRequest(
     @Param('requestId') requestId: string,
     @Body() dto: UpdateLinkRequestDto,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<{ success: boolean; message: string }> {
     const adminUserId = req.user?.id || 'unknown';
 
@@ -104,14 +102,15 @@ export class AdminVerificationController {
       {
         ipAddress: this.getClientIp(req),
         userAgent: req.headers['user-agent'],
-      },
+      }
     );
 
     return {
       success: true,
-      message: dto.status === 'APPROVED'
-        ? 'Link request approved successfully.'
-        : 'Link request rejected.',
+      message:
+        dto.status === 'APPROVED'
+          ? 'Link request approved successfully.'
+          : 'Link request rejected.',
     };
   }
 
@@ -123,7 +122,7 @@ export class AdminVerificationController {
   @HttpCode(HttpStatus.CREATED)
   async generateParentCode(
     @Param('learnerId') learnerId: string,
-    @Req() req: AuthenticatedRequest,
+    @Req() req: AuthenticatedRequest
   ): Promise<{
     code: string;
     expiresAt: Date;
@@ -137,11 +136,7 @@ export class AdminVerificationController {
       throw new Error('School context required');
     }
 
-    return this.registrationService.generateParentVerificationCode(
-      schoolId,
-      learnerId,
-      issuedById,
-    );
+    return this.registrationService.generateParentVerificationCode(schoolId, learnerId, issuedById);
   }
 
   /**

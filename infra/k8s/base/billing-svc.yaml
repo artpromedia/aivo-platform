@@ -112,6 +112,28 @@ spec:
                   name: shared-secrets
                   key: nats-url
 
+            # Stripe price IDs (required in production)
+            - name: STRIPE_PRICE_PRO_MONTHLY
+              valueFrom:
+                secretKeyRef:
+                  name: billing-svc-secrets
+                  key: stripe-price-pro-monthly
+            - name: STRIPE_PRICE_PRO_ANNUAL
+              valueFrom:
+                secretKeyRef:
+                  name: billing-svc-secrets
+                  key: stripe-price-pro-annual
+            - name: STRIPE_PRICE_PREMIUM_MONTHLY
+              valueFrom:
+                secretKeyRef:
+                  name: billing-svc-secrets
+                  key: stripe-price-premium-monthly
+            - name: STRIPE_PRICE_PREMIUM_ANNUAL
+              valueFrom:
+                secretKeyRef:
+                  name: billing-svc-secrets
+                  key: stripe-price-premium-annual
+
           resources:
             requests:
               cpu: "100m"
@@ -122,7 +144,7 @@ spec:
 
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 15
@@ -131,7 +153,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /ready
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -140,7 +162,7 @@ spec:
 
           startupProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5

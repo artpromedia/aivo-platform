@@ -7,10 +7,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Common labels applied to all resources
-commonLabels:
-  app.kubernetes.io/part-of: aivo-platform
-  app.kubernetes.io/managed-by: kustomize
+# Override namespace to aivo-prod for deployment
+namespace: aivo-prod
+
+# Common labels applied to all resources (except selectors)
+# Note: Using commonLabels with kustomize adds labels to selectors which
+# makes them immutable. For existing deployments, use kubectl patch instead.
+# commonLabels:
+#   app.kubernetes.io/part-of: aivo-platform
+#   app.kubernetes.io/managed-by: kustomize
 
 # Core services deployed to all environments
 resources:

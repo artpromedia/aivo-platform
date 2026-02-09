@@ -4,7 +4,7 @@
 # Multi-stage build for NestJS services
 
 # Stage 1: Builder
-FROM node:20-alpine3.18 AS builder
+FROM node:20.19.4-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache g++ make python3
@@ -27,20 +27,33 @@ COPY services/${SERVICE_NAME}/ ./services/${SERVICE_NAME}/
 RUN if [ -f "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" ]; then \
             cp "services/${SERVICE_NAME}/scripts/docker-entrypoint.sh" /app/docker-entrypoint.sh; \
         else \
-            printf '#!/bin/sh\nif [ -f dist/main.js ]; then\n  exec node dist/main.js\nelif [ -f dist/src/main.js ]; then\n  exec node dist/src/main.js\nelif [ -f dist/index.js ]; then\n  exec node dist/index.js\nelif [ -f dist/src/index.js ]; then\n  exec node dist/src/index.js\nelse\n  echo "No entrypoint found in dist (tried main.js, src/main.js, index.js, src/index.js)" 1>&2\n  ls -R dist 1>&2\n  exit 1\nfi\n' > /app/docker-entrypoint.sh; \
+            printf '#!/bin/sh\nif [ -f dist/main.js ]; then\n  exec node dist/main.js\nelif [ -f dist/src/main.js ]; then\n  exec node dist/src/main.js\nelif [ -f dist/index.cjs ]; then\n  exec node dist/index.cjs\nelif [ -f dist/index.js ]; then\n  exec node dist/index.js\nelif [ -f dist/src/index.js ]; then\n  exec node dist/src/index.js\nelse\n  echo "No entrypoint found in dist (tried main.js, src/main.js, index.cjs, index.js, src/index.js)" 1>&2\n  ls -R dist 1>&2\n  exit 1\nfi\n' > /app/docker-entrypoint.sh; \
         fi
+# Strip Windows CRLF line endings (git on Windows may checkout with \r\n)
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (skip lifecycle scripts - they'll run during turbo build)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Generate Prisma client if schema exists (with checksum bypass for offline builds)
 ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN if [ -f "services/${SERVICE_NAME}/prisma/schema.prisma" ]; then \
+      # Inject binaryTargets if not already present, to ensure linux-musl-openssl-3.0.x engine is generated
+      if ! grep -q 'linux-musl-openssl-3.0.x' "services/${SERVICE_NAME}/prisma/schema.prisma"; then \
+        sed -i '/provider.*=.*"prisma-client-js"/a\  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]' "services/${SERVICE_NAME}/prisma/schema.prisma"; \
+      fi; \
       cd services/${SERVICE_NAME} && npx prisma generate --schema=prisma/schema.prisma; \
     fi
 
-# Ensure generated Prisma client path exists for runtime COPY
+# Ensure generated Prisma client paths exist for runtime COPY (avoids COPY failure if dir missing)
 RUN mkdir -p /app/services/${SERVICE_NAME}/generated/prisma-client
+# Also capture default Prisma output (node_modules/.prisma/client) for services without custom output
+RUN mkdir -p /app/prisma-default-client
+RUN if [ -d "/app/services/${SERVICE_NAME}/node_modules/.prisma/client" ]; then \
+      cp -r /app/services/${SERVICE_NAME}/node_modules/.prisma/client/* /app/prisma-default-client/ 2>/dev/null || true; \
+    elif [ -d "/app/node_modules/.prisma/client" ]; then \
+      cp -r /app/node_modules/.prisma/client/* /app/prisma-default-client/ 2>/dev/null || true; \
+    fi
 
 # Build the service
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
@@ -48,8 +61,17 @@ RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 # Use pnpm deploy to create production bundle
 RUN pnpm deploy --filter="@aivo/${SERVICE_NAME}" --prod /deploy
 
+# Ensure fastify-plugin is in deploy bundle (peer dep of @aivo/ts-observability, may be missing)
+RUN if [ -d "/deploy/node_modules/@aivo/ts-observability" ] && [ ! -d "/deploy/node_modules/fastify-plugin" ]; then \
+      fp_dir=$(find /app/node_modules/.pnpm -path "*/fastify-plugin@*/node_modules/fastify-plugin" -type d 2>/dev/null | head -1); \
+      if [ -n "$fp_dir" ]; then \
+        cp -r "$fp_dir" /deploy/node_modules/fastify-plugin; \
+        echo "Copied fastify-plugin from workspace to deploy bundle"; \
+      fi; \
+    fi
+
 # Stage 2: Runner
-FROM node:20-alpine3.18 AS runner
+FROM node:20.19.4-alpine AS runner
 
 # Security: Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -57,15 +79,27 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling and OpenSSL 1.1 compatibility for Prisma
-RUN apk add --no-cache dumb-init openssl1.1-compat
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
 # Copy production bundle from pnpm deploy
 ARG SERVICE_NAME
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/generated/prisma-client ./generated/prisma-client
+# Copy default Prisma client for services using default output path (into node_modules/.prisma/client)
+COPY --from=builder --chown=nodejs:nodejs /app/prisma-default-client ./node_modules/.prisma/client/
+# Copy Prisma schema for runtime migrations support
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
+
+# Create symlinks for Prisma client resolution from compiled dist directories
+# Some services compile to dist/src/ and import from ../generated/prisma-client
+# which resolves to dist/generated/prisma-client - create symlink to fix this
+# Create a real prisma-client directory under dist/generated/ for ESM resolution
+# Import path: ../generated/prisma-client/index.js -> dist/generated/prisma-client/index.js
+RUN mkdir -p dist/generated && ln -sf /app/generated/prisma-client dist/generated/prisma-client 2>/dev/null || true
+# Also for dist/src/generated/prisma-client (services compiling from src/)
+RUN mkdir -p dist/src/generated && ln -sf /app/generated/prisma-client dist/src/generated/prisma-client 2>/dev/null || true
 
 # Copy scripts
 COPY --from=builder --chown=nodejs:nodejs /app/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

@@ -5,12 +5,15 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 import { logger, metrics } from '@aivo/ts-observability';
-import { Redshift, ExecuteStatementCommand, GetStatementResultCommand } from '@aws-sdk/client-redshift-data';
+import {
+  Redshift,
+  ExecuteStatementCommand,
+  GetStatementResultCommand,
+} from '@aws-sdk/client-redshift-data';
 import { S3 } from '@aws-sdk/client-s3';
 import type { Redis } from 'ioredis';
 
-
-import type { PrismaClient } from '../../generated/prisma';
+import type { PrismaClient } from '../../generated/prisma/index.js';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -279,11 +282,7 @@ export class AnalyticsQueryService {
 
       // Cache result
       if (this.config.cacheEnabled) {
-        await this.redis.setex(
-          cacheKey,
-          this.config.cacheTtlSeconds,
-          JSON.stringify(metricsData)
-        );
+        await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(metricsData));
       }
 
       metrics.timing('analytics.query.duration', Date.now() - startTime, {
@@ -337,11 +336,7 @@ export class AnalyticsQueryService {
 
         // Cache individual result
         const cacheKey = `analytics:student:${studentId}:${this.formatPeriodKey(period)}`;
-        await this.redis.setex(
-          cacheKey,
-          this.config.cacheTtlSeconds,
-          JSON.stringify(metricsData)
-        );
+        await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(metricsData));
       }
     }
 
@@ -386,11 +381,7 @@ export class AnalyticsQueryService {
 
       // Cache result
       if (this.config.cacheEnabled) {
-        await this.redis.setex(
-          cacheKey,
-          this.config.cacheTtlSeconds,
-          JSON.stringify(metricsData)
-        );
+        await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(metricsData));
       }
 
       metrics.timing('analytics.query.duration', Date.now() - startTime, {
@@ -522,11 +513,7 @@ export class AnalyticsQueryService {
     };
 
     if (this.config.cacheEnabled) {
-      await this.redis.setex(
-        cacheKey,
-        this.config.cacheTtlSeconds,
-        JSON.stringify(metricsData)
-      );
+      await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(metricsData));
     }
 
     return metricsData;
@@ -613,11 +600,7 @@ export class AnalyticsQueryService {
     };
 
     if (this.config.cacheEnabled) {
-      await this.redis.setex(
-        cacheKey,
-        this.config.cacheTtlSeconds,
-        JSON.stringify(metricsData)
-      );
+      await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(metricsData));
     }
 
     return metricsData;
@@ -726,7 +709,10 @@ export class AnalyticsQueryService {
           weight: 0.3,
           value: row.days_inactive as number,
           threshold: this.config.atRiskThresholds.inactivityDays,
-          contribution: (row.days_inactive as number) > this.config.atRiskThresholds.inactivityDays * 2 ? 30 : 15,
+          contribution:
+            (row.days_inactive as number) > this.config.atRiskThresholds.inactivityDays * 2
+              ? 30
+              : 15,
           description: `Student has been inactive for ${String(row.days_inactive)} days`,
         });
       }
@@ -737,7 +723,8 @@ export class AnalyticsQueryService {
           weight: 0.25,
           value: row.avg_score as number,
           threshold: this.config.atRiskThresholds.lowScore,
-          contribution: (row.avg_score as number) < this.config.atRiskThresholds.lowScore - 20 ? 25 : 15,
+          contribution:
+            (row.avg_score as number) < this.config.atRiskThresholds.lowScore - 20 ? 25 : 15,
           description: `Average score of ${Math.round(row.avg_score as number)}% is below threshold`,
         });
       }
@@ -748,7 +735,11 @@ export class AnalyticsQueryService {
           weight: 0.25,
           value: (row.completion_rate as number) * 100,
           threshold: this.config.atRiskThresholds.lowCompletion,
-          contribution: (row.completion_rate as number) < (this.config.atRiskThresholds.lowCompletion - 20) / 100 ? 25 : 15,
+          contribution:
+            (row.completion_rate as number) <
+            (this.config.atRiskThresholds.lowCompletion - 20) / 100
+              ? 25
+              : 15,
           description: `Completion rate of ${Math.round((row.completion_rate as number) * 100)}% is below threshold`,
         });
       }
@@ -759,7 +750,10 @@ export class AnalyticsQueryService {
           weight: 0.2,
           value: (row.avg_mastery as number) * 100,
           threshold: this.config.atRiskThresholds.lowMastery,
-          contribution: (row.avg_mastery as number) < (this.config.atRiskThresholds.lowMastery - 20) / 100 ? 20 : 10,
+          contribution:
+            (row.avg_mastery as number) < (this.config.atRiskThresholds.lowMastery - 20) / 100
+              ? 20
+              : 10,
           description: `Average mastery of ${Math.round((row.avg_mastery as number) * 100)}% is below threshold`,
         });
       }
@@ -775,11 +769,7 @@ export class AnalyticsQueryService {
     });
 
     if (this.config.cacheEnabled) {
-      await this.redis.setex(
-        cacheKey,
-        this.config.cacheTtlSeconds,
-        JSON.stringify(atRiskStudents)
-      );
+      await this.redis.setex(cacheKey, this.config.cacheTtlSeconds, JSON.stringify(atRiskStudents));
     }
 
     return atRiskStudents;
@@ -1024,7 +1014,11 @@ export class AnalyticsQueryService {
     `;
   }
 
-  private buildBatchStudentMetricsQuery(studentIds: string[], tenantId: string, period: TimeRange): string {
+  private buildBatchStudentMetricsQuery(
+    studentIds: string[],
+    tenantId: string,
+    period: TimeRange
+  ): string {
     // Validate all inputs
     const safeIds = studentIds.map((id) => validateUuid(id, 'studentId'));
     const safeTenantId = validateUuid(tenantId, 'tenantId');
@@ -1090,7 +1084,11 @@ export class AnalyticsQueryService {
     return this.getEmptyStudentMetrics(studentId, tenantId, period);
   }
 
-  private getEmptyStudentMetrics(studentId: string, tenantId: string, period: TimeRange): StudentMetrics {
+  private getEmptyStudentMetrics(
+    studentId: string,
+    tenantId: string,
+    period: TimeRange
+  ): StudentMetrics {
     return {
       studentId,
       tenantId,
@@ -1179,7 +1177,7 @@ export class AnalyticsQueryService {
     period: TimeRange
   ): ClassMetrics {
     const row = result[0];
-    
+
     return {
       classId,
       tenantId,

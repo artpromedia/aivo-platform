@@ -5,55 +5,53 @@
  */
 
 import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 
 // Controllers
-import { ParentController } from './parent/parent.controller.js';
 import { AuthController } from './auth/auth.controller.js';
-import { MessagingController } from './messaging/messaging.controller.js';
-import { ReportsController } from './pdf/reports.controller.js';
-import { OnboardingController } from './onboarding/onboarding.controller.js';
-import { HomeworkController } from './homework/homework.controller.js';
-import { LearnerController } from './learner/learner.controller.js';
+import { LearnerAuthMiddleware } from './auth/learner-auth.middleware.js';
+import { ParentAuthMiddleware } from './auth/parent-auth.middleware.js';
+import { ParentAuthService } from './auth/parent-auth.service.js';
+import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
 import { CaregiverController } from './caregiver/caregiver.controller.js';
+import { CaregiverService } from './caregiver/caregiver.service.js';
+import { CryptoService } from './crypto/crypto.service.js';
+import { WeeklyDigestService } from './digest/weekly-digest.service.js';
+import { EmailService } from './email/email.service.js';
+import { FirebaseService } from './firebase/firebase.service.js';
+import { HomeworkController } from './homework/homework.controller.js';
+import { HomeworkService } from './homework/homework.service.js';
+import { I18nService } from './i18n/i18n.service.js';
 import { InternalController } from './internal/internal.controller.js';
+import { LearnerController } from './learner/learner.controller.js';
+import { MessagingController } from './messaging/messaging.controller.js';
+import { MessagingService } from './messaging/messaging.service.js';
+import { NotificationService } from './notification/notification.service.js';
+import { OnboardingController } from './onboarding/onboarding.controller.js';
+import { ParentController } from './parent/parent.controller.js';
+import { ParentService } from './parent/parent.service.js';
+import { PdfReportService } from './pdf/pdf-report.service.js';
+import { ReportsController } from './pdf/reports.controller.js';
 
 // Registration Controllers (self-service registration)
-import { RegistrationController } from './registration/registration.controller.js';
+import { PrismaService } from './prisma/prisma.service.js';
 import { AdminVerificationController } from './registration/admin-verification.controller.js';
 import { FamilyController } from './registration/family.controller.js';
+import { FamilyService } from './registration/family.service.js';
+import { RegistrationController } from './registration/registration.controller.js';
 
 // Services
-import { ParentService } from './parent/parent.service.js';
-import { ParentAuthService } from './auth/parent-auth.service.js';
-import { MessagingService } from './messaging/messaging.service.js';
-import { WeeklyDigestService } from './digest/weekly-digest.service.js';
-import { NotificationService } from './notification/notification.service.js';
-import { EmailService } from './email/email.service.js';
 import { ContentModerationService } from './moderation/content-moderation.service.js';
-import { PdfReportService } from './pdf/pdf-report.service.js';
 import { OnboardingService } from './onboarding/onboarding.service.js';
-import { HomeworkService } from './homework/homework.service.js';
-import { CaregiverService } from './caregiver/caregiver.service.js';
-import { PrismaService } from './prisma/prisma.service.js';
-import { CryptoService } from './crypto/crypto.service.js';
-import { I18nService } from './i18n/i18n.service.js';
 
 // Registration Services (self-service registration)
 import { RegistrationService } from './registration/registration.service.js';
-import { FamilyService } from './registration/family.service.js';
 
 // Middleware
-import { ParentAuthMiddleware } from './auth/parent-auth.middleware.js';
-import { LearnerAuthMiddleware } from './auth/learner-auth.middleware.js';
-import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    EventEmitterModule.forRoot(),
-  ],
+  imports: [ScheduleModule.forRoot(), EventEmitterModule.forRoot()],
   controllers: [
     ParentController,
     AuthController,
@@ -75,6 +73,7 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
     CryptoService,
     I18nService,
     EmailService,
+    FirebaseService,
 
     // Business services
     ParentService,
@@ -104,16 +103,12 @@ import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
 export class ParentModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply rate limiting to all routes
-    consumer
-      .apply(RateLimitMiddleware)
-      .forRoutes('*');
+    consumer.apply(RateLimitMiddleware).forRoutes('*');
 
     // Apply learner authentication to learner routes (except pin-login which is public)
     consumer
       .apply(LearnerAuthMiddleware)
-      .forRoutes(
-        { path: 'learner/baseline-status', method: RequestMethod.PATCH },
-      );
+      .forRoutes({ path: 'learner/baseline-status', method: RequestMethod.PATCH });
 
     // Apply parent authentication to protected routes
     consumer
@@ -139,14 +134,17 @@ export class ParentModule implements NestModule {
         { path: 'api/v1/caregiver/register', method: RequestMethod.POST },
         { path: 'api/v1/caregiver/verify-email', method: RequestMethod.POST },
         { path: 'api/v1/caregiver/:registrationId/status', method: RequestMethod.GET },
-        { path: 'api/v1/caregiver/:registrationId/resend-verification', method: RequestMethod.POST },
+        {
+          path: 'api/v1/caregiver/:registrationId/resend-verification',
+          method: RequestMethod.POST,
+        },
         { path: 'api/v1/caregiver/:registrationId/learners', method: RequestMethod.POST },
         { path: 'api/v1/caregiver/learners/:linkRequestId/verify', method: RequestMethod.POST },
         // Internal routes (service-to-service) - multiple patterns for compatibility
         { path: 'internal/(.*)', method: RequestMethod.ALL },
         { path: 'internal/create-profile', method: RequestMethod.POST },
         { path: 'api/v1/internal/(.*)', method: RequestMethod.ALL },
-        { path: 'api/v1/internal/create-profile', method: RequestMethod.POST },
+        { path: 'api/v1/internal/create-profile', method: RequestMethod.POST }
       )
       .forRoutes('*');
   }

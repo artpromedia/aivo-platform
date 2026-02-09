@@ -10,7 +10,7 @@
 
 import { Controller, Get, Post, Param, Body, Res, UseGuards, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Response, Request } from 'express';
+import type { Response, Request } from 'express';
 
 import { CurrentParent } from '../auth/current-parent.decorator.js';
 import { ParentAuthGuard } from '../auth/parent-auth.guard.js';

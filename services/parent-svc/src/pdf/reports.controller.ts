@@ -15,16 +15,18 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { ParentService } from '../parent/parent.service.js';
-import { PdfReportService } from './pdf-report.service.js';
+import type { Response } from 'express';
+
 import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import { ParentService } from '../parent/parent.service.js';
+
+import { PdfReportService } from './pdf-report.service.js';
 
 @Controller('reports')
 export class ReportsController {
   constructor(
     private readonly parentService: ParentService,
-    private readonly pdfService: PdfReportService,
+    private readonly pdfService: PdfReportService
   ) {}
 
   /**
@@ -38,14 +40,10 @@ export class ReportsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string
   ) {
-    const report = await this.parentService.getProgressReport(
-      req.parent!.id,
-      studentId,
-      {
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-      }
-    );
+    const report = await this.parentService.getProgressReport(req.parent!.id, studentId, {
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    });
 
     const summary = await this.parentService.getStudentSummary(req.parent!.id, studentId);
 

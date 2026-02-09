@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@aivo/ui-web', '@aivo/ts-types'],
   images: {
@@ -9,16 +10,16 @@ const nextConfig = {
     // In development, don't rewrite API routes - use local route handlers
     // This allows the mock data in /api routes to be served
     const isDev = process.env.NODE_ENV === 'development';
-    
+
     // Service URLs for production
     const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
     const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://localhost:4001';
-    
+
     // In development mode, don't proxy - use local API route handlers
     if (isDev) {
       return [];
     }
-    
+
     return [
       // Parent service routes
       {

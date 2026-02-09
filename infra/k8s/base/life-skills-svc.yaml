@@ -93,6 +93,11 @@ spec:
               value: "http://ai-orchestrator:3000"
             - name: PROFILE_SVC_URL
               value: "http://profile-svc:3000"
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: life-skills-svc-secrets
+                  key: internal-api-key
 
           resources:
             requests:
@@ -113,7 +118,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /ready
               port: http
             initialDelaySeconds: 5
             periodSeconds: 5

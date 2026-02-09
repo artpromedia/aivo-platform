@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   // Enable MDX support for documentation
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],

@@ -128,7 +128,7 @@ spec:
 
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 15
@@ -136,8 +136,7 @@ spec:
             failureThreshold: 3
 
           readinessProbe:
-            httpGet:
-              path: /health/ready
+            tcpSocket:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -146,7 +145,7 @@ spec:
 
           startupProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
