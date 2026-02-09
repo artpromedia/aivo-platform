@@ -327,7 +327,8 @@ class PersonalizedBrainCloner:
             embedding_dim=checkpoint.get('embedding_dim', self.embedding_dim),
             hidden_dim=checkpoint.get('hidden_dim', self.hidden_dim),
         )
-        model.load_state_dict(checkpoint['model_state_dict'])        model.eval()  # Set model to evaluation mode        
+        model.load_state_dict(checkpoint['model_state_dict'])
+        model.eval()  # Set model to evaluation mode
         logger.info(f"Loaded base model from {model_path}")
         return model
     

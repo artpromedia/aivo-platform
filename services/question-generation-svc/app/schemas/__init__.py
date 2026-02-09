@@ -32,6 +32,23 @@ from app.schemas.requests import (
     # Health Check
     HealthResponse,
     ReadinessResponse,
+    # Sprint 2 schemas
+    BatchGenerateRequest,
+    BatchGenerateResponse,
+    PassageQuestions,
+    ModelStatus,
+    ModelsStatusResponse,
+    CurriculumGenerateRequest,
+    CurriculumGenerateResponse,
+    JobStatus,
+    AsyncGenerateRequest,
+    AsyncGenerateResponse,
+    JobStatusResponse,
+    JobResultResponse,
+    StandardAlignmentItem,
+    AlignToStandardsRequest,
+    AlignedQuestionItem,
+    AlignToStandardsResponse,
 )
 
 __all__ = [
@@ -66,4 +83,21 @@ __all__ = [
     # Health Check
     "HealthResponse",
     "ReadinessResponse",
+    # Sprint 2 schemas
+    "BatchGenerateRequest",
+    "BatchGenerateResponse",
+    "PassageQuestions",
+    "ModelStatus",
+    "ModelsStatusResponse",
+    "CurriculumGenerateRequest",
+    "CurriculumGenerateResponse",
+    "JobStatus",
+    "AsyncGenerateRequest",
+    "AsyncGenerateResponse",
+    "JobStatusResponse",
+    "JobResultResponse",
+    "StandardAlignmentItem",
+    "AlignToStandardsRequest",
+    "AlignedQuestionItem",
+    "AlignToStandardsResponse",
 ]

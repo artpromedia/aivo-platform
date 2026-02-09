@@ -223,6 +223,15 @@ class ProviderHealth(BaseModel):
 # =============================================================================
 
 
+class MessageRole(str, Enum):
+    """Valid roles for a conversation message."""
+
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
+    TOOL = "tool"
+
+
 class Message(BaseModel):
     """A single message in a conversation."""
 
