@@ -46,6 +46,7 @@ RUN apk add --no-cache dumb-init openssl
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/assessment-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/assessment-svc/generated ./generated
+RUN ln -s /app/generated /app/dist/generated
 COPY --from=builder --chown=nodejs:nodejs /app/services/assessment-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 

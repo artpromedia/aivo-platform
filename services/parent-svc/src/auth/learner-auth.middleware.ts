@@ -5,10 +5,11 @@
  * Used by endpoints called from web-learner/mobile-learner apps.
  */
 
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { logger } from '@aivo/ts-observability';
+import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
 import { config } from '../config.js';
 
 export interface LearnerAuthRequest extends Request {

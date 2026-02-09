@@ -75,13 +75,14 @@ images:
 
 # Patches for staging-specific configuration
 patches:
-  # Set NODE_ENV to staging for all ConfigMaps
+  # Keep NODE_ENV=production for staging (required for prod dependency resolution)
+  # Use APP_ENV to distinguish staging from production
   - target:
       kind: ConfigMap
     patch: |-
       - op: replace
         path: /data/NODE_ENV
-        value: "staging"
+        value: "production"
 
   # Reduce replicas for staging (cost optimization)
   - target:

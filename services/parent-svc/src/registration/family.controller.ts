@@ -16,12 +16,10 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
+
 import { FamilyService } from './family.service.js';
-import {
-  FamilyDashboardResponse,
-  LearnerOverview,
-} from './registration.types.js';
+import { FamilyDashboardResponse, LearnerOverview } from './registration.types.js';
 
 // Interface for authenticated caregiver request
 interface CaregiverAuthRequest extends Request {
@@ -47,9 +45,7 @@ export class FamilyController {
    * GET /api/v1/family/dashboard
    */
   @Get('dashboard')
-  async getDashboard(
-    @Req() req: CaregiverAuthRequest,
-  ): Promise<FamilyDashboardResponse> {
+  async getDashboard(@Req() req: CaregiverAuthRequest): Promise<FamilyDashboardResponse> {
     const caregiverId = req.caregiver!.id;
     return this.familyService.getFamilyDashboard(caregiverId);
   }
@@ -62,7 +58,7 @@ export class FamilyController {
   @HttpCode(HttpStatus.OK)
   async setActiveLearner(
     @Req() req: CaregiverAuthRequest,
-    @Body() body: { learnerId: string },
+    @Body() body: { learnerId: string }
   ): Promise<{ success: boolean; learner: { id: string; name: string } }> {
     const caregiverId = req.caregiver!.id;
     return this.familyService.setActiveLearner(caregiverId, body.learnerId);
@@ -75,22 +71,24 @@ export class FamilyController {
   @Get('learners/:learnerId')
   async getLearnerDetails(
     @Req() req: CaregiverAuthRequest,
-    @Param('learnerId') learnerId: string,
-  ): Promise<LearnerOverview & {
-    recentSessions: Array<{
-      id: string;
-      subject: string;
-      duration: number;
-      score: number | null;
-      completedAt: Date;
-    }>;
-    achievements: Array<{
-      id: string;
-      name: string;
-      description: string;
-      earnedAt: Date;
-    }>;
-  }> {
+    @Param('learnerId') learnerId: string
+  ): Promise<
+    LearnerOverview & {
+      recentSessions: {
+        id: string;
+        subject: string;
+        duration: number;
+        score: number | null;
+        completedAt: Date;
+      }[];
+      achievements: {
+        id: string;
+        name: string;
+        description: string;
+        earnedAt: Date;
+      }[];
+    }
+  > {
     const caregiverId = req.caregiver!.id;
     return this.familyService.getLearnerDetails(caregiverId, learnerId);
   }

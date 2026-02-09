@@ -7,6 +7,7 @@
  * - Max 5 resend attempts per registration per hour
  */
 
+import { logger } from '@aivo/ts-observability';
 import {
   Injectable,
   CanActivate,
@@ -14,8 +15,8 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { logger } from '@aivo/ts-observability';
+import type { Request } from 'express';
+
 import { config } from '../../config.js';
 
 interface RateLimitEntry {
@@ -89,7 +90,7 @@ export class RegistrationRateLimitGuard implements CanActivate {
           message: `Too many requests. Please try again in ${remainingSeconds} seconds.`,
           retryAfter: remainingSeconds,
         },
-        HttpStatus.TOO_MANY_REQUESTS,
+        HttpStatus.TOO_MANY_REQUESTS
       );
     }
 
@@ -128,7 +129,7 @@ export class RegistrationRateLimitGuard implements CanActivate {
           message: `Too many requests. Please try again in ${remainingSeconds} seconds.`,
           retryAfter: remainingSeconds,
         },
-        HttpStatus.TOO_MANY_REQUESTS,
+        HttpStatus.TOO_MANY_REQUESTS
       );
     }
 
@@ -195,12 +196,15 @@ export class RegistrationRateLimitGuard implements CanActivate {
  */
 @Injectable()
 export class FraudDetectionGuard implements CanActivate {
-  private static readonly suspiciousPatterns = new Map<string, {
-    registrationAttempts: number;
-    uniqueEmails: Set<string>;
-    firstSeen: number;
-    flagged: boolean;
-  }>();
+  private static readonly suspiciousPatterns = new Map<
+    string,
+    {
+      registrationAttempts: number;
+      uniqueEmails: Set<string>;
+      firstSeen: number;
+      flagged: boolean;
+    }
+  >();
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (config.environment === 'development') {
@@ -236,9 +240,7 @@ export class FraudDetectionGuard implements CanActivate {
     // Flag suspicious activity:
     // - More than 10 registration attempts from same IP in 24 hours
     // - More than 5 unique emails from same IP in 24 hours
-    const isSuspicious =
-      pattern.registrationAttempts > 10 ||
-      pattern.uniqueEmails.size > 5;
+    const isSuspicious = pattern.registrationAttempts > 10 || pattern.uniqueEmails.size > 5;
 
     if (isSuspicious && !pattern.flagged) {
       pattern.flagged = true;

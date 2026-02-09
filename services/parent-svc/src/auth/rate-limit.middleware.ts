@@ -4,9 +4,10 @@
  * Implements rate limiting for parent API endpoints.
  */
 
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
 import { logger } from '@aivo/ts-observability';
+import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
+
 import { config } from '../config.js';
 
 interface RateLimitEntry {
@@ -67,7 +68,6 @@ export class RateLimitMiddleware implements NestMiddleware {
         count: entry.count,
       });
 
-
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
@@ -101,7 +101,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     // For authenticated requests, use user ID
     // For unauthenticated requests, use IP address
     const authReq = req as { parent?: { id: string } };
-    
+
     if (authReq.parent?.id) {
       return authReq.parent.id;
     }

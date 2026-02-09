@@ -12,9 +12,11 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { verify } from 'jsonwebtoken';
+import type { Request } from 'express';
+import jwt from 'jsonwebtoken';
+const { verify } = jwt;
 import { logger } from '@aivo/ts-observability';
+
 import { config } from '../../config.js';
 
 interface JwtPayload {
@@ -122,13 +124,11 @@ export class SchoolAdminPermissionGuard implements CanActivate {
     }
 
     // Check specific permission
-    if (user.permissions && user.permissions.includes(this.requiredPermission)) {
+    if (user.permissions?.includes(this.requiredPermission)) {
       return true;
     }
 
-    throw new ForbiddenException(
-      `Missing required permission: ${this.requiredPermission}`,
-    );
+    throw new ForbiddenException(`Missing required permission: ${this.requiredPermission}`);
   }
 }
 

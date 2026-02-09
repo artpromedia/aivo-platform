@@ -13,12 +13,16 @@ export function createApp(options: { pool?: Pool; logger?: boolean } = {}) {
   const app = Fastify({ logger: options.logger ?? true });
   const pool = options.pool ?? createPool();
 
+  // Health check (no auth required)
+  app.get('/health', async () => ({ status: 'ok' }));
+
   // Rate limiting
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   void app.register(rateLimit as any, FastifyRateLimitPresets.publicApi('consent-svc'));
 
   const auth = authMiddleware({ publicKey: config.jwtPublicKey });
   app.addHook('preHandler', async (request, reply) => {
+    if (request.url === '/health') return;
     await auth(request as any, reply as any);
   });
 

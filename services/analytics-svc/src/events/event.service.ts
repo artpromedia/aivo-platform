@@ -11,7 +11,7 @@ import type { PutRecordsRequestEntry } from '@aws-sdk/client-kinesis';
 import { Kinesis, PutRecordsCommand } from '@aws-sdk/client-kinesis';
 import type { Redis } from 'ioredis';
 
-import type { PrismaClient } from '../../generated/prisma';
+import type { PrismaClient } from '../../generated/prisma.js';
 
 import type { CaliperService } from './caliper.service';
 import type {
@@ -22,11 +22,9 @@ import type {
   EventContext,
   EventMetadata,
   LearningEvent,
-  SystemEvent} from './event.types';
-import {
-  createEventId,
-  validateEventDetailed,
+  SystemEvent,
 } from './event.types';
+import { createEventId, validateEventDetailed } from './event.types';
 import type { XAPIService } from './xapi.service';
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
@@ -924,11 +922,7 @@ export class EventService {
 
     // Student activity tracking (TTL: 30 days)
     if (event.studentId) {
-      pipeline.zadd(
-        `analytics:student:${event.studentId}:activity`,
-        now.getTime(),
-        event.id
-      );
+      pipeline.zadd(`analytics:student:${event.studentId}:activity`, now.getTime(), event.id);
       pipeline.expire(`analytics:student:${event.studentId}:activity`, 86400 * 30);
     }
 
@@ -938,10 +932,7 @@ export class EventService {
   /**
    * Track daily active user
    */
-  private async trackDailyActiveUser(
-    studentId: string,
-    tenantId: string
-  ): Promise<void> {
+  private async trackDailyActiveUser(studentId: string, tenantId: string): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
 
     await this.redis
@@ -958,10 +949,7 @@ export class EventService {
   /**
    * Update real-time metrics counter
    */
-  private async updateRealTimeMetrics(
-    metric: string,
-    context: EventContext
-  ): Promise<void> {
+  private async updateRealTimeMetrics(metric: string, context: EventContext): Promise<void> {
     const minuteKey = Math.floor(Date.now() / 60000);
 
     await this.redis
@@ -996,10 +984,7 @@ export class EventService {
     };
   }
 
-  private isSignificantInteraction(interaction: {
-    type: string;
-    target: string;
-  }): boolean {
+  private isSignificantInteraction(interaction: { type: string; target: string }): boolean {
     // Filter out noise - only track meaningful interactions
     const significantTargets = [
       'button',

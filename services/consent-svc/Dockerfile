@@ -45,7 +45,6 @@ RUN apk add --no-cache dumb-init
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/consent-svc/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/services/consent-svc/generated ./generated
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables

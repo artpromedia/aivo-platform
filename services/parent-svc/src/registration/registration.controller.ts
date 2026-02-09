@@ -15,7 +15,10 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
+
+import { CaptchaGuard } from './guards/captcha.guard.js';
+import { RegistrationRateLimitGuard } from './guards/registration-rate-limit.guard.js';
 import { RegistrationService } from './registration.service.js';
 import {
   RegisterCaregiverDto,
@@ -28,8 +31,6 @@ import {
   VerifyLearnerCodeResponse,
   RegistrationStatusResponse,
 } from './registration.types.js';
-import { RegistrationRateLimitGuard } from './guards/registration-rate-limit.guard.js';
-import { CaptchaGuard } from './guards/captcha.guard.js';
 
 @Controller('api/v1/caregiver')
 export class RegistrationController {
@@ -44,7 +45,7 @@ export class RegistrationController {
   @UseGuards(RegistrationRateLimitGuard, CaptchaGuard)
   async register(
     @Body() dto: RegisterCaregiverDto,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<RegistrationResponse> {
     return this.registrationService.registerCaregiver(dto, {
       ipAddress: this.getClientIp(req),
@@ -61,7 +62,7 @@ export class RegistrationController {
   @UseGuards(RegistrationRateLimitGuard)
   async verifyEmail(
     @Body() dto: VerifyEmailDto,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<VerifyEmailResponse> {
     return this.registrationService.verifyEmail(dto, {
       ipAddress: this.getClientIp(req),
@@ -78,7 +79,7 @@ export class RegistrationController {
   async addLearnerLink(
     @Param('registrationId') registrationId: string,
     @Body() dto: AddLearnerLinkDto,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<LearnerLinkResponse> {
     return this.registrationService.addLearnerLink(registrationId, dto, {
       ipAddress: this.getClientIp(req),
@@ -95,7 +96,7 @@ export class RegistrationController {
   async verifyLearnerCode(
     @Param('linkRequestId') linkRequestId: string,
     @Body() dto: VerifyLearnerCodeDto,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<VerifyLearnerCodeResponse> {
     return this.registrationService.verifyLearnerCode(linkRequestId, dto, {
       ipAddress: this.getClientIp(req),
@@ -109,7 +110,7 @@ export class RegistrationController {
    */
   @Get(':registrationId/status')
   async getRegistrationStatus(
-    @Param('registrationId') registrationId: string,
+    @Param('registrationId') registrationId: string
   ): Promise<RegistrationStatusResponse> {
     return this.registrationService.getRegistrationStatus(registrationId);
   }
@@ -123,7 +124,7 @@ export class RegistrationController {
   @UseGuards(RegistrationRateLimitGuard)
   async resendVerification(
     @Param('registrationId') registrationId: string,
-    @Req() req: Request,
+    @Req() req: Request
   ): Promise<{ success: boolean; message: string }> {
     return this.registrationService.resendVerificationEmail(registrationId, {
       ipAddress: this.getClientIp(req),

@@ -10,8 +10,8 @@ import { logger } from '@aivo/ts-observability';
 import type { FastifyInstance } from 'fastify';
 import { FastifyRequest, FastifyReply } from 'fastify';
 
-import type { TimePeriod } from '../services/teacher-analytics.service';
-import teacherAnalyticsService from '../services/teacher-analytics.service';
+import type { TimePeriod } from '../services/teacher-analytics.service.js';
+import teacherAnalyticsService from '../services/teacher-analytics.service.js';
 
 // =====================
 // Route Schemas

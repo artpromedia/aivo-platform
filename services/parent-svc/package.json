@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && node scripts/strip-prisma-sourcemaps.js && tsup src/index.ts --format esm --clean",
+    "build": "prisma generate && node scripts/strip-prisma-sourcemaps.js && tsup",
     "start": "node dist/index.js",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
@@ -47,6 +47,8 @@
     "nestjs-i18n": "^10.4.0",
     "nodemailer": "^7.0.12",
     "pdfkit": "^0.14.0",
+    "fastify": "^5.1.0",
+    "fastify-plugin": "^5.0.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

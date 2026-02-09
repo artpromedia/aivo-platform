@@ -4,10 +4,11 @@
  * Verifies JWT tokens and loads parent context.
  */
 
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { logger } from '@aivo/ts-observability';
+import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
 import { config } from '../config.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 

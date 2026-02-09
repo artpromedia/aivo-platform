@@ -62,7 +62,10 @@ import { createLogger } from './logger.js';
 import { createMetricsRegistry } from './metrics/index.js';
 
 // Singleton logger for services that import directly
-export const logger = createLogger({ serviceName: 'default' });
+export const logger = createLogger({
+  serviceName: 'default',
+  environment: process.env.NODE_ENV ?? 'development',
+});
 
 // Singleton metrics for services that import directly
 export const metrics = createMetricsRegistry({ serviceName: 'default' });
