@@ -5,6 +5,7 @@ Environment-based configuration for the brain engine service.
 """
 
 from typing import Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -47,6 +48,15 @@ class Settings(BaseSettings):
     otel_enabled: bool = False
     otel_endpoint: Optional[str] = None
     otel_service_name: str = "brain-engine"
+
+    @field_validator("port", mode="before")
+    @classmethod
+    def parse_port(cls, v: object) -> int:
+        """Handle K8s-injected service env vars like tcp://10.43.x.x:8080."""
+        if isinstance(v, str) and v.startswith("tcp://"):
+            # Extract port from K8s service URL
+            return int(v.rsplit(":", 1)[-1])
+        return int(v)  # type: ignore[arg-type]
 
     class Config:
         env_file = ".env"
