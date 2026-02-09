@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for audio processing (sorted alphabetically)
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for audio processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ffmpeg \
     libportaudio2 \
     libsndfile1 \
@@ -23,9 +24,9 @@ USER appuser
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check (using Python instead of curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
 # Run application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

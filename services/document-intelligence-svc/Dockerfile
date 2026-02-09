@@ -1,8 +1,8 @@
 FROM python:3.11-slim
 
 # Install system dependencies for OCR (sorted alphabetically)
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglib2.0-0 \
     poppler-utils \
     tesseract-ocr \
@@ -26,9 +26,9 @@ USER appuser
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check (using Python instead of curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
 # Run application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -6,7 +6,7 @@ WORKDIR /app
 # Install system dependencies for OpenCV, OCR, and computer vision
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # OpenCV dependencies
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -29,8 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-eng \
     libtesseract-dev \
     libleptonica-dev \
-    # Health check utility
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for OpenCV
@@ -70,9 +68,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check (using Python instead of curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 # Run application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

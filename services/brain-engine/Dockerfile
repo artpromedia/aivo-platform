@@ -9,9 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy dependency files
 COPY pyproject.toml ./
+RUN touch README.md
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 # Copy source code
 COPY src/ ./src/
