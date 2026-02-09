@@ -23,6 +23,8 @@ commonLabels:
   environment: production
   platform: hetzner
   app.kubernetes.io/environment: production
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: aivo-platform
 
 commonAnnotations:
   deployment.kubernetes.io/environment: production
