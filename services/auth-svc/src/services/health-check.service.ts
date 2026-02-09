@@ -12,9 +12,10 @@
  * - Resource utilization monitoring
  */
 
-import type { PrismaClient } from '@prisma/client';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
+
+import type { PrismaClient } from '../../generated/prisma-client/index.js';
 
 export interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';

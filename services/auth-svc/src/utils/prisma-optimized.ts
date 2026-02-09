@@ -13,8 +13,9 @@
  *   const prisma = createOptimizedPrismaClient();
  */
 
-import { PrismaClient } from '@prisma/client';
 import type { FastifyBaseLogger } from 'fastify';
+
+import { PrismaClient } from '../../generated/prisma-client/index.js';
 
 export interface ConnectionPoolConfig {
   /**
