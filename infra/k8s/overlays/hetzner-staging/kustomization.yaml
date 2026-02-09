@@ -13,9 +13,11 @@ resources:
 
 namespace: aivo-staging
 
-commonLabels:
-  environment: staging
-  platform: hetzner
+labels:
+  - pairs:
+      environment: staging
+      platform: hetzner
+    includeSelectors: false
 
 commonAnnotations:
   deployment.kubernetes.io/environment: staging

@@ -15,6 +15,10 @@ resources:
 
 namespace: aivo-prod
 
+# NOTE: commonLabels injects into spec.selector.matchLabels.
+# Existing TS deployments already have these in their selectors, so we
+# MUST keep commonLabels for consistency. New deployments must be created
+# via kustomize (not base YAMLs) or deleted+recreated to match.
 commonLabels:
   environment: production
   platform: hetzner
