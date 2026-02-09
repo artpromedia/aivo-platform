@@ -775,7 +775,7 @@ class HierarchicalPlanner:
             plan.tasks = [
                 t for t in plan.tasks
                 if t.status != TaskStatus.PENDING or
-                mastered_skill not in t.postconditions[0] if t.postconditions else True
+                (mastered_skill not in t.postconditions[0] if t.postconditions else True)
             ]
         
         # Recalculate total duration

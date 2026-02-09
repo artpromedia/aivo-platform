@@ -48,21 +48,21 @@ class StudentFeatures:
     grade_level: int = 5  # Student's grade level
     
     # Engagement features
-    avg_session_duration: float  # Minutes per session
-    session_consistency: float  # Variance in session times (0-1, 0=consistent)
-    total_practice_time: float  # Hours in last 30 days
-    completion_rate: float  # % of started activities completed
+    avg_session_duration: float = 0.0  # Minutes per session
+    session_consistency: float = 0.0  # Variance in session times (0-1, 0=consistent)
+    total_practice_time: float = 0.0  # Hours in last 30 days
+    completion_rate: float = 0.0  # % of started activities completed
     login_streak: int = 0  # Consecutive days logged in
     
     # Behavioral features
-    avg_focus_score: float  # 0-1, attention/engagement during sessions
-    frustration_events: int  # Count in last 30 days
-    help_seeking_rate: float  # Hints/questions per session
+    avg_focus_score: float = 0.0  # 0-1, attention/engagement during sessions
+    frustration_events: int = 0  # Count in last 30 days
+    help_seeking_rate: float = 0.0  # Hints/questions per session
     quit_rate: float = 0.0  # Rate of quitting activities early
     
     # Time-based features
-    days_since_last_session: int  # Days since last activity
-    longest_gap_days: int  # Longest gap between sessions in last 30 days
+    days_since_last_session: int = 0  # Days since last activity
+    longest_gap_days: int = 0  # Longest gap between sessions in last 30 days
     time_of_day_variance: float = 0.5  # Variance in session times (0-1)
     
     # IEP/Support features
