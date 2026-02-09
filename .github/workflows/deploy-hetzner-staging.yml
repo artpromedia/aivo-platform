@@ -16,6 +16,7 @@ on:
       services:
         description: 'Comma-separated services to deploy (empty = all)'
         required: false
+        type: string
         default: ''
       skip_tests:
         description: 'Skip tests (emergency deploys only)'
@@ -416,11 +417,9 @@ jobs:
             exit 0
 
       - name: Notify Slack
-        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        if: always()
         uses: slackapi/slack-github-action@v1
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
           payload: |
             {
               "text": "${{ job.status == 'success' && '✅' || '❌' }} Hetzner staging deploy ${{ job.status }} (${{ needs.ci.outputs.version }})"

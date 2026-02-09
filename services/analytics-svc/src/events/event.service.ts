@@ -11,7 +11,7 @@ import type { PutRecordsRequestEntry } from '@aws-sdk/client-kinesis';
 import { Kinesis, PutRecordsCommand } from '@aws-sdk/client-kinesis';
 import type { Redis } from 'ioredis';
 
-import type { PrismaClient } from '../../generated/prisma/index.js';
+import type { PrismaClient } from '../../generated/prisma.js';
 
 import type { CaliperService } from './caliper.service';
 import type {

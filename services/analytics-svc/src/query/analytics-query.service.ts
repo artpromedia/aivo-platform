@@ -13,7 +13,7 @@ import {
 import { S3 } from '@aws-sdk/client-s3';
 import type { Redis } from 'ioredis';
 
-import type { PrismaClient } from '../../generated/prisma/index.js';
+import type { PrismaClient } from '../../generated/prisma.js';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

@@ -16,37 +16,36 @@ import { ParentAuthService } from './auth/parent-auth.service.js';
 import { RateLimitMiddleware } from './auth/rate-limit.middleware.js';
 import { CaregiverController } from './caregiver/caregiver.controller.js';
 import { CaregiverService } from './caregiver/caregiver.service.js';
-import { CryptoService } from './crypto/crypto.service.js';
 import { WeeklyDigestService } from './digest/weekly-digest.service.js';
-import { EmailService } from './email/email.service.js';
-import { FirebaseService } from './firebase/firebase.service.js';
 import { HomeworkController } from './homework/homework.controller.js';
-import { HomeworkService } from './homework/homework.service.js';
-import { I18nService } from './i18n/i18n.service.js';
-import { InternalController } from './internal/internal.controller.js';
-import { LearnerController } from './learner/learner.controller.js';
 import { MessagingController } from './messaging/messaging.controller.js';
-import { MessagingService } from './messaging/messaging.service.js';
-import { NotificationService } from './notification/notification.service.js';
-import { OnboardingController } from './onboarding/onboarding.controller.js';
 import { ParentController } from './parent/parent.controller.js';
 import { ParentService } from './parent/parent.service.js';
 import { PdfReportService } from './pdf/pdf-report.service.js';
 import { ReportsController } from './pdf/reports.controller.js';
+import { OnboardingController } from './onboarding/onboarding.controller.js';
+import { LearnerController } from './learner/learner.controller.js';
+import { InternalController } from './internal/internal.controller.js';
 
 // Registration Controllers (self-service registration)
 import { PrismaService } from './prisma/prisma.service.js';
 import { AdminVerificationController } from './registration/admin-verification.controller.js';
-import { FamilyController } from './registration/family.controller.js';
-import { FamilyService } from './registration/family.service.js';
 import { RegistrationController } from './registration/registration.controller.js';
+import { FamilyController } from './registration/family.controller.js';
 
 // Services
+import { MessagingService } from './messaging/messaging.service.js';
+import { NotificationService } from './notification/notification.service.js';
+import { EmailService } from './email/email.service.js';
 import { ContentModerationService } from './moderation/content-moderation.service.js';
 import { OnboardingService } from './onboarding/onboarding.service.js';
+import { HomeworkService } from './homework/homework.service.js';
+import { CryptoService } from './crypto/crypto.service.js';
+import { I18nService } from './i18n/i18n.service.js';
 
 // Registration Services (self-service registration)
 import { RegistrationService } from './registration/registration.service.js';
+import { FamilyService } from './registration/family.service.js';
 
 // Middleware
 
@@ -73,7 +72,6 @@ import { RegistrationService } from './registration/registration.service.js';
     CryptoService,
     I18nService,
     EmailService,
-    FirebaseService,
 
     // Business services
     ParentService,
