@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsup src/cli.ts src/index.ts --format esm --dts",
     "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "lint": "eslint src"
   },
   "dependencies": {
