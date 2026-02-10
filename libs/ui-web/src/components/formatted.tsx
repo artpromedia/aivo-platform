@@ -7,7 +7,17 @@
  */
 
 import React, { useMemo } from 'react';
-import { FormattedNumber, FormattedDate, FormattedTime, FormattedRelativeTime, FormattedMessage, FormattedList, FormattedDisplayName, FormattedPlural } from 'react-intl';
+import {
+  FormattedNumber,
+  FormattedDate,
+  FormattedTime,
+  FormattedRelativeTime,
+  FormattedMessage,
+  FormattedList,
+  FormattedDisplayName,
+  FormattedPlural,
+} from 'react-intl';
+
 import { useLocale } from '../providers/LocaleProvider';
 
 /* ==========================================================================
@@ -332,12 +342,7 @@ export function FormattedTimeAgo({
 
   return (
     <span className={className}>
-      <FormattedRelativeTime
-        value={relValue}
-        unit={unit}
-        numeric={numeric}
-        style={style}
-      />
+      <FormattedRelativeTime value={relValue} unit={unit} numeric={numeric} style={style} />
     </span>
   );
 }
@@ -353,10 +358,7 @@ export function FormattedTimeAgo({
  * <FormattedOrdinal value={3} />
  * // Output: 3rd (in en) or 3. (in de)
  */
-export function FormattedOrdinal({
-  value,
-  className,
-}: FormattedOrdinalProps): React.ReactElement {
+export function FormattedOrdinal({ value, className }: FormattedOrdinalProps): React.ReactElement {
   const { locale } = useLocale();
 
   const ordinal = useMemo(() => {
@@ -379,7 +381,7 @@ export function FormattedOrdinal({
 
     // For other languages, use the locale's number format
     // Many languages just use the number with a period (e.g., German: 1., 2., 3.)
-    if (['de', 'fr', 'es', 'it', 'pt', 'nl'].some(l => locale.startsWith(l))) {
+    if (['de', 'fr', 'es', 'it', 'pt', 'nl'].some((l) => locale.startsWith(l))) {
       return `${value}.`;
     }
 
@@ -409,12 +411,7 @@ export function FormattedUnit({
 }: FormattedUnitProps): React.ReactElement {
   return (
     <span className={className}>
-      <FormattedNumber
-        value={value}
-        style="unit"
-        unit={unit}
-        unitDisplay={unitDisplay}
-      />
+      <FormattedNumber value={value} style="unit" unit={unit} unitDisplay={unitDisplay} />
     </span>
   );
 }
@@ -430,19 +427,15 @@ export function FormattedUnit({
  * <FormattedRange start={10} end={20} />
  * // Output: 10–20
  */
-export function FormattedRange({
-  start,
-  end,
-  className,
-}: FormattedRangeProps): React.ReactElement {
+export function FormattedRange({ start, end, className }: FormattedRangeProps): React.ReactElement {
   const { locale } = useLocale();
 
   const formattedRange = useMemo(() => {
-    // @ts-expect-error formatRange may not be in all TypeScript definitions yet
     if (typeof Intl.NumberFormat.prototype.formatRange === 'function') {
       const formatter = new Intl.NumberFormat(locale);
-      // @ts-expect-error formatRange exists in modern browsers
-      return formatter.formatRange(start, end);
+      return (
+        formatter as Intl.NumberFormat & { formatRange: (start: number, end: number) => string }
+      ).formatRange(start, end);
     }
     // Fallback for older browsers
     const formatter = new Intl.NumberFormat(locale);
@@ -571,7 +564,7 @@ export function FormattedScore({
   className,
   colorCoded = false,
 }: FormattedScoreProps): React.ReactElement {
-  const normalizedValue = max !== 100 ? (value / max) : value / 100;
+  const normalizedValue = max !== 100 ? value / max : value / 100;
 
   const colorClass = useMemo(() => {
     if (!colorCoded) return '';
@@ -654,19 +647,36 @@ export function FormattedDuration({
 
     // Long format
     if (hours > 0) {
-      const hourFormatter = new Intl.NumberFormat(locale, { style: 'unit', unit: 'hour', unitDisplay: 'long' });
+      const hourFormatter = new Intl.NumberFormat(locale, {
+        style: 'unit',
+        unit: 'hour',
+        unitDisplay: 'long',
+      });
       parts.push(hourFormatter.format(hours));
     }
     if (minutes > 0) {
-      const minFormatter = new Intl.NumberFormat(locale, { style: 'unit', unit: 'minute', unitDisplay: 'long' });
+      const minFormatter = new Intl.NumberFormat(locale, {
+        style: 'unit',
+        unit: 'minute',
+        unitDisplay: 'long',
+      });
       parts.push(minFormatter.format(minutes));
     }
     if (secs > 0 && hours === 0) {
-      const secFormatter = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'long' });
+      const secFormatter = new Intl.NumberFormat(locale, {
+        style: 'unit',
+        unit: 'second',
+        unitDisplay: 'long',
+      });
       parts.push(secFormatter.format(secs));
     }
 
-    return listFormatter.format(parts) || new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'long' }).format(0);
+    return (
+      listFormatter.format(parts) ||
+      new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'long' }).format(
+        0
+      )
+    );
   }, [seconds, format, locale]);
 
   return <span className={className}>{formatted}</span>;

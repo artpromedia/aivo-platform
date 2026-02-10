@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm turbo build --filter=@aivo/a11y --filter=@aivo/ui-web
+        run: pnpm turbo build --filter=@aivo/a11y
 
       - name: Run a11y unit tests
         run: pnpm --filter @aivo/a11y test

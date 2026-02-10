@@ -39,9 +39,11 @@
     "tailwindcss": "^3.4.0"
   },
   "dependencies": {
+    "@aivo/i18n": "workspace:*",
     "@aivo/ts-types": "workspace:*",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
+    "react-intl": "^7.1.0",
     "recharts": "^2.15.0"
   }
 }
