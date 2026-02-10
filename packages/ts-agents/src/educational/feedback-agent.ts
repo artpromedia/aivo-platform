@@ -78,7 +78,7 @@ Remember: Effective feedback builds confidence while guiding improvement. It sho
 
 export class FeedbackAgent extends Agent {
   private feedbackConfig: FeedbackConfig;
-  private goals: Map<string, Goal> = new Map();
+  private goals = new Map<string, Goal>();
   private progressHistory: ProgressEntry[] = [];
 
   constructor(config: FeedbackConfig, dependencies: AgentDependencies) {

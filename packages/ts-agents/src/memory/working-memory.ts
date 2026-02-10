@@ -13,7 +13,7 @@ export interface WorkingMemoryConfig {
 export class WorkingMemory {
   private items: MemoryItem[] = [];
   private capacity: number;
-  private focusIndex: number = -1;
+  private focusIndex = -1;
 
   constructor(capacity: number = 7) {
     this.capacity = capacity;

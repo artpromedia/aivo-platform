@@ -74,10 +74,10 @@ Remember: The goal is accurate assessment that helps guide learning, not to tric
 
 export class AssessmentAgent extends Agent {
   private assessmentConfig: AssessmentConfig;
-  private currentDifficulty: number = 0.5;
+  private currentDifficulty = 0.5;
   private questionBank: Question[] = [];
   private responses: Response[] = [];
-  private estimatedSkillLevel: number = 0.5;
+  private estimatedSkillLevel = 0.5;
 
   constructor(config: AssessmentConfig, dependencies: AgentDependencies) {
     super(config, dependencies);

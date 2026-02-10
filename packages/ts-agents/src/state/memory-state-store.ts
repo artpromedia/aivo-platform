@@ -17,9 +17,10 @@ export interface MemoryStoreOptions {
 }
 
 export class MemoryStateStore implements IStateStore {
-  private store: Map<string, StoredState> = new Map();
-  private agentIndex: Map<string, Set<string>> = new Map();
+  private store = new Map<string, StoredState>();
+  private agentIndex = new Map<string, Set<string>>();
   private options: Required<MemoryStoreOptions>;
+  // eslint-disable-next-line no-undef
   private cleanupTimer?: NodeJS.Timeout;
 
   constructor(options?: MemoryStoreOptions) {

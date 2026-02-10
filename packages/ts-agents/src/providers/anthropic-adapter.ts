@@ -78,7 +78,7 @@ interface AnthropicStream {
 
 export class AnthropicAdapter extends ModelAdapter {
   private client?: AnthropicClient;
-  private modelName: string = 'claude-3-sonnet-20240229';
+  private modelName = 'claude-3-sonnet-20240229';
 
   constructor(apiKey?: string, baseUrl?: string) {
     super(apiKey, baseUrl);
@@ -121,7 +121,7 @@ export class AnthropicAdapter extends ModelAdapter {
       stop_sequences: request.config.stopSequences,
     };
 
-    if (request.tools && request.tools.length > 0) {
+    if ((request.tools?.length ?? 0) > 0) {
       params.tools = this.formatTools(request.tools) as AnthropicTool[];
     }
 
@@ -150,7 +150,7 @@ export class AnthropicAdapter extends ModelAdapter {
       stop_sequences: request.config.stopSequences,
     };
 
-    if (request.tools && request.tools.length > 0) {
+    if ((request.tools?.length ?? 0) > 0) {
       params.tools = this.formatTools(request.tools) as AnthropicTool[];
     }
 
@@ -201,7 +201,7 @@ export class AnthropicAdapter extends ModelAdapter {
           content: message.content,
         });
       } else if (message.role === 'assistant') {
-        if (message.toolCalls && message.toolCalls.length > 0) {
+        if ((message.toolCalls?.length ?? 0) > 0) {
           // Assistant message with tool calls
           const content: AnthropicContentBlock[] = [];
 

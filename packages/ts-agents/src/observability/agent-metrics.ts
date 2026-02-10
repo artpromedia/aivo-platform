@@ -80,7 +80,7 @@ class Histogram {
 }
 
 class Counter {
-  private value: number = 0;
+  private value = 0;
 
   increment(by: number = 1): void {
     this.value += by;
@@ -96,7 +96,7 @@ class Counter {
 }
 
 class Gauge {
-  private value: number = 0;
+  private value = 0;
 
   set(value: number): void {
     this.value = value;
@@ -110,9 +110,10 @@ class Gauge {
 export class AgentMetrics {
   private config: Required<AgentMetricsConfig>;
   private agentId: string;
-  private histograms: Map<string, Histogram> = new Map();
-  private counters: Map<string, Counter> = new Map();
-  private gauges: Map<string, Gauge> = new Map();
+  private histograms = new Map<string, Histogram>();
+  private counters = new Map<string, Counter>();
+  private gauges = new Map<string, Gauge>();
+  // eslint-disable-next-line no-undef
   private flushTimer?: NodeJS.Timeout;
 
   constructor(agentId: string, config?: Partial<AgentMetricsConfig>) {
@@ -121,6 +122,7 @@ export class AgentMetrics {
       enabled: true,
       flushIntervalMs: 60000, // 1 minute
       histogramBuckets: 1000,
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
       onFlush: () => {},
       ...config,
     };

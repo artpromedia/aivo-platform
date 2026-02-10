@@ -16,7 +16,7 @@ export interface MemoryEntry extends Memory {
 }
 
 export class LongTermMemory {
-  private memories: Map<string, MemoryEntry> = new Map();
+  private memories = new Map<string, MemoryEntry>();
   private config: Required<LongTermMemoryConfig>;
 
   constructor(config: LongTermMemoryConfig) {

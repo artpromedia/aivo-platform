@@ -11,9 +11,9 @@ export interface RegistryOptions {
 }
 
 export class ToolRegistry {
-  private tools: Map<string, ExtendedTool> = new Map();
-  private factories: Map<string, ToolFactory> = new Map();
-  private categories: Map<ToolCategory, Set<string>> = new Map();
+  private tools = new Map<string, ExtendedTool>();
+  private factories = new Map<string, ToolFactory>();
+  private categories = new Map<ToolCategory, Set<string>>();
   private options: Required<RegistryOptions>;
 
   constructor(options?: RegistryOptions) {

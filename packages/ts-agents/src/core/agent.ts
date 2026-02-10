@@ -42,7 +42,7 @@ export abstract class Agent {
   protected toolExecutor: ToolExecutor;
   protected modelAdapter: ModelAdapter;
   protected conversationManager: ConversationManager;
-  protected eventHandlers: Map<AgentEventType, AgentEventHandler[]> = new Map();
+  protected eventHandlers = new Map<AgentEventType, AgentEventHandler[]>();
   protected currentContext: AgentContext | null = null;
 
   constructor(config: AgentConfig, dependencies: AgentDependencies) {
@@ -139,7 +139,7 @@ export abstract class Agent {
         });
 
         // Process tool calls if any
-        if (response.toolCalls && response.toolCalls.length > 0) {
+        if ((response.toolCalls?.length ?? 0) > 0) {
           await this.stateManager.update(validatedContext.sessionId, {
             status: 'waiting_for_tool',
           });
@@ -476,8 +476,4 @@ export abstract class Agent {
 /**
  * Default agent implementation for general use
  */
-export class DefaultAgent extends Agent {
-  constructor(config: AgentConfig, dependencies: AgentDependencies) {
-    super(config, dependencies);
-  }
-}
+export class DefaultAgent extends Agent {}

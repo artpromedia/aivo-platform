@@ -47,8 +47,8 @@ export type StateChangeHandler = (
 export class StateMachine {
   private config: StateMachineConfig;
   private context: StateContext;
-  private handlers: Map<string, StateChangeHandler[]> = new Map();
-  private stateHandlers: Map<AgentStatus, StateChangeHandler[]> = new Map();
+  private handlers = new Map<string, StateChangeHandler[]>();
+  private stateHandlers = new Map<AgentStatus, StateChangeHandler[]>();
 
   constructor(config: StateMachineConfig) {
     this.config = {
@@ -94,8 +94,8 @@ export class StateMachine {
   /**
    * Get context data
    */
-  getData<T = unknown>(key: string): T | undefined {
-    return this.context.data[key] as T | undefined;
+  getData(key: string): unknown {
+    return this.context.data[key];
   }
 
   /**

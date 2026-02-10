@@ -88,7 +88,7 @@ interface OpenAIChatChoice {
 
 export class OpenAIAdapter extends ModelAdapter {
   private client?: OpenAIClient;
-  private modelName: string = 'gpt-4-turbo-preview';
+  private modelName = 'gpt-4-turbo-preview';
 
   constructor(apiKey?: string, baseUrl?: string) {
     super(apiKey, baseUrl);
@@ -130,7 +130,7 @@ export class OpenAIAdapter extends ModelAdapter {
       stop: request.config.stopSequences,
     };
 
-    if (request.tools && request.tools.length > 0) {
+    if ((request.tools?.length ?? 0) > 0) {
       params.tools = this.formatTools(request.tools) as OpenAITool[];
       params.tool_choice = 'auto';
     }
@@ -160,7 +160,7 @@ export class OpenAIAdapter extends ModelAdapter {
       stream: true,
     };
 
-    if (request.tools && request.tools.length > 0) {
+    if ((request.tools?.length ?? 0) > 0) {
       params.tools = this.formatTools(request.tools) as OpenAITool[];
       params.tool_choice = 'auto';
     }
@@ -270,7 +270,7 @@ export class OpenAIAdapter extends ModelAdapter {
           content: message.content || null,
         };
 
-        if (message.toolCalls && message.toolCalls.length > 0) {
+        if ((message.toolCalls?.length ?? 0) > 0) {
           assistantMessage.tool_calls = message.toolCalls.map(tc => ({
             id: tc.id,
             type: 'function' as const,

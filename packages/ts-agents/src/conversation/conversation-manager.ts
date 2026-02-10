@@ -16,10 +16,10 @@ export class ConversationManager {
   private config: ConversationConfig;
   private history: MessageHistory;
   private contextManager: ContextWindowManager;
-  private branches: Map<string, ConversationBranch> = new Map();
+  private branches = new Map<string, ConversationBranch>();
   private currentBranchId?: string;
   private summaryCache?: string;
-  private lastSummaryIndex: number = 0;
+  private lastSummaryIndex = 0;
 
   constructor(config: ConversationConfig) {
     this.config = config;

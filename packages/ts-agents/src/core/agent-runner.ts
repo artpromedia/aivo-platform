@@ -44,11 +44,11 @@ export interface AgentRun {
 
 export class AgentRunner {
   private config: AgentRunnerConfig;
-  private agents: Map<string, Agent> = new Map();
+  private agents = new Map<string, Agent>();
   private runQueue: AgentRun[] = [];
-  private activeRuns: Map<string, AgentRun> = new Map();
-  private eventHandlers: Map<AgentEventType, AgentEventHandler[]> = new Map();
-  private isProcessing: boolean = false;
+  private activeRuns = new Map<string, AgentRun>();
+  private eventHandlers = new Map<AgentEventType, AgentEventHandler[]>();
+  private isProcessing = false;
 
   constructor(config?: Partial<AgentRunnerConfig>) {
     this.config = {
@@ -258,7 +258,7 @@ export class AgentRunner {
         if (!run) break;
 
         // Start the run without awaiting
-        this.executeRun(run).catch(error => {
+        this.executeRun(run).catch((error: unknown) => {
           console.error('Run execution error:', error);
         });
       }
@@ -398,9 +398,9 @@ export class AgentRunner {
           clearTimeout(timer);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error: unknown) => {
           clearTimeout(timer);
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         });
     });
   }

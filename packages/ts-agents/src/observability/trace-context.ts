@@ -75,7 +75,7 @@ export class BufferTraceExporter implements TraceExporter {
 export class TraceContext {
   private config: Required<TraceContextConfig>;
   private currentTrace?: string;
-  private spans: Map<string, Span> = new Map();
+  private spans = new Map<string, Span>();
   private spanStack: string[] = [];
 
   constructor(config: Partial<TraceContextConfig>) {

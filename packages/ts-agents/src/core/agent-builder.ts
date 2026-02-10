@@ -10,7 +10,7 @@ import type {
   MemoryConfig,
   Tool,
 } from './types';
-import { Agent, DefaultAgent, type AgentDependencies } from './agent';
+import { DefaultAgent, type Agent, type AgentDependencies } from './agent';
 import { StateManager } from '../state/state-manager';
 import { MemoryStateStore } from '../state/memory-state-store';
 import { RedisStateStore } from '../state/redis-state-store';
@@ -20,7 +20,7 @@ import { WorkingMemory } from '../memory/working-memory';
 import { LongTermMemory } from '../memory/long-term-memory';
 import { ToolRegistry } from '../tools/tool-registry';
 import { ToolExecutor } from '../tools/tool-executor';
-import { ModelAdapter } from '../providers/model-adapter';
+import type { ModelAdapter } from '../providers/model-adapter';
 import { AnthropicAdapter } from '../providers/anthropic-adapter';
 import { OpenAIAdapter } from '../providers/openai-adapter';
 import { ConversationManager } from '../conversation/conversation-manager';
@@ -41,9 +41,9 @@ export interface AgentBuilderOptions {
 
 export class AgentBuilder {
   private id: string;
-  private name: string = 'Agent';
-  private description: string = '';
-  private systemPrompt: string = 'You are a helpful AI assistant.';
+  private name = 'Agent';
+  private description = '';
+  private systemPrompt = 'You are a helpful AI assistant.';
   private model: ModelConfig = {
     provider: 'anthropic',
     model: 'claude-3-sonnet-20240229',
@@ -51,8 +51,8 @@ export class AgentBuilder {
     maxTokens: 4096,
   };
   private tools: Tool[] = [];
-  private maxIterations: number = 10;
-  private timeout: number = 300000; // 5 minutes
+  private maxIterations = 10;
+  private timeout = 300000; // 5 minutes
   private stateConfig: StateConfig = {
     store: 'memory',
     ttlSeconds: 3600,
