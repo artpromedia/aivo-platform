@@ -12,9 +12,6 @@ on:
         required: true
         default: 'DO NOT RUN'
 
-# Prevent execution even if manually triggered
-if: false
-
 env:
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9'

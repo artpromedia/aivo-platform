@@ -13,9 +13,6 @@ on:
         required: true
         default: 'DO NOT RUN'
 
-# Prevent execution even if manually triggered
-if: false
-
 env:
   GKE_CLUSTER: aivo-gke-staging
   GKE_ZONE: us-central1-c

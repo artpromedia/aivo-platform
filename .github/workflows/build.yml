@@ -1,19 +1,17 @@
 # .github/workflows/build.yml
-# Build and Push Docker Images
-# Runs on pushes to main/release branches and tags
+# DEPRECATED — Builds and pushes Docker images to GCR (gcr.io/aivo-learning)
+# Replaced by deploy-hetzner-staging.yml / deploy-hetzner-production.yml which use GHCR.
+# DO NOT re-enable push triggers.
 
-name: Build and Push
+name: '[DISABLED] Build and Push (GCR)'
 
 on:
-  push:
-    branches: [main, release/*]
-    tags: ['v*']
   workflow_dispatch:
     inputs:
-      services:
-        description: 'Services to build (comma-separated, or "all")'
-        required: false
-        default: 'all'
+      _disabled:
+        description: 'This workflow is disabled. Use deploy-hetzner-staging.yml instead.'
+        required: true
+        default: 'DO NOT RUN'
 
 env:
   REGISTRY: gcr.io
