@@ -159,9 +159,13 @@ describe('CircuitBreaker', () => {
         resetTimeout: 1000,
       });
 
-      // Open then wait
-      const failFn = vi.fn().mockRejectedValue(new Error('fail'));
-      const cb3 = new CircuitBreaker(failFn, {
+      // Open then wait — use a fn that fails first, then succeeds for probe
+      const failThenSucceed = vi.fn()
+        .mockRejectedValueOnce(new Error('fail'))
+        .mockRejectedValueOnce(new Error('fail'))
+        .mockRejectedValueOnce(new Error('fail'))
+        .mockResolvedValue('recovered');
+      const cb3 = new CircuitBreaker(failThenSucceed, {
         name: 'test-3',
         failureThreshold: 3,
         volumeThreshold: 3,
@@ -170,12 +174,13 @@ describe('CircuitBreaker', () => {
       for (let i = 0; i < 3; i++) {
         await expect(cb3.fire()).rejects.toThrow();
       }
+      expect(cb3.state).toBe(CircuitState.OPEN);
       vi.advanceTimersByTime(1100);
 
-      // The next fire should be allowed (half-open probe)
-      // Replace the action by creating new CB
-      // Note: we can't replace action on existing CB, so verify state
-      expect(cb3.state).toBe(CircuitState.HALF_OPEN);
+      // The next fire triggers allowRequest() which transitions OPEN → HALF_OPEN
+      // The probe call should succeed since the mock now resolves
+      const result = await cb3.fire();
+      expect(result).toBe('recovered');
 
       vi.useRealTimers();
     });

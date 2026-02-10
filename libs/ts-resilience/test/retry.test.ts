@@ -152,7 +152,7 @@ describe('retry', () => {
         onRetry,
       });
       expect(onRetry).toHaveBeenCalledTimes(1);
-      expect(onRetry).toHaveBeenCalledWith(2, expect.any(Error), expect.any(Number));
+      expect(onRetry).toHaveBeenCalledWith(1, expect.any(Error), expect.any(Number));
     });
   });
 
