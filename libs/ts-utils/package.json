@@ -12,8 +12,8 @@
     }
   },
   "scripts": {
-    "lint": "eslint src --ext .ts",
-    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "test": "vitest run",
     "build": "tsc",
     "dev": "tsc --watch"
   },

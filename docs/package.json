@@ -16,8 +16,8 @@
     "typecheck": "tsc",
     "gen-api-docs": "docusaurus gen-api-docs all",
     "clean-api-docs": "docusaurus clean-api-docs all",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test:links": "linkinator ./build --recurse --skip 'https://github.com'",
     "test:a11y": "pa11y-ci --sitemap ./build/sitemap.xml"

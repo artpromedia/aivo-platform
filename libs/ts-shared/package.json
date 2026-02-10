@@ -23,8 +23,8 @@
     "dev": "tsc --watch",
     "clean": "rimraf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
-    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {

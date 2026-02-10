@@ -21,8 +21,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src --ext .ts",
-    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

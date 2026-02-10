@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "lint": "eslint \"src/**/*.ts\" --ignore-pattern \"**/*.d.ts\"",
+    "lint": "eslint src",
     "test": "vitest run",
     "build": "tsc -p tsconfig.json",
     "prepare": "pnpm build"

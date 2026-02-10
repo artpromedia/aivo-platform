@@ -9,7 +9,7 @@
     "build": "prisma generate && tsc || true",
     "start": "node dist/index.js",
     "lint": "eslint src",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:watch": "vitest",
     "prisma:generate": "prisma generate",
     "etl": "tsx src/etl/cli.ts",

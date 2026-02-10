@@ -14,8 +14,8 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",

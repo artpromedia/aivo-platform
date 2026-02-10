@@ -10,7 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "test": "vitest"
   },
   "dependencies": {

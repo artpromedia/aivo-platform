@@ -15,7 +15,7 @@
     "./styles/globals.css": "./src/styles/globals.css"
   },
   "scripts": {
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src",
     "test": "vitest run",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",

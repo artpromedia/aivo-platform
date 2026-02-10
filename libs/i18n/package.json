@@ -13,8 +13,8 @@
     "./constants": "./src/constants/index.ts"
   },
   "scripts": {
-    "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src",
+    "test": "vitest run",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "extract": "formatjs extract 'src/**/*.ts*' --out-file lang/en.json --id-interpolation-pattern '[sha512:contenthash:base64:6]'",
