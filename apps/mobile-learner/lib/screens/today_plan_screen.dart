@@ -187,7 +187,11 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => context.go('/complete'),
+              onPressed: () {
+                // Navigate to the first activity in the plan
+                final firstActivity = plan.activities.first;
+                context.go('/activity/${firstActivity.id}');
+              },
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start Learning'),
             ),

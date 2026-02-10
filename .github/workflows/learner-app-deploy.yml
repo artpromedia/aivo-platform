@@ -351,25 +351,3 @@ jobs:
 
       - name: Deploy to Production
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Notify success
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "✅ Learner App deployed to production",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ *Learner App Production Deployment*\n\n*Commit:* `${{ github.sha }}`\n*Deployed by:* ${{ github.actor }}\n*URL:* https://learn.aivo.ai"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-        continue-on-error: true

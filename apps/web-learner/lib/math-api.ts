@@ -8,7 +8,7 @@
  * - Practice Problems with difficulty levels
  */
 
-const API_BASE_URL = 'http://localhost:8085/api/math';
+const API_BASE_URL = process.env.NEXT_PUBLIC_MATH_API_URL || 'http://localhost:8085/api/math';
 
 // ============================================================================
 // Virtual Manipulatives Types

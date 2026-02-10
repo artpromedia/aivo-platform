@@ -31,6 +31,7 @@ dependencies:
   fl_chart: ^0.69.0
   cached_network_image: ^3.4.1
   timeago: ^3.7.0
+  http: ^1.2.0
   flutter_common:
     path: ../../libs/flutter-common
   flutter_notifications:

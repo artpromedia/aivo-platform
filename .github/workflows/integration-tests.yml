@@ -648,7 +648,7 @@ jobs:
           // Write to GitHub step summary
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
           
-          // Set output for Slack notification
+          // Set output for reporting
           const overallStatus = totalFailed > 0 ? 'failure' : 'success';
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=${overallStatus}\n`);
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `total=${totalTests}\n`);
@@ -666,78 +666,6 @@ jobs:
           name: integration-test-report
           path: all-test-results/
           retention-days: 30
-
-  # ===========================================================================
-  # Notifications
-  # ===========================================================================
-  notify:
-    name: Send Notifications
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: 
-      - report
-      - test-learner-journey
-      - test-teacher-classroom
-      - test-billing
-      - test-tenant-isolation
-    if: |
-      always() && 
-      github.event_name != 'pull_request' &&
-      (needs.test-learner-journey.result == 'failure' ||
-       needs.test-teacher-classroom.result == 'failure' ||
-       needs.test-billing.result == 'failure' ||
-       needs.test-tenant-isolation.result == 'failure')
-    
-    steps:
-      - name: Send Slack notification on failure
-        if: always()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          channel-id: ${{ vars.SLACK_CHANNEL_CI_ALERTS }}
-          payload: |
-            {
-              "text": "🚨 Integration Tests Failed",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "🚨 Integration Tests Failed",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Triggered By:*\n${{ github.actor }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   # ===========================================================================
   # Final Status Check

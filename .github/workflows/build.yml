@@ -17,10 +17,10 @@ on:
 
 env:
   REGISTRY: gcr.io
-  PROJECT_ID: aivo-platform
+  PROJECT_ID: aivo-learning
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
-  FLUTTER_VERSION: '3.16.x'
+  FLUTTER_VERSION: '3.24.0'
 
 jobs:
   # ════════════════════════════════════════════════════════════════════════════
@@ -117,13 +117,15 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: services/${{ matrix.service }}/Dockerfile
+          context: .
+          file: docker/Dockerfile.service
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            SERVICE_NAME=${{ matrix.service }}
             VERSION=${{ needs.prepare.outputs.version }}
             BUILD_SHA=${{ needs.prepare.outputs.sha_short }}
             BUILD_TIME=${{ github.event.head_commit.timestamp }}

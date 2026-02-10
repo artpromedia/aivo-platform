@@ -4,7 +4,7 @@
 # =============================================================================
 # Deploys a validated release to K3s production on Hetzner.
 # Includes: image verification → manual approval → canary (10%) → full rollout
-# → smoke tests → DB migrations → Slack notification.
+# → smoke tests → DB migrations.
 # =============================================================================
 
 name: Deploy to Hetzner (Production)
@@ -400,50 +400,6 @@ jobs:
               echo "🚨 More than 3 services unhealthy — investigate immediately!"
               exit 1
             fi
-
-      - name: Notify success
-        if: success()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "🚀 *Hetzner Production Deploy Successful*",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚀 *AIVO Production Deployed to Hetzner*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Deployed by:* ${{ github.actor }}\n*Time:* <!date^${{ github.event.created_at || 'now' }}^{date_short_pretty} at {time}|just now>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "🚨 HETZNER PRODUCTION DEPLOY FAILED",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚨 *PRODUCTION DEPLOY FAILED*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>\n\n@channel Investigate immediately!"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
 
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 5: Database Migrations (post-deploy)

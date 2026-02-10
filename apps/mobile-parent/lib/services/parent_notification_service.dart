@@ -64,58 +64,53 @@ class ParentNotificationService {
       case NotificationTypes.sessionCompleted:
       case NotificationTypes.sessionSummary:
         final childId = notification.data['child_id'];
-        final sessionId = notification.data['session_id'];
-        if (childId != null && sessionId != null) {
-          router.push('/children/$childId/sessions/$sessionId');
-        } else if (childId != null) {
-          router.push('/children/$childId');
+        if (childId != null) {
+          // Navigate to the child's progress report
+          router.push('/progress-report/$childId');
+        } else {
+          router.push('/dashboard');
         }
         break;
 
       case NotificationTypes.achievementUnlocked:
         final childId = notification.data['child_id'];
         if (childId != null) {
-          router.push('/children/$childId/achievements');
+          router.push('/progress-report/$childId');
         }
         break;
 
       case NotificationTypes.teacherMessage:
-        final conversationId = notification.data['conversation_id'];
-        if (conversationId != null) {
-          router.push('/messages/$conversationId');
-        } else {
-          router.push('/messages');
-        }
+        router.push('/messages');
         break;
 
       case NotificationTypes.iepUpdate:
         final childId = notification.data['child_id'];
         if (childId != null) {
-          router.push('/children/$childId/iep');
+          router.push('/iep/$childId');
         }
         break;
 
       case NotificationTypes.paymentFailed:
       case NotificationTypes.subscriptionExpiring:
-        router.push('/settings/billing');
+        router.push('/subscription');
         break;
 
       case NotificationTypes.progressMilestone:
         final childId = notification.data['child_id'];
         if (childId != null) {
-          router.push('/children/$childId/progress');
+          router.push('/progress-report/$childId');
         }
         break;
 
       case NotificationTypes.streakMilestone:
         final childId = notification.data['child_id'];
         if (childId != null) {
-          router.push('/children/$childId');
+          router.push('/progress-report/$childId');
         }
         break;
 
       default:
-        router.push('/notifications');
+        router.push('/dashboard');
     }
   }
 

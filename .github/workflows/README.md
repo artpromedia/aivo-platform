@@ -12,7 +12,6 @@ These warnings indicate that certain secrets or variables might not be configure
 
 - `GCP_SA_KEY` - GCP Service Account JSON key for non-production environments
 - `GCP_PROD_SA_KEY` - GCP Service Account JSON key for production environment
-- `SLACK_WEBHOOK_URL` - Slack webhook for deployment notifications
 - `PAGERDUTY_ROUTING_KEY` - PagerDuty routing key for critical alerts
 
 **Required Variables:**

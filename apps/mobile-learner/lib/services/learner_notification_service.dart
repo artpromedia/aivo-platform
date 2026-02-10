@@ -72,23 +72,23 @@ class LearnerNotificationService {
 
     switch (notification.type) {
       case NotificationTypes.achievementUnlocked:
-        router.push('/achievements');
+        router.push('/progress');
         break;
 
       case NotificationTypes.streakMilestone:
-        router.push('/profile');
+        router.push('/progress');
         break;
 
       case NotificationTypes.sessionReminder:
         // Only if parent enabled reminders
         final settings = _ref.read(learnerSettingsProvider);
         if (settings.sessionRemindersEnabled) {
-          router.push('/home');
+          router.push('/plan');
         }
         break;
 
       case NotificationTypes.levelUp:
-        router.push('/profile');
+        router.push('/progress');
         break;
 
       case NotificationTypes.encouragement:
@@ -96,7 +96,7 @@ class LearnerNotificationService {
         break;
 
       default:
-        router.push('/home');
+        router.push('/plan');
     }
   }
 

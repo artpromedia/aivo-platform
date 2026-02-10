@@ -135,7 +135,7 @@ async function getAuthToken(): Promise<string | null> {
 
   // Fallback to localStorage (client-side only)
   if (typeof globalThis !== 'undefined' && 'window' in globalThis) {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem('accessToken');
   }
 
   return null;

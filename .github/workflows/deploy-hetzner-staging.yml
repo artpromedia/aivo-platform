@@ -481,14 +481,4 @@ jobs:
             echo "Smoke tests complete: ${FAILED} failed"
             exit 0
 
-      - name: Notify Slack
-        if: always()
-        continue-on-error: true
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "${{ job.status == 'success' && '✅' || '❌' }} Hetzner staging deploy ${{ job.status }} (${{ needs.ci.outputs.version }})"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+

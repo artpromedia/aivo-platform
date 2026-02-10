@@ -166,7 +166,7 @@ export interface TestAnalytics {
 }
 
 // API Base URL
-const API_BASE_URL = 'http://localhost:8091';
+const API_BASE_URL = process.env.NEXT_PUBLIC_STUDY_SKILLS_API_URL || 'http://localhost:8091';
 
 // Note-Taking Template API Functions
 export async function getNoteTemplates(userId: string): Promise<NoteTemplate[]> {

@@ -1,7 +1,7 @@
 // Visual Learning API
 // API client for visual learning tools and features
 
-const VISUAL_LEARNING_API_URL = 'http://localhost:8089/api/visual-learning';
+const VISUAL_LEARNING_API_URL = process.env.NEXT_PUBLIC_VISUAL_LEARNING_API_URL || 'http://localhost:8089/api/visual-learning';
 
 // Mind Map Types
 

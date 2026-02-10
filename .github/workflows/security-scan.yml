@@ -261,35 +261,3 @@ jobs:
           echo "- Security scan results are uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
           echo "- Review any warnings in the individual job logs" >> $GITHUB_STEP_SUMMARY
           echo "- Critical and high severity issues should be addressed promptly" >> $GITHUB_STEP_SUMMARY
-
-      - name: Notify on critical issues
-        if: ${{ needs.secret-scan.result == 'failure' }}
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚨 Security Alert: Secrets detected in codebase",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚨 *SECURITY ALERT*\n\nPotential secrets detected in the codebase!\n\nPlease investigate immediately."
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Scan Results" },
-                      "style": "danger",
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

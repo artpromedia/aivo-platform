@@ -293,13 +293,13 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
     return Column(
       children: [
         FilledButton.icon(
-          onPressed: () => context.go('/today'),
+          onPressed: () => context.go('/plan'),
           icon: const Icon(Icons.home),
           label: const Text('Back to Today'),
         ),
         const SizedBox(height: 12),
         TextButton(
-          onPressed: () => context.go('/badges'),
+          onPressed: () => context.go('/progress'),
           child: const Text('View All Badges'),
         ),
       ],

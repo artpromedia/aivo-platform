@@ -175,36 +175,6 @@ jobs:
         env:
           DATABASE_URL: postgresql://aivo:${{ steps.db-creds.outputs.password }}@${{ steps.db-creds.outputs.host }}:5432/aivo_${{ github.event.inputs.environment }}
 
-      - name: Notify completion
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "Database migration completed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "📊 *Database Migration Completed*\n\n*Environment:* ${{ github.event.inputs.environment }}\n*Action:* ${{ github.event.inputs.action }}\n*Service:* ${{ github.event.inputs.service }}\n*Actor:* ${{ github.actor }}"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Logs" },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   # ════════════════════════════════════════════════════════════════════════════
   # SUMMARY

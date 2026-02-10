@@ -400,15 +400,6 @@ jobs:
             echo "::warning::GOOGLE_PLAY_JSON_KEY not configured - skipping deployment"
           fi
 
-      - name: Notify Slack
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"🚀 ${{ matrix.app }} deployed to beta track!"}' \
-            $SLACK_WEBHOOK_URL
-
   # Deploy to Production (manual with approval)
   deploy-production:
     runs-on: ubuntu-latest
@@ -456,14 +447,6 @@ jobs:
           git tag -a "android/${{ matrix.app }}/v${VERSION}" -m "Production release ${VERSION}"
           git push origin "android/${{ matrix.app }}/v${VERSION}"
 
-      - name: Notify Slack
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"🎉 ${{ matrix.app }} deployed to PRODUCTION (10% rollout)!"}' \
-            $SLACK_WEBHOOK_URL
 
   # iOS TestFlight Deployment
   deploy-ios-testflight:
@@ -531,12 +514,3 @@ jobs:
           else
             echo "::warning::App Store Connect credentials not configured"
           fi
-
-      - name: Notify Slack
-        if: success()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"🍎 ${{ matrix.app }} iOS build uploaded to TestFlight!"}' \
-            $SLACK_WEBHOOK_URL

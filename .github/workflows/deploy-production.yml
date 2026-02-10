@@ -55,7 +55,7 @@ jobs:
           echo "✅ Valid version: $VERSION"
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
 
@@ -146,17 +146,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ env.PROJECT_ID }}
 
       - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v1
+        uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
@@ -289,78 +289,6 @@ jobs:
           echo "Status: ${{ job.status }}"
           echo "Completed: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-      - name: Notify on success
-        if: success()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚀 Production deployment successful",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚀 *Production Deployment Successful*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Deployed by:* ${{ github.actor }}"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Production" },
-                      "url": "https://aivo.ai"
-                    },
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View API" },
-                      "url": "https://api.aivo.ai/health"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - name: Notify on failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚨 PRODUCTION DEPLOYMENT FAILED",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚨 *PRODUCTION DEPLOYMENT FAILED*\n\n*Version:* `${{ needs.validate.outputs.version }}`\n*Attempted by:* ${{ github.actor }}\n\n@channel Please investigate immediately!"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Logs" },
-                      "style": "danger",
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    },
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "Runbook" },
-                      "url": "https://docs.aivo.ai/runbooks/deployment-failure"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
   # ════════════════════════════════════════════════════════════════════════════
   # RUN MIGRATIONS
@@ -373,12 +301,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
 
       - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v1
+        uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}

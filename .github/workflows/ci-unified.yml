@@ -51,7 +51,7 @@ env:
   PROJECT_ID: aivo-learning
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
-  FLUTTER_VERSION: '3.22.0'
+  FLUTTER_VERSION: '3.24.0'
   
 jobs:
   # ════════════════════════════════════════════════════════════════════════════
@@ -669,28 +669,6 @@ jobs:
           echo "Smoke tests complete: $FAILED service(s) failed"
         continue-on-error: true
 
-      - name: Notify Slack
-        if: always() && env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || '' }}
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '✅' || '❌' }} *Staging Deployment ${{ job.status }}*\n*Commit:* `${{ github.sha }}`\n*Actor:* ${{ github.actor }}"
-                  }
-                }
-              ]
-            }
-
   # ════════════════════════════════════════════════════════════════════════════
   # DEPLOY TO PRODUCTION
   # ════════════════════════════════════════════════════════════════════════════
@@ -744,28 +722,6 @@ jobs:
             echo "Checking $svc..."
             kubectl exec -n aivo-prod deploy/$svc -- curl -sf http://localhost:3000/health/ready
           done
-
-      - name: Notify Slack
-        if: always() && env.SLACK_WEBHOOK_URL != ''
-        uses: slackapi/slack-github-action@v1
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL || '' }}
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "${{ job.status == 'success' && '🚀' || '🔥' }} Production deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '🚀' || '🔥' }} *Production Deployment ${{ job.status }}*\n*Version:* `${{ github.event.release.tag_name || github.sha }}`\n*Actor:* ${{ github.actor }}"
-                  }
-                }
-              ]
-            }
 
   # ════════════════════════════════════════════════════════════════════════════
   # SUMMARY

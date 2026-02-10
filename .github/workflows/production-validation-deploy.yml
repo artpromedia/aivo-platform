@@ -633,51 +633,6 @@ jobs:
           # In production, this would hit key endpoints to warm caches
           echo "✅ Cache warmup complete"
 
-      - name: Notify team
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚀 Production deployment complete!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*🚀 AIVO Production Deployment Complete*\n\n*Version:* `${{ needs.confirm-deployment.outputs.version }}`\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    { "type": "mrkdwn", "text": "*Parity Check:* ✅ Passed" },
-                    { "type": "mrkdwn", "text": "*Security Audit:* ✅ Passed" },
-                    { "type": "mrkdwn", "text": "*E2E Tests:* ✅ Passed" },
-                    { "type": "mrkdwn", "text": "*Performance:* ✅ Passed" }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Learner App" },
-                      "url": "https://learner.aivo.ai"
-                    },
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Dashboard" },
-                      "url": "https://grafana.aivo.ai"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
       - name: Create deployment record
         run: |
           echo "Creating deployment record..."
@@ -731,35 +686,3 @@ jobs:
           kubectl rollout undo deployment --all -n ${{ env.NAMESPACE }} || true
           kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=300s || true
           echo "Rollback completed"
-
-      - name: Notify failure
-        if: failure()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚨 PRODUCTION DEPLOYMENT FAILED - ROLLBACK INITIATED",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚨 *PRODUCTION DEPLOYMENT FAILED*\n\nRollback has been automatically initiated.\n\n*Version:* `${{ needs.confirm-deployment.outputs.version }}`\n*Attempted by:* ${{ github.actor }}\n\n@channel Please investigate immediately!"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": { "type": "plain_text", "text": "View Logs" },
-                      "style": "danger",
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

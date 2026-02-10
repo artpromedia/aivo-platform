@@ -34,7 +34,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 }
 
 async function getBlob(endpoint: string): Promise<Blob> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     headers: {

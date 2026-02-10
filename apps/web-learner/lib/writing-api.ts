@@ -8,7 +8,7 @@
  * - Writing Templates for different formats
  */
 
-const API_BASE_URL = 'http://localhost:8086/api/writing';
+const API_BASE_URL = process.env.NEXT_PUBLIC_WRITING_API_URL || 'http://localhost:8086/api/writing';
 
 // ============================================================================
 // Graphic Organizers Types

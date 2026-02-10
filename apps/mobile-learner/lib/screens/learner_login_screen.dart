@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../pin/pin_controller.dart';
 import '../pin/pin_state.dart';
@@ -240,11 +241,12 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    // Use AIVO brand colors for login screen (not grade-based theme)
+    const errorRed = Color(0xFFEF4444);
+    const errorBg = Color(0xFFFEF2F2);
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -265,21 +267,21 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colorScheme.errorContainer,
+                          color: errorBg,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.error_outline,
-                              color: colorScheme.error,
+                              color: errorRed,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _error!,
-                                style: TextStyle(color: colorScheme.error),
+                                style: const TextStyle(color: errorRed),
                               ),
                             ),
                           ],
@@ -304,25 +306,29 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Use AIVO brand colors for login screen (not grade-based theme)
+    const brandPurple = Color(0xFF7C3AED);
+    const brandPurpleLight = Color(0xFFF5F3FF);
 
     return Column(
       children: [
-        // Logo
+        // AIVO Logo
         Semantics(
           label: 'Aivo Learning logo',
           image: true,
           child: Container(
-            width: 80,
-            height: 80,
+            width: 88,
+            height: 88,
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
+              color: brandPurpleLight,
+              borderRadius: BorderRadius.circular(22),
             ),
-            child: Icon(
-              Icons.school,
-              size: 48,
-              color: colorScheme.primary,
+            padding: const EdgeInsets.all(16),
+            child: SvgPicture.asset(
+              'packages/flutter_common/assets/images/aivo-icon-purple.svg',
+              width: 56,
+              height: 56,
+              colorFilter: const ColorFilter.mode(brandPurple, BlendMode.srcIn),
             ),
           ),
         ),
@@ -331,15 +337,15 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
           'Ready to Learn?',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+                color: const Color(0xFF18181B),
               ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Sign in to start your learning adventure!',
           style: TextStyle(
             fontSize: 16,
-            color: colorScheme.onSurfaceVariant,
+            color: Color(0xFF52525B),
           ),
         ),
       ],
@@ -358,7 +364,8 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
   }
 
   Widget _buildSelectionMode(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Use AIVO brand colors for login screen (not grade-based theme)
+    const brandPurple = Color(0xFF7C3AED);
 
     return Column(
       key: const ValueKey('selection'),
@@ -374,8 +381,8 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
+            backgroundColor: brandPurple,
+            foregroundColor: Colors.white,
           ),
         ),
         const SizedBox(height: 16),
@@ -384,11 +391,11 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
         Row(
           children: [
             const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 'or',
-                style: TextStyle(color: colorScheme.onSurfaceVariant),
+                style: TextStyle(color: Color(0xFF71717A)),
               ),
             ),
             const Expanded(child: Divider()),
@@ -406,6 +413,8 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            foregroundColor: brandPurple,
+            side: const BorderSide(color: brandPurple, width: 1.5),
           ),
         ),
         const SizedBox(height: 16),
@@ -432,7 +441,8 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
   }
 
   Widget _buildSsoMode(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // Use AIVO brand colors for login screen
+    const brandPurple = Color(0xFF7C3AED);
 
     return Column(
       key: const ValueKey('sso'),
@@ -445,6 +455,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             onPressed: _goBack,
             icon: const Icon(Icons.arrow_back),
             label: const Text('Back'),
+            style: TextButton.styleFrom(foregroundColor: brandPurple),
           ),
         ),
         const SizedBox(height: 16),
@@ -462,7 +473,13 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: brandPurple, width: 2),
+              ),
+              floatingLabelStyle: const TextStyle(color: brandPurple),
             ),
+            cursorColor: brandPurple,
             enabled: !_isLoading,
             onChanged: (_) => _checkDistrict(),
             onSubmitted: (_) => _checkDistrict(),
@@ -472,9 +489,9 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
 
         // Provider buttons
         if (_availableProviders.isNotEmpty) ...[
-          Text(
+          const Text(
             'Sign in with:',
-            style: TextStyle(color: colorScheme.onSurfaceVariant),
+            style: TextStyle(color: Color(0xFF71717A)),
           ),
           const SizedBox(height: 12),
           for (final provider in _availableProviders) ...[
@@ -487,7 +504,9 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
           ],
         ] else if (_isLoading) ...[
           const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
+            ),
           ),
         ],
       ],
@@ -495,6 +514,8 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
   }
 
   Widget _buildPinMode(BuildContext context) {
+    // Use AIVO brand colors for login screen
+    const brandPurple = Color(0xFF7C3AED);
     final pinState = ref.watch(pinControllerProvider);
     final isLoading = pinState.status == PinStatus.loading || _isLoading;
 
@@ -509,6 +530,7 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             onPressed: _goBack,
             icon: const Icon(Icons.arrow_back),
             label: const Text('Back'),
+            style: TextButton.styleFrom(foregroundColor: brandPurple),
           ),
         ),
         const SizedBox(height: 16),
@@ -526,7 +548,13 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: brandPurple, width: 2),
+              ),
+              floatingLabelStyle: const TextStyle(color: brandPurple),
             ),
+            cursorColor: brandPurple,
             keyboardType: TextInputType.number,
             maxLength: 6,
             obscureText: true,
@@ -544,12 +572,17 @@ class _LearnerLoginScreenState extends ConsumerState<LearnerLoginScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            backgroundColor: brandPurple,
+            foregroundColor: Colors.white,
           ),
           child: isLoading
               ? const SizedBox(
                   height: 20,
                   width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 )
               : const Text('Unlock'),
         ),
