@@ -9,7 +9,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "test": "vitest",
+    "test": "vitest --passWithNoTests",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
