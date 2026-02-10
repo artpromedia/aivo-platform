@@ -353,7 +353,7 @@ jobs:
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Notify success
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        if: always()
         uses: slackapi/slack-github-action@v1
         with:
           payload: |

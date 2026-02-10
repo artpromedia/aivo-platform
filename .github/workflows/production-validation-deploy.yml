@@ -634,7 +634,7 @@ jobs:
           echo "✅ Cache warmup complete"
 
       - name: Notify team
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        if: always()
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
@@ -733,7 +733,7 @@ jobs:
           echo "Rollback completed"
 
       - name: Notify failure
-        if: ${{ secrets.SLACK_ALERT_WEBHOOK_URL != '' }}
+        if: failure()
         uses: slackapi/slack-github-action@v1
         with:
           payload: |

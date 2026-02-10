@@ -261,7 +261,7 @@ jobs:
           echo "- Critical and high severity issues should be addressed promptly" >> $GITHUB_STEP_SUMMARY
 
       - name: Notify on critical issues
-        if: ${{ needs.secret-scan.result == 'failure' && secrets.SLACK_ALERT_WEBHOOK_URL != '' }}
+        if: ${{ needs.secret-scan.result == 'failure' }}
         uses: slackapi/slack-github-action@v1
         with:
           payload: |

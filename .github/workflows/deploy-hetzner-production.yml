@@ -402,7 +402,7 @@ jobs:
             fi
 
       - name: Notify success
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        if: success()
         uses: slackapi/slack-github-action@v1
         with:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -424,7 +424,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify failure
-        if: failure() && secrets.SLACK_ALERT_WEBHOOK_URL != ''
+        if: failure()
         uses: slackapi/slack-github-action@v1
         with:
           webhook-url: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
