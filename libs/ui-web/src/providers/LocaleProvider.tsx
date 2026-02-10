@@ -12,29 +12,21 @@
  * - Integration with GradeThemeProvider
  */
 
-import type { ReactNode } from 'react';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-} from 'react';
-import { IntlProvider } from 'react-intl';
-
-// Import i18n utilities and types
 import type { Locale, LocaleMetadata, TranslationMessages } from '@aivo/i18n';
 import {
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
-  RTL_LOCALES,
   LOCALE_METADATA,
   getMessages,
   getBrowserLocale,
   getSupportedLocale,
   isRTLLocale,
 } from '@aivo/i18n';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { IntlProvider } from 'react-intl';
+
+export type { TranslationMessages } from '@aivo/i18n';
 
 const LOCALE_STORAGE_KEY = 'aivo-locale';
 
@@ -86,11 +78,10 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
  */
 function groupLocalesByRegion(): Record<string, Locale[]> {
   const regions: Record<string, Locale[]> = {
-    'Americas': ['en', 'es', 'pt-BR'],
-    'Europe': ['fr', 'de', 'it', 'nl', 'ru'],
-    'Asia': ['zh', 'ja', 'ko', 'hi', 'id'],
+    Americas: ['en', 'es', 'pt-BR'],
+    Europe: ['fr', 'de', 'it', 'nl', 'ru'],
+    Asia: ['zh-CN', 'ja', 'ko', 'hi', 'id'],
     'Middle East': ['ar', 'tr'],
-    'Africa': ['sw'],
   };
   return regions;
 }
@@ -270,6 +261,7 @@ export function LocaleProvider({
         defaultLocale={DEFAULT_LOCALE}
         onError={(err) => {
           // Ignore missing translation errors in development
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
           if (err.code === 'MISSING_TRANSLATION') {
             console.debug(`Missing translation: ${err.message}`);
             return;

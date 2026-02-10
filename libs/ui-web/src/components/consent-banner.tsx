@@ -28,6 +28,9 @@ export type ConsentCategory =
 
 export type ConsentStatus = 'pending' | 'accepted' | 'rejected' | 'partial';
 
+/** @deprecated Use ConsentStatus instead */
+export type ConsentState = ConsentStatus;
+
 export interface ConsentPreferences {
   essential: boolean; // Always true, cannot be disabled
   analytics: boolean;
@@ -60,6 +63,18 @@ export interface ConsentContextValue {
   closeBanner: () => void;
   resetConsent: () => void;
 }
+
+/** Action methods available on the consent context */
+export type ConsentActions = Pick<
+  ConsentContextValue,
+  | 'updatePreferences'
+  | 'acceptAll'
+  | 'rejectAll'
+  | 'openPreferences'
+  | 'closePreferences'
+  | 'closeBanner'
+  | 'resetConsent'
+>;
 
 export interface ConsentProviderProps {
   children: React.ReactNode;
@@ -212,7 +227,7 @@ export function ConsentProvider({
   // Load saved preferences on mount
   useEffect(() => {
     const saved = loadConsentFromStorage(storageKey);
-    if (saved && saved.version === policyVersion) {
+    if (saved?.version === policyVersion) {
       setPreferences(saved.preferences);
       setHasConsented(true);
       setShowBanner(false);
@@ -224,7 +239,13 @@ export function ConsentProvider({
   // Derive consent status
   const status: ConsentStatus = React.useMemo(() => {
     if (!hasConsented) return 'pending';
-    const nonEssential = ['analytics', 'marketing', 'personalization', 'thirdParty', 'aiFeatures'] as const;
+    const nonEssential = [
+      'analytics',
+      'marketing',
+      'personalization',
+      'thirdParty',
+      'aiFeatures',
+    ] as const;
     const allAccepted = nonEssential.every((key) => preferences[key]);
     const allRejected = nonEssential.every((key) => !preferences[key]);
     if (allAccepted) return 'accepted';
@@ -365,12 +386,13 @@ export function ConsentBanner({
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex-1">
-              <h2 id="consent-banner-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2
+                id="consent-banner-title"
+                className="text-lg font-semibold text-gray-900 dark:text-white"
+              >
                 {t.bannerTitle}
               </h2>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                {t.bannerDescription}
-              </p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t.bannerDescription}</p>
               <div className="mt-2 flex gap-4 text-sm">
                 <a
                   href="/privacy"
@@ -431,7 +453,14 @@ export function ConsentPreferenceCenter({
   className = '',
   translations: customTranslations,
 }: ConsentPreferenceCenterProps): React.ReactElement | null {
-  const { showPreferences, closePreferences, preferences, updatePreferences, acceptAll, rejectAll } = useConsent();
+  const {
+    showPreferences,
+    closePreferences,
+    preferences,
+    updatePreferences,
+    acceptAll,
+    rejectAll,
+  } = useConsent();
   const [localPrefs, setLocalPrefs] = useState<ConsentPreferences>(preferences);
   const t = { ...DEFAULT_TRANSLATIONS, ...customTranslations };
 
@@ -442,18 +471,43 @@ export function ConsentPreferenceCenter({
 
   if (!showPreferences) return null;
 
-  const categories: Array<{
+  const categories: {
     key: keyof ConsentPreferences;
     label: string;
     description: string;
     required: boolean;
-  }> = [
+  }[] = [
     { key: 'essential', label: t.essential!, description: t.essentialDescription!, required: true },
-    { key: 'analytics', label: t.analytics!, description: t.analyticsDescription!, required: false },
-    { key: 'marketing', label: t.marketing!, description: t.marketingDescription!, required: false },
-    { key: 'personalization', label: t.personalization!, description: t.personalizationDescription!, required: false },
-    { key: 'thirdParty', label: t.thirdParty!, description: t.thirdPartyDescription!, required: false },
-    { key: 'aiFeatures', label: t.aiFeatures!, description: t.aiFeaturesDescription!, required: false },
+    {
+      key: 'analytics',
+      label: t.analytics!,
+      description: t.analyticsDescription!,
+      required: false,
+    },
+    {
+      key: 'marketing',
+      label: t.marketing!,
+      description: t.marketingDescription!,
+      required: false,
+    },
+    {
+      key: 'personalization',
+      label: t.personalization!,
+      description: t.personalizationDescription!,
+      required: false,
+    },
+    {
+      key: 'thirdParty',
+      label: t.thirdParty!,
+      description: t.thirdPartyDescription!,
+      required: false,
+    },
+    {
+      key: 'aiFeatures',
+      label: t.aiFeatures!,
+      description: t.aiFeaturesDescription!,
+      required: false,
+    },
   ];
 
   const handleToggle = (key: keyof ConsentPreferences) => {
@@ -488,7 +542,12 @@ export function ConsentPreferenceCenter({
                 aria-label="Close"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -509,7 +568,9 @@ export function ConsentPreferenceCenter({
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900 dark:text-white">{label}</span>
                       {required && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{t.required}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {t.required}
+                        </span>
                       )}
                     </div>
                     <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{description}</p>
@@ -607,14 +668,24 @@ export function ConsentManagerButton({
       className={`fixed bottom-4 ${positionClass} z-50 p-3 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow ${className}`}
       aria-label={ariaLabel}
     >
-      <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        className="w-5 h-5 text-gray-600 dark:text-gray-300"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
           d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
         />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
       </svg>
     </button>
   );

@@ -53,7 +53,11 @@ export interface LocaleMetadata {
   code: SupportedLocale;
   name: string;
   englishName: string;
+  /** Native language name (alias for name) */
+  nativeName?: string;
   direction: 'ltr' | 'rtl';
+  /** Emoji flag for the locale */
+  flag?: string;
   region?: string;
   script?: string;
   numberSystem?: string;

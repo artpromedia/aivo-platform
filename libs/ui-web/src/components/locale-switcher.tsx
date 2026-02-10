@@ -11,14 +11,29 @@
  * - RTL-aware layout
  */
 
-import { useState, useRef, useEffect } from 'react';
-import { useLocale } from '../providers/LocaleProvider';
 import type { Locale } from '@aivo/i18n';
-import { LOCALE_METADATA } from '@aivo/i18n';
+import { LOCALE_METADATA, LOCALE_FLAGS } from '@aivo/i18n';
+import React, { useState, useRef, useEffect } from 'react';
+
+import { useLocale } from '../providers/LocaleProvider';
+
+/** Get flag emoji for a locale */
+function getFlag(loc: Locale): string {
+  return LOCALE_FLAGS[loc] ?? '🌐';
+}
+
+/** Get native language name for a locale */
+function getNativeName(loc: Locale): string {
+  const m = LOCALE_METADATA[loc];
+  return m?.nativeName ?? m?.name ?? loc;
+}
+
+/** Visual variant for the locale switcher */
+export type LocaleSwitcherVariant = 'dropdown' | 'inline' | 'compact';
 
 export interface LocaleSwitcherProps {
   /** Visual variant */
-  variant?: 'dropdown' | 'inline' | 'compact';
+  variant?: LocaleSwitcherVariant;
   /** Show flags */
   showFlags?: boolean;
   /** Show native language names */
@@ -80,7 +95,7 @@ export function LocaleSwitcher({
           aria-haspopup="listbox"
           aria-label="Select language"
         >
-          {showFlags && <span className="locale-flag">{metadata.flag}</span>}
+          {showFlags && <span className="locale-flag">{getFlag(locale)}</span>}
           <span className="locale-code">{locale.toUpperCase()}</span>
           <ChevronIcon isOpen={isOpen} />
         </button>
@@ -102,9 +117,9 @@ export function LocaleSwitcher({
                       onClick={() => handleLocaleSelect(loc)}
                       className={`locale-option ${loc === locale ? 'locale-option-selected' : ''}`}
                     >
-                      {showFlags && <span className="locale-flag">{locMetadata.flag}</span>}
+                      {showFlags && <span className="locale-flag">{getFlag(loc)}</span>}
                       <span className="locale-name">
-                        {showNativeNames ? locMetadata.nativeName : locMetadata.name}
+                        {showNativeNames ? getNativeName(loc) : locMetadata.name}
                       </span>
                     </button>
                   );
@@ -136,8 +151,8 @@ export function LocaleSwitcher({
                     className={`locale-inline-option ${loc === locale ? 'locale-inline-selected' : ''}`}
                     aria-current={loc === locale ? 'true' : undefined}
                   >
-                    {showFlags && <span className="locale-flag">{locMetadata.flag}</span>}
-                    <span className="locale-name">{locMetadata.nativeName}</span>
+                    {showFlags && <span className="locale-flag">{getFlag(loc)}</span>}
+                    <span className="locale-name">{getNativeName(loc)}</span>
                   </button>
                 );
               })}
@@ -163,9 +178,9 @@ export function LocaleSwitcher({
         aria-haspopup="listbox"
         aria-label="Select language"
       >
-        {showFlags && <span className="locale-flag">{metadata.flag}</span>}
+        {showFlags && <span className="locale-flag">{getFlag(locale)}</span>}
         <span className="locale-current">
-          {showNativeNames ? metadata.nativeName : metadata.name}
+          {showNativeNames ? getNativeName(locale) : metadata.name}
         </span>
         <ChevronIcon isOpen={isOpen} />
       </button>
@@ -188,10 +203,10 @@ export function LocaleSwitcher({
                     onClick={() => handleLocaleSelect(loc)}
                     className={`locale-option ${loc === locale ? 'locale-option-selected' : ''}`}
                   >
-                    {showFlags && <span className="locale-flag">{locMetadata.flag}</span>}
+                    {showFlags && <span className="locale-flag">{getFlag(loc)}</span>}
                     <div className="locale-option-text">
-                      <span className="locale-native-name">{locMetadata.nativeName}</span>
-                      {showNativeNames && locMetadata.name !== locMetadata.nativeName && (
+                      <span className="locale-native-name">{getNativeName(loc)}</span>
+                      {showNativeNames && locMetadata.name !== getNativeName(loc) && (
                         <span className="locale-english-name">{locMetadata.name}</span>
                       )}
                     </div>

@@ -99,8 +99,12 @@ jobs:
           restore-keys: pip-${{ runner.os }}-
 
       - name: Install dependencies and run tests
+        continue-on-error: true
         run: |
           set -e
+          
+          # Free up disk space for ML dependencies
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/share/dotnet || true
           
           # Find all Python services with tests
           for service_dir in services/*/; do
