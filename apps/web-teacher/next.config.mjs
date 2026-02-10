@@ -84,6 +84,12 @@ const nextConfig = {
   // WEBPACK OPTIMIZATION
   // ============================================================================
   webpack: (config, { isServer }) => {
+    // Resolve .js extension imports to .ts files (for libs using NodeNext module resolution)
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+    };
+
     // Note: Do NOT alias lodash to lodash-es here
     // recharts imports lodash/isFunction, lodash/range which need regular lodash
     // Tree-shaking for lodash is handled by optimizePackageImports

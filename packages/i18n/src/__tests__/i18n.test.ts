@@ -16,8 +16,8 @@ import {
   formatCurrency,
   formatRelativeTime,
   formatList,
-} from '../src';
-import type { SupportedLocale, I18nConfig } from '../src/types';
+} from '..';
+import type { SupportedLocale, I18nConfig } from '../types';
 
 describe('I18nManager', () => {
   let i18n: I18nManager;

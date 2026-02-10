@@ -14,6 +14,16 @@ interface GraphicOrganizersProps {
   learnerId: string;
 }
 
+/** Safely cast an unknown content field to a string array */
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
+/** Safely cast an unknown content field to an array of T */
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 /**
  * Graphic Organizers component
  * Provides interactive visual tools for organizing thoughts and ideas
@@ -192,13 +202,13 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Connections</label>
-          {(content.connections || []).map((conn: string, idx: number) => (
+          {asStringArray(content.connections).map((conn: string, idx: number) => (
             <div key={idx} className="flex gap-2 mb-2">
               <input
                 type="text"
                 value={conn}
                 onChange={(e) => {
-                  const newConnections = [...(content.connections || [])];
+                  const newConnections = [...asStringArray(content.connections)];
                   newConnections[idx] = e.target.value;
                   setContent({ ...content, connections: newConnections });
                 }}
@@ -207,7 +217,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newConnections = (content.connections || []).filter(
+                  const newConnections = asStringArray(content.connections).filter(
                     (_: string, i: number) => i !== idx
                   );
                   setContent({ ...content, connections: newConnections });
@@ -220,7 +230,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           ))}
           <button
             onClick={() => {
-              setContent({ ...content, connections: [...(content.connections || []), ''] });
+              setContent({ ...content, connections: [...asStringArray(content.connections), ''] });
             }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
@@ -275,7 +285,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <div>
             <label className="block text-sm font-medium mb-1">Left Items</label>
             <textarea
-              value={(content.leftItems || []).join('\n')}
+              value={asStringArray(content.leftItems).join('\n')}
               onChange={(e) => {
                 setContent({ ...content, leftItems: e.target.value.split('\n') });
               }}
@@ -287,7 +297,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <div>
             <label className="block text-sm font-medium mb-1">Overlap Items</label>
             <textarea
-              value={(content.overlapItems || []).join('\n')}
+              value={asStringArray(content.overlapItems).join('\n')}
               onChange={(e) => {
                 setContent({ ...content, overlapItems: e.target.value.split('\n') });
               }}
@@ -299,7 +309,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <div>
             <label className="block text-sm font-medium mb-1">Right Items</label>
             <textarea
-              value={(content.rightItems || []).join('\n')}
+              value={asStringArray(content.rightItems).join('\n')}
               onChange={(e) => {
                 setContent({ ...content, rightItems: e.target.value.split('\n') });
               }}
@@ -320,14 +330,14 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">Steps/Events</label>
-          {(content.steps || []).map((step: string, idx: number) => (
+          {asStringArray(content.steps).map((step: string, idx: number) => (
             <div key={idx} className="flex gap-2 mb-2">
               <span className="px-3 py-2 bg-slate-100 rounded-md font-medium">{idx + 1}</span>
               <input
                 type="text"
                 value={step}
                 onChange={(e) => {
-                  const newSteps = [...(content.steps || [])];
+                  const newSteps = [...asStringArray(content.steps)];
                   newSteps[idx] = e.target.value;
                   setContent({ ...content, steps: newSteps });
                 }}
@@ -336,7 +346,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newSteps = (content.steps || []).filter(
+                  const newSteps = asStringArray(content.steps).filter(
                     (_: string, i: number) => i !== idx
                   );
                   setContent({ ...content, steps: newSteps });
@@ -349,7 +359,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           ))}
           <button
             onClick={() => {
-              setContent({ ...content, steps: [...(content.steps || []), ''] });
+              setContent({ ...content, steps: [...asStringArray(content.steps), ''] });
             }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
@@ -392,7 +402,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Similarities</label>
           <textarea
-            value={(content.similarities || []).join('\n')}
+            value={asStringArray(content.similarities).join('\n')}
             onChange={(e) => {
               setContent({ ...content, similarities: e.target.value.split('\n') });
             }}
@@ -404,7 +414,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Differences</label>
           <textarea
-            value={(content.differences || []).join('\n')}
+            value={asStringArray(content.differences).join('\n')}
             onChange={(e) => {
               setContent({ ...content, differences: e.target.value.split('\n') });
             }}
@@ -425,7 +435,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Causes</label>
           <textarea
-            value={(content.causes || []).join('\n')}
+            value={asStringArray(content.causes).join('\n')}
             onChange={(e) => {
               setContent({ ...content, causes: e.target.value.split('\n') });
             }}
@@ -437,7 +447,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Effects</label>
           <textarea
-            value={(content.effects || []).join('\n')}
+            value={asStringArray(content.effects).join('\n')}
             onChange={(e) => {
               setContent({ ...content, effects: e.target.value.split('\n') });
             }}
@@ -458,7 +468,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">What I Know</label>
           <textarea
-            value={(content.know || []).join('\n')}
+            value={asStringArray(content.know).join('\n')}
             onChange={(e) => {
               setContent({ ...content, know: e.target.value.split('\n') });
             }}
@@ -470,7 +480,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">What I Want to Learn</label>
           <textarea
-            value={(content.want || []).join('\n')}
+            value={asStringArray(content.want).join('\n')}
             onChange={(e) => {
               setContent({ ...content, want: e.target.value.split('\n') });
             }}
@@ -482,7 +492,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">What I Learned</label>
           <textarea
-            value={(content.learned || []).join('\n')}
+            value={asStringArray(content.learned).join('\n')}
             onChange={(e) => {
               setContent({ ...content, learned: e.target.value.split('\n') });
             }}
@@ -514,7 +524,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Characters</label>
           <textarea
-            value={(content.characters || []).join('\n')}
+            value={asStringArray(content.characters).join('\n')}
             onChange={(e) => {
               setContent({ ...content, characters: e.target.value.split('\n') });
             }}
@@ -548,7 +558,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Events</label>
           <textarea
-            value={(content.events || []).join('\n')}
+            value={asStringArray(content.events).join('\n')}
             onChange={(e) => {
               setContent({ ...content, events: e.target.value.split('\n') });
             }}
@@ -590,7 +600,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Main Points</label>
-          {(content.points || []).map(
+          {asArray<{ main: string; supporting: string[] }>(content.points).map(
             (point: { main: string; supporting: string[] }, idx: number) => (
               <div key={idx} className="mb-4 p-3 border border-slate-200 rounded-md">
                 <div className="flex gap-2 mb-2">
@@ -598,7 +608,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
                     type="text"
                     value={point.main}
                     onChange={(e) => {
-                      const newPoints = [...(content.points || [])];
+                      const newPoints = [...asArray<{ main: string; supporting: string[] }>(content.points)];
                       newPoints[idx] = { ...point, main: e.target.value };
                       setContent({ ...content, points: newPoints });
                     }}
@@ -607,7 +617,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
                   />
                   <button
                     onClick={() => {
-                      const newPoints = (content.points || []).filter(
+                      const newPoints = asArray<{ main: string; supporting: string[] }>(content.points).filter(
                         (_: { main: string; supporting: string[] }, i: number) => i !== idx
                       );
                       setContent({ ...content, points: newPoints });
@@ -620,7 +630,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
                 <textarea
                   value={point.supporting.join('\n')}
                   onChange={(e) => {
-                    const newPoints = [...(content.points || [])];
+                    const newPoints = [...asArray<{ main: string; supporting: string[] }>(content.points)];
                     newPoints[idx] = { ...point, supporting: e.target.value.split('\n') };
                     setContent({ ...content, points: newPoints });
                   }}
@@ -635,7 +645,7 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             onClick={() => {
               setContent({
                 ...content,
-                points: [...(content.points || []), { main: '', supporting: [] }],
+                points: [...asArray<{ main: string; supporting: string[] }>(content.points), { main: '', supporting: [] }],
               });
             }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"

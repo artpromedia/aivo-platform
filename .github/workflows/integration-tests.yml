@@ -196,11 +196,11 @@ jobs:
           --health-retries 5
       
       nats:
-        image: nats:2.10
+        image: nats:2.10-alpine
         ports:
           - 4222:4222
         options: >-
-          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-cmd "nc -z localhost 4222 || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -292,11 +292,11 @@ jobs:
           --health-retries 5
       
       nats:
-        image: nats:2.10
+        image: nats:2.10-alpine
         ports:
           - 4222:4222
         options: >-
-          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-cmd "nc -z localhost 4222 || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -480,11 +480,11 @@ jobs:
           --health-retries 5
       
       nats:
-        image: nats:2.10
+        image: nats:2.10-alpine
         ports:
           - 4222:4222
         options: >-
-          --health-cmd "wget -q --spider http://localhost:8222/healthz || exit 1"
+          --health-cmd "nc -z localhost 4222 || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5

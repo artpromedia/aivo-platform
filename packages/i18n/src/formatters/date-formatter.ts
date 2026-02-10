@@ -70,9 +70,10 @@ export function formatDate(
   }
 
   // Handle preset styles
-  if (options.preset && FORMAT_PRESETS[options.preset]) {
+  const presetName = options.preset ?? options.format ?? (options as Record<string, unknown>).style as string | undefined;
+  if (presetName && FORMAT_PRESETS[presetName]) {
     const formatter = getFormatter(locale, {
-      ...FORMAT_PRESETS[options.preset],
+      ...FORMAT_PRESETS[presetName],
       calendar: options.calendar,
       numberingSystem: options.numberingSystem,
       timeZone: options.timeZone,

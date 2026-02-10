@@ -105,6 +105,9 @@ export function findBestMatch(
   return fallback;
 }
 
+/** Alias for findBestMatch (test-compatibility) */
+export const getBestMatchingLocale = findBestMatch;
+
 /**
  * Get accept-language header locales in preference order
  */

@@ -46,7 +46,7 @@ function getFormatter(
 export function formatList(
   items: string[],
   locale: SupportedLocale,
-  options: ListFormatOptions = {}
+  options: ListFormatOptions | 'conjunction' | 'disjunction' | 'unit' = {}
 ): string {
   if (items.length === 0) {
     return '';
@@ -56,9 +56,12 @@ export function formatList(
     return items[0];
   }
 
+  const resolvedOptions: ListFormatOptions =
+    typeof options === 'string' ? { type: options } : options;
+
   const formatter = getFormatter(locale, {
-    type: options.type ?? 'conjunction',
-    style: options.style ?? 'long',
+    type: resolvedOptions.type ?? 'conjunction',
+    style: resolvedOptions.style ?? 'long',
   });
 
   return formatter.format(items);

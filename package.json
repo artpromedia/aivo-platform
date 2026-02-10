@@ -19,6 +19,7 @@
     "test:tenant-isolation:watch": "vitest watch tests/integration/tenant-isolation",
     "test:tenant-isolation:report": "vitest run tests/integration/tenant-isolation --reporter=verbose && node -e \"require('./tests/integration/tenant-isolation/reporter').TenantIsolationReporter.generateFromResults()\"",
     "build": "turbo run build --filter=...[origin/main]",
+    "typecheck": "turbo run typecheck",
     "verify-all": "turbo run lint test build",
     "test:e2e": "turbo run test:e2e --filter=web-learner",
     "test:e2e:all": "turbo run test:e2e",
