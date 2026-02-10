@@ -29,6 +29,7 @@
     "date-fns": "^4.1.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
     "@types/node": "^22.7.5",
     "@types/uuid": "^10.0.0",
     "prisma": "^5.22.0",

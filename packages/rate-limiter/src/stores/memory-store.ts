@@ -25,7 +25,11 @@ export class MemoryStore implements RateLimitStore {
   private sortedSets = new Map<string, SortedSetEntry[]>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(cleanupIntervalMs = 60000) {
+  constructor(cleanupIntervalMsOrOptions: number | { cleanupInterval?: number } = 60000) {
+    const cleanupIntervalMs =
+      typeof cleanupIntervalMsOrOptions === 'number'
+        ? cleanupIntervalMsOrOptions
+        : (cleanupIntervalMsOrOptions.cleanupInterval ?? 60000);
     // Periodic cleanup of expired entries
     this.cleanupInterval = setInterval(() => {
       this.cleanup();

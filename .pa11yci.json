@@ -10,14 +10,14 @@
     }
   },
   "urls": [
-    "http://localhost:3003",
-    "http://localhost:3003/dashboard",
-    "http://localhost:3003/assessment/baseline",
-    "http://localhost:3003/subjects/k5/math",
-    "http://localhost:3003/subjects/k5/reading",
-    "http://localhost:3003/subjects/ms/algebra",
-    "http://localhost:3003/subjects/hs/calculus",
-    "http://localhost:3003/profile",
-    "http://localhost:3003/settings"
+    "http://localhost:3002",
+    "http://localhost:3002/dashboard",
+    "http://localhost:3002/assessment/baseline",
+    "http://localhost:3002/subjects/k5/math",
+    "http://localhost:3002/subjects/k5/reading",
+    "http://localhost:3002/subjects/ms/algebra",
+    "http://localhost:3002/subjects/hs/calculus",
+    "http://localhost:3002/profile",
+    "http://localhost:3002/settings"
   ]
 }

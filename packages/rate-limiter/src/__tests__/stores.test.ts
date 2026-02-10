@@ -31,13 +31,13 @@ describe('MemoryStore', () => {
     });
 
     it('should expire values after TTL', async () => {
-      await store.set('expiring', 'value', 50); // 50ms TTL
+      await store.set('expiring', 'value', 0.05); // 0.05s = 50ms TTL
 
       // Value should exist immediately
       expect(await store.get('expiring')).toBe('value');
 
       // Wait for expiration
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Value should be gone
       expect(await store.get('expiring')).toBeNull();
@@ -140,8 +140,8 @@ describe('MemoryStore', () => {
         now
       );
 
-      expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(7);
+      expect(result.success).toBe(true);
+      expect(result.tokens).toBe(7);
     });
 
     it('should deny when no tokens', async () => {
@@ -161,8 +161,8 @@ describe('MemoryStore', () => {
         now + 1
       );
 
-      expect(result.allowed).toBe(false);
-      expect(result.remaining).toBe(0);
+      expect(result.success).toBe(false);
+      expect(result.tokens).toBe(0);
     });
   });
 
@@ -206,7 +206,7 @@ describe('MemoryStore', () => {
 
   describe('cleanup', () => {
     it('should clean up expired entries periodically', async () => {
-      await store.set('short-lived', 'value', 50); // 50ms TTL
+      await store.set('short-lived', 'value', 0.05); // 0.05s = 50ms TTL
 
       // Value exists
       expect(await store.get('short-lived')).toBe('value');

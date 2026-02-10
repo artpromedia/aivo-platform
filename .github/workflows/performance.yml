@@ -36,7 +36,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build with stats
-        run: pnpm --filter @aivo/web-learner build
+        run: pnpm turbo run build --filter=@aivo/web-learner
         env:
           NODE_ENV: production
 
@@ -124,7 +124,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @aivo/web-learner build
+        run: pnpm turbo run build --filter=@aivo/web-learner
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10
@@ -281,15 +281,15 @@ jobs:
       - name: Install Playwright
         run: npx playwright install chromium
 
-      - name: Build and preview
+      - name: Build and start
         run: |
-          pnpm --filter @aivo/web-learner build
-          pnpm --filter @aivo/web-learner preview &
+          pnpm turbo run build --filter=@aivo/web-learner
+          pnpm --filter @aivo/web-learner start &
           sleep 5
 
       - name: Measure Core Web Vitals
         run: |
-          node scripts/measure-web-vitals.js http://localhost:4173
+          node scripts/measure-web-vitals.js http://localhost:3000
 
       - name: Upload Web Vitals report
         uses: actions/upload-artifact@v4

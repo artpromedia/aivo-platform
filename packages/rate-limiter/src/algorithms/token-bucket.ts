@@ -32,7 +32,7 @@ export class TokenBucket {
   ): Promise<AlgorithmCheckResult> {
     const now = Date.now();
     const stateKey = `tb:${key}`;
-    const state = await this.getState(stateKey);
+    const state = await this.getState(stateKey, capacity);
 
     // Calculate current token count
     const currentTokens = this.calculateTokens(state, capacity, refillRate, now);
@@ -73,15 +73,16 @@ export class TokenBucket {
   /**
    * Get current state of the bucket
    */
-  async getState(key: string): Promise<TokenBucketState> {
+  async getState(key: string, capacity?: number): Promise<TokenBucketState> {
     const data = await this.store.get(key);
     if (!data) {
-      return { tokens: 0, lastRefill: Date.now() };
+      // New bucket starts full
+      return { tokens: capacity ?? Number.MAX_SAFE_INTEGER, lastRefill: Date.now() };
     }
     try {
       return JSON.parse(data);
     } catch {
-      return { tokens: 0, lastRefill: Date.now() };
+      return { tokens: capacity ?? Number.MAX_SAFE_INTEGER, lastRefill: Date.now() };
     }
   }
 

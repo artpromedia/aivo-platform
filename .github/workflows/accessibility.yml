@@ -75,7 +75,7 @@ jobs:
 
       - name: Start server
         run: |
-          pnpm --filter @aivo/web-teacher preview &
+          pnpm --filter @aivo/web-teacher start &
           sleep 10
 
       - name: Run Pa11y CI
@@ -116,7 +116,7 @@ jobs:
 
       - name: Start server
         run: |
-          pnpm --filter @aivo/web-teacher preview &
+          pnpm --filter @aivo/web-teacher start &
           sleep 10
 
       - name: Run Lighthouse CI
