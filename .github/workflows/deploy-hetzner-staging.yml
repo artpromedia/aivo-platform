@@ -45,14 +45,64 @@ permissions:
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 0: Determine which services to build/deploy
+  # ══════════════════════════════════════════════════════════════════════════
+  prepare:
+    name: Prepare Service Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      ts_services: ${{ steps.matrix.outputs.ts_services }}
+      py_services: ${{ steps.matrix.outputs.py_services }}
+      has_ts: ${{ steps.matrix.outputs.has_ts }}
+      has_py: ${{ steps.matrix.outputs.has_py }}
+    steps:
+      - name: Build filtered matrices
+        id: matrix
+        run: |
+          ALL_TS='["auth-svc","session-svc","consent-svc","profile-svc","content-svc","assessment-svc","personalization-svc","life-skills-svc","ai-orchestrator","analytics-svc","notify-svc","messaging-svc","goal-svc","focus-svc","billing-svc","payments-svc","parent-svc","baseline-svc"]'
+          ALL_PY='["ai-inference-svc","training-svc","ml-recommendation-svc","brain-engine","python-api-gateway","vision-analysis-svc","speech-analysis-svc","accessibility-ai-svc","question-generation-svc","writing-assessment-svc","content-intelligence-svc","cognitive-load-svc","knowledge-graph-svc","multimodal-analytics-svc","document-intelligence-svc","specialized-support-svc","rl-tutoring-svc","peer-learning-svc","curriculum-py-svc","grading-engine"]'
+
+          INPUT_SERVICES="${{ inputs.services }}"
+
+          if [ -z "$INPUT_SERVICES" ]; then
+            # No filter — deploy all
+            echo "ts_services=$ALL_TS" >> $GITHUB_OUTPUT
+            echo "py_services=$ALL_PY" >> $GITHUB_OUTPUT
+            echo "has_ts=true" >> $GITHUB_OUTPUT
+            echo "has_py=true" >> $GITHUB_OUTPUT
+          else
+            # Filter to requested services
+            TS_FILTERED="[]"
+            PY_FILTERED="[]"
+            IFS=',' read -ra SVCS <<< "$INPUT_SERVICES"
+            for svc in "${SVCS[@]}"; do
+              svc=$(echo "$svc" | xargs) # trim whitespace
+              if echo "$ALL_TS" | jq -e "index(\"$svc\")" > /dev/null 2>&1; then
+                TS_FILTERED=$(echo "$TS_FILTERED" | jq --arg s "$svc" '. + [$s]')
+              fi
+              if echo "$ALL_PY" | jq -e "index(\"$svc\")" > /dev/null 2>&1; then
+                PY_FILTERED=$(echo "$PY_FILTERED" | jq --arg s "$svc" '. + [$s]')
+              fi
+            done
+            echo "ts_services=$TS_FILTERED" >> $GITHUB_OUTPUT
+            echo "py_services=$PY_FILTERED" >> $GITHUB_OUTPUT
+            HAS_TS=$([ "$(echo "$TS_FILTERED" | jq 'length')" -gt 0 ] && echo "true" || echo "false")
+            HAS_PY=$([ "$(echo "$PY_FILTERED" | jq 'length')" -gt 0 ] && echo "true" || echo "false")
+            echo "has_ts=$HAS_TS" >> $GITHUB_OUTPUT
+            echo "has_py=$HAS_PY" >> $GITHUB_OUTPUT
+          fi
+
+          echo "TS services: $(cat $GITHUB_OUTPUT | grep ts_services)"
+          echo "PY services: $(cat $GITHUB_OUTPUT | grep py_services)"
+
+  # ══════════════════════════════════════════════════════════════════════════
   # STAGE 1: CI — Lint, TypeCheck, Test, Build (unchanged from GCP pipeline)
   # ══════════════════════════════════════════════════════════════════════════
   ci:
     name: CI Pipeline
+    needs: prepare
+    if: ${{ !inputs.skip_tests }}
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      sha_short: ${{ steps.version.outputs.sha_short }}
     services:
       postgres:
         image: postgres:15
@@ -117,6 +167,20 @@ jobs:
       - name: Build
         run: pnpm run build
 
+  # ══════════════════════════════════════════════════════════════════════════
+  # VERSION — always runs (even when CI is skipped)
+  # ══════════════════════════════════════════════════════════════════════════
+  version:
+    name: Compute Version
+    runs-on: ubuntu-latest
+    needs: prepare
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha_short: ${{ steps.version.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Determine version
         id: version
         run: |
@@ -132,29 +196,15 @@ jobs:
   docker:
     name: Docker — ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [ci, version, prepare]
+    if: |
+      always() &&
+      needs.prepare.outputs.has_ts == 'true' &&
+      (needs.ci.result == 'success' || needs.ci.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
-        service:
-          - auth-svc
-          - session-svc
-          - consent-svc
-          - profile-svc
-          - content-svc
-          - assessment-svc
-          - personalization-svc
-          - life-skills-svc
-          - ai-orchestrator
-          - analytics-svc
-          - notify-svc
-          - messaging-svc
-          - goal-svc
-          - focus-svc
-          - billing-svc
-          - payments-svc
-          - parent-svc
-          - baseline-svc
+        service: ${{ fromJson(needs.prepare.outputs.ts_services) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -175,7 +225,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}
           tags: |
-            type=raw,value=${{ needs.ci.outputs.version }}
+            type=raw,value=${{ needs.version.outputs.version }}
             type=raw,value=latest
             type=sha,prefix=sha-
 
@@ -191,15 +241,15 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
-            VERSION=${{ needs.ci.outputs.version }}
-            BUILD_SHA=${{ needs.ci.outputs.sha_short }}
+            VERSION=${{ needs.version.outputs.version }}
+            BUILD_SHA=${{ needs.version.outputs.sha_short }}
 
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@0.24.0
         continue-on-error: true
         timeout-minutes: 10
         with:
-          image-ref: '${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.ci.outputs.version }}'
+          image-ref: '${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.version.outputs.version }}'
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -229,31 +279,15 @@ jobs:
   docker-python:
     name: Docker (Python) — ${{ matrix.service }}
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [ci, version, prepare]
+    if: |
+      always() &&
+      needs.prepare.outputs.has_py == 'true' &&
+      (needs.ci.result == 'success' || needs.ci.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
-        service:
-          - ai-inference-svc
-          - training-svc
-          - ml-recommendation-svc
-          - brain-engine
-          - python-api-gateway
-          - vision-analysis-svc
-          - speech-analysis-svc
-          - accessibility-ai-svc
-          - question-generation-svc
-          - writing-assessment-svc
-          - content-intelligence-svc
-          - cognitive-load-svc
-          - knowledge-graph-svc
-          - multimodal-analytics-svc
-          - document-intelligence-svc
-          - specialized-support-svc
-          - rl-tutoring-svc
-          - peer-learning-svc
-          - curriculum-py-svc
-          - grading-engine
+        service: ${{ fromJson(needs.prepare.outputs.py_services) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -273,7 +307,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}
           tags: |
-            type=raw,value=${{ needs.ci.outputs.version }}
+            type=raw,value=${{ needs.version.outputs.version }}
             type=raw,value=latest
             type=sha,prefix=sha-
 
@@ -293,7 +327,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         with:
-          image-ref: '${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.ci.outputs.version }}'
+          image-ref: '${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.version.outputs.version }}'
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -323,7 +357,11 @@ jobs:
   deploy:
     name: Deploy to Hetzner Staging
     runs-on: ubuntu-latest
-    needs: [ci, docker, docker-python]
+    needs: [version, docker, docker-python]
+    if: |
+      always() &&
+      (needs.docker.result == 'success' || needs.docker.result == 'skipped') &&
+      (needs.docker-python.result == 'success' || needs.docker-python.result == 'skipped')
     environment: staging
     steps:
       - uses: actions/checkout@v4
@@ -339,7 +377,7 @@ jobs:
           command_timeout: 15m
           script: |
             set -euo pipefail
-            VERSION="${{ needs.ci.outputs.version }}"
+            VERSION="${{ needs.version.outputs.version }}"
             NAMESPACE="aivo-staging"
 
             echo "═══════════════════════════════════════"
@@ -464,7 +502,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "${{ job.status == 'success' && '✅' || '❌' }} Hetzner staging deploy ${{ job.status }} (${{ needs.ci.outputs.version }})"
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Hetzner staging deploy ${{ job.status }} (${{ needs.version.outputs.version }})"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
