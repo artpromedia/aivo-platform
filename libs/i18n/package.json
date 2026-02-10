@@ -14,7 +14,7 @@
   },
   "scripts": {
     "lint": "eslint src --ext .ts,.tsx",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "extract": "formatjs extract 'src/**/*.ts*' --out-file lang/en.json --id-interpolation-pattern '[sha512:contenthash:base64:6]'",
