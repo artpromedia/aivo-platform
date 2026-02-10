@@ -55,12 +55,12 @@ jobs:
       - name: Generate Prisma clients
         run: |
           chmod +x ./scripts/prisma-generate-all.sh 2>/dev/null || true
-          ./scripts/prisma-generate-all.sh || true
+          ./scripts/prisma-generate-all.sh
         env:
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Verify all
-        run: pnpm turbo run test build --continue
+        run: pnpm run verify-all
 
   security:
     name: Security (osv + trivy)
