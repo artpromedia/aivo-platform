@@ -42,7 +42,7 @@ export default function JoinPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { error?: string; needsBaseline?: boolean };
 
       if (!response.ok) {
         throw new Error(data.error || 'Invalid code');
@@ -149,13 +149,21 @@ export default function JoinPage() {
             </p>
             <div className="flex gap-2">
               <a
-                href={process.env.NEXT_PUBLIC_PARENT_APP_URL ? `${process.env.NEXT_PUBLIC_PARENT_APP_URL}/register` : '/access'}
+                href={
+                  process.env.NEXT_PUBLIC_PARENT_APP_URL
+                    ? `${process.env.NEXT_PUBLIC_PARENT_APP_URL}/register`
+                    : '/access'
+                }
                 className="flex-1 py-2 px-3 text-sm text-center border border-[var(--aivo-purple-200)] rounded-lg hover:bg-[var(--aivo-purple-50)] hover:border-[var(--aivo-brand-primary)] transition-colors"
               >
                 👨‍👩‍👧 I&apos;m a Parent
               </a>
               <a
-                href={process.env.NEXT_PUBLIC_TEACHER_APP_URL ? `${process.env.NEXT_PUBLIC_TEACHER_APP_URL}/register` : '/access'}
+                href={
+                  process.env.NEXT_PUBLIC_TEACHER_APP_URL
+                    ? `${process.env.NEXT_PUBLIC_TEACHER_APP_URL}/register`
+                    : '/access'
+                }
                 className="flex-1 py-2 px-3 text-sm text-center border border-[var(--aivo-purple-200)] rounded-lg hover:bg-[var(--aivo-purple-50)] hover:border-[var(--aivo-brand-primary)] transition-colors"
               >
                 👩‍🏫 I&apos;m a Teacher

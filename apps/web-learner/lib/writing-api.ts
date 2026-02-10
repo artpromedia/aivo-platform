@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /**
  * Writing Tools API Client
- * 
+ *
  * Provides access to writing assistance features:
  * - Graphic Organizers for structuring ideas
  * - Sentence Starters to overcome writer's block
@@ -17,7 +18,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_WRITING_API_URL || 'http://localhos
 export interface GraphicOrganizer {
   id: string;
   name: string;
-  type: 'web' | 'venn' | 'sequence' | 'compare-contrast' | 'cause-effect' | 'kwl' | 'story-map' | 'outline';
+  type:
+    | 'web'
+    | 'venn'
+    | 'sequence'
+    | 'compare-contrast'
+    | 'cause-effect'
+    | 'kwl'
+    | 'story-map'
+    | 'outline';
   description: string;
   best_for: string;
   icon: string;
@@ -27,7 +36,7 @@ export interface OrganizerContent {
   organizerId: string;
   title?: string;
   createdAt?: string;
-  [key: string]: any; // Allow any organizer-specific content fields
+  [key: string]: unknown; // Allow any organizer-specific content fields
 }
 
 export interface SavedOrganizer {
@@ -193,17 +202,18 @@ export async function saveOrganizerContent(
   learnerId: string,
   contentOrOrganizerId: OrganizerContent | string,
   name?: string,
-  content?: Record<string, any>
+  content?: Record<string, unknown>
 ): Promise<SavedOrganizer> {
   // Support both old (learnerId, organizerId, name, content) and new (learnerId, OrganizerContent) signatures
-  const body = typeof contentOrOrganizerId === 'string'
-    ? { learnerId, organizerId: contentOrOrganizerId, name, content }
-    : { 
-        learnerId, 
-        organizerId: contentOrOrganizerId.organizerId, 
-        name: contentOrOrganizerId.title || 'Untitled',
-        content: contentOrOrganizerId 
-      };
+  const body =
+    typeof contentOrOrganizerId === 'string'
+      ? { learnerId, organizerId: contentOrOrganizerId, name, content }
+      : {
+          learnerId,
+          organizerId: contentOrOrganizerId.organizerId,
+          name: contentOrOrganizerId.title || 'Untitled',
+          content: contentOrOrganizerId,
+        };
   const response = await fetch(`${API_BASE_URL}/organizers/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -230,9 +240,15 @@ export async function exportOrganizer(
   contentOrOrganizerId: OrganizerContent | string,
   format?: 'pdf' | 'image' | 'text'
 ): Promise<Blob> {
-  const body = typeof contentOrOrganizerId === 'string'
-    ? { learnerId, organizerId: contentOrOrganizerId, format: format || 'text' }
-    : { learnerId, organizerId: contentOrOrganizerId.organizerId, content: contentOrOrganizerId, format: format || 'text' };
+  const body =
+    typeof contentOrOrganizerId === 'string'
+      ? { learnerId, organizerId: contentOrOrganizerId, format: format || 'text' }
+      : {
+          learnerId,
+          organizerId: contentOrOrganizerId.organizerId,
+          content: contentOrOrganizerId,
+          format: format || 'text',
+        };
   const response = await fetch(`${API_BASE_URL}/organizers/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -265,7 +281,7 @@ export async function getSentenceStarters(
   const url = subcategory
     ? `${API_BASE_URL}/starters?category=${category}&subcategory=${subcategory}`
     : `${API_BASE_URL}/starters?category=${category}`;
-  
+
   const response = await fetch(url);
   if (!response.ok) throw new Error('Failed to fetch starters');
   return response.json();
@@ -278,9 +294,10 @@ export async function logStarterUsage(
   usageOrLearnerId: StarterUsage | string,
   starterId?: string
 ): Promise<void> {
-  const body = typeof usageOrLearnerId === 'string'
-    ? { learnerId: usageOrLearnerId, starterId }
-    : usageOrLearnerId;
+  const body =
+    typeof usageOrLearnerId === 'string'
+      ? { learnerId: usageOrLearnerId, starterId }
+      : usageOrLearnerId;
   const response = await fetch(`${API_BASE_URL}/starters/usage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -292,13 +309,13 @@ export async function logStarterUsage(
 /**
  * Get random sentence starters
  */
-export async function getRandomStarters(count: number = 5): Promise<SentenceStarter[]> {
+export async function getRandomStarters(count = 5): Promise<SentenceStarter[]> {
   const response = await fetch(`${API_BASE_URL}/starters/random?count=${count}`);
   if (!response.ok) throw new Error('Failed to fetch random starters');
-  const data = await response.json();
+  const data = (await response.json()) as { starters: string[] | SentenceStarter[] };
   // Handle both array of strings and array of objects
   if (Array.isArray(data.starters) && typeof data.starters[0] === 'string') {
-    return data.starters.map((text: string, index: number) => ({
+    return (data.starters as string[]).map((text: string, index: number) => ({
       id: `random-${index}`,
       text,
       category: 'random',
@@ -307,7 +324,7 @@ export async function getRandomStarters(count: number = 5): Promise<SentenceStar
       examples: [],
     }));
   }
-  return data.starters;
+  return data.starters as SentenceStarter[];
 }
 
 // ============================================================================
@@ -373,11 +390,13 @@ export async function applyGrammarSuggestion(
     if (!response.ok) throw new Error('Failed to apply suggestion');
     return response.json();
   }
-  
+
   const issue = issueOrId;
+  const suggestion = issue.suggestions[suggestionIndex];
+  const replacement = typeof suggestion === 'string' ? suggestion : suggestion.replacement;
   const before = text.substring(0, issue.position.start);
   const after = text.substring(issue.position.end);
-  return { correctedText: before + issue.suggestions[suggestionIndex] + after };
+  return { correctedText: before + replacement + after };
 }
 
 // ============================================================================

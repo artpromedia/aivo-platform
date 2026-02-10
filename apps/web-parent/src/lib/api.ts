@@ -26,11 +26,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Request failed' }));
+    const error = (await res.json().catch(() => ({ message: 'Request failed' }))) as {
+      message?: string;
+    };
     throw new Error(error.message || `HTTP ${res.status}`);
   }
 
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 async function getBlob(endpoint: string): Promise<Blob> {

@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 // Visual Learning API
 // API client for visual learning tools and features
 
-const VISUAL_LEARNING_API_URL = process.env.NEXT_PUBLIC_VISUAL_LEARNING_API_URL || 'http://localhost:8089/api/visual-learning';
+const VISUAL_LEARNING_API_URL =
+  process.env.NEXT_PUBLIC_VISUAL_LEARNING_API_URL || 'http://localhost:8089/api/visual-learning';
 
 // Mind Map Types
 
@@ -84,7 +86,9 @@ export async function deleteMindMap(mapId: string): Promise<void> {
 }
 
 export async function exportMindMap(mapId: string, format: 'png' | 'pdf' | 'json'): Promise<Blob> {
-  const response = await fetch(`${VISUAL_LEARNING_API_URL}/mind-maps/${mapId}/export?format=${format}`);
+  const response = await fetch(
+    `${VISUAL_LEARNING_API_URL}/mind-maps/${mapId}/export?format=${format}`
+  );
   if (!response.ok) throw new Error('Failed to export mind map');
   return response.blob();
 }
@@ -179,8 +183,13 @@ export async function deleteDiagram(diagramId: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to delete diagram');
 }
 
-export async function exportDiagram(diagramId: string, format: 'png' | 'svg' | 'pdf'): Promise<Blob> {
-  const response = await fetch(`${VISUAL_LEARNING_API_URL}/diagrams/${diagramId}/export?format=${format}`);
+export async function exportDiagram(
+  diagramId: string,
+  format: 'png' | 'svg' | 'pdf'
+): Promise<Blob> {
+  const response = await fetch(
+    `${VISUAL_LEARNING_API_URL}/diagrams/${diagramId}/export?format=${format}`
+  );
   if (!response.ok) throw new Error('Failed to export diagram');
   return response.blob();
 }
@@ -275,7 +284,10 @@ export async function updateVideoAnnotation(
   return response.json();
 }
 
-export async function deleteVideoAnnotation(videoId: string, annotationId: string): Promise<AnnotatedVideo> {
+export async function deleteVideoAnnotation(
+  videoId: string,
+  annotationId: string
+): Promise<AnnotatedVideo> {
   const response = await fetch(
     `${VISUAL_LEARNING_API_URL}/videos/${videoId}/annotations/${annotationId}`,
     {
@@ -382,24 +394,36 @@ export async function updateVisualNote(
   noteId: string,
   data: Partial<VisualNote>
 ): Promise<VisualNotebook> {
-  const response = await fetch(`${VISUAL_LEARNING_API_URL}/notebooks/${notebookId}/notes/${noteId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+  const response = await fetch(
+    `${VISUAL_LEARNING_API_URL}/notebooks/${notebookId}/notes/${noteId}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }
+  );
   if (!response.ok) throw new Error('Failed to update visual note');
   return response.json();
 }
 
-export async function deleteVisualNote(notebookId: string, noteId: string): Promise<VisualNotebook> {
-  const response = await fetch(`${VISUAL_LEARNING_API_URL}/notebooks/${notebookId}/notes/${noteId}`, {
-    method: 'DELETE',
-  });
+export async function deleteVisualNote(
+  notebookId: string,
+  noteId: string
+): Promise<VisualNotebook> {
+  const response = await fetch(
+    `${VISUAL_LEARNING_API_URL}/notebooks/${notebookId}/notes/${noteId}`,
+    {
+      method: 'DELETE',
+    }
+  );
   if (!response.ok) throw new Error('Failed to delete visual note');
   return response.json();
 }
 
-export async function exportVisualNotebook(notebookId: string, format: 'pdf' | 'png'): Promise<Blob> {
+export async function exportVisualNotebook(
+  notebookId: string,
+  format: 'pdf' | 'png'
+): Promise<Blob> {
   const response = await fetch(
     `${VISUAL_LEARNING_API_URL}/notebooks/${notebookId}/export?format=${format}`
   );

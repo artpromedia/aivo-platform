@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 // Study Skills API Client - Note-Taking Templates, Study Guides, Memory Techniques, and Test Prep Tools
 
 // Note-Taking Template Types
@@ -406,10 +407,7 @@ export async function createMemoryCard(data: {
   return response.json();
 }
 
-export async function reviewMemoryCard(
-  cardId: string,
-  correct: boolean
-): Promise<MemoryCard> {
+export async function reviewMemoryCard(cardId: string, correct: boolean): Promise<MemoryCard> {
   const response = await fetch(`${API_BASE_URL}/memory-cards/${cardId}/review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -475,10 +473,16 @@ export async function deleteTestPrepPlan(planId: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to delete test prep plan');
 }
 
-export async function completeStudySession(planId: string, sessionId: string): Promise<TestPrepPlan> {
-  const response = await fetch(`${API_BASE_URL}/test-prep-plans/${planId}/sessions/${sessionId}/complete`, {
-    method: 'POST',
-  });
+export async function completeStudySession(
+  planId: string,
+  sessionId: string
+): Promise<TestPrepPlan> {
+  const response = await fetch(
+    `${API_BASE_URL}/test-prep-plans/${planId}/sessions/${sessionId}/complete`,
+    {
+      method: 'POST',
+    }
+  );
   if (!response.ok) throw new Error('Failed to complete study session');
   return response.json();
 }

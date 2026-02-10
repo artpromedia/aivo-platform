@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /**
  * Math Support API Client
- * 
+ *
  * Provides access to math assistance features:
  * - Virtual Manipulatives for visual math learning
  * - Step-by-Step Solutions with worked examples
@@ -17,7 +18,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_MATH_API_URL || 'http://localhost:8
 export interface Manipulative {
   id: string;
   name: string;
-  type: 'fraction-bars' | 'number-line' | 'base-ten-blocks' | 'algebra-tiles' | 'geometric-shapes' | 'counters';
+  type:
+    | 'fraction-bars'
+    | 'number-line'
+    | 'base-ten-blocks'
+    | 'algebra-tiles'
+    | 'geometric-shapes'
+    | 'counters';
   description: string;
   grade_level: string;
   icon: string;
@@ -25,7 +32,7 @@ export interface Manipulative {
 
 export interface ManipulativeState {
   manipulativeId: string;
-  state: Record<string, any>; // Flexible state for different manipulative types
+  state: Record<string, unknown>; // Flexible state for different manipulative types
   timestamp: string;
 }
 
