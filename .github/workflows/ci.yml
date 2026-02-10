@@ -60,7 +60,7 @@ jobs:
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Verify all
-        run: pnpm run verify-all
+        run: pnpm turbo run test build --continue
 
   security:
     name: Security (osv + trivy)
