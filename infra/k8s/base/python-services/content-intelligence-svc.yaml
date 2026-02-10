@@ -17,9 +17,14 @@ spec:
         app: content-intelligence-svc
         tier: python-medium
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: content-intelligence-svc
-          image: aivo/content-intelligence-svc
+          image: aivo/content-intelligence-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -29,9 +34,11 @@ spec:
             requests:
               cpu: 250m
               memory: 1Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "1000m"
               memory: 2Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

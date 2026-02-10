@@ -17,9 +17,14 @@ spec:
         app: accessibility-ai-svc
         tier: python-heavy
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: accessibility-ai-svc
-          image: aivo/accessibility-ai-svc
+          image: aivo/accessibility-ai-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -29,9 +34,11 @@ spec:
             requests:
               cpu: 500m
               memory: 2Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "2000m"
               memory: 4Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

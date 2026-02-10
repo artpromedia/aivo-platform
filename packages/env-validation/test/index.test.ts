@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
 import {
   isProduction,
@@ -6,7 +6,6 @@ import {
   isTest,
   validateEnv,
   EnvValidationError,
-  requiredInProduction,
   port,
   url,
   databaseUrl,
@@ -246,6 +245,3 @@ describe('env-validation', () => {
     });
   });
 });
-
-// Need to import vi for onError mock test
-import { vi } from 'vitest';

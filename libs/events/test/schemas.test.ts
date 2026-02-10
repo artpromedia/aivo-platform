@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   BaseEventSchema,
   EventSourceSchema,
-  EventEnvelopeSchema,
   GradeBandSchema,
   SessionOriginSchema,
   SessionTypeSchema,

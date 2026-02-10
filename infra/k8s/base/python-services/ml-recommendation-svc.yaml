@@ -17,9 +17,14 @@ spec:
         app: ml-recommendation-svc
         tier: python-medium
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: ml-recommendation-svc
-          image: aivo/ml-recommendation-svc
+          image: aivo/ml-recommendation-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -35,9 +40,11 @@ spec:
             requests:
               cpu: 200m
               memory: 512Mi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "1000m"
               memory: 1Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

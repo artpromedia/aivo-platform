@@ -17,9 +17,14 @@ spec:
         app: writing-assessment-svc
         tier: python-medium
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: writing-assessment-svc
-          image: aivo/writing-assessment-svc
+          image: aivo/writing-assessment-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -29,9 +34,11 @@ spec:
             requests:
               cpu: 250m
               memory: 1Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "1000m"
               memory: 2Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

@@ -6,7 +6,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -18,11 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
-
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Create uploads directory and non-root user
+RUN mkdir -p /app/uploads \
+    && useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Health check

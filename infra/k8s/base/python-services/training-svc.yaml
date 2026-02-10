@@ -17,9 +17,14 @@ spec:
         app: training-svc
         tier: python-heavy
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: training-svc
-          image: aivo/training-svc
+          image: aivo/training-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -39,9 +44,11 @@ spec:
             requests:
               cpu: "1000m"
               memory: 6Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "4000m"
               memory: 8Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /api/v1/training/health

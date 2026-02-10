@@ -3,9 +3,8 @@ import {
   CircuitBreaker,
   CircuitState,
   CircuitConfigs,
-  CircuitBreakerError,
   createCircuitBreaker,
-  circuitBreakerRegistry,
+  resetAllCircuits,
 } from '../src/circuit-breaker';
 
 describe('CircuitBreaker', () => {
@@ -15,7 +14,7 @@ describe('CircuitBreaker', () => {
   beforeEach(() => {
     successAction = vi.fn().mockResolvedValue('ok');
     failAction = vi.fn().mockRejectedValue(new Error('fail'));
-    circuitBreakerRegistry.resetAll();
+    resetAllCircuits();
   });
 
   describe('initial state', () => {

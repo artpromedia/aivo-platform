@@ -17,9 +17,14 @@ spec:
         app: curriculum-py-svc
         tier: python-light
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: curriculum-py-svc
-          image: aivo/curriculum-py-svc
+          image: aivo/curriculum-py-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -35,9 +40,11 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
+              ephemeral-storage: 128Mi
             limits:
               cpu: 500m
               memory: 512Mi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

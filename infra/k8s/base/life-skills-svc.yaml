@@ -50,6 +50,7 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: life-skills-svc
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -103,9 +104,11 @@ spec:
             requests:
               cpu: 100m
               memory: 256Mi
+              ephemeral-storage: "128Mi"
             limits:
               cpu: 500m
               memory: 512Mi
+              ephemeral-storage: "512Mi"
 
           livenessProbe:
             httpGet:
@@ -133,6 +136,13 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 30
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
 
           volumeMounts:
             - name: tmp

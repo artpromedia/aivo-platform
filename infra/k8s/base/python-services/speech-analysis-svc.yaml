@@ -17,9 +17,14 @@ spec:
         app: speech-analysis-svc
         tier: python-medium
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: speech-analysis-svc
-          image: aivo/speech-analysis-svc
+          image: aivo/speech-analysis-svc:latest
           ports:
             - containerPort: 8080
           envFrom:
@@ -35,9 +40,11 @@ spec:
             requests:
               cpu: 250m
               memory: 1Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "1000m"
               memory: 2Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

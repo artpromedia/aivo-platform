@@ -37,20 +37,16 @@ ENV OPENCV_IO_ENABLE_OPENEXR=1
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 
-# Install PyTorch CPU version first (smaller image size)
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
-# Install remaining dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install PyTorch CPU version and remaining dependencies
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-
-# Create directories for model cache
-RUN mkdir -p /app/.cache/huggingface /app/.cache/easyocr && \
+# Create non-root user and model cache directories
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app && \
+    mkdir -p /app/.cache/huggingface /app/.cache/easyocr && \
     chown -R appuser:appuser /app/.cache
 
 USER appuser

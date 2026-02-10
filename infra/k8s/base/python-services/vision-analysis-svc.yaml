@@ -17,9 +17,14 @@ spec:
         app: vision-analysis-svc
         tier: python-heavy
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: vision-analysis-svc
-          image: aivo/vision-analysis-svc
+          image: aivo/vision-analysis-svc:latest
           ports:
             - containerPort: 8000
           envFrom:
@@ -29,9 +34,11 @@ spec:
             requests:
               cpu: 500m
               memory: 3Gi
+              ephemeral-storage: 128Mi
             limits:
               cpu: "2000m"
               memory: 6Gi
+              ephemeral-storage: 512Mi
           livenessProbe:
             httpGet:
               path: /health

@@ -7,7 +7,6 @@ import type {
   PresenceUpdate,
   RoomType,
   RoomUser,
-  RoomState,
 } from '../src/types.js';
 
 /**
