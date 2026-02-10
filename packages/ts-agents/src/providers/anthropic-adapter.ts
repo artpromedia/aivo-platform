@@ -3,12 +3,9 @@
  */
 
 import { v4 as uuid } from 'uuid';
-import type {
-  Message,
-  ToolDefinition,
-  ToolCall,
-  TokenUsage,
-} from '../core/types';
+
+import type { Message, ToolDefinition, ToolCall, TokenUsage } from '../core/types';
+
 import {
   ModelAdapter,
   type GenerateRequest,
@@ -79,13 +76,12 @@ interface AnthropicStream {
 export class AnthropicAdapter extends ModelAdapter {
   private client?: AnthropicClient;
   private modelName = 'claude-3-sonnet-20240229';
+  private initialized = false;
 
-  constructor(apiKey?: string, baseUrl?: string) {
-    super(apiKey, baseUrl);
-    this.initializeClient();
-  }
+  private async ensureClient(): Promise<void> {
+    if (this.initialized) return;
+    this.initialized = true;
 
-  private initializeClient(): void {
     const key = this.apiKey || process.env.ANTHROPIC_API_KEY;
     if (!key) {
       return;
@@ -93,8 +89,10 @@ export class AnthropicAdapter extends ModelAdapter {
 
     try {
       // Dynamic import to avoid bundling issues
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const Anthropic = require('@anthropic-ai/sdk').default;
+      const mod = (await import('@anthropic-ai/sdk')) as {
+        default: new (opts: { apiKey: string; baseURL?: string }) => AnthropicClient;
+      };
+      const Anthropic = mod.default;
       this.client = new Anthropic({
         apiKey: key,
         baseURL: this.baseUrl,
@@ -105,8 +103,11 @@ export class AnthropicAdapter extends ModelAdapter {
   }
 
   async generate(request: GenerateRequest): Promise<GenerateResponse> {
+    await this.ensureClient();
     if (!this.client) {
-      throw new Error('Anthropic client not initialized. Provide API key or install @anthropic-ai/sdk');
+      throw new Error(
+        'Anthropic client not initialized. Provide API key or install @anthropic-ai/sdk'
+      );
     }
 
     this.modelName = request.config.model;
@@ -115,14 +116,14 @@ export class AnthropicAdapter extends ModelAdapter {
       model: request.config.model,
       max_tokens: request.config.maxTokens || 4096,
       system: request.systemPrompt,
-      messages: this.formatMessages(request.messages) as AnthropicMessageParam[],
+      messages: this.formatMessages(request.messages),
       temperature: request.config.temperature,
       top_p: request.config.topP,
       stop_sequences: request.config.stopSequences,
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools) as AnthropicTool[];
+      params.tools = this.formatTools(request.tools);
     }
 
     const response = await this.client.messages.create(params);
@@ -134,6 +135,7 @@ export class AnthropicAdapter extends ModelAdapter {
     request: GenerateRequest,
     callback: StreamCallback
   ): Promise<GenerateResponse> {
+    await this.ensureClient();
     if (!this.client) {
       throw new Error('Anthropic client not initialized');
     }
@@ -144,14 +146,14 @@ export class AnthropicAdapter extends ModelAdapter {
       model: request.config.model,
       max_tokens: request.config.maxTokens || 4096,
       system: request.systemPrompt,
-      messages: this.formatMessages(request.messages) as AnthropicMessageParam[],
+      messages: this.formatMessages(request.messages),
       temperature: request.config.temperature,
       top_p: request.config.topP,
       stop_sequences: request.config.stopSequences,
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools) as AnthropicTool[];
+      params.tools = this.formatTools(request.tools);
     }
 
     const stream = this.client.messages.stream(params);
@@ -225,7 +227,7 @@ export class AnthropicAdapter extends ModelAdapter {
             content: message.content,
           });
         }
-      } else if (message.role === 'tool') {
+      } else {
         // Tool results are part of a user message
         formatted.push({
           role: 'user',
@@ -244,7 +246,7 @@ export class AnthropicAdapter extends ModelAdapter {
   }
 
   protected formatTools(tools: ToolDefinition[]): AnthropicTool[] {
-    return tools.map(tool => ({
+    return tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
       input_schema: tool.parameters as unknown as Record<string, unknown>,
@@ -259,7 +261,7 @@ export class AnthropicAdapter extends ModelAdapter {
         toolCalls.push({
           id: block.id || uuid(),
           name: block.name || '',
-          arguments: (block.input || {}) as Record<string, unknown>,
+          arguments: block.input || {},
           timestamp: new Date(),
         });
       }

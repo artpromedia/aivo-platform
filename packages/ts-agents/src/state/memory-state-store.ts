@@ -4,6 +4,7 @@
  */
 
 import type { AgentState } from '../core/types';
+
 import type { IStateStore } from './state-manager';
 
 interface StoredState {
@@ -20,8 +21,7 @@ export class MemoryStateStore implements IStateStore {
   private store = new Map<string, StoredState>();
   private agentIndex = new Map<string, Set<string>>();
   private options: Required<MemoryStoreOptions>;
-  // eslint-disable-next-line no-undef
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
 
   constructor(options?: MemoryStoreOptions) {
     this.options = {
@@ -177,9 +177,7 @@ export class MemoryStateStore implements IStateStore {
     }, this.options.cleanupIntervalMs);
 
     // Don't prevent process from exiting
-    if (this.cleanupTimer.unref) {
-      this.cleanupTimer.unref();
-    }
+    this.cleanupTimer.unref();
   }
 
   /**
@@ -196,7 +194,7 @@ export class MemoryStateStore implements IStateStore {
     }
 
     for (const key of keysToDelete) {
-      this.delete(key);
+      void this.delete(key);
     }
   }
 
@@ -217,7 +215,7 @@ export class MemoryStateStore implements IStateStore {
     }
 
     if (oldestKey) {
-      this.delete(oldestKey);
+      void this.delete(oldestKey);
     }
   }
 
@@ -234,16 +232,16 @@ export class MemoryStateStore implements IStateStore {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => this.deepClone(item)) as unknown as T;
+      return (obj as unknown[]).map((item) => this.deepClone(item)) as unknown as T;
     }
 
-    const cloned = {} as T;
+    const cloned = {} as Record<string, unknown>;
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         cloned[key] = this.deepClone(obj[key]);
       }
     }
 
-    return cloned;
+    return cloned as T;
   }
 }

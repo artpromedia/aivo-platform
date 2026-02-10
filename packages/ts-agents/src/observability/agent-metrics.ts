@@ -30,7 +30,7 @@ class Histogram {
   private values: number[] = [];
   private maxValues: number;
 
-  constructor(maxValues: number = 1000) {
+  constructor(maxValues = 1000) {
     this.maxValues = maxValues;
   }
 
@@ -82,7 +82,7 @@ class Histogram {
 class Counter {
   private value = 0;
 
-  increment(by: number = 1): void {
+  increment(by = 1): void {
     this.value += by;
   }
 
@@ -113,8 +113,7 @@ export class AgentMetrics {
   private histograms = new Map<string, Histogram>();
   private counters = new Map<string, Counter>();
   private gauges = new Map<string, Gauge>();
-  // eslint-disable-next-line no-undef
-  private flushTimer?: NodeJS.Timeout;
+  private flushTimer?: ReturnType<typeof setTimeout>;
 
   constructor(agentId: string, config?: Partial<AgentMetricsConfig>) {
     this.agentId = agentId;
@@ -122,8 +121,9 @@ export class AgentMetrics {
       enabled: true,
       flushIntervalMs: 60000, // 1 minute
       histogramBuckets: 1000,
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      onFlush: () => {},
+      onFlush: (_snapshot: MetricSnapshot): void => {
+        // Default no-op flush handler - override to export metrics
+      },
       ...config,
     };
 
@@ -143,7 +143,7 @@ export class AgentMetrics {
   /**
    * Increment a counter
    */
-  incrementCounter(name: string, by: number = 1): void {
+  incrementCounter(name: string, by = 1): void {
     if (!this.config.enabled) return;
     this.getOrCreateCounter(name).increment(by);
   }
@@ -172,11 +172,7 @@ export class AgentMetrics {
   /**
    * Record tool execution
    */
-  recordToolExecution(
-    toolName: string,
-    durationMs: number,
-    success: boolean
-  ): void {
+  recordToolExecution(toolName: string, durationMs: number, success: boolean): void {
     this.recordDuration(`tool.${toolName}.duration`, durationMs);
     this.incrementCounter(`tool.${toolName}.calls_total`);
     if (success) {
@@ -198,11 +194,7 @@ export class AgentMetrics {
   /**
    * Record memory operation
    */
-  recordMemoryOperation(
-    type: 'store' | 'recall',
-    memoryType: string,
-    durationMs: number
-  ): void {
+  recordMemoryOperation(type: 'store' | 'recall', memoryType: string, durationMs: number): void {
     this.recordDuration(`memory.${type}.${memoryType}.duration`, durationMs);
     this.incrementCounter(`memory.${type}.${memoryType}.total`);
   }
@@ -363,8 +355,6 @@ export class AgentMetrics {
       this.flush();
     }, this.config.flushIntervalMs);
 
-    if (this.flushTimer.unref) {
-      this.flushTimer.unref();
-    }
+    this.flushTimer.unref();
   }
 }

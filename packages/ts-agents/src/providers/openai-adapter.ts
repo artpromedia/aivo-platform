@@ -3,12 +3,9 @@
  */
 
 import { v4 as uuid } from 'uuid';
-import type {
-  Message,
-  ToolDefinition,
-  ToolCall,
-  TokenUsage,
-} from '../core/types';
+
+import type { Message, ToolDefinition, ToolCall, TokenUsage } from '../core/types';
+
 import {
   ModelAdapter,
   type GenerateRequest,
@@ -17,10 +14,31 @@ import {
 } from './model-adapter';
 
 // OpenAI SDK types (optional import)
+interface OpenAIStreamChunk {
+  choices: {
+    delta: {
+      content?: string;
+      tool_calls?: {
+        index: number;
+        id?: string;
+        function?: { name?: string; arguments?: string };
+      }[];
+    };
+  }[];
+}
+
 interface OpenAIClient {
   chat: {
     completions: {
-      create(params: OpenAIChatCompletionParams): Promise<OpenAIChatCompletion>;
+      create(
+        params: OpenAIChatCompletionParams & { stream?: false }
+      ): Promise<OpenAIChatCompletion>;
+      create(
+        params: OpenAIChatCompletionParams & { stream: true }
+      ): Promise<AsyncIterable<OpenAIStreamChunk>>;
+      create(
+        params: OpenAIChatCompletionParams
+      ): Promise<OpenAIChatCompletion | AsyncIterable<OpenAIStreamChunk>>;
     };
   };
 }
@@ -89,13 +107,12 @@ interface OpenAIChatChoice {
 export class OpenAIAdapter extends ModelAdapter {
   private client?: OpenAIClient;
   private modelName = 'gpt-4-turbo-preview';
+  private initialized = false;
 
-  constructor(apiKey?: string, baseUrl?: string) {
-    super(apiKey, baseUrl);
-    this.initializeClient();
-  }
+  private async ensureClient(): Promise<void> {
+    if (this.initialized) return;
+    this.initialized = true;
 
-  private initializeClient(): void {
     const key = this.apiKey || process.env.OPENAI_API_KEY;
     if (!key) {
       return;
@@ -103,8 +120,10 @@ export class OpenAIAdapter extends ModelAdapter {
 
     try {
       // Dynamic import to avoid bundling issues
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const OpenAI = require('openai').default;
+      const mod = (await import('openai')) as {
+        default: new (opts: { apiKey: string; baseURL?: string }) => OpenAIClient;
+      };
+      const OpenAI = mod.default;
       this.client = new OpenAI({
         apiKey: key,
         baseURL: this.baseUrl,
@@ -115,6 +134,7 @@ export class OpenAIAdapter extends ModelAdapter {
   }
 
   async generate(request: GenerateRequest): Promise<GenerateResponse> {
+    await this.ensureClient();
     if (!this.client) {
       throw new Error('OpenAI client not initialized. Provide API key or install openai package');
     }
@@ -123,7 +143,7 @@ export class OpenAIAdapter extends ModelAdapter {
 
     const params: OpenAIChatCompletionParams = {
       model: request.config.model,
-      messages: this.formatMessages(request.messages, request.systemPrompt) as OpenAIChatMessage[],
+      messages: this.formatMessages(request.messages, request.systemPrompt),
       temperature: request.config.temperature,
       top_p: request.config.topP,
       max_tokens: request.config.maxTokens,
@@ -131,7 +151,7 @@ export class OpenAIAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools) as OpenAITool[];
+      params.tools = this.formatTools(request.tools);
       params.tool_choice = 'auto';
     }
 
@@ -144,6 +164,7 @@ export class OpenAIAdapter extends ModelAdapter {
     request: GenerateRequest,
     callback: StreamCallback
   ): Promise<GenerateResponse> {
+    await this.ensureClient();
     if (!this.client) {
       throw new Error('OpenAI client not initialized');
     }
@@ -152,7 +173,7 @@ export class OpenAIAdapter extends ModelAdapter {
 
     const params: OpenAIChatCompletionParams = {
       model: request.config.model,
-      messages: this.formatMessages(request.messages, request.systemPrompt) as OpenAIChatMessage[],
+      messages: this.formatMessages(request.messages, request.systemPrompt),
       temperature: request.config.temperature,
       top_p: request.config.topP,
       max_tokens: request.config.maxTokens,
@@ -161,7 +182,7 @@ export class OpenAIAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools) as OpenAITool[];
+      params.tools = this.formatTools(request.tools);
       params.tool_choice = 'auto';
     }
 
@@ -169,8 +190,7 @@ export class OpenAIAdapter extends ModelAdapter {
     let fullMessage = '';
     const toolCallsMap = new Map<number, OpenAIToolCall>();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stream = await (this.client.chat.completions.create(params) as any);
+    const stream = await this.client.chat.completions.create({ ...params, stream: true as const });
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;
@@ -206,7 +226,7 @@ export class OpenAIAdapter extends ModelAdapter {
         toolCalls.push({
           id: tc.id,
           name: tc.function.name,
-          arguments: JSON.parse(tc.function.arguments || '{}'),
+          arguments: JSON.parse(tc.function.arguments || '{}') as Record<string, unknown>,
           timestamp: new Date(),
         });
       } catch {
@@ -239,10 +259,7 @@ export class OpenAIAdapter extends ModelAdapter {
     return this.client !== undefined;
   }
 
-  protected formatMessages(
-    messages: Message[],
-    systemPrompt?: string
-  ): OpenAIChatMessage[] {
+  protected formatMessages(messages: Message[], systemPrompt?: string): OpenAIChatMessage[] {
     const formatted: OpenAIChatMessage[] = [];
 
     // Add system prompt if provided
@@ -271,7 +288,7 @@ export class OpenAIAdapter extends ModelAdapter {
         };
 
         if ((message.toolCalls?.length ?? 0) > 0) {
-          assistantMessage.tool_calls = message.toolCalls.map(tc => ({
+          assistantMessage.tool_calls = message.toolCalls.map((tc) => ({
             id: tc.id,
             type: 'function' as const,
             function: {
@@ -282,7 +299,8 @@ export class OpenAIAdapter extends ModelAdapter {
         }
 
         formatted.push(assistantMessage);
-      } else if (message.role === 'tool') {
+      } else {
+        // tool role
         formatted.push({
           role: 'tool',
           content: message.content,
@@ -295,7 +313,7 @@ export class OpenAIAdapter extends ModelAdapter {
   }
 
   protected formatTools(tools: ToolDefinition[]): OpenAITool[] {
-    return tools.map(tool => ({
+    return tools.map((tool) => ({
       type: 'function' as const,
       function: {
         name: tool.name,
@@ -314,7 +332,7 @@ export class OpenAIAdapter extends ModelAdapter {
           toolCalls.push({
             id: tc.id,
             name: tc.function.name,
-            arguments: JSON.parse(tc.function.arguments),
+            arguments: JSON.parse(tc.function.arguments) as Record<string, unknown>,
             timestamp: new Date(),
           });
         } catch {
