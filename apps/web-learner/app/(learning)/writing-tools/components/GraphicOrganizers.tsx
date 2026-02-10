@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+import type { GraphicOrganizer, SavedOrganizer, OrganizerContent } from '@/lib/writing-api';
 import {
-  GraphicOrganizer,
-  SavedOrganizer,
-  OrganizerContent,
   getGraphicOrganizers,
   saveOrganizerContent,
   getSavedOrganizers,
@@ -82,7 +81,15 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
       case 'web':
         return { ...baseContent, centerTopic: '', connections: [] };
       case 'venn':
-        return { ...baseContent, leftCircle: '', rightCircle: '', overlap: '', leftItems: [], rightItems: [], overlapItems: [] };
+        return {
+          ...baseContent,
+          leftCircle: '',
+          rightCircle: '',
+          overlap: '',
+          leftItems: [],
+          rightItems: [],
+          overlapItems: [],
+        };
       case 'sequence':
         return { ...baseContent, steps: [] };
       case 'compare-contrast':
@@ -92,7 +99,15 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
       case 'kwl':
         return { ...baseContent, know: [], want: [], learned: [] };
       case 'story-map':
-        return { ...baseContent, title: '', characters: [], setting: '', problem: '', events: [], solution: '' };
+        return {
+          ...baseContent,
+          title: '',
+          characters: [],
+          setting: '',
+          problem: '',
+          events: [],
+          solution: '',
+        };
       case 'outline':
         return { ...baseContent, mainIdea: '', points: [] };
       default:
@@ -167,8 +182,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Center Topic</label>
           <input
             type="text"
-            value={content.centerTopic || ''}
-            onChange={(e) => setContent({ ...content, centerTopic: e.target.value })}
+            value={(content.centerTopic as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, centerTopic: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             placeholder="Main idea or topic"
           />
@@ -190,7 +207,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newConnections = (content.connections || []).filter((_: string, i: number) => i !== idx);
+                  const newConnections = (content.connections || []).filter(
+                    (_: string, i: number) => i !== idx
+                  );
                   setContent({ ...content, connections: newConnections });
                 }}
                 className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
@@ -200,7 +219,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             </div>
           ))}
           <button
-            onClick={() => setContent({ ...content, connections: [...(content.connections || []), ''] })}
+            onClick={() => {
+              setContent({ ...content, connections: [...(content.connections || []), ''] });
+            }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
             Add Connection
@@ -220,8 +241,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Left Circle Label</label>
             <input
               type="text"
-              value={content.leftCircle || ''}
-              onChange={(e) => setContent({ ...content, leftCircle: e.target.value })}
+              value={(content.leftCircle as string) || ''}
+              onChange={(e) => {
+                setContent({ ...content, leftCircle: e.target.value });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
             />
           </div>
@@ -229,8 +252,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Right Circle Label</label>
             <input
               type="text"
-              value={content.rightCircle || ''}
-              onChange={(e) => setContent({ ...content, rightCircle: e.target.value })}
+              value={(content.rightCircle as string) || ''}
+              onChange={(e) => {
+                setContent({ ...content, rightCircle: e.target.value });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
             />
           </div>
@@ -239,8 +264,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Overlap Label</label>
           <input
             type="text"
-            value={content.overlap || ''}
-            onChange={(e) => setContent({ ...content, overlap: e.target.value })}
+            value={(content.overlap as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, overlap: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
           />
         </div>
@@ -249,7 +276,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Left Items</label>
             <textarea
               value={(content.leftItems || []).join('\n')}
-              onChange={(e) => setContent({ ...content, leftItems: e.target.value.split('\n') })}
+              onChange={(e) => {
+                setContent({ ...content, leftItems: e.target.value.split('\n') });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
               rows={5}
               placeholder="One item per line"
@@ -259,7 +288,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Overlap Items</label>
             <textarea
               value={(content.overlapItems || []).join('\n')}
-              onChange={(e) => setContent({ ...content, overlapItems: e.target.value.split('\n') })}
+              onChange={(e) => {
+                setContent({ ...content, overlapItems: e.target.value.split('\n') });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
               rows={5}
               placeholder="One item per line"
@@ -269,7 +300,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Right Items</label>
             <textarea
               value={(content.rightItems || []).join('\n')}
-              onChange={(e) => setContent({ ...content, rightItems: e.target.value.split('\n') })}
+              onChange={(e) => {
+                setContent({ ...content, rightItems: e.target.value.split('\n') });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
               rows={5}
               placeholder="One item per line"
@@ -303,7 +336,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               />
               <button
                 onClick={() => {
-                  const newSteps = (content.steps || []).filter((_: string, i: number) => i !== idx);
+                  const newSteps = (content.steps || []).filter(
+                    (_: string, i: number) => i !== idx
+                  );
                   setContent({ ...content, steps: newSteps });
                 }}
                 className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
@@ -313,7 +348,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             </div>
           ))}
           <button
-            onClick={() => setContent({ ...content, steps: [...(content.steps || []), ''] })}
+            onClick={() => {
+              setContent({ ...content, steps: [...(content.steps || []), ''] });
+            }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
             Add Step
@@ -333,8 +370,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Subject 1</label>
             <input
               type="text"
-              value={content.subject1 || ''}
-              onChange={(e) => setContent({ ...content, subject1: e.target.value })}
+              value={(content.subject1 as string) || ''}
+              onChange={(e) => {
+                setContent({ ...content, subject1: e.target.value });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
             />
           </div>
@@ -342,8 +381,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <label className="block text-sm font-medium mb-1">Subject 2</label>
             <input
               type="text"
-              value={content.subject2 || ''}
-              onChange={(e) => setContent({ ...content, subject2: e.target.value })}
+              value={(content.subject2 as string) || ''}
+              onChange={(e) => {
+                setContent({ ...content, subject2: e.target.value });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
             />
           </div>
@@ -352,7 +393,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Similarities</label>
           <textarea
             value={(content.similarities || []).join('\n')}
-            onChange={(e) => setContent({ ...content, similarities: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, similarities: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One similarity per line"
@@ -362,7 +405,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Differences</label>
           <textarea
             value={(content.differences || []).join('\n')}
-            onChange={(e) => setContent({ ...content, differences: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, differences: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One difference per line"
@@ -381,7 +426,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Causes</label>
           <textarea
             value={(content.causes || []).join('\n')}
-            onChange={(e) => setContent({ ...content, causes: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, causes: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={5}
             placeholder="One cause per line"
@@ -391,7 +438,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Effects</label>
           <textarea
             value={(content.effects || []).join('\n')}
-            onChange={(e) => setContent({ ...content, effects: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, effects: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={5}
             placeholder="One effect per line"
@@ -410,7 +459,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">What I Know</label>
           <textarea
             value={(content.know || []).join('\n')}
-            onChange={(e) => setContent({ ...content, know: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, know: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One item per line"
@@ -420,7 +471,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">What I Want to Learn</label>
           <textarea
             value={(content.want || []).join('\n')}
-            onChange={(e) => setContent({ ...content, want: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, want: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One item per line"
@@ -430,7 +483,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">What I Learned</label>
           <textarea
             value={(content.learned || []).join('\n')}
-            onChange={(e) => setContent({ ...content, learned: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, learned: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One item per line"
@@ -450,7 +505,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <input
             type="text"
             value={content.title || ''}
-            onChange={(e) => setContent({ ...content, title: e.target.value })}
+            onChange={(e) => {
+              setContent({ ...content, title: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
           />
         </div>
@@ -458,7 +515,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Characters</label>
           <textarea
             value={(content.characters || []).join('\n')}
-            onChange={(e) => setContent({ ...content, characters: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, characters: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={3}
             placeholder="One character per line"
@@ -468,16 +527,20 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Setting</label>
           <input
             type="text"
-            value={content.setting || ''}
-            onChange={(e) => setContent({ ...content, setting: e.target.value })}
+            value={(content.setting as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, setting: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Problem</label>
           <textarea
-            value={content.problem || ''}
-            onChange={(e) => setContent({ ...content, problem: e.target.value })}
+            value={(content.problem as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, problem: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={2}
           />
@@ -486,7 +549,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Events</label>
           <textarea
             value={(content.events || []).join('\n')}
-            onChange={(e) => setContent({ ...content, events: e.target.value.split('\n') })}
+            onChange={(e) => {
+              setContent({ ...content, events: e.target.value.split('\n') });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={4}
             placeholder="One event per line"
@@ -495,8 +560,10 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
         <div>
           <label className="block text-sm font-medium mb-1">Solution</label>
           <textarea
-            value={content.solution || ''}
-            onChange={(e) => setContent({ ...content, solution: e.target.value })}
+            value={(content.solution as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, solution: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
             rows={2}
           />
@@ -514,52 +581,63 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
           <label className="block text-sm font-medium mb-1">Main Idea</label>
           <input
             type="text"
-            value={content.mainIdea || ''}
-            onChange={(e) => setContent({ ...content, mainIdea: e.target.value })}
+            value={(content.mainIdea as string) || ''}
+            onChange={(e) => {
+              setContent({ ...content, mainIdea: e.target.value });
+            }}
             className="w-full px-3 py-2 border border-slate-300 rounded-md"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Main Points</label>
-          {(content.points || []).map((point: { main: string; supporting: string[] }, idx: number) => (
-            <div key={idx} className="mb-4 p-3 border border-slate-200 rounded-md">
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={point.main}
+          {(content.points || []).map(
+            (point: { main: string; supporting: string[] }, idx: number) => (
+              <div key={idx} className="mb-4 p-3 border border-slate-200 rounded-md">
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={point.main}
+                    onChange={(e) => {
+                      const newPoints = [...(content.points || [])];
+                      newPoints[idx] = { ...point, main: e.target.value };
+                      setContent({ ...content, points: newPoints });
+                    }}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-md font-medium"
+                    placeholder={`Point ${idx + 1}`}
+                  />
+                  <button
+                    onClick={() => {
+                      const newPoints = (content.points || []).filter(
+                        (_: { main: string; supporting: string[] }, i: number) => i !== idx
+                      );
+                      setContent({ ...content, points: newPoints });
+                    }}
+                    className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <textarea
+                  value={point.supporting.join('\n')}
                   onChange={(e) => {
                     const newPoints = [...(content.points || [])];
-                    newPoints[idx] = { ...point, main: e.target.value };
+                    newPoints[idx] = { ...point, supporting: e.target.value.split('\n') };
                     setContent({ ...content, points: newPoints });
                   }}
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-md font-medium"
-                  placeholder={`Point ${idx + 1}`}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
+                  rows={3}
+                  placeholder="Supporting details (one per line)"
                 />
-                <button
-                  onClick={() => {
-                    const newPoints = (content.points || []).filter((_: { main: string; supporting: string[] }, i: number) => i !== idx);
-                    setContent({ ...content, points: newPoints });
-                  }}
-                  className="px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
-                >
-                  Remove
-                </button>
               </div>
-              <textarea
-                value={point.supporting.join('\n')}
-                onChange={(e) => {
-                  const newPoints = [...(content.points || [])];
-                  newPoints[idx] = { ...point, supporting: e.target.value.split('\n') };
-                  setContent({ ...content, points: newPoints });
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                rows={3}
-                placeholder="Supporting details (one per line)"
-              />
-            </div>
-          ))}
+            )
+          )}
           <button
-            onClick={() => setContent({ ...content, points: [...(content.points || []), { main: '', supporting: [] }] })}
+            onClick={() => {
+              setContent({
+                ...content,
+                points: [...(content.points || []), { main: '', supporting: [] }],
+              });
+            }}
             className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
             Add Point
@@ -585,7 +663,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <h3 className="text-lg font-semibold">Select an Organizer</h3>
             {savedOrganizers.length > 0 && (
               <button
-                onClick={() => setShowSaved(!showSaved)}
+                onClick={() => {
+                  setShowSaved(!showSaved);
+                }}
                 className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200"
               >
                 {showSaved ? 'Show Templates' : 'Show Saved'}
@@ -598,7 +678,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               {savedOrganizers.map((saved) => (
                 <button
                   key={saved.id}
-                  onClick={() => loadSavedOrganizer(saved)}
+                  onClick={() => {
+                    loadSavedOrganizer(saved);
+                  }}
                   className="p-4 border border-slate-200 rounded-lg text-left hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
                 >
                   <h4 className="font-medium mb-1">{saved.content.title || 'Untitled'}</h4>
@@ -616,7 +698,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
               {organizers.map((organizer) => (
                 <button
                   key={organizer.id}
-                  onClick={() => selectOrganizer(organizer)}
+                  onClick={() => {
+                    selectOrganizer(organizer);
+                  }}
                   className="p-4 border border-slate-200 rounded-lg text-left hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
                 >
                   <h4 className="font-medium mb-1">{organizer.name}</h4>
@@ -649,7 +733,9 @@ export function GraphicOrganizers({ learnerId }: Readonly<GraphicOrganizersProps
             <input
               type="text"
               value={content?.title || ''}
-              onChange={(e) => content && setContent({ ...content, title: e.target.value })}
+              onChange={(e) => {
+                if (content) setContent({ ...content, title: e.target.value });
+              }}
               className="w-full px-3 py-2 border border-slate-300 rounded-md"
               placeholder="Give your organizer a title"
             />

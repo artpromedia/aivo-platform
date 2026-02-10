@@ -50,7 +50,7 @@ export function parseColor(color: string): RGB | null {
 
   // Handle rgb/rgba
   const rgbMatch = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(trimmed);
-  if (rgbMatch && rgbMatch[1] && rgbMatch[2] && rgbMatch[3]) {
+  if (rgbMatch?.[1] && rgbMatch[2] && rgbMatch[3]) {
     return {
       r: Number.parseInt(rgbMatch[1], 10),
       g: Number.parseInt(rgbMatch[2], 10),
@@ -60,12 +60,17 @@ export function parseColor(color: string): RGB | null {
 
   // Handle hsl/hsla
   const hslMatch = /hsla?\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/.exec(trimmed);
-  if (hslMatch && hslMatch[1] && hslMatch[2] && hslMatch[3]) {
+  if (hslMatch?.[1] && hslMatch[2] && hslMatch[3]) {
     return hslToRgb({
       h: Number.parseInt(hslMatch[1], 10),
       s: Number.parseInt(hslMatch[2], 10),
       l: Number.parseInt(hslMatch[3], 10),
     });
+  }
+
+  // Handle bare hex (without # prefix)
+  if (/^[0-9a-f]{3}$|^[0-9a-f]{6}$/.test(trimmed)) {
+    return hexToRgb('#' + trimmed);
   }
 
   // Handle named colors
@@ -200,9 +205,7 @@ export function hslToRgb(hsl: HSL): RGB {
 export function getRelativeLuminance(rgb: RGB): number {
   const values = [rgb.r, rgb.g, rgb.b].map((c) => {
     const srgb = c / 255;
-    return srgb <= 0.03928
-      ? srgb / 12.92
-      : Math.pow((srgb + 0.055) / 1.055, 2.4);
+    return srgb <= 0.03928 ? srgb / 12.92 : Math.pow((srgb + 0.055) / 1.055, 2.4);
   });
   const r = values[0] ?? 0;
   const g = values[1] ?? 0;
@@ -234,10 +237,7 @@ export function getContrastRatio(color1: string, color2: string): number {
 /**
  * Check contrast compliance
  */
-export function checkContrast(
-  foreground: string,
-  background: string
-): ContrastResult {
+export function checkContrast(foreground: string, background: string): ContrastResult {
   const ratio = getContrastRatio(foreground, background);
 
   const result: ContrastResult = {
@@ -266,11 +266,7 @@ export function checkContrast(
 /**
  * Find a color that meets contrast requirements
  */
-export function findAccessibleColor(
-  color: string,
-  background: string,
-  targetRatio = 4.5
-): string {
+export function findAccessibleColor(color: string, background: string, targetRatio = 4.5): string {
   const rgb = parseColor(color);
   const bgRgb = parseColor(background);
 
@@ -287,10 +283,7 @@ export function findAccessibleColor(
   const maxAttempts = 100;
 
   while (attempts < maxAttempts) {
-    const currentRatio = getContrastRatio(
-      rgbToHex(adjustedRgb),
-      background
-    );
+    const currentRatio = getContrastRatio(rgbToHex(adjustedRgb), background);
 
     if (currentRatio >= targetRatio) {
       return rgbToHex(adjustedRgb);
@@ -431,12 +424,7 @@ export function validateColorContrast(
   requiredRatio: number;
   message: string;
 } {
-  const {
-    level = 'AA',
-    fontSize = 16,
-    isBold = false,
-    isUIComponent = false,
-  } = options;
+  const { level = 'AA', fontSize = 16, isBold = false, isUIComponent = false } = options;
 
   const ratio = getContrastRatio(foreground, background);
   let requiredRatio: number;

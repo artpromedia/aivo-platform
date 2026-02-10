@@ -438,7 +438,7 @@ describe('Homework Schemas', () => {
         sessionId: UUID2,
         learnerId: UUID3,
         questionId: UUID,
-        hintId: 'hint-1',
+        hintId: UUID2,
         hintLevel: 1,
         hintType: 'conceptual',
         generationLatencyMs: 500,

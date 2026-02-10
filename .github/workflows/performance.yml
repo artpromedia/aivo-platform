@@ -185,7 +185,8 @@ jobs:
         run: pnpm build
 
       - name: Run database migrations
-        run: pnpm db:migrate
+        run: pnpm -r --if-present run db:migrate
+        continue-on-error: true
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
 

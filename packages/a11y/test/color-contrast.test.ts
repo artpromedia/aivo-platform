@@ -133,10 +133,10 @@ describe('rgbToHsl / hslToRgb round-trip', () => {
     const original = { r: 100, g: 150, b: 200 };
     const hsl = rgbToHsl(original);
     const back = hslToRgb(hsl);
-    // Allow rounding tolerance
-    expect(back.r).toBeCloseTo(original.r, 0);
-    expect(back.g).toBeCloseTo(original.g, 0);
-    expect(back.b).toBeCloseTo(original.b, 0);
+    // Allow ±1 tolerance due to integer rounding in HSL conversion
+    expect(Math.abs(back.r - original.r)).toBeLessThanOrEqual(1);
+    expect(Math.abs(back.g - original.g)).toBeLessThanOrEqual(1);
+    expect(Math.abs(back.b - original.b)).toBeLessThanOrEqual(1);
   });
 });
 
