@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "strictNullChecks": true,
     "moduleResolution": "bundler",
     "module": "ESNext",
@@ -16,3 +16,4 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "build"]
 }
+

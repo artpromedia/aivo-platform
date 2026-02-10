@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -20,3 +20,4 @@
   "include": ["./**/*.ts", "./**/*.js"],
   "exclude": ["node_modules", "dist", "test-results", "playwright-report"]
 }
+

@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "plugins": [{ "name": "next" }],
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -20,3 +20,4 @@
   "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next-env.d.ts"],
   "exclude": ["node_modules", "__tests__", "vitest.config.ts", "vitest.setup.ts"]
 }
+

@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "rootDir": ".",
     "outDir": ".next",
     "jsx": "preserve",
@@ -33,3 +33,4 @@
   ],
   "exclude": ["node_modules", ".next", "dist", "build", "vitest.config.ts"]
 }
+

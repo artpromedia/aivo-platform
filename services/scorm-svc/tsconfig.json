@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "outDir": "./dist",
     "rootDir": "./src",
     "module": "NodeNext",
@@ -25,3 +25,4 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
+

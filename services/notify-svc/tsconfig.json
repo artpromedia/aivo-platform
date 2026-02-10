@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "moduleResolution": "bundler",
     "module": "ESNext",
     "outDir": "./dist",
@@ -21,3 +21,4 @@
     "src/services/push-notification.service.ts"
   ]
 }
+
