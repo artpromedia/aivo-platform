@@ -1,37 +1,19 @@
 # .github/workflows/production-validation-deploy.yml
-# AIVO Platform - Production Validation & Deployment
-# Week 49-52: Final Validation & Deployment Automation
-#
-# This workflow runs comprehensive validation checks before production deployment:
-# - Feature parity verification
-# - Security audit
-# - Performance benchmarks
-# - E2E tests
-# - Database migration validation
+# DEPRECATED — GCP/GKE production validation deploy
+# Replaced by deploy-hetzner-production.yml. GKE clusters do not exist.
 
-name: Production Validation & Deploy
+name: '[DISABLED] Production Validation & Deploy (GCP)'
 
 on:
   workflow_dispatch:
     inputs:
-      confirm:
-        description: 'Type "deploy-to-production" to confirm deployment'
+      _disabled:
+        description: 'This workflow is disabled. Use deploy-hetzner-production.yml instead.'
         required: true
-        type: string
-      skip_performance:
-        description: 'Skip performance benchmarks (faster deployment)'
-        required: false
-        default: false
-        type: boolean
-      skip_e2e:
-        description: 'Skip E2E tests (emergency only)'
-        required: false
-        default: false
-        type: boolean
-      version:
-        description: 'Version tag to deploy (optional, defaults to latest)'
-        required: false
-        type: string
+        default: 'DO NOT RUN'
+
+# Prevent execution even if manually triggered
+if: false
 
 env:
   NODE_VERSION: '20.19.4'
