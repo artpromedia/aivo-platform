@@ -24,6 +24,10 @@
     "clean": {
       "cache": false
     },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "verify-all": {
       "dependsOn": ["lint", "test", "build"],
       "cache": false
