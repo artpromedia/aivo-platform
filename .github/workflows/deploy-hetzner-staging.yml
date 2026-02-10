@@ -336,12 +336,19 @@ jobs:
                 --docker-username="${{ github.actor }}" \
                 --docker-password="${{ secrets.GHCR_PAT }}"
 
-            # Clone/update repo on server
+            # Clone/update repo on server (use PAT for private repo)
+            REPO_URL="https://x-access-token:${{ secrets.GHCR_PAT }}@github.com/artpromedia/aivo-platform.git"
             if [ -d /opt/aivo ]; then
-              cd /opt/aivo && git pull origin main
-            else
-              git clone https://github.com/artpromedia/aivo-platform.git /opt/aivo
               cd /opt/aivo
+              git remote set-url origin "$REPO_URL"
+              git fetch origin main
+              git reset --hard origin/main
+              # Remove token from stored remote URL
+              git remote set-url origin "https://github.com/artpromedia/aivo-platform.git"
+            else
+              git clone "$REPO_URL" /opt/aivo
+              cd /opt/aivo
+              git remote set-url origin "https://github.com/artpromedia/aivo-platform.git"
             fi
 
             # Update image tags in Hetzner overlay
@@ -380,14 +387,26 @@ jobs:
             echo "Applying Kubernetes manifests..."
             kustomize build . | kubectl apply -f -
 
-            # Wait for rollouts
+            # Wait for rollouts (parallel with 120s timeout each)
             echo ""
             echo "Waiting for rollouts..."
+            PIDS=()
             for svc in "${ALL_SERVICES[@]}"; do
-              kubectl rollout status "deployment/${svc}" -n "$NAMESPACE" --timeout=300s 2>/dev/null || \
-                echo "⚠ ${svc} rollout timeout (may not be deployed yet)"
+              ( kubectl rollout status "deployment/${svc}" -n "$NAMESPACE" --timeout=120s 2>/dev/null && \
+                echo "✅ ${svc}" || echo "⚠ ${svc} rollout incomplete" ) &
+              PIDS+=($!)
             done
 
+            # Wait for all background rollout checks
+            set +e
+            FAILED=0
+            for pid in "${PIDS[@]}"; do
+              wait "$pid" || FAILED=$((FAILED + 1))
+            done
+            set -e
+
+            echo ""
+            echo "═══ Rollout Summary: ${FAILED} incomplete ═══"
             echo ""
             echo "═══ Pod Status ═══"
             kubectl get pods -n "$NAMESPACE" -o wide
