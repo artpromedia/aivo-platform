@@ -1,12 +1,10 @@
 # .github/workflows/deploy-staging.yml
-# Deploy to Staging Environment
-# Automatically deploys on push to main
+# DEPRECATED — GCP/GKE staging deploy (replaced by deploy-hetzner-staging.yml)
+# Kept for reference only. Trigger disabled to prevent conflicts.
 
-name: Deploy to Staging
+name: '[DISABLED] Deploy to Staging (GCP)'
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:
