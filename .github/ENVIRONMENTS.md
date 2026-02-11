@@ -42,33 +42,36 @@ This document outlines the GitHub Environments configuration required for CI/CD 
 
 ### Staging Environment
 
-| Secret Name             | Description                        | Required For         |
-| ----------------------- | ---------------------------------- | -------------------- |
-| `GCP_SA_KEY`            | GCP Service Account JSON (staging) | GCR push, GKE deploy |
-| `DATABASE_URL`          | PostgreSQL connection string       | Database migrations  |
-| `REDIS_URL`             | Redis connection string            | Session/caching      |
-| `NATS_URL`              | NATS messaging URL                 | Event messaging      |
-| `JWT_SECRET`            | JWT signing secret                 | Auth service         |
-| `ENCRYPTION_KEY`        | Data encryption key                | Sensitive data       |
-| `OPENAI_API_KEY`        | OpenAI API key                     | AI orchestrator      |
-| `ANTHROPIC_API_KEY`     | Anthropic API key                  | AI orchestrator      |
-| `SENDGRID_API_KEY`      | SendGrid API key                   | Email notifications  |
-| `STRIPE_SECRET_KEY`     | Stripe secret key                  | Billing service      |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing             | Payment webhooks     |
+| Secret Name             | Description                     | Required For        |
+| ----------------------- | ------------------------------- | ------------------- |
+| `STAGING_HOST`          | Hetzner staging server hostname | SSH deploy          |
+| `STAGING_USER`          | SSH user for staging server     | SSH deploy          |
+| `STAGING_SSH_KEY`       | SSH private key for staging     | SSH deploy          |
+| `DATABASE_URL`          | PostgreSQL connection string    | Database migrations |
+| `REDIS_URL`             | Redis connection string         | Session/caching     |
+| `NATS_URL`              | NATS messaging URL              | Event messaging     |
+| `JWT_SECRET`            | JWT signing secret              | Auth service        |
+| `ENCRYPTION_KEY`        | Data encryption key             | Sensitive data      |
+| `OPENAI_API_KEY`        | OpenAI API key                  | AI orchestrator     |
+| `ANTHROPIC_API_KEY`     | Anthropic API key               | AI orchestrator     |
+| `SENDGRID_API_KEY`      | SendGrid API key                | Email notifications |
+| `STRIPE_SECRET_KEY`     | Stripe secret key               | Billing service     |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing          | Payment webhooks    |
 
 ### Production Environment
 
 All staging secrets plus:
 
-| Secret Name         | Description                           | Required For         |
-| ------------------- | ------------------------------------- | -------------------- |
-| `GCP_PROD_SA_KEY`   | GCP Service Account JSON (production) | GCR push, GKE deploy |
-| `PROD_DATABASE_URL` | Production PostgreSQL URL             | Database operations  |
-| `PROD_REDIS_URL`    | Production Redis URL                  | Session/caching      |
-| `SENTRY_DSN`        | Sentry error tracking DSN             | Error monitoring     |
-| `DATADOG_API_KEY`   | Datadog API key                       | APM monitoring       |
-| `PAGERDUTY_KEY`     | PagerDuty integration key             | Incident alerting    |
-| `SLACK_WEBHOOK_URL` | Slack notification webhook            | Deploy notifications |
+| Secret Name          | Description                        | Required For        |
+| -------------------- | ---------------------------------- | ------------------- |
+| `PRODUCTION_HOST`    | Hetzner production server hostname | SSH deploy          |
+| `PRODUCTION_USER`    | SSH user for production server     | SSH deploy          |
+| `PRODUCTION_SSH_KEY` | SSH private key for production     | SSH deploy          |
+| `PROD_DATABASE_URL`  | Production PostgreSQL URL          | Database operations |
+| `PROD_REDIS_URL`     | Production Redis URL               | Session/caching     |
+| `SENTRY_DSN`         | Sentry error tracking DSN          | Error monitoring    |
+| `DATADOG_API_KEY`    | Datadog API key                    | APM monitoring      |
+| `PAGERDUTY_KEY`      | PagerDuty integration key          | Incident alerting   |
 
 ### Mobile Build Secrets
 
@@ -177,7 +180,7 @@ kubectl rollout undo deployment/<service-name> -n aivo-prod
 kubectl rollout undo deployment/<service-name> --to-revision=<N> -n aivo-prod
 
 # Or via GitHub Actions
-gh workflow run deploy-production.yml -f version=v1.2.3 -f skip_approval=true
+gh workflow run ci-unified.yml -f deploy_environment=production -f version=v1.2.3
 ```
 
 ---

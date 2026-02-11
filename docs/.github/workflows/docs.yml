@@ -221,25 +221,6 @@ jobs:
           working-directory: docs
           scope: ${{ secrets.VERCEL_ORG_ID }}
 
-      - name: Notify Slack
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "📚 Documentation deployed to production!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "📚 *Documentation deployed to production!*\n\n<https://docs.aivo.edu|View Documentation>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
   update-algolia:
     name: Update Algolia Search Index
     runs-on: ubuntu-latest

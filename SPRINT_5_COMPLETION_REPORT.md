@@ -20,14 +20,14 @@ Sprint 5 successfully completed all four critical production readiness tasks, br
 
 ### Production Impact
 
-| Metric | Before Sprint 5 | After Sprint 5 | Improvement |
-|--------|----------------|----------------|-------------|
-| Production Readiness | 93/100 | 97/100 | +4 points |
-| E2E Test Coverage | 78% | 86% | +8% |
-| P95 Response Time (estimated) | 350ms | <100ms | 71% faster |
-| Database Query Speed | 450ms (email lookups) | 15ms | 30x faster |
-| Concurrent Users Validated | 100 | 700 | 7x capacity |
-| Trust Score Implementation | Mock data | Production services | Production-ready |
+| Metric                        | Before Sprint 5       | After Sprint 5      | Improvement      |
+| ----------------------------- | --------------------- | ------------------- | ---------------- |
+| Production Readiness          | 93/100                | 97/100              | +4 points        |
+| E2E Test Coverage             | 78%                   | 86%                 | +8%              |
+| P95 Response Time (estimated) | 350ms                 | <100ms              | 71% faster       |
+| Database Query Speed          | 450ms (email lookups) | 15ms                | 30x faster       |
+| Concurrent Users Validated    | 100                   | 700                 | 7x capacity      |
+| Trust Score Implementation    | Mock data             | Production services | Production-ready |
 
 ---
 
@@ -49,10 +49,9 @@ Replaced mock data providers with production implementations:
 export class ProductionDataProviders implements DataProviders {
   // 1. ReviewDataProvider - profile-svc integration
   async getReviewData(userId: string): Promise<ReviewData> {
-    const response = await fetchWithTimeout(
-      `${PROFILE_SVC_URL}/users/${userId}/reviews`,
-      { timeout: 5000 }
-    );
+    const response = await fetchWithTimeout(`${PROFILE_SVC_URL}/users/${userId}/reviews`, {
+      timeout: 5000,
+    });
     return response.data || defaultReviewData;
   }
 
@@ -60,7 +59,7 @@ export class ProductionDataProviders implements DataProviders {
   async getVerificationData(userId: string): Promise<VerificationData> {
     const [authData, profileData] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId } }),
-      fetchWithTimeout(`${PROFILE_SVC_URL}/users/${userId}/verification`)
+      fetchWithTimeout(`${PROFILE_SVC_URL}/users/${userId}/verification`),
     ]);
     return mergeVerificationData(authData, profileData);
   }
@@ -69,7 +68,7 @@ export class ProductionDataProviders implements DataProviders {
   async getTenureData(userId: string): Promise<TenureData> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { createdAt: true, lastLoginAt: true }
+      select: { createdAt: true, lastLoginAt: true },
     });
     return calculateTenureMetrics(user);
   }
@@ -78,7 +77,7 @@ export class ProductionDataProviders implements DataProviders {
   async getActivityData(userId: string): Promise<ActivityData> {
     const [sessionData, analyticsData] = await Promise.all([
       fetchWithTimeout(`${SESSION_SVC_URL}/users/${userId}/sessions`),
-      fetchWithTimeout(`${ANALYTICS_SVC_URL}/users/${userId}/activity`)
+      fetchWithTimeout(`${ANALYTICS_SVC_URL}/users/${userId}/activity`),
     ]);
     return mergeActivityData(sessionData, analyticsData);
   }
@@ -86,7 +85,7 @@ export class ProductionDataProviders implements DataProviders {
   // 5. ComplianceDataProvider - compliance repository
   async getComplianceData(userId: string): Promise<ComplianceData> {
     const violations = await prisma.complianceViolation.count({
-      where: { userId, status: 'active' }
+      where: { userId, status: 'active' },
     });
     return { violationCount: violations, compliant: violations === 0 };
   }
@@ -141,18 +140,19 @@ const trustScoreService = new TrustScoreService(
 
 ### Coverage Breakdown
 
-| Test Suite | Tests | Coverage Contribution |
-|------------|-------|---------------------|
-| Payment Flows | 14 | +3% |
-| Authentication/Security | 25 | +3% |
-| Mobile Parent Onboarding | 8 | +1% |
-| Mobile Parent Push Notifications | 7 | +0.5% |
-| Mobile Learner Offline Sync | 10 | +0.5% |
-| **Total** | **64** | **+8%** |
+| Test Suite                       | Tests  | Coverage Contribution |
+| -------------------------------- | ------ | --------------------- |
+| Payment Flows                    | 14     | +3%                   |
+| Authentication/Security          | 25     | +3%                   |
+| Mobile Parent Onboarding         | 8      | +1%                   |
+| Mobile Parent Push Notifications | 7      | +0.5%                 |
+| Mobile Learner Offline Sync      | 10     | +0.5%                 |
+| **Total**                        | **64** | **+8%**               |
 
 ### Test Files Created
 
 #### 1. Payment Flows (Playwright)
+
 **File:** [tests/e2e/payment-flows.spec.ts](tests/e2e/payment-flows.spec.ts) (540 lines, 14 tests)
 
 ```typescript
@@ -184,6 +184,7 @@ describe('Payment Flows E2E', () => {
 ```
 
 **Coverage:**
+
 - Credit card payments
 - Payment retries
 - Subscription upgrades/downgrades
@@ -194,6 +195,7 @@ describe('Payment Flows E2E', () => {
 - Discount code application
 
 #### 2. Authentication & Security (Playwright)
+
 **File:** [tests/e2e/authentication-security.spec.ts](tests/e2e/authentication-security.spec.ts) (745 lines, 25 tests)
 
 ```typescript
@@ -227,6 +229,7 @@ describe('Authentication & Security E2E', () => {
 ```
 
 **Coverage:**
+
 - MFA enrollment/verification
 - Account lockout
 - Trust score impact
@@ -239,6 +242,7 @@ describe('Authentication & Security E2E', () => {
 - XSS prevention
 
 #### 3. Mobile Parent Onboarding (Flutter)
+
 **File:** [apps/mobile-parent/test/integration/parent_onboarding_test.dart](apps/mobile-parent/test/integration/parent_onboarding_test.dart) (114 lines, 8 tests)
 
 ```dart
@@ -246,25 +250,25 @@ void main() {
   group('Parent Onboarding Integration Tests', () {
     testWidgets('Complete onboarding flow', (tester) async {
       await tester.pumpWidget(const ParentApp());
-      
+
       // Step 1: Account creation
       await tester.tap(find.byKey(const Key('create-account')));
       await tester.enterText(find.byKey(const Key('email')), 'parent@test.com');
       await tester.enterText(find.byKey(const Key('password')), 'SecurePass123!');
       await tester.tap(find.byKey(const Key('submit')));
       await tester.pumpAndSettle();
-      
+
       // Step 2: Email verification
       await tester.enterText(find.byKey(const Key('otp')), '123456');
       await tester.tap(find.byKey(const Key('verify')));
       await tester.pumpAndSettle();
-      
+
       // Step 3: Child profile creation
       await tester.tap(find.byKey(const Key('add-child')));
       await tester.enterText(find.byKey(const Key('child-name')), 'John');
       await tester.tap(find.byKey(const Key('save')));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Dashboard'), findsOneWidget);
     });
   });
@@ -272,6 +276,7 @@ void main() {
 ```
 
 **Coverage:**
+
 - Account creation
 - Email verification
 - Child profile setup
@@ -279,6 +284,7 @@ void main() {
 - Onboarding completion
 
 #### 4. Mobile Parent Push Notifications (Flutter)
+
 **File:** [apps/mobile-parent/test/integration/push_notifications_test.dart](apps/mobile-parent/test/integration/push_notifications_test.dart) (95 lines, 7 tests)
 
 ```dart
@@ -286,14 +292,14 @@ void main() {
   group('Push Notifications Integration Tests', () {
     testWidgets('Receive and display notification', (tester) async {
       await tester.pumpWidget(const ParentApp());
-      
+
       // Simulate incoming notification
       await NotificationService.simulateNotification(
         title: 'Progress Update',
         body: 'John completed Math Lesson 5',
       );
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Progress Update'), findsOneWidget);
       expect(find.text('John completed Math Lesson 5'), findsOneWidget);
     });
@@ -302,6 +308,7 @@ void main() {
 ```
 
 **Coverage:**
+
 - Notification display
 - Notification tap handling
 - Deep linking
@@ -309,6 +316,7 @@ void main() {
 - Notification preferences
 
 #### 5. Mobile Learner Offline Sync (Flutter)
+
 **File:** [apps/mobile-learner/test/integration/offline_sync_test.dart](apps/mobile-learner/test/integration/offline_sync_test.dart) (150 lines, 10 tests)
 
 ```dart
@@ -316,25 +324,25 @@ void main() {
   group('Offline Sync Integration Tests', () {
     testWidgets('Complete lesson offline and sync later', (tester) async {
       await tester.pumpWidget(const LearnerApp());
-      
+
       // Go offline
       await NetworkSimulator.setOffline();
-      
+
       // Complete lesson
       await tester.tap(find.byKey(const Key('lesson-1')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('complete')));
       await tester.pumpAndSettle();
-      
+
       // Verify offline storage
       final syncQueue = await SyncQueue.getPendingItems();
       expect(syncQueue.length, 1);
       expect(syncQueue[0].type, 'lesson-completion');
-      
+
       // Go online
       await NetworkSimulator.setOnline();
       await tester.pump(const Duration(seconds: 2));
-      
+
       // Verify sync
       final syncedQueue = await SyncQueue.getPendingItems();
       expect(syncedQueue.length, 0);
@@ -344,6 +352,7 @@ void main() {
 ```
 
 **Coverage:**
+
 - Offline lesson completion
 - Offline progress tracking
 - Sync queue management
@@ -369,6 +378,7 @@ void main() {
 ### Load Testing Suite
 
 #### 1. k6 Load Test Script
+
 **File:** [tests/performance/sprint5-production-load-test.k6.js](tests/performance/sprint5-production-load-test.k6.js) (715 lines)
 
 ```javascript
@@ -457,9 +467,9 @@ export default function () {
     'login success': (r) => r.status === 200,
     'login under 200ms': (r) => r.timings.duration < 200,
   });
-  
+
   const token = loginResp.json('token');
-  
+
   // 2. Get User Profile
   const profileResp = http.get(`${BASE_URL}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -467,7 +477,7 @@ export default function () {
   check(profileResp, {
     'profile success': (r) => r.status === 200,
   });
-  
+
   // 3. Calculate Trust Score
   const trustResp = http.post(`${BASE_URL}/trust-score/calculate`, null, {
     headers: { Authorization: `Bearer ${token}` },
@@ -476,21 +486,22 @@ export default function () {
     'trust score success': (r) => r.status === 200,
     'trust score under 900ms': (r) => r.timings.duration < 900,
   });
-  
+
   sleep(1);
 }
 ```
 
 #### 2. PowerShell Test Runner
+
 **File:** [tests/performance/run-load-tests.ps1](tests/performance/run-load-tests.ps1) (265 lines)
 
 ```powershell
 param(
     [ValidateSet('smoke', 'load', 'stress', 'spike', 'soak', 'trust-score', 'auth')]
     [string]$Profile = 'smoke',
-    
+
     [string]$BaseUrl = 'http://localhost:3000',
-    
+
     [switch]$GenerateReport = $true
 )
 
@@ -509,9 +520,11 @@ if ($GenerateReport) {
 ```
 
 #### 3. Load Testing Guide
+
 **File:** [tests/performance/LOAD_TESTING_GUIDE.md](tests/performance/LOAD_TESTING_GUIDE.md) (520+ lines)
 
 Comprehensive guide with:
+
 - Setup instructions
 - Profile descriptions
 - Threshold explanations
@@ -520,30 +533,31 @@ Comprehensive guide with:
 
 ### Test Profiles
 
-| Profile | VUs | Duration | Purpose |
-|---------|-----|----------|---------|
-| **smoke** | 5 | 1 min | Quick sanity check |
-| **load** | 100 | 9 min | Average load validation |
-| **stress** | 700 | 40 min | **Critical production test** |
-| **spike** | 1000 | 8 min | Sudden traffic spike |
-| **soak** | 200 | 2 hours | Memory leak detection |
-| **trust-score** | 50 | 7 min | Trust score endpoint focus |
-| **auth** | 100 | 12 min | Authentication flow focus |
+| Profile         | VUs  | Duration | Purpose                      |
+| --------------- | ---- | -------- | ---------------------------- |
+| **smoke**       | 5    | 1 min    | Quick sanity check           |
+| **load**        | 100  | 9 min    | Average load validation      |
+| **stress**      | 700  | 40 min   | **Critical production test** |
+| **spike**       | 1000 | 8 min    | Sudden traffic spike         |
+| **soak**        | 200  | 2 hours  | Memory leak detection        |
+| **trust-score** | 50   | 7 min    | Trust score endpoint focus   |
+| **auth**        | 100  | 12 min   | Authentication flow focus    |
 
 ### Performance Targets
 
-| Metric | Target | Status |
-|--------|--------|--------|
-| P50 Response Time | <100ms | ✅ Infrastructure ready |
-| P95 Response Time | <200ms | ✅ Infrastructure ready |
-| P99 Response Time | <500ms | ✅ Infrastructure ready |
-| Error Rate | <0.5% | ✅ Infrastructure ready |
-| Concurrent Users | 500+ | ✅ 700 VU test configured |
-| Requests/Second | >500 | ✅ Threshold configured |
+| Metric            | Target | Status                    |
+| ----------------- | ------ | ------------------------- |
+| P50 Response Time | <100ms | ✅ Infrastructure ready   |
+| P95 Response Time | <200ms | ✅ Infrastructure ready   |
+| P99 Response Time | <500ms | ✅ Infrastructure ready   |
+| Error Rate        | <0.5%  | ✅ Infrastructure ready   |
+| Concurrent Users  | 500+   | ✅ 700 VU test configured |
+| Requests/Second   | >500   | ✅ Threshold configured   |
 
 ### Validation Results
 
 ✅ **Stress Test Configuration Validated**:
+
 - Ramps from 0 → 700 VUs over 17 minutes
 - Sustains 700 VUs for 20 minutes
 - Monitors auth, profile, trust score endpoints
@@ -562,6 +576,7 @@ Comprehensive guide with:
 ### Optimizations Implemented
 
 #### 1. Redis Caching Service
+
 **File:** [services/auth-svc/src/services/cache.service.ts](services/auth-svc/src/services/cache.service.ts) (330 lines)
 
 ```typescript
@@ -612,11 +627,7 @@ export class CacheService {
 
 // Decorator for method caching
 export function Cacheable(keyPrefix: string, ttl = 300) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const original = descriptor.value;
     descriptor.value = async function (...args: any[]) {
       const key = `${keyPrefix}:${args.join(':')}`;
@@ -627,18 +638,21 @@ export function Cacheable(keyPrefix: string, ttl = 300) {
 ```
 
 **Performance Impact:**
+
 - **Database Load Reduction**: 60-80%
 - **Cache Hit Rate Target**: >70%
 - **P95 Response Time (cached)**: <50ms vs <200ms (database)
 - **Memory Usage**: ~2GB Redis for 100k cached objects
 
 **Cache Strategy:**
+
 - User profiles: 5-minute TTL
 - Trust scores: 5-minute TTL
 - Sessions: 30-minute TTL
 - MFA configs: 10-minute TTL
 
 #### 2. Database Indexes
+
 **File:** [services/auth-svc/prisma/migrations/20260128_performance_indexes.sql](services/auth-svc/prisma/migrations/20260128_performance_indexes.sql) (200 lines)
 
 ```sql
@@ -686,26 +700,29 @@ ANALYZE "RefreshToken";
 
 **Performance Impact (Estimated):**
 
-| Query | Before | After | Improvement |
-|-------|--------|-------|-------------|
-| Email lookup | 450ms | 15ms | 30x faster |
-| Session query | 280ms | 25ms | 11x faster |
-| Trust score lookup | 320ms | 18ms | 18x faster |
-| MFA config lookup | 210ms | 12ms | 17x faster |
-| Token refresh | 380ms | 22ms | 17x faster |
+| Query              | Before | After | Improvement |
+| ------------------ | ------ | ----- | ----------- |
+| Email lookup       | 450ms  | 15ms  | 30x faster  |
+| Session query      | 280ms  | 25ms  | 11x faster  |
+| Trust score lookup | 320ms  | 18ms  | 18x faster  |
+| MFA config lookup  | 210ms  | 12ms  | 17x faster  |
+| Token refresh      | 380ms  | 22ms  | 17x faster  |
 
 **Index Strategy:**
+
 - **Standard B-tree**: For equality and range queries
 - **Partial indexes**: For filtered queries (active sessions, verified emails)
 - **Composite indexes**: For multi-column queries
 - **GIN indexes**: For full-text search (pg_trgm)
 
 **Index Size Impact:**
+
 - Total index size: ~500MB (for 1M users)
 - Partial indexes: 70% smaller than full indexes
 - Query speedup: 15-30x on indexed columns
 
 #### 3. Connection Pool Optimization
+
 **File:** [services/auth-svc/src/utils/prisma-optimized.ts](services/auth-svc/src/utils/prisma-optimized.ts) (340 lines)
 
 ```typescript
@@ -752,9 +769,7 @@ export function createOptimizedPrismaClient(
 
   const prisma = new PrismaClient({
     datasources: { db: { url: databaseUrl } },
-    log: preset.enableQueryLogging
-      ? ['query', 'info', 'warn', 'error']
-      : ['error'],
+    log: preset.enableQueryLogging ? ['query', 'info', 'warn', 'error'] : ['error'],
   });
 
   // Middleware: Slow query logging
@@ -812,25 +827,28 @@ export async function checkDatabaseHealth(
 
 **Performance Impact:**
 
-| Metric | Before (default) | After (optimized) | Improvement |
-|--------|-----------------|-------------------|-------------|
-| Connection pool size | 2 | 50 (prod) / 100 (load test) | 25x / 50x |
-| Connection wait time | 150ms | 5ms | 30x faster |
-| Pool exhaustion errors | Frequent at 100+ VUs | None at 700+ VUs | Eliminated |
-| Connect timeout | 10s | 5s (prod) / 3s (load test) | Faster failure |
+| Metric                 | Before (default)     | After (optimized)           | Improvement    |
+| ---------------------- | -------------------- | --------------------------- | -------------- |
+| Connection pool size   | 2                    | 50 (prod) / 100 (load test) | 25x / 50x      |
+| Connection wait time   | 150ms                | 5ms                         | 30x faster     |
+| Pool exhaustion errors | Frequent at 100+ VUs | None at 700+ VUs            | Eliminated     |
+| Connect timeout        | 10s                  | 5s (prod) / 3s (load test)  | Faster failure |
 
 **Configuration Strategy:**
+
 - **Development**: 10 connections (low resource usage)
 - **Staging**: 30 connections (moderate load)
 - **Production**: 50 connections (high load)
 - **Load Test**: 100 connections (extreme stress)
 
 **PgBouncer Compatibility:**
+
 - Statement cache size: 100
 - Transaction pooling mode
 - Read replica support
 
 #### 4. Query Optimization Utilities
+
 **File:** [services/auth-svc/src/utils/query-optimizer.ts](services/auth-svc/src/utils/query-optimizer.ts) (200 lines)
 
 ```typescript
@@ -899,11 +917,7 @@ export class QueryOptimizer {
   }
 
   // Delete in batches (prevent timeout)
-  static async deleteInBatches(
-    model: any,
-    where: any,
-    batchSize = 1000
-  ): Promise<number> {
+  static async deleteInBatches(model: any, where: any, batchSize = 1000): Promise<number> {
     let totalDeleted = 0;
     let deletedInBatch = 0;
 
@@ -923,6 +937,7 @@ export class QueryOptimizer {
 ```
 
 **Performance Benefits:**
+
 - **N+1 Query Prevention**: DataLoader pattern reduces 100 queries → 1
 - **Pagination**: Cursor-based is 10x faster than offset for large tables
 - **Count Optimization**: Estimates are instant vs full table scans
@@ -930,14 +945,14 @@ export class QueryOptimizer {
 
 ### Overall Performance Impact
 
-| Metric | Baseline | Optimized | Improvement |
-|--------|----------|-----------|-------------|
-| P50 Response Time | 120ms | <50ms | 58% faster |
-| P95 Response Time | 350ms | <100ms | 71% faster |
-| P99 Response Time | 800ms | <200ms | 75% faster |
-| Database Load | 100% | 20-40% | 60-80% reduction |
-| Cache Hit Rate | 0% | >70% | N/A |
-| Concurrent Users Supported | 100 | 700+ | 7x capacity |
+| Metric                     | Baseline | Optimized | Improvement      |
+| -------------------------- | -------- | --------- | ---------------- |
+| P50 Response Time          | 120ms    | <50ms     | 58% faster       |
+| P95 Response Time          | 350ms    | <100ms    | 71% faster       |
+| P99 Response Time          | 800ms    | <200ms    | 75% faster       |
+| Database Load              | 100%     | 20-40%    | 60-80% reduction |
+| Cache Hit Rate             | 0%       | >70%      | N/A              |
+| Concurrent Users Supported | 100      | 700+      | 7x capacity      |
 
 ---
 
@@ -945,22 +960,23 @@ export class QueryOptimizer {
 
 ### Sprint 5 Impact on Production Score
 
-| Category | Before Sprint 5 | After Sprint 5 | Change |
-|----------|----------------|----------------|--------|
-| **Security & Compliance** | 95/100 | 95/100 | No change |
-| **Database & Migrations** | 100/100 | 100/100 | No change |
-| **API Completeness** | 98/100 | 98/100 | No change |
-| **Mobile Parity** | 100/100 | 100/100 | No change |
-| **Testing & QA** | 78/100 | 92/100 | +14 |
-| **Performance & Scalability** | 70/100 | 95/100 | +25 |
-| **Monitoring & Observability** | 88/100 | 88/100 | No change |
-| **Documentation** | 90/100 | 90/100 | No change |
-| **Deployment & CI/CD** | 85/100 | 85/100 | No change |
-| **OVERALL** | **93/100** | **97/100** | **+4** |
+| Category                       | Before Sprint 5 | After Sprint 5 | Change    |
+| ------------------------------ | --------------- | -------------- | --------- |
+| **Security & Compliance**      | 95/100          | 95/100         | No change |
+| **Database & Migrations**      | 100/100         | 100/100        | No change |
+| **API Completeness**           | 98/100          | 98/100         | No change |
+| **Mobile Parity**              | 100/100         | 100/100        | No change |
+| **Testing & QA**               | 78/100          | 92/100         | +14       |
+| **Performance & Scalability**  | 70/100          | 95/100         | +25       |
+| **Monitoring & Observability** | 88/100          | 88/100         | No change |
+| **Documentation**              | 90/100          | 90/100         | No change |
+| **Deployment & CI/CD**         | 85/100          | 85/100         | No change |
+| **OVERALL**                    | **93/100**      | **97/100**     | **+4**    |
 
 ### Category Breakdowns
 
 #### Testing & QA: 78 → 92 (+14)
+
 - ✅ E2E coverage: 78% → 86% (+8%)
 - ✅ Load testing infrastructure: Complete
 - ✅ Critical payment flows: 14 tests
@@ -968,6 +984,7 @@ export class QueryOptimizer {
 - ✅ Mobile integration tests: 25 tests
 
 #### Performance & Scalability: 70 → 95 (+25)
+
 - ✅ Caching strategy: Redis with 60-80% reduction in DB load
 - ✅ Database indexes: 30+ indexes, 15-30x query speedup
 - ✅ Connection pooling: 50 connections (production), 100 (load test)
@@ -981,43 +998,43 @@ export class QueryOptimizer {
 ### Phase 1: Pre-Launch Validation (1-2 days)
 
 1. **Run Full Load Test Suite**
+
    ```powershell
    # Smoke test (1 min)
    .\tests\performance\run-load-tests.ps1 -Profile smoke
-   
+
    # Load test (9 min)
    .\tests\performance\run-load-tests.ps1 -Profile load
-   
+
    # Stress test (40 min) - CRITICAL
    .\tests\performance\run-load-tests.ps1 -Profile stress
-   
+
    # Soak test (2 hours) - Optional
    .\tests\performance\run-load-tests.ps1 -Profile soak
    ```
 
 2. **Deploy Database Indexes**
+
    ```sql
    -- Run migration (with CONCURRENTLY to avoid downtime)
    psql -d aivo_production -f services/auth-svc/prisma/migrations/20260128_performance_indexes.sql
-   
+
    -- Verify index creation
    SELECT indexname, idx_scan FROM pg_stat_user_indexes WHERE idx_scan > 0;
    ```
 
 3. **Deploy Redis Caching**
-   - Provision Redis cluster (AWS ElastiCache or GCP Memorystore)
+   - Provision Redis cluster (self-managed on Hetzner)
    - Configure cache TTLs
    - Monitor cache hit rates (target >70%)
 
 4. **Update Connection Pooling**
+
    ```typescript
    // services/auth-svc/src/prisma.ts
    import { createOptimizedPrismaClient, RecommendedConfig } from './utils/prisma-optimized';
-   
-   export const prisma = createOptimizedPrismaClient(
-     RecommendedConfig.production,
-     logger
-   );
+
+   export const prisma = createOptimizedPrismaClient(RecommendedConfig.production, logger);
    ```
 
 ### Phase 2: Production Launch (1 day)
@@ -1141,24 +1158,24 @@ Sprint 5 successfully prepared the AIVO platform for production launch by:
 
 ## Files Created Summary
 
-| File | Lines | Purpose |
-|------|-------|---------|
-| trust-score-data-providers.ts | 383 | Production data providers |
-| payment-flows.spec.ts | 540 | Payment E2E tests |
-| authentication-security.spec.ts | 745 | Auth/security E2E tests |
-| parent_onboarding_test.dart | 114 | Mobile parent tests |
-| push_notifications_test.dart | 95 | Mobile notifications tests |
-| offline_sync_test.dart | 150 | Mobile offline tests |
-| sprint5-production-load-test.k6.js | 715 | k6 load test suite |
-| run-load-tests.ps1 | 265 | PowerShell test runner |
-| load-test.config.ps1 | 60 | Load test configuration |
-| load-test.config.sh | 70 | Bash configuration |
-| LOAD_TESTING_GUIDE.md | 520 | Load testing documentation |
-| cache.service.ts | 330 | Redis caching service |
-| 20260128_performance_indexes.sql | 200 | Database indexes migration |
-| prisma-optimized.ts | 340 | Connection pool optimization |
-| query-optimizer.ts | 200 | Query optimization utilities |
-| **TOTAL** | **4,727** | **15 files** |
+| File                               | Lines     | Purpose                      |
+| ---------------------------------- | --------- | ---------------------------- |
+| trust-score-data-providers.ts      | 383       | Production data providers    |
+| payment-flows.spec.ts              | 540       | Payment E2E tests            |
+| authentication-security.spec.ts    | 745       | Auth/security E2E tests      |
+| parent_onboarding_test.dart        | 114       | Mobile parent tests          |
+| push_notifications_test.dart       | 95        | Mobile notifications tests   |
+| offline_sync_test.dart             | 150       | Mobile offline tests         |
+| sprint5-production-load-test.k6.js | 715       | k6 load test suite           |
+| run-load-tests.ps1                 | 265       | PowerShell test runner       |
+| load-test.config.ps1               | 60        | Load test configuration      |
+| load-test.config.sh                | 70        | Bash configuration           |
+| LOAD_TESTING_GUIDE.md              | 520       | Load testing documentation   |
+| cache.service.ts                   | 330       | Redis caching service        |
+| 20260128_performance_indexes.sql   | 200       | Database indexes migration   |
+| prisma-optimized.ts                | 340       | Connection pool optimization |
+| query-optimizer.ts                 | 200       | Query optimization utilities |
+| **TOTAL**                          | **4,727** | **15 files**                 |
 
 ---
 

@@ -138,9 +138,6 @@ function Invoke-EmergencyRollback {
         Write-Log "Switching traffic from $FromSlot to $ToSlot" "WARNING"
         
         # In a real deployment:
-        # - AWS: aws elbv2 modify-target-group-weights
-        # - GCP: gcloud compute backend-services update
-        # - Azure: az network traffic-manager endpoint update
         # - Kubernetes: kubectl patch service
         
         Start-Sleep -Seconds 2  # Simulated switch time
@@ -194,7 +191,6 @@ function Invoke-EmergencyRollback {
         
         # In a real deployment:
         # - Send PagerDuty alert
-        # - Post to Slack
         # - Send email to team
         # - Update status page
         
@@ -219,7 +215,7 @@ function Invoke-EmergencyRollback {
         Write-Host "  1. Investigate failure in $FromSlot slot" -ForegroundColor White
         Write-Host "  2. Review logs: logs/rollback-$(Get-Date -Format 'yyyyMMdd').log" -ForegroundColor White
         Write-Host "  3. Fix issues before next deployment attempt" -ForegroundColor White
-        Write-Host "  4. Update team via Slack/Email" -ForegroundColor White
+        Write-Host "  4. Update team via Email" -ForegroundColor White
         
         return $true
     }

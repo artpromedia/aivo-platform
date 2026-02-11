@@ -5,7 +5,6 @@
 # - Automated builds and deployments
 # - Play Store deployment (internal, beta, production)
 # - COPPA compliance checks
-# - Slack notifications
 # - Version management
 
 default_platform(:android)
@@ -131,11 +130,6 @@ platform :android do
       release_status: "draft",
       version_name: get_version_name
     )
-
-    notify_slack(
-      message: "Android internal build uploaded to Play Store!",
-      success: true
-    )
   end
 
   desc "Deploy to closed beta track"
@@ -152,11 +146,6 @@ platform :android do
       skip_upload_screenshots: true,
       release_status: "completed",
       version_name: get_version_name
-    )
-
-    notify_slack(
-      message: "Android beta build available on Play Store!",
-      success: true
     )
   end
 
@@ -180,11 +169,6 @@ platform :android do
       add_git_tag(tag: "android/v#{version}")
       push_git_tags
     end
-
-    notify_slack(
-      message: "Android production build released (#{(rollout * 100).to_i}% rollout)!",
-      success: true
-    )
   end
 
   desc "Complete production rollout to 100%"
@@ -195,11 +179,6 @@ platform :android do
       release_status: "completed",
       skip_upload_aab: true,
       version_name: get_version_name
-    )
-
-    notify_slack(
-      message: "Android production rollout completed (100%)!",
-      success: true
     )
   end
 
@@ -212,11 +191,6 @@ platform :android do
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
-    )
-
-    notify_slack(
-      message: "Android internal build promoted to beta!",
-      success: true
     )
   end
 
@@ -232,11 +206,6 @@ platform :android do
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
-    )
-
-    notify_slack(
-      message: "Android beta promoted to production (#{(rollout * 100).to_i}% rollout)!",
-      success: true
     )
   end
 
@@ -333,26 +302,12 @@ platform :android do
     ) || "Bug fixes and improvements"
   end
 
-  private_lane :notify_slack do |options|
-    return unless ENV["SLACK_WEBHOOK_URL"]
-
-    slack(
-      message: options[:message],
-      success: options[:success],
-      slack_url: ENV["SLACK_WEBHOOK_URL"],
-      default_payloads: [:git_branch, :git_author]
-    )
-  end
-
   # ============================================================================
   # ERROR HANDLING
   # ============================================================================
 
   error do |lane, exception|
-    notify_slack(
-      message: "Android build failed in lane '#{lane}': #{exception.message}",
-      success: false
-    )
+    UI.error("Android build failed in lane '#{lane}': #{exception.message}")
   end
 
 end

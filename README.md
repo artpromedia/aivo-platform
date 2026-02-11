@@ -567,11 +567,10 @@ docker compose -f docker/docker-compose.yml down -v
 
 ### GitHub Actions Workflows
 
-| Workflow                | Trigger         | Description                      |
-| ----------------------- | --------------- | -------------------------------- |
-| `ci-unified.yml`        | Push, PR        | Lint, test, build, security scan |
-| `deploy-staging.yml`    | Push to `main`  | Deploy to staging                |
-| `deploy-production.yml` | Manual, Release | Deploy to production             |
+| Workflow         | Trigger       | Description                  |
+| ---------------- | ------------- | ---------------------------- |
+| `ci-unified.yml` | Push, PR      | Lint, test, build, deploy    |
+| `build.yml`      | Workflow call | Build and push Docker images |
 
 ### Environments
 
@@ -686,7 +685,6 @@ pnpm install
 1. Check the [docs/](docs/) folder for detailed documentation
 2. Review service-specific READMEs in each service directory
 3. Check GitHub Issues for known problems
-4. Ask in the team Slack channel
 
 ---
 

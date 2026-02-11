@@ -14,7 +14,8 @@ COPY src/ ./src/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager ./src/main.go
 
 # Runtime stage
-FROM gcr.io/distroless/static:nonroot
+FROM docker.io/library/alpine:3.19 AS runtime
+RUN apk --no-cache add ca-certificates
 
 WORKDIR /
 

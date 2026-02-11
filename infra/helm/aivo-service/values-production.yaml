@@ -61,7 +61,7 @@ externalSecrets:
   refreshInterval: "5m"  # More frequent refresh for production
   secretStoreRef:
     kind: ClusterSecretStore
-    name: gcp-secret-store
+    name: k8s-secret-store
   data:
     - secretKey: DATABASE_URL
       remoteRef:

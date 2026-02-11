@@ -118,20 +118,23 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Phase 1: Infrastructure Provisioning (Day 1)
 
 **Morning (9 AM - 12 PM)**
-- [ ] Verify Terraform state is current
-- [ ] Provision production Kubernetes cluster (EKS/GKE)
+
+- [ ] Verify infrastructure state is current
+- [ ] Provision production K3s cluster on Hetzner
 - [ ] Configure node pools and autoscaling
 - [ ] Verify cluster networking
 
 **Afternoon (1 PM - 5 PM)**
-- [ ] Configure load balancers (ALB/NLB)
-- [ ] Set up database cluster (RDS/Cloud SQL)
-- [ ] Configure Redis cache cluster
+
+- [ ] Configure load balancers (Traefik/Nginx)
+- [ ] Set up PostgreSQL database
+- [ ] Configure Redis cache
 - [ ] Set up CDN distribution
 - [ ] Configure DNS records
 - [ ] Verify TLS certificates
 
 **Evening (5 PM - 8 PM)**
+
 - [ ] Test infrastructure connectivity
 - [ ] Verify backup systems
 - [ ] Document infrastructure endpoints
@@ -139,6 +142,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Phase 2: Backend Services (Day 2)
 
 **Morning (9 AM - 12 PM)**
+
 - [ ] Deploy core services:
   - [ ] auth-svc
   - [ ] profile-svc
@@ -148,6 +152,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 - [ ] Test inter-service communication
 
 **Afternoon (1 PM - 5 PM)**
+
 - [ ] Deploy remaining services:
   - [ ] ai-orchestrator
   - [ ] assessment-svc
@@ -162,6 +167,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 - [ ] Set up API gateway routing
 
 **Evening (5 PM - 8 PM)**
+
 - [ ] Run service integration tests
 - [ ] Verify all endpoints responding
 - [ ] Document service URLs
@@ -169,18 +175,21 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Phase 3: Frontend Applications (Day 3)
 
 **Morning (9 AM - 12 PM)**
+
 - [ ] Build production bundles for all apps
 - [ ] Deploy Learner Portal (web-learner)
 - [ ] Deploy Parent Portal (web-parent)
 - [ ] Verify deployments and routing
 
 **Afternoon (1 PM - 5 PM)**
+
 - [ ] Deploy Teacher Portal (web-teacher)
 - [ ] Deploy District Admin Portal (web-district)
 - [ ] Deploy Platform Admin (web-platform-admin)
 - [ ] Configure CDN for static assets
 
 **Evening (5 PM - 8 PM)**
+
 - [ ] Test all portal access
 - [ ] Verify authentication flows
 - [ ] Document deployment URLs
@@ -188,27 +197,32 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Phase 4: Database Migration (Day 4)
 
 **Morning (9 AM - 12 PM)**
+
 - [ ] Create final pre-migration backup
 - [ ] Verify backup integrity
 - [ ] Enable maintenance mode (if needed)
 
 **Afternoon (1 PM - 3 PM)**
+
 - [ ] Run database migrations
 - [ ] Verify migration success
 - [ ] Run data integrity checks
 
 **Afternoon (3 PM - 5 PM)**
+
 - [ ] Seed required reference data
 - [ ] Verify data accessibility
 - [ ] Test rollback procedure (dry run)
 
 **Evening (5 PM - 8 PM)**
+
 - [ ] Document final database state
 - [ ] Create post-migration backup
 
 ### Phase 5: Integration Testing (Day 5)
 
 **Morning (9 AM - 12 PM)**
+
 - [ ] Run smoke tests on production
 - [ ] Test critical user flows:
   - [ ] User registration
@@ -219,6 +233,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
   - [ ] District admin user management
 
 **Afternoon (1 PM - 5 PM)**
+
 - [ ] Verify all integrations:
   - [ ] Payment processing
   - [ ] Email delivery
@@ -228,6 +243,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 - [ ] Run security scan
 
 **Evening (5 PM - 8 PM)**
+
 - [ ] Address any discovered issues
 - [ ] Document test results
 - [ ] Final go/no-go decision
@@ -235,18 +251,21 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Phase 6: Go-Live (Day 6-7)
 
 **Day 6 Morning - Staged Rollout**
+
 - [ ] Enable production traffic (10% canary)
 - [ ] Monitor error rates closely
 - [ ] Monitor performance metrics
 - [ ] Verify user signups working
 
 **Day 6 Afternoon - Expanded Rollout**
+
 - [ ] Increase traffic to 50%
 - [ ] Continue monitoring
 - [ ] Address any issues
 - [ ] Verify payment processing
 
 **Day 7 - Full Rollout**
+
 - [ ] Increase traffic to 100%
 - [ ] Disable maintenance mode
 - [ ] Send go-live announcement
@@ -294,6 +313,7 @@ This checklist ensures all requirements are met before deploying the AIVO platfo
 ### Criteria for Rollback
 
 Initiate rollback if ANY of the following occur:
+
 - Data loss or corruption detected
 - Security breach identified
 - Error rate exceeds 5%
@@ -303,6 +323,7 @@ Initiate rollback if ANY of the following occur:
 ### Rollback Steps
 
 1. **Immediate Actions**
+
    ```bash
    # Stop deployment
    kubectl rollout pause deployment --all -n production
@@ -317,6 +338,7 @@ Initiate rollback if ANY of the following occur:
    - Is it a usability issue?
 
 3. **Execute Rollback**
+
    ```bash
    # Rollback Kubernetes deployments
    kubectl rollout undo deployment/web-learner -n production
@@ -352,25 +374,25 @@ Initiate rollback if ANY of the following occur:
 
 ### Week 1 Targets
 
-| Metric | Target | Critical Threshold |
-|--------|--------|-------------------|
-| Uptime | >99.9% | 99% |
-| Error Rate | <0.1% | 1% |
-| Avg Response Time | <500ms | 1000ms |
-| New User Signups | >100 | N/A |
-| Data Loss Incidents | 0 | 0 |
-| Security Incidents | 0 | 0 |
+| Metric              | Target | Critical Threshold |
+| ------------------- | ------ | ------------------ |
+| Uptime              | >99.9% | 99%                |
+| Error Rate          | <0.1%  | 1%                 |
+| Avg Response Time   | <500ms | 1000ms             |
+| New User Signups    | >100   | N/A                |
+| Data Loss Incidents | 0      | 0                  |
+| Security Incidents  | 0      | 0                  |
 
 ### Month 1 Targets
 
-| Metric | Target | Critical Threshold |
-|--------|--------|-------------------|
-| Uptime | >99.95% | 99.5% |
-| User Satisfaction | >4.5/5 | 3.5/5 |
-| Daily Active Users | >1000 | 500 |
-| Teacher Adoption | >80% | 50% |
-| Parent Engagement | >60% | 30% |
-| Support Ticket Resolution | <4 hours | 24 hours |
+| Metric                    | Target   | Critical Threshold |
+| ------------------------- | -------- | ------------------ |
+| Uptime                    | >99.95%  | 99.5%              |
+| User Satisfaction         | >4.5/5   | 3.5/5              |
+| Daily Active Users        | >1000    | 500                |
+| Teacher Adoption          | >80%     | 50%                |
+| Parent Engagement         | >60%     | 30%                |
+| Support Ticket Resolution | <4 hours | 24 hours           |
 
 ---
 
@@ -380,39 +402,39 @@ All sign-offs must be completed before go-live:
 
 ### Technical Sign-Off
 
-| Role | Name | Signature | Date |
-|------|------|-----------|------|
-| Engineering Lead | _____________ | _____________ | _______ |
-| DevOps Lead | _____________ | _____________ | _______ |
-| QA Lead | _____________ | _____________ | _______ |
-| Security Lead | _____________ | _____________ | _______ |
+| Role             | Name           | Signature      | Date       |
+| ---------------- | -------------- | -------------- | ---------- |
+| Engineering Lead | ******\_****** | ******\_****** | **\_\_\_** |
+| DevOps Lead      | ******\_****** | ******\_****** | **\_\_\_** |
+| QA Lead          | ******\_****** | ******\_****** | **\_\_\_** |
+| Security Lead    | ******\_****** | ******\_****** | **\_\_\_** |
 
 ### Business Sign-Off
 
-| Role | Name | Signature | Date |
-|------|------|-----------|------|
-| Product Owner | _____________ | _____________ | _______ |
-| Customer Success | _____________ | _____________ | _______ |
-| Support Lead | _____________ | _____________ | _______ |
+| Role             | Name           | Signature      | Date       |
+| ---------------- | -------------- | -------------- | ---------- |
+| Product Owner    | ******\_****** | ******\_****** | **\_\_\_** |
+| Customer Success | ******\_****** | ******\_****** | **\_\_\_** |
+| Support Lead     | ******\_****** | ******\_****** | **\_\_\_** |
 
 ### Executive Sign-Off
 
-| Role | Name | Signature | Date |
-|------|------|-----------|------|
-| CTO | _____________ | _____________ | _______ |
-| CEO/Stakeholder | _____________ | _____________ | _______ |
+| Role            | Name           | Signature      | Date       |
+| --------------- | -------------- | -------------- | ---------- |
+| CTO             | ******\_****** | ******\_****** | **\_\_\_** |
+| CEO/Stakeholder | ******\_****** | ******\_****** | **\_\_\_** |
 
 ---
 
 ## Emergency Contacts
 
-| Role | Name | Phone | Email |
-|------|------|-------|-------|
-| On-Call Engineer | _______ | _______ | _______ |
-| DevOps Lead | _______ | _______ | _______ |
-| Security Team | _______ | _______ | _______ |
-| Database Admin | _______ | _______ | _______ |
-| Product Owner | _______ | _______ | _______ |
+| Role             | Name       | Phone      | Email      |
+| ---------------- | ---------- | ---------- | ---------- |
+| On-Call Engineer | **\_\_\_** | **\_\_\_** | **\_\_\_** |
+| DevOps Lead      | **\_\_\_** | **\_\_\_** | **\_\_\_** |
+| Security Team    | **\_\_\_** | **\_\_\_** | **\_\_\_** |
+| Database Admin   | **\_\_\_** | **\_\_\_** | **\_\_\_** |
+| Product Owner    | **\_\_\_** | **\_\_\_** | **\_\_\_** |
 
 ---
 
@@ -426,5 +448,5 @@ All sign-offs must be completed before go-live:
 
 ---
 
-*Last Updated: $(date +"%Y-%m-%d")*
-*Version: 1.0.0*
+_Last Updated: $(date +"%Y-%m-%d")_
+_Version: 1.0.0_

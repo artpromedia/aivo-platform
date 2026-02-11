@@ -6,7 +6,6 @@
 # - Code signing with match
 # - TestFlight and App Store deployment
 # - COPPA compliance checks
-# - Slack notifications
 
 default_platform(:ios)
 
@@ -122,11 +121,6 @@ platform :ios do
       changelog: changelog,
       notify_external_testers: false
     )
-
-    notify_slack(
-      message: "iOS TestFlight build uploaded!",
-      success: true
-    )
   end
 
   desc "Deploy to TestFlight (external beta)"
@@ -141,11 +135,6 @@ platform :ios do
       distribute_external: true,
       groups: options[:groups] || ["Beta Testers"],
       changelog: changelog
-    )
-
-    notify_slack(
-      message: "iOS Beta build available for testing!",
-      success: true
     )
   end
 
@@ -176,11 +165,6 @@ platform :ios do
       add_git_tag(tag: "ios/v#{version}+#{build}")
       push_git_tags
     end
-
-    notify_slack(
-      message: "iOS App Store build uploaded!",
-      success: true
-    )
   end
 
   # ============================================================================
@@ -274,26 +258,12 @@ platform :ios do
     ) || "Bug fixes and improvements"
   end
 
-  private_lane :notify_slack do |options|
-    return unless ENV["SLACK_WEBHOOK_URL"]
-
-    slack(
-      message: options[:message],
-      success: options[:success],
-      slack_url: ENV["SLACK_WEBHOOK_URL"],
-      default_payloads: [:git_branch, :git_author]
-    )
-  end
-
   # ============================================================================
   # ERROR HANDLING
   # ============================================================================
 
   error do |lane, exception|
-    notify_slack(
-      message: "iOS build failed in lane '#{lane}': #{exception.message}",
-      success: false
-    )
+    UI.error("iOS build failed in lane '#{lane}': #{exception.message}")
   end
 
 end

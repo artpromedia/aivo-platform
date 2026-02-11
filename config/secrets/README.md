@@ -22,8 +22,7 @@ After running `scripts/generate-secrets.sh`, this directory will contain:
 
 Secrets are managed via:
 
-- **Google Secret Manager** for GCP deployments
-- **Kubernetes Secrets** for runtime configuration
+- **Kubernetes Secrets** for runtime configuration on Hetzner K3s
 - **HashiCorp Vault** for advanced secret management (optional)
 
 ## File Permissions

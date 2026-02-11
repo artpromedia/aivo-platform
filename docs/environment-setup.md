@@ -115,18 +115,16 @@ kubectl get secret database-credentials -n aivo-staging -o yaml
 
 ### Production Environment
 
-Production uses External Secrets Operator with Google Secret Manager:
+Production uses K8s native Secrets on the Hetzner K3s cluster:
 
 ```bash
-# Create secret in Google Secret Manager
-gcloud secrets create aivo-prod-database-url \
-  --replication-policy="automatic"
+# Create secret in K8s
+kubectl create secret generic database-credentials \
+  --from-literal=DATABASE_URL="postgresql://..." \
+  -n aivo-prod
 
-echo -n "postgresql://..." | \
-  gcloud secrets versions add aivo-prod-database-url --data-file=-
-
-# External Secrets Operator syncs to Kubernetes
-kubectl get externalsecret -n aivo-prod
+# Verify secrets
+kubectl get secrets -n aivo-prod
 ```
 
 ## Service-Specific Configuration

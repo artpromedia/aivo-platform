@@ -47,8 +47,7 @@ concurrency:
 
 # Global environment variables
 env:
-  REGISTRY: gcr.io
-  PROJECT_ID: aivo-learning
+  REGISTRY: ghcr.io/artpromedia
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
   FLUTTER_VERSION: '3.22.0'
@@ -514,32 +513,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
-
-      - name: Ensure GCR Artifact Registry repo exists
-        run: |
-          set -e
-          if ! gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1; then
-            gcloud artifacts repositories create gcr.io \
-              --repository-format=docker \
-              --location=us \
-              --project="${PROJECT_ID}" \
-              --description="GCR-compatible repo for CI pushes" || \
-            gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1
-          fi
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/aivo-${{ matrix.service }}
           tags: |
             type=raw,value=${{ needs.build.outputs.version }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -563,7 +548,7 @@ jobs:
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.build.outputs.version }}'
+          image-ref: '${{ env.REGISTRY }}/aivo-${{ matrix.service }}:${{ needs.build.outputs.version }}'
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -588,68 +573,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Deploy to Hetzner Staging
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: aivo-gke-staging
-          location: us-central1-c
-
-      - name: Setup Kustomize
-        uses: imranismail/setup-kustomize@v2
-
-      - name: Deploy to staging
-        run: |
-          cd infra/k8s/overlays/staging
-          
-          # Update image tags for all services
-          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
-                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
-                    profile-svc personalization-svc life-skills-svc)
-          
-          for svc in "${SERVICES[@]}"; do
-            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${{ needs.docker.outputs.version || 'main-' }}${{ github.sha }}
-          done
-          
-          # Apply to cluster
-          kustomize build . | kubectl apply -f -
-          
-          # Wait for rollout
-          kubectl rollout status deployment --all -n aivo-staging --timeout=600s
-
-      - name: Run smoke tests
-        run: |
-          sleep 30
-          for svc in auth-svc content-svc session-svc; do
-            kubectl exec -n aivo-staging deploy/$svc -- curl -sf http://localhost:3000/health/ready || echo "Warning: $svc health check failed"
-          done
-        continue-on-error: true
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '✅' || '❌' }} *Staging Deployment ${{ job.status }}*\n*Commit:* `${{ github.sha }}`\n*Actor:* ${{ github.actor }}"
-                  }
-                }
-              ]
-            }
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /opt/aivo
+            
+            VERSION="main-${{ github.sha }}"
+            SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                      analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                      billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                      profile-svc personalization-svc life-skills-svc)
+            
+            # Update image tags
+            cd infra/k8s/overlays/staging
+            for svc in "${SERVICES[@]}"; do
+              kustomize edit set image aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}
+            done
+            
+            # Apply to cluster
+            kustomize build . | kubectl apply -f -
+            
+            # Wait for rollout
+            kubectl rollout status deployment --all -n aivo-staging --timeout=600s
 
   # ════════════════════════════════════════════════════════════════════════════
   # DEPLOY TO PRODUCTION
@@ -665,65 +616,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Deploy to Hetzner Production
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: aivo-production
-          location: us-central1-c
-
-      - name: Setup Kustomize
-        uses: imranismail/setup-kustomize@v2
-
-      - name: Deploy to production
-        run: |
-          cd infra/k8s/overlays/production
-          
-          VERSION="${{ github.event.release.tag_name || github.sha }}"
-          
-          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
-                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
-                    profile-svc personalization-svc life-skills-svc)
-          
-          for svc in "${SERVICES[@]}"; do
-            kustomize edit set image aivo/${svc}=gcr.io/${{ env.PROJECT_ID }}/${svc}:${VERSION}
-          done
-          
-          kustomize build . | kubectl apply -f -
-          kubectl rollout status deployment --all -n aivo-prod --timeout=900s
-
-      - name: Run production health checks
-        run: |
-          sleep 60
-          for svc in auth-svc content-svc session-svc billing-svc; do
-            echo "Checking $svc..."
-            kubectl exec -n aivo-prod deploy/$svc -- curl -sf http://localhost:3000/health/ready
-          done
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "${{ job.status == 'success' && '🚀' || '🔥' }} Production deployment ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ job.status == 'success' && '🚀' || '🔥' }} *Production Deployment ${{ job.status }}*\n*Version:* `${{ github.event.release.tag_name || github.sha }}`\n*Actor:* ${{ github.actor }}"
-                  }
-                }
-              ]
-            }
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /opt/aivo
+            
+            VERSION="${{ github.event.release.tag_name || github.sha }}"
+            SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                      analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                      billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                      profile-svc personalization-svc life-skills-svc)
+            
+            # Update image tags
+            cd infra/k8s/overlays/production
+            for svc in "${SERVICES[@]}"; do
+              kustomize edit set image aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}
+            done
+            
+            # Apply to cluster
+            kustomize build . | kubectl apply -f -
+            
+            # Wait for rollout
+            kubectl rollout status deployment --all -n aivo-prod --timeout=900s
 
   # ════════════════════════════════════════════════════════════════════════════
   # SUMMARY
