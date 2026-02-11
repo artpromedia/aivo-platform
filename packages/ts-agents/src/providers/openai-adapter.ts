@@ -190,14 +190,14 @@ export class OpenAIAdapter extends ModelAdapter {
     let fullMessage = '';
     const toolCallsMap = new Map<number, OpenAIToolCall>();
 
-    const streamResponse = await this.client.chat.completions.create({ ...params, stream: true as const });
+    // TypeScript doesn't narrow the return type even with `stream: true as const`
+    // so we need to explicitly cast. The SDK returns AsyncIterable when stream=true.
+    const stream = (await this.client.chat.completions.create({ 
+      ...params, 
+      stream: true 
+    })) as AsyncIterable<OpenAIStreamChunk>;
 
-    // Type guard: streaming returns AsyncIterable, not OpenAIChatCompletion
-    if (!Symbol.asyncIterator || !(Symbol.asyncIterator in streamResponse)) {
-      throw new Error('Expected streaming response');
-    }
-
-    for await (const chunk of streamResponse) {
+    for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;
 
       if (delta?.content) {
