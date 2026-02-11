@@ -1,16 +1,14 @@
-# =============================================================================
+﻿# =============================================================================
 # AIVO Platform - Staging Environment Overlay
 # =============================================================================
 # Staging-specific configuration that overrides base settings.
-# Deployed via GitHub Actions workflow: deploy-staging.yml
+# Deployed via GitHub Actions CI/CD pipeline to Hetzner
 # =============================================================================
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Reference the base configuration
-# NOTE (2026-02-05): CI deploys only ai-orchestrator directly (see ci-unified.yml).
-# Keep overlay intact for full staging restore later.
 resources:
   - ../../base
 
@@ -25,53 +23,53 @@ commonLabels:
 commonAnnotations:
   deployment.kubernetes.io/environment: staging
 
-# Image configuration - use GCR registry
+# Image configuration - use GitHub Container Registry (GHCR)
 # Note: Image tags are set dynamically by the CI/CD pipeline using:
-#   kustomize edit set image gcr.io/aivo-learning/<service>=gcr.io/aivo-learning/<service>:<tag>
+#   kustomize edit set image ghcr.io/artpromedia/aivo-<service>=ghcr.io/artpromedia/aivo-<service>:<tag>
 images:
   # Authentication & User Management
   - name: aivo/auth-svc
-    newName: gcr.io/aivo-learning/auth-svc
+    newName: ghcr.io/artpromedia/aivo-auth-svc
   - name: aivo/session-svc
-    newName: gcr.io/aivo-learning/session-svc
+    newName: ghcr.io/artpromedia/aivo-session-svc
   - name: aivo/consent-svc
-    newName: gcr.io/aivo-learning/consent-svc
+    newName: ghcr.io/artpromedia/aivo-consent-svc
   - name: aivo/profile-svc
-    newName: gcr.io/aivo-learning/profile-svc
+    newName: ghcr.io/artpromedia/aivo-profile-svc
   # Content & Learning
   - name: aivo/content-svc
-    newName: gcr.io/aivo-learning/content-svc
+    newName: ghcr.io/artpromedia/aivo-content-svc
   - name: aivo/assessment-svc
-    newName: gcr.io/aivo-learning/assessment-svc
+    newName: ghcr.io/artpromedia/aivo-assessment-svc
   - name: aivo/personalization-svc
-    newName: gcr.io/aivo-learning/personalization-svc
+    newName: ghcr.io/artpromedia/aivo-personalization-svc
   - name: aivo/life-skills-svc
-    newName: gcr.io/aivo-learning/life-skills-svc
+    newName: ghcr.io/artpromedia/aivo-life-skills-svc
   # AI & Analytics
   - name: aivo/ai-orchestrator
-    newName: gcr.io/aivo-learning/ai-orchestrator
+    newName: ghcr.io/artpromedia/aivo-ai-orchestrator
   - name: aivo/analytics-svc
-    newName: gcr.io/aivo-learning/analytics-svc
+    newName: ghcr.io/artpromedia/aivo-analytics-svc
   # Communication
   - name: aivo/notify-svc
-    newName: gcr.io/aivo-learning/notify-svc
+    newName: ghcr.io/artpromedia/aivo-notify-svc
   - name: aivo/messaging-svc
-    newName: gcr.io/aivo-learning/messaging-svc
+    newName: ghcr.io/artpromedia/aivo-messaging-svc
   # Goal & Focus
   - name: aivo/goal-svc
-    newName: gcr.io/aivo-learning/goal-svc
+    newName: ghcr.io/artpromedia/aivo-goal-svc
   - name: aivo/focus-svc
-    newName: gcr.io/aivo-learning/focus-svc
+    newName: ghcr.io/artpromedia/aivo-focus-svc
   # Billing & Payments
   - name: aivo/billing-svc
-    newName: gcr.io/aivo-learning/billing-svc
+    newName: ghcr.io/artpromedia/aivo-billing-svc
   - name: aivo/payments-svc
-    newName: gcr.io/aivo-learning/payments-svc
+    newName: ghcr.io/artpromedia/aivo-payments-svc
   # Parent Portal
   - name: aivo/parent-svc
-    newName: gcr.io/aivo-learning/parent-svc
+    newName: ghcr.io/artpromedia/aivo-parent-svc
   - name: aivo/baseline-svc
-    newName: gcr.io/aivo-learning/baseline-svc
+    newName: ghcr.io/artpromedia/aivo-baseline-svc
 
 # Patches for staging-specific configuration
 patches:
@@ -113,25 +111,6 @@ patches:
         path: /spec/replicas
         value: 1
 
-  # TEMP (2026-02-05): Lower ai-orchestrator resources for staging capacity.
-  # Revert by removing this patch block to restore base requests/limits.
-  - target:
-      kind: Deployment
-      name: ai-orchestrator
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/cpu
-        value: "200m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "512Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/cpu
-        value: "1000m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "2Gi"
-
   # Reduce HPA max replicas for staging
   - target:
       kind: HorizontalPodAutoscaler
@@ -139,35 +118,3 @@ patches:
       - op: replace
         path: /spec/maxReplicas
         value: 5
-
-  # Allow ai-orchestrator to reach Memorystore Redis (staging)
-  - target:
-      kind: NetworkPolicy
-      name: ai-orchestrator-network-policy
-    patch: |-
-      - op: add
-        path: /spec/egress/-
-        value:
-          to:
-            - ipBlock:
-                cidr: 10.234.111.187/32
-          ports:
-            - protocol: TCP
-              port: 6379
-
-  # Reduce resource requests for all services in staging to fit in smaller cluster
-  - target:
-      kind: Deployment
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/cpu
-        value: "50m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/requests/memory
-        value: "128Mi"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/cpu
-        value: "500m"
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/limits/memory
-        value: "512Mi"

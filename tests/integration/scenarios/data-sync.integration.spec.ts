@@ -971,7 +971,7 @@ describe('Data Sync (Ed-Fi) - Complete Workflow', () => {
             type: 'sync_failure',
             threshold: 3,
             window: '1h',
-            actions: ['email', 'slack'],
+            actions: ['email'],
           },
           {
             type: 'sync_duration',

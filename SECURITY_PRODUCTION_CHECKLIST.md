@@ -35,7 +35,7 @@ JWT_SECRET="<REPLACE_WITH_SECURE_256_BIT_KEY>"
 **Action Required:**
 
 1. Generate secure 256-bit key: `openssl rand -base64 32`
-2. Store in secure secret management system (GCP Secret Manager, AWS Secrets Manager, etc.)
+2. Store in secure secret management system (K8s Secrets, HashiCorp Vault, etc.)
 3. Set in production environment
 
 ---
@@ -63,7 +63,7 @@ STRIPE_WEBHOOK_SECRET=whsec_<ACTUAL_WEBHOOK_SECRET>
 
 1. Obtain live keys from: https://dashboard.stripe.com/apikeys
 2. Configure webhook endpoint and retrieve webhook secret
-3. Store in GCP Secret Manager
+3. Store in K8s Secrets on the Hetzner cluster
 4. Mount secrets in production environment
 
 ---
@@ -196,7 +196,7 @@ RESEARCH_DEIDENTIFICATION_SALT=<SECURE_RANDOM_SALT>
 
 ### Phase 2: Secret Management (Pre-Production)
 
-- [ ] Set up GCP Secret Manager
+- [ ] Set up K8s Secrets management on Hetzner cluster
 - [ ] Generate all production secrets
 - [ ] Document secret rotation policy
 - [ ] Create secret backup/recovery procedures
@@ -204,7 +204,7 @@ RESEARCH_DEIDENTIFICATION_SALT=<SECURE_RANDOM_SALT>
 
 ### Phase 3: Production Deployment
 
-- [ ] Mount secrets from GCP Secret Manager
+- [ ] Mount secrets from K8s Secrets
 - [ ] Test all services start successfully with production secrets
 - [ ] Verify webhook endpoints are reachable
 - [ ] Test OAuth flows for all SIS integrations
@@ -255,7 +255,7 @@ Set up monitoring for:
 ## References
 
 - Stripe API Documentation: https://stripe.com/docs/api
-- GCP Secret Manager: https://cloud.google.com/secret-manager/docs
+- K8s Secrets: https://kubernetes.io/docs/concepts/configuration/secret/
 - OWASP Secret Management: https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
 
 ---

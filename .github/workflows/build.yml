@@ -1,24 +1,25 @@
 # .github/workflows/build.yml
-# DEPRECATED — Builds and pushes Docker images to GCR (gcr.io/aivo-learning)
-# Replaced by deploy-hetzner-staging.yml / deploy-hetzner-production.yml which use GHCR.
-# DO NOT re-enable push triggers.
+# Build and Push Docker Images
+# Runs on pushes to main/release branches and tags
 
-name: '[DISABLED] Build and Push (GCR)'
+name: Build and Push
 
 on:
+  push:
+    branches: [main, release/*]
+    tags: ['v*']
   workflow_dispatch:
     inputs:
-      _disabled:
-        description: 'This workflow is disabled. Use deploy-hetzner-staging.yml instead.'
-        required: true
-        default: 'DO NOT RUN'
+      services:
+        description: 'Services to build (comma-separated, or "all")'
+        required: false
+        default: 'all'
 
 env:
-  REGISTRY: gcr.io
-  PROJECT_ID: aivo-learning
+  REGISTRY: ghcr.io/artpromedia
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
-  FLUTTER_VERSION: '3.24.0'
+  FLUTTER_VERSION: '3.16.x'
 
 jobs:
   # ════════════════════════════════════════════════════════════════════════════
@@ -40,14 +41,11 @@ jobs:
       - name: Determine services to build
         id: services
         run: |
-          # Fixed list of core services (same as ci-unified.yml)
-          CORE_SERVICES='["auth-svc","session-svc","content-svc","assessment-svc","ai-orchestrator","analytics-svc","notify-svc","messaging-svc","goal-svc","focus-svc","billing-svc","payments-svc","parent-svc","baseline-svc","consent-svc","profile-svc","personalization-svc","life-skills-svc"]'
-
           if [[ "${{ github.event.inputs.services }}" == "all" ]] || [[ -z "${{ github.event.inputs.services }}" ]]; then
-            # Use fixed list of core services
-            SERVICES="$CORE_SERVICES"
+            # Get all services with Dockerfiles
+            SERVICES=$(find services -maxdepth 2 -name "Dockerfile" -exec dirname {} \; | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')
           else
-            # Parse input for specific services
+            # Parse input
             SERVICES=$(echo "${{ github.event.inputs.services }}" | tr ',' '\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
           fi
           echo "list=$SERVICES" >> $GITHUB_OUTPUT
@@ -93,19 +91,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/aivo-${{ matrix.service }}
           tags: |
             type=raw,value=${{ needs.prepare.outputs.version }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -115,34 +112,27 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          context: .
-          file: docker/Dockerfile.service
+          file: services/${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            SERVICE_NAME=${{ matrix.service }}
             VERSION=${{ needs.prepare.outputs.version }}
             BUILD_SHA=${{ needs.prepare.outputs.sha_short }}
             BUILD_TIME=${{ github.event.head_commit.timestamp }}
 
       - name: Run Trivy scan on image
         uses: aquasecurity/trivy-action@0.24.0
-        continue-on-error: true
-        timeout-minutes: 10
-        env:
-          TRIVY_TIMEOUT: 10m
         with:
-          image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
+          image-ref: '${{ env.REGISTRY }}/aivo-${{ matrix.service }}:${{ needs.prepare.outputs.version }}'
           format: 'sarif'
           output: 'trivy-results-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
-          exit-code: '0'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
@@ -315,12 +305,12 @@ jobs:
           echo "| **Version** | \`${{ needs.prepare.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ needs.prepare.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Release** | ${{ needs.prepare.outputs.is_release }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Registry** | \`${{ env.REGISTRY }}/${{ env.PROJECT_ID }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Registry** | \`${{ env.REGISTRY }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           echo "### 🐳 Services Built" >> $GITHUB_STEP_SUMMARY
           echo '${{ needs.prepare.outputs.services }}' | jq -r '.[]' | while read service; do
-            echo "- ✅ \`$service\` → \`${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/$service:${{ needs.prepare.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`$service\` → \`${{ env.REGISTRY }}/aivo-$service:${{ needs.prepare.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           done
           echo "" >> $GITHUB_STEP_SUMMARY
           

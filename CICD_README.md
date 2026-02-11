@@ -37,7 +37,7 @@ This document provides an overview of the CI/CD and DevOps configuration for the
 ### Prerequisites
 
 - GitHub repository access
-- GCP project access (for GCR and GKE)
+- Hetzner server access (SSH)
 - Required secrets configured in GitHub
 
 ### Configure GitHub Environments
@@ -74,11 +74,9 @@ gh workflow run ci-unified.yml -f deploy_environment=staging
 ```
 .github/
 ├── workflows/
-│   ├── ci-unified.yml      # Main CI/CD pipeline
+│   ├── ci-unified.yml      # Main CI/CD pipeline (build, test, deploy to Hetzner)
 │   ├── ci.yml              # Legacy CI workflow
-│   ├── build.yml           # Docker build workflow
-│   ├── deploy-staging.yml  # Staging deployment
-│   └── deploy-production.yml # Production deployment
+│   └── build.yml           # Docker build workflow
 ├── ENVIRONMENTS.md         # Environment configuration docs
 └── CODEOWNERS             # Code ownership rules
 
@@ -134,8 +132,8 @@ The main pipeline includes:
 | `e2e-web`           | Playwright E2E tests          | main branch             | ⚠️ ≥95% pass |
 | `e2e-mobile`        | Patrol Flutter tests          | main branch             | ⚠️ ≥95% pass |
 | `docker`            | Build Docker images           | main/release branches   | ✅ Required  |
-| `deploy-staging`    | Deploy to staging             | main branch             | Manual       |
-| `deploy-production` | Deploy to production          | Release publication     | Manual       |
+| `deploy-staging`    | Deploy to Hetzner staging     | main branch             | Automatic    |
+| `deploy-production` | Deploy to Hetzner production  | Release publication     | Manual       |
 
 ### Test Pipeline Stages
 
@@ -340,7 +338,7 @@ All Docker images are scanned with Trivy:
 ### Secrets Management
 
 - GitHub Secrets for CI/CD
-- GCP Secret Manager for runtime secrets
+- K8s Secrets for runtime configuration
 - External Secrets Operator for K8s integration
 
 ## Rollback
@@ -352,7 +350,7 @@ All Docker images are scanned with Trivy:
 kubectl rollout undo deployment/<service> -n aivo-prod
 
 # Via GitHub Actions
-gh workflow run deploy-production.yml -f version=v1.0.0 -f skip_approval=true
+gh workflow run ci-unified.yml -f deploy_environment=production
 ```
 
 See [DEPLOYMENT_RUNBOOK.md](docs/DEPLOYMENT_RUNBOOK.md) for detailed procedures.

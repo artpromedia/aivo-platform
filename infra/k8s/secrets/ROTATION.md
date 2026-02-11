@@ -83,9 +83,10 @@ kubectl rollout restart deployment/auth-svc -n aivo-prod
 2. **Update Kubernetes secret**
 
    ```bash
-   # For Google Secret Manager
-   echo -n "postgresql://auth_new:new_password@host:5432/aivo_auth" | \
-     gcloud secrets versions add aivo-prod-auth-database-url --data-file=-
+   # Update the K8s secret directly
+   kubectl create secret generic database-credentials \
+     --from-literal=AUTH_DATABASE_URL="postgresql://auth_new:new_password@host:5432/aivo_auth" \
+     --dry-run=client -o yaml | kubectl apply -f - -n aivo-prod
    ```
 
 3. **Trigger secret refresh**
@@ -122,9 +123,10 @@ kubectl rollout restart deployment/auth-svc -n aivo-prod
 2. **Update secret**
 
    ```bash
-   # Google Secret Manager
-   echo -n "sk-new-key" | \
-     gcloud secrets versions add aivo-prod-openai-api-key --data-file=-
+   # Update the K8s secret directly
+   kubectl create secret generic external-services \
+     --from-literal=OPENAI_API_KEY="sk-new-key" \
+     --dry-run=client -o yaml | kubectl apply -f - -n aivo-prod
    ```
 
 3. **Trigger refresh and restart**
@@ -218,9 +220,8 @@ kubectl annotate externalsecret --all force-sync=$(date +%s) -n aivo-prod
 
 Consider implementing automated rotation using:
 
-- Google Secret Manager automatic rotation
+- K8s CronJob-based secret rotation
 - HashiCorp Vault dynamic secrets
-- AWS Secrets Manager rotation lambdas
 
 ## Monitoring
 

@@ -1,11 +1,11 @@
 /**
  * Alert Routes
- * 
+ *
  * GET /alerts - List alerts
  * GET /alerts/:id - Get alert details
  * PATCH /alerts/:id/acknowledge - Acknowledge alert
  * PATCH /alerts/:id/resolve - Resolve alert
- * 
+ *
  * GET /alerts/rules - List alert rules
  * POST /alerts/rules - Create alert rule
  * GET /alerts/rules/:id - Get alert rule
@@ -15,19 +15,22 @@
 
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+
 import { prisma } from '../prisma.js';
 
 export async function registerAlertsRoutes(app: FastifyInstance) {
   // List alerts
   app.get('/alerts', async (request) => {
     const tenantId = (request as any).user?.tenantId || 'system';
-    const query = z.object({
-      status: z.enum(['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'SUPPRESSED']).optional(),
-      severity: z.enum(['INFO', 'WARNING', 'ERROR', 'CRITICAL']).optional(),
-      modelId: z.string().uuid().optional(),
-      limit: z.coerce.number().int().min(1).max(100).default(50),
-      offset: z.coerce.number().int().min(0).default(0),
-    }).parse(request.query);
+    const query = z
+      .object({
+        status: z.enum(['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED', 'SUPPRESSED']).optional(),
+        severity: z.enum(['INFO', 'WARNING', 'ERROR', 'CRITICAL']).optional(),
+        modelId: z.string().uuid().optional(),
+        limit: z.coerce.number().int().min(1).max(100).default(50),
+        offset: z.coerce.number().int().min(0).default(0),
+      })
+      .parse(request.query);
 
     const where: any = { tenantId };
     if (query.status) where.status = query.status;
@@ -87,10 +90,12 @@ export async function registerAlertsRoutes(app: FastifyInstance) {
   // List alert rules
   app.get('/alerts/rules', async (request) => {
     const tenantId = (request as any).user?.tenantId || 'system';
-    const query = z.object({
-      modelId: z.string().uuid().optional(),
-      isEnabled: z.enum(['true', 'false']).optional(),
-    }).parse(request.query);
+    const query = z
+      .object({
+        modelId: z.string().uuid().optional(),
+        isEnabled: z.enum(['true', 'false']).optional(),
+      })
+      .parse(request.query);
 
     const where: any = { tenantId };
     if (query.modelId) where.modelId = query.modelId;
@@ -113,24 +118,25 @@ export async function registerAlertsRoutes(app: FastifyInstance) {
   app.post('/alerts/rules', async (request, reply) => {
     const tenantId = (request as any).user?.tenantId || 'system';
     const userId = (request as any).user?.userId;
-    const body = z.object({
-      name: z.string().min(1).max(100),
-      description: z.string().optional(),
-      modelId: z.string().uuid().optional(),
-      modelVersionId: z.string().uuid().optional(),
-      deploymentId: z.string().uuid().optional(),
-      metricName: z.string(),
-      operator: z.enum(['gt', 'lt', 'gte', 'lte', 'eq']),
-      threshold: z.number(),
-      windowDuration: z.number().int().positive(),
-      minSamples: z.number().int().positive().default(10),
-      severity: z.enum(['INFO', 'WARNING', 'ERROR', 'CRITICAL']).default('WARNING'),
-      notifyChannels: z.array(z.string()).default([]),
-      webhookUrl: z.string().url().optional(),
-      emailRecipients: z.array(z.string().email()).default([]),
-      slackChannel: z.string().optional(),
-      tags: z.array(z.string()).default([]),
-    }).parse(request.body);
+    const body = z
+      .object({
+        name: z.string().min(1).max(100),
+        description: z.string().optional(),
+        modelId: z.string().uuid().optional(),
+        modelVersionId: z.string().uuid().optional(),
+        deploymentId: z.string().uuid().optional(),
+        metricName: z.string(),
+        operator: z.enum(['gt', 'lt', 'gte', 'lte', 'eq']),
+        threshold: z.number(),
+        windowDuration: z.number().int().positive(),
+        minSamples: z.number().int().positive().default(10),
+        severity: z.enum(['INFO', 'WARNING', 'ERROR', 'CRITICAL']).default('WARNING'),
+        notifyChannels: z.array(z.string()).default([]),
+        webhookUrl: z.string().url().optional(),
+        emailRecipients: z.array(z.string().email()).default([]),
+        tags: z.array(z.string()).default([]),
+      })
+      .parse(request.body);
 
     const rule = await prisma.alertRule.create({
       data: {

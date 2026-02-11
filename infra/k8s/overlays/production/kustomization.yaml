@@ -1,8 +1,8 @@
-# =============================================================================
+﻿# =============================================================================
 # AIVO Platform - Production Environment Overlay
 # =============================================================================
 # Production-specific configuration that overrides base settings.
-# Deployed via GitHub Actions workflow: deploy-production.yml
+# Deployed via GitHub Actions CI/CD pipeline to Hetzner
 # =============================================================================
 
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -29,46 +29,46 @@ commonAnnotations:
   deployment.kubernetes.io/environment: production
   prometheus.io/scrape: "true"
 
-# Image configuration - use GCR registry
+# Image configuration - use GitHub Container Registry (GHCR)
 # Note: Image tags are set dynamically by the CI/CD pipeline using:
-#   kustomize edit set image gcr.io/aivo-platform/<service>=gcr.io/aivo-platform/<service>:<tag>
+#   kustomize edit set image ghcr.io/artpromedia/aivo-<service>=ghcr.io/artpromedia/aivo-<service>:<tag>
 images:
   - name: aivo/auth-svc
-    newName: gcr.io/aivo-platform/auth-svc
+    newName: ghcr.io/artpromedia/aivo-auth-svc
   - name: aivo/content-svc
-    newName: gcr.io/aivo-platform/content-svc
+    newName: ghcr.io/artpromedia/aivo-content-svc
   - name: aivo/session-svc
-    newName: gcr.io/aivo-platform/session-svc
+    newName: ghcr.io/artpromedia/aivo-session-svc
   - name: aivo/assessment-svc
-    newName: gcr.io/aivo-platform/assessment-svc
+    newName: ghcr.io/artpromedia/aivo-assessment-svc
   - name: aivo/analytics-svc
-    newName: gcr.io/aivo-platform/analytics-svc
+    newName: ghcr.io/artpromedia/aivo-analytics-svc
   - name: aivo/ai-orchestrator
-    newName: gcr.io/aivo-platform/ai-orchestrator
+    newName: ghcr.io/artpromedia/aivo-ai-orchestrator
   - name: aivo/notify-svc
-    newName: gcr.io/aivo-platform/notify-svc
+    newName: ghcr.io/artpromedia/aivo-notify-svc
   - name: aivo/messaging-svc
-    newName: gcr.io/aivo-platform/messaging-svc
+    newName: ghcr.io/artpromedia/aivo-messaging-svc
   - name: aivo/goal-svc
-    newName: gcr.io/aivo-platform/goal-svc
+    newName: ghcr.io/artpromedia/aivo-goal-svc
   - name: aivo/focus-svc
-    newName: gcr.io/aivo-platform/focus-svc
+    newName: ghcr.io/artpromedia/aivo-focus-svc
   - name: aivo/personalization-svc
-    newName: gcr.io/aivo-platform/personalization-svc
+    newName: ghcr.io/artpromedia/aivo-personalization-svc
   - name: aivo/billing-svc
-    newName: gcr.io/aivo-platform/billing-svc
+    newName: ghcr.io/artpromedia/aivo-billing-svc
   - name: aivo/consent-svc
-    newName: gcr.io/aivo-platform/consent-svc
+    newName: ghcr.io/artpromedia/aivo-consent-svc
   - name: aivo/profile-svc
-    newName: gcr.io/aivo-platform/profile-svc
+    newName: ghcr.io/artpromedia/aivo-profile-svc
   - name: aivo/baseline-svc
-    newName: gcr.io/aivo-platform/baseline-svc
+    newName: ghcr.io/artpromedia/aivo-baseline-svc
   - name: aivo/life-skills-svc
-    newName: gcr.io/aivo-platform/life-skills-svc
+    newName: ghcr.io/artpromedia/aivo-life-skills-svc
   - name: aivo/parent-svc
-    newName: gcr.io/aivo-platform/parent-svc
+    newName: ghcr.io/artpromedia/aivo-parent-svc
   - name: aivo/payments-svc
-    newName: gcr.io/aivo-platform/payments-svc
+    newName: ghcr.io/artpromedia/aivo-payments-svc
 
 # Patches for production-specific configurations
 patches:
@@ -126,7 +126,7 @@ configMapGenerator:
       - ENABLE_METRICS=true
       - ENABLE_TRACING=true
 
-# Secret generator references (actual secrets from GCP Secret Manager)
+# Secret generator references (actual secrets from K8s Secrets)
 secretGenerator:
   - name: production-secrets
     type: Opaque

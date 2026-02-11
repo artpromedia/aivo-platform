@@ -388,7 +388,6 @@ If you see HTTP 501 responses in production:
 ## Contact
 
 - **Platform Team:** platform@aivo.ai
-- **On-Call:** #aivo-platform-oncall (Slack)
 - **Documentation:** https://docs.aivo.ai/features/coming-soon
 
 ---

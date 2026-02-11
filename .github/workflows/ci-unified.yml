@@ -25,6 +25,15 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
+      deploy_environment:
+        description: 'Environment to deploy to'
+        required: false
+        type: choice
+        options:
+          - none
+          - staging
+          - production
+        default: none
       skip_tests:
         description: 'Skip tests (emergency deploys only)'
         required: false
@@ -38,11 +47,10 @@ concurrency:
 
 # Global environment variables
 env:
-  REGISTRY: gcr.io
-  PROJECT_ID: aivo-learning
+  REGISTRY: ghcr.io/artpromedia
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9.12.0'
-  FLUTTER_VERSION: '3.24.0'
+  FLUTTER_VERSION: '3.22.0'
   
 jobs:
   # ════════════════════════════════════════════════════════════════════════════
@@ -382,7 +390,7 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          SHA_SHORT=$(git rev-parse --short=8 HEAD)
+          SHA_SHORT=$(git rev-parse --short HEAD)
           
           if [[ "${{ github.event_name }}" == "release" ]]; then
             VERSION="${{ github.event.release.tag_name }}"
@@ -457,7 +465,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-fs-results.sarif'
@@ -505,32 +513,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT }}
-
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker gcr.io --quiet
-
-      - name: Ensure GCR Artifact Registry repo exists
-        run: |
-          set -e
-          if ! gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1; then
-            gcloud artifacts repositories create gcr.io \
-              --repository-format=docker \
-              --location=us \
-              --project="${PROJECT_ID}" \
-              --description="GCR-compatible repo for CI pushes" || \
-            gcloud artifacts repositories describe gcr.io --location=us --project="${PROJECT_ID}" >/dev/null 2>&1
-          fi
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/aivo-${{ matrix.service }}
           tags: |
             type=raw,value=${{ needs.build.outputs.version }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -553,30 +547,103 @@ jobs:
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.24.0
-        continue-on-error: true
-        timeout-minutes: 10
-        env:
-          TRIVY_TIMEOUT: 10m
         with:
-          image-ref: '${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.build.outputs.version }}'
+          image-ref: '${{ env.REGISTRY }}/aivo-${{ matrix.service }}:${{ needs.build.outputs.version }}'
           format: 'sarif'
           output: 'trivy-${{ matrix.service }}.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: 'container-${{ matrix.service }}'
 
   # ════════════════════════════════════════════════════════════════════════════
-  # NOTE: Staging and Production deployments are handled by dedicated workflows:
-  #   - deploy-hetzner-staging.yml  (triggers on push to main)
-  #   - deploy-hetzner-production.yml (triggers on release publish)
-  # GKE deploy jobs were removed — the aivo-gke-staging cluster does not exist.
+  # DEPLOY TO STAGING
   # ════════════════════════════════════════════════════════════════════════════
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker]
+    if: github.ref == 'refs/heads/main' || inputs.deploy_environment == 'staging'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Hetzner Staging
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /opt/aivo
+            
+            VERSION="main-${{ github.sha }}"
+            SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                      analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                      billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                      profile-svc personalization-svc life-skills-svc)
+            
+            # Update image tags
+            cd infra/k8s/overlays/staging
+            for svc in "${SERVICES[@]}"; do
+              kustomize edit set image aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}
+            done
+            
+            # Apply to cluster
+            kustomize build . | kubectl apply -f -
+            
+            # Wait for rollout
+            kubectl rollout status deployment --all -n aivo-staging --timeout=600s
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # DEPLOY TO PRODUCTION
+  # ════════════════════════════════════════════════════════════════════════════
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [docker, deploy-staging]
+    if: github.event_name == 'release' || inputs.deploy_environment == 'production'
+    environment: 
+      name: production
+      url: https://app.aivolearning.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Hetzner Production
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /opt/aivo
+            
+            VERSION="${{ github.event.release.tag_name || github.sha }}"
+            SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
+                      analytics-svc notify-svc messaging-svc goal-svc focus-svc \
+                      billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                      profile-svc personalization-svc life-skills-svc)
+            
+            # Update image tags
+            cd infra/k8s/overlays/production
+            for svc in "${SERVICES[@]}"; do
+              kustomize edit set image aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}
+            done
+            
+            # Apply to cluster
+            kustomize build . | kubectl apply -f -
+            
+            # Wait for rollout
+            kubectl rollout status deployment --all -n aivo-prod --timeout=900s
 
   # ════════════════════════════════════════════════════════════════════════════
   # SUMMARY
@@ -584,7 +651,7 @@ jobs:
   summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, build, security, docker]
+    needs: [lint, typecheck, test, build, security, docker, deploy-staging, deploy-production]
     if: always()
     steps:
       - name: Generate Summary
@@ -599,8 +666,8 @@ jobs:
           echo "| Build | ${{ needs.build.result == 'success' && '✅' || needs.build.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security.result == 'success' && '✅' || needs.security.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker | ${{ needs.docker.result == 'success' && '✅' || needs.docker.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "ℹ️ Deployments are handled by dedicated Hetzner workflows." >> $GITHUB_STEP_SUMMARY
+          echo "| Staging | ${{ needs.deploy-staging.result == 'success' && '✅' || needs.deploy-staging.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production | ${{ needs.deploy-production.result == 'success' && '✅' || needs.deploy-production.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

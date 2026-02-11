@@ -363,10 +363,7 @@ describe('Prediction Routes', () => {
 
   describe('GET /predictions', () => {
     it('should list predictions with pagination', async () => {
-      const predictions = [
-        createMockPrediction('pred-001'),
-        createMockPrediction('pred-002'),
-      ];
+      const predictions = [createMockPrediction('pred-001'), createMockPrediction('pred-002')];
 
       mockPrisma.prediction.findMany.mockResolvedValue(predictions);
       mockPrisma.prediction.count.mockResolvedValue(2);
@@ -688,9 +685,24 @@ describe('Metrics Routes', () => {
   describe('POST /metrics/aggregate', () => {
     it('should trigger metrics aggregation', async () => {
       const predictions = [
-        createMockPrediction('p1', { status: 'SUCCESS', latencyMs: 100, confidence: 0.9, isCorrect: true }),
-        createMockPrediction('p2', { status: 'SUCCESS', latencyMs: 150, confidence: 0.85, isCorrect: true }),
-        createMockPrediction('p3', { status: 'ERROR', latencyMs: 50, confidence: null, isCorrect: false }),
+        createMockPrediction('p1', {
+          status: 'SUCCESS',
+          latencyMs: 100,
+          confidence: 0.9,
+          isCorrect: true,
+        }),
+        createMockPrediction('p2', {
+          status: 'SUCCESS',
+          latencyMs: 150,
+          confidence: 0.85,
+          isCorrect: true,
+        }),
+        createMockPrediction('p3', {
+          status: 'ERROR',
+          latencyMs: 50,
+          confidence: null,
+          isCorrect: false,
+        }),
       ];
 
       mockPrisma.prediction.findMany.mockResolvedValue(predictions);
@@ -775,10 +787,7 @@ describe('Alerts Routes', () => {
 
   describe('GET /alerts', () => {
     it('should list alerts with pagination', async () => {
-      const alerts = [
-        createMockAlert('alert-001'),
-        createMockAlert('alert-002'),
-      ];
+      const alerts = [createMockAlert('alert-001'), createMockAlert('alert-002')];
 
       mockPrisma.alert.findMany.mockResolvedValue(alerts);
       mockPrisma.alert.count.mockResolvedValue(2);
@@ -881,7 +890,9 @@ describe('Alerts Routes', () => {
     });
 
     it('should accept resolution notes', async () => {
-      mockPrisma.alert.update.mockResolvedValue(createMockAlert('alert-001', { status: 'RESOLVED' }));
+      mockPrisma.alert.update.mockResolvedValue(
+        createMockAlert('alert-001', { status: 'RESOLVED' })
+      );
 
       await app.inject({
         method: 'PATCH',
@@ -976,10 +987,9 @@ describe('Alerts Routes', () => {
         windowDuration: 1800,
         minSamples: 50,
         severity: 'CRITICAL',
-        notifyChannels: ['email', 'slack'],
+        notifyChannels: ['email'],
         webhookUrl: 'https://example.com/webhook',
         emailRecipients: ['admin@example.com', 'ops@example.com'],
-        slackChannel: '#alerts',
         tags: ['production', 'critical'],
       };
 

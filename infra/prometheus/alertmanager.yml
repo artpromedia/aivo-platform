@@ -2,7 +2,7 @@
 #
 # Routes alerts from Prometheus to appropriate channels:
 # - Critical alerts → PagerDuty (immediate page)
-# - Warning alerts → Slack channel
+# - Warning alerts → Email
 # - Info alerts → Email digest
 #
 # To use:
@@ -22,9 +22,6 @@ global:
 
   # PagerDuty routing key (global default)
   pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
-
-  # Slack API URL
-  slack_api_url: '${SLACK_WEBHOOK_URL}'
 
 # Templates for notification formatting
 templates:
@@ -52,7 +49,7 @@ inhibit_rules:
 # Route tree for alert routing
 route:
   # Default receiver for unmatched alerts
-  receiver: 'slack-warnings'
+  receiver: 'email-digest'
   
   # How long to wait before sending a notification for a group of alerts
   group_wait: 30s
@@ -90,20 +87,20 @@ route:
       continue: true
 
     # ──────────────────────────────────────────────────────────────────────────
-    # Critical and warning alerts → Slack
+    # Critical and warning alerts → Email
     # ──────────────────────────────────────────────────────────────────────────
     - matchers:
         - severity=~"critical|warning"
-      receiver: 'slack-oncall'
+      receiver: 'email-digest'
       group_wait: 30s
       repeat_interval: 2h
 
     # ──────────────────────────────────────────────────────────────────────────
-    # AI-specific alerts → AI team Slack channel
+    # AI-specific alerts → Email
     # ──────────────────────────────────────────────────────────────────────────
     - matchers:
         - journey="tutoring"
-      receiver: 'slack-ai-team'
+      receiver: 'email-digest'
       group_wait: 1m
       repeat_interval: 4h
       continue: true
@@ -137,61 +134,6 @@ receivers:
             text: 'Grafana Dashboard'
           - href: '{{ (index .Alerts 0).Annotations.runbook_url }}'
             text: 'Runbook'
-
-  # ════════════════════════════════════════════════════════════════════════════
-  # Slack for on-call visibility
-  # ════════════════════════════════════════════════════════════════════════════
-  - name: 'slack-oncall'
-    slack_configs:
-      - channel: '#aivo-alerts'
-        username: 'Aivo Alerts'
-        icon_emoji: ':alert:'
-        send_resolved: true
-        title: '{{ if eq .Status "firing" }}🔥{{ else }}✅{{ end }} {{ .GroupLabels.alertname }}'
-        text: >-
-          {{ range .Alerts }}
-          *Alert:* {{ .Annotations.summary }}
-          *Service:* {{ .Labels.service }}
-          *Severity:* {{ .Labels.severity }}
-          *Description:* {{ .Annotations.description }}
-          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
-          {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
-          {{ end }}
-        actions:
-          - type: button
-            text: 'View in Grafana'
-            url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
-          - type: button
-            text: 'Runbook'
-            url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
-
-  - name: 'slack-warnings'
-    slack_configs:
-      - channel: '#aivo-alerts-low'
-        username: 'Aivo Alerts'
-        icon_emoji: ':warning:'
-        send_resolved: true
-        title: '{{ if eq .Status "firing" }}⚠️{{ else }}✅{{ end }} {{ .GroupLabels.alertname }}'
-        text: >-
-          {{ range .Alerts }}
-          *Alert:* {{ .Annotations.summary }}
-          *Description:* {{ .Annotations.description }}
-          {{ end }}
-
-  - name: 'slack-ai-team'
-    slack_configs:
-      - channel: '#aivo-ai-alerts'
-        username: 'AI Orchestrator'
-        icon_emoji: ':robot_face:'
-        send_resolved: true
-        title: '{{ if eq .Status "firing" }}🤖{{ else }}✅{{ end }} AI Alert: {{ .GroupLabels.alertname }}'
-        text: >-
-          {{ range .Alerts }}
-          *Alert:* {{ .Annotations.summary }}
-          *Agent Type:* {{ .Labels.agent_type }}
-          *Provider:* {{ .Labels.provider }}
-          *Description:* {{ .Annotations.description }}
-          {{ end }}
 
   # ════════════════════════════════════════════════════════════════════════════
   # Email for digests and low-priority

@@ -3,7 +3,7 @@
 **Severity:** 🚨 CRITICAL  
 **Response Time:** Immediate (<5 minutes)  
 **Alert:** "High Error Rate"  
-**Threshold:** Error rate >1% for 5+ minutes  
+**Threshold:** Error rate >1% for 5+ minutes
 
 ---
 
@@ -34,9 +34,11 @@ This alert indicates that the system is experiencing an elevated error rate abov
 ### 2. Assess Severity
 
 Navigate to Datadog dashboard:
+
 - https://datadog.com/aivo/production-dashboard
 
 Check:
+
 - Current error rate (%)
 - Affected services
 - Error rate trend (increasing/stable/decreasing)
@@ -70,6 +72,7 @@ service:* status:error
 ```
 
 **What to look for:**
+
 - Is a specific endpoint causing most errors?
 - Are errors distributed across all endpoints?
 - Any new endpoints showing errors?
@@ -84,6 +87,7 @@ service:* status:error
 ```
 
 **Common error types:**
+
 - `ConnectionError`: Database or Redis connection issues
 - `TimeoutError`: Slow queries or service calls
 - `ValidationError`: Bad request data (less critical)
@@ -101,6 +105,7 @@ git log --oneline --since="2 hours ago"
 ```
 
 **Questions:**
+
 - Was there a deployment in the last 2 hours?
 - Any configuration changes?
 - Any database migrations?
@@ -129,6 +134,7 @@ service:* status:error
 ```
 
 **Look for patterns:**
+
 - Same error message repeated?
 - Specific user IDs affected?
 - Geographic patterns?
@@ -141,11 +147,13 @@ service:* status:error
 ### Cause 1: Recent Deployment Issue
 
 **Symptoms:**
+
 - Error rate spiked immediately after deployment
 - Specific service showing errors
 - Errors in new code paths
 
 **Solution:**
+
 ```powershell
 # Immediate rollback
 .\scripts\rollback-deployment.ps1 `
@@ -159,6 +167,7 @@ service:* status:error
 ```
 
 **Post-Rollback:**
+
 1. Investigate failed deployment locally
 2. Fix issues
 3. Test in staging
@@ -167,11 +176,13 @@ service:* status:error
 ### Cause 2: Database Connection Pool Exhaustion
 
 **Symptoms:**
+
 - Errors: "Connection pool exhausted" or "Connection timeout"
 - Database connection count at/near limit (50)
 - Slow response times
 
 **Solution:**
+
 ```sql
 -- Check active connections
 SELECT count(*), state, wait_event_type
@@ -180,7 +191,7 @@ WHERE datname = 'aivo_prod'
 GROUP BY state, wait_event_type;
 
 -- Identify long-running queries
-SELECT 
+SELECT
   pid,
   now() - query_start as duration,
   state,
@@ -193,12 +204,13 @@ LIMIT 10;
 -- Kill long-running queries if needed (>5 minutes)
 SELECT pg_terminate_backend(pid)
 FROM pg_stat_activity
-WHERE datname = 'aivo_prod' 
+WHERE datname = 'aivo_prod'
   AND state != 'idle'
   AND now() - query_start > interval '5 minutes';
 ```
 
 **Immediate mitigation:**
+
 ```typescript
 // Increase connection pool size temporarily
 // In services/auth-svc/src/prisma.ts
@@ -213,11 +225,13 @@ export const prisma = createOptimizedPrismaClient(
 ### Cause 3: Redis Cache Failure
 
 **Symptoms:**
+
 - Errors: "Redis connection refused" or "ECONNREFUSED"
 - Cache hit rate drops to 0%
 - Database load increases significantly
 
 **Solution:**
+
 ```bash
 # Check Redis status
 redis-cli -u $REDIS_URL INFO server
@@ -226,11 +240,11 @@ redis-cli -u $REDIS_URL INFO server
 redis-cli -u $REDIS_URL INFO memory
 
 # If Redis is down, restart or failover
-# AWS ElastiCache: Trigger manual failover
-# GCP Memorystore: Trigger manual failover
+# Hetzner: systemctl restart redis on the server
 ```
 
 **Immediate mitigation:**
+
 ```typescript
 // Services should gracefully degrade without cache
 // Verify cache service has proper error handling
@@ -245,11 +259,13 @@ try {
 ### Cause 4: External Service Outage
 
 **Symptoms:**
+
 - Errors specific to external API calls (Stripe, SendGrid, etc.)
 - Timeout errors on external requests
 - Service call failures in trust score
 
 **Solution:**
+
 ```powershell
 # Check external service status pages
 Start-Process "https://status.stripe.com"
@@ -261,24 +277,26 @@ service:auth-svc @trust_score.service_call.failed:true
 ```
 
 **Immediate mitigation:**
+
 ```typescript
 // Verify services have proper fallbacks
 // Example: Trust score should use cached values or safe defaults
-const trustScoreData = await this.dataProviders.getReviewData(userId)
-  .catch(error => {
-    logger.warn('Review service unavailable, using defaults', { error });
-    return defaultReviewData; // Safe fallback
-  });
+const trustScoreData = await this.dataProviders.getReviewData(userId).catch((error) => {
+  logger.warn('Review service unavailable, using defaults', { error });
+  return defaultReviewData; // Safe fallback
+});
 ```
 
 ### Cause 5: Traffic Spike / DDoS
 
 **Symptoms:**
+
 - Sudden traffic increase (10x normal)
 - Errors: "Too many requests" or "Service unavailable"
 - Resource utilization (CPU/memory) maxed out
 
 **Solution:**
+
 ```powershell
 # Check traffic volume
 # In Datadog
@@ -286,17 +304,17 @@ sum:http.requests{env:production}.as_rate()
 
 # Check request sources
 # In Datadog logs
-service:* 
+service:*
 | group by http.client_ip
 | sort by count desc
 | limit 20
 ```
 
 **Immediate mitigation:**
+
 ```bash
 # Enable rate limiting at load balancer
-# AWS ALB: Implement WAF rules
-# GCP Load Balancer: Implement Cloud Armor rules
+# Hetzner firewall: Implement IP blocking rules
 # Cloudflare: Enable "I'm Under Attack" mode
 
 # Block offending IPs if identified
@@ -310,6 +328,7 @@ service:*
 ### Step 1: Implement Fix
 
 Based on root cause identified:
+
 - Rollback deployment if deployment-related
 - Scale resources if capacity issue
 - Fix connection pool if pool exhaustion
@@ -335,6 +354,7 @@ Start-Process "https://datadog.com/aivo/production-dashboard"
 
 ```markdown
 # If customer-impacting, update status page
+
 # https://status.aivo.app
 
 **Title:** Elevated Error Rates Resolved
@@ -399,9 +419,9 @@ The issue has been resolved and all systems are operating normally.
 
 ### Escalation Path
 
-1. **Primary On-Call** (you) → 
-2. **Secondary On-Call** (check PagerDuty) → 
-3. **Tech Lead** → 
+1. **Primary On-Call** (you) →
+2. **Secondary On-Call** (check PagerDuty) →
+3. **Tech Lead** →
 4. **CTO**
 
 ### Escalation Commands
@@ -432,7 +452,7 @@ Current status: [mitigation attempts]
 
 **Target Resolution Time:** 30 minutes  
 **Average Resolution Time:** [Update after incidents]  
-**Escalation Rate:** [Update after incidents]  
+**Escalation Rate:** [Update after incidents]
 
 ---
 

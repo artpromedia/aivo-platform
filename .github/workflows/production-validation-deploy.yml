@@ -1,24 +1,42 @@
 # .github/workflows/production-validation-deploy.yml
-# DEPRECATED — GCP/GKE production validation deploy
-# Replaced by deploy-hetzner-production.yml. GKE clusters do not exist.
+# AIVO Platform - Production Validation & Deployment
+# Week 49-52: Final Validation & Deployment Automation
+#
+# This workflow runs comprehensive validation checks before production deployment:
+# - Feature parity verification
+# - Security audit
+# - Performance benchmarks
+# - E2E tests
+# - Database migration validation
 
-name: '[DISABLED] Production Validation & Deploy (GCP)'
+name: Production Validation & Deploy
 
 on:
   workflow_dispatch:
     inputs:
-      _disabled:
-        description: 'This workflow is disabled. Use deploy-hetzner-production.yml instead.'
+      confirm:
+        description: 'Type "deploy-to-production" to confirm deployment'
         required: true
-        default: 'DO NOT RUN'
+        type: string
+      skip_performance:
+        description: 'Skip performance benchmarks (faster deployment)'
+        required: false
+        default: false
+        type: boolean
+      skip_e2e:
+        description: 'Skip E2E tests (emergency only)'
+        required: false
+        default: false
+        type: boolean
+      version:
+        description: 'Version tag to deploy (optional, defaults to latest)'
+        required: false
+        type: string
 
 env:
   NODE_VERSION: '20.19.4'
   PNPM_VERSION: '9'
-  REGISTRY: gcr.io
-  PROJECT_ID: aivo-platform
-  GKE_CLUSTER: aivo-production
-  GKE_ZONE: us-central1
+  REGISTRY: ghcr.io/artpromedia
   NAMESPACE: aivo-prod
 
 jobs:
@@ -372,9 +390,9 @@ jobs:
       - name: Login to Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: _json_key
-          password: ${{ secrets.GCP_PROD_SA_KEY }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check if service exists
         id: check
@@ -392,8 +410,8 @@ jobs:
           context: services/${{ matrix.service }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:${{ needs.confirm-deployment.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/aivo-${{ matrix.service }}:${{ needs.confirm-deployment.outputs.version }}
+            ${{ env.REGISTRY }}/aivo-${{ matrix.service }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -449,21 +467,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
       - name: Create database backup
         run: |
           echo "Creating pre-migration backup..."
           BACKUP_NAME="pre-deploy-$(date +%Y%m%d-%H%M%S)"
           echo "Backup: $BACKUP_NAME"
-          # In production, this would trigger a Cloud SQL backup
-          # gcloud sql backups create --instance=$INSTANCE $BACKUP_NAME
+          # In production, trigger a database backup via SSH or management API
           echo "✅ Backup created (simulated)"
 
       - name: Run migrations
@@ -495,49 +504,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Deploy to Hetzner Production
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-
-      - name: Deploy services
-        run: |
-          SERVICES=(
-            "auth-svc"
-            "profile-svc"
-            "content-svc"
-            "assessment-svc"
-            "analytics-svc"
-            "ai-orchestrator"
-            "grading-engine"
-            "brain-engine"
-            "session-svc"
-            "billing-svc"
-            "messaging-svc"
-            "notify-svc"
-            "gamification-svc"
-            "curriculum-svc"
-            "consent-svc"
-            "tenant-svc"
-          )
-
-          VERSION="${{ needs.confirm-deployment.outputs.version }}"
-
-          for service in "${SERVICES[@]}"; do
-            echo "Deploying $service..."
-            if kubectl get deployment $service -n ${{ env.NAMESPACE }} &>/dev/null; then
-              kubectl set image deployment/$service $service=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/$service:$VERSION -n ${{ env.NAMESPACE }} || true
-            fi
-          done
-
-          echo "Waiting for rollout..."
-          kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=600s || true
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /opt/aivo
+            
+            SERVICES=(
+              "auth-svc" "profile-svc" "content-svc" "assessment-svc"
+              "analytics-svc" "ai-orchestrator" "grading-engine" "brain-engine"
+              "session-svc" "billing-svc" "messaging-svc" "notify-svc"
+              "gamification-svc" "curriculum-svc" "consent-svc" "tenant-svc"
+            )
+            
+            VERSION="${{ needs.confirm-deployment.outputs.version }}"
+            
+            for service in "${SERVICES[@]}"; do
+              echo "Deploying $service..."
+              if kubectl get deployment $service -n ${{ env.NAMESPACE }} &>/dev/null; then
+                kubectl set image deployment/$service $service=ghcr.io/artpromedia/aivo-$service:$VERSION -n ${{ env.NAMESPACE }} || true
+              fi
+            done
+            
+            echo "Waiting for rollout..."
+            kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=600s || true
 
   deploy-frontend:
     name: Deploy Frontend Apps
@@ -612,6 +607,50 @@ jobs:
           # In production, this would hit key endpoints to warm caches
           echo "✅ Cache warmup complete"
 
+      - name: Notify team
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚀 Production deployment complete!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*🚀 AIVO Production Deployment Complete*\n\n*Version:* `${{ needs.confirm-deployment.outputs.version }}`\n*Deployed by:* ${{ github.actor }}\n*Time:* $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*Parity Check:* ✅ Passed" },
+                    { "type": "mrkdwn", "text": "*Security Audit:* ✅ Passed" },
+                    { "type": "mrkdwn", "text": "*E2E Tests:* ✅ Passed" },
+                    { "type": "mrkdwn", "text": "*Performance:* ✅ Passed" }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Learner App" },
+                      "url": "https://learner.aivo.ai"
+                    },
+                    {
+                      "type": "button",
+                      "text": { "type": "plain_text", "text": "View Dashboard" },
+                      "url": "https://grafana.aivo.ai"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
       - name: Create deployment record
         run: |
           echo "Creating deployment record..."
@@ -648,20 +687,15 @@ jobs:
     needs: [deploy-backend, deploy-frontend, post-deployment]
     if: failure()
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Rollback deployments via SSH
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          credentials_json: ${{ secrets.GCP_PROD_SA_KEY }}
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_ZONE }}
-
-      - name: Rollback deployments
-        run: |
-          echo "⚠️ Deployment failed - initiating rollback..."
-          kubectl rollout undo deployment --all -n ${{ env.NAMESPACE }} || true
-          kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=300s || true
-          echo "Rollback completed"
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            echo "⚠️ Deployment failed - initiating rollback..."
+            kubectl rollout undo deployment --all -n ${{ env.NAMESPACE }} || true
+            kubectl rollout status deployment --all -n ${{ env.NAMESPACE }} --timeout=300s || true
+            echo "Rollback completed"

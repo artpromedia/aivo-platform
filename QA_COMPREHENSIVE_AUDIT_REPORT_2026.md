@@ -262,8 +262,6 @@ specialized-support-svc       ✅ Full implementation with dyslexia, ASD, anxiet
 | tenant-isolation-tests.yml | Multi-tenant                | ✅ Active |                  |
 | performance.yml            | Performance                 | ✅ Active |                  |
 | accessibility.yml          | WCAG                        | ✅ Active |                  |
-| deploy-staging.yml         | Staging deploy              | ✅ Active |                  |
-| deploy-production.yml      | Prod deploy                 | ✅ Active |                  |
 
 **New Additions:**
 

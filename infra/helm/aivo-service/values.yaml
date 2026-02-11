@@ -12,7 +12,7 @@ replicaCount: 2
 
 # Image configuration
 image:
-  repository: gcr.io/aivo-platform
+  repository: ghcr.io/artpromedia
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -193,7 +193,7 @@ externalSecrets:
   refreshInterval: "1h"
   secretStoreRef:
     kind: ClusterSecretStore
-    name: gcp-secret-store
+    name: k8s-secret-store
   data: []
   #  - secretKey: DATABASE_URL
   #    remoteRef:

@@ -3,7 +3,7 @@
 **Owner:** DevOps & Infrastructure Team  
 **Last Updated:** January 28, 2026  
 **Review Cadence:** Quarterly  
-**Next Review:** April 28, 2026  
+**Next Review:** April 28, 2026
 
 ---
 
@@ -27,6 +27,7 @@ This Disaster Recovery (DR) plan documents procedures for restoring AIVO platfor
 ### Scope
 
 **Covered Systems:**
+
 - Application services (all microservices)
 - Databases (PostgreSQL)
 - Cache layer (Redis)
@@ -35,6 +36,7 @@ This Disaster Recovery (DR) plan documents procedures for restoring AIVO platfor
 - Infrastructure as Code
 
 **Not Covered:**
+
 - Third-party service outages (Stripe, SendGrid, etc.)
 - Client-side issues (browser, mobile app)
 - Network infrastructure (handled by cloud provider)
@@ -42,10 +44,12 @@ This Disaster Recovery (DR) plan documents procedures for restoring AIVO platfor
 ### Recovery Objectives
 
 **Recovery Time Objective (RTO):**
+
 - **Critical Services:** 4 hours
 - **Non-Critical Services:** 24 hours
 
 **Recovery Point Objective (RPO):**
+
 - **Database:** 1 hour (maximum 1 hour of data loss)
 - **File Storage:** 24 hours
 - **Configuration:** 0 (version controlled)
@@ -64,21 +68,22 @@ This Disaster Recovery (DR) plan documents procedures for restoring AIVO platfor
 backup_schedule:
   full_backup:
     frequency: Daily
-    time: "02:00 AM EST"
+    time: '02:00 AM EST'
     retention: 30 days
-  
+
   incremental_backup:
     frequency: Hourly
     retention: 7 days
-  
+
   transaction_log_backup:
     frequency: Every 15 minutes
     retention: 7 days
 ```
 
 **Backup Method:**
+
 ```bash
-# Automated via cloud provider (AWS RDS / GCP Cloud SQL)
+# Automated via cron on the Hetzner server
 # Manual backup command if needed:
 
 pg_dump -Fc \
@@ -93,12 +98,14 @@ pg_dump -Fc \
 ```
 
 **Backup Storage:**
-- Primary: AWS S3 / GCP Cloud Storage
-- Secondary: Cross-region replication (us-east-1 → us-west-2)
+
+- Primary: Hetzner Storage Box / S3-compatible storage
+- Secondary: Off-site replication
 - Encryption: AES-256 at rest
 - Lifecycle: Automatic deletion after retention period
 
 **Validation:**
+
 ```bash
 # Automated backup validation (runs daily)
 ./scripts/validate-backup.sh
@@ -117,11 +124,13 @@ pg_dump -Fc \
 **Capability:** Restore to any point within last 7 days
 
 **Use Cases:**
+
 - Accidental data deletion
 - Corruption from bad deployment
 - Rollback to specific timestamp
 
 **Restore Command:**
+
 ```bash
 # Restore to specific timestamp
 aws rds restore-db-instance-to-point-in-time \
@@ -141,13 +150,14 @@ backup_schedule:
   snapshot:
     frequency: Every 6 hours
     retention: 7 days
-  
+
   aof_persistence:
     enabled: true
-    fsync: everysec  # Append-only file synced every second
+    fsync: everysec # Append-only file synced every second
 ```
 
 **Backup Method:**
+
 ```bash
 # Redis RDB snapshots (automated)
 # Manual snapshot if needed:
@@ -161,6 +171,7 @@ redis-cli -u $REDIS_URL LASTSAVE
 ```
 
 **Recovery Method:**
+
 ```bash
 # Redis recovery is automatic on restart
 # RDB file is loaded on startup
@@ -178,32 +189,33 @@ redis-cli -u $REDIS_URL_NEW CONFIG GET dir
 ```
 
 **Cache Rebuilding:**
+
 ```typescript
 // If Redis data lost completely, rebuild from database
 async function rebuildCache() {
   logger.info('Rebuilding Redis cache from database');
-  
+
   // Warm frequently accessed data
   const popularLessons = await prisma.lesson.findMany({
     where: { views: { gt: 100 } },
     take: 100,
   });
-  
+
   for (const lesson of popularLessons) {
     await cache.set(`lesson:${lesson.id}`, lesson, 7200);
   }
-  
+
   // Warm trust scores for active users
   const activeUsers = await prisma.user.findMany({
     where: { lastLoginAt: { gt: new Date(Date.now() - 86400000) } },
     take: 1000,
   });
-  
+
   for (const user of activeUsers) {
     const trustScore = await calculateTrustScore(user.id);
     await cache.set(`trust:${user.id}`, trustScore, 1800);
   }
-  
+
   logger.info('Cache rebuild complete');
 }
 ```
@@ -213,9 +225,9 @@ async function rebuildCache() {
 **User-Uploaded Files (S3/Cloud Storage):**
 
 ```yaml
-versioning: enabled  # Keep all versions of objects
-replication: cross-region  # us-east-1 → us-west-2
-retention: 
+versioning: enabled # Keep all versions of objects
+replication: cross-region # us-east-1 → us-west-2
+retention:
   current_version: Permanent
   deleted_objects: 90 days
 lifecycle:
@@ -223,6 +235,7 @@ lifecycle:
 ```
 
 **Backup Validation:**
+
 ```bash
 # Verify file storage replication
 aws s3 ls s3://aivo-prod-files/ --summarize > files_primary.txt
@@ -235,20 +248,23 @@ diff files_primary.txt files_replica.txt
 ### 4. Configuration & Secrets
 
 **Infrastructure as Code:**
+
 - Git repository (GitHub/GitLab)
 - Branching strategy: main, staging, production
 - All infrastructure changes version controlled
 - Terraform/CloudFormation templates
 
 **Secrets Management:**
+
 ```yaml
-secrets_storage: AWS Secrets Manager / GCP Secret Manager
-backup_frequency: Real-time replication
-recovery: Access via API with IAM credentials
-retention: All versions retained indefinitely
+secrets_storage: K8s Secrets (on Hetzner K3s cluster)
+backup_frequency: Backed up with cluster state
+recovery: Restore via kubectl
+retention: All versions retained in git-encrypted backups
 ```
 
 **Application Code:**
+
 ```yaml
 source_code: Git (GitHub)
 branches: main, develop, feature/*
@@ -264,6 +280,7 @@ recovery: git clone from repository
 ### Scenario 1: Complete Database Failure
 
 **Symptoms:**
+
 - Database unreachable
 - All application queries failing
 - Health checks reporting database unhealthy
@@ -271,24 +288,24 @@ recovery: git clone from repository
 **Recovery Steps:**
 
 **Step 1: Assess Situation (0-5 minutes)**
+
 ```bash
 # Check database status
 psql $DATABASE_URL -c "SELECT 1"
 
-# If connection fails, check cloud provider console
-# AWS RDS Console: Check instance status
-# GCP Cloud SQL Console: Check instance status
+# If connection fails, check database server
+# SSH to Hetzner: Check PostgreSQL service status
+ssh production-server 'systemctl status postgresql'
 
 # Check automated backups available
-aws rds describe-db-snapshots \
-  --db-instance-identifier aivo-prod-db \
-  --query 'DBSnapshots[0]'
+ls -lt /backups/aivo_prod_*.dump | head -5
 ```
 
 **Step 2: Enable Maintenance Mode (5-10 minutes)**
+
 ```bash
 # Update status page
-# Message: "We're experiencing technical difficulties. 
+# Message: "We're experiencing technical difficulties.
 #          Our team is working to restore service."
 
 # Enable maintenance mode for applications
@@ -296,6 +313,7 @@ aws rds describe-db-snapshots \
 ```
 
 **Step 3: Restore from Backup (10-40 minutes)**
+
 ```bash
 # Option A: Point-in-Time Recovery (preferred)
 aws rds restore-db-instance-to-point-in-time \
@@ -322,6 +340,7 @@ aws rds restore-db-instance-from-db-snapshot \
 ```
 
 **Step 4: Validate Restored Database (40-50 minutes)**
+
 ```sql
 -- Connect to restored database
 psql $DATABASE_URL_RESTORED
@@ -354,6 +373,7 @@ SELECT * FROM pg_stat_database WHERE datname = 'aivo_prod';
 ```
 
 **Step 5: Update Connection Strings (50-60 minutes)**
+
 ```bash
 # Update DATABASE_URL in secrets manager
 aws secretsmanager update-secret \
@@ -373,6 +393,7 @@ kubectl wait --for=condition=ready pod -l app=auth-svc --timeout=300s
 ```
 
 **Step 6: Verify Application Health (60-70 minutes)**
+
 ```powershell
 # Check all service health endpoints
 $services = @('auth-svc', 'profile-svc', 'session-svc', 'analytics-svc', 'content-svc', 'reports-svc')
@@ -386,6 +407,7 @@ foreach ($service in $services) {
 ```
 
 **Step 7: Smoke Tests (70-80 minutes)**
+
 ```powershell
 # Run critical user flow tests
 pnpm test:smoke --env=production
@@ -399,6 +421,7 @@ pnpm test:smoke --env=production
 ```
 
 **Step 8: Disable Maintenance Mode (80-90 minutes)**
+
 ```bash
 # Update status page
 # Message: "Services have been restored. Thank you for your patience."
@@ -408,6 +431,7 @@ pnpm test:smoke --env=production
 ```
 
 **Step 9: Post-Recovery (90+ minutes)**
+
 ```bash
 # Monitor for 2 hours:
 # - Error rate (should be <0.5%)
@@ -432,6 +456,7 @@ pnpm test:smoke --env=production
 ### Scenario 2: Application Service Failure
 
 **Symptoms:**
+
 - One or more services unavailable
 - Health checks failing
 - Errors in logs
@@ -439,6 +464,7 @@ pnpm test:smoke --env=production
 **Recovery Steps:**
 
 **Step 1: Identify Failed Service (0-2 minutes)**
+
 ```powershell
 # Check service health
 $services = @('auth-svc', 'profile-svc', 'session-svc', 'analytics-svc', 'content-svc', 'reports-svc')
@@ -454,6 +480,7 @@ foreach ($service in $services) {
 ```
 
 **Step 2: Check Service Logs (2-5 minutes)**
+
 ```bash
 # View recent logs for failed service
 kubectl logs deployment/auth-svc --tail=100
@@ -466,6 +493,7 @@ kubectl logs deployment/auth-svc --tail=100
 ```
 
 **Step 3: Restart Service (5-8 minutes)**
+
 ```bash
 # Restart failed service
 kubectl rollout restart deployment/auth-svc
@@ -478,6 +506,7 @@ curl https://aivo.app/auth-svc/health
 ```
 
 **Step 4: If Restart Fails, Redeploy (8-20 minutes)**
+
 ```powershell
 # Redeploy from last known good version
 .\scripts\deploy-production.ps1 `
@@ -490,6 +519,7 @@ curl https://aivo.app/auth-svc/health
 ```
 
 **Step 5: Verify Recovery (20-25 minutes)**
+
 ```powershell
 # Run smoke tests
 pnpm test:smoke
@@ -504,6 +534,7 @@ pnpm test:smoke
 ### Scenario 3: Redis Cache Failure
 
 **Symptoms:**
+
 - Cache connection errors
 - High database load (no cache hits)
 - Increased response times
@@ -511,6 +542,7 @@ pnpm test:smoke
 **Recovery Steps:**
 
 **Step 1: Assess Redis Status (0-2 minutes)**
+
 ```bash
 # Check Redis connectivity
 redis-cli -u $REDIS_URL PING
@@ -519,18 +551,20 @@ redis-cli -u $REDIS_URL PING
 ```
 
 **Step 2: Restore from Backup (2-10 minutes)**
+
 ```bash
 # If Redis data lost, restore from RDB backup
 # 1. Stop Redis (if running)
 # 2. Copy backup RDB file to data directory
 # 3. Start Redis
 
-# For managed Redis (AWS ElastiCache / GCP Memorystore):
-# Restore from latest snapshot via cloud console
+# For self-managed Redis on Hetzner:
+# Restore from latest RDB snapshot
 # Duration: 5-8 minutes
 ```
 
 **Step 3: Rebuild Cache (10-20 minutes)**
+
 ```typescript
 // If backup unavailable, rebuild cache from database
 npm run rebuild-cache
@@ -540,6 +574,7 @@ npm run rebuild-cache
 ```
 
 **Step 4: Verify Cache Working (20-25 minutes)**
+
 ```bash
 # Check Redis stats
 redis-cli -u $REDIS_URL INFO stats
@@ -559,6 +594,7 @@ redis-cli -u $REDIS_URL INFO stats
 ### Scenario 4: Complete Infrastructure Failure (Worst Case)
 
 **Symptoms:**
+
 - Entire region unavailable
 - All services down
 - Database unreachable
@@ -566,6 +602,7 @@ redis-cli -u $REDIS_URL INFO stats
 **Recovery Steps (Multi-Region Failover):**
 
 **Step 1: Activate DR Region (0-10 minutes)**
+
 ```bash
 # Switch DNS to DR region (us-west-2)
 aws route53 change-resource-record-sets \
@@ -576,6 +613,7 @@ aws route53 change-resource-record-sets \
 ```
 
 **Step 2: Restore Database in DR Region (10-40 minutes)**
+
 ```bash
 # Restore from cross-region backup replica
 aws rds restore-db-instance-from-db-snapshot \
@@ -588,6 +626,7 @@ aws rds restore-db-instance-from-db-snapshot \
 ```
 
 **Step 3: Deploy Services in DR Region (40-70 minutes)**
+
 ```bash
 # Deploy all services to DR region
 cd infrastructure/terraform
@@ -602,6 +641,7 @@ terraform apply -auto-approve
 ```
 
 **Step 4: Validate DR Environment (70-90 minutes)**
+
 ```powershell
 # Run full test suite against DR
 pnpm test:integration --env=dr
@@ -611,6 +651,7 @@ pnpm test:e2e --env=dr
 ```
 
 **Step 5: Enable Production Traffic (90-120 minutes)**
+
 ```bash
 # Verify DNS updated
 nslookup aivo.app
@@ -655,6 +696,7 @@ nslookup aivo.app
 ### Backup Validation (Daily)
 
 **Automated Test:**
+
 ```bash
 #!/bin/bash
 # scripts/validate-backup.sh
@@ -689,6 +731,7 @@ rm /tmp/$LATEST_BACKUP
 ```
 
 **Results Reported:**
+
 - Slack notification: Daily backup validation results
 - Dashboard: Last successful validation timestamp
 
@@ -697,6 +740,7 @@ rm /tmp/$LATEST_BACKUP
 **Scheduled:** First Monday of quarter (Jan, Apr, Jul, Oct)
 
 **Drill Procedure:**
+
 1. Announce DR drill to team (1 week notice)
 2. Simulate failure scenario (e.g., database unavailable)
 3. Execute recovery procedures
@@ -706,12 +750,14 @@ rm /tmp/$LATEST_BACKUP
 7. Report results to leadership
 
 **Success Criteria:**
+
 - Recovery completed within RTO
 - Data loss within RPO
 - All services operational post-recovery
 - No unexpected issues
 
 **Last Drill Results:**
+
 - Date: October 7, 2025
 - Scenario: Database failure
 - Time to Recovery: 1h 45m (within 4h RTO) ✅
@@ -724,28 +770,33 @@ rm /tmp/$LATEST_BACKUP
 ## Roles & Responsibilities
 
 ### Incident Commander
+
 - Declare disaster
 - Coordinate recovery efforts
 - Make go/no-go decisions
 - Communicate with stakeholders
 
 ### DevOps Lead
+
 - Execute recovery procedures
 - Validate backups
 - Restore infrastructure
 - Verify system health
 
 ### Database Administrator
+
 - Restore database from backups
 - Validate data integrity
 - Optimize performance post-recovery
 
 ### Engineering Manager
+
 - Support recovery team
 - Allocate resources
 - Escalate to executives if needed
 
 ### Communications Lead
+
 - Update status page
 - Notify customers
 - Internal communications
@@ -757,22 +808,22 @@ rm /tmp/$LATEST_BACKUP
 
 ### Primary Contacts
 
-| Role | Name | Phone | Email |
-|------|------|-------|-------|
-| Incident Commander | [Name] | [Phone] | [Email] |
-| DevOps Lead | [Name] | [Phone] | [Email] |
+| Role                   | Name   | Phone   | Email   |
+| ---------------------- | ------ | ------- | ------- |
+| Incident Commander     | [Name] | [Phone] | [Email] |
+| DevOps Lead            | [Name] | [Phone] | [Email] |
 | Database Administrator | [Name] | [Phone] | [Email] |
-| Engineering Manager | [Name] | [Phone] | [Email] |
-| CTO | [Name] | [Phone] | [Email] |
+| Engineering Manager    | [Name] | [Phone] | [Email] |
+| CTO                    | [Name] | [Phone] | [Email] |
 
 ### Vendor Support
 
-| Vendor | Service | Support Phone | Support Email | Status Page |
-|--------|---------|---------------|---------------|-------------|
-| AWS | Infrastructure | +1-xxx-xxx-xxxx | aws-support@ | status.aws.amazon.com |
-| GCP | Infrastructure | +1-xxx-xxx-xxxx | gcp-support@ | status.cloud.google.com |
-| Stripe | Payments | +1-xxx-xxx-xxxx | support@stripe.com | status.stripe.com |
-| SendGrid | Email | +1-xxx-xxx-xxxx | support@sendgrid.com | status.sendgrid.com |
+| Vendor   | Service        | Support Phone   | Support Email        | Status Page             |
+| -------- | -------------- | --------------- | -------------------- | ----------------------- |
+| AWS      | Infrastructure | +1-xxx-xxx-xxxx | aws-support@         | status.aws.amazon.com   |
+| GCP      | Infrastructure | +1-xxx-xxx-xxxx | gcp-support@         | status.cloud.google.com |
+| Stripe   | Payments       | +1-xxx-xxx-xxxx | support@stripe.com   | status.stripe.com       |
+| SendGrid | Email          | +1-xxx-xxx-xxxx | support@sendgrid.com | status.sendgrid.com     |
 
 ---
 
@@ -781,6 +832,7 @@ rm /tmp/$LATEST_BACKUP
 ### Backup Restoration Commands Reference
 
 **PostgreSQL:**
+
 ```bash
 # Restore from dump file
 pg_restore -d aivo_prod -Fc aivo_backup.dump
@@ -793,6 +845,7 @@ pg_restore -d aivo_prod -n public aivo_backup.dump
 ```
 
 **Redis:**
+
 ```bash
 # Restore RDB file
 # 1. Stop Redis
@@ -810,6 +863,7 @@ redis-cli DBSIZE
 ```
 
 **File Storage:**
+
 ```bash
 # Restore from S3 backup
 aws s3 sync s3://aivo-backups-replica/ s3://aivo-prod-files/ --delete

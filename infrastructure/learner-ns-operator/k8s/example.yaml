@@ -47,8 +47,7 @@ spec:
   networkPolicies: true
   allowedImages:
     - "docker.io/library/*"
-    - "gcr.io/aivo/*"
-    - "quay.io/aivo/*"
+    - "ghcr.io/artpromedia/*"
   labels:
     environment: lab
     course: ml-advanced

@@ -25,7 +25,7 @@ This runbook covers deployment procedures for the AIVO platform across all envir
 
 ### Contact Information
 
-| Role             | Team          | Slack Channel           | PagerDuty           |
+| Role             | Team          | Contact Channel         | PagerDuty           |
 | ---------------- | ------------- | ----------------------- | ------------------- |
 | Platform On-Call | Platform Team | `#aivo-platform-oncall` | `platform-critical` |
 | Database On-Call | DBA Team      | `#aivo-dba`             | `dba-critical`      |
@@ -73,13 +73,13 @@ This runbook covers deployment procedures for the AIVO platform across all envir
 Staging deploys automatically on merge to `main`. Manual deployment:
 
 ```bash
-# Trigger staging deployment via GitHub Actions
-gh workflow run deploy-staging.yml -f version=main-<sha>
+# Trigger staging deployment via ci-unified pipeline
+gh workflow run ci-unified.yml -f deploy_environment=staging
 
-# Or via kubectl
-kubectl config use-context aivo-staging
-cd infra/k8s/overlays/staging
-kustomize edit set image aivo/<service>=gcr.io/aivo-platform/<service>:<tag>
+# Or via kubectl on Hetzner
+ssh staging-server
+cd /opt/aivo/infra/k8s/overlays/staging
+kustomize edit set image aivo/<service>=ghcr.io/artpromedia/aivo-<service>:<tag>
 kustomize build . | kubectl apply -f -
 kubectl rollout status deployment --all -n aivo-staging
 ```
@@ -176,7 +176,7 @@ For critical production issues:
 
    ```bash
    # ALWAYS backup first
-   gcloud sql backups create --instance=aivo-prod-db
+   ssh production-server 'pg_dump -Fc aivo_prod > /backups/aivo_prod_$(date +%Y%m%d_%H%M%S).dump'
 
    # Run migration
    kubectl exec -it deploy/<service> -n aivo-prod -- npx prisma migrate deploy
@@ -210,13 +210,11 @@ kubectl rollout history deployment/<service> -n aivo-prod
 kubectl rollout undo deployment/<service> --to-revision=<N> -n aivo-prod
 ```
 
-### Rollback via GitHub Actions
+### Rollback via CI/CD
 
 ```bash
-# Deploy previous release
-gh workflow run deploy-production.yml \
-  -f version=v1.2.2 \
-  -f skip_approval=true  # Emergency only
+# Deploy previous release via ci-unified pipeline
+gh workflow run ci-unified.yml -f deploy_environment=production -f version=v1.2.2
 ```
 
 ### Full Environment Rollback
@@ -245,10 +243,10 @@ kubectl rollout status deployment --all -n aivo-prod
 
    ```bash
    # List backups
-   gcloud sql backups list --instance=aivo-prod-db
+   ssh production-server 'ls -lt /backups/aivo_prod_*.dump'
 
    # Restore (this will cause downtime)
-   gcloud sql backups restore <backup-id> --restore-instance=aivo-prod-db
+   ssh production-server 'pg_restore -d aivo_prod /backups/<backup-file>.dump'
    ```
 
 3. **Manual Schema Rollback** (if forward-compatible)
@@ -278,7 +276,7 @@ kubectl rollout status deployment --all -n aivo-prod
 
 1. **Detection & Alert**
    - PagerDuty alert received
-   - Slack notification in `#aivo-incidents`
+   - Monitor in `#aivo-incidents`
 
 2. **Triage (5 minutes)**
 
@@ -394,7 +392,7 @@ Security: security@aivolearning.com
 3. **Check External Services**
    - Stripe status: https://status.stripe.com
    - OpenAI status: https://status.openai.com
-   - GCP status: https://status.cloud.google.com
+   - Hetzner status: https://status.hetzner.com
 
 ### Memory Issues
 

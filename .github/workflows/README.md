@@ -8,16 +8,15 @@ The following warnings appear in the workflow files but are **expected and can b
 
 These warnings indicate that certain secrets or variables might not be configured yet. They are expected until the GitHub repository is fully configured with the necessary secrets and variables:
 
-**Required Secrets (GCP):**
+**Required Secrets:**
 
-- `GCP_SA_KEY` - GCP Service Account JSON key for non-production environments
-- `GCP_PROD_SA_KEY` - GCP Service Account JSON key for production environment
+- `STAGING_HOST` - Hetzner staging server hostname/IP
+- `STAGING_USER` - SSH user for staging server
+- `STAGING_SSH_KEY` - SSH private key for staging server
+- `PRODUCTION_HOST` - Hetzner production server hostname/IP
+- `PRODUCTION_USER` - SSH user for production server
+- `PRODUCTION_SSH_KEY` - SSH private key for production server
 - `PAGERDUTY_ROUTING_KEY` - PagerDuty routing key for critical alerts
-
-**Required Variables:**
-
-- `PROJECT_ID` - GCP project ID (default: `aivo-platform`)
-- `GCP_REGION` - GCP region for deployments (default: `us-central1`)
 
 ### Environment Name Validation
 
@@ -31,11 +30,7 @@ To resolve these warnings, configure the following in your GitHub repository:
    - Click "New repository secret"
    - Add each of the required secrets listed above
 
-2. **Add Repository Variables** (Settings → Secrets and variables → Actions → Variables):
-   - Click "New repository variable"
-   - Add `GCP_REGION` with your preferred region (default: `us-central1`)
-
-3. **Create Environments** (Settings → Environments):
+2. **Create Environments** (Settings → Environments):
    - Create `development` environment
    - Create `staging` environment
    - Create `production` environment (with protection rules recommended)
@@ -43,13 +38,12 @@ To resolve these warnings, configure the following in your GitHub repository:
 
 Once configured, the workflows will have access to all required secrets and the warnings will no longer appear during workflow runs.
 
-## GCP Infrastructure
+## Infrastructure
 
-This platform deploys to Google Cloud Platform (GCP) with the following architecture:
+This platform deploys to **Hetzner** dedicated servers with the following architecture:
 
-- **GKE**: Google Kubernetes Engine for container orchestration
-- **Cloud SQL**: Managed PostgreSQL databases
-- **Cloud Memorystore**: Managed Redis for caching
-- **GCR**: Google Container Registry for Docker images
-- **Cloud Monitoring**: Observability and alerting
-- **Secret Manager**: Secure secrets management
+- **K3s**: Lightweight Kubernetes for container orchestration
+- **PostgreSQL**: Self-managed databases on Hetzner
+- **Redis**: Self-managed Redis for caching
+- **GHCR**: GitHub Container Registry for Docker images
+- **Prometheus + Grafana**: Observability and alerting

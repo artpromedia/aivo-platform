@@ -10,10 +10,11 @@
  */
 
 import { config } from '../../config.js';
-import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
 import { DeliveryChannel } from '../../prisma.js';
-import * as fcm from './fcm.js';
+import type { PushPayload, DeliveryResult, BatchDeliveryResult } from '../../types.js';
+
 import * as apns from './apns.js';
+import * as fcm from './fcm.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -74,7 +75,8 @@ const deadLetterQueue: DeadLetterEntry[] = [];
 const MAX_DEAD_LETTER_SIZE = 10000;
 
 // Callback for token invalidation
-let onInvalidToken: ((token: string, userId: string, tenantId: string) => Promise<void>) | null = null;
+let onInvalidToken: ((token: string, userId: string, tenantId: string) => Promise<void>) | null =
+  null;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // INITIALIZATION
@@ -147,7 +149,7 @@ export async function sendPushNotification(
       recordSuccess(provider);
     } else {
       recordFailure(provider);
-      
+
       // Handle invalid token
       if (result.shouldRemoveToken && onInvalidToken && payload.userId && payload.tenantId) {
         await onInvalidToken(payload.token, payload.userId, payload.tenantId);
@@ -174,7 +176,7 @@ export async function sendPushNotification(
  * Send push notifications to multiple devices
  */
 export async function sendPushBatch(
-  payloads: Array<PushPayload & { userId?: string; tenantId?: string }>
+  payloads: (PushPayload & { userId?: string; tenantId?: string })[]
 ): Promise<BatchDeliveryResult> {
   // Separate by platform
   const androidPayloads = payloads.filter((p) => p.platform === 'android' || p.platform === 'web');
@@ -402,7 +404,7 @@ function isCircuitOpen(provider: 'fcm' | 'apns'): boolean {
 
 function recordSuccess(provider: 'fcm' | 'apns'): void {
   const state = circuitBreakers[provider];
-  
+
   // Reset circuit breaker on success
   if (state.isOpen || state.failures > 0) {
     console.log(`[PushService] ${provider} circuit closed after success`);
@@ -471,7 +473,7 @@ export async function retryDeadLetterQueue(): Promise<{
     }
 
     const result = await sendPushNotification(entry.payload);
-    
+
     if (result.success) {
       succeeded++;
     } else {
@@ -512,7 +514,7 @@ function checkFailureRate(): void {
       totalSent: metrics.totalSent,
       totalFailed: metrics.totalFailed,
     });
-    // In production, this would trigger an alert (PagerDuty, Slack, etc.)
+    // In production, this would trigger an alert (PagerDuty, email, etc.)
   }
 }
 

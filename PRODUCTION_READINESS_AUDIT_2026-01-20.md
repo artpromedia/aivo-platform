@@ -228,24 +228,22 @@
 
 ### 6.1 Workflows ✅ COMPREHENSIVE
 
-| Workflow              | Purpose                           |
-| --------------------- | --------------------------------- |
-| ci.yml                | Build, test, lint (Turbo caching) |
-| security-scan.yml     | 7 security tools, daily schedule  |
-| deploy-staging.yml    | Auto-deploy on main push          |
-| deploy-production.yml | Approval gates, canary deployment |
-| mobile-ci.yml         | Flutter tests, COPPA compliance   |
-| e2e-tests.yml         | Patrol E2E for mobile             |
+| Workflow          | Purpose                          |
+| ----------------- | -------------------------------- |
+| ci-unified.yml    | Build, test, lint, deploy        |
+| security-scan.yml | 7 security tools, daily schedule |
+| mobile-ci.yml     | Flutter tests, COPPA compliance  |
+| e2e-tests.yml     | Patrol E2E for mobile            |
 
 ### 6.2 Deployment Strategy ✅ EXCELLENT
 
-| Feature                  | Status                           |
-| ------------------------ | -------------------------------- |
-| Staging Auto-Deploy      | ✅ On main push                  |
-| Production Approval Gate | ✅ GitHub Environment protection |
-| Canary Deployment        | ✅ 10% traffic, 5-min monitoring |
-| Automatic Rollback       | ✅ On canary failure             |
-| Image Verification       | ✅ Checks all 13 services in GCR |
+| Feature                  | Status                            |
+| ------------------------ | --------------------------------- |
+| Staging Auto-Deploy      | ✅ On main push                   |
+| Production Approval Gate | ✅ GitHub Environment protection  |
+| Canary Deployment        | ✅ 10% traffic, 5-min monitoring  |
+| Automatic Rollback       | ✅ On canary failure              |
+| Image Verification       | ✅ Checks all 13 services in GHCR |
 
 ### 6.3 Container Security ✅ EXCELLENT
 

@@ -396,10 +396,10 @@ model AlertRule {
   severity        AlertSeverity     @default(WARNING)
 
   // Notification
-  notifyChannels  String[]                      // slack, email, webhook, pagerduty
+  notifyChannels  String[]                      // email, webhook, pagerduty
   webhookUrl      String?
   emailRecipients String[]          @default([])
-  slackChannel    String?
+  slackChannel    String?           // @deprecated - Slack not in use, pending migration removal
 
   // Status
   isEnabled       Boolean           @default(true)

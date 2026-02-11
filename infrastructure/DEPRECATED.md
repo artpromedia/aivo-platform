@@ -1,34 +1,34 @@
-# ⚠️ DEPRECATED - AWS Infrastructure
+# ⚠️ DEPRECATED - Legacy Infrastructure
 
-**This directory contains AWS-specific Terraform configurations that are NO LONGER USED.**
+**This directory contains legacy infrastructure configurations that are NO LONGER USED for core infrastructure.**
 
 ## Current Infrastructure
 
-The AIVO platform has been migrated to **Google Cloud Platform (GCP)**.
+The AIVO platform runs on **Hetzner dedicated servers** with **K3s** (lightweight Kubernetes).
 
-**Active Infrastructure Location:** [`/infra/terraform/`](../infra/terraform/)
+**Active Infrastructure Locations:**
 
-## GCP Infrastructure Components
+- [`/infra/k8s/`](../infra/k8s/) — Kubernetes manifests and overlays
+- [`/infra/helm/`](../infra/helm/) — Helm chart templates
 
-- **GKE** - Google Kubernetes Engine
-- **Cloud SQL** - Managed PostgreSQL
-- **Cloud Memorystore** - Managed Redis
-- **GCR** - Google Container Registry
-- **Cloud Monitoring** - Observability & Alerting
-- **Secret Manager** - Secrets Management
+## Hetzner Infrastructure Components
 
-## Why This Directory Exists
+- **K3s** — Lightweight Kubernetes on Hetzner
+- **PostgreSQL** — Self-managed PostgreSQL
+- **Redis** — Self-managed Redis
+- **GHCR** — GitHub Container Registry (ghcr.io/artpromedia)
+- **Prometheus/Grafana** — Observability & Alerting
+- **K8s Secrets** — Secrets Management
 
-This directory is kept for:
+## What's Still Here
 
-1. Historical reference
-2. Potential multi-cloud support in the future
-3. Migration documentation
+- `helm/` — Kong and service Helm charts (active)
+- `kong/` — API Gateway configuration (active)
+- `learner-ns-operator/` — Namespace operator (active)
 
-## DO NOT USE
+## Deployments
 
-Do not use these AWS configurations. All deployments go through:
+All deployments go through:
 
-- `.github/workflows/deploy-staging.yml` (GCP)
-- `.github/workflows/deploy-production.yml` (GCP)
-- `.github/workflows/infrastructure.yml` (GCP Terraform)
+- `.github/workflows/ci-unified.yml` — CI/CD + deploy via SSH to Hetzner
+- `.github/workflows/production-validation-deploy.yml` — Production validation deploy

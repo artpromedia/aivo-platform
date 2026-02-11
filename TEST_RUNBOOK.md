@@ -1091,7 +1091,6 @@ pnpm run verify-all                         # Run all CI checks
 
 ### Getting Help
 
-- **Slack:** #qa-engineering
 - **Documentation:** [TEST_STRATEGY.md](./TEST_STRATEGY.md)
 - **Team:** QA Engineering Team
 

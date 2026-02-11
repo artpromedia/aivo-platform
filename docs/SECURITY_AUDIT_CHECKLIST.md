@@ -3,7 +3,7 @@
 **Audit Date:** January 28, 2026  
 **Auditor:** DevOps & Security Team  
 **Version:** 1.0  
-**Status:** ✅ PASSED  
+**Status:** ✅ PASSED
 
 ---
 
@@ -14,6 +14,7 @@ This security audit validates that the AIVO platform meets all security requirem
 **Audit Result:** ✅ **APPROVED FOR PRODUCTION**
 
 **Overall Score:** 98/100
+
 - Critical Issues: 0 🟢
 - High Priority: 0 🟢
 - Medium Priority: 2 🟡
@@ -27,6 +28,7 @@ This security audit validates that the AIVO platform meets all security requirem
 
 **Status:** PASS  
 **Validation:**
+
 ```powershell
 # Verify SSL certificate
 openssl s_client -connect aivo.app:443 -servername aivo.app
@@ -40,6 +42,7 @@ openssl s_client -connect aivo.app:443 -servername aivo.app
 ```
 
 **Configuration:**
+
 ```typescript
 // In services/*/src/server.ts
 const httpsOptions = {
@@ -51,6 +54,7 @@ const httpsOptions = {
 ```
 
 **Findings:**
+
 - ✅ Certificate valid and trusted
 - ✅ Auto-renewal configured (Certbot)
 - ✅ No mixed content warnings
@@ -65,15 +69,16 @@ const httpsOptions = {
 // JWT token configuration validated
 // In services/auth-svc/src/config/jwt.config.ts
 export const jwtConfig = {
-  accessTokenExpiry: '15m',      // ✓ Short-lived
-  refreshTokenExpiry: '7d',      // ✓ Reasonable
-  algorithm: 'RS256',            // ✓ Asymmetric (secure)
+  accessTokenExpiry: '15m', // ✓ Short-lived
+  refreshTokenExpiry: '7d', // ✓ Reasonable
+  algorithm: 'RS256', // ✓ Asymmetric (secure)
   issuer: 'aivo.app',
   audience: 'aivo-api',
 };
 ```
 
 **Findings:**
+
 - ✅ JWT tokens with RS256 (asymmetric encryption)
 - ✅ Short access token lifetime (15 minutes)
 - ✅ Refresh token rotation implemented
@@ -82,6 +87,7 @@ export const jwtConfig = {
 - ✅ Logout invalidates tokens (blacklist in Redis)
 
 **Validated User Flows:**
+
 - ✅ Login with email/password
 - ✅ OAuth2 authentication (Google, Microsoft)
 - ✅ Multi-factor authentication (MFA) for admin accounts
@@ -106,6 +112,7 @@ async hashPassword(password: string): Promise<string> {
 ```
 
 **Findings:**
+
 - ✅ bcrypt with 12 salt rounds
 - ✅ Password complexity requirements enforced:
   - Minimum 8 characters
@@ -143,6 +150,7 @@ export function requireRole(roles: UserRole[]) {
 ```
 
 **Findings:**
+
 - ✅ Role-based access control (RBAC) implemented
 - ✅ Fine-grained permissions per resource
 - ✅ Principle of least privilege enforced
@@ -164,8 +172,8 @@ export function requireRole(roles: UserRole[]) {
 import rateLimit from 'express-rate-limit';
 
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100,                   // 100 requests per window
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -174,12 +182,13 @@ export const apiLimiter = rateLimit({
 // Stricter limits for auth endpoints
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,  // Only 5 login attempts per 15 min
+  max: 5, // Only 5 login attempts per 15 min
   skipSuccessfulRequests: true,
 });
 ```
 
 **Findings:**
+
 - ✅ Global rate limit: 100 req/15min per IP
 - ✅ Auth endpoints: 5 req/15min per IP
 - ✅ Rate limits stored in Redis (distributed)
@@ -187,6 +196,7 @@ export const authLimiter = rateLimit({
 - ✅ Different limits for authenticated vs anonymous users
 
 **Test Results:**
+
 ```bash
 # Test rate limiting
 for i in {1..10}; do
@@ -223,6 +233,7 @@ export const corsOptions = {
 ```
 
 **Findings:**
+
 - ✅ Strict origin whitelist (no wildcards)
 - ✅ Credentials allowed only for trusted origins
 - ✅ No CORS errors in production
@@ -258,6 +269,7 @@ function sanitizeInput(input: string): string {
 ```
 
 **Findings:**
+
 - ✅ All API endpoints use Zod validation
 - ✅ HTML sanitization on user-generated content
 - ✅ SQL injection protected (Prisma ORM)
@@ -265,6 +277,7 @@ function sanitizeInput(input: string): string {
 - ✅ File upload validation (type, size, content)
 
 **SQL Injection Test:**
+
 ```sql
 -- Attempted injection (blocked by Prisma)
 POST /api/users/login
@@ -286,31 +299,34 @@ POST /api/users/login
 // In services/*/src/middleware/security-headers.middleware.ts
 import helmet from 'helmet';
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", 'https://api.aivo.app'],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://api.aivo.app'],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
     },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  frameguard: { action: 'deny' },
-  noSniff: true,
-  xssFilter: true,
-}));
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    xssFilter: true,
+  })
+);
 ```
 
 **Findings:**
+
 - ✅ Content-Security-Policy (CSP) configured
 - ✅ Strict-Transport-Security (HSTS) enabled
 - ✅ X-Frame-Options: DENY (clickjacking protection)
@@ -319,6 +335,7 @@ app.use(helmet({
 - ✅ Referrer-Policy: strict-origin-when-cross-origin
 
 **Security Headers Check:**
+
 ```bash
 curl -I https://aivo.app/api/health
 
@@ -340,16 +357,19 @@ Content-Security-Policy: default-src 'self' ✓
 **Validation:**
 
 **Database:**
-- ✅ PostgreSQL encryption enabled (AWS RDS/GCP Cloud SQL)
+
+- ✅ PostgreSQL encryption enabled (self-managed on Hetzner)
 - ✅ Encrypted storage volumes (AES-256)
 - ✅ Automated encrypted backups
 - ✅ Encryption keys managed by cloud provider KMS
 
 **Redis:**
+
 - ✅ Redis encryption at rest enabled
 - ✅ In-transit encryption (TLS)
 
 **Sensitive Data Fields:**
+
 ```typescript
 // PII encryption in application layer
 // In libs/common/src/utils/encryption.util.ts
@@ -369,6 +389,7 @@ export function encrypt(text: string): string {
 ```
 
 **Findings:**
+
 - ✅ Database-level encryption (AES-256)
 - ✅ Application-level encryption for PII (SSN, payment info)
 - ✅ Encryption keys rotated quarterly
@@ -395,7 +416,7 @@ export function encrypt(text: string): string {
 // In libs/common/src/utils/logger.ts
 function maskSensitiveData(obj: any): any {
   const sensitiveFields = ['password', 'ssn', 'creditCard', 'apiKey'];
-  
+
   for (const key in obj) {
     if (sensitiveFields.includes(key)) {
       obj[key] = '***REDACTED***';
@@ -410,6 +431,7 @@ logger.info('User login', maskSensitiveData({ email, password }));
 ```
 
 **Findings:**
+
 - ✅ Passwords never logged
 - ✅ PII masked in application logs
 - ✅ Payment info tokenized (Stripe tokens only)
@@ -427,9 +449,10 @@ logger.info('User login', maskSensitiveData({ email, password }));
 **Validation:**
 
 **Environment Separation:**
+
 ```bash
 # Production environment variables stored securely
-# ✓ AWS Secrets Manager / GCP Secret Manager
+# ✓ K8s Secrets (on Hetzner K3s cluster)
 # ✓ Not in version control (.env* in .gitignore)
 # ✓ Different secrets per environment
 
@@ -442,6 +465,7 @@ cat .gitignore | grep env
 ```
 
 **Secret Access:**
+
 ```typescript
 // Secrets loaded from secure store
 // In services/*/src/config/secrets.ts
@@ -461,6 +485,7 @@ const dbPassword = await getSecret('DATABASE_PASSWORD');
 ```
 
 **Findings:**
+
 - ✅ No hardcoded secrets in code
 - ✅ Secrets managed via cloud provider (AWS/GCP)
 - ✅ Secrets rotated quarterly
@@ -473,6 +498,7 @@ const dbPassword = await getSecret('DATABASE_PASSWORD');
 **Validation:**
 
 **Connection String Security:**
+
 ```typescript
 // Database URL from environment
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -486,6 +512,7 @@ const DATABASE_URL = process.env.DATABASE_URL;
 ```
 
 **Findings:**
+
 - ✅ Strong passwords (32+ characters)
 - ✅ SSL/TLS required for connections
 - ✅ Credentials rotated monthly
@@ -498,6 +525,7 @@ const DATABASE_URL = process.env.DATABASE_URL;
 **Validation:**
 
 **Third-Party API Keys:**
+
 ```typescript
 // External API keys secured
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
@@ -510,6 +538,7 @@ const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 ```
 
 **Findings:**
+
 - ✅ All API keys stored in secret manager
 - ✅ Keys rotated on schedule or compromise
 - ✅ IP restrictions on provider dashboards
@@ -537,7 +566,7 @@ export class AuditService {
       timestamp: new Date(),
       severity: event.severity,
     });
-    
+
     // Send to SIEM if critical
     if (event.severity === 'critical') {
       await this.sendToSIEM(event);
@@ -555,6 +584,7 @@ export class AuditService {
 ```
 
 **Findings:**
+
 - ✅ All authentication events logged
 - ✅ Failed login attempts tracked
 - ✅ Admin actions audited
@@ -567,27 +597,29 @@ export class AuditService {
 **Validation:**
 
 **Current State:**
+
 - ✅ Basic rate limiting
 - ✅ Failed login attempt detection
 - ⚠️ No automated intrusion detection system (IDS)
 - ⚠️ No Web Application Firewall (WAF)
 
 **Recommendation:**
+
 ```yaml
-# Recommended: Enable AWS WAF or GCP Cloud Armor
-aws_waf_rules:
-  - name: "SQL Injection Protection"
-    type: "SQL_INJECTION"
-    action: "BLOCK"
-  
-  - name: "XSS Protection"
-    type: "XSS"
-    action: "BLOCK"
-  
-  - name: "Rate Limiting"
-    type: "RATE_BASED"
-    limit: 2000  # requests per 5 minutes
-    action: "BLOCK"
+# Recommended: Enable a Web Application Firewall (WAF)
+waf_rules:
+  - name: 'SQL Injection Protection'
+    type: 'SQL_INJECTION'
+    action: 'BLOCK'
+
+  - name: 'XSS Protection'
+    type: 'XSS'
+    action: 'BLOCK'
+
+  - name: 'Rate Limiting'
+    type: 'RATE_BASED'
+    limit: 2000 # requests per 5 minutes
+    action: 'BLOCK'
 ```
 
 **Action Item:** Implement WAF before production launch (Nice to have, not blocking)
@@ -602,6 +634,7 @@ aws_waf_rules:
 **Validation:**
 
 **Children's Privacy:**
+
 - ✅ Parental consent required for users <13
 - ✅ Minimal data collection for children
 - ✅ No advertising to children
@@ -609,6 +642,7 @@ aws_waf_rules:
 - ✅ Parent can review/delete child's data
 
 **Implementation:**
+
 ```typescript
 // Age verification
 if (user.age < 13) {
@@ -628,6 +662,7 @@ const childDataFields = ['firstName', 'grade', 'progress'];
 **Validation:**
 
 **Education Records:**
+
 - ✅ Student education records protected
 - ✅ Access limited to authorized users (teachers, parents)
 - ✅ Audit trail for record access
@@ -640,6 +675,7 @@ const childDataFields = ['firstName', 'grade', 'progress'];
 **Validation:**
 
 **Data Protection:**
+
 - ✅ Privacy policy published
 - ✅ User consent for data processing
 - ✅ Right to access (data export)
@@ -690,6 +726,7 @@ pnpm audit --production
 ```
 
 **Findings:**
+
 - ✅ No known vulnerabilities in production dependencies
 - ✅ Automated security scanning (Dependabot)
 - ✅ Regular dependency updates scheduled
@@ -701,19 +738,21 @@ pnpm audit --production
 **Validation:**
 
 **Current State:**
+
 - ✅ ESLint security rules enabled
 - ✅ TypeScript strict mode
 - ⚠️ No SAST (Static Application Security Testing) tool
 - ⚠️ No automated penetration testing
 
 **Recommendation:**
+
 ```yaml
 # Recommended: Integrate SonarQube or Snyk
 sonarqube:
   security_hotspots: true
   vulnerability_detection: true
   code_smells: true
-  
+
 # Or Snyk
 snyk:
   test: true
@@ -729,10 +768,12 @@ snyk:
 **Validation:**
 
 **Current State:**
+
 - ⚠️ No formal penetration testing conducted
 - ✅ Manual security testing performed
 
 **Recommendation:**
+
 - Schedule penetration testing post-launch (Month 2)
 - Engage third-party security firm
 - Focus areas: Authentication, API security, data protection
@@ -749,6 +790,7 @@ snyk:
 **Validation:**
 
 **Incident Response Procedures:**
+
 ```markdown
 # Security Incident Response
 
@@ -780,6 +822,7 @@ snyk:
 ```
 
 **Findings:**
+
 - ✅ Incident response plan documented
 - ✅ On-call security contact (PagerDuty)
 - ✅ Escalation procedures defined
@@ -792,27 +835,35 @@ snyk:
 ### ✅ Passed (26/28 checks)
 
 **Authentication & Authorization:**
+
 - SSL/TLS, JWT, Password Security, RBAC
 
 **API Security:**
+
 - Rate Limiting, CORS, Input Validation, Security Headers
 
 **Data Protection:**
+
 - Encryption at Rest, Encryption in Transit, PII Handling
 
 **Environment & Secrets:**
+
 - Environment Variables, Database Credentials, API Keys
 
 **Logging & Monitoring:**
+
 - Security Event Logging
 
 **Compliance:**
+
 - COPPA, FERPA, GDPR
 
 **Vulnerability Assessment:**
+
 - Dependency Scanning
 
 **Incident Response:**
+
 - Response Plan
 
 ### ⚠️ Warnings (2/28 checks)
@@ -823,7 +874,7 @@ snyk:
    - Timeline: Before high-traffic events
 
 2. **SAST Tool Integration** - Recommended but not blocking
-   - Impact: Medium  
+   - Impact: Medium
    - Mitigation: SonarQube or Snyk integration
    - Timeline: Q2 2026
 
@@ -838,11 +889,13 @@ snyk:
 ## Recommendations for Production Launch
 
 ### Pre-Launch (Required) ✅
+
 All required items completed.
 
 ### Post-Launch (Nice to Have)
+
 1. **Enable WAF** (Week 2)
-   - AWS WAF or GCP Cloud Armor
+   - Web Application Firewall (e.g., ModSecurity, Cloudflare WAF)
    - SQL injection protection
    - XSS protection
    - Advanced rate limiting
@@ -869,6 +922,7 @@ All required items completed.
 **Security Audit Result:** ✅ **APPROVED FOR PRODUCTION LAUNCH**
 
 **Justification:**
+
 - All critical security controls in place
 - Zero critical or high-priority vulnerabilities
 - Medium-priority items are nice-to-have enhancements
@@ -877,10 +931,10 @@ All required items completed.
 
 **Signatures:**
 
-**Security Lead:** _________________________ Date: Jan 28, 2026  
-**DevOps Lead:** _________________________ Date: Jan 28, 2026  
-**Engineering Manager:** _________________________ Date: Jan 28, 2026  
-**CTO:** _________________________ Date: Jan 28, 2026  
+**Security Lead:** ****\*\*\*\*****\_****\*\*\*\***** Date: Jan 28, 2026  
+**DevOps Lead:** ****\*\*\*\*****\_****\*\*\*\***** Date: Jan 28, 2026  
+**Engineering Manager:** ****\*\*\*\*****\_****\*\*\*\***** Date: Jan 28, 2026  
+**CTO:** ****\*\*\*\*****\_****\*\*\*\***** Date: Jan 28, 2026
 
 ---
 
