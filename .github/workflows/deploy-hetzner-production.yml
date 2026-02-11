@@ -150,7 +150,7 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════
   canary:
     name: Canary Deployment
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     needs: [validate, approval]
     if: |
       always() &&
@@ -158,16 +158,12 @@ jobs:
       (needs.approval.result == 'success' || needs.approval.result == 'skipped') &&
       !inputs.skip_canary
     steps:
+      - uses: actions/checkout@v4
+
       - name: Deploy canary pods
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -euo pipefail
-            VERSION="${{ needs.validate.outputs.version }}"
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.validate.outputs.version }}"
             NS="aivo-prod"
 
             echo "═══ Canary deploy: $VERSION ═══"
@@ -275,7 +271,7 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════
   deploy:
     name: Full Production Rollout
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     needs: [validate, approval, canary]
     if: |
       always() &&
@@ -288,28 +284,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Full rollout via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          command_timeout: 20m
-          script: |
-            set -euo pipefail
-            VERSION="${{ needs.validate.outputs.version }}"
-            NS="aivo-prod"
+      - name: Full rollout
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.validate.outputs.version }}"
+          NS="aivo-prod"
 
-            echo "════════════════════════════════════════"
-            echo "  PRODUCTION ROLLOUT: AIVO $VERSION"
-            echo "════════════════════════════════════════"
+          echo "════════════════════════════════════════"
+          echo "  PRODUCTION ROLLOUT: AIVO $VERSION"
+          echo "════════════════════════════════════════"
 
-            cd /opt/aivo
-            git fetch origin main
-            git checkout main
-            git pull origin main
-
-            cd infra/k8s/overlays/hetzner
+          cd infra/k8s/overlays/hetzner
 
             SERVICES=(
               auth-svc session-svc consent-svc profile-svc
@@ -362,14 +347,9 @@ jobs:
             kubectl get deployments -n "$NS"
 
       - name: Smoke tests
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          script: |
-            echo "Waiting 60s for services to stabilize..."
-            sleep 60
+        run: |
+          echo "Waiting 60s for services to stabilize..."
+          sleep 60
 
             NS="aivo-prod"
             FAILED=0
@@ -406,21 +386,15 @@ jobs:
   # ══════════════════════════════════════════════════════════════════════════
   migrations:
     name: Run Database Migrations
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, production]
     needs: [validate, deploy]
     if: success()
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Prisma migrations via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          command_timeout: 15m
-          script: |
-            set -euo pipefail
+      - name: Run Prisma migrations
+        run: |
+          set -euo pipefail
             VERSION="${{ needs.validate.outputs.version }}"
             NS="aivo-prod"
             RUN_ID="${{ github.run_number }}"

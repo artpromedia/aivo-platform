@@ -318,167 +318,151 @@ jobs:
           category: 'container-${{ matrix.service }}'
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 3: Deploy to K3s via SSH
+  # STAGE 3: Deploy to K3s (self-hosted runner on Hetzner)
   # ══════════════════════════════════════════════════════════════════════════
   deploy:
     name: Deploy to Hetzner Staging
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, hetzner, staging]
     needs: [ci, docker, docker-python]
     environment: staging
     steps:
       - uses: actions/checkout@v4
 
-      # ── CHANGED: SSH deploy instead of GKE ──
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          port: 22
-          command_timeout: 45m
-          script: |
-            set -euo pipefail
-            VERSION="${{ needs.ci.outputs.version }}"
-            NAMESPACE="aivo-staging"
+      - name: Ensure GHCR pull secret
+        run: |
+          NAMESPACE="aivo-staging"
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n "$NAMESPACE" get secret ghcr-pull-secret 2>/dev/null || \
+            kubectl -n "$NAMESPACE" create secret docker-registry ghcr-pull-secret \
+              --docker-server=ghcr.io \
+              --docker-username="${{ github.actor }}" \
+              --docker-password="${{ secrets.GHCR_PAT }}"
 
-            echo "═══════════════════════════════════════"
-            echo "  Deploying AIVO $VERSION to staging"
-            echo "  (wave-based deployment)"
-            echo "═══════════════════════════════════════"
+      - name: Update image tags
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.ci.outputs.version }}"
 
-            # Ensure namespace exists
-            kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          cd infra/k8s/overlays/hetzner-staging
 
-            # Ensure GHCR pull secret exists (for private repos)
-            kubectl -n "$NAMESPACE" get secret ghcr-pull-secret 2>/dev/null || \
-              kubectl -n "$NAMESPACE" create secret docker-registry ghcr-pull-secret \
-                --docker-server=ghcr.io \
-                --docker-username="${{ github.actor }}" \
-                --docker-password="${{ secrets.GHCR_PAT }}"
+          # TypeScript services
+          TS_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+          )
 
-            # Clone/update repo on server (use PAT for private repo)
-            REPO_URL="https://x-access-token:${{ secrets.GHCR_PAT }}@github.com/artpromedia/aivo-platform.git"
-            if [ -d /opt/aivo ]; then
-              cd /opt/aivo
-              git remote set-url origin "$REPO_URL"
-              git fetch origin main
-              git reset --hard origin/main
-              # Remove token from stored remote URL
-              git remote set-url origin "https://github.com/artpromedia/aivo-platform.git"
-            else
-              git clone "$REPO_URL" /opt/aivo
-              cd /opt/aivo
-              git remote set-url origin "https://github.com/artpromedia/aivo-platform.git"
+          # Python AI/ML services
+          PY_SERVICES=(
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+          )
+
+          ALL_SERVICES=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}")
+
+          for svc in "${ALL_SERVICES[@]}"; do
+            echo "  Setting image: aivo-${svc}:${VERSION}"
+            kustomize edit set image \
+              "aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}" 2>/dev/null || true
+          done
+
+      - name: Deploy in waves
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.ci.outputs.version }}"
+          NAMESPACE="aivo-staging"
+
+          echo "═══════════════════════════════════════"
+          echo "  Deploying AIVO $VERSION to staging"
+          echo "═══════════════════════════════════════"
+
+          cd infra/k8s/overlays/hetzner-staging
+          kustomize build . > /tmp/aivo-staging-manifests.yaml
+
+          TS_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+          )
+          PY_SERVICES=(
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+          )
+          ALL_SERVICES=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}")
+
+          WAVE_SIZE=6
+          TOTAL=${#ALL_SERVICES[@]}
+          WAVE=1
+          GLOBAL_FAILED=0
+
+          for (( i=0; i<TOTAL; i+=WAVE_SIZE )); do
+            WAVE_SERVICES=("${ALL_SERVICES[@]:i:WAVE_SIZE}")
+            echo ""
+            echo "═══ Wave $WAVE: ${WAVE_SERVICES[*]} ═══"
+
+            kubectl apply -f /tmp/aivo-staging-manifests.yaml 2>/dev/null || true
+
+            echo "  Waiting for wave $WAVE rollouts..."
+            WAVE_FAILED=0
+            for svc in "${WAVE_SERVICES[@]}"; do
+              if kubectl rollout status "deployment/${svc}" -n "$NAMESPACE" --timeout=180s 2>/dev/null; then
+                echo "  ✅ ${svc}"
+              else
+                echo "  ⚠  ${svc} rollout incomplete"
+                WAVE_FAILED=$((WAVE_FAILED + 1))
+              fi
+            done
+
+            GLOBAL_FAILED=$((GLOBAL_FAILED + WAVE_FAILED))
+            echo "  Wave $WAVE complete: ${WAVE_FAILED} incomplete"
+
+            if [ $((i + WAVE_SIZE)) -lt $TOTAL ]; then
+              echo "  Pausing 15s before next wave..."
+              sleep 15
             fi
 
-            # Update image tags in Hetzner overlay
-            cd infra/k8s/overlays/hetzner-staging
+            WAVE=$((WAVE + 1))
+          done
 
-            # TypeScript services
-            TS_SERVICES=(
-              auth-svc session-svc consent-svc profile-svc
-              content-svc assessment-svc personalization-svc life-skills-svc
-              ai-orchestrator analytics-svc notify-svc messaging-svc
-              goal-svc focus-svc billing-svc payments-svc
-              parent-svc baseline-svc
-            )
-
-            # Python AI/ML services
-            PY_SERVICES=(
-              ai-inference-svc training-svc ml-recommendation-svc
-              brain-engine python-api-gateway vision-analysis-svc
-              speech-analysis-svc accessibility-ai-svc question-generation-svc
-              writing-assessment-svc content-intelligence-svc cognitive-load-svc
-              knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
-              specialized-support-svc rl-tutoring-svc peer-learning-svc
-              curriculum-py-svc grading-engine
-            )
-
-            ALL_SERVICES=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}")
-
-            for svc in "${ALL_SERVICES[@]}"; do
-              echo "  Setting image: aivo-${svc}:${VERSION}"
-              kustomize edit set image \
-                "aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}" 2>/dev/null || true
-            done
-
-            # Build all manifests once
-            echo ""
-            echo "Building Kubernetes manifests..."
-            kustomize build . > /tmp/aivo-staging-manifests.yaml
-
-            # ──────────────────────────────────────────────────────────
-            # Deploy in waves of 6 services to avoid overwhelming K3s
-            # ──────────────────────────────────────────────────────────
-            WAVE_SIZE=6
-            TOTAL=${#ALL_SERVICES[@]}
-            WAVE=1
-            GLOBAL_FAILED=0
-
-            for (( i=0; i<TOTAL; i+=WAVE_SIZE )); do
-              WAVE_SERVICES=("${ALL_SERVICES[@]:i:WAVE_SIZE}")
-              echo ""
-              echo "═══ Wave $WAVE: ${WAVE_SERVICES[*]} ═══"
-
-              # Apply full manifests (idempotent — already-running services are unaffected)
-              kubectl apply -f /tmp/aivo-staging-manifests.yaml 2>/dev/null || true
-
-              # Wait for this wave's rollouts
-              echo "  Waiting for wave $WAVE rollouts..."
-              WAVE_FAILED=0
-              for svc in "${WAVE_SERVICES[@]}"; do
-                if kubectl rollout status "deployment/${svc}" -n "$NAMESPACE" --timeout=180s 2>/dev/null; then
-                  echo "  ✅ ${svc}"
-                else
-                  echo "  ⚠  ${svc} rollout incomplete"
-                  WAVE_FAILED=$((WAVE_FAILED + 1))
-                fi
-              done
-
-              GLOBAL_FAILED=$((GLOBAL_FAILED + WAVE_FAILED))
-              echo "  Wave $WAVE complete: ${WAVE_FAILED} incomplete"
-
-              # Brief pause between waves to let the node stabilize
-              if [ $((i + WAVE_SIZE)) -lt $TOTAL ]; then
-                echo "  Pausing 15s before next wave..."
-                sleep 15
-              fi
-
-              WAVE=$((WAVE + 1))
-            done
-
-            echo ""
-            echo "═══════════════════════════════════════════════════"
-            echo "  Deployment complete: ${GLOBAL_FAILED}/${TOTAL} incomplete"
-            echo "═══════════════════════════════════════════════════"
-            echo ""
-            kubectl get pods -n "$NAMESPACE" --sort-by=.metadata.name -o wide
+          echo ""
+          echo "═══════════════════════════════════════════════════"
+          echo "  Deployment complete: ${GLOBAL_FAILED}/${TOTAL} incomplete"
+          echo "═══════════════════════════════════════════════════"
+          echo ""
+          kubectl get pods -n "$NAMESPACE" --sort-by=.metadata.name -o wide
 
       - name: Smoke tests
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HETZNER_APP1_HOST }}
-          username: deploy
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          script: |
-            NAMESPACE="aivo-staging"
-            FAILED=0
+        run: |
+          NAMESPACE="aivo-staging"
+          FAILED=0
 
-            SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator)
+          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator)
 
-            for svc in "${SERVICES[@]}"; do
-              if kubectl exec -n "$NAMESPACE" "deploy/${svc}" -- \
-                curl -sf http://localhost:3000/health --max-time 5 2>/dev/null; then
-                echo "✅ ${svc}"
-              else
-                echo "⚠️  ${svc} health check failed"
-                FAILED=$((FAILED + 1))
-              fi
-            done
+          for svc in "${SERVICES[@]}"; do
+            if kubectl exec -n "$NAMESPACE" "deploy/${svc}" -- \
+              curl -sf http://localhost:3000/health --max-time 5 2>/dev/null; then
+              echo "✅ ${svc}"
+            else
+              echo "⚠️  ${svc} health check failed"
+              FAILED=$((FAILED + 1))
+            fi
+          done
 
-            echo ""
-            echo "Smoke tests complete: ${FAILED} failed"
-            exit 0
+          echo ""
+          echo "Smoke tests complete: ${FAILED} failed"
 
 
