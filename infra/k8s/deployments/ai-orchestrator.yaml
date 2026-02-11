@@ -13,15 +13,15 @@
 #   - 8: Maximum number of replicas (e.g., 10)
 #
 # Resource Sizing Guidelines:
-# ┌─────────────────────┬────────────┬────────────┬──────────────┬──────────────┐
-# │ Service Type        │ CPU Req    │ CPU Limit  │ Memory Req   │ Memory Limit │
-# ├─────────────────────┼────────────┼────────────┼──────────────┼──────────────┤
-# │ Auth/Core           │ 100m       │ 500m       │ 256Mi        │ 512Mi        │
-# │ API Gateway         │ 200m       │ 1000m      │ 512Mi        │ 1Gi          │
-# │ AI/ML Services      │ 500m       │ 2000m      │ 1Gi          │ 4Gi          │
-# │ Background Workers  │ 100m       │ 500m       │ 256Mi        │ 512Mi        │
-# │ Realtime/WebSocket  │ 200m       │ 1000m      │ 512Mi        │ 1Gi          │
-# └─────────────────────┴────────────┴────────────┴──────────────┴──────────────┘
+# 
+#  Service Type         CPU Req     CPU Limit   Memory Req    Memory Limit 
+# 
+#  Auth/Core            100m        500m        256Mi         512Mi        
+#  API Gateway          200m        1000m       512Mi         1Gi          
+#  AI/ML Services       500m        2000m       1Gi           4Gi          
+#  Background Workers   100m        500m        256Mi         512Mi        
+#  Realtime/WebSocket   200m        1000m       512Mi         1Gi          
+# 
 #
 # ============================================================================
 
@@ -149,9 +149,9 @@ spec:
                   name: shared-secrets
                   key: nats-url
 
-            # ════════════════════════════════════════════════════════════════
+            # 
             # LLM Provider API Keys (from K8s Secrets)
-            # ════════════════════════════════════════════════════════════════
+            # 
 
             # Google Gemini (PRIMARY)
             - name: GOOGLE_GEMINI_API_KEY

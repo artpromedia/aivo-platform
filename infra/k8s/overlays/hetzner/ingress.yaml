@@ -1,5 +1,5 @@
 # =============================================================================
-# AIVO Platform — Hetzner Ingress (NGINX Ingress Controller)
+# AIVO Platform  Hetzner Ingress (NGINX Ingress Controller)
 # =============================================================================
 # NGINX Ingress for K3s on Hetzner bare-metal servers.
 # TLS handled by self-signed origin certificate (Cloudflare "Full" SSL mode).

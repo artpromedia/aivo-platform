@@ -1,7 +1,7 @@
 # =============================================================================
-# AIVO Platform — Hetzner Staging Overlay
+# AIVO Platform  Hetzner Staging Overlay
 # =============================================================================
-# Staging on K3s — runs on Server 3 (64GB) in aivo-staging namespace.
+# Staging on K3s  runs on Server 3 (64GB) in aivo-staging namespace.
 # Minimal replicas, lower resource limits.
 # =============================================================================
 
@@ -22,7 +22,7 @@ labels:
 commonAnnotations:
   deployment.kubernetes.io/environment: staging
 
-# ── Images: GHCR ──
+#  Images: GHCR 
 images:
   - name: aivo/auth-svc
     newName: ghcr.io/artpromedia/aivo-auth-svc
@@ -79,7 +79,7 @@ images:
     newName: ghcr.io/artpromedia/aivo-baseline-svc
     newTag: latest
 
-  # ── Python AI/ML Services ──
+  #  Python AI/ML Services 
   - name: aivo/ai-inference-svc
     newName: ghcr.io/artpromedia/aivo-ai-inference-svc
     newTag: latest
@@ -167,7 +167,7 @@ patches:
         path: /spec/replicas
         value: 1
 
-  # Low resource limits (staging fits on Server 3 — 64GB)
+  # Low resource limits (staging fits on Server 3  64GB)
   - target:
       kind: Deployment
     patch: |-

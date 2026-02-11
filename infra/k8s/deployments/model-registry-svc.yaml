@@ -1,6 +1,6 @@
-# ══════════════════════════════════════════════════════════════════════════════
+# 
 # AIVO Model Registry Service - Kubernetes Manifests
-# ══════════════════════════════════════════════════════════════════════════════
+# 
 # AI/ML model versioning and lifecycle management
 
 ---
