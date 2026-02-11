@@ -8,12 +8,12 @@ name: Mobile CI/CD
 # - Accessibility testing
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'apps/mobile-*/**'
-      - 'libs/flutter-*/**'
-      - '.github/workflows/mobile-ci.yml'
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'apps/mobile-*/**'
+  #     - 'libs/flutter-*/**'
+  #     - '.github/workflows/mobile-ci.yml'
   pull_request:
     branches: [main, develop]
     paths:

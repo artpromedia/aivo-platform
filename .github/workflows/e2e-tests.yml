@@ -3,11 +3,11 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'apps/mobile-*/**'
-      - 'tests/e2e-mobile/**'
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'apps/mobile-*/**'
+  #     - 'tests/e2e-mobile/**'
   pull_request:
     branches: [main, develop]
     paths:

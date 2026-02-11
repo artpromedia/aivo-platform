@@ -8,14 +8,14 @@ on:
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
-  push:
-    branches: [main]
-    paths:
-      - '**/package.json'
-      - '**/pnpm-lock.yaml'
-      - '**/pubspec.yaml'
-      - '**/Dockerfile'
-      - '.github/workflows/security-scan.yml'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - '**/package.json'
+  #     - '**/pnpm-lock.yaml'
+  #     - '**/pubspec.yaml'
+  #     - '**/Dockerfile'
+  #     - '.github/workflows/security-scan.yml'
   pull_request:
     branches: [main]
     paths:

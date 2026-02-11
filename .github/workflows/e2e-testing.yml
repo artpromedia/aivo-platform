@@ -14,12 +14,12 @@
 name: E2E Testing Pipeline
 
 on:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'apps/web-learner/**'
-      - 'packages/**'
-      - '.github/workflows/e2e-testing.yml'
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'apps/web-learner/**'
+  #     - 'packages/**'
+  #     - '.github/workflows/e2e-testing.yml'
   pull_request:
     branches: [main, develop]
     paths:

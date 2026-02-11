@@ -14,10 +14,10 @@
 name: Auth Service Migrations
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'services/auth-svc/prisma/**'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'services/auth-svc/prisma/**'
   pull_request:
     branches: [main]
     paths:
