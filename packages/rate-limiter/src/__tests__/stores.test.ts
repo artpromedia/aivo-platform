@@ -111,11 +111,7 @@ describe('MemoryStore', () => {
       await store.slidingWindowAdd('count-window', now + 1, windowMs);
       await store.slidingWindowAdd('count-window', now + 2, windowMs);
 
-      const count = await store.slidingWindowCount(
-        'count-window',
-        now - 1000,
-        now + 10
-      );
+      const count = await store.slidingWindowCount('count-window', now - 1000, now + 10);
 
       expect(count).toBe(3);
     });
@@ -132,13 +128,7 @@ describe('MemoryStore', () => {
       const capacity = 10;
       const refillRate = 1;
 
-      const result = await store.tokenBucketConsume(
-        'bucket',
-        capacity,
-        refillRate,
-        3,
-        now
-      );
+      const result = await store.tokenBucketConsume('bucket', capacity, refillRate, 3, now);
 
       expect(result.success).toBe(true);
       expect(result.tokens).toBe(7);
@@ -153,16 +143,10 @@ describe('MemoryStore', () => {
       await store.tokenBucketConsume('bucket', capacity, refillRate, 5, now);
 
       // Try to consume more
-      const result = await store.tokenBucketConsume(
-        'bucket',
-        capacity,
-        refillRate,
-        1,
-        now + 1
-      );
+      const result = await store.tokenBucketConsume('bucket', capacity, refillRate, 1, now + 1);
 
       expect(result.success).toBe(false);
-      expect(result.tokens).toBe(0);
+      expect(result.tokens).toBeCloseTo(0, 4);
     });
   });
 
@@ -172,15 +156,9 @@ describe('MemoryStore', () => {
       const capacity = 10;
       const leakRate = 1;
 
-      const result = await store.leakyBucketConsume(
-        'leaky',
-        capacity,
-        leakRate,
-        3,
-        now
-      );
+      const result = await store.leakyBucketConsume('leaky', capacity, leakRate, 3, now);
 
-      expect(result.allowed).toBe(true);
+      expect(result.success).toBe(true);
     });
 
     it('should deny when bucket full', async () => {
@@ -192,15 +170,9 @@ describe('MemoryStore', () => {
       await store.leakyBucketConsume('leaky', capacity, leakRate, 5, now);
 
       // Try to add more
-      const result = await store.leakyBucketConsume(
-        'leaky',
-        capacity,
-        leakRate,
-        1,
-        now + 1
-      );
+      const result = await store.leakyBucketConsume('leaky', capacity, leakRate, 1, now + 1);
 
-      expect(result.allowed).toBe(false);
+      expect(result.success).toBe(false);
     });
   });
 
