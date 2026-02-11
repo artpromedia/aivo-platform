@@ -1,59 +1,26 @@
+'use client';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
-import { getAuthSession } from '../../../lib/auth';
+import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useDashboard } from '@/lib/hooks/use-learner-api';
 
-// Mock data - would come from API in production
-const MOCK_CONTINUE_LEARNING = [
-  {
-    id: 'lesson-1',
-    courseId: 'math-101',
-    title: 'Multiplying Fractions',
-    courseName: 'Math 5',
-    progress: 65,
-    thumbnail: '🧮',
-    estimatedTime: '15 min',
-  },
-  {
-    id: 'lesson-2',
-    courseId: 'science-101',
-    title: 'The Water Cycle',
-    courseName: 'Science 5',
-    progress: 30,
-    thumbnail: '🌊',
-    estimatedTime: '20 min',
-  },
-];
+export default function DashboardPage() {
+  const { data, isLoading, error, refetch } = useDashboard();
 
-const MOCK_DAILY_GOALS = [
-  { id: 'g1', title: 'Complete 2 lessons', current: 1, target: 2, emoji: '📖' },
-  { id: 'g2', title: 'Earn 100 XP', current: 75, target: 100, emoji: '⭐' },
-  { id: 'g3', title: 'Practice math for 15 min', current: 10, target: 15, emoji: '🧮' },
-];
-
-const MOCK_ACHIEVEMENTS = [
-  { id: 'a1', title: 'First Steps', emoji: '👣', earned: true },
-  { id: 'a2', title: 'Math Whiz', emoji: '🧠', earned: true },
-  { id: 'a3', title: 'Science Star', emoji: '🌟', earned: false },
-  { id: 'a4', title: 'Reading Pro', emoji: '📚', earned: false },
-];
-
-const MOCK_UPCOMING = [
-  { id: 'u1', title: 'Math Quiz', dueDate: '2024-01-17', type: 'quiz', emoji: '📝' },
-  { id: 'u2', title: 'Science Project', dueDate: '2024-01-20', type: 'project', emoji: '🔬' },
-];
-
-export default async function DashboardPage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect('/login');
+  if (isLoading) return <PageSkeleton />;
+  if (error || !data) {
+    return <ErrorState message="Couldn't load your dashboard." onRetry={() => void refetch()} />;
   }
 
-  const firstName = session.name?.split(' ')[0] ?? 'Learner';
+  const { continueLearning, dailyGoals, achievements, upcoming, firstName } = data;
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  function getGreeting() {
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+  const greeting = getGreeting();
 
   return (
     <div className="space-y-8">
@@ -76,7 +43,7 @@ export default async function DashboardPage() {
 
         {/* Daily Goals Progress */}
         <div className="mt-6 grid grid-cols-3 gap-4">
-          {MOCK_DAILY_GOALS.map((goal) => (
+          {dailyGoals.map((goal) => (
             <div key={goal.id} className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
               <div className="mb-2 flex items-center gap-2 text-sm">
                 <span>{goal.emoji}</span>
@@ -108,7 +75,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {MOCK_CONTINUE_LEARNING.map((lesson) => (
+              {continueLearning.map((lesson) => (
                 <Link
                   key={lesson.id}
                   href={`/courses/${lesson.courseId}/lessons/${lesson.id}`}
@@ -171,7 +138,7 @@ export default async function DashboardPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="mb-4 font-bold text-slate-900">📅 Upcoming</h2>
             <div className="space-y-3">
-              {MOCK_UPCOMING.map((item) => (
+              {upcoming.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"
@@ -197,7 +164,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {MOCK_ACHIEVEMENTS.map((achievement) => (
+              {achievements.map((achievement) => (
                 <div
                   key={achievement.id}
                   className={`flex flex-col items-center gap-1 rounded-xl p-2 ${
@@ -224,21 +191,22 @@ export default async function DashboardPage() {
               </div>
             </div>
             <div className="mt-4 flex justify-between">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+                function getDayClass() {
+                  if (i < 5) return 'bg-orange-500 text-white';
+                  if (i === 5) return 'border-2 border-dashed border-orange-300 text-orange-400';
+                  return 'bg-slate-100 text-slate-400';
+                }
+                return (
                 <div key={day + i} className="flex flex-col items-center gap-1">
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs ${
-                      i < 5
-                        ? 'bg-orange-500 text-white'
-                        : i === 5
-                          ? 'border-2 border-dashed border-orange-300 text-orange-400'
-                          : 'bg-slate-100 text-slate-400'
-                    }`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs ${getDayClass()}`}
                   >
                     {i < 5 ? '✓' : day}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 

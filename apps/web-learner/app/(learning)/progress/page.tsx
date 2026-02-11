@@ -1,52 +1,20 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-import { getAuthSession } from '../../../lib/auth';
+import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useProgress } from '@/lib/hooks/use-learner-api';
 
-// Mock data - would come from API in production
-const MOCK_WEEKLY_STATS = [
-  { day: 'Mon', minutes: 45, xp: 150 },
-  { day: 'Tue', minutes: 30, xp: 100 },
-  { day: 'Wed', minutes: 60, xp: 200 },
-  { day: 'Thu', minutes: 25, xp: 80 },
-  { day: 'Fri', minutes: 40, xp: 130 },
-  { day: 'Sat', minutes: 15, xp: 50 },
-  { day: 'Sun', minutes: 0, xp: 0 },
-];
+export default function ProgressPage() {
+  const { data, isLoading, error, refetch } = useProgress();
 
-const MOCK_SUBJECT_PROGRESS = [
-  { subject: 'Math', progress: 45, color: 'bg-blue-500', lessons: 11, total: 24, mastery: 72 },
-  { subject: 'Science', progress: 30, color: 'bg-green-500', lessons: 6, total: 20, mastery: 65 },
-  { subject: 'Reading', progress: 60, color: 'bg-purple-500', lessons: 11, total: 18, mastery: 85 },
-  { subject: 'Social Studies', progress: 20, color: 'bg-orange-500', lessons: 3, total: 16, mastery: 55 },
-];
-
-const MOCK_SKILLS = [
-  { skill: 'Fractions', level: 4, maxLevel: 5, emoji: '🔢' },
-  { skill: 'Reading Comprehension', level: 5, maxLevel: 5, emoji: '📖' },
-  { skill: 'Scientific Method', level: 3, maxLevel: 5, emoji: '🔬' },
-  { skill: 'Problem Solving', level: 4, maxLevel: 5, emoji: '🧩' },
-  { skill: 'Writing', level: 3, maxLevel: 5, emoji: '✍️' },
-  { skill: 'Geography', level: 2, maxLevel: 5, emoji: '🗺️' },
-];
-
-const MOCK_RECENT_ACTIVITY = [
-  { id: 1, type: 'lesson', title: 'Completed "Dividing Fractions"', xp: 50, time: '2 hours ago', emoji: '📖' },
-  { id: 2, type: 'quiz', title: 'Passed Math Quiz', xp: 100, time: '4 hours ago', emoji: '✅' },
-  { id: 3, type: 'game', title: 'Played Focus Game', xp: 25, time: '1 day ago', emoji: '🎮' },
-  { id: 4, type: 'lesson', title: 'Started "The Water Cycle"', xp: 10, time: '1 day ago', emoji: '📖' },
-  { id: 5, type: 'achievement', title: 'Earned "Math Whiz" badge', xp: 75, time: '2 days ago', emoji: '🏆' },
-];
-
-export default async function ProgressPage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect('/login');
+  if (isLoading) return <PageSkeleton />;
+  if (error || !data) {
+    return <ErrorState message="Couldn't load your progress." onRetry={() => void refetch()} />;
   }
 
-  const maxMinutes = Math.max(...MOCK_WEEKLY_STATS.map((s) => s.minutes));
-  const totalXpThisWeek = MOCK_WEEKLY_STATS.reduce((sum, s) => sum + s.xp, 0);
-  const totalMinutesThisWeek = MOCK_WEEKLY_STATS.reduce((sum, s) => sum + s.minutes, 0);
+  const { weeklyStats, subjectProgress, skills, recentActivity, streakDays, lessonsCompleted } = data;
+  const maxMinutes = Math.max(...weeklyStats.map((s) => s.minutes), 1);
+  const totalXpThisWeek = weeklyStats.reduce((sum, s) => sum + s.xp, 0);
+  const totalMinutesThisWeek = weeklyStats.reduce((sum, s) => sum + s.minutes, 0);
 
   return (
     <div className="space-y-6">
@@ -70,12 +38,12 @@ export default async function ProgressPage() {
         </div>
         <div className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50 p-4">
           <div className="text-3xl">🔥</div>
-          <div className="mt-2 text-2xl font-bold text-orange-700">5</div>
+          <div className="mt-2 text-2xl font-bold text-orange-700">{streakDays}</div>
           <div className="text-sm text-orange-600">Day streak</div>
         </div>
         <div className="rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4">
           <div className="text-3xl">📚</div>
-          <div className="mt-2 text-2xl font-bold text-green-700">31</div>
+          <div className="mt-2 text-2xl font-bold text-green-700">{lessonsCompleted}</div>
           <div className="text-sm text-green-600">Lessons completed</div>
         </div>
       </div>
@@ -85,7 +53,7 @@ export default async function ProgressPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 font-bold text-slate-900">📊 Weekly Learning Time</h2>
           <div className="flex h-48 items-end justify-between gap-2">
-            {MOCK_WEEKLY_STATS.map((stat, i) => (
+            {weeklyStats.map((stat, i) => (
               <div key={stat.day} className="flex flex-1 flex-col items-center">
                 <div className="w-full rounded-t-lg bg-slate-100" style={{ height: '100%' }}>
                   <div
@@ -106,7 +74,7 @@ export default async function ProgressPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 font-bold text-slate-900">📚 Subject Progress</h2>
           <div className="space-y-4">
-            {MOCK_SUBJECT_PROGRESS.map((subject) => (
+            {subjectProgress.map((subject) => (
               <div key={subject.subject}>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="font-medium text-slate-700">{subject.subject}</span>
@@ -137,7 +105,7 @@ export default async function ProgressPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 font-bold text-slate-900">💪 Skills</h2>
           <div className="grid grid-cols-2 gap-3">
-            {MOCK_SKILLS.map((skill) => (
+            {skills.map((skill) => (
               <div
                 key={skill.skill}
                 className="rounded-xl border border-slate-100 bg-slate-50 p-3"
@@ -149,7 +117,7 @@ export default async function ProgressPage() {
                 <div className="flex gap-1">
                   {Array.from({ length: skill.maxLevel }).map((_, i) => (
                     <div
-                      key={i}
+                      key={`lvl-${skill.skill}-${i}`}
                       className={`h-2 flex-1 rounded-full ${
                         i < skill.level ? 'bg-yellow-400' : 'bg-slate-200'
                       }`}
@@ -168,7 +136,7 @@ export default async function ProgressPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 font-bold text-slate-900">🕐 Recent Activity</h2>
           <div className="space-y-3">
-            {MOCK_RECENT_ACTIVITY.map((activity) => (
+            {recentActivity.map((activity) => (
               <div
                 key={activity.id}
                 className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"

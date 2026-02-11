@@ -1,148 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
-import { getAuthSession } from '../../../lib/auth';
-
-// Types matching assessment-svc
-type AssessmentType = 'QUIZ' | 'TEST' | 'PRACTICE' | 'DIAGNOSTIC' | 'ASSIGNMENT';
-type AssessmentStatus = 'not_started' | 'in_progress' | 'completed' | 'graded';
-type DifficultyLevel = 'BEGINNER' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
-
-interface Assessment {
-  id: string;
-  title: string;
-  type: AssessmentType;
-  subject: string;
-  description: string;
-  questionCount: number;
-  timeLimit?: number; // in minutes
-  dueDate?: string;
-  status: AssessmentStatus;
-  score?: number;
-  maxScore?: number;
-  difficulty: DifficultyLevel;
-  attempts: number;
-  maxAttempts: number;
-  emoji: string;
-  xpReward: number;
-}
-
-// Mock data for development
-const MOCK_ASSESSMENTS: Assessment[] = [
-  {
-    id: 'assess-1',
-    title: 'Multiplication Facts Quiz',
-    type: 'QUIZ',
-    subject: 'Math',
-    description: 'Test your knowledge of multiplication tables 1-12',
-    questionCount: 20,
-    timeLimit: 10,
-    dueDate: '2025-01-20',
-    status: 'not_started',
-    difficulty: 'MEDIUM',
-    attempts: 0,
-    maxAttempts: 3,
-    emoji: '🧮',
-    xpReward: 100,
-  },
-  {
-    id: 'assess-2',
-    title: 'Reading Comprehension: The Water Cycle',
-    type: 'ASSIGNMENT',
-    subject: 'Science',
-    description: 'Read the passage and answer questions about the water cycle',
-    questionCount: 10,
-    timeLimit: 30,
-    dueDate: '2025-01-18',
-    status: 'in_progress',
-    difficulty: 'EASY',
-    attempts: 1,
-    maxAttempts: 2,
-    emoji: '🌊',
-    xpReward: 75,
-  },
-  {
-    id: 'assess-3',
-    title: 'Spelling Test - Week 15',
-    type: 'TEST',
-    subject: 'ELA',
-    description: 'Weekly spelling test covering vocabulary words',
-    questionCount: 15,
-    timeLimit: 20,
-    dueDate: '2025-01-17',
-    status: 'not_started',
-    difficulty: 'MEDIUM',
-    attempts: 0,
-    maxAttempts: 1,
-    emoji: '✍️',
-    xpReward: 150,
-  },
-  {
-    id: 'assess-4',
-    title: 'Math Practice: Fractions',
-    type: 'PRACTICE',
-    subject: 'Math',
-    description: 'Practice adding and subtracting fractions',
-    questionCount: 15,
-    status: 'not_started',
-    difficulty: 'MEDIUM',
-    attempts: 0,
-    maxAttempts: 999,
-    emoji: '🔢',
-    xpReward: 50,
-  },
-];
-
-const COMPLETED_ASSESSMENTS: Assessment[] = [
-  {
-    id: 'assess-c1',
-    title: 'Addition Quiz',
-    type: 'QUIZ',
-    subject: 'Math',
-    description: 'Basic addition facts',
-    questionCount: 20,
-    status: 'graded',
-    score: 18,
-    maxScore: 20,
-    difficulty: 'EASY',
-    attempts: 1,
-    maxAttempts: 3,
-    emoji: '➕',
-    xpReward: 80,
-  },
-  {
-    id: 'assess-c2',
-    title: 'Science Unit Test: Plants',
-    type: 'TEST',
-    subject: 'Science',
-    description: 'Unit test on plant life cycles',
-    questionCount: 25,
-    status: 'graded',
-    score: 22,
-    maxScore: 25,
-    difficulty: 'MEDIUM',
-    attempts: 1,
-    maxAttempts: 1,
-    emoji: '🌱',
-    xpReward: 200,
-  },
-  {
-    id: 'assess-c3',
-    title: 'Grammar Quiz: Parts of Speech',
-    type: 'QUIZ',
-    subject: 'ELA',
-    description: 'Identify nouns, verbs, and adjectives',
-    questionCount: 15,
-    status: 'graded',
-    score: 14,
-    maxScore: 15,
-    difficulty: 'MEDIUM',
-    attempts: 1,
-    maxAttempts: 2,
-    emoji: '📝',
-    xpReward: 100,
-  },
-];
+import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useAssessments } from '@/lib/hooks/use-learner-api';
+import type { AssessmentType, DifficultyLevel } from '@/lib/types';
 
 function getTypeColor(type: AssessmentType): { bg: string; text: string } {
   switch (type) {
@@ -181,25 +43,38 @@ function getScoreEmoji(percentage: number): string {
   return '💪';
 }
 
-export default async function AssessmentsPage() {
-  const session = await getAuthSession();
+function getDueDateStyle(days: number): string {
+  if (days <= 1) return 'font-medium text-red-600';
+  if (days <= 3) return 'text-orange-600';
+  return 'text-slate-500';
+}
 
-  if (!session) {
-    redirect('/login');
+function getDueDateLabel(days: number): string {
+  if (days === 0) return 'Due today!';
+  if (days === 1) return 'Due tomorrow';
+  return `Due in ${days} days`;
+}
+
+export default function AssessmentsPage() {
+  const { data, isLoading, error, refetch } = useAssessments();
+
+  if (isLoading) return <PageSkeleton />;
+  if (error || !data) {
+    return <ErrorState message="Couldn't load assessments." onRetry={() => void refetch()} />;
   }
 
-  const firstName = session.name?.split(' ')[0] ?? 'Learner';
-  const upcomingCount = MOCK_ASSESSMENTS.filter(a => a.status === 'not_started' || a.status === 'in_progress').length;
-  const dueThisWeek = MOCK_ASSESSMENTS.filter(a => {
+  const { upcoming: upcomingAssessments, completed: completedAssessments, firstName } = data;
+  const upcomingCount = upcomingAssessments.filter(a => a.status === 'not_started' || a.status === 'in_progress').length;
+  const dueThisWeek = upcomingAssessments.filter(a => {
     if (!a.dueDate) return false;
     const daysUntilDue = Math.ceil((new Date(a.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     return daysUntilDue <= 7 && daysUntilDue >= 0;
   });
 
-  const averageScore = COMPLETED_ASSESSMENTS.length > 0
+  const averageScore = completedAssessments.length > 0
     ? Math.round(
-        COMPLETED_ASSESSMENTS.reduce((sum, a) => sum + ((a.score || 0) / (a.maxScore || 1)) * 100, 0) /
-          COMPLETED_ASSESSMENTS.length
+        completedAssessments.reduce((sum, a) => sum + ((a.score || 0) / (a.maxScore || 1)) * 100, 0) /
+          completedAssessments.length
       )
     : 0;
 
@@ -260,18 +135,18 @@ export default async function AssessmentsPage() {
           <h2 className="text-xl font-bold text-slate-900">Ready to Take</h2>
           <div className="flex gap-2">
             <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-              {MOCK_ASSESSMENTS.filter(a => a.status === 'not_started').length} new
+              {upcomingAssessments.filter(a => a.status === 'not_started').length} new
             </span>
-            {MOCK_ASSESSMENTS.filter(a => a.status === 'in_progress').length > 0 && (
+            {upcomingAssessments.some(a => a.status === 'in_progress') && (
               <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-700">
-                {MOCK_ASSESSMENTS.filter(a => a.status === 'in_progress').length} in progress
+                {upcomingAssessments.filter(a => a.status === 'in_progress').length} in progress
               </span>
             )}
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {MOCK_ASSESSMENTS.map((assessment) => {
+          {upcomingAssessments.map((assessment) => {
             const typeColor = getTypeColor(assessment.type);
             const stars = getDifficultyStars(assessment.difficulty);
             const daysUntilDue = assessment.dueDate
@@ -341,13 +216,8 @@ export default async function AssessmentsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     {daysUntilDue !== null && (
-                      <span className={`text-sm ${
-                        daysUntilDue <= 1 ? 'font-medium text-red-600' :
-                        daysUntilDue <= 3 ? 'text-orange-600' : 'text-slate-500'
-                      }`}>
-                        {daysUntilDue === 0 ? 'Due today!' :
-                         daysUntilDue === 1 ? 'Due tomorrow' :
-                         `Due in ${daysUntilDue} days`}
+                      <span className={`text-sm ${getDueDateStyle(daysUntilDue)}`}>
+                        {getDueDateLabel(daysUntilDue)}
                       </span>
                     )}
                     {!assessment.dueDate && (
@@ -390,7 +260,7 @@ export default async function AssessmentsPage() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900">Completed</h2>
           <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
-            {COMPLETED_ASSESSMENTS.length} finished
+            {completedAssessments.length} finished
           </span>
         </div>
 
@@ -406,7 +276,7 @@ export default async function AssessmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {COMPLETED_ASSESSMENTS.map((assessment) => {
+              {completedAssessments.map((assessment) => {
                 const percentage = Math.round(((assessment.score || 0) / (assessment.maxScore || 1)) * 100);
                 const typeColor = getTypeColor(assessment.type);
 

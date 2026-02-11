@@ -3,33 +3,28 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-// Mock learner data
-const MOCK_LEARNER = {
-  firstName: 'Alex',
-  lastName: 'Johnson',
-  grade: '5th Grade',
-  school: 'Lincoln Elementary',
-  avatar: '🦸',
-  xp: 1250,
-  level: 12,
-  streakDays: 5,
-  joinDate: '2024-09-01',
-  learningStyle: 'Visual',
-  interests: ['Math', 'Science', 'Reading'],
-};
-
-const MOCK_STATS = {
-  lessonsCompleted: 47,
-  quizzesPassed: 23,
-  hoursLearned: 32,
-  achievementsEarned: 15,
-};
+import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useProfile, useUpdateAvatar } from '@/lib/hooks/use-learner-api';
 
 const AVATAR_OPTIONS = ['🦸', '🧙', '🦊', '🐼', '🦄', '🚀', '🌟', '🎨', '🎮', '🏆'];
 
 export default function ProfilePage() {
-  const [selectedAvatar, setSelectedAvatar] = useState(MOCK_LEARNER.avatar);
+  const { data, isLoading, error, refetch } = useProfile();
+  const updateAvatarMutation = useUpdateAvatar();
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+
+  if (isLoading) return <PageSkeleton />;
+  if (error || !data) {
+    return <ErrorState message="Couldn't load your profile." onRetry={() => void refetch()} />;
+  }
+
+  const { learner, stats, journey } = data;
+  const selectedAvatar = learner.avatar || '🦸';
+
+  function handleAvatarSelect(avatar: string) {
+    updateAvatarMutation.mutate(avatar);
+    setShowAvatarPicker(false);
+  }
 
   return (
     <div className="space-y-8">
@@ -62,8 +57,7 @@ export default function ProfilePage() {
                     <button
                       key={avatar}
                       onClick={() => {
-                        setSelectedAvatar(avatar);
-                        setShowAvatarPicker(false);
+                        handleAvatarSelect(avatar);
                       }}
                       className={`flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition hover:bg-purple-100 ${
                         selectedAvatar === avatar ? 'bg-purple-200' : 'bg-slate-100'
@@ -80,27 +74,27 @@ export default function ProfilePage() {
           {/* Info */}
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-3xl font-bold">
-              {MOCK_LEARNER.firstName} {MOCK_LEARNER.lastName}
+              {learner.firstName} {learner.lastName}
             </h1>
             <p className="mt-1 text-purple-200">
-              {MOCK_LEARNER.grade} • {MOCK_LEARNER.school}
+              {learner.grade} • {learner.school}
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-3 md:justify-start">
               <span className="rounded-full bg-white/20 px-4 py-1.5 text-sm">
-                ⭐ Level {MOCK_LEARNER.level}
+                ⭐ Level {learner.level}
               </span>
               <span className="rounded-full bg-white/20 px-4 py-1.5 text-sm">
-                🔥 {MOCK_LEARNER.streakDays} day streak
+                🔥 {learner.streakDays} day streak
               </span>
               <span className="rounded-full bg-white/20 px-4 py-1.5 text-sm">
-                🎨 {MOCK_LEARNER.learningStyle} Learner
+                🎨 {learner.learningStyle} Learner
               </span>
             </div>
           </div>
 
           {/* XP Display */}
           <div className="text-center">
-            <div className="text-4xl font-bold">{MOCK_LEARNER.xp.toLocaleString()}</div>
+            <div className="text-4xl font-bold">{learner.xp.toLocaleString()}</div>
             <div className="text-purple-200">Total XP</div>
           </div>
         </div>
@@ -114,25 +108,25 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="rounded-xl bg-blue-50 p-4 text-center">
                 <div className="text-3xl font-bold text-blue-600">
-                  {MOCK_STATS.lessonsCompleted}
+                  {stats.lessonsCompleted}
                 </div>
                 <div className="mt-1 text-sm text-slate-600">Lessons Done</div>
               </div>
               <div className="rounded-xl bg-green-50 p-4 text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {MOCK_STATS.quizzesPassed}
+                  {stats.quizzesPassed}
                 </div>
                 <div className="mt-1 text-sm text-slate-600">Quizzes Passed</div>
               </div>
               <div className="rounded-xl bg-purple-50 p-4 text-center">
                 <div className="text-3xl font-bold text-purple-600">
-                  {MOCK_STATS.hoursLearned}h
+                  {stats.hoursLearned}h
                 </div>
                 <div className="mt-1 text-sm text-slate-600">Hours Learned</div>
               </div>
               <div className="rounded-xl bg-yellow-50 p-4 text-center">
                 <div className="text-3xl font-bold text-yellow-600">
-                  {MOCK_STATS.achievementsEarned}
+                  {stats.achievementsEarned}
                 </div>
                 <div className="mt-1 text-sm text-slate-600">Achievements</div>
               </div>
@@ -143,7 +137,7 @@ export default function ProfilePage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-xl font-bold text-slate-900">💡 My Interests</h2>
             <div className="flex flex-wrap gap-2">
-              {MOCK_LEARNER.interests.map((interest) => (
+              {learner.interests.map((interest) => (
                 <span
                   key={interest}
                   className="rounded-full bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 text-sm font-medium text-blue-700"
@@ -163,13 +157,10 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="absolute left-4 top-0 h-full w-0.5 bg-slate-200" />
               <div className="space-y-4">
-                {[
-                  { date: 'Today', event: 'Completed "Multiplying Fractions"', emoji: '🧮' },
-                  { date: 'Yesterday', event: 'Earned "Math Whiz" badge', emoji: '🏆' },
-                  { date: '3 days ago', event: 'Finished Science Chapter 4', emoji: '🔬' },
-                  { date: '1 week ago', event: 'Started 5th Grade Math', emoji: '📚' },
-                ].map((item, i) => (
-                  <div key={i} className="relative ml-8 rounded-xl bg-slate-50 p-4">
+                {(journey.length > 0 ? journey : [
+                  { date: 'Getting started', event: 'Welcome to AIVO!', emoji: '🎉' },
+                ]).map((item) => (
+                  <div key={item.event} className="relative ml-8 rounded-xl bg-slate-50 p-4">
                     <div className="absolute -left-6 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500" />
                     <div className="flex items-center gap-3">
                       <span className="text-xl">{item.emoji}</span>
@@ -242,7 +233,7 @@ export default function ProfilePage() {
             <div className="text-3xl">🎓</div>
             <div className="mt-2 text-sm text-slate-500">Learning with AIVO since</div>
             <div className="font-bold text-slate-900">
-              {new Date(MOCK_LEARNER.joinDate).toLocaleDateString('en-US', {
+              {new Date(learner.joinDate).toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
               })}

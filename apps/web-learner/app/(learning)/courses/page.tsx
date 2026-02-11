@@ -1,73 +1,16 @@
+'use client';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
-import { getAuthSession } from '../../../lib/auth';
+import { EmptyState, ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useCourses } from '@/lib/hooks/use-learner-api';
 
-// Mock data - would come from API in production
-const MOCK_COURSES = [
-  {
-    id: 'math-101',
-    title: 'Math 5',
-    description: 'Master fractions, decimals, and problem-solving',
-    thumbnail: '🧮',
-    progress: 45,
-    totalLessons: 24,
-    completedLessons: 11,
-    color: 'from-blue-500 to-cyan-500',
-    nextLesson: {
-      id: 'lesson-1',
-      title: 'Multiplying Fractions',
-    },
-  },
-  {
-    id: 'science-101',
-    title: 'Science 5',
-    description: 'Explore earth science, life science, and physics',
-    thumbnail: '🔬',
-    progress: 30,
-    totalLessons: 20,
-    completedLessons: 6,
-    color: 'from-green-500 to-emerald-500',
-    nextLesson: {
-      id: 'lesson-2',
-      title: 'The Water Cycle',
-    },
-  },
-  {
-    id: 'reading-101',
-    title: 'Reading & Language Arts',
-    description: 'Improve reading comprehension and writing skills',
-    thumbnail: '📚',
-    progress: 60,
-    totalLessons: 18,
-    completedLessons: 11,
-    color: 'from-purple-500 to-pink-500',
-    nextLesson: {
-      id: 'lesson-3',
-      title: 'Story Elements',
-    },
-  },
-  {
-    id: 'social-101',
-    title: 'Social Studies',
-    description: 'Learn about history, geography, and civics',
-    thumbnail: '🌍',
-    progress: 20,
-    totalLessons: 16,
-    completedLessons: 3,
-    color: 'from-orange-500 to-red-500',
-    nextLesson: {
-      id: 'lesson-4',
-      title: 'American Revolution',
-    },
-  },
-];
+export default function CoursesPage() {
+  const { data: courses, isLoading, error, refetch } = useCourses();
 
-export default async function CoursesPage() {
-  const session = await getAuthSession();
-
-  if (!session) {
-    redirect('/login');
+  if (isLoading) return <PageSkeleton />;
+  if (error || !courses) {
+    return <ErrorState message="Couldn't load your courses." onRetry={() => void refetch()} />;
   }
 
   return (
@@ -79,8 +22,11 @@ export default async function CoursesPage() {
       </div>
 
       {/* Course Grid */}
+      {courses.length === 0 ? (
+        <EmptyState emoji="📚" title="No courses yet" description="Courses will appear here once you're enrolled." />
+      ) : (
       <div className="grid gap-6 sm:grid-cols-2">
-        {MOCK_COURSES.map((course) => (
+        {courses.map((course) => (
           <div
             key={course.id}
             className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-md"
@@ -138,6 +84,7 @@ export default async function CoursesPage() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Explore More Section */}
       <section className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">

@@ -1,123 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
-import { getAuthSession } from '../../../lib/auth';
-
-// Types matching goal-svc
-type GoalStatus = 'DRAFT' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED';
-type GoalDomain = 'ELA' | 'MATH' | 'SCIENCE' | 'SPEECH' | 'SEL' | 'OTHER';
-
-interface Goal {
-  id: string;
-  title: string;
-  description: string;
-  domain: GoalDomain;
-  status: GoalStatus;
-  targetDate: string;
-  progressPercent: number;
-  objectives: Objective[];
-  emoji: string;
-  streakDays: number;
-  xpReward: number;
-}
-
-interface Objective {
-  id: string;
-  description: string;
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'MET';
-  progressPercent: number;
-}
-
-// Mock data for development
-const MOCK_GOALS: Goal[] = [
-  {
-    id: 'goal-1',
-    title: 'Master Multiplication Tables',
-    description: 'Learn all multiplication facts from 1-12 with 95% accuracy',
-    domain: 'MATH',
-    status: 'ACTIVE',
-    targetDate: '2025-03-15',
-    progressPercent: 72,
-    emoji: '🧮',
-    streakDays: 5,
-    xpReward: 500,
-    objectives: [
-      { id: 'obj-1', description: 'Complete 1-5 multiplication facts', status: 'MET', progressPercent: 100 },
-      { id: 'obj-2', description: 'Complete 6-9 multiplication facts', status: 'IN_PROGRESS', progressPercent: 65 },
-      { id: 'obj-3', description: 'Complete 10-12 multiplication facts', status: 'NOT_STARTED', progressPercent: 0 },
-    ],
-  },
-  {
-    id: 'goal-2',
-    title: 'Read 20 Books This Year',
-    description: 'Read and complete comprehension quizzes for 20 chapter books',
-    domain: 'ELA',
-    status: 'ACTIVE',
-    targetDate: '2025-06-01',
-    progressPercent: 35,
-    emoji: '📚',
-    streakDays: 12,
-    xpReward: 1000,
-    objectives: [
-      { id: 'obj-4', description: 'Read 5 fiction books', status: 'MET', progressPercent: 100 },
-      { id: 'obj-5', description: 'Read 5 non-fiction books', status: 'IN_PROGRESS', progressPercent: 40 },
-      { id: 'obj-6', description: 'Read 5 mystery books', status: 'NOT_STARTED', progressPercent: 0 },
-      { id: 'obj-7', description: 'Read 5 science books', status: 'NOT_STARTED', progressPercent: 0 },
-    ],
-  },
-  {
-    id: 'goal-3',
-    title: 'Science Explorer Badge',
-    description: 'Complete all units in the Science Explorer module',
-    domain: 'SCIENCE',
-    status: 'ACTIVE',
-    targetDate: '2025-04-01',
-    progressPercent: 50,
-    emoji: '🔬',
-    streakDays: 3,
-    xpReward: 750,
-    objectives: [
-      { id: 'obj-8', description: 'Complete Life Science unit', status: 'MET', progressPercent: 100 },
-      { id: 'obj-9', description: 'Complete Earth Science unit', status: 'IN_PROGRESS', progressPercent: 50 },
-      { id: 'obj-10', description: 'Complete Physical Science unit', status: 'NOT_STARTED', progressPercent: 0 },
-    ],
-  },
-  {
-    id: 'goal-4',
-    title: 'Spelling Champion',
-    description: 'Score 100% on 10 weekly spelling tests',
-    domain: 'ELA',
-    status: 'ACTIVE',
-    targetDate: '2025-05-01',
-    progressPercent: 60,
-    emoji: '✍️',
-    streakDays: 0,
-    xpReward: 400,
-    objectives: [
-      { id: 'obj-11', description: 'Complete weeks 1-5 with 100%', status: 'MET', progressPercent: 100 },
-      { id: 'obj-12', description: 'Complete weeks 6-10 with 100%', status: 'IN_PROGRESS', progressPercent: 20 },
-    ],
-  },
-];
-
-const COMPLETED_GOALS = [
-  {
-    id: 'goal-c1',
-    title: 'Addition & Subtraction Master',
-    domain: 'MATH',
-    completedDate: '2024-12-15',
-    xpEarned: 300,
-    emoji: '➕',
-  },
-  {
-    id: 'goal-c2',
-    title: 'First Chapter Book',
-    domain: 'ELA',
-    completedDate: '2024-11-20',
-    xpEarned: 200,
-    emoji: '📖',
-  },
-];
+import { EmptyState, ErrorState, PageSkeleton } from '@/components/ui/loading-states';
+import { useGoals } from '@/lib/hooks/use-learner-api';
+import type { GoalDomain, GoalStatus } from '@/lib/types';
 
 function getDomainColor(domain: GoalDomain): { bg: string; text: string; border: string } {
   switch (domain) {
@@ -141,19 +28,32 @@ function getStatusBadge(status: GoalStatus): { color: string; label: string } {
   }
 }
 
-export default async function GoalsPage() {
-  const session = await getAuthSession();
+function getProgressBarColor(percent: number): string {
+  if (percent >= 70) return 'bg-green-500';
+  if (percent >= 40) return 'bg-yellow-500';
+  return 'bg-indigo-500';
+}
 
-  if (!session) {
-    redirect('/login');
+function getObjectiveColor(status: string): string {
+  if (status === 'MET') return 'bg-green-500';
+  if (status === 'IN_PROGRESS') return 'bg-yellow-500';
+  return 'bg-slate-200';
+}
+
+export default function GoalsPage() {
+  const { data, isLoading, error, refetch } = useGoals();
+
+  if (isLoading) return <PageSkeleton />;
+  if (error || !data) {
+    return <ErrorState message="Couldn't load your goals." onRetry={() => void refetch()} />;
   }
 
-  const firstName = session.name?.split(' ')[0] ?? 'Learner';
-  const totalActiveGoals = MOCK_GOALS.filter(g => g.status === 'ACTIVE').length;
-  const averageProgress = Math.round(
-    MOCK_GOALS.filter(g => g.status === 'ACTIVE').reduce((sum, g) => sum + g.progressPercent, 0) / totalActiveGoals
-  );
-  const totalXpPossible = MOCK_GOALS.reduce((sum, g) => sum + g.xpReward, 0);
+  const { active: activeGoals, completed: completedGoals, firstName } = data;
+  const totalActiveGoals = activeGoals.length || 1;
+  const averageProgress = activeGoals.length > 0
+    ? Math.round(activeGoals.reduce((sum, g) => sum + g.progressPercent, 0) / totalActiveGoals)
+    : 0;
+  const totalXpPossible = activeGoals.reduce((sum, g) => sum + g.xpReward, 0);
 
   return (
     <div className="space-y-8">
@@ -224,7 +124,11 @@ export default async function GoalsPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {MOCK_GOALS.filter(g => g.status === 'ACTIVE').map((goal) => {
+          {activeGoals.length === 0 ? (
+            <div className="md:col-span-2">
+              <EmptyState emoji="🎯" title="No active goals" description="Set a new goal to start tracking your progress!" />
+            </div>
+          ) : activeGoals.map((goal) => {
             const domainColor = getDomainColor(goal.domain);
             const daysUntilDue = Math.ceil(
               (new Date(goal.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -269,13 +173,7 @@ export default async function GoalsPage() {
                   </div>
                   <div className="h-3 rounded-full bg-slate-100">
                     <div
-                      className={`h-full rounded-full transition-all ${
-                        goal.progressPercent >= 70
-                          ? 'bg-green-500'
-                          : goal.progressPercent >= 40
-                            ? 'bg-yellow-500'
-                            : 'bg-indigo-500'
-                      }`}
+                      className={`h-full rounded-full transition-all ${getProgressBarColor(goal.progressPercent)}`}
                       style={{ width: `${goal.progressPercent}%` }}
                     />
                   </div>
@@ -290,13 +188,7 @@ export default async function GoalsPage() {
                     {goal.objectives.map((obj) => (
                       <div
                         key={obj.id}
-                        className={`h-2 flex-1 rounded-full ${
-                          obj.status === 'MET'
-                            ? 'bg-green-500'
-                            : obj.status === 'IN_PROGRESS'
-                              ? 'bg-yellow-500'
-                              : 'bg-slate-200'
-                        }`}
+                        className={`h-2 flex-1 rounded-full ${getObjectiveColor(obj.status)}`}
                         title={obj.description}
                       />
                     ))}
@@ -319,21 +211,21 @@ export default async function GoalsPage() {
       </section>
 
       {/* Completed Goals */}
-      {COMPLETED_GOALS.length > 0 && (
+      {completedGoals.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">Completed Goals</h2>
             <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
-              {COMPLETED_GOALS.length} achieved
+              {completedGoals.length} achieved
             </span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white">
-            {COMPLETED_GOALS.map((goal, idx) => (
+            {completedGoals.map((goal, idx) => (
               <div
                 key={goal.id}
                 className={`flex items-center justify-between p-4 ${
-                  idx !== COMPLETED_GOALS.length - 1 ? 'border-b border-slate-100' : ''
+                  idx < completedGoals.length - 1 ? 'border-b border-slate-100' : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
