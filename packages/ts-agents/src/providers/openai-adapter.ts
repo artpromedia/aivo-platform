@@ -148,6 +148,7 @@ export class OpenAIAdapter extends ModelAdapter {
       top_p: request.config.topP,
       max_tokens: request.config.maxTokens,
       stop: request.config.stopSequences,
+      stream: false, // Explicitly false for non-streaming
     };
 
     if ((request.tools?.length ?? 0) > 0) {
