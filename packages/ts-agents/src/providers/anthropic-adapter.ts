@@ -123,7 +123,7 @@ export class AnthropicAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools);
+      params.tools = this.formatTools(request.tools!);
     }
 
     const response = await this.client.messages.create(params);
@@ -153,7 +153,7 @@ export class AnthropicAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools);
+      params.tools = this.formatTools(request.tools!);
     }
 
     const stream = this.client.messages.stream(params);
@@ -211,7 +211,7 @@ export class AnthropicAdapter extends ModelAdapter {
             content.push({ type: 'text', text: message.content });
           }
 
-          for (const toolCall of message.toolCalls) {
+          for (const toolCall of message.toolCalls!) {
             content.push({
               type: 'tool_use',
               id: toolCall.id,

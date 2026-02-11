@@ -41,8 +41,8 @@ export default defineConfig({
     },
 
     // Setup files
-    setupFiles: ['./setup/global-setup.ts'],
-    globalSetup: './setup/start-services.ts',
+    setupFiles: [path.resolve(__dirname, 'setup/global-setup.ts')],
+    globalSetup: path.resolve(__dirname, 'setup/start-services.ts'),
 
     // Coverage (disabled by default, enable with --coverage flag)
     coverage: {

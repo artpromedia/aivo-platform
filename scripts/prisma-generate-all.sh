@@ -64,28 +64,14 @@ echo -e "${BLUE}═════════════════════�
 echo ""
 
 # Active TypeScript services that need Prisma client generation.
-# These are the services in the pnpm workspace that are actually built.
-# Python services and stub/unused services are excluded.
-ACTIVE_SERVICES=(
-    ai-orchestrator
-    analytics-svc
-    assessment-svc
-    auth-svc
-    baseline-svc
-    billing-svc
-    consent-svc
-    content-svc
-    focus-svc
-    goal-svc
-    life-skills-svc
-    messaging-svc
-    notify-svc
-    parent-svc
-    payments-svc
-    personalization-svc
-    profile-svc
-    session-svc
-)
+# Auto-discover all services that have a prisma/schema.prisma file.
+ACTIVE_SERVICES=()
+for svc_dir in "$SERVICES_DIR"/*/prisma/schema.prisma; do
+    if [[ -f "$svc_dir" ]]; then
+        svc_name="$(basename "$(dirname "$(dirname "$svc_dir")")")"
+        ACTIVE_SERVICES+=("$svc_name")
+    fi
+done
 
 # Find services to generate Prisma clients for
 find_prisma_services() {

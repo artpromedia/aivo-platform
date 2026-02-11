@@ -146,7 +146,7 @@ export abstract class Agent {
 
           // Execute tools
           const toolResults = await this.executeToolCalls(
-            response.toolCalls,
+            response.toolCalls!,
             validatedContext
           );
 
@@ -161,8 +161,8 @@ export abstract class Agent {
           await this.conversationManager.addMessage(assistantMessage);
 
           // Add tool results as messages
-          for (let i = 0; i < response.toolCalls.length; i++) {
-            const toolCall = response.toolCalls[i];
+          for (let i = 0; i < response.toolCalls!.length; i++) {
+            const toolCall = response.toolCalls![i];
             if (toolCall) {
               const toolMessage: Message = {
                 id: uuid(),

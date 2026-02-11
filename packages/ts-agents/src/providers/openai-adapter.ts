@@ -151,7 +151,7 @@ export class OpenAIAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools);
+      params.tools = this.formatTools(request.tools!);
       params.tool_choice = 'auto';
     }
 
@@ -182,7 +182,7 @@ export class OpenAIAdapter extends ModelAdapter {
     };
 
     if ((request.tools?.length ?? 0) > 0) {
-      params.tools = this.formatTools(request.tools);
+      params.tools = this.formatTools(request.tools!);
       params.tool_choice = 'auto';
     }
 
@@ -190,9 +190,14 @@ export class OpenAIAdapter extends ModelAdapter {
     let fullMessage = '';
     const toolCallsMap = new Map<number, OpenAIToolCall>();
 
-    const stream = await this.client.chat.completions.create({ ...params, stream: true as const });
+    const streamResponse = await this.client.chat.completions.create({ ...params, stream: true as const });
 
-    for await (const chunk of stream) {
+    // Type guard: streaming returns AsyncIterable, not OpenAIChatCompletion
+    if (!Symbol.asyncIterator || !(Symbol.asyncIterator in streamResponse)) {
+      throw new Error('Expected streaming response');
+    }
+
+    for await (const chunk of streamResponse) {
       const delta = chunk.choices[0]?.delta;
 
       if (delta?.content) {
@@ -288,7 +293,7 @@ export class OpenAIAdapter extends ModelAdapter {
         };
 
         if ((message.toolCalls?.length ?? 0) > 0) {
-          assistantMessage.tool_calls = message.toolCalls.map((tc) => ({
+          assistantMessage.tool_calls = message.toolCalls!.map((tc) => ({
             id: tc.id,
             type: 'function' as const,
             function: {

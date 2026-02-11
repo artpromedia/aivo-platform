@@ -1,20 +1,15 @@
 # .github/workflows/learner-app-deploy.yml
 # Learner App Production Deployment with Quality Gates
+# DISABLED: apps/learner-app is not in pnpm workspace (legacy). Use web-learner instead.
 
 name: Learner App Deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/learner-app/**'
-      - 'packages/ui/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/learner-app/**'
-      - 'packages/ui/**'
   workflow_dispatch:
+    inputs:
+      disabled:
+        description: 'This workflow is disabled (apps/learner-app not in workspace)'
+        required: false
 
 concurrency:
   group: learner-app-${{ github.ref }}
