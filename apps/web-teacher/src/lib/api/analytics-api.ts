@@ -3,7 +3,9 @@
  * Provides access to student performance analytics and progress visualization
  */
 
-const API_BASE_URL = 'http://localhost:8096/api/teacher/analytics';
+import { getEnvUrl } from '@/lib/utils';
+
+const API_BASE_URL = `${getEnvUrl('NEXT_PUBLIC_ANALYTICS_API_URL', 'http://localhost:8096', { serviceName: 'analytics-api' })}/api/teacher/analytics`;
 
 export interface PerformanceMetrics {
   studentId: string;

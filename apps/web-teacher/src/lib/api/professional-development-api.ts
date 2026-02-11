@@ -3,7 +3,9 @@
  * Provides access to training resources, best practices, and teaching strategies
  */
 
-const API_BASE_URL = 'http://localhost:8097/api/teacher/professional-development';
+import { getEnvUrl } from '@/lib/utils';
+
+const API_BASE_URL = `${getEnvUrl('NEXT_PUBLIC_PD_API_URL', 'http://localhost:8097', { serviceName: 'professional-development-api' })}/api/teacher/professional-development`;
 
 export type ResourceType = 'video' | 'article' | 'course' | 'webinar' | 'workshop' | 'guide';
 export type ResourceCategory = 

@@ -33,7 +33,6 @@ export function VersionControl({ curriculumId }: VersionControlProps) {
 
       try {
         // In production, fetch from API
-        // const accessToken = 'mock-token';
         // const result = await getCurriculumVersions(curriculumId, tenantId, accessToken);
         // setVersions(result.versions);
 

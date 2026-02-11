@@ -31,7 +31,7 @@ interface CurriculumDetailViewProps {
 
 export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps) {
   const router = useRouter();
-  const { tenantId } = useAuth();
+  const { tenantId, accessToken } = useAuth();
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,6 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
       setError(null);
 
       try {
-        const accessToken = 'mock-token';
         const result = await getCurriculumById(curriculumId, tenantId, accessToken);
         setCurriculum(result.curriculum);
       } catch (err) {
@@ -66,7 +65,6 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
 
     setActionLoading('publish');
     try {
-      const accessToken = 'mock-token';
       const result = await publishCurriculum(curriculum.id, tenantId, accessToken);
       setCurriculum(result.curriculum);
     } catch (err) {
@@ -81,7 +79,6 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
 
     setActionLoading('archive');
     try {
-      const accessToken = 'mock-token';
       const result = await archiveCurriculum(curriculum.id, tenantId, accessToken);
       setCurriculum(result.curriculum);
     } catch (err) {
@@ -96,7 +93,6 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
 
     setActionLoading('delete');
     try {
-      const accessToken = 'mock-token';
       await deleteCurriculum(curriculum.id, tenantId, accessToken);
       router.push('/curriculum');
     } catch (err) {

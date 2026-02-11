@@ -210,21 +210,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Investor Demo Access */}
-          <Link
-            href="/investor-demo"
-            className="block rounded-2xl border border-purple-300 bg-gradient-to-br from-purple-900 to-slate-900 p-4 shadow-lg transition hover:shadow-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-2xl text-white">
-                🚀
-              </div>
-              <div>
-                <div className="text-lg font-bold text-white">Investor Demo</div>
-                <div className="text-sm text-purple-300">View platform capabilities</div>
-              </div>
-            </div>
-          </Link>
+
         </div>
       </div>
     </div>

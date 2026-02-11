@@ -19,7 +19,7 @@ interface UploadCurriculumModalProps {
 
 export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModalProps) {
   const router = useRouter();
-  const { tenantId, userName } = useAuth();
+  const { tenantId, userName, accessToken } = useAuth();
   const [activeTab, setActiveTab] = useState<'create' | 'upload'>('create');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,9 +76,6 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
     setError(null);
 
     try {
-      // In production, get access token from auth context
-      const accessToken = 'mock-token';
-
       if (activeTab === 'create') {
         await createCurriculum(tenantId, userName, accessToken, formData);
       } else {

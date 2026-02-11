@@ -137,11 +137,8 @@ export default function DashboardPage() {
     );
   }
 
-  // Dev mode indicator - hidden for demo
-  const DevModeIndicator = () => {
-    // Temporarily hidden for investor demo
-    return null;
-  };
+  // Dev mode indicator
+  const DevModeIndicator = () => null;
 
   const selectedChild = profile?.students?.find((s) => s.id === selectedChildId);
 

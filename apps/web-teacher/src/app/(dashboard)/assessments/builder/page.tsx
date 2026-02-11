@@ -27,6 +27,7 @@ import {
 } from '@/components/assessment';
 import { Button } from '@/components/ui/button';
 import { useAssessmentBuilder } from '@/hooks/useAssessmentBuilder';
+import { useClasses } from '@/hooks/use-classes';
 import type { Question } from '@/lib/types';
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -40,17 +41,6 @@ interface ClassOption {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// MOCK DATA
-// ════════════════════════════════════════════════════════════════════════════
-
-const MOCK_CLASSES: ClassOption[] = [
-  { id: '1', name: 'Math 101 - Period 1', studentCount: 28 },
-  { id: '2', name: 'Math 101 - Period 2', studentCount: 25 },
-  { id: '3', name: 'Algebra I - Period 3', studentCount: 30 },
-  { id: '4', name: 'Geometry - Period 5', studentCount: 24 },
-];
-
-// ════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -58,6 +48,14 @@ export default function AssessmentBuilderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const assessmentId = searchParams.get('id') || undefined;
+
+  // Fetch real classes from API
+  const { classes: classSummaries } = useClasses();
+  const classOptions: ClassOption[] = classSummaries.map((c) => ({
+    id: c.id,
+    name: c.name,
+    studentCount: c.studentCount ?? 0,
+  }));
 
   const {
     assessment,
@@ -522,7 +520,7 @@ export default function AssessmentBuilderPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="">Choose a class...</option>
-                  {MOCK_CLASSES.map((cls) => (
+                  {classOptions.map((cls) => (
                     <option key={cls.id} value={cls.id}>
                       {cls.name} ({cls.studentCount} students)
                     </option>

@@ -16,6 +16,7 @@ export interface AuthState {
   userName: string | null;
   roles: Role[];
   tenantId: string | null;
+  accessToken: string | null;
 }
 
 interface AuthContextValue extends AuthState {
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue>({
   userName: null,
   roles: [],
   tenantId: null,
+  accessToken: null,
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   logout: async () => {},
 });

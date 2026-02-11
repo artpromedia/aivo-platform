@@ -22,6 +22,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     userName: auth?.userId ?? null,
     roles: auth?.roles ?? [],
     tenantId: auth?.tenantId ?? null,
+    accessToken: auth?.accessToken ?? null,
   };
 
   return (

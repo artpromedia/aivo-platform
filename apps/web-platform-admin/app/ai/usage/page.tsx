@@ -1,5 +1,6 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
 import { type ReactNode, useState, useEffect, useCallback } from 'react';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -332,6 +333,8 @@ function formatDateString(date: Date): string {
 }
 
 export default function AIUsageAnalyticsPage() {
+  const { data: session } = useSession();
+  const accessToken = (session as { accessToken?: string } | null)?.accessToken ?? '';
   const [data, setData] = useState<AIAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -350,7 +353,6 @@ export default function AIUsageAnalyticsPage() {
     setError(null);
 
     try {
-      const accessToken = 'mock-token'; // In production, get from auth context
       const response = await fetchAIAnalytics(accessToken, dateRange);
       setData(response);
     } catch (err) {

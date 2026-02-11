@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, Heading, Button, Badge } from '@aivo/ui-web';
+import { useSession } from 'next-auth/react';
 import { type ReactNode, useState, useEffect, useCallback } from 'react';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -324,6 +325,8 @@ function formatDateString(date: Date): string {
 }
 
 export default function ResearchExportsPage() {
+  const { data: session } = useSession();
+  const accessToken = (session as { accessToken?: string } | null)?.accessToken ?? '';
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [auditLog, setAuditLog] = useState<ExportAuditRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -355,7 +358,6 @@ export default function ResearchExportsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const accessToken = 'mock-token';
       const [tenantsData, auditData] = await Promise.all([
         fetchTenants(accessToken),
         fetchAuditLog(accessToken),
@@ -382,7 +384,6 @@ export default function ResearchExportsPage() {
     setChecking(true);
     setAnonymityResult(null);
     try {
-      const accessToken = 'mock-token';
       const result = await checkAnonymity(accessToken, selectedTenants, dateRange);
       setAnonymityResult(result);
     } catch (err) {
@@ -409,7 +410,6 @@ export default function ResearchExportsPage() {
     setExporting(true);
     setError(null);
     try {
-      const accessToken = 'mock-token';
       const result = await requestExport(accessToken, {
         tenantIds: selectedTenants,
         dateRange,

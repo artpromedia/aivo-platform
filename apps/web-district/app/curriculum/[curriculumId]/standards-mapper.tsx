@@ -27,7 +27,7 @@ interface StandardsMapperProps {
 }
 
 export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
-  const { tenantId } = useAuth();
+  const { tenantId, accessToken } = useAuth();
   const [standards, setStandards] = useState<StandardAlignment[]>([]);
   const [coverage, setCoverage] = useState<StandardsCoverageReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,6 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
       setError(null);
 
       try {
-        const accessToken = 'mock-token';
         const [alignmentResult, coverageResult] = await Promise.all([
           getStandardsAlignment(curriculumId, tenantId, accessToken),
           getStandardsCoverageReport(curriculumId, tenantId, accessToken),
@@ -68,7 +67,6 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
       if (!tenantId) return;
 
       try {
-        const accessToken = 'mock-token';
         await removeStandardAlignment(alignmentId, tenantId, accessToken);
         setStandards((prev) => prev.filter((s) => s.id !== alignmentId));
       } catch (err) {
@@ -83,7 +81,6 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
       if (!tenantId) return;
 
       try {
-        const accessToken = 'mock-token';
         const result = await alignStandardToCurriculum(curriculumId, tenantId, accessToken, {
           standardCode: standard.code,
           standardDescription: standard.description,
@@ -254,6 +251,7 @@ function AddStandardModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchableStandard[]>([]);
   const [searching, setSearching] = useState(false);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -264,7 +262,6 @@ function AddStandardModal({
 
       setSearching(true);
       try {
-        const accessToken = 'mock-token';
         const response = await searchStandards(searchQuery, accessToken, {
           framework: selectedFramework,
         });

@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:8092';
+import { getEnvUrl } from '@/lib/utils';
+
+const API_BASE = getEnvUrl('NEXT_PUBLIC_ACCESSIBILITY_SVC_URL', 'http://localhost:8092', { serviceName: 'accessibility-svc' });
 
 // ============================================================================
 // Types - Accommodation Management

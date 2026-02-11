@@ -11,13 +11,14 @@ import {
   fetchClassroomHomeworkUsage,
   fetchClassroomFocusPatterns,
 } from '@/lib/classroom-analytics';
+import { useAuth } from '@/app/providers';
 
 type TabId = 'homework' | 'focus';
 
 export default function ClassroomAnalyticsPage() {
   const params = useParams();
   const classroomId = params?.classroomId as string;
-  const tenantId = 'demo-tenant'; // In production, get from session/context
+  const { tenantId, accessToken } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabId>('homework');
   const [homeworkData, setHomeworkData] = useState<ClassroomHomeworkUsage | null>(null);
@@ -33,12 +34,9 @@ export default function ClassroomAnalyticsPage() {
       setError(null);
 
       try {
-        // Mock access token for demo - in production, get from auth provider
-        const accessToken = 'demo-token';
-
         const [homework, focus] = await Promise.all([
-          fetchClassroomHomeworkUsage(tenantId, classroomId, accessToken),
-          fetchClassroomFocusPatterns(tenantId, classroomId, accessToken),
+          fetchClassroomHomeworkUsage(tenantId ?? '', classroomId, accessToken ?? ''),
+          fetchClassroomFocusPatterns(tenantId ?? '', classroomId, accessToken ?? ''),
         ]);
 
         setHomeworkData(homework);

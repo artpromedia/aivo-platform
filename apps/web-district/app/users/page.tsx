@@ -1,7 +1,7 @@
 /**
  * User Management Page
  *
- * CRUD interface for managing district users
+ * CRUD interface for managing district users — wired to /api/users proxy routes
  */
 
 'use client';
@@ -27,142 +27,119 @@ export interface User {
   lastLoginAt?: string;
 }
 
-// Mock data for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'sarah.johnson@school.edu',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    role: 'TEACHER',
-    status: 'ACTIVE',
-    schoolId: 'school-1',
-    schoolName: 'Lincoln Elementary',
-    createdAt: '2024-01-15T10:00:00Z',
-    lastLoginAt: '2025-01-12T14:30:00Z',
-  },
-  {
-    id: '2',
-    email: 'michael.chen@school.edu',
-    firstName: 'Michael',
-    lastName: 'Chen',
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    schoolId: 'school-1',
-    schoolName: 'Lincoln Elementary',
-    createdAt: '2023-08-20T08:00:00Z',
-    lastLoginAt: '2025-01-13T09:15:00Z',
-  },
-  {
-    id: '3',
-    email: 'emma.wilson@school.edu',
-    firstName: 'Emma',
-    lastName: 'Wilson',
-    role: 'TEACHER',
-    status: 'PENDING',
-    schoolId: 'school-2',
-    schoolName: 'Washington Middle',
-    createdAt: '2025-01-10T12:00:00Z',
-  },
-  {
-    id: '4',
-    email: 'alex.smith@email.com',
-    firstName: 'Alex',
-    lastName: 'Smith',
-    role: 'PARENT',
-    status: 'ACTIVE',
-    createdAt: '2024-09-01T16:00:00Z',
-    lastLoginAt: '2025-01-11T20:00:00Z',
-  },
-  {
-    id: '5',
-    email: 'olivia.brown@school.edu',
-    firstName: 'Olivia',
-    lastName: 'Brown',
-    role: 'TEACHER',
-    status: 'INACTIVE',
-    schoolId: 'school-1',
-    schoolName: 'Lincoln Elementary',
-    createdAt: '2023-05-15T10:00:00Z',
-  },
-];
+// ═══════════════════════════════════════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const TENANT_ID = typeof window !== 'undefined'
+  ? (document.cookie.match(/aivo_tenant_id=([^;]+)/)?.[1] ?? 'default')
+  : 'default';
+
+async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(body.error ?? `Request failed (${res.status})`);
+  }
+  return res.json() as Promise<T>;
+}
+
+async function fetchUsers(filters?: { role?: string; status?: string; search?: string }): Promise<User[]> {
+  const params = new URLSearchParams({ tenantId: TENANT_ID });
+  if (filters?.role && filters.role !== 'all') params.set('role', filters.role);
+  if (filters?.status && filters.status !== 'all') params.set('status', filters.status);
+  if (filters?.search) params.set('search', filters.search);
+  const data = await apiFetch<{ users?: User[] } | User[]>(`/api/users?${params}`);
+  return Array.isArray(data) ? data : (data.users ?? []);
+}
+
+async function createUser(data: Partial<User>): Promise<User> {
+  return apiFetch<User>('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({ ...data, tenantId: TENANT_ID }),
+  });
+}
+
+async function updateUser(userId: string, data: Partial<User>): Promise<User> {
+  return apiFetch<User>(`/api/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+async function deleteUser(userId: string): Promise<void> {
+  await apiFetch<unknown>(`/api/users/${userId}`, { method: 'DELETE' });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function UserManagementPage() {
-  const [users, setUsers] = React.useState<User[]>(mockUsers);
-  const [filteredUsers, setFilteredUsers] = React.useState<User[]>(mockUsers);
-  const [loading, setLoading] = React.useState(false);
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [showCsvModal, setShowCsvModal] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<User | null>(null);
+  const [activeFilters, setActiveFilters] = React.useState<{ search: string; role: string; status: string; school: string }>({
+    search: '', role: 'all', status: 'all', school: 'all',
+  });
 
-  // Stats
-  const stats = React.useMemo(() => {
-    return {
-      total: users.length,
-      active: users.filter((u) => u.status === 'ACTIVE').length,
-      pending: users.filter((u) => u.status === 'PENDING').length,
-      teachers: users.filter((u) => u.role === 'TEACHER').length,
-      admins: users.filter((u) => u.role === 'ADMIN').length,
-    };
-  }, [users]);
-
-  const handleFilter = (filters: {
-    search: string;
-    role: string;
-    status: string;
-    school: string;
-  }) => {
-    let filtered = users;
-
-    if (filters.search) {
-      const query = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (u) =>
-          u.email.toLowerCase().includes(query) ||
-          u.firstName.toLowerCase().includes(query) ||
-          u.lastName.toLowerCase().includes(query)
-      );
+  // Initial load
+  const loadUsers = React.useCallback(async (filters?: typeof activeFilters) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchUsers(filters);
+      setUsers(data);
+      applyClientFilter(data, filters ?? activeFilters);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+    } finally {
+      setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (filters.role && filters.role !== 'all') {
-      filtered = filtered.filter((u) => u.role === filters.role);
-    }
+  React.useEffect(() => { loadUsers(); }, [loadUsers]);
 
-    if (filters.status && filters.status !== 'all') {
-      filtered = filtered.filter((u) => u.status === filters.status);
-    }
-
+  // Client-side filter for school (not supported server-side)
+  function applyClientFilter(data: User[], filters: typeof activeFilters) {
+    let filtered = data;
     if (filters.school && filters.school !== 'all') {
       filtered = filtered.filter((u) => u.schoolId === filters.school);
     }
-
     setFilteredUsers(filtered);
+  }
+
+  // Stats
+  const stats = React.useMemo(() => ({
+    total: users.length,
+    active: users.filter((u) => u.status === 'ACTIVE').length,
+    pending: users.filter((u) => u.status === 'PENDING').length,
+    teachers: users.filter((u) => u.role === 'TEACHER').length,
+    admins: users.filter((u) => u.role === 'ADMIN').length,
+  }), [users]);
+
+  const handleFilter = (filters: { search: string; role: string; status: string; school: string }) => {
+    setActiveFilters(filters);
+    loadUsers(filters);
   };
 
   const handleCreateUser = async (data: Partial<User>) => {
     setLoading(true);
     setError(null);
-
     try {
-      // In production, this would call the API
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        email: data.email!,
-        firstName: data.firstName!,
-        lastName: data.lastName!,
-        role: data.role!,
-        status: 'PENDING',
-        schoolId: data.schoolId,
-        schoolName: data.schoolId === 'school-1' ? 'Lincoln Elementary' : 'Washington Middle',
-        createdAt: new Date().toISOString(),
-      };
-
-      setUsers((prev) => [...prev, newUser]);
-      setFilteredUsers((prev) => [...prev, newUser]);
+      await createUser(data);
+      await loadUsers(activeFilters);
       setShowCreateModal(false);
     } catch (err) {
-      setError('Failed to create user');
+      setError(err instanceof Error ? err.message : 'Failed to create user');
     } finally {
       setLoading(false);
     }
@@ -170,38 +147,28 @@ export default function UserManagementPage() {
 
   const handleUpdateUser = async (data: Partial<User>) => {
     if (!editingUser) return;
-
     setLoading(true);
     setError(null);
-
     try {
-      // In production, this would call the API
-      const updatedUser = { ...editingUser, ...data };
-
-      setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? updatedUser : u)));
-      setFilteredUsers((prev) => prev.map((u) => (u.id === editingUser.id ? updatedUser : u)));
+      await updateUser(editingUser.id, data);
+      await loadUsers(activeFilters);
       setEditingUser(null);
     } catch (err) {
-      setError('Failed to update user');
+      setError(err instanceof Error ? err.message : 'Failed to update user');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return;
-    }
-
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     setLoading(true);
     setError(null);
-
     try {
-      // In production, this would call the API
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      setFilteredUsers((prev) => prev.filter((u) => u.id !== userId));
+      await deleteUser(userId);
+      await loadUsers(activeFilters);
     } catch (err) {
-      setError('Failed to delete user');
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
     } finally {
       setLoading(false);
     }
@@ -209,35 +176,28 @@ export default function UserManagementPage() {
 
   const handleStatusChange = async (userId: string, newStatus: User['status']) => {
     setLoading(true);
-
     try {
-      // In production, this would call the API
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)));
-      setFilteredUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
-      );
+      await updateUser(userId, { status: newStatus });
+      await loadUsers(activeFilters);
     } catch (err) {
-      setError('Failed to update user status');
+      setError(err instanceof Error ? err.message : 'Failed to update user status');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCsvImport = (importedUsers: Partial<User>[]) => {
-    const newUsers: User[] = importedUsers.map((u, i) => ({
-      id: `imported-${Date.now()}-${i}`,
-      email: u.email!,
-      firstName: u.firstName!,
-      lastName: u.lastName!,
-      role: u.role || 'TEACHER',
-      status: 'PENDING',
-      schoolId: u.schoolId,
-      createdAt: new Date().toISOString(),
-    }));
-
-    setUsers((prev) => [...prev, ...newUsers]);
-    setFilteredUsers((prev) => [...prev, ...newUsers]);
-    setShowCsvModal(false);
+  const handleCsvImport = async (importedUsers: Partial<User>[]) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all(importedUsers.map((u) => createUser(u)));
+      await loadUsers(activeFilters);
+      setShowCsvModal(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import users');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

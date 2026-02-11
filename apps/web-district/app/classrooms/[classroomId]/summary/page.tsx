@@ -10,6 +10,7 @@ import {
   getIndependenceLabelColor,
   getBaselineStatusColor,
 } from '../../../../lib/classroom-reports';
+import { useAuth } from '../../../providers';
 
 export default function ClassroomSummaryPage() {
   const params = useParams();
@@ -19,6 +20,7 @@ export default function ClassroomSummaryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     async function loadReport() {
@@ -28,8 +30,7 @@ export default function ClassroomSummaryPage() {
       setError(null);
 
       try {
-        const accessToken = 'demo-token'; // In production, get from auth
-        const data = await fetchClassroomSummary(classroomId, accessToken);
+        const data = await fetchClassroomSummary(classroomId, accessToken ?? '');
         setReport(data);
       } catch (err) {
         console.error('Failed to load classroom summary:', err);

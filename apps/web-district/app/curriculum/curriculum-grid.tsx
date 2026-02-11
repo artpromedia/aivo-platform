@@ -22,7 +22,7 @@ import {
 } from '../../lib/curriculum-api';
 
 export function CurriculumGrid() {
-  const { tenantId } = useAuth();
+  const { tenantId, accessToken } = useAuth();
   const searchParams = useSearchParams();
   const [curricula, setCurricula] = useState<Curriculum[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +36,6 @@ export function CurriculumGrid() {
       setError(null);
 
       try {
-        // In production, get access token from auth context
-        const accessToken = 'mock-token';
         const filters = {
           subjectArea: searchParams.get('subject') || undefined,
           gradeLevel: searchParams.get('grade') || undefined,
