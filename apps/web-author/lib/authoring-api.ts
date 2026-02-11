@@ -33,10 +33,32 @@ const LEARNER_MODEL_SVC_URL = process.env.NEXT_PUBLIC_LEARNER_MODEL_SVC_URL || '
 // FETCH HELPER
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Retrieve the access token from the auth cookie via the dev-login session endpoint.
+ */
+let _cachedToken: string | null = null;
+let _tokenFetchedAt = 0;
+const TOKEN_TTL_MS = 4 * 60 * 1000; // 4 minutes
+
+async function getAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  if (_cachedToken && Date.now() - _tokenFetchedAt < TOKEN_TTL_MS) return _cachedToken;
+  try {
+    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { accessToken?: string };
+    _cachedToken = data.accessToken ?? null;
+    _tokenFetchedAt = Date.now();
+    return _cachedToken;
+  } catch {
+    return null;
+  }
+}
+
 async function apiFetch<T>(baseUrl: string, path: string, options?: RequestInit): Promise<T> {
   const url = `${baseUrl}${path}`;
   const existingHeaders = options?.headers ?? {};
-  const headers: HeadersInit = {
+  const headersObj: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(existingHeaders instanceof Headers
       ? Object.fromEntries(existingHeaders as unknown as Iterable<[string, string]>)
@@ -45,9 +67,15 @@ async function apiFetch<T>(baseUrl: string, path: string, options?: RequestInit)
         : existingHeaders),
   };
 
+  // Inject Bearer token when available
+  const token = await getAccessToken();
+  if (token && !headersObj.Authorization) {
+    headersObj.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(url, {
     ...(options ?? {}),
-    headers,
+    headers: headersObj,
     credentials: 'include',
   });
 

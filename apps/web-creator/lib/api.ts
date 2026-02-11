@@ -163,6 +163,29 @@ export interface ValidationError {
 
 const API_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || 'http://localhost:4070/api/v1';
 
+/**
+ * Retrieve the access token from the session cookie.
+ * Works in browser context by calling the session endpoint.
+ */
+let _cachedToken: string | null = null;
+let _tokenFetchedAt = 0;
+const TOKEN_TTL_MS = 4 * 60 * 1000; // 4 minutes
+
+async function getAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  if (_cachedToken && Date.now() - _tokenFetchedAt < TOKEN_TTL_MS) return _cachedToken;
+  try {
+    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { accessToken?: string };
+    _cachedToken = data.accessToken ?? null;
+    _tokenFetchedAt = Date.now();
+    return _cachedToken;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   let headers: Record<string, string> = {};
   if (options.headers instanceof Headers) {
@@ -173,8 +196,15 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers = options.headers;
   }
 
+  // Inject Bearer token when available
+  const token = await getAccessToken();
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...headers,

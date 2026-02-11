@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import React from 'react';
 
 import { requirePlatformAdmin } from '../../../lib/auth';
 import {
@@ -12,54 +13,14 @@ import {
   type ModelCard,
 } from '../../../lib/model-cards-api';
 
-// Mock data for development
-const MOCK_MODEL: ModelCard = {
-  id: '1',
-  modelKey: 'AIVO_TUTOR_V1',
-  provider: 'OPENAI',
-  displayName: 'Aivo Tutor',
-  description:
-    'An AI-powered tutoring assistant designed to help K-12 learners understand concepts through guided questions and scaffolded explanations.',
-  intendedUseCases: `Best for:
-• Providing step-by-step explanations of concepts
-• Answering curriculum-aligned questions
-• Offering hints and guided practice
-• Explaining mistakes in a supportive way
-• Adapting language to different grade levels`,
-  limitations: `Not appropriate for:
-• Medical, legal, or professional advice
-• Grading or formal assessment decisions
-• Replacing teacher judgment on student progress
-• Handling sensitive student disclosures
-• Making placement or intervention recommendations
-
-Important: AI tutoring is a supplement to, not a replacement for, human instruction.`,
-  safetyConsiderations: `Safety measures in place:
-• Content filtered for age-appropriateness
-• Guardrails prevent discussion of harmful topics
-• Responses audited for bias and accuracy
-• Human review of flagged interactions
-• Automatic escalation for concerning content
-
-Disclaimer: This is not a diagnostic tool and should not be used as a substitute for clinical evaluation.`,
-  inputTypes: 'Text (student questions, responses, homework problems)',
-  outputTypes: 'Text (explanations, hints, feedback, encouragement)',
-  dataSourcesSummary:
-    'Trained on curated educational content aligned with Common Core and state standards.',
-  lastReviewedAt: '2024-12-01T00:00:00Z',
-  lastReviewedBy: null,
-  metadataJson: { version: '1.0', baseModel: 'gpt-4o-mini', features: ['tutoring', 'homework_help'] },
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-12-01T00:00:00Z',
-};
-
 interface PageProps {
-  params: { modelKey: string };
+  params: Promise<{ modelKey: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
+  const { modelKey } = await params;
   return {
-    title: `${params.modelKey} Model Card | Aivo Platform Admin`,
+    title: `${modelKey} Model Card | Aivo Platform Admin`,
     description: 'AI model capabilities, limitations, and safety documentation',
   };
 }
@@ -84,7 +45,13 @@ function Section({
   );
 }
 
-function BulletList({ items, variant = 'default' }: { items: string[]; variant?: 'default' | 'warning' }) {
+function BulletList({
+  items,
+  variant = 'default',
+}: {
+  items: string[];
+  variant?: 'default' | 'warning';
+}) {
   const iconClass = variant === 'warning' ? 'text-amber-500' : 'text-emerald-500';
   const icon =
     variant === 'warning' ? (
@@ -118,6 +85,7 @@ function BulletList({ items, variant = 'default' }: { items: string[]; variant?:
 }
 
 export default async function ModelDetailPage({ params }: PageProps) {
+  const { modelKey } = await params;
   const auth = await requirePlatformAdmin();
   if (auth === 'forbidden') {
     return (
@@ -131,21 +99,18 @@ export default async function ModelDetailPage({ params }: PageProps) {
   let modelCard: ModelCard;
 
   try {
-    const result = await getModelCard(params.modelKey, auth.accessToken);
+    const result = await getModelCard(modelKey, auth.accessToken);
     modelCard = result.modelCard;
   } catch {
-    // Use mock data in development, or show not found
-    if (params.modelKey === 'AIVO_TUTOR_V1') {
-      modelCard = MOCK_MODEL;
-    } else {
-      notFound();
-    }
+    notFound();
   }
 
   const provider = PROVIDER_DISPLAY[modelCard.provider];
   const bestFor = parseBestFor(modelCard.intendedUseCases);
   const notAppropriateFor = parseNotAppropriateFor(modelCard.limitations);
-  const { measures: safetyMeasures, disclaimer } = parseSafetyMeasures(modelCard.safetyConsiderations);
+  const { measures: safetyMeasures, disclaimer } = parseSafetyMeasures(
+    modelCard.safetyConsiderations
+  );
 
   return (
     <div className="space-y-6">
@@ -161,7 +126,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
       {/* Review Banner */}
       <div className="bg-slate-100 rounded-lg px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-5 w-5 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -191,7 +161,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
         <Section
           title="Intended Uses"
           icon={
-            <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5 text-emerald-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -209,7 +184,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
         <Section
           title="Limitations"
           icon={
-            <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5 text-amber-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -228,7 +208,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
       <Section
         title="Safety & Mitigations"
         icon={
-          <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-5 w-5 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -238,7 +223,9 @@ export default async function ModelDetailPage({ params }: PageProps) {
           </svg>
         }
       >
-        <p className="text-sm text-slate-600 mb-4">Measures implemented to ensure safe operation:</p>
+        <p className="text-sm text-slate-600 mb-4">
+          Measures implemented to ensure safe operation:
+        </p>
         <BulletList items={safetyMeasures} />
         {disclaimer && (
           <div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -268,7 +255,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
         <Section
           title="Input Types"
           icon={
-            <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5 text-slate-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -284,7 +276,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
         <Section
           title="Output Types"
           icon={
-            <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5 text-slate-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -302,7 +299,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
       <Section
         title="Training Data Summary"
         icon={
-          <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-5 w-5 text-slate-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -320,7 +322,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
         <Section
           title="Technical Details"
           icon={
-            <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="h-5 w-5 text-slate-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -334,13 +341,17 @@ export default async function ModelDetailPage({ params }: PageProps) {
             {modelCard.metadataJson.version && (
               <div>
                 <dt className="text-xs text-slate-500 uppercase tracking-wide">Version</dt>
-                <dd className="text-sm text-slate-900 font-mono mt-1">{modelCard.metadataJson.version}</dd>
+                <dd className="text-sm text-slate-900 font-mono mt-1">
+                  {modelCard.metadataJson.version}
+                </dd>
               </div>
             )}
             {modelCard.metadataJson.baseModel && (
               <div>
                 <dt className="text-xs text-slate-500 uppercase tracking-wide">Base Model</dt>
-                <dd className="text-sm text-slate-900 font-mono mt-1">{modelCard.metadataJson.baseModel}</dd>
+                <dd className="text-sm text-slate-900 font-mono mt-1">
+                  {modelCard.metadataJson.baseModel}
+                </dd>
               </div>
             )}
             {modelCard.metadataJson.context_window && (

@@ -27,8 +27,8 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "vitest.config.ts",
-    "vitest.setup.ts"
+    "vitest.setup.ts",
+    "middleware.ts"
   ],
   "exclude": ["node_modules", ".next", "dist", "build"]
 }
-

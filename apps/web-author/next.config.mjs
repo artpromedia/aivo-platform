@@ -12,6 +12,22 @@ const nextConfig = {
     return config;
   },
 
+  async rewrites() {
+    const authoringSvcUrl = process.env.AUTHORING_SVC_URL || 'http://localhost:4060';
+    const learnerModelSvcUrl = process.env.LEARNER_MODEL_SVC_URL || 'http://localhost:4025';
+
+    return [
+      {
+        source: '/api/authoring/:path*',
+        destination: `${authoringSvcUrl}/api/v1/authoring/:path*`,
+      },
+      {
+        source: '/api/learner-model/:path*',
+        destination: `${learnerModelSvcUrl}/api/v1/learner-model/:path*`,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {
