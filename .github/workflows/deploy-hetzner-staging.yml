@@ -114,8 +114,9 @@ jobs:
           DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
           REDIS_URL: redis://localhost:6379
 
-      - name: Build
-        run: pnpm run build
+      # Build step removed — Docker stage handles per-service builds.
+      # The root `pnpm run build` triggers turbo across all ~90 packages
+      # (including 10 Next.js web apps) which hangs CI for hours.
 
       - name: Determine version
         id: version

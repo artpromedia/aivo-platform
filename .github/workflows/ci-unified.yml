@@ -17,8 +17,9 @@ permissions:
   security-events: write
 
 on:
-  push:
-    branches: [main, develop, release/*, hotfix/*]
+  # push trigger disabled — deploy-hetzner-staging.yml handles main deploys
+  # push:
+  #   branches: [main, develop, release/*, hotfix/*]
   pull_request:
     branches: [main, develop]
   release:
