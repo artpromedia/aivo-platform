@@ -5,9 +5,11 @@
 name: Build and Push
 
 on:
-  push:
-    branches: [main, release/*]
-    tags: ['v*']
+  # Disabled auto-trigger: deploy-hetzner-staging.yml handles Docker builds
+  # Re-enable when web/mobile apps are production-ready
+  # push:
+  #   branches: [main, release/*]
+  #   tags: ['v*']
   workflow_dispatch:
     inputs:
       services:
