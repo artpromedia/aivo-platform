@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aivo/auth-web": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ts-types": "workspace:*",
     "@aivo/ui": "workspace:*",

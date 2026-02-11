@@ -18,7 +18,14 @@
       }
     ]
   },
-  "include": ["app/**/*", "components/**/*", "lib/**/*", "next-env.d.ts", ".next/types/**/*.ts"],
+  "include": [
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "middleware.ts",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     ".next",
@@ -29,4 +36,3 @@
     "vitest.setup.ts"
   ]
 }
-

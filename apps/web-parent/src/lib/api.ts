@@ -1,5 +1,8 @@
 /**
  * API Client for Parent Portal
+ *
+ * Uses httpOnly cookie-based auth (cookies sent automatically by the browser).
+ * No localStorage token reads — tokens are never accessible to client JS.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -13,15 +16,13 @@ interface RequestOptions {
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-
   const res = await fetch(`${API_URL}${endpoint}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...headers,
     },
+    credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -36,12 +37,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 }
 
 async function getBlob(endpoint: string): Promise<Blob> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-
   const res = await fetch(`${API_URL}${endpoint}`, {
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
+    credentials: 'include',
   });
 
   if (!res.ok) {

@@ -12,25 +12,9 @@
 import Link from 'next/link';
 import * as React from 'react';
 
+import { useAuth } from '../../../components/providers';
+
 import { cn } from '@/lib/utils';
-
-// Types for auth context
-interface AuthContext {
-  userName?: string;
-  userInitials?: string;
-  userRole?: string;
-  userEmail?: string;
-}
-
-// Stub useAuth hook - integrate with actual auth provider
-function useAuth(): AuthContext {
-  return {
-    userName: undefined,
-    userInitials: undefined,
-    userRole: undefined,
-    userEmail: undefined,
-  };
-}
 
 interface HeaderProps {
   title?: string;
@@ -344,13 +328,15 @@ function NotificationsDropdown({ onClose }: DropdownProps) {
 }
 
 function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProps) {
+  const { logout } = useAuth();
+
   const menuItems = [
     { label: 'My Profile', href: '/profile', icon: '👤' },
     { label: 'Account Settings', href: '/settings/account', icon: '⚙️' },
     { label: 'Notification Preferences', href: '/settings/notifications', icon: '🔔' },
     { label: 'Help Center', href: '/help', icon: '❓' },
     { divider: true },
-    { label: 'Sign Out', href: '/logout', icon: '🚪', danger: true },
+    { label: 'Sign Out', href: '#', icon: '🚪', danger: true, action: logout },
   ];
 
   return (
@@ -360,19 +346,34 @@ function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProp
         <p className="text-sm text-gray-500">{userEmail}</p>
       </div>
       <div className="py-1">
-        {menuItems.map((item, index) => {
+        {menuItems.map((item) => {
           if ('divider' in item) {
-            return <div key={`divider-${index}`} className="my-1 border-t" />;
+            return <div key="menu-divider" className="my-1 border-t" />;
+          }
+          if ('action' in item && item.action) {
+            return (
+              <button
+                key={item.label}
+                onClick={() => {
+                  onClose();
+                  void item.action();
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50',
+                  item.danger ? 'text-red-600' : 'text-gray-700'
+                )}
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
           }
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50',
-                item.danger ? 'text-red-600' : 'text-gray-700'
-              )}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               <span>{item.icon}</span>
               <span>{item.label}</span>

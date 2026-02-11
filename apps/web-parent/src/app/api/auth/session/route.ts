@@ -1,82 +1,35 @@
 /**
  * Auth Session API Route
  *
- * Returns the current user session. This is called by the frontend
- * to check authentication status.
+ * Returns the current user session verified via @aivo/auth-web.
+ * No more raw base64 JWT decode or dev mocks.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { getServerSession } from '@aivo/auth-web';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const isDev = process.env.NODE_ENV === 'development';
-
-interface JwtPayload {
-  sub?: string;
-  id?: string;
-  email?: string;
-  name?: string;
-  firstName?: string;
-  lastName?: string;
-  givenName?: string;
-  familyName?: string;
-}
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('auth-token')?.value || 
-                  cookieStore.get('parent-token')?.value ||
-                  request.headers.get('Authorization')?.replace('Bearer ', '');
+    const session = await getServerSession();
 
-    if (token) {
-      try {
-        // Parse the token (JWT has 3 parts separated by .)
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8')) as JwtPayload;
-          
-          return NextResponse.json({
-            user: {
-              id: payload.sub || payload.id,
-              email: payload.email || 'parent@example.com',
-              name: payload.name || payload.firstName || 'Parent',
-              firstName: payload.firstName || payload.givenName || 'Demo',
-              lastName: payload.lastName || payload.familyName || 'Parent',
-            },
-            expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          });
-        }
-      } catch (jwtError) {
-        console.log('[Session API] Token parsing failed:', jwtError);
-      }
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In development, return a mock session
-    if (isDev) {
-      return NextResponse.json({
-        user: {
-          id: 'parent_demo_123',
-          email: 'demo@example.com',
-          name: 'Demo Parent',
-          firstName: 'Demo',
-          lastName: 'Parent',
-        },
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      });
-    }
-
-    // No valid session
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({
+      user: {
+        id: session.userId,
+        email: session.email,
+        name: session.name,
+        roles: session.roles,
+        tenantId: session.tenantId,
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
   } catch (error) {
     console.error('[Session API] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

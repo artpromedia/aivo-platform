@@ -409,6 +409,9 @@ importers:
 
   apps/web-district:
     dependencies:
+      '@aivo/auth-web':
+        specifier: workspace:*
+        version: link:../../packages/auth-web
       '@aivo/caching':
         specifier: workspace:*
         version: link:../../packages/caching
@@ -485,6 +488,9 @@ importers:
 
   apps/web-learner:
     dependencies:
+      '@aivo/auth-web':
+        specifier: workspace:*
+        version: link:../../packages/auth-web
       '@aivo/ts-types':
         specifier: workspace:*
         version: link:../../libs/ts-types
@@ -628,6 +634,9 @@ importers:
 
   apps/web-parent:
     dependencies:
+      '@aivo/auth-web':
+        specifier: workspace:*
+        version: link:../../packages/auth-web
       '@aivo/ts-types':
         specifier: workspace:*
         version: link:../../libs/ts-types
@@ -740,6 +749,9 @@ importers:
 
   apps/web-platform-admin:
     dependencies:
+      '@aivo/auth-web':
+        specifier: workspace:*
+        version: link:../../packages/auth-web
       '@aivo/caching':
         specifier: workspace:*
         version: link:../../packages/caching
@@ -810,6 +822,9 @@ importers:
 
   apps/web-teacher:
     dependencies:
+      '@aivo/auth-web':
+        specifier: workspace:*
+        version: link:../../packages/auth-web
       '@aivo/ts-rbac':
         specifier: workspace:*
         version: link:../../libs/ts-rbac
@@ -1481,6 +1496,28 @@ importers:
       vitest:
         specifier: ^1.1.0
         version: 1.6.1(@types/node@20.19.26)(jsdom@23.2.0)(terser@5.44.1)
+
+  packages/auth-web:
+    dependencies:
+      jose:
+        specifier: ^5.2.0
+        version: 5.10.0
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.27
+      next:
+        specifier: 14.2.35
+        version: 14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.1)(jsdom@26.1.0)(terser@5.44.1)
 
   packages/caching:
     dependencies:

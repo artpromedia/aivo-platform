@@ -21,15 +21,28 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const session = await getAuthSession();
 
+  // Derive display fields from AuthSession
+  const userName = session?.name ?? null;
+  const userEmail = session?.email ?? null;
+  const userInitials = userName
+    ? userName
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : null;
+  const userRole = session?.roles[0] ?? null;
+
   const initialAuth: AuthState = session
     ? {
         isAuthenticated: true,
         userId: session.userId,
         tenantId: session.tenantId,
-        userName: session.userName,
-        userEmail: session.userEmail,
-        userInitials: session.userInitials,
-        userRole: session.userRole,
+        userName,
+        userEmail,
+        userInitials,
+        userRole,
         roles: session.roles,
       }
     : {
@@ -51,7 +64,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </a>
         <Providers initialAuth={initialAuth}>
           <Nav />
-          <main id="main-content" className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6" tabIndex={-1}>{children}</main>
+          <main
+            id="main-content"
+            className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6"
+            tabIndex={-1}
+          >
+            {children}
+          </main>
         </Providers>
       </body>
     </html>
