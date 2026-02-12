@@ -436,6 +436,12 @@ jobs:
     name: Deploy to Hetzner Staging
     runs-on: [self-hosted, hetzner, staging]
     needs: [ci, docker, docker-python, docker-web]
+    # Deploy runs if CI passes and at least docker-web succeeds.
+    # Backend/Python images already exist on staging from prior deploys.
+    if: |
+      always() &&
+      needs.ci.result == 'success' &&
+      needs.docker-web.result == 'success'
     environment: staging
     steps:
       - uses: actions/checkout@v4
