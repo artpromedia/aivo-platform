@@ -1,0 +1,160 @@
+# =============================================================================
+# AIVO Platform  Web Frontend Ingress (NGINX Ingress Controller)
+# =============================================================================
+# Ingress rules for all web frontend applications.
+# Each app gets its own subdomain under aivolearning.com.
+# TLS handled by Cloudflare origin certificate ("Full" SSL mode).
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aivo-web-ingress
+  namespace: aivo-prod
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    # Cache static assets at the ingress level
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    # HSTS (also set in Next.js, belt-and-suspenders)
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-Frame-Options: DENY";
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - aivolearning.com
+        - www.aivolearning.com
+        - app.aivolearning.com
+        - teacher.aivolearning.com
+        - parent.aivolearning.com
+        - admin.aivolearning.com
+        - district.aivolearning.com
+        - author.aivolearning.com
+        - creator.aivolearning.com
+        - docs.aivolearning.com
+      secretName: cloudflare-origin-tls
+  rules:
+    # Marketing site — aivolearning.com + www
+    - host: aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-marketing
+                port:
+                  number: 3000
+    - host: www.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-marketing
+                port:
+                  number: 3000
+
+    # Student/Learner app
+    - host: app.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-learner
+                port:
+                  number: 3000
+
+    # Teacher dashboard
+    - host: teacher.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-teacher
+                port:
+                  number: 3000
+
+    # Parent/caregiver portal
+    - host: parent.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-parent
+                port:
+                  number: 3000
+
+    # Platform admin panel
+    - host: admin.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-platform-admin
+                port:
+                  number: 3000
+
+    # District administrator dashboard
+    - host: district.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-district
+                port:
+                  number: 3000
+
+    # Content authoring tool
+    - host: author.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-author
+                port:
+                  number: 3000
+
+    # Content creation studio
+    - host: creator.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-creator
+                port:
+                  number: 3000
+
+    # Developer documentation portal
+    - host: docs.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-dev-portal
+                port:
+                  number: 3000

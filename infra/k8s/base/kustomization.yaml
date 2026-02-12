@@ -47,6 +47,9 @@ resources:
   - parent-svc.yaml
   - baseline-svc.yaml
 
+  #  Web Frontend Applications 
+  - web-apps/
+
   #  Python AI/ML Services 
   #  Heavy (large model loading  pin to i9-9900K via nodeSelector)
   - python-services/training-svc.yaml

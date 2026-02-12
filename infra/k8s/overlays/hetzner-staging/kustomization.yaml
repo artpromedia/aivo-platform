@@ -10,6 +10,7 @@ kind: Kustomization
 
 resources:
   - ../../base
+  - web-ingress.yaml
 
 namespace: aivo-staging
 
@@ -139,6 +140,35 @@ images:
     newTag: latest
   - name: aivo/grading-engine
     newName: ghcr.io/artpromedia/aivo-grading-engine
+    newTag: latest
+
+  #  Web Frontend Applications 
+  - name: aivo/web-learner
+    newName: ghcr.io/artpromedia/aivo-web-learner
+    newTag: latest
+  - name: aivo/web-teacher
+    newName: ghcr.io/artpromedia/aivo-web-teacher
+    newTag: latest
+  - name: aivo/web-marketing
+    newName: ghcr.io/artpromedia/aivo-web-marketing
+    newTag: latest
+  - name: aivo/web-parent
+    newName: ghcr.io/artpromedia/aivo-web-parent
+    newTag: latest
+  - name: aivo/web-district
+    newName: ghcr.io/artpromedia/aivo-web-district
+    newTag: latest
+  - name: aivo/web-platform-admin
+    newName: ghcr.io/artpromedia/aivo-web-platform-admin
+    newTag: latest
+  - name: aivo/web-author
+    newName: ghcr.io/artpromedia/aivo-web-author
+    newTag: latest
+  - name: aivo/web-creator
+    newName: ghcr.io/artpromedia/aivo-web-creator
+    newTag: latest
+  - name: aivo/web-dev-portal
+    newName: ghcr.io/artpromedia/aivo-web-dev-portal
     newTag: latest
 
 patches:

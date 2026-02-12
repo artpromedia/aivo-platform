@@ -1,0 +1,19 @@
+# ============================================================================
+# Web Apps — Kustomization
+# ============================================================================
+# Groups all web frontend deployments for inclusion in the base kustomization.
+# ============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - web-learner.yaml
+  - web-teacher.yaml
+  - web-marketing.yaml
+  - web-parent.yaml
+  - web-district.yaml
+  - web-platform-admin.yaml
+  - web-author.yaml
+  - web-creator.yaml
+  - web-dev-portal.yaml

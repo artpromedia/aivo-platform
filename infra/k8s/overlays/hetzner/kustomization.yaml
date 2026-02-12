@@ -12,6 +12,7 @@ kind: Kustomization
 resources:
   - ../../base
   - ingress.yaml
+  - web-ingress.yaml
 
 namespace: aivo-prod
 
@@ -162,6 +163,35 @@ images:
     newName: ghcr.io/artpromedia/aivo-curriculum-py-svc
     newTag: latest
 
+  #  Web Frontend Applications 
+  - name: aivo/web-learner
+    newName: ghcr.io/artpromedia/aivo-web-learner
+    newTag: latest
+  - name: aivo/web-teacher
+    newName: ghcr.io/artpromedia/aivo-web-teacher
+    newTag: latest
+  - name: aivo/web-marketing
+    newName: ghcr.io/artpromedia/aivo-web-marketing
+    newTag: latest
+  - name: aivo/web-parent
+    newName: ghcr.io/artpromedia/aivo-web-parent
+    newTag: latest
+  - name: aivo/web-district
+    newName: ghcr.io/artpromedia/aivo-web-district
+    newTag: latest
+  - name: aivo/web-platform-admin
+    newName: ghcr.io/artpromedia/aivo-web-platform-admin
+    newTag: latest
+  - name: aivo/web-author
+    newName: ghcr.io/artpromedia/aivo-web-author
+    newTag: latest
+  - name: aivo/web-creator
+    newName: ghcr.io/artpromedia/aivo-web-creator
+    newTag: latest
+  - name: aivo/web-dev-portal
+    newName: ghcr.io/artpromedia/aivo-web-dev-portal
+    newTag: latest
+
 patches:
   #  ConfigMap: NODE_ENV=production 
   - target:
@@ -241,6 +271,29 @@ patches:
   - target:
       kind: Deployment
       name: ai-orchestrator
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  #  Web Frontend Replicas (high-traffic apps get 2 replicas) 
+  - target:
+      kind: Deployment
+      name: web-learner
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: web-teacher
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: Deployment
+      name: web-marketing
     patch: |-
       - op: replace
         path: /spec/replicas

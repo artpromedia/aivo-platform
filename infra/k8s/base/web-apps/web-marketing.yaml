@@ -1,0 +1,138 @@
+# ============================================================================
+# Web Marketing — Kubernetes Deployment
+# ============================================================================
+# Next.js standalone app — the public marketing site (aivolearning.com).
+# ============================================================================
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-marketing-config
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: web-marketing
+    app.kubernetes.io/component: frontend
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-marketing
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: web-marketing
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-marketing
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-marketing
+        app.kubernetes.io/component: frontend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: web-marketing
+          image: aivo/web-marketing:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: web-marketing-config
+
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nextjs-cache
+              mountPath: /app/.next/cache
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: nextjs-cache
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-marketing
+  namespace: aivo
+  labels:
+    app.kubernetes.io/name: web-marketing
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: web-marketing

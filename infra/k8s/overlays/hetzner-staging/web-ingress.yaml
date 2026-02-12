@@ -1,0 +1,140 @@
+# =============================================================================
+# AIVO Platform  Web Frontend Ingress — Staging
+# =============================================================================
+# Staging ingress for web frontends. Uses staging subdomains.
+# TLS handled by Cloudflare origin certificate ("Full" SSL mode).
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aivo-web-ingress
+  namespace: aivo-staging
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - staging.aivolearning.com
+        - staging-app.aivolearning.com
+        - staging-teacher.aivolearning.com
+        - staging-parent.aivolearning.com
+        - staging-admin.aivolearning.com
+        - staging-district.aivolearning.com
+        - staging-author.aivolearning.com
+        - staging-creator.aivolearning.com
+        - staging-docs.aivolearning.com
+      secretName: cloudflare-origin-tls
+  rules:
+    # Marketing site — staging
+    - host: staging.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-marketing
+                port:
+                  number: 3000
+
+    # Student/Learner app — staging
+    - host: staging-app.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-learner
+                port:
+                  number: 3000
+
+    # Teacher dashboard — staging
+    - host: staging-teacher.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-teacher
+                port:
+                  number: 3000
+
+    # Parent portal — staging
+    - host: staging-parent.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-parent
+                port:
+                  number: 3000
+
+    # Platform admin — staging
+    - host: staging-admin.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-platform-admin
+                port:
+                  number: 3000
+
+    # District admin — staging
+    - host: staging-district.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-district
+                port:
+                  number: 3000
+
+    # Content authoring — staging
+    - host: staging-author.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-author
+                port:
+                  number: 3000
+
+    # Content creation — staging
+    - host: staging-creator.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-creator
+                port:
+                  number: 3000
+
+    # Developer docs — staging
+    - host: staging-docs.aivolearning.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-dev-portal
+                port:
+                  number: 3000
