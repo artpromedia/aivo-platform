@@ -114,6 +114,10 @@ export class I18nManager {
   private detectLocale(): SupportedLocale {
     const { detection } = this.config;
 
+    if (!detection) {
+      return this.config.defaultLocale;
+    }
+
     for (const source of detection.order) {
       let detected: string | null = null;
 
@@ -201,6 +205,10 @@ export class I18nManager {
    */
   private persistLocale(locale: SupportedLocale): void {
     const { detection } = this.config;
+
+    if (!detection) {
+      return;
+    }
 
     if (detection.caches.includes('localStorage') && typeof localStorage !== 'undefined') {
       localStorage.setItem(detection.localStorageKey, locale);
