@@ -102,6 +102,12 @@ generate_client() {
         return 0
     fi
 
+    # Skip services without package.json — npx prisma requires Node.js deps
+    if [[ ! -f "$service_dir/package.json" ]]; then
+        echo -e "${YELLOW}  ⚠ Skipping $service (no package.json — not a Node.js service or missing setup)${NC}"
+        return 0
+    fi
+
     if [[ "$DRY_RUN" == "true" ]]; then
         echo -e "${BLUE}  [DRY RUN] Would generate client for: $service${NC}"
         return 0

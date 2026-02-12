@@ -156,7 +156,9 @@ export class OpenAIAdapter extends ModelAdapter {
       params.tool_choice = 'auto';
     }
 
-    const response = await this.client.chat.completions.create(params);
+    // Cast needed: TS can't narrow the overload since params.stream is `boolean`, not literal `false`.
+    // We set stream=false above, so the SDK returns OpenAIChatCompletion.
+    const response = await this.client.chat.completions.create(params) as OpenAIChatCompletion;
 
     return this.parseResponse(response);
   }
