@@ -9,11 +9,12 @@
     "module": "esnext",
     "baseUrl": ".",
     "paths": {
+      "@aivo/i18n": ["../../packages/i18n/src"],
       "@aivo/*": [
+        "../../packages/*/src",
         "../../libs/*/src",
         "../../services/*/src",
-        "../../apps/*/src",
-        "../../packages/*/src"
+        "../../apps/*/src"
       ],
       "@/*": ["./*"]
     },
