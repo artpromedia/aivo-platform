@@ -9,4 +9,4 @@ export {
   type TranslationManagerConfig,
   type UploadOptions,
   type DownloadOptions,
-} from './translation-manager.js';
+} from './translation-manager';

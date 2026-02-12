@@ -11,7 +11,7 @@ import {
   LOCALE_METADATA,
   type Locale,
   type TranslationMessages,
-} from '../constants/index.js';
+} from '../constants/index';
 
 /**
  * Check if a locale is RTL
@@ -207,17 +207,23 @@ export function formatMessageWithValues(
  * @example
  * interpolateMessage('You have {count} items', { count: 5 }) // 'You have 5 items'
  */
-export function interpolateMessage(
-  message: string,
-  values?: Record<string, unknown>
-): string {
+export function interpolateMessage(message: string, values?: Record<string, unknown>): string {
   if (!values) {
     return message;
   }
 
-  return message.replace(/\{(\w+)(?:,\s*\w+(?:,\s*\{[^}]+\})?)?\}/g, (match, key) => {
+  return message.replace(/\{(\w+)(?:,\s*\w+(?:,\s*\{[^}]+\})?)?\}/g, (match, key: string) => {
     const value = values[key];
-    return value !== undefined ? String(value) : match;
+    if (value === undefined) return match;
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      typeof value === 'bigint'
+    ) {
+      return String(value);
+    }
+    return match;
   });
 }
 
@@ -328,15 +334,12 @@ export function sortLocalesByName(locales: Locale[]): Locale[] {
  * Group locales by region
  */
 export function groupLocalesByRegion(locales: Locale[]): Record<string, Locale[]> {
-  return locales.reduce(
-    (groups, locale) => {
-      const region = LOCALE_METADATA[locale]?.region || 'Other';
-      if (!groups[region]) {
-        groups[region] = [];
-      }
-      groups[region].push(locale);
-      return groups;
-    },
-    {} as Record<string, Locale[]>
-  );
+  return locales.reduce<Record<string, Locale[]>>((groups, locale) => {
+    const region = LOCALE_METADATA[locale]?.region || 'Other';
+    if (!groups[region]) {
+      groups[region] = [];
+    }
+    groups[region].push(locale);
+    return groups;
+  }, {});
 }

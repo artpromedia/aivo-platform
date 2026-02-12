@@ -47,30 +47,29 @@ export default function AIModelDetailPage() {
       {metrics && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total Calls" value={metrics.totalCalls?.toLocaleString() ?? '—'} />
+            <StatCard
+              label="Total Requests"
+              value={metrics.requestCount?.toLocaleString() ?? '—'}
+            />
             <StatCard
               label="Avg Latency"
               value={metrics.avgLatencyMs ? `${metrics.avgLatencyMs}ms` : '—'}
             />
             <StatCard
-              label="Error Rate"
-              value={metrics.errorRate != null ? `${(metrics.errorRate * 100).toFixed(1)}%` : '—'}
+              label="Errors"
+              value={metrics.errorCount != null ? metrics.errorCount.toLocaleString() : '—'}
             />
             <StatCard
               label="Est. Cost"
-              value={
-                metrics.totalCostCents != null
-                  ? `$${(metrics.totalCostCents / 100).toFixed(2)}`
-                  : '—'
-              }
+              value={metrics.costTotal != null ? `$${metrics.costTotal.toFixed(2)}` : '—'}
             />
           </div>
 
-          {metrics.callsByPeriod && metrics.callsByPeriod.length > 0 && (
+          {metrics.dataPoints && metrics.dataPoints.length > 0 && (
             <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold">Calls by Period</h2>
               <div className="grid gap-2">
-                {metrics.callsByPeriod.map((entry: { period: string; count: number }) => (
+                {metrics.dataPoints.map((entry: { period: string; count: number }) => (
                   <div
                     key={entry.period}
                     className="flex items-center justify-between border-b py-2 text-sm last:border-0"

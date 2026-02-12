@@ -4,7 +4,7 @@
  * Configurable message loader with caching and fallback support.
  */
 
-import { type Locale, type TranslationMessages, DEFAULT_LOCALE } from '../constants/index.js';
+import { type Locale, type TranslationMessages, DEFAULT_LOCALE } from '../constants/index';
 
 export interface MessageLoaderConfig {
   /**

@@ -138,7 +138,8 @@ export async function requireSession(): Promise<AuthSession> {
     const { redirect } = await import('next/navigation');
     redirect('/login');
   }
-  return session;
+  // session is guaranteed non-null after the guard above
+  return session!;
 }
 
 // ─── Cookie helpers ───────────────────────────────────────────────────────────

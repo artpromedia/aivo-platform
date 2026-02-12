@@ -7,7 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./messages/*": "./src/messages/*.json",
-    "./provider": "./src/provider/index.ts",
+    "./provider": "./src/provider/index.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./utils": "./src/utils/index.ts",
     "./constants": "./src/constants/index.ts"

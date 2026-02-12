@@ -5,7 +5,12 @@
  * Provides utilities for extracting, uploading, and downloading translations.
  */
 
-import { type Locale, SUPPORTED_LOCALES, DEFAULT_LOCALE, type TranslationMessages } from '../constants/index.js';
+import {
+  type Locale,
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  type TranslationMessages,
+} from '../constants/index';
 
 /**
  * Translation management platform types
@@ -18,12 +23,15 @@ export type TranslationPlatform = 'crowdin' | 'lokalise' | 'phrase' | 'custom';
 export interface TranslationStatus {
   key: string;
   sourceText: string;
-  translations: Record<Locale, {
-    text: string | null;
-    status: 'translated' | 'fuzzy' | 'untranslated' | 'approved';
-    lastUpdated: string | null;
-    translator: string | null;
-  }>;
+  translations: Record<
+    Locale,
+    {
+      text: string | null;
+      status: 'translated' | 'fuzzy' | 'untranslated' | 'approved';
+      lastUpdated: string | null;
+      translator: string | null;
+    }
+  >;
 }
 
 /**
@@ -72,13 +80,21 @@ export class TranslationManager {
   /**
    * Get translation completion statistics
    */
-  async getStatistics(): Promise<Record<Locale, {
-    total: number;
-    translated: number;
-    approved: number;
-    percentage: number;
-  }>> {
-    const stats: Record<string, { total: number; translated: number; approved: number; percentage: number }> = {};
+  async getStatistics(): Promise<
+    Record<
+      Locale,
+      {
+        total: number;
+        translated: number;
+        approved: number;
+        percentage: number;
+      }
+    >
+  > {
+    const stats: Record<
+      string,
+      { total: number; translated: number; approved: number; percentage: number }
+    > = {};
 
     for (const locale of SUPPORTED_LOCALES) {
       if (locale === this.config.sourceLocale) {
@@ -95,7 +111,10 @@ export class TranslationManager {
       };
     }
 
-    return stats as Record<Locale, { total: number; translated: number; approved: number; percentage: number }>;
+    return stats as Record<
+      Locale,
+      { total: number; translated: number; approved: number; percentage: number }
+    >;
   }
 
   /**
@@ -107,7 +126,9 @@ export class TranslationManager {
   ): Promise<{ uploaded: number; updated: number; errors: string[] }> {
     const { updateStrings = true, cleanupMode = 'none' } = options;
 
-    console.log(`Uploading ${Object.keys(messages).length} source strings to ${this.config.platform}`);
+    console.log(
+      `Uploading ${Object.keys(messages).length} source strings to ${this.config.platform}`
+    );
     console.log(`Options: updateStrings=${updateStrings}, cleanupMode=${cleanupMode}`);
 
     // Platform-specific implementation would go here
@@ -131,7 +152,9 @@ export class TranslationManager {
   ): Promise<Record<Locale, TranslationMessages>> {
     const { locales = SUPPORTED_LOCALES, includeUntranslated = false } = options;
 
-    console.log(`Downloading translations for ${locales.length} locales from ${this.config.platform}`);
+    console.log(
+      `Downloading translations for ${locales.length} locales from ${this.config.platform}`
+    );
 
     const translations: Record<string, TranslationMessages> = {};
 

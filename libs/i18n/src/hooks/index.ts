@@ -13,8 +13,9 @@ import {
   type FormatListOptions,
   type FormatRelativeTimeOptions,
 } from 'react-intl';
-import { useLocaleContext } from '../provider/index.js';
-import { RTL_LOCALES, type Locale, LOCALE_METADATA } from '../constants/index.js';
+
+import { RTL_LOCALES, type Locale, LOCALE_METADATA } from '../constants/index';
+import { useLocaleContext } from '../provider/index';
 
 /**
  * Hook for accessing the current locale and locale utilities
@@ -129,7 +130,7 @@ export function useFormatNumber() {
   );
 
   const formatDecimal = useCallback(
-    (value: number, decimals: number = 2) => {
+    (value: number, decimals = 2) => {
       return intl.formatNumber(value, {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
@@ -228,7 +229,11 @@ export function useFormatCurrency() {
   const intl = useIntl();
 
   const formatCurrency = useCallback(
-    (value: number, currency: string, options?: Omit<FormatNumberOptions, 'style' | 'currency'>) => {
+    (
+      value: number,
+      currency: string,
+      options?: Omit<FormatNumberOptions, 'style' | 'currency'>
+    ) => {
       return intl.formatNumber(value, {
         style: 'currency',
         currency,
@@ -279,11 +284,7 @@ export function useFormatRelativeTime() {
   const intl = useIntl();
 
   const formatRelativeTime = useCallback(
-    (
-      value: number,
-      unit: Intl.RelativeTimeFormatUnit,
-      options?: FormatRelativeTimeOptions
-    ) => {
+    (value: number, unit: Intl.RelativeTimeFormatUnit, options?: FormatRelativeTimeOptions) => {
       return intl.formatRelativeTime(value, unit, options);
     },
     [intl]

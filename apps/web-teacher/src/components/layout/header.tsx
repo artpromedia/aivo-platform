@@ -12,7 +12,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 
-import { useAuth } from '../../../components/providers';
+import { useAuth } from '../shared/providers';
 
 import { cn } from '@/lib/utils';
 

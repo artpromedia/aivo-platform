@@ -11,7 +11,7 @@
  */
 
 // Provider
-export { AivoIntlProvider, type AivoIntlProviderProps } from './provider/index.js';
+export { AivoIntlProvider, type AivoIntlProviderProps } from './provider/index';
 
 // Hooks
 export {
@@ -25,7 +25,7 @@ export {
   useFormatList,
   usePluralRules,
   useRTL,
-} from './hooks/index.js';
+} from './hooks/index';
 
 // Utilities
 export {
@@ -41,7 +41,7 @@ export {
   getSupportedLocale,
   getLanguageName,
   getRegionName,
-} from './utils/index.js';
+} from './utils/index';
 
 // Constants
 export {
@@ -55,10 +55,10 @@ export {
   type LocaleMetadata,
   type MessageDescriptor,
   type TranslationMessages,
-} from './constants/index.js';
+} from './constants/index';
 
 // Message loader
-export { createMessageLoader, type MessageLoaderConfig } from './loader/index.js';
+export { createMessageLoader, type MessageLoaderConfig } from './loader/index';
 
 // Translation management
 export {
@@ -72,7 +72,7 @@ export {
   type TranslationManagerConfig,
   type UploadOptions,
   type DownloadOptions,
-} from './management/index.js';
+} from './management/index';
 
 // Messages
 export {
@@ -81,4 +81,4 @@ export {
   getAvailableMessageLocales,
   hasMessages,
   type SupportedMessageLocale,
-} from './messages/index.js';
+} from './messages/index';

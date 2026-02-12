@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { IntlProvider, type IntlConfig } from 'react-intl';
+
 import {
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,
@@ -17,8 +18,8 @@ import {
   LOCALE_METADATA,
   type Locale,
   type TranslationMessages,
-} from '../constants/index.js';
-import { loadMessagesAsync, getBrowserLocale, normalizeLocale } from '../utils/index.js';
+} from '../constants/index';
+import { loadMessagesAsync, getBrowserLocale, normalizeLocale } from '../utils/index';
 
 /**
  * Locale context for accessing locale state outside IntlProvider
@@ -172,10 +173,10 @@ export function AivoIntlProvider({
           setIsLoading(false);
         }
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           console.error(`Failed to load messages for locale ${locale}:`, error);
-          onError?.(error);
+          onError?.(error instanceof Error ? error : new Error(String(error)));
           // Fall back to default messages
           setMessages(defaultMessages);
           setIsLoading(false);
