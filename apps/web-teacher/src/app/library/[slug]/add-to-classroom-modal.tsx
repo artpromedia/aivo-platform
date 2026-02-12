@@ -14,12 +14,12 @@
 import { Button } from '@aivo/ui-web';
 import { useState, useEffect } from 'react';
 
-import { useAuth } from '../../../components/providers';
+import { useAuth } from '@/components/shared/providers';
 import {
   type MarketplaceLibraryItem,
   addContentToClassroom,
   getTeacherClassrooms,
-} from '../../../lib/marketplace-api';
+} from '@/lib/marketplace-api';
 
 interface Classroom {
   id: string;

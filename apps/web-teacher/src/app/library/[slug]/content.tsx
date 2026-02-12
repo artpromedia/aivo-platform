@@ -17,7 +17,7 @@ import {
   getItemTypeLabel,
   getSubjectLabel,
   getGradeBandLabel,
-} from '../../../lib/marketplace-api';
+} from '@/lib/marketplace-api';
 
 import { AddToClassroomModal } from './add-to-classroom-modal';
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoonPage } from '@/components/pages/coming-soon-page';
+import { PartnersPage as PartnersPageContent } from '@/components/pages';
 
 export const metadata: Metadata = {
   title: 'Partners | AIVO Learning',
@@ -8,11 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PartnersPage() {
-  return (
-    <ComingSoonPage
-      title="Partner With Us"
-      description="Join our network of educational partners, resellers, and integration partners."
-      expectedDate="Q1 2025"
-    />
-  );
+  return <PartnersPageContent />;
 }

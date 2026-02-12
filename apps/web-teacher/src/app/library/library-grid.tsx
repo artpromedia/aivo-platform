@@ -15,14 +15,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { useAuth } from '../../components/providers';
+import { useAuth } from '@/components/shared/providers';
 import {
   type MarketplaceLibraryItem,
   type MarketplaceItemType,
   getTeacherLibrary,
   getItemTypeLabel,
   getSubjectLabel,
-} from '../../lib/marketplace-api';
+} from '@/lib/marketplace-api';
 
 export function LibraryGrid() {
   const { userId } = useAuth();

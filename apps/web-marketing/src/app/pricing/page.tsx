@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoonPage } from '@/components/pages/coming-soon-page';
+import { PricingPage as PricingPageContent } from '@/components/pages';
 
 export const metadata: Metadata = {
   title: 'Pricing | AIVO Learning',
@@ -8,11 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
-  return (
-    <ComingSoonPage
-      title="Pricing Plans"
-      description="Flexible pricing for families, educators, and institutions. Contact us at sales@aivo.app for pricing information."
-      expectedDate="Contact Sales"
-    />
-  );
+  return <PricingPageContent />;
 }

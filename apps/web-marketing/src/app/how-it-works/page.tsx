@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoonPage } from '@/components/pages/coming-soon-page';
+import { HowItWorksPage as HowItWorksPageContent } from '@/components/pages';
 
 export const metadata: Metadata = {
   title: 'How It Works | AIVO Learning',
@@ -9,11 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function HowItWorksPage() {
-  return (
-    <ComingSoonPage
-      title="How It Works"
-      description="Discover the science and technology behind AIVO's personalized learning approach. We're putting the finishing touches on this page."
-      expectedDate="Q1 2026"
-    />
-  );
+  return <HowItWorksPageContent />;
 }

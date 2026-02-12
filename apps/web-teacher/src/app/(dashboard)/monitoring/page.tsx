@@ -14,7 +14,7 @@ import {
   acknowledgeHelpRequest,
   type StudentSession,
   type FocusState,
-} from '../../../../lib/api/monitoring';
+} from '@/lib/api/monitoring';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
 import { useAccessToken } from '@/hooks';

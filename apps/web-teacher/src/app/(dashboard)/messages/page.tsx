@@ -13,7 +13,7 @@ import {
   markConversationRead,
   type Conversation,
   type Message,
-} from '../../../../lib/api/messages';
+} from '@/lib/api/messages-standalone';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
 import { useAccessToken } from '@/hooks';

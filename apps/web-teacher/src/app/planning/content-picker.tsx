@@ -18,14 +18,14 @@ import { Button } from '@aivo/ui-web';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
-import { useAuth } from '../../components/providers';
+import { useAuth } from '@/components/shared/providers';
 import {
   type MarketplaceLibraryItem,
   type PartnerContentItem,
   getTeacherLibrary,
   getEntitledPartnerContent,
   getItemTypeLabel,
-} from '../../lib/marketplace-api';
+} from '@/lib/marketplace-api';
 
 interface Props {
   readonly open: boolean;

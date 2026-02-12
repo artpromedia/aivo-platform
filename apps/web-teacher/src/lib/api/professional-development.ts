@@ -179,7 +179,7 @@ export const pdCertificatesApi = {
   download: async (id: string): Promise<Blob> => {
     const response = await fetch(`/pd/certifications/${id}/download`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        Authorization: `Bearer ${localStorage.getItem('aivo_access_token') || ''}`,
       },
     });
     if (!response.ok) {
@@ -213,7 +213,7 @@ export const pdReportsApi = {
   exportReport: async (format: 'pdf' | 'csv'): Promise<Blob> => {
     const response = await fetch(`/pd/reports/me/export?format=${format}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        Authorization: `Bearer ${localStorage.getItem('aivo_access_token') || ''}`,
       },
     });
     if (!response.ok) {

@@ -18,7 +18,7 @@ import {
   type SharedResource,
   type PostCategory,
   type CommunityStats,
-} from '../../../../lib/api/community';
+} from '@/lib/api/community';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
 import { useAccessToken } from '@/hooks';

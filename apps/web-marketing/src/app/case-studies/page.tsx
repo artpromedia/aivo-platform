@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoonPage } from '@/components/pages/coming-soon-page';
+import { CaseStudiesPage as CaseStudiesPageContent } from '@/components/pages';
 
 export const metadata: Metadata = {
   title: 'Case Studies | AIVO Learning',
@@ -8,11 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function CaseStudiesPage() {
-  return (
-    <ComingSoonPage
-      title="Case Studies"
-      description="Real success stories from schools, districts, and families transforming education with AIVO."
-      expectedDate="Q1 2025"
-    />
-  );
+  return <CaseStudiesPageContent />;
 }

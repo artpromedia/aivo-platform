@@ -131,7 +131,7 @@ export function useClassroomMonitor(
       setIsLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('aivo_access_token');
       const response = await fetch(`${API_URL}/monitor/classroom/${classroomId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -348,7 +348,7 @@ export function useClassroomMonitor(
   const sendIntervention = useCallback(
     async (studentId: string, type: string, message?: string) => {
       try {
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('aivo_access_token');
 
         const response = await fetch(`${API_URL}/monitor/classroom/${classroomId}/intervention`, {
           method: 'POST',

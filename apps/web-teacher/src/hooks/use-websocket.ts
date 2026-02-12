@@ -50,7 +50,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}): WebSocketHook {
   // Get token from localStorage or auth context
   const getToken = useCallback(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      return localStorage.getItem('aivo_access_token');
     }
     return null;
   }, []);

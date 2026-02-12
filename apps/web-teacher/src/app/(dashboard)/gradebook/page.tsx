@@ -12,7 +12,7 @@ import {
   updateGrade,
   type Gradebook as APIGradebook,
   type TeacherClass,
-} from '../../../../lib/api/gradebook';
+} from '@/lib/api/gradebook';
 
 import { GradebookTable } from '@/components/gradebook/gradebook-table';
 import { PageHeader } from '@/components/layout/breadcrumb';

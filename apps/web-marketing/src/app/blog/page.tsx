@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ComingSoonPage } from '@/components/pages/coming-soon-page';
+import { BlogPage as BlogPageContent } from '@/components/pages';
 
 export const metadata: Metadata = {
   title: 'Blog | AIVO Learning',
@@ -9,11 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
-  return (
-    <ComingSoonPage
-      title="AIVO Blog"
-      description="Expert insights on neurodiverse education, learning science, and teaching strategies."
-      expectedDate="Q1 2025"
-    />
-  );
+  return <BlogPageContent />;
 }
