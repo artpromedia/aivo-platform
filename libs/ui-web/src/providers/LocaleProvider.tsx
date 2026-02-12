@@ -77,11 +77,13 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
  * Group locales by region for UI display
  */
 function groupLocalesByRegion(): Record<string, Locale[]> {
+  // Cast needed because @aivo/i18n resolves to different packages
+  // (libs/i18n uses 'zh', packages/i18n uses 'zh-CN') depending on the consumer
   const regions: Record<string, Locale[]> = {
-    Americas: ['en', 'es', 'pt-BR'],
-    Europe: ['fr', 'de', 'it', 'nl', 'ru'],
-    Asia: ['zh', 'ja', 'ko', 'hi', 'id'],
-    'Middle East': ['ar', 'tr'],
+    Americas: ['en', 'es', 'pt-BR'] as Locale[],
+    Europe: ['fr', 'de', 'it', 'nl', 'ru'] as Locale[],
+    Asia: ['zh', 'ja', 'ko', 'hi', 'id'] as Locale[],
+    'Middle East': ['ar', 'tr'] as Locale[],
   };
   return regions;
 }
@@ -154,7 +156,8 @@ export function LocaleProvider({
     // 3. Detect from browser
     if (detectBrowserLocale) {
       const browserLocale = getBrowserLocale();
-      const supported = getSupportedLocale([browserLocale]);
+      // getSupportedLocale signature differs between libs/i18n (string[]) and packages/i18n (string|null)
+      const supported = getSupportedLocale(browserLocale as any);
       if (supported) return supported as Locale;
     }
 

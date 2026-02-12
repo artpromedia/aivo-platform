@@ -25,7 +25,9 @@ function getFlag(loc: Locale): string {
 /** Get native language name for a locale */
 function getNativeName(loc: Locale): string {
   const m = LOCALE_METADATA[loc];
-  return m?.name ?? loc;
+  // Use nativeName when available (packages/i18n), otherwise fall back to name
+  const meta = m as unknown as Record<string, string>;
+  return meta?.nativeName ?? m?.name ?? loc;
 }
 
 /** Visual variant for the locale switcher */
