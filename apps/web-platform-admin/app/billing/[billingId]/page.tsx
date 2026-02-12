@@ -48,7 +48,11 @@ export default function BillingDetailPage() {
               <Field label="Expires" value={formatDate(quote.validUntil)} />
               <Field
                 label="Total"
-                value={quote.totalAmountCents != null ? `$${(quote.totalAmountCents / 100).toFixed(2)}` : '—'}
+                value={
+                  quote.totalAmountCents != null
+                    ? `$${(quote.totalAmountCents / 100).toFixed(2)}`
+                    : '—'
+                }
               />
             </div>
           </div>
@@ -73,7 +77,7 @@ export default function BillingDetailPage() {
                       description: string;
                       quantity: number;
                       unitPriceCents: number;
-                      totalCents: number;
+                      totalAmountCents: number;
                     }) => (
                       <tr key={item.id} className="border-b last:border-0">
                         <td className="py-2">{item.description}</td>
@@ -82,7 +86,7 @@ export default function BillingDetailPage() {
                           ${(item.unitPriceCents / 100).toFixed(2)}
                         </td>
                         <td className="py-2 text-right font-medium">
-                          ${(item.totalCents / 100).toFixed(2)}
+                          ${(item.totalAmountCents / 100).toFixed(2)}
                         </td>
                       </tr>
                     )

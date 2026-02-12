@@ -50,9 +50,12 @@ export async function requirePlatformAdmin(): Promise<AuthSession | 'forbidden'>
 type CookieResponse = Pick<NextResponse, 'cookies'>;
 
 export function setAuthCookies(res: CookieResponse, accessToken: string, refreshToken: string) {
-  _setAuthCookies(res, accessToken, refreshToken);
+  // NextResponse.cookies.set overload is structurally compatible at runtime
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _setAuthCookies(res as any, accessToken, refreshToken);
 }
 
 export function clearAuthCookies(res: CookieResponse) {
-  _clearAuthCookies(res);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _clearAuthCookies(res as any);
 }
