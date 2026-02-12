@@ -10,17 +10,19 @@
 'use client';
 
 import type { Role } from '@aivo/ts-rbac';
-import { GradeThemeProvider, AccessibilityProvider } from '@aivo/ui-web';
 import {
   ErrorBoundary,
   PageErrorFallback,
   OfflineBanner,
   useNetworkStatus,
 } from '@aivo/ui/components';
+import { GradeThemeProvider, AccessibilityProvider } from '@aivo/ui-web';
 import { WebPushProvider } from '@aivo/ui-web/components/notifications';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { SessionProvider } from 'next-auth/react';
 import type { ReactNode } from 'react';
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 
 // VAPID public key should come from environment variable
 // This is safe to expose in client-side code as it's the public key
@@ -119,23 +121,41 @@ export function Providers({ children, initialAuth }: ProvidersProps) {
     roles: [],
   };
 
+  // Stable QueryClient instance (created once per component lifetime)
+  const queryClientRef = useRef<QueryClient | null>(null);
+  if (!queryClientRef.current) {
+    queryClientRef.current = new QueryClient({
+      defaultOptions: {
+        queries: { staleTime: 60 * 1000, retry: 1 },
+      },
+    });
+  }
+
   return (
-    <ErrorBoundary fallback={({ error, resetError }) => <PageErrorFallback error={error} resetError={resetError} />}>
-      <AuthProvider initialAuth={initialAuth || defaultAuth}>
-        <GradeThemeProvider gradeLevel="HS">
-          <AccessibilityProvider>
-            <WebPushProvider
-              vapidPublicKey={VAPID_PUBLIC_KEY}
-              serviceWorkerPath="/push-service-worker.js"
-              userRole="teacher"
-              registerEndpoint="/api/notifications/push/subscribe"
-              unregisterEndpoint="/api/notifications/push/unsubscribe"
-            >
-              <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
-            </WebPushProvider>
-          </AccessibilityProvider>
-        </GradeThemeProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <SessionProvider>
+      <QueryClientProvider client={queryClientRef.current}>
+        <ErrorBoundary
+          fallback={({ error, resetError }) => (
+            <PageErrorFallback error={error} resetError={resetError} />
+          )}
+        >
+          <AuthProvider initialAuth={initialAuth || defaultAuth}>
+            <GradeThemeProvider gradeLevel="HS">
+              <AccessibilityProvider>
+                <WebPushProvider
+                  vapidPublicKey={VAPID_PUBLIC_KEY}
+                  serviceWorkerPath="/push-service-worker.js"
+                  userRole="teacher"
+                  registerEndpoint="/api/notifications/push/subscribe"
+                  unregisterEndpoint="/api/notifications/push/unsubscribe"
+                >
+                  <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
+                </WebPushProvider>
+              </AccessibilityProvider>
+            </GradeThemeProvider>
+          </AuthProvider>
+        </ErrorBoundary>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

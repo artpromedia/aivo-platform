@@ -7,6 +7,8 @@ import { Nunito } from 'next/font/google';
 import React from 'react';
 import './globals.css';
 
+import { Providers } from '@/components/shared/providers';
+
 const nunito = Nunito({
   subsets: ['latin'],
   variable: '--font-nunito',
@@ -31,7 +33,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={nunito.variable} data-grade-theme="navigator">
-      <body className="min-h-screen bg-background font-sans antialiased">{children}</body>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

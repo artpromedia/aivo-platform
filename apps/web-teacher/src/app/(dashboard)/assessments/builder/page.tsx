@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Assessment Builder Page
  *
@@ -26,8 +28,8 @@ import {
   AutoGradingConfig,
 } from '@/components/assessment';
 import { Button } from '@/components/ui/button';
-import { useAssessmentBuilder } from '@/hooks/useAssessmentBuilder';
 import { useClasses } from '@/hooks/use-classes';
+import { useAssessmentBuilder } from '@/hooks/useAssessmentBuilder';
 import type { Question } from '@/lib/types';
 
 // ════════════════════════════════════════════════════════════════════════════

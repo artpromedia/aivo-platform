@@ -1,6 +1,6 @@
 'use client';
 
-import type { MasteryBucket } from '../lib/classroom-analytics';
+import type { MasteryBucket } from '../../lib/classroom-analytics';
 
 interface MasteryDistributionProps {
   buckets: MasteryBucket[];

@@ -1,25 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { ProfessionalDevelopmentDashboard } from '@/components/professional-development/pd-dashboard';
-import { TrainingResourcesLibrary } from '@/components/professional-development/training-resources-library';
+export const dynamic = 'force-dynamic';
+
+import { BookOpen, Award, Clock, Trophy, TrendingUp, Target, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { BestPracticesLibrary } from '@/components/professional-development/best-practices-library';
-import { TeachingStrategiesLibrary } from '@/components/professional-development/teaching-strategies-library';
-import { TrainingModules } from '@/components/professional-development/training-modules';
+import { CertificationTracker } from '@/components/professional-development/certification-tracker';
+import { ProfessionalDevelopmentDashboard } from '@/components/professional-development/pd-dashboard';
 import { PeerCollaboration } from '@/components/professional-development/peer-collaboration';
 import { ResourceLibrary } from '@/components/professional-development/resource-library';
-import { CertificationTracker } from '@/components/professional-development/certification-tracker';
-import {
-  BookOpen,
-  Award,
-  Clock,
-  Trophy,
-  TrendingUp,
-  Target,
-  Sparkles,
-} from 'lucide-react';
+import { TeachingStrategiesLibrary } from '@/components/professional-development/teaching-strategies-library';
+import { TrainingModules } from '@/components/professional-development/training-modules';
+import { TrainingResourcesLibrary } from '@/components/professional-development/training-resources-library';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -47,9 +42,7 @@ function StatCard({ icon, label, value, total, trend, bgColor }: StatCardProps) 
                 trend.isPositive ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              <TrendingUp
-                className={`h-4 w-4 ${!trend.isPositive ? 'rotate-180' : ''}`}
-              />
+              <TrendingUp className={`h-4 w-4 ${!trend.isPositive ? 'rotate-180' : ''}`} />
               {trend.value}%
             </div>
           )}

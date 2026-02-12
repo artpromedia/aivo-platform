@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { Heading } from '@aivo/ui-web';
 import { Suspense } from 'react';
 

@@ -191,15 +191,17 @@ function StudentsTab({
         <tbody>
           {students.map((s) => (
             <tr key={s.id ?? s.student?.id} className="border-b last:border-0 hover:bg-gray-50">
-              <td className="px-4 py-3 font-medium">{s.student?.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`}</td>
-              <td className="px-4 py-3">{s.gradeLevel ?? '—'}</td>
-              <td className="px-4 py-3">{formatPercent(s.mastery)}</td>
+              <td className="px-4 py-3 font-medium">
+                {s.student?.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`}
+              </td>
+              <td className="px-4 py-3">{s.student?.gradeLevel ?? '—'}</td>
+              <td className="px-4 py-3">{formatPercent(s.currentGrade)}</td>
               <td className="px-4 py-3">
-                <StatusBadge status={s.status ?? 'active'} />
+                <StatusBadge status={s.student?.status ?? 'active'} />
               </td>
               <td className="px-4 py-3 text-right">
                 <Link
-                  href={`/students/${s.studentId ?? s.id}`}
+                  href={`/students/${s.student?.id ?? s.id}`}
                   className="text-primary-600 hover:underline"
                 >
                   View

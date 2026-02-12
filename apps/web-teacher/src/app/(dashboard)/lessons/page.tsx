@@ -7,13 +7,14 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import * as React from 'react';
 
-import { fetchLessons, type LessonSummary, type LessonStatus } from '@/lib/api/lessons';
-
 import { PageHeader } from '@/components/layout/breadcrumb';
 import { useAccessToken } from '@/hooks';
+import { fetchLessons, type LessonSummary, type LessonStatus } from '@/lib/api/lessons';
 
 const subjectIcons: Record<string, string> = {
   Math: '🔢',

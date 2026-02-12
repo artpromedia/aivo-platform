@@ -7,17 +7,18 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import * as React from 'react';
 
+import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 import {
   fetchActiveSessions,
   acknowledgeHelpRequest,
   type StudentSession,
   type FocusState,
 } from '@/lib/api/monitoring';
-
-import { PageHeader } from '@/components/layout/breadcrumb';
-import { useAccessToken } from '@/hooks';
 
 const focusStateConfig: Record<FocusState, { label: string; color: string; icon: string }> = {
   focused: {

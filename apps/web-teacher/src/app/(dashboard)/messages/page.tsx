@@ -4,8 +4,12 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import * as React from 'react';
 
+import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 import {
   fetchConversations,
   fetchConversationMessages,
@@ -14,9 +18,6 @@ import {
   type Conversation,
   type Message,
 } from '@/lib/api/messages-standalone';
-
-import { PageHeader } from '@/components/layout/breadcrumb';
-import { useAccessToken } from '@/hooks';
 
 export default function MessagesPage() {
   const { accessToken, isLoading: authLoading } = useAccessToken();

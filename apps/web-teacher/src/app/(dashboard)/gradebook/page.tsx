@@ -4,8 +4,13 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import * as React from 'react';
 
+import { GradebookTable } from '@/components/gradebook/gradebook-table';
+import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 import {
   fetchGradebook,
   fetchTeacherClasses,
@@ -13,10 +18,6 @@ import {
   type Gradebook as APIGradebook,
   type TeacherClass,
 } from '@/lib/api/gradebook';
-
-import { GradebookTable } from '@/components/gradebook/gradebook-table';
-import { PageHeader } from '@/components/layout/breadcrumb';
-import { useAccessToken } from '@/hooks';
 import type { Gradebook } from '@/lib/types';
 
 export default function GradebookPage() {

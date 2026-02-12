@@ -7,8 +7,12 @@
 
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import * as React from 'react';
 
+import { PageHeader } from '@/components/layout/breadcrumb';
+import { useAccessToken } from '@/hooks';
 import {
   fetchPosts,
   fetchResources,
@@ -19,9 +23,6 @@ import {
   type PostCategory,
   type CommunityStats,
 } from '@/lib/api/community';
-
-import { PageHeader } from '@/components/layout/breadcrumb';
-import { useAccessToken } from '@/hooks';
 
 const categoryConfig: Record<PostCategory, { label: string; color: string; icon: string }> = {
   discussion: { label: 'Discussion', color: 'bg-blue-100 text-blue-700', icon: '💬' },

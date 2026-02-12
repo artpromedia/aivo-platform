@@ -78,6 +78,9 @@ const nextConfig = {
 
     // Enable scroll restoration
     scrollRestoration: true,
+
+    // Disable missing Suspense boundary bailout for useSearchParams
+    missingSuspenseWithCSRBailout: false,
   },
 
   // ============================================================================
