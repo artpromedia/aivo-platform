@@ -4,7 +4,7 @@
 # Multi-stage build for Next.js applications
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:20.19.4-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY apps/web-marketing/ ./apps/web-marketing/
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:20.19.4-alpine AS builder
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -40,7 +40,7 @@ ENV NODE_ENV=production
 RUN pnpm turbo build --filter="@aivo/web-marketing"
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM node:20.19.4-alpine AS runner
 WORKDIR /app
 
 # Security: Create non-root user
