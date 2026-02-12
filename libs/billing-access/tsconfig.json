@@ -5,11 +5,11 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "composite": true,
-    "paths": {
-      "@aivo/billing-common": ["../billing-common/src/index.ts"]
-    }
+    "composite": true
   },
+  "references": [
+    { "path": "../billing-common" }
+  ],
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

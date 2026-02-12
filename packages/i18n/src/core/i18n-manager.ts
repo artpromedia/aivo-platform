@@ -124,12 +124,12 @@ export class I18nManager {
       switch (source) {
         case 'localStorage':
           if (typeof localStorage !== 'undefined') {
-            detected = localStorage.getItem(detection.localStorageKey);
+            detected = localStorage.getItem(detection.localStorageKey ?? 'i18nextLng');
           }
           break;
         case 'cookie':
           if (typeof document !== 'undefined') {
-            const match = new RegExp(`${detection.cookieName}=([^;]+)`).exec(document.cookie);
+            const match = new RegExp(`${detection.cookieName ?? 'i18next'}=([^;]+)`).exec(document.cookie);
             detected = match?.[1] ?? null;
           }
           break;
@@ -211,11 +211,11 @@ export class I18nManager {
     }
 
     if (detection.caches.includes('localStorage') && typeof localStorage !== 'undefined') {
-      localStorage.setItem(detection.localStorageKey, locale);
+      localStorage.setItem(detection.localStorageKey ?? 'i18nextLng', locale);
     }
 
     if (detection.caches.includes('cookie') && typeof document !== 'undefined') {
-      document.cookie = `${detection.cookieName}=${locale};path=/;max-age=31536000`;
+      document.cookie = `${detection.cookieName ?? 'i18next'}=${locale};path=/;max-age=31536000`;
     }
   }
 
