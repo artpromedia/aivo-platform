@@ -48,7 +48,7 @@ export default function BillingDetailPage() {
               <Field label="Expires" value={formatDate(quote.validUntil)} />
               <Field
                 label="Total"
-                value={quote.totalCents != null ? `$${(quote.totalCents / 100).toFixed(2)}` : '—'}
+                value={quote.totalAmountCents != null ? `$${(quote.totalAmountCents / 100).toFixed(2)}` : '—'}
               />
             </div>
           </div>

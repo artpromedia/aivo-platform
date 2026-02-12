@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 
-import { useAuth } from '../../providers';
 import {
   type Curriculum,
   type CurriculumStatus,
@@ -24,6 +23,7 @@ import {
   formatDate,
   formatDateTime,
 } from '../../../lib/curriculum-api';
+import { useAuth } from '../../providers';
 
 interface CurriculumDetailViewProps {
   curriculumId: string;
@@ -40,7 +40,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
 
   useEffect(() => {
     async function loadCurriculum() {
-      if (!tenantId) return;
+      if (!tenantId || !accessToken) return;
 
       setLoading(true);
       setError(null);
@@ -208,7 +208,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
             </button>
           )}
           <button
-            onClick={() => router.push(`/curriculum/${curriculumId}/edit`)}
+            onClick={() => { router.push(`/curriculum/${curriculumId}/edit`); }}
             className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition hover:bg-surface-muted"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,7 +217,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
             Edit
           </button>
           <button
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={() => { setShowDeleteConfirm(true); }}
             className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -276,7 +276,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => { setShowDeleteConfirm(false); }} />
           <div className="relative w-full max-w-md rounded-xl bg-surface p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-red-600">Delete Curriculum</h3>
             <p className="mt-2 text-sm text-muted">
@@ -284,7 +284,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
             </p>
             <div className="mt-4 flex justify-end gap-3">
               <button
-                onClick={() => setShowDeleteConfirm(false)}
+                onClick={() => { setShowDeleteConfirm(false); }}
                 className="rounded-lg px-4 py-2 text-sm font-medium text-muted hover:bg-surface-muted"
               >
                 Cancel
@@ -316,7 +316,7 @@ function UnitAccordion({
   return (
     <div>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { setIsOpen(!isOpen); }}
         className="flex w-full items-center justify-between p-4 text-left transition hover:bg-surface-muted"
       >
         <div className="flex items-center gap-3">

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
 import 'package:go_router/go_router.dart';
 
+import '../screens/analytics/analytics_dashboard_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/students/student_list_screen.dart';
 import '../screens/students/student_detail_screen.dart';
@@ -206,6 +207,15 @@ final GoRouter appRouter = GoRouter(
         final classId = state.uri.queryParameters['classId'];
         return ClassroomAnalyticsScreen(teacherId: teacherId, classId: classId);
       },
+    ),
+
+    // Class Analytics Dashboard
+    GoRoute(
+      path: '/analytics/class/:classId',
+      builder: (context, state) => AnalyticsDashboardScreen(
+        classId: state.pathParameters['classId']!,
+        className: state.uri.queryParameters['className'],
+      ),
     ),
 
     // Professional Development

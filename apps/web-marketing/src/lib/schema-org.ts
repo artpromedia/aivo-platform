@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { Organization, Product, SoftwareApplication, FAQPage, WithContext } from 'schema-dts';
+import type { Organization, Product, SoftwareApplication, FAQPage, WithContext, Offer } from 'schema-dts';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://aivolearning.com';
 
@@ -85,13 +85,7 @@ export const platformSchema: WithContext<SoftwareApplication> = {
     price: '0',
     priceCurrency: 'USD',
     availability: 'https://schema.org/InStock',
-    priceSpecification: {
-      '@type': 'UnitPriceSpecification',
-      price: '0',
-      priceCurrency: 'USD',
-      billingIncrement: 'Monthly',
-    },
-  },
+  } as unknown as Offer,
   aggregateRating: {
     '@type': 'AggregateRating',
     ratingValue: '4.9',
