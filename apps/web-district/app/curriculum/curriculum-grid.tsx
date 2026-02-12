@@ -30,7 +30,7 @@ export function CurriculumGrid() {
 
   useEffect(() => {
     async function loadCurricula() {
-      if (!tenantId) return;
+      if (!tenantId || !accessToken) return;
 
       setLoading(true);
       setError(null);

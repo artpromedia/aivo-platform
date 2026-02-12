@@ -28,15 +28,15 @@ export default function ClassroomAnalyticsPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!classroomId) return;
+      if (!classroomId || !tenantId || !accessToken) return;
 
       setLoading(true);
       setError(null);
 
       try {
         const [homework, focus] = await Promise.all([
-          fetchClassroomHomeworkUsage(tenantId ?? '', classroomId, accessToken ?? ''),
-          fetchClassroomFocusPatterns(tenantId ?? '', classroomId, accessToken ?? ''),
+          fetchClassroomHomeworkUsage(tenantId, classroomId, accessToken),
+          fetchClassroomFocusPatterns(tenantId, classroomId, accessToken),
         ]);
 
         setHomeworkData(homework);

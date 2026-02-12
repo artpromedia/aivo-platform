@@ -173,7 +173,7 @@ export class TranslationManager {
    */
   async sync(): Promise<{
     uploaded: number;
-    downloaded: Record<Locale, number>;
+    downloaded: Partial<Record<Locale, number>>;
     errors: string[];
   }> {
     console.log(`Syncing translations with ${this.config.platform}`);
@@ -248,25 +248,25 @@ export function extractTranslationKeys(sourceCode: string): string[] {
   const formatMessageRegex = /formatMessage\s*\(\s*\{\s*id:\s*['"`]([^'"`]+)['"`]/g;
   let match;
   while ((match = formatMessageRegex.exec(sourceCode)) !== null) {
-    keys.push(match[1]);
+    if (match[1]) keys.push(match[1]);
   }
 
   // Match t('...')
   const tRegex = /\bt\s*\(\s*['"`]([^'"`]+)['"`]/g;
   while ((match = tRegex.exec(sourceCode)) !== null) {
-    keys.push(match[1]);
+    if (match[1]) keys.push(match[1]);
   }
 
   // Match <FormattedMessage id="..." />
   const formattedMessageRegex = /<FormattedMessage[^>]*id\s*=\s*['"`]([^'"`]+)['"`]/g;
   while ((match = formattedMessageRegex.exec(sourceCode)) !== null) {
-    keys.push(match[1]);
+    if (match[1]) keys.push(match[1]);
   }
 
   // Match defineMessages({ key: { id: '...' } })
   const defineMessagesRegex = /id:\s*['"`]([^'"`]+)['"`]/g;
   while ((match = defineMessagesRegex.exec(sourceCode)) !== null) {
-    keys.push(match[1]);
+    if (match[1]) keys.push(match[1]);
   }
 
   return [...new Set(keys)];
@@ -327,9 +327,9 @@ export function mergeTranslations(
 
   for (const key of Object.keys(sourceMessages)) {
     if (targetMessages[key]) {
-      merged[key] = targetMessages[key];
-    } else if (fallbackToSource) {
-      merged[key] = sourceMessages[key];
+      merged[key] = targetMessages[key]!;
+    } else if (fallbackToSource && sourceMessages[key]) {
+      merged[key] = sourceMessages[key]!;
     }
   }
 

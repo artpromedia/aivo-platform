@@ -50,7 +50,7 @@ export function useFormatMessage() {
 
   const formatMessage = useCallback(
     (descriptor: MessageDescriptor, values?: Record<string, unknown>) => {
-      return intl.formatMessage(descriptor, values);
+      return intl.formatMessage(descriptor, values as Record<string, string> | undefined);
     },
     [intl]
   );
@@ -58,7 +58,11 @@ export function useFormatMessage() {
   // Shorthand function for common use case
   const t = useCallback(
     (id: string, values?: Record<string, unknown>, defaultMessage?: string) => {
-      return intl.formatMessage({ id, defaultMessage }, values);
+      const descriptor: MessageDescriptor = { id };
+      if (defaultMessage !== undefined) {
+        descriptor.defaultMessage = defaultMessage;
+      }
+      return intl.formatMessage(descriptor, values as Record<string, string> | undefined);
     },
     [intl]
   );

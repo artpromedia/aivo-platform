@@ -32,9 +32,9 @@ export async function requireAuth(): Promise<AuthSession> {
 type CookieResponse = Pick<NextResponse, 'cookies'>;
 
 export function setAuthCookies(res: CookieResponse, accessToken: string, refreshToken: string) {
-  _setAuthCookies(res, accessToken, refreshToken);
+  _setAuthCookies(res as any, accessToken, refreshToken);
 }
 
 export function clearAuthCookies(res: CookieResponse) {
-  _clearAuthCookies(res);
+  _clearAuthCookies(res as any);
 }

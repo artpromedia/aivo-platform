@@ -66,7 +66,7 @@ export async function getMessages(locale: string): Promise<Record<string, string
   }
 
   // Try language code only (e.g., 'en' from 'en-US')
-  const languageCode = normalizedLocale.split('-')[0];
+  const languageCode = normalizedLocale.split('-')[0] ?? normalizedLocale;
   if (languageCode in messageCatalog) {
     const messages = await messageCatalog[languageCode as SupportedMessageLocale]();
     return messages.default || messages;
@@ -89,6 +89,6 @@ export function getAvailableMessageLocales(): string[] {
  */
 export function hasMessages(locale: string): boolean {
   const normalizedLocale = locale.toLowerCase().replace('_', '-');
-  const languageCode = normalizedLocale.split('-')[0];
+  const languageCode = normalizedLocale.split('-')[0] ?? normalizedLocale;
   return normalizedLocale in messageCatalog || languageCode in messageCatalog;
 }

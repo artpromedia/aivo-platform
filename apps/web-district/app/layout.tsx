@@ -1,4 +1,5 @@
 import { AccessibilityProvider, GradeThemeProvider } from '@aivo/ui-web';
+import type { Role } from '@aivo/ts-rbac';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -20,7 +21,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const initialAuth = {
     isAuthenticated: !!auth,
     userName: auth?.userId ?? null,
-    roles: auth?.roles ?? [],
+    roles: (auth?.roles ?? []) as Role[],
     tenantId: auth?.tenantId ?? null,
     accessToken: auth?.accessToken ?? null,
   };

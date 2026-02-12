@@ -61,7 +61,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
   }, [curriculumId, tenantId]);
 
   const handlePublish = useCallback(async () => {
-    if (!tenantId || !curriculum) return;
+    if (!tenantId || !curriculum || !accessToken) return;
 
     setActionLoading('publish');
     try {
@@ -75,7 +75,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
   }, [tenantId, curriculum]);
 
   const handleArchive = useCallback(async () => {
-    if (!tenantId || !curriculum) return;
+    if (!tenantId || !curriculum || !accessToken) return;
 
     setActionLoading('archive');
     try {
@@ -89,7 +89,7 @@ export function CurriculumDetailView({ curriculumId }: CurriculumDetailViewProps
   }, [tenantId, curriculum]);
 
   const handleDelete = useCallback(async () => {
-    if (!tenantId || !curriculum) return;
+    if (!tenantId || !curriculum || !accessToken) return;
 
     setActionLoading('delete');
     try {

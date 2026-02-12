@@ -37,7 +37,7 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
 
   useEffect(() => {
     async function loadData() {
-      if (!tenantId) return;
+      if (!tenantId || !accessToken) return;
 
       setLoading(true);
       setError(null);
@@ -64,7 +64,7 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
 
   const handleRemoveStandard = useCallback(
     async (alignmentId: string) => {
-      if (!tenantId) return;
+      if (!tenantId || !accessToken) return;
 
       try {
         await removeStandardAlignment(alignmentId, tenantId, accessToken);
@@ -78,7 +78,7 @@ export function StandardsMapper({ curriculumId }: StandardsMapperProps) {
 
   const handleAddStandard = useCallback(
     async (standard: SearchableStandard) => {
-      if (!tenantId) return;
+      if (!tenantId || !accessToken) return;
 
       try {
         const result = await alignStandardToCurriculum(curriculumId, tenantId, accessToken, {
@@ -255,7 +255,7 @@ function AddStandardModal({
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (searchQuery.length < 2) {
+      if (searchQuery.length < 2 || !accessToken) {
         setResults([]);
         return;
       }

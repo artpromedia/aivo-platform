@@ -70,7 +70,7 @@ export function UploadCurriculumModal({ isOpen, onClose }: UploadCurriculumModal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tenantId || !userName) return;
+    if (!tenantId || !userName || !accessToken) return;
 
     setIsSubmitting(true);
     setError(null);

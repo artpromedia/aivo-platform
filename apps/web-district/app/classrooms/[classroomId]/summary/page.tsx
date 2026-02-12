@@ -24,13 +24,13 @@ export default function ClassroomSummaryPage() {
 
   useEffect(() => {
     async function loadReport() {
-      if (!classroomId) return;
+      if (!classroomId || !accessToken) return;
 
       setLoading(true);
       setError(null);
 
       try {
-        const data = await fetchClassroomSummary(classroomId, accessToken ?? '');
+        const data = await fetchClassroomSummary(classroomId, accessToken);
         setReport(data);
       } catch (err) {
         console.error('Failed to load classroom summary:', err);

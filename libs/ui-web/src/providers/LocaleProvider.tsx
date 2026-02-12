@@ -80,7 +80,7 @@ function groupLocalesByRegion(): Record<string, Locale[]> {
   const regions: Record<string, Locale[]> = {
     Americas: ['en', 'es', 'pt-BR'],
     Europe: ['fr', 'de', 'it', 'nl', 'ru'],
-    Asia: ['zh-CN', 'ja', 'ko', 'hi', 'id'],
+    Asia: ['zh', 'ja', 'ko', 'hi', 'id'],
     'Middle East': ['ar', 'tr'],
   };
   return regions;
@@ -154,7 +154,7 @@ export function LocaleProvider({
     // 3. Detect from browser
     if (detectBrowserLocale) {
       const browserLocale = getBrowserLocale();
-      const supported = getSupportedLocale(browserLocale);
+      const supported = getSupportedLocale([browserLocale]);
       if (supported) return supported as Locale;
     }
 

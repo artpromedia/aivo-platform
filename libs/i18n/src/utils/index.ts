@@ -45,7 +45,7 @@ export function normalizeLocale(locale: string): Locale | null {
 
   // Try with proper casing (e.g., en-GB, pt-BR)
   const parts = normalized.split('-');
-  if (parts.length === 2) {
+  if (parts.length === 2 && parts[0] && parts[1]) {
     const cased = `${parts[0]}-${parts[1].toUpperCase()}`;
     if (SUPPORTED_LOCALES.includes(cased as Locale)) {
       return cased as Locale;
@@ -53,7 +53,7 @@ export function normalizeLocale(locale: string): Locale | null {
   }
 
   // Fall back to base language
-  const baseLanguage = parts[0];
+  const baseLanguage = parts[0] ?? normalized;
   if (SUPPORTED_LOCALES.includes(baseLanguage as Locale)) {
     return baseLanguage as Locale;
   }
@@ -84,7 +84,7 @@ export function getBrowserLocale(): string {
 
   // navigator.languages returns an array of preferred languages
   if (navigator.languages && navigator.languages.length > 0) {
-    return navigator.languages[0];
+    return navigator.languages[0] ?? DEFAULT_LOCALE;
   }
 
   // Fallback to navigator.language
@@ -292,14 +292,14 @@ export function parseLocale(locale: string): {
 } {
   const parts = locale.split('-');
   const result: { language: string; region?: string; script?: string } = {
-    language: parts[0].toLowerCase(),
+    language: (parts[0] ?? locale).toLowerCase(),
   };
 
-  if (parts.length >= 2) {
+  if (parts.length >= 2 && parts[1]) {
     // Check if second part is a script (4 letters) or region (2 letters)
     if (parts[1].length === 4) {
       result.script = parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
-      if (parts.length >= 3) {
+      if (parts.length >= 3 && parts[2]) {
         result.region = parts[2].toUpperCase();
       }
     } else {
