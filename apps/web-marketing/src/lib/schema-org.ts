@@ -6,7 +6,14 @@
  */
 
 import React from 'react';
-import type { Organization, Product, SoftwareApplication, FAQPage, WithContext, Offer } from 'schema-dts';
+import type {
+  Organization,
+  Product,
+  SoftwareApplication,
+  FAQPage,
+  WithContext,
+  Offer,
+} from 'schema-dts';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'https://aivolearning.com';
 
@@ -114,7 +121,14 @@ export const platformSchema: WithContext<SoftwareApplication> = {
   releaseNotes:
     'Enhanced AI personalization, improved accessibility features, expanded curriculum coverage',
   screenshot: `${BASE_URL}/screenshots/platform-overview.png`,
-  video: `${BASE_URL}/videos/platform-demo.mp4`,
+  video: {
+    '@type': 'VideoObject',
+    name: 'AIVO Platform Demo',
+    contentUrl: `${BASE_URL}/videos/platform-demo.mp4`,
+    thumbnailUrl: `${BASE_URL}/screenshots/platform-overview.png`,
+    description: 'A demo of the AIVO adaptive learning platform',
+    uploadDate: '2026-01-01',
+  },
   accessibilityAPI: ['ARIA'],
   accessibilityControl: ['fullKeyboardControl', 'fullMouseControl', 'fullTouchControl'],
   accessibilityFeature: [
