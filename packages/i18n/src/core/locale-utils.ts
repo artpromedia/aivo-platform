@@ -24,12 +24,12 @@ export interface ParsedLocale {
 export function parseLocale(locale: string): ParsedLocale {
   const parts = locale.split('-');
   const result: ParsedLocale = {
-    language: parts[0].toLowerCase(),
+    language: parts[0]!.toLowerCase(),
     full: locale,
   };
 
   if (parts.length > 1) {
-    const second = parts[1];
+    const second = parts[1]!;
     // Script codes are 4 letters (e.g., Hans, Hant)
     if (second.length === 4) {
       result.script = second.charAt(0).toUpperCase() + second.slice(1).toLowerCase();
@@ -66,7 +66,7 @@ export function normalizeLocale(locale: string): string {
  * Get the base language from a locale
  */
 export function getBaseLanguage(locale: string): string {
-  return locale.split('-')[0].toLowerCase();
+  return locale.split('-')[0]!.toLowerCase();
 }
 
 /**
@@ -117,7 +117,7 @@ export function parseAcceptLanguage(header: string): string[] {
   return header
     .split(',')
     .map((part) => {
-      const [locale, q = 'q=1'] = part.trim().split(';');
+      const [locale = '', q = 'q=1'] = part.trim().split(';');
       const quality = parseFloat(q.replace('q=', ''));
       return { locale: locale.trim(), quality };
     })
@@ -135,7 +135,7 @@ export function detectBrowserLocale(): string | null {
 
   // navigator.languages provides user's preferred languages
   if (navigator.languages?.length > 0) {
-    return navigator.languages[0];
+    return navigator.languages[0]!;
   }
 
   // Fallback to single language property
@@ -270,7 +270,7 @@ export function groupLocalesByLanguage(
     if (!groups[base]) {
       groups[base] = [];
     }
-    groups[base].push(locale);
+    groups[base]!.push(locale);
     return groups;
   }, {});
 }

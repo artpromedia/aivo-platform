@@ -424,7 +424,7 @@ export class I18nManager {
   getLoadedNamespaces(): LoadedNamespace[] {
     return Array.from(this.loadedNamespaces).map((key) => {
       const [locale, namespace] = key.split(':');
-      return { locale: locale as SupportedLocale, namespace: namespace as TranslationNamespace };
+      return { locale: locale! as SupportedLocale, namespace: namespace! as TranslationNamespace };
     });
   }
 

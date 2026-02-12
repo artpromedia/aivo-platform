@@ -199,7 +199,7 @@ export function formatISO(date: Date | number | string): string {
  */
 export function formatISODate(date: Date | number | string): string {
   const dateObj = date instanceof Date ? date : new Date(date);
-  return dateObj.toISOString().split('T')[0];
+  return dateObj.toISOString().split('T')[0]!;
 }
 
 /**
@@ -207,7 +207,7 @@ export function formatISODate(date: Date | number | string): string {
  */
 export function formatISOTime(date: Date | number | string): string {
   const dateObj = date instanceof Date ? date : new Date(date);
-  return dateObj.toISOString().split('T')[1].split('.')[0];
+  return dateObj.toISOString().split('T')[1]!.split('.')[0]!;
 }
 
 /**

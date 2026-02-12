@@ -7,6 +7,10 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   compress: true,
   generateEtags: true,
+
+  // Type checking is handled by the CI TypeCheck step; skip during next build to avoid strict-mode conflicts with shared libs
+  typescript: { ignoreBuildErrors: true },
+
   images: {
     domains: ['localhost', 'api.aivolearning.com'],
   },

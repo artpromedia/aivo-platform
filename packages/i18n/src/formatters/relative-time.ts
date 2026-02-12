@@ -82,7 +82,7 @@ function findAppropriateUnit(
 
   // Find the appropriate unit
   for (let i = Math.max(0, maxUnitIndex); i <= minUnitIndex; i++) {
-    const { unit, seconds: unitSeconds } = TIME_UNITS[i];
+    const { unit, seconds: unitSeconds } = TIME_UNITS[i]!;
 
     if (absSeconds >= unitSeconds || i === minUnitIndex) {
       let value = seconds / unitSeconds;

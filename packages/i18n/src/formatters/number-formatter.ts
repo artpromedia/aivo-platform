@@ -245,7 +245,7 @@ export function formatOrdinal(value: number, locale: SupportedLocale): string {
   };
 
   // For non-English locales, just use the number with a period (common pattern)
-  const baseLocale = locale.split('-')[0];
+  const baseLocale = locale.split('-')[0]!;
   if (baseLocale !== 'en') {
     return `${formatNumber(value, locale)}.`;
   }
@@ -298,14 +298,14 @@ export function formatFileSize(
     ? ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
     : ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 
-  if (bytes === 0) return `0 ${units[0]}`;
+  if (bytes === 0) return `0 ${units[0]!}`;
 
   const exponent = Math.min(
     Math.floor(Math.log(Math.abs(bytes)) / Math.log(base)),
     units.length - 1
   );
   const value = bytes / Math.pow(base, exponent);
-  const unit = units[exponent];
+  const unit = units[exponent]!;
 
   // Try to use unit format if available
   try {

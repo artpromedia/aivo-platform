@@ -9,6 +9,9 @@ const nextConfig = {
   // Enable MDX support for documentation
   pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
 
+  // Type checking is handled by the CI TypeCheck step; skip during next build to avoid strict-mode conflicts with shared libs
+  typescript: { ignoreBuildErrors: true },
+
   async headers() {
     return [
       {
