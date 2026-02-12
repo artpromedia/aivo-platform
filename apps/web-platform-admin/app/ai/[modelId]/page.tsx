@@ -69,13 +69,13 @@ export default function AIModelDetailPage() {
             <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold">Calls by Period</h2>
               <div className="grid gap-2">
-                {metrics.dataPoints.map((entry: { period: string; count: number }) => (
+                {metrics.dataPoints.map((entry) => (
                   <div
-                    key={entry.period}
+                    key={entry.timestamp}
                     className="flex items-center justify-between border-b py-2 text-sm last:border-0"
                   >
-                    <span className="text-slate-600">{entry.period}</span>
-                    <span className="font-medium">{entry.count.toLocaleString()}</span>
+                    <span className="text-slate-600">{entry.timestamp}</span>
+                    <span className="font-medium">{entry.requests.toLocaleString()}</span>
                   </div>
                 ))}
               </div>

@@ -244,3 +244,13 @@ export function generateHowToSchema(guide: {
     })),
   };
 }
+
+/**
+ * SchemaScript - Renders structured data as a JSON-LD script tag
+ */
+export function SchemaScript({ schema }: { schema: object }) {
+  return React.createElement('script', {
+    type: 'application/ld+json',
+    dangerouslySetInnerHTML: { __html: JSON.stringify(schema) },
+  });
+}

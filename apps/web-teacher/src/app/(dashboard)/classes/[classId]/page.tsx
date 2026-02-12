@@ -14,8 +14,8 @@ import * as React from 'react';
 import { PageHeader, Tabs } from '@/components/layout/breadcrumb';
 import { useClass, useClassAnalytics } from '@/hooks/use-classes';
 import { classesApi } from '@/lib/api';
-import type { StudentRosterEntry } from '@/lib/types/student';
 import type { Assignment } from '@/lib/types/assignment';
+import type { StudentRosterEntry } from '@/lib/types/student';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -50,13 +50,21 @@ export default function ClassDetailPage() {
     classesApi
       .getStudents(classId)
       .then(setStudents)
-      .catch(() => setStudents([]))
-      .finally(() => setStudentsLoading(false));
+      .catch(() => {
+        setStudents([]);
+      })
+      .finally(() => {
+        setStudentsLoading(false);
+      });
     classesApi
       .getAssignments(classId)
       .then(setAssignments)
-      .catch(() => setAssignments([]))
-      .finally(() => setAssignmentsLoading(false));
+      .catch(() => {
+        setAssignments([]);
+      })
+      .finally(() => {
+        setAssignmentsLoading(false);
+      });
   }, [classId]);
 
   const tabs = [
@@ -95,7 +103,7 @@ export default function ClassDetailPage() {
     <div>
       <PageHeader
         title={formatClassTitle(classData.name, classData.section)}
-        description={[classData.room, classData.schedule].filter(Boolean).join(' · ')}
+        description={([classData.room, classData.schedule].filter(Boolean) as string[]).join(' · ')}
         actions={
           <div className="flex gap-2">
             <Link
@@ -117,10 +125,7 @@ export default function ClassDetailPage() {
       {/* Stats */}
       <div className="mt-6 grid gap-4 sm:grid-cols-4">
         <StatBox label="Students" value={students.length} />
-        <StatBox
-          label="Class Average"
-          value={formatPercent(analytics?.averageScore)}
-        />
+        <StatBox label="Class Average" value={formatPercent(analytics?.averageGrade)} />
         <StatBox label="Assignments" value={assignments.length} />
         <StatBox
           label="At Risk"
@@ -167,7 +172,9 @@ function StudentsTab({
 }>) {
   if (loading) return <LoadingSkeleton rows={5} />;
   if (students.length === 0)
-    return <EmptyState message="No students enrolled yet." action="Add students from the roster." />;
+    return (
+      <EmptyState message="No students enrolled yet." action="Add students from the roster." />
+    );
 
   return (
     <div className="rounded-xl border bg-white">
@@ -245,7 +252,8 @@ function AssignmentsTab({
           <div>
             <p className="font-medium">{a.title}</p>
             <p className="text-sm text-gray-500">
-              {a.category ?? a.type} · Due {a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}
+              {a.category ?? a.type} · Due{' '}
+              {a.dueDate ? new Date(a.dueDate).toLocaleDateString() : 'N/A'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -365,7 +373,9 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
     'at-risk': 'bg-red-100 text-red-700',
   };
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}>
+    <span
+      className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}
+    >
       {status}
     </span>
   );
@@ -374,7 +384,7 @@ function StatusBadge({ status }: Readonly<{ status: string }>) {
 function LoadingSkeleton({ rows }: Readonly<{ rows: number }>) {
   return (
     <div className="space-y-3">
-      {/* eslint-disable-next-line react/no-array-index-key */}
+      {}
       {Array.from({ length: rows }).map((_, i) => (
         <div key={`skeleton-${i}`} className="h-14 animate-pulse rounded-xl bg-gray-100" />
       ))}

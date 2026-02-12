@@ -15,8 +15,8 @@
  * If not installed, the directive transformers will not be available.
  */
 
-import type { Role } from './roles.js';
-import { isRole } from './roles.js';
+import type { Role } from './roles';
+import { isRole } from './roles';
 
 export interface GraphQLContext {
   auth?: AuthInfo | undefined;
@@ -86,7 +86,7 @@ export function hasRequiredRole(userRoles: Role[], requiredRoles: string[]): boo
 }
 
 // Re-export for convenience
-export { Role } from './roles.js';
+export { Role } from './roles';
 
 // =============================================================================
 // GraphQL Directive Transformers (require graphql and @graphql-tools/utils)

@@ -2,9 +2,9 @@ import type { NextFunction, Request, Response } from 'express';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { importSPKI, jwtVerify, type JWTPayload, type KeyLike, type JWTVerifyOptions } from 'jose';
 
-import type { Role } from './roles.js';
-import { isRole } from './roles.js';
-import type { AuthContext } from './types.js';
+import type { Role } from './roles';
+import { isRole } from './roles';
+import type { AuthContext } from './types';
 
 export interface AuthMiddlewareOptions {
   publicKey: string;
