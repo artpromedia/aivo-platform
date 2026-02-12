@@ -12,6 +12,7 @@ import {
   Tag,
 } from 'lucide-react';
 import Link from 'next/link';
+import * as React from 'react';
 
 import { Navigation, Footer } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
@@ -36,9 +37,8 @@ const categories = ['All', 'Product', 'Research', 'Education', 'Neurodiversity',
 const posts: BlogPost[] = [
   {
     slug: 'introducing-adaptive-ai-tutor',
-    title: 'Introducing AIVO's Adaptive AI Tutor',
-    excerpt:
-      'Our AI tutor adapts in real-time to each learner's pace, learning style, and IEP goals — delivering truly personalised education at scale.',
+    title: `Introducing AIVO's Adaptive AI Tutor`,
+    excerpt: `Our AI tutor adapts in real-time to each learner's pace, learning style, and IEP goals — delivering truly personalised education at scale.`,
     category: 'Product',
     date: 'Jan 28, 2026',
     readTime: '5 min read',
@@ -110,10 +110,11 @@ export function BlogPage() {
         <section className="pt-32 pb-16 bg-gradient-to-b from-theme-primary-50 to-white">
           <div className="container mx-auto px-4 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Badge variant="primary" className="mb-4">Blog</Badge>
+              <Badge variant="primary" className="mb-4">
+                Blog
+              </Badge>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Insights &amp;{' '}
-                <span className="text-gradient-primary">Stories</span>
+                Insights &amp; <span className="text-gradient-primary">Stories</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 News, research, and ideas from the AIVO team on inclusive education, AI-powered
@@ -147,69 +148,94 @@ export function BlogPage() {
         </section>
 
         {/* ── Featured Post ───────────────────────────────────── */}
-        {posts.filter((p) => p.featured).map((post) => (
-          <section key={post.slug} className="py-12">
-            <div className="container mx-auto px-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="max-w-4xl mx-auto bg-gradient-to-br from-theme-primary-50 to-coral-50 rounded-3xl p-8 md:p-12 border border-theme-primary-100"
-              >
-                <Badge variant="gradient" className="mb-4">Featured</Badge>
-                <h2 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-4">{post.title}</h2>
-                <p className="text-gray-600 text-lg mb-6">{post.excerpt}</p>
-                <div className="flex flex-wrap items-center gap-4">
-                  <span className="flex items-center gap-1 text-sm text-gray-500"><Calendar className="w-4 h-4" />{post.date}</span>
-                  <span className="flex items-center gap-1 text-sm text-gray-500"><BookOpen className="w-4 h-4" />{post.readTime}</span>
-                  <span className="flex items-center gap-1 text-sm text-theme-primary-600"><Tag className="w-4 h-4" />{post.category}</span>
-                </div>
-                <Link href={`/blog/${post.slug}`} className="inline-flex items-center gap-2 mt-6 text-theme-primary-600 font-semibold hover:text-theme-primary-700 transition-colors">
-                  Read Article <ArrowRight className="w-4 h-4" />
-                </Link>
-              </motion.div>
-            </div>
-          </section>
-        ))}
+        {posts
+          .filter((p) => p.featured)
+          .map((post) => (
+            <section key={post.slug} className="py-12">
+              <div className="container mx-auto px-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="max-w-4xl mx-auto bg-gradient-to-br from-theme-primary-50 to-coral-50 rounded-3xl p-8 md:p-12 border border-theme-primary-100"
+                >
+                  <Badge variant="gradient" className="mb-4">
+                    Featured
+                  </Badge>
+                  <h2 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                    {post.title}
+                  </h2>
+                  <p className="text-gray-600 text-lg mb-6">{post.excerpt}</p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <Calendar className="w-4 h-4" />
+                      {post.date}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <BookOpen className="w-4 h-4" />
+                      {post.readTime}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm text-theme-primary-600">
+                      <Tag className="w-4 h-4" />
+                      {post.category}
+                    </span>
+                  </div>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="inline-flex items-center gap-2 mt-6 text-theme-primary-600 font-semibold hover:text-theme-primary-700 transition-colors"
+                  >
+                    Read Article <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </motion.div>
+              </div>
+            </section>
+          ))}
 
         {/* ── Post Grid ───────────────────────────────────────── */}
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {posts.filter((p) => !p.featured).map((post, i) => (
-                <motion.article
-                  key={post.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-soft hover:shadow-soft-lg transition-shadow overflow-hidden group"
-                >
-                  {/* Icon banner */}
-                  <div className="h-40 bg-gradient-to-br from-theme-primary-100 to-coral-50 flex items-center justify-center">
-                    <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center shadow-sm">
-                      <post.icon className="w-8 h-8 text-theme-primary-500" />
+              {posts
+                .filter((p) => !p.featured)
+                .map((post, i) => (
+                  <motion.article
+                    key={post.slug}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-white rounded-2xl border border-gray-100 shadow-soft hover:shadow-soft-lg transition-shadow overflow-hidden group"
+                  >
+                    {/* Icon banner */}
+                    <div className="h-40 bg-gradient-to-br from-theme-primary-100 to-coral-50 flex items-center justify-center">
+                      <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center shadow-sm">
+                        <post.icon className="w-8 h-8 text-theme-primary-500" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Badge variant="outline" className="text-xs">{post.category}</Badge>
-                      <span className="text-xs text-gray-400">{post.readTime}</span>
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Badge variant="outline" className="text-xs">
+                          {post.category}
+                        </Badge>
+                        <span className="text-xs text-gray-400">{post.readTime}</span>
+                      </div>
+                      <h3 className="font-display text-lg font-semibold text-gray-900 mb-2 group-hover:text-theme-primary-600 transition-colors">
+                        {post.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">{post.date}</span>
+                        <Link
+                          href={`/blog/${post.slug}`}
+                          className="text-theme-primary-600 text-sm font-medium hover:text-theme-primary-700 transition-colors inline-flex items-center gap-1"
+                        >
+                          Read <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      </div>
                     </div>
-                    <h3 className="font-display text-lg font-semibold text-gray-900 mb-2 group-hover:text-theme-primary-600 transition-colors">
-                      {post.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">{post.date}</span>
-                      <Link href={`/blog/${post.slug}`} className="text-theme-primary-600 text-sm font-medium hover:text-theme-primary-700 transition-colors inline-flex items-center gap-1">
-                        Read <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    </div>
-                  </div>
-                </motion.article>
-              ))}
+                  </motion.article>
+                ))}
             </div>
           </div>
         </section>
@@ -217,14 +243,33 @@ export function BlogPage() {
         {/* ── Newsletter CTA ──────────────────────────────────── */}
         <section className="py-20 bg-gradient-to-br from-theme-primary-600 to-purple-700">
           <div className="container mx-auto px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Stay in the Loop</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+                Stay in the Loop
+              </h2>
               <p className="text-theme-primary-100 text-lg max-w-xl mx-auto mb-8">
-                Get the latest articles on inclusive education, product updates, and neurodiversity research delivered to your inbox.
+                Get the latest articles on inclusive education, product updates, and neurodiversity
+                research delivered to your inbox.
               </p>
-              <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
-                <input type="email" placeholder="your@email.com" className="flex-1 px-4 py-3 rounded-xl border-0 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50" />
-                <button type="submit" className="px-6 py-3 bg-white text-theme-primary-600 font-semibold rounded-xl hover:shadow-lg transition-shadow">
+              <form
+                className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                }}
+              >
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="flex-1 px-4 py-3 rounded-xl border-0 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-white text-theme-primary-600 font-semibold rounded-xl hover:shadow-lg transition-shadow"
+                >
                   Subscribe
                 </button>
               </form>

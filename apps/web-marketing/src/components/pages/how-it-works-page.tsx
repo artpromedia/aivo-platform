@@ -16,6 +16,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import Link from 'next/link';
+import * as React from 'react';
 
 import { Navigation, Footer } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
@@ -97,12 +98,16 @@ const perspectives = [
     role: 'For Learners',
     icon: GraduationCap,
     description: 'A fun, judgement-free space that adapts to how you learn best.',
-    highlights: ['Activities that match your pace', 'Rewards for every milestone', 'No wrong answers — just learning'],
+    highlights: [
+      'Activities that match your pace',
+      'Rewards for every milestone',
+      'No wrong answers — just learning',
+    ],
   },
   {
     role: 'For Parents',
     icon: Users,
-    description: 'See real progress, celebrate wins, and stay connected to your child's learning.',
+    description: `See real progress, celebrate wins, and stay connected to your child's learning.`,
     highlights: ['Real-time progress dashboard', 'Weekly summary reports', 'IEP goal tracking'],
   },
   {
@@ -136,13 +141,15 @@ export function HowItWorksPage() {
 
           <div className="container mx-auto px-4 text-center relative z-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Badge variant="primary" className="mb-4">How It Works</Badge>
+              <Badge variant="primary" className="mb-4">
+                How It Works
+              </Badge>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
                 Learning, <span className="text-gradient-primary">Reimagined</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                AIVO combines AI, neuroscience, and great design to create a learning experience that
-                adapts to every mind. Here&apos;s how it works.
+                AIVO combines AI, neuroscience, and great design to create a learning experience
+                that adapts to every mind. Here&apos;s how it works.
               </p>
             </motion.div>
           </div>
@@ -163,7 +170,9 @@ export function HowItWorksPage() {
                 >
                   {/* Number + line */}
                   <div className="flex flex-col items-center md:w-20 shrink-0">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}>
+                    <div
+                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}
+                    >
                       <step.icon className="w-7 h-7 text-white" />
                     </div>
                     {i < steps.length - 1 && (
@@ -174,9 +183,13 @@ export function HowItWorksPage() {
                   {/* Content */}
                   <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-soft p-8">
                     <div className="flex items-center gap-3 mb-3">
-                      <Badge variant="outline" className="text-xs">Step {step.number}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Step {step.number}
+                      </Badge>
                     </div>
-                    <h3 className="font-display text-2xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                    <h3 className="font-display text-2xl font-bold text-gray-900 mb-3">
+                      {step.title}
+                    </h3>
                     <p className="text-gray-600 mb-5">{step.description}</p>
                     <div className="space-y-2">
                       {step.details.map((detail) => (
@@ -196,13 +209,21 @@ export function HowItWorksPage() {
         {/* ── Perspectives ────────────────────────────────────── */}
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-              <Badge variant="primary" className="mb-4">For Everyone</Badge>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="primary" className="mb-4">
+                For Everyone
+              </Badge>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 Built for Every Stakeholder
               </h2>
               <p className="text-gray-600 max-w-xl mx-auto">
-                AIVO works for learners, parents, teachers, and administrators — each with their own tailored experience.
+                AIVO works for learners, parents, teachers, and administrators — each with their own
+                tailored experience.
               </p>
             </motion.div>
 
@@ -247,7 +268,10 @@ export function HowItWorksPage() {
                 { icon: LineChart, label: 'Evidence-Based' },
                 { icon: Shield, label: 'SOC 2 Type II' },
               ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 px-5 py-3 bg-gray-50 rounded-xl">
+                <div
+                  key={label}
+                  className="flex items-center gap-2 px-5 py-3 bg-gray-50 rounded-xl"
+                >
                   <Icon className="w-5 h-5 text-theme-primary-500" />
                   <span className="text-sm font-medium text-gray-700">{label}</span>
                 </div>
@@ -259,16 +283,29 @@ export function HowItWorksPage() {
         {/* ── CTA ─────────────────────────────────────────────── */}
         <section className="py-20 bg-gradient-to-br from-theme-primary-600 to-purple-700">
           <div className="container mx-auto px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+                Ready to Get Started?
+              </h2>
               <p className="text-theme-primary-100 text-lg max-w-xl mx-auto mb-8">
-                Join hundreds of families and educators already using AIVO to unlock every learner&apos;s potential.
+                Join hundreds of families and educators already using AIVO to unlock every
+                learner&apos;s potential.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/pricing" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow">
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow"
+                >
                   View Pricing <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link href="/demo" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors">
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors"
+                >
                   Request a Demo
                 </Link>
               </div>

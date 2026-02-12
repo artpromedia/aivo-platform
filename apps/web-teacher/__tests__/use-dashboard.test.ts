@@ -11,14 +11,14 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock the analytics API
-vi.mock('@/src/lib/api/analytics', () => ({
+vi.mock('@/lib/api/analytics', () => ({
   analyticsApi: {
     getDashboardSummary: vi.fn(),
   },
 }));
 
-import { analyticsApi } from '@/src/lib/api/analytics';
-import { useDashboard } from '@/src/hooks/use-dashboard';
+import { analyticsApi } from '@/lib/api/analytics';
+import { useDashboard } from '@/hooks/use-dashboard';
 
 const mockSummary = {
   stats: { totalStudents: 50, averageMastery: 80, iepStudents: 5, atRiskStudents: 3 },

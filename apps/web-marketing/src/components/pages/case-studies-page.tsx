@@ -1,16 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  TrendingUp,
-  Users,
-  Clock,
-  Award,
-  ArrowRight,
-  School,
-  MapPin,
-  BarChart3,
-} from 'lucide-react';
+import { Users, Award, ArrowRight, School, MapPin, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 
 import { Navigation, Footer } from '@/components/shared';
@@ -64,12 +55,11 @@ const studies: CaseStudy[] = [
   },
   {
     slug: 'martinez-family',
-    title: 'A Family's Journey: From Frustration to Confidence',
+    title: `A Family's Journey: From Frustration to Confidence`,
     organization: 'The Martinez Family',
     location: 'Denver, CO',
     type: 'family',
-    excerpt:
-      'When traditional tutoring wasn't working for their son with ADHD and dyslexia, the Martinez family turned to AIVO. Within three months, his reading level improved by two grade levels.',
+    excerpt: `When traditional tutoring wasn't working for their son with ADHD and dyslexia, the Martinez family turned to AIVO. Within three months, his reading level improved by two grade levels.`,
     metrics: [
       { label: 'Reading Level', value: '+2 grades' },
       { label: 'Screen Time Quality', value: '95%' },
@@ -83,8 +73,7 @@ const studies: CaseStudy[] = [
     organization: 'Oakwood Academy',
     location: 'Chicago, IL',
     type: 'school',
-    excerpt:
-      'By combining AIVO's multi-sensory approach with SEL-integrated content, Oakwood Academy saw a dramatic decrease in classroom behaviour incidents and improved student focus.',
+    excerpt: `By combining AIVO's multi-sensory approach with SEL-integrated content, Oakwood Academy saw a dramatic decrease in classroom behaviour incidents and improved student focus.`,
     metrics: [
       { label: 'Behaviour Incidents', value: '-35%' },
       { label: 'Student Focus', value: '+50%' },
@@ -98,8 +87,7 @@ const studies: CaseStudy[] = [
     organization: 'Bright Minds Co-Op',
     location: 'Portland, OR',
     type: 'family',
-    excerpt:
-      'A homeschool cooperative of 45 families leveraged AIVO's custom learning paths to create individualised curricula for neurodivergent learners without increasing workload.',
+    excerpt: `A homeschool cooperative of 45 families leveraged AIVO's custom learning paths to create individualised curricula for neurodivergent learners without increasing workload.`,
     metrics: [
       { label: 'Families', value: '45' },
       { label: 'Curriculum Prep Time', value: '-60%' },
@@ -129,13 +117,15 @@ export function CaseStudiesPage() {
         <section className="pt-32 pb-16 bg-gradient-to-b from-theme-primary-50 to-white">
           <div className="container mx-auto px-4 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Badge variant="primary" className="mb-4">Case Studies</Badge>
+              <Badge variant="primary" className="mb-4">
+                Case Studies
+              </Badge>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Real Results,{' '}
-                <span className="text-gradient-primary">Real Impact</span>
+                Real Results, <span className="text-gradient-primary">Real Impact</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                See how schools, districts, and families are using AIVO to unlock every learner&apos;s potential.
+                See how schools, districts, and families are using AIVO to unlock every
+                learner&apos;s potential.
               </p>
             </motion.div>
           </div>
@@ -154,7 +144,9 @@ export function CaseStudiesPage() {
                   transition={{ delay: i * 0.1 }}
                   className="text-center p-6 bg-white rounded-2xl border border-gray-100 shadow-soft"
                 >
-                  <div className="text-3xl md:text-4xl font-bold text-theme-primary-600 mb-1">{stat.value}</div>
+                  <div className="text-3xl md:text-4xl font-bold text-theme-primary-600 mb-1">
+                    {stat.value}
+                  </div>
                   <div className="text-sm text-gray-500">{stat.label}</div>
                 </motion.div>
               ))}
@@ -178,13 +170,22 @@ export function CaseStudiesPage() {
                   {/* Header */}
                   <div className="p-6 pb-4">
                     <div className="flex items-center gap-2 mb-3">
-                      {study.type === 'school' && <School className="w-4 h-4 text-theme-primary-500" />}
-                      {study.type === 'district' && <BarChart3 className="w-4 h-4 text-theme-primary-500" />}
-                      {study.type === 'family' && <Users className="w-4 h-4 text-theme-primary-500" />}
-                      <span className="text-sm font-medium text-gray-700">{study.organization}</span>
+                      {study.type === 'school' && (
+                        <School className="w-4 h-4 text-theme-primary-500" />
+                      )}
+                      {study.type === 'district' && (
+                        <BarChart3 className="w-4 h-4 text-theme-primary-500" />
+                      )}
+                      {study.type === 'family' && (
+                        <Users className="w-4 h-4 text-theme-primary-500" />
+                      )}
+                      <span className="text-sm font-medium text-gray-700">
+                        {study.organization}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-400 mb-3">
-                      <MapPin className="w-3 h-3" />{study.location}
+                      <MapPin className="w-3 h-3" />
+                      {study.location}
                     </div>
                     <h3 className="font-display text-lg font-semibold text-gray-900 mb-2 group-hover:text-theme-primary-600 transition-colors">
                       {study.title}
@@ -208,10 +209,15 @@ export function CaseStudiesPage() {
                   <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex flex-wrap gap-1">
                       {study.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-[10px] px-2 py-0.5">{tag}</Badge>
+                        <Badge key={tag} variant="outline" className="text-[10px] px-2 py-0.5">
+                          {tag}
+                        </Badge>
                       ))}
                     </div>
-                    <Link href={`/case-studies/${study.slug}`} className="text-theme-primary-600 text-sm font-medium hover:text-theme-primary-700 inline-flex items-center gap-1">
+                    <Link
+                      href={`/case-studies/${study.slug}`}
+                      className="text-theme-primary-600 text-sm font-medium hover:text-theme-primary-700 inline-flex items-center gap-1"
+                    >
                       Read <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
@@ -224,17 +230,30 @@ export function CaseStudiesPage() {
         {/* ── CTA ─────────────────────────────────────────────── */}
         <section className="py-20 bg-gradient-to-br from-theme-primary-600 to-purple-700">
           <div className="container mx-auto px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
               <Award className="w-12 h-12 text-white/80 mx-auto mb-4" />
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Ready to Write Your Success Story?</h2>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+                Ready to Write Your Success Story?
+              </h2>
               <p className="text-theme-primary-100 text-lg max-w-xl mx-auto mb-8">
-                Join the growing community of schools, districts, and families achieving real results with AIVO.
+                Join the growing community of schools, districts, and families achieving real
+                results with AIVO.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/demo" className="inline-flex items-center justify-center px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow">
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow"
+                >
                   Request a Demo
                 </Link>
-                <Link href="/pricing" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors">
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors"
+                >
                   View Pricing
                 </Link>
               </div>

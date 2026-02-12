@@ -20,8 +20,7 @@ import {
 import * as React from 'react';
 
 import { PricingCTA } from '@/components/cta';
-import { Navigation } from '@/components/shared';
-import { Footer } from '@/components/shared';
+import { Navigation, Footer } from '@/components/shared';
 import { Badge } from '@/components/ui/badge';
 import type { PlanType } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -169,12 +168,36 @@ const faqs = [
 ];
 
 const educatorFeatures = [
-  { icon: Brain, title: 'AI-Powered Adaptation', description: 'Content adapts in real-time to each learner's pace and style' },
-  { icon: BarChart3, title: 'Actionable Analytics', description: 'Deep insight into learner progress, strengths, and growth areas' },
-  { icon: BookOpen, title: 'Full Curriculum Library', description: 'Thousands of activities aligned to standards and IEP goals' },
-  { icon: GraduationCap, title: 'IEP Goal Tracking', description: 'Track IEP objectives with measurable data and exportable reports' },
-  { icon: Headphones, title: 'Multi-Sensory Learning', description: 'Visual, auditory, and kinesthetic activities for every learner' },
-  { icon: Zap, title: 'Instant Feedback', description: 'Real-time guidance keeps learners motivated and on track' },
+  {
+    icon: Brain,
+    title: 'AI-Powered Adaptation',
+    description: `Content adapts in real-time to each learner's pace and style`,
+  },
+  {
+    icon: BarChart3,
+    title: 'Actionable Analytics',
+    description: 'Deep insight into learner progress, strengths, and growth areas',
+  },
+  {
+    icon: BookOpen,
+    title: 'Full Curriculum Library',
+    description: 'Thousands of activities aligned to standards and IEP goals',
+  },
+  {
+    icon: GraduationCap,
+    title: 'IEP Goal Tracking',
+    description: 'Track IEP objectives with measurable data and exportable reports',
+  },
+  {
+    icon: Headphones,
+    title: 'Multi-Sensory Learning',
+    description: 'Visual, auditory, and kinesthetic activities for every learner',
+  },
+  {
+    icon: Zap,
+    title: 'Instant Feedback',
+    description: 'Real-time guidance keeps learners motivated and on track',
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -193,10 +216,11 @@ export function PricingPage() {
         <section className="pt-32 pb-16 bg-gradient-to-b from-theme-primary-50 to-white">
           <div className="container mx-auto px-4 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <Badge variant="primary" className="mb-4">Pricing</Badge>
+              <Badge variant="primary" className="mb-4">
+                Pricing
+              </Badge>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Simple, Transparent{' '}
-                <span className="text-gradient-primary">Pricing</span>
+                Simple, Transparent <span className="text-gradient-primary">Pricing</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 Choose the plan that fits your family&apos;s needs. All plans include our core
@@ -210,10 +234,22 @@ export function PricingPage() {
         <section className="pb-4">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-4 mb-12">
-              <span className={cn('text-sm font-medium transition-colors', isAnnual ? 'text-gray-500' : 'text-gray-900')}>Monthly</span>
+              <span
+                className={cn(
+                  'text-sm font-medium transition-colors',
+                  isAnnual ? 'text-gray-500' : 'text-gray-900'
+                )}
+              >
+                Monthly
+              </span>
               <button
-                onClick={() => setIsAnnual(!isAnnual)}
-                className={cn('relative w-14 h-8 rounded-full transition-colors', isAnnual ? 'bg-theme-primary-500' : 'bg-gray-300')}
+                onClick={() => {
+                  setIsAnnual(!isAnnual);
+                }}
+                className={cn(
+                  'relative w-14 h-8 rounded-full transition-colors',
+                  isAnnual ? 'bg-theme-primary-500' : 'bg-gray-300'
+                )}
                 aria-label={isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
               >
                 <motion.div
@@ -222,8 +258,17 @@ export function PricingPage() {
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
               </button>
-              <span className={cn('text-sm font-medium transition-colors', isAnnual ? 'text-gray-900' : 'text-gray-500')}>Annual</span>
-              <Badge variant="success" className="ml-2">Save 50%</Badge>
+              <span
+                className={cn(
+                  'text-sm font-medium transition-colors',
+                  isAnnual ? 'text-gray-900' : 'text-gray-500'
+                )}
+              >
+                Annual
+              </span>
+              <Badge variant="success" className="ml-2">
+                Save 50%
+              </Badge>
             </div>
           </div>
         </section>
@@ -250,33 +295,58 @@ export function PricingPage() {
                   >
                     {tier.popular && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <Badge variant="gradient" className="px-4 py-1"><Star className="w-3 h-3 mr-1" />Most Popular</Badge>
+                        <Badge variant="gradient" className="px-4 py-1">
+                          <Star className="w-3 h-3 mr-1" />
+                          Most Popular
+                        </Badge>
                       </div>
                     )}
                     {tier.discount && (
-                      <div className="absolute top-4 right-4"><Badge variant="success">{tier.discount}</Badge></div>
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="success">{tier.discount}</Badge>
+                      </div>
                     )}
                     <div className="text-center mb-6">
-                      <h3 className="font-display text-2xl font-bold text-gray-900 mb-2">{tier.name}</h3>
+                      <h3 className="font-display text-2xl font-bold text-gray-900 mb-2">
+                        {tier.name}
+                      </h3>
                       <p className="text-gray-500 text-sm">{tier.description}</p>
                     </div>
                     <div className="text-center mb-8">
                       <div className="flex items-end justify-center gap-1">
-                        {tier.originalPrice && <span className="text-lg text-gray-400 line-through mb-1">${tier.originalPrice}</span>}
-                        <span className="text-5xl font-bold text-gray-900">${price.toFixed(price === 0 ? 0 : 2)}</span>
+                        {tier.originalPrice && (
+                          <span className="text-lg text-gray-400 line-through mb-1">
+                            ${tier.originalPrice}
+                          </span>
+                        )}
+                        <span className="text-5xl font-bold text-gray-900">
+                          ${price.toFixed(price === 0 ? 0 : 2)}
+                        </span>
                         <span className="text-gray-500 mb-2">/month</span>
                       </div>
                       {isAnnual && price > 0 && (
-                        <p className="text-sm text-gray-500 mt-1">Billed annually (${(price * 12).toFixed(2)}/year)</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Billed annually (${(price * 12).toFixed(2)}/year)
+                        </p>
                       )}
                     </div>
-                    <PricingCTA plan={tier.planId as PlanType} interval={isAnnual ? 'annual' : 'monthly'} className="mb-8" />
+                    <PricingCTA
+                      plan={tier.planId as PlanType}
+                      interval={isAnnual ? 'annual' : 'monthly'}
+                      className="mb-8"
+                    />
                     <div className="space-y-3">
                       {tier.features.map((f) => (
-                        <div key={f} className="flex items-start gap-3"><Check className="w-5 h-5 text-mint-500 shrink-0 mt-0.5" /><span className="text-gray-600 text-sm">{f}</span></div>
+                        <div key={f} className="flex items-start gap-3">
+                          <Check className="w-5 h-5 text-mint-500 shrink-0 mt-0.5" />
+                          <span className="text-gray-600 text-sm">{f}</span>
+                        </div>
                       ))}
                       {tier.notIncluded?.map((f) => (
-                        <div key={f} className="flex items-start gap-3 opacity-50"><X className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" /><span className="text-gray-400 text-sm">{f}</span></div>
+                        <div key={f} className="flex items-start gap-3 opacity-50">
+                          <X className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" />
+                          <span className="text-gray-400 text-sm">{f}</span>
+                        </div>
                       ))}
                     </div>
                   </motion.div>
@@ -287,8 +357,12 @@ export function PricingPage() {
             {/* Trust */}
             <div className="flex flex-wrap items-center justify-center gap-6 mb-16">
               {trustBadges.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl">
-                  <Icon className="w-5 h-5 text-theme-primary-500" /><span className="text-sm font-medium text-gray-700">{label}</span>
+                <div
+                  key={label}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl"
+                >
+                  <Icon className="w-5 h-5 text-theme-primary-500" />
+                  <span className="text-sm font-medium text-gray-700">{label}</span>
                 </div>
               ))}
             </div>
@@ -298,9 +372,18 @@ export function PricingPage() {
         {/* ── Feature Comparison ────────────────────────────────── */}
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Compare Plans</h2>
-              <p className="text-gray-600 max-w-xl mx-auto">See exactly what you get with each plan</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Compare Plans
+              </h2>
+              <p className="text-gray-600 max-w-xl mx-auto">
+                See exactly what you get with each plan
+              </p>
             </motion.div>
 
             <div className="max-w-4xl mx-auto overflow-x-auto">
@@ -308,9 +391,15 @@ export function PricingPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="py-4 pr-4 text-sm font-semibold text-gray-900">Feature</th>
-                    <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">Free</th>
-                    <th className="py-4 px-4 text-sm font-semibold text-theme-primary-600 text-center">Pro</th>
-                    <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">Premium</th>
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">
+                      Free
+                    </th>
+                    <th className="py-4 px-4 text-sm font-semibold text-theme-primary-600 text-center">
+                      Pro
+                    </th>
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">
+                      Premium
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -329,7 +418,11 @@ export function PricingPage() {
                         return (
                           <td key={key} className="py-3 px-4 text-center">
                             {typeof v === 'boolean' ? (
-                              v ? <Check className="w-5 h-5 text-mint-500 mx-auto" /> : <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              v ? (
+                                <Check className="w-5 h-5 text-mint-500 mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              )
                             ) : (
                               <span className="text-sm text-gray-600">{v}</span>
                             )}
@@ -347,10 +440,22 @@ export function PricingPage() {
         {/* ── Why Educators Love AIVO ───────────────────────────── */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-              <Badge variant="primary" className="mb-4">Why AIVO</Badge>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Built for Every Learner</h2>
-              <p className="text-gray-600 max-w-xl mx-auto">Powerful tools designed for neurodivergent learners and the educators who support them</p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <Badge variant="primary" className="mb-4">
+                Why AIVO
+              </Badge>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Built for Every Learner
+              </h2>
+              <p className="text-gray-600 max-w-xl mx-auto">
+                Powerful tools designed for neurodivergent learners and the educators who support
+                them
+              </p>
             </motion.div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {educatorFeatures.map((feat, i) => (
@@ -365,7 +470,9 @@ export function PricingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-theme-primary-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
                     <feat.icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="font-display text-lg font-semibold text-gray-900 mb-2">{feat.title}</h3>
+                  <h3 className="font-display text-lg font-semibold text-gray-900 mb-2">
+                    {feat.title}
+                  </h3>
                   <p className="text-gray-600 text-sm">{feat.description}</p>
                 </motion.div>
               ))}
@@ -376,8 +483,15 @@ export function PricingPage() {
         {/* ── FAQ ───────────────────────────────────────────────── */}
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Frequently Asked Questions
+              </h2>
             </motion.div>
             <div className="max-w-2xl mx-auto space-y-3">
               {faqs.map((faq, index) => (
@@ -390,16 +504,28 @@ export function PricingPage() {
                   className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
                 >
                   <button
-                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                    onClick={() => {
+                      setOpenFaq(openFaq === index ? null : index);
+                    }}
                     className="w-full flex items-center justify-between p-5 text-left"
                     aria-expanded={openFaq === index}
                   >
                     <span className="font-semibold text-gray-900">{faq.question}</span>
-                    <ChevronDown className={cn('w-5 h-5 text-gray-500 transition-transform duration-200', openFaq === index && 'rotate-180')} />
+                    <ChevronDown
+                      className={cn(
+                        'w-5 h-5 text-gray-500 transition-transform duration-200',
+                        openFaq === index && 'rotate-180'
+                      )}
+                    />
                   </button>
                   <AnimatePresence>
                     {openFaq === index && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}>
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
                         <div className="px-5 pb-5 text-gray-600">{faq.answer}</div>
                       </motion.div>
                     )}
@@ -413,12 +539,20 @@ export function PricingPage() {
         {/* ── Money-Back Guarantee ──────────────────────────────── */}
         <section className="py-16">
           <div className="container mx-auto px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
               <div className="inline-flex items-center gap-3 px-6 py-4 bg-mint-50 border border-mint-200 rounded-2xl">
-                <div className="w-12 h-12 bg-mint-100 rounded-xl flex items-center justify-center"><Shield className="w-6 h-6 text-mint-600" /></div>
+                <div className="w-12 h-12 bg-mint-100 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-mint-600" />
+                </div>
                 <div className="text-left">
                   <div className="font-semibold text-gray-900">30-Day Money-Back Guarantee</div>
-                  <div className="text-sm text-gray-600">Try risk-free. Full refund if not satisfied.</div>
+                  <div className="text-sm text-gray-600">
+                    Try risk-free. Full refund if not satisfied.
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -428,16 +562,29 @@ export function PricingPage() {
         {/* ── Enterprise CTA ───────────────────────────────────── */}
         <section className="py-20 bg-gradient-to-br from-theme-primary-600 to-purple-700">
           <div className="container mx-auto px-4 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Need School or District Pricing?</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+                Need School or District Pricing?
+              </h2>
               <p className="text-theme-primary-100 text-lg max-w-xl mx-auto mb-8">
-                We offer custom plans for schools, districts, and organizations. Get volume discounts and dedicated support.
+                We offer custom plans for schools, districts, and organizations. Get volume
+                discounts and dedicated support.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/contact" className="inline-flex items-center justify-center px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow">
+                <a
+                  href="/contact"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow"
+                >
                   Contact Sales
                 </a>
-                <a href="/demo" className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors">
+                <a
+                  href="/demo"
+                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors"
+                >
                   Request a Demo
                 </a>
               </div>
