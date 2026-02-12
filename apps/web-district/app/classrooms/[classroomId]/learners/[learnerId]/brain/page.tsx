@@ -17,7 +17,7 @@ export default async function VirtualBrainPage({
 }) {
   const session = await getAuthSession();
 
-  if (!session || !hasInsightsAccess(session.roles)) {
+  if (!session || !hasInsightsAccess(session.roles as Role[])) {
     return (
       <NotPermitted
         title="Not permitted to view this learner's Virtual Brain"

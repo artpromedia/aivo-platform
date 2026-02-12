@@ -190,7 +190,7 @@ function StudentsTab({
         </thead>
         <tbody>
           {students.map((s) => (
-            <tr key={s.studentId ?? s.id} className="border-b last:border-0 hover:bg-gray-50">
+            <tr key={s.id ?? s.student?.id} className="border-b last:border-0 hover:bg-gray-50">
               <td className="px-4 py-3 font-medium">{s.name ?? `${s.firstName} ${s.lastName}`}</td>
               <td className="px-4 py-3">{s.gradeLevel ?? '—'}</td>
               <td className="px-4 py-3">{formatPercent(s.mastery)}</td>

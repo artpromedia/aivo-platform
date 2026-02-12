@@ -4,6 +4,7 @@ packages:
   - "services/*"
   - "libs/ts-*"
   - "libs/ui-web"
+  - "libs/i18n"
   - "libs/ts-data-access"
   - "libs/events"
   - "libs/billing-*"

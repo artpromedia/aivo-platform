@@ -10,65 +10,65 @@
  */
 export const SUPPORTED_LOCALES = [
   // Major World Languages
-  'en',      // English (default)
-  'en-GB',   // English (UK)
-  'en-AU',   // English (Australia)
-  'es',      // Spanish
-  'es-MX',   // Spanish (Mexico)
-  'es-AR',   // Spanish (Argentina)
-  'fr',      // French
-  'fr-CA',   // French (Canada)
-  'pt',      // Portuguese
-  'pt-BR',   // Portuguese (Brazil)
-  'de',      // German
-  'it',      // Italian
-  'nl',      // Dutch
-  
+  'en', // English (default)
+  'en-GB', // English (UK)
+  'en-AU', // English (Australia)
+  'es', // Spanish
+  'es-MX', // Spanish (Mexico)
+  'es-AR', // Spanish (Argentina)
+  'fr', // French
+  'fr-CA', // French (Canada)
+  'pt', // Portuguese
+  'pt-BR', // Portuguese (Brazil)
+  'de', // German
+  'it', // Italian
+  'nl', // Dutch
+
   // Asian Languages
-  'zh',      // Chinese (Simplified)
-  'zh-TW',   // Chinese (Traditional)
-  'ja',      // Japanese
-  'ko',      // Korean
-  'hi',      // Hindi
-  'bn',      // Bengali
-  'ta',      // Tamil
-  'vi',      // Vietnamese
-  'th',      // Thai
-  'id',      // Indonesian
-  'ms',      // Malay
-  
+  'zh', // Chinese (Simplified)
+  'zh-TW', // Chinese (Traditional)
+  'ja', // Japanese
+  'ko', // Korean
+  'hi', // Hindi
+  'bn', // Bengali
+  'ta', // Tamil
+  'vi', // Vietnamese
+  'th', // Thai
+  'id', // Indonesian
+  'ms', // Malay
+
   // African Languages
-  'sw',      // Swahili
-  'ha',      // Hausa
-  'yo',      // Yoruba
-  'am',      // Amharic
-  'zu',      // Zulu
-  'ig',      // Igbo
-  
+  'sw', // Swahili
+  'ha', // Hausa
+  'yo', // Yoruba
+  'am', // Amharic
+  'zu', // Zulu
+  'ig', // Igbo
+
   // Middle Eastern / RTL Languages
-  'ar',      // Arabic
-  'ar-SA',   // Arabic (Saudi Arabia)
-  'ar-EG',   // Arabic (Egypt)
-  'he',      // Hebrew
-  'fa',      // Persian/Farsi
-  'ur',      // Urdu
-  
+  'ar', // Arabic
+  'ar-SA', // Arabic (Saudi Arabia)
+  'ar-EG', // Arabic (Egypt)
+  'he', // Hebrew
+  'fa', // Persian/Farsi
+  'ur', // Urdu
+
   // European Languages
-  'ru',      // Russian
-  'pl',      // Polish
-  'uk',      // Ukrainian
-  'tr',      // Turkish
-  'el',      // Greek
-  'cs',      // Czech
-  'ro',      // Romanian
-  'hu',      // Hungarian
-  'sv',      // Swedish
-  'da',      // Danish
-  'no',      // Norwegian
-  'fi',      // Finnish
+  'ru', // Russian
+  'pl', // Polish
+  'uk', // Ukrainian
+  'tr', // Turkish
+  'el', // Greek
+  'cs', // Czech
+  'ro', // Romanian
+  'hu', // Hungarian
+  'sv', // Swedish
+  'da', // Danish
+  'no', // Norwegian
+  'fi', // Finnish
 ] as const;
 
-export type Locale = typeof SUPPORTED_LOCALES[number];
+export type Locale = (typeof SUPPORTED_LOCALES)[number];
 
 /**
  * Default fallback locale
@@ -78,34 +78,27 @@ export const DEFAULT_LOCALE: Locale = 'en';
 /**
  * Right-to-left locales
  */
-export const RTL_LOCALES: Locale[] = [
-  'ar',
-  'ar-SA',
-  'ar-EG',
-  'he',
-  'fa',
-  'ur',
-];
+export const RTL_LOCALES: Locale[] = ['ar', 'ar-SA', 'ar-EG', 'he', 'fa', 'ur'];
 
 /**
  * Metadata for each supported locale
  */
 export interface LocaleMetadata {
   code: Locale;
-  name: string;           // Native name
-  englishName: string;    // English name
-  region: string;         // Geographic region
-  script: string;         // Writing script
+  name: string; // Native name
+  englishName: string; // English name
+  region: string; // Geographic region
+  script: string; // Writing script
   direction: 'ltr' | 'rtl';
-  numberSystem: string;   // Default number system
-  dateFormat: string;     // Common date format pattern
-  currency: string;       // Default currency code
-  flag: string;           // Flag emoji
+  numberSystem: string; // Default number system
+  dateFormat: string; // Common date format pattern
+  currency: string; // Default currency code
+  flag: string; // Flag emoji
 }
 
 export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
   // English variants
-  'en': {
+  en: {
     code: 'en',
     name: 'English',
     englishName: 'English',
@@ -141,9 +134,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'AUD',
     flag: '🇦🇺',
   },
-  
+
   // Spanish variants
-  'es': {
+  es: {
     code: 'es',
     name: 'Español',
     englishName: 'Spanish',
@@ -179,9 +172,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'ARS',
     flag: '🇦🇷',
   },
-  
+
   // French variants
-  'fr': {
+  fr: {
     code: 'fr',
     name: 'Français',
     englishName: 'French',
@@ -205,9 +198,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'CAD',
     flag: '🇨🇦',
   },
-  
+
   // Portuguese variants
-  'pt': {
+  pt: {
     code: 'pt',
     name: 'Português',
     englishName: 'Portuguese',
@@ -231,9 +224,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'BRL',
     flag: '🇧🇷',
   },
-  
+
   // Other European languages
-  'de': {
+  de: {
     code: 'de',
     name: 'Deutsch',
     englishName: 'German',
@@ -245,7 +238,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EUR',
     flag: '🇩🇪',
   },
-  'it': {
+  it: {
     code: 'it',
     name: 'Italiano',
     englishName: 'Italian',
@@ -257,7 +250,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EUR',
     flag: '🇮🇹',
   },
-  'nl': {
+  nl: {
     code: 'nl',
     name: 'Nederlands',
     englishName: 'Dutch',
@@ -269,7 +262,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EUR',
     flag: '🇳🇱',
   },
-  'ru': {
+  ru: {
     code: 'ru',
     name: 'Русский',
     englishName: 'Russian',
@@ -281,7 +274,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'RUB',
     flag: '🇷🇺',
   },
-  'pl': {
+  pl: {
     code: 'pl',
     name: 'Polski',
     englishName: 'Polish',
@@ -293,7 +286,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'PLN',
     flag: '🇵🇱',
   },
-  'uk': {
+  uk: {
     code: 'uk',
     name: 'Українська',
     englishName: 'Ukrainian',
@@ -305,7 +298,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'UAH',
     flag: '🇺🇦',
   },
-  'tr': {
+  tr: {
     code: 'tr',
     name: 'Türkçe',
     englishName: 'Turkish',
@@ -317,7 +310,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'TRY',
     flag: '🇹🇷',
   },
-  'el': {
+  el: {
     code: 'el',
     name: 'Ελληνικά',
     englishName: 'Greek',
@@ -329,7 +322,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EUR',
     flag: '🇬🇷',
   },
-  'cs': {
+  cs: {
     code: 'cs',
     name: 'Čeština',
     englishName: 'Czech',
@@ -341,7 +334,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'CZK',
     flag: '🇨🇿',
   },
-  'ro': {
+  ro: {
     code: 'ro',
     name: 'Română',
     englishName: 'Romanian',
@@ -353,7 +346,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'RON',
     flag: '🇷🇴',
   },
-  'hu': {
+  hu: {
     code: 'hu',
     name: 'Magyar',
     englishName: 'Hungarian',
@@ -365,7 +358,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'HUF',
     flag: '🇭🇺',
   },
-  'sv': {
+  sv: {
     code: 'sv',
     name: 'Svenska',
     englishName: 'Swedish',
@@ -377,7 +370,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'SEK',
     flag: '🇸🇪',
   },
-  'da': {
+  da: {
     code: 'da',
     name: 'Dansk',
     englishName: 'Danish',
@@ -389,7 +382,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'DKK',
     flag: '🇩🇰',
   },
-  'no': {
+  no: {
     code: 'no',
     name: 'Norsk',
     englishName: 'Norwegian',
@@ -401,7 +394,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'NOK',
     flag: '🇳🇴',
   },
-  'fi': {
+  fi: {
     code: 'fi',
     name: 'Suomi',
     englishName: 'Finnish',
@@ -413,9 +406,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EUR',
     flag: '🇫🇮',
   },
-  
+
   // Asian Languages
-  'zh': {
+  zh: {
     code: 'zh',
     name: '中文',
     englishName: 'Chinese (Simplified)',
@@ -439,7 +432,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'TWD',
     flag: '🇹🇼',
   },
-  'ja': {
+  ja: {
     code: 'ja',
     name: '日本語',
     englishName: 'Japanese',
@@ -451,7 +444,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'JPY',
     flag: '🇯🇵',
   },
-  'ko': {
+  ko: {
     code: 'ko',
     name: '한국어',
     englishName: 'Korean',
@@ -463,7 +456,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'KRW',
     flag: '🇰🇷',
   },
-  'hi': {
+  hi: {
     code: 'hi',
     name: 'हिन्दी',
     englishName: 'Hindi',
@@ -475,7 +468,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'INR',
     flag: '🇮🇳',
   },
-  'bn': {
+  bn: {
     code: 'bn',
     name: 'বাংলা',
     englishName: 'Bengali',
@@ -487,7 +480,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'BDT',
     flag: '🇧🇩',
   },
-  'ta': {
+  ta: {
     code: 'ta',
     name: 'தமிழ்',
     englishName: 'Tamil',
@@ -499,7 +492,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'INR',
     flag: '🇮🇳',
   },
-  'vi': {
+  vi: {
     code: 'vi',
     name: 'Tiếng Việt',
     englishName: 'Vietnamese',
@@ -511,7 +504,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'VND',
     flag: '🇻🇳',
   },
-  'th': {
+  th: {
     code: 'th',
     name: 'ไทย',
     englishName: 'Thai',
@@ -523,7 +516,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'THB',
     flag: '🇹🇭',
   },
-  'id': {
+  id: {
     code: 'id',
     name: 'Bahasa Indonesia',
     englishName: 'Indonesian',
@@ -535,7 +528,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'IDR',
     flag: '🇮🇩',
   },
-  'ms': {
+  ms: {
     code: 'ms',
     name: 'Bahasa Melayu',
     englishName: 'Malay',
@@ -547,9 +540,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'MYR',
     flag: '🇲🇾',
   },
-  
+
   // African Languages
-  'sw': {
+  sw: {
     code: 'sw',
     name: 'Kiswahili',
     englishName: 'Swahili',
@@ -561,7 +554,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'KES',
     flag: '🇰🇪',
   },
-  'ha': {
+  ha: {
     code: 'ha',
     name: 'Hausa',
     englishName: 'Hausa',
@@ -573,7 +566,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'NGN',
     flag: '🇳🇬',
   },
-  'yo': {
+  yo: {
     code: 'yo',
     name: 'Yorùbá',
     englishName: 'Yoruba',
@@ -585,7 +578,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'NGN',
     flag: '🇳🇬',
   },
-  'am': {
+  am: {
     code: 'am',
     name: 'አማርኛ',
     englishName: 'Amharic',
@@ -597,7 +590,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'ETB',
     flag: '🇪🇹',
   },
-  'zu': {
+  zu: {
     code: 'zu',
     name: 'isiZulu',
     englishName: 'Zulu',
@@ -609,7 +602,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'ZAR',
     flag: '🇿🇦',
   },
-  'ig': {
+  ig: {
     code: 'ig',
     name: 'Igbo',
     englishName: 'Igbo',
@@ -621,9 +614,9 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'NGN',
     flag: '🇳🇬',
   },
-  
+
   // RTL Languages
-  'ar': {
+  ar: {
     code: 'ar',
     name: 'العربية',
     englishName: 'Arabic',
@@ -659,7 +652,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'EGP',
     flag: '🇪🇬',
   },
-  'he': {
+  he: {
     code: 'he',
     name: 'עברית',
     englishName: 'Hebrew',
@@ -671,7 +664,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'ILS',
     flag: '🇮🇱',
   },
-  'fa': {
+  fa: {
     code: 'fa',
     name: 'فارسی',
     englishName: 'Persian',
@@ -683,7 +676,7 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
     currency: 'IRR',
     flag: '🇮🇷',
   },
-  'ur': {
+  ur: {
     code: 'ur',
     name: 'اردو',
     englishName: 'Urdu',
@@ -703,6 +696,18 @@ export const LOCALE_METADATA: Record<Locale, LocaleMetadata> = {
 export const CURRENCY_BY_LOCALE: Record<Locale, string> = Object.fromEntries(
   Object.entries(LOCALE_METADATA).map(([locale, meta]) => [locale, meta.currency])
 ) as Record<Locale, string>;
+
+/**
+ * Locale flag emojis
+ */
+export const LOCALE_FLAGS: Record<Locale, string> = Object.fromEntries(
+  Object.entries(LOCALE_METADATA).map(([locale, meta]) => [locale, meta.flag])
+) as Record<Locale, string>;
+
+/**
+ * Currency codes by locale (alias)
+ */
+export const LOCALE_CURRENCIES: Record<Locale, string> = CURRENCY_BY_LOCALE;
 
 /**
  * Number systems by locale

@@ -45,7 +45,7 @@ export default function BillingDetailPage() {
               <Field label="Status" value={quote.status} />
               <Field label="Tenant" value={quote.tenantName ?? quote.tenantId ?? '—'} />
               <Field label="Created" value={formatDate(quote.createdAt)} />
-              <Field label="Expires" value={formatDate(quote.expiresAt)} />
+              <Field label="Expires" value={formatDate(quote.validUntil)} />
               <Field
                 label="Total"
                 value={quote.totalCents != null ? `$${(quote.totalCents / 100).toFixed(2)}` : '—'}
