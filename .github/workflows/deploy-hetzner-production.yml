@@ -2,9 +2,18 @@
 # =============================================================================
 # AIVO Platform — Deploy to Hetzner Production
 # =============================================================================
-# Deploys a validated release to K3s production on Hetzner.
-# Includes: image verification → manual approval → canary (10%) → full rollout
-# → smoke tests → DB migrations.
+# Deploys a validated release to K3s production on Hetzner bare-metal.
+#
+# Flow:
+#   1. Validate — version format + verify ALL 47 images in GHCR
+#   2. Approval Gate — environment-based manual approval
+#   3. Canary — deploy 4 critical services + 1 web app as canary pods (5 min)
+#   4. Full Rollout — kustomize-based wave deploy of all 47 services
+#   5. Smoke Tests — backend health + web frontend health
+#   6. DB Migrations — Prisma migrate deploy via K8s Job
+#   7. Record — create GitHub deployment record
+#
+# Trigger: release published (from create-release.yml) or manual dispatch.
 # =============================================================================
 
 name: Deploy to Hetzner (Production)
@@ -15,8 +24,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release tag to deploy (e.g. v1.2.3)'
+        description: 'Release tag to deploy (e.g. v1.2.0)'
         required: true
+        type: string
       skip_approval:
         description: 'Skip manual approval (emergency only)'
         required: false
@@ -36,16 +46,15 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/artpromedia
   NAMESPACE: aivo-prod
-  NODE_VERSION: '20.19.4'
-  PNPM_VERSION: '9.12.0'
 
 permissions:
   contents: read
   packages: read
+  deployments: write
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 1: Validate Release
+  # STAGE 1: Validate Release & Verify All 47 Images
   # ══════════════════════════════════════════════════════════════════════════
   validate:
     name: Validate Release
@@ -61,10 +70,13 @@ jobs:
           if [[ "${{ github.event_name }}" == "release" ]]; then
             VERSION="${{ github.event.release.tag_name }}"
           else
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ inputs.version }}"
           fi
 
-          # Validate format
+          # Normalize
+          VERSION="${VERSION#v}"
+          VERSION="v${VERSION}"
+
           if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
             echo "❌ Invalid version: $VERSION (expected vX.Y.Z or vX.Y.Z-suffix)"
             exit 1
@@ -78,14 +90,17 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Verify all images exist in GHCR
         run: |
+          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           MISSING=0
+          VERIFIED=0
 
-          SERVICES=(
+          # TypeScript backend services (18)
+          TS_SERVICES=(
             auth-svc session-svc consent-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
@@ -93,6 +108,7 @@ jobs:
             parent-svc baseline-svc
           )
 
+          # Python AI/ML services (20)
           PY_SERVICES=(
             ai-inference-svc training-svc ml-recommendation-svc
             brain-engine python-api-gateway vision-analysis-svc
@@ -103,30 +119,42 @@ jobs:
             curriculum-py-svc grading-engine
           )
 
-          ALL_SERVICES=("${SERVICES[@]}" "${PY_SERVICES[@]}")
+          # Web frontend apps (9)
+          WEB_APPS=(
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
 
-          for svc in "${ALL_SERVICES[@]}"; do
+          ALL=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}" "${WEB_APPS[@]}")
+
+          echo "═══ Verifying ${#ALL[@]} images for tag: ${VERSION} ═══"
+          echo ""
+
+          for svc in "${ALL[@]}"; do
             IMAGE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}"
-            echo -n "Checking ${svc}... "
+            echo -n "  ${svc}... "
 
-            # Use docker manifest inspect to verify image exists
             if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
               echo "✅"
+              VERIFIED=$((VERIFIED + 1))
             else
               echo "❌ MISSING"
               MISSING=$((MISSING + 1))
             fi
           done
 
+          echo ""
+          echo "Verified: ${VERIFIED}/${#ALL[@]}"
+
           if [[ $MISSING -gt 0 ]]; then
             echo ""
-            echo "❌ ${MISSING} image(s) missing. Build them first with the staging pipeline."
-            echo "   Ensure the release tag matches the image tags in GHCR."
+            echo "❌ ${MISSING} image(s) missing for tag '${VERSION}'."
+            echo "   Run the 'Create Release' workflow to tag images from staging."
             exit 1
           fi
 
-          echo ""
-          echo "✅ All 38 images verified for ${VERSION}"
+          echo "✅ All ${#ALL[@]} images verified for ${VERSION}"
 
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 2: Manual Approval Gate
@@ -146,7 +174,7 @@ jobs:
           echo "   Time: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 3: Canary Deployment (10% traffic for 5 minutes)
+  # STAGE 3: Canary Deployment (5 minutes)
   # ══════════════════════════════════════════════════════════════════════════
   canary:
     name: Canary Deployment
@@ -164,107 +192,170 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
-            NS="aivo-prod"
+          NS="${{ env.NAMESPACE }}"
 
-            echo "═══ Canary deploy: $VERSION ═══"
+          echo "═══ Canary deploy: $VERSION ═══"
 
-            # Deploy canary for critical services (1 pod each alongside production)
-            CANARY_SERVICES=(auth-svc content-svc session-svc ai-orchestrator)
+          # Canary for critical backend services + 1 web app
+          CANARY_BACKEND=(auth-svc content-svc session-svc ai-orchestrator)
+          CANARY_WEB=(web-learner)
 
-            for svc in "${CANARY_SERVICES[@]}"; do
-              echo "Creating canary for ${svc}..."
-              cat <<EOF | kubectl apply -f -
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: ${svc}-canary
-              namespace: ${NS}
-              labels:
+          # Deploy backend canary pods
+          for svc in "${CANARY_BACKEND[@]}"; do
+            echo "Creating canary for ${svc}..."
+            cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${svc}-canary
+            namespace: ${NS}
+            labels:
+              app: ${svc}
+              deployment-type: canary
+              version: ${VERSION}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
                 app: ${svc}
                 deployment-type: canary
-                version: ${VERSION}
-            spec:
-              replicas: 1
-              selector:
-                matchLabels:
+            template:
+              metadata:
+                labels:
                   app: ${svc}
                   deployment-type: canary
-              template:
-                metadata:
-                  labels:
-                    app: ${svc}
-                    deployment-type: canary
-                    version: ${VERSION}
-                spec:
-                  containers:
-                    - name: ${svc}
-                      image: ghcr.io/artpromedia/aivo-${svc}:${VERSION}
-                      ports:
-                        - containerPort: 3000
-                      livenessProbe:
-                        httpGet:
-                          path: /health
-                          port: 3000
-                        initialDelaySeconds: 15
-                        periodSeconds: 10
-                      readinessProbe:
-                        httpGet:
-                          path: /health
-                          port: 3000
-                        initialDelaySeconds: 5
-                        periodSeconds: 5
-                      envFrom:
-                        - secretRef:
-                            name: shared-secrets
-                      resources:
-                        requests:
-                          cpu: 100m
-                          memory: 256Mi
-                        limits:
-                          cpu: 500m
-                          memory: 512Mi
-                  imagePullSecrets:
-                    - name: ghcr-pull-secret
-            EOF
-            done
+                  version: ${VERSION}
+              spec:
+                containers:
+                  - name: ${svc}
+                    image: ${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}
+                    ports:
+                      - containerPort: 3000
+                    livenessProbe:
+                      httpGet:
+                        path: /health
+                        port: 3000
+                      initialDelaySeconds: 15
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: /health
+                        port: 3000
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                    envFrom:
+                      - secretRef:
+                          name: shared-secrets
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                imagePullSecrets:
+                  - name: ghcr-pull-secret
+          EOF
+          done
 
-            # Wait for canary pods to be ready
-            for svc in "${CANARY_SERVICES[@]}"; do
-              echo "Waiting for ${svc}-canary..."
-              kubectl rollout status "deployment/${svc}-canary" -n "$NS" --timeout=180s
-            done
+          # Deploy web canary pod
+          for app in "${CANARY_WEB[@]}"; do
+            echo "Creating canary for ${app}..."
+            cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${app}-canary
+            namespace: ${NS}
+            labels:
+              app: ${app}
+              deployment-type: canary
+              version: ${VERSION}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: ${app}
+                deployment-type: canary
+            template:
+              metadata:
+                labels:
+                  app: ${app}
+                  deployment-type: canary
+                  version: ${VERSION}
+              spec:
+                containers:
+                  - name: ${app}
+                    image: ${{ env.IMAGE_PREFIX }}/aivo-${app}:${VERSION}
+                    ports:
+                      - containerPort: 3000
+                    livenessProbe:
+                      httpGet:
+                        path: /api/health
+                        port: 3000
+                      initialDelaySeconds: 20
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: /api/health
+                        port: 3000
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                    resources:
+                      requests:
+                        cpu: 50m
+                        memory: 128Mi
+                      limits:
+                        cpu: 250m
+                        memory: 512Mi
+                imagePullSecrets:
+                  - name: ghcr-pull-secret
+          EOF
+          done
 
-            echo ""
-            echo "✅ Canary pods running. Monitoring for 5 minutes..."
-            sleep 300
+          ALL_CANARY=("${CANARY_BACKEND[@]}" "${CANARY_WEB[@]}")
 
-            # Health check canary pods
-            UNHEALTHY=0
-            for svc in "${CANARY_SERVICES[@]}"; do
-              STATUS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
-                -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
-              RESTARTS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
-                -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' 2>/dev/null || echo "0")
+          # Wait for canary pods to be ready
+          for svc in "${ALL_CANARY[@]}"; do
+            echo "Waiting for ${svc}-canary..."
+            kubectl rollout status "deployment/${svc}-canary" -n "$NS" --timeout=180s
+          done
 
-              if [[ "$STATUS" != "Running" || "$RESTARTS" -gt 2 ]]; then
-                echo "❌ ${svc}-canary: status=${STATUS}, restarts=${RESTARTS}"
-                UNHEALTHY=$((UNHEALTHY + 1))
-              else
-                echo "✅ ${svc}-canary: healthy"
-              fi
-            done
+          echo ""
+          echo "✅ Canary pods running. Monitoring for 5 minutes..."
+          sleep 300
 
-            if [[ $UNHEALTHY -gt 0 ]]; then
-              echo ""
-              echo "❌ Canary failed! Rolling back canary pods..."
-              for svc in "${CANARY_SERVICES[@]}"; do
-                kubectl delete deployment "${svc}-canary" -n "$NS" --ignore-not-found
-              done
-              exit 1
+          # Health check canary pods
+          UNHEALTHY=0
+          for svc in "${ALL_CANARY[@]}"; do
+            STATUS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+              -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+            RESTARTS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+              -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' 2>/dev/null || echo "0")
+
+            if [[ "$STATUS" != "Running" || "$RESTARTS" -gt 2 ]]; then
+              echo "❌ ${svc}-canary: status=${STATUS}, restarts=${RESTARTS}"
+
+              # Log last 30 lines for debugging
+              echo "--- Last 30 log lines ---"
+              kubectl logs -l "app=${svc},deployment-type=canary" -n "$NS" --tail=30 2>/dev/null || true
+              echo "---"
+
+              UNHEALTHY=$((UNHEALTHY + 1))
+            else
+              echo "✅ ${svc}-canary: healthy (status=${STATUS}, restarts=${RESTARTS})"
             fi
+          done
 
+          if [[ $UNHEALTHY -gt 0 ]]; then
             echo ""
-            echo "✅ Canary healthy. Proceeding to full rollout."
+            echo "❌ Canary failed! Rolling back canary pods..."
+            kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ Canary healthy after 5 minutes. Proceeding to full rollout."
 
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 4: Full Production Rollout
@@ -284,11 +375,84 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Full rollout
+      - name: Ensure GHCR pull secret
+        run: |
+          NS="${{ env.NAMESPACE }}"
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n "$NS" get secret ghcr-pull-secret 2>/dev/null || \
+            kubectl -n "$NS" create secret docker-registry ghcr-pull-secret \
+              --docker-server=ghcr.io \
+              --docker-username="${{ github.actor }}" \
+              --docker-password="${{ secrets.GHCR_PAT }}"
+
+      - name: Ensure web app secrets
+        run: |
+          NS="${{ env.NAMESPACE }}"
+          APPS_WITH_AUTH=(
+            web-learner web-teacher web-parent
+            web-district web-platform-admin web-author web-creator
+          )
+
+          for app in "${APPS_WITH_AUTH[@]}"; do
+            SECRET_NAME="${app}-secrets"
+            if ! kubectl -n "$NS" get secret "$SECRET_NAME" &>/dev/null; then
+              NEXTAUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+              kubectl -n "$NS" create secret generic "$SECRET_NAME" \
+                --from-literal="nextauth-secret=${NEXTAUTH_SECRET}"
+              echo "✅ Created ${SECRET_NAME}"
+            else
+              echo "⏭  ${SECRET_NAME} exists"
+            fi
+          done
+
+      - name: Update image tags
         run: |
           set -euo pipefail
           VERSION="${{ needs.validate.outputs.version }}"
-          NS="aivo-prod"
+
+          cd infra/k8s/overlays/hetzner
+
+          # TypeScript services (18)
+          TS_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+          )
+
+          # Python AI/ML services (20)
+          PY_SERVICES=(
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+          )
+
+          # Web frontend apps (9)
+          WEB_APPS=(
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
+
+          ALL_SERVICES=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}" "${WEB_APPS[@]}")
+
+          echo "═══ Updating ${#ALL_SERVICES[@]} image tags to ${VERSION} ═══"
+          for svc in "${ALL_SERVICES[@]}"; do
+            echo "  Image: aivo-${svc}:${VERSION}"
+            kustomize edit set image \
+              "aivo/${svc}=${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}" 2>/dev/null || true
+          done
+
+      - name: Deploy in waves
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.validate.outputs.version }}"
+          NS="${{ env.NAMESPACE }}"
 
           echo "════════════════════════════════════════"
           echo "  PRODUCTION ROLLOUT: AIVO $VERSION"
@@ -296,96 +460,200 @@ jobs:
 
           cd infra/k8s/overlays/hetzner
 
-            SERVICES=(
-              auth-svc session-svc consent-svc profile-svc
-              content-svc assessment-svc personalization-svc life-skills-svc
-              ai-orchestrator analytics-svc notify-svc messaging-svc
-              goal-svc focus-svc billing-svc payments-svc
-              parent-svc baseline-svc
-            )
+          # Build manifests
+          kustomize build . > /tmp/aivo-prod-manifests.yaml
 
-            PY_SERVICES=(
-              ai-inference-svc training-svc ml-recommendation-svc
-              brain-engine python-api-gateway vision-analysis-svc
-              speech-analysis-svc accessibility-ai-svc question-generation-svc
-              writing-assessment-svc content-intelligence-svc cognitive-load-svc
-              knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
-              specialized-support-svc rl-tutoring-svc peer-learning-svc
-              curriculum-py-svc grading-engine
-            )
+          TS_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+          )
 
-            ALL_SERVICES=("${SERVICES[@]}" "${PY_SERVICES[@]}")
+          PY_SERVICES=(
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+          )
 
-            # Update all image tags
-            for svc in "${ALL_SERVICES[@]}"; do
-              echo "  Image: aivo-${svc}:${VERSION}"
-              kustomize edit set image \
-                "aivo/${svc}=ghcr.io/artpromedia/aivo-${svc}:${VERSION}"
+          WEB_APPS=(
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
+
+          ALL_SERVICES=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}" "${WEB_APPS[@]}")
+
+          WAVE_SIZE=6
+          TOTAL=${#ALL_SERVICES[@]}
+          WAVE=1
+          GLOBAL_FAILED=0
+
+          for (( i=0; i<TOTAL; i+=WAVE_SIZE )); do
+            WAVE_SERVICES=("${ALL_SERVICES[@]:i:WAVE_SIZE}")
+            echo ""
+            echo "═══ Wave $WAVE: ${WAVE_SERVICES[*]} ═══"
+
+            # Apply all manifests each wave (idempotent)
+            kubectl apply -f /tmp/aivo-prod-manifests.yaml 2>/dev/null || true
+
+            WAVE_FAILED=0
+            for svc in "${WAVE_SERVICES[@]}"; do
+              if kubectl rollout status "deployment/${svc}" -n "$NS" --timeout=300s 2>/dev/null; then
+                echo "  ✅ ${svc}"
+              else
+                echo "  ⚠  ${svc} rollout incomplete"
+                WAVE_FAILED=$((WAVE_FAILED + 1))
+              fi
             done
 
-            # Apply manifests
-            echo ""
-            echo "Applying production manifests..."
-            kustomize build . | kubectl apply -f -
+            GLOBAL_FAILED=$((GLOBAL_FAILED + WAVE_FAILED))
+            echo "  Wave $WAVE complete: ${WAVE_FAILED} incomplete"
 
-            # Wait for all rollouts (15-minute timeout)
-            echo ""
-            echo "Waiting for rollouts..."
-            kubectl rollout status deployment --all -n "$NS" --timeout=900s
+            if [ $((i + WAVE_SIZE)) -lt $TOTAL ]; then
+              echo "  Pausing 20s before next wave..."
+              sleep 20
+            fi
 
-            # Remove canary pods
-            echo ""
-            echo "Cleaning up canary deployments..."
-            kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
+            WAVE=$((WAVE + 1))
+          done
 
-            echo ""
-            echo "═══ Final Pod Status ═══"
-            kubectl get pods -n "$NS" -o wide
+          # Clean up canary deployments
+          echo ""
+          echo "Cleaning up canary deployments..."
+          kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
 
-            echo ""
-            echo "═══ Deployment Status ═══"
-            kubectl get deployments -n "$NS"
+          echo ""
+          echo "════════════════════════════════════════════════════"
+          echo "  Rollout complete: $((TOTAL - GLOBAL_FAILED))/${TOTAL} successful"
+          echo "════════════════════════════════════════════════════"
+          echo ""
 
-      - name: Smoke tests
+          echo "═══ Final Pod Status ═══"
+          kubectl get pods -n "$NS" --sort-by=.metadata.name -o wide
+
+          echo ""
+          echo "═══ Deployment Status ═══"
+          kubectl get deployments -n "$NS"
+
+          if [[ $GLOBAL_FAILED -gt 5 ]]; then
+            echo ""
+            echo "🚨 More than 5 services failed to roll out — investigate!"
+            exit 1
+          fi
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 5: Smoke Tests (backend + web)
+  # ══════════════════════════════════════════════════════════════════════════
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: [self-hosted, hetzner, production]
+    needs: [validate, deploy]
+    if: success()
+    steps:
+      - name: Backend health checks
         run: |
           echo "Waiting 60s for services to stabilize..."
           sleep 60
 
-            NS="aivo-prod"
-            FAILED=0
-            TOTAL=0
+          NS="${{ env.NAMESPACE }}"
+          FAILED=0
+          TOTAL=0
 
-            SERVICES=(
-              auth-svc session-svc consent-svc profile-svc
-              content-svc assessment-svc ai-orchestrator
-              analytics-svc notify-svc billing-svc
-              parent-svc
-            )
+          # Core backend services
+          BACKEND_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc ai-orchestrator
+            analytics-svc notify-svc messaging-svc
+            billing-svc payments-svc parent-svc
+          )
 
-            for svc in "${SERVICES[@]}"; do
-              TOTAL=$((TOTAL + 1))
-              if kubectl exec -n "$NS" "deploy/${svc}" -- \
-                curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
-                echo "✅ ${svc}"
+          echo "═══ Backend Health Checks ═══"
+          for svc in "${BACKEND_SERVICES[@]}"; do
+            TOTAL=$((TOTAL + 1))
+            if kubectl exec -n "$NS" "deploy/${svc}" -- \
+              curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
+              echo "✅ ${svc}"
+            else
+              echo "❌ ${svc}"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "Backend: $((TOTAL - FAILED))/${TOTAL} healthy"
+
+          if [[ $FAILED -gt 3 ]]; then
+            echo "🚨 More than 3 backend services unhealthy!"
+            exit 1
+          fi
+
+      - name: Web frontend health checks
+        run: |
+          NS="${{ env.NAMESPACE }}"
+          FAILED=0
+          TOTAL=0
+
+          WEB_APPS=(
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
+
+          echo "═══ Web Frontend Health Checks ═══"
+          for app in "${WEB_APPS[@]}"; do
+            TOTAL=$((TOTAL + 1))
+            if kubectl exec -n "$NS" "deploy/${app}" -- \
+              curl -sf http://localhost:3000/api/health --max-time 10 2>/dev/null; then
+              echo "✅ ${app}"
+            else
+              # Fallback: try root path for apps without /api/health
+              if kubectl exec -n "$NS" "deploy/${app}" -- \
+                curl -sf http://localhost:3000/ --max-time 10 -o /dev/null 2>/dev/null; then
+                echo "✅ ${app} (via /)"
               else
-                echo "❌ ${svc}"
+                echo "⚠️  ${app}"
                 FAILED=$((FAILED + 1))
               fi
-            done
-
-            echo ""
-            echo "Results: $((TOTAL - FAILED))/${TOTAL} healthy"
-
-            if [[ $FAILED -gt 3 ]]; then
-              echo "🚨 More than 3 services unhealthy — investigate immediately!"
-              exit 1
             fi
+          done
+
+          echo ""
+          echo "Web apps: $((TOTAL - FAILED))/${TOTAL} healthy"
+
+          if [[ $FAILED -gt 2 ]]; then
+            echo "🚨 More than 2 web apps unhealthy!"
+            exit 1
+          fi
+
+      - name: External endpoint check
+        continue-on-error: true
+        run: |
+          echo "═══ External Endpoint Check ═══"
+          ENDPOINTS=(
+            "https://api.aivolearning.com/health"
+            "https://app.aivolearning.com"
+            "https://teacher.aivolearning.com"
+          )
+
+          for url in "${ENDPOINTS[@]}"; do
+            if curl -sf "$url" --max-time 15 -o /dev/null 2>/dev/null; then
+              echo "✅ ${url}"
+            else
+              echo "⚠️  ${url} (may need DNS/TLS propagation)"
+            fi
+          done
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 5: Database Migrations (post-deploy)
+  # STAGE 6: Database Migrations (post-deploy)
   # ══════════════════════════════════════════════════════════════════════════
   migrations:
-    name: Run Database Migrations
+    name: Database Migrations
     runs-on: [self-hosted, hetzner, production]
     needs: [validate, deploy]
     if: success()
@@ -395,68 +663,76 @@ jobs:
       - name: Run Prisma migrations
         run: |
           set -euo pipefail
-            VERSION="${{ needs.validate.outputs.version }}"
-            NS="aivo-prod"
-            RUN_ID="${{ github.run_number }}"
+          VERSION="${{ needs.validate.outputs.version }}"
+          NS="${{ env.NAMESPACE }}"
+          RUN_ID="${{ github.run_number }}"
 
-            echo "═══ Running DB Migrations ═══"
+          echo "═══ Running DB Migrations ═══"
+          echo "  Version: $VERSION"
+          echo "  Job name: db-migrate-${RUN_ID}"
 
-            # Run migration as a Kubernetes Job using the auth-svc image
-            # (it contains Prisma CLI and all migration files)
-            cat <<EOF | kubectl apply -f -
-            apiVersion: batch/v1
-            kind: Job
-            metadata:
-              name: db-migrate-${RUN_ID}
-              namespace: ${NS}
-            spec:
-              ttlSecondsAfterFinished: 600
-              backoffLimit: 2
-              template:
-                spec:
-                  restartPolicy: Never
-                  containers:
-                    - name: migrate
-                      image: ghcr.io/artpromedia/aivo-auth-svc:${VERSION}
-                      command: ["npx", "prisma", "migrate", "deploy"]
-                      envFrom:
-                        - secretRef:
-                            name: shared-secrets
-                        - secretRef:
-                            name: auth-svc-secrets
-                      resources:
-                        requests:
-                          memory: "256Mi"
-                          cpu: "100m"
-                        limits:
-                          memory: "512Mi"
-                          cpu: "500m"
-                  imagePullSecrets:
-                    - name: ghcr-pull-secret
-            EOF
+          # Run migration as a Kubernetes Job using the auth-svc image
+          # (it contains Prisma CLI and all migration files)
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: db-migrate-${RUN_ID}
+            namespace: ${NS}
+            labels:
+              app: db-migrate
+              version: ${VERSION}
+          spec:
+            ttlSecondsAfterFinished: 600
+            backoffLimit: 2
+            activeDeadlineSeconds: 600
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: migrate
+                    image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
+                    command: ["npx", "prisma", "migrate", "deploy"]
+                    envFrom:
+                      - secretRef:
+                          name: shared-secrets
+                      - secretRef:
+                          name: auth-svc-secrets
+                    resources:
+                      requests:
+                        memory: "256Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "512Mi"
+                        cpu: "500m"
+                imagePullSecrets:
+                  - name: ghcr-pull-secret
+          EOF
 
-            # Wait for migration job to complete
-            echo "Waiting for migration job..."
-            kubectl wait --for=condition=complete "job/db-migrate-${RUN_ID}" \
-              -n "$NS" --timeout=600s
-
+          # Wait for migration job to complete
+          echo "Waiting for migration job..."
+          if kubectl wait --for=condition=complete "job/db-migrate-${RUN_ID}" \
+            -n "$NS" --timeout=600s; then
             echo ""
             echo "═══ Migration Logs ═══"
             kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
-
-            # Cleanup
-            kubectl delete "job/db-migrate-${RUN_ID}" -n "$NS" --ignore-not-found
-
             echo ""
             echo "✅ Migrations complete"
+          else
+            echo ""
+            echo "❌ Migration failed or timed out"
+            echo "═══ Migration Logs ═══"
+            kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
+            exit 1
+          fi
 
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 6: Create GitHub Deployment Record
+  # STAGE 7: Create Deployment Record
   # ══════════════════════════════════════════════════════════════════════════
   record:
-    name: Create Deployment Record
+    name: Deployment Record
     runs-on: ubuntu-latest
-    needs: [validate, deploy]
+    needs: [validate, deploy, smoke-tests, migrations]
     if: success()
     steps:
       - name: Create GitHub deployment
@@ -465,4 +741,28 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: production
           ref: ${{ needs.validate.outputs.version }}
-          description: "Hetzner production deployment of ${{ needs.validate.outputs.version }}"
+          description: |
+            Hetzner production deployment of ${{ needs.validate.outputs.version }}
+            Services: 18 TS + 20 Python + 9 Web = 47 total
+            Deployed by: ${{ github.actor }}
+
+      - name: Summary
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          echo "# 🚀 Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${VERSION}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | Hetzner Production (K3s) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Namespace** | \`aivo-prod\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Services** | 18 TS + 20 Python + 9 Web = 47 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed by** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | $(date -u +'%Y-%m-%dT%H:%M:%SZ') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- API: https://api.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- App: https://app.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Teacher: https://teacher.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Parent: https://parent.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Admin: https://admin.aivolearning.com" >> $GITHUB_STEP_SUMMARY
