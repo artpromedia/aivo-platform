@@ -15,8 +15,8 @@
  * If not installed, the directive transformers will not be available.
  */
 
-import type { Role } from './roles.js';
-import { isRole } from './roles.js';
+import type { Role } from './roles';
+import { isRole } from './roles';
 
 export interface GraphQLContext {
   auth?: AuthInfo | undefined;
