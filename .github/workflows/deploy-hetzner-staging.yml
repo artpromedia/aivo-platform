@@ -841,9 +841,17 @@ jobs:
             if [[ "$svc" == web-* ]]; then
               HEALTH_PATH="/api/health"
               INITIAL_DELAY=20
+              EXTRA_VOLUME_MOUNTS='
+                      - name: next-cache
+                        mountPath: /app/.next/cache'
+              EXTRA_VOLUMES='
+                  - name: next-cache
+                    emptyDir: {}'
             else
               HEALTH_PATH="/health"
               INITIAL_DELAY=15
+              EXTRA_VOLUME_MOUNTS=""
+              EXTRA_VOLUMES=""
             fi
 
             cat <<EOF | kubectl apply -f -
@@ -896,6 +904,12 @@ jobs:
                       limits:
                         cpu: 500m
                         memory: 512Mi
+                    volumeMounts:
+                      - name: tmp
+                        mountPath: /tmp${EXTRA_VOLUME_MOUNTS}
+                volumes:
+                  - name: tmp
+                    emptyDir: {}${EXTRA_VOLUMES}
                 imagePullSecrets:
                   - name: ghcr-pull-secret
           EOF

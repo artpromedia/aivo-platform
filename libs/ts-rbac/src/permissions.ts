@@ -1,4 +1,4 @@
-import { Role } from './roles';
+import { Role } from './roles.js';
 
 export enum Permission {
   TenantRead = 'tenant:read',
