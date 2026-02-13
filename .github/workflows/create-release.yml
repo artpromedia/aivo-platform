@@ -250,6 +250,10 @@ jobs:
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
 
+      - name: Authenticate crane with GHCR
+        run: |
+          echo "${{ secrets.GHCR_PAT }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+
       - name: Re-tag image
         run: |
           SOURCE="${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.validate.outputs.source_tag }}"
