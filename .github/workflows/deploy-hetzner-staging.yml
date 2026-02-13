@@ -116,9 +116,11 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Build shared libraries
+        run: pnpm --filter @aivo/ts-types --filter @aivo/billing-common build
+
       - name: TypeCheck
         run: pnpm -r --if-present run typecheck
-        continue-on-error: true
 
       - name: Test
         if: ${{ !inputs.skip_tests }}
