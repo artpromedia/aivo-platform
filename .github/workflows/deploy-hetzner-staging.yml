@@ -1,12 +1,14 @@
 # .github/workflows/deploy-hetzner-staging.yml
 # =============================================================================
-# AIVO Platform — Deploy to Hetzner Staging
+# AIVO Platform — CI/CD Pipeline
 # =============================================================================
-# Builds Docker images, pushes to GHCR, deploys to K3s on Hetzner Server 2.
-# Staging namespace: aivo-staging (runs on Server 3 node).
+# Full pipeline: CI → Docker → Staging Deploy → [Release → Production]
+#
+# On push to main:   CI + Docker builds + Staging deploy
+# With release_version: Also tags images + creates release + deploys production
 # =============================================================================
 
-name: Deploy to Hetzner (Staging)
+name: AIVO CI/CD Pipeline
 
 on:
   push:
@@ -23,9 +25,19 @@ on:
         required: false
         type: boolean
         default: false
+      release_version:
+        description: 'Release version to create after staging (e.g. 1.2.0 — leave empty to skip release/production)'
+        required: false
+        type: string
+        default: ''
+      skip_approval:
+        description: 'Skip production approval gate (emergency only)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
-  group: hetzner-staging-${{ github.ref }}
+  group: hetzner-pipeline-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -39,9 +51,10 @@ env:
   DEPLOY_USER: deploy
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   security-events: write
+  deployments: write
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
@@ -629,4 +642,574 @@ jobs:
           echo ""
           echo "Smoke tests complete: ${FAILED} failed"
 
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 4: Release — Tag Images with Version (only when release_version set)
+  # ══════════════════════════════════════════════════════════════════════════
+  release-tag:
+    name: Release — Tag Images
+    runs-on: ubuntu-latest
+    needs: [ci, deploy]
+    if: |
+      success() &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.release_version != ''
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Validate version
+        id: version
+        run: |
+          set -euo pipefail
+          INPUT_VERSION="${{ inputs.release_version }}"
+          VERSION="v${INPUT_VERSION#v}"
+
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "❌ Invalid version: $VERSION (expected vX.Y.Z)"
+            exit 1
+          fi
+
+          if git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag $VERSION already exists!"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Release version: $VERSION"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.4
+
+      - name: Re-tag all 47 images
+        run: |
+          set -euo pipefail
+          SOURCE_TAG="${{ needs.ci.outputs.version }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          ALL_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
+
+          echo "═══ Tagging ${#ALL_SERVICES[@]} images: ${SOURCE_TAG} → ${VERSION} ═══"
+
+          FAILED=0
+          for svc in "${ALL_SERVICES[@]}"; do
+            SOURCE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${SOURCE_TAG}"
+            TARGET="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}"
+            echo -n "  ${svc}... "
+            if crane copy "$SOURCE" "$TARGET" 2>/dev/null; then
+              echo "✅"
+            else
+              echo "❌"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          if [[ $FAILED -gt 0 ]]; then
+            echo "❌ ${FAILED} images failed to tag"
+            exit 1
+          fi
+
+          echo "✅ All ${#ALL_SERVICES[@]} images tagged as ${VERSION}"
+
+  release-create:
+    name: Release — Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [ci, release-tag]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.release-tag.outputs.version }}"
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)
+
+          if [[ -n "$PREV_TAG" ]]; then
+            CHANGES=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGES=$(git log --pretty=format:"- %s (%h)" --no-merges -50)
+          fi
+
+          {
+            echo "changelog<<EOF"
+            echo "## What's Changed"
+            echo ""
+            echo "$CHANGES"
+            echo ""
+            echo "## Docker Images"
+            echo "All **47** images tagged as \`${VERSION}\` in \`ghcr.io/artpromedia\`"
+            echo "- 18 TypeScript backend services"
+            echo "- 20 Python AI/ML services"
+            echo "- 9 Next.js web applications"
+            echo ""
+            echo "Source: \`${{ needs.ci.outputs.version }}\` (staging-tested)"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-tag.outputs.version }}
+          name: "AIVO Platform ${{ needs.release-tag.outputs.version }}"
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+          target_commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 5: Production — Approval Gate
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-approval:
+    name: Production — Approval Gate
+    runs-on: ubuntu-latest
+    needs: [release-tag, release-create]
+    if: |
+      success() && !inputs.skip_approval
+    environment: production-approval
+    steps:
+      - name: Approval recorded
+        run: |
+          echo "🔐 Production deployment approved"
+          echo "   Version: ${{ needs.release-tag.outputs.version }}"
+          echo "   Approved by: ${{ github.actor }}"
+          echo "   Time: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 6: Production — Canary Deployment
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-canary:
+    name: Production — Canary (5 min)
+    runs-on: [self-hosted, hetzner, production]
+    needs: [release-tag, prod-approval]
+    if: |
+      always() &&
+      needs.release-tag.result == 'success' &&
+      (needs.prod-approval.result == 'success' || needs.prod-approval.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy canary pods
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release-tag.outputs.version }}"
+          NS="aivo-prod"
+
+          echo "═══ Canary deploy: $VERSION ═══"
+
+          CANARY_SERVICES=(auth-svc content-svc session-svc ai-orchestrator web-learner)
+
+          for svc in "${CANARY_SERVICES[@]}"; do
+            echo "Creating canary for ${svc}..."
+
+            # Web apps use /api/health, backend uses /health
+            if [[ "$svc" == web-* ]]; then
+              HEALTH_PATH="/api/health"
+              INITIAL_DELAY=20
+            else
+              HEALTH_PATH="/health"
+              INITIAL_DELAY=15
+            fi
+
+            cat <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ${svc}-canary
+            namespace: ${NS}
+            labels:
+              app: ${svc}
+              deployment-type: canary
+              version: ${VERSION}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: ${svc}
+                deployment-type: canary
+            template:
+              metadata:
+                labels:
+                  app: ${svc}
+                  deployment-type: canary
+                  version: ${VERSION}
+              spec:
+                containers:
+                  - name: ${svc}
+                    image: ${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}
+                    ports:
+                      - containerPort: 3000
+                    livenessProbe:
+                      httpGet:
+                        path: ${HEALTH_PATH}
+                        port: 3000
+                      initialDelaySeconds: ${INITIAL_DELAY}
+                      periodSeconds: 10
+                    readinessProbe:
+                      httpGet:
+                        path: ${HEALTH_PATH}
+                        port: 3000
+                      initialDelaySeconds: 5
+                      periodSeconds: 5
+                    envFrom:
+                      - secretRef:
+                          name: shared-secrets
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+                imagePullSecrets:
+                  - name: ghcr-pull-secret
+          EOF
+          done
+
+          # Wait for canary pods to be ready
+          for svc in "${CANARY_SERVICES[@]}"; do
+            echo "Waiting for ${svc}-canary..."
+            kubectl rollout status "deployment/${svc}-canary" -n "$NS" --timeout=180s
+          done
+
+          echo "✅ Canary pods running. Monitoring for 5 minutes..."
+          sleep 300
+
+          # Health check canary pods
+          UNHEALTHY=0
+          for svc in "${CANARY_SERVICES[@]}"; do
+            STATUS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+              -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "Unknown")
+            RESTARTS=$(kubectl get pods -l "app=${svc},deployment-type=canary" -n "$NS" \
+              -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' 2>/dev/null || echo "0")
+
+            if [[ "$STATUS" != "Running" || "$RESTARTS" -gt 2 ]]; then
+              echo "❌ ${svc}-canary: status=${STATUS}, restarts=${RESTARTS}"
+              kubectl logs -l "app=${svc},deployment-type=canary" -n "$NS" --tail=20 2>/dev/null || true
+              UNHEALTHY=$((UNHEALTHY + 1))
+            else
+              echo "✅ ${svc}-canary: healthy"
+            fi
+          done
+
+          if [[ $UNHEALTHY -gt 0 ]]; then
+            echo "❌ Canary failed! Rolling back..."
+            kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
+            exit 1
+          fi
+
+          echo "✅ Canary healthy. Proceeding to full rollout."
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 7: Production — Full Rollout
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-deploy:
+    name: Production — Full Rollout
+    runs-on: [self-hosted, hetzner, production]
+    needs: [release-tag, prod-approval, prod-canary]
+    if: |
+      always() &&
+      needs.release-tag.result == 'success' &&
+      (needs.prod-approval.result == 'success' || needs.prod-approval.result == 'skipped') &&
+      (needs.prod-canary.result == 'success' || needs.prod-canary.result == 'skipped')
+    environment:
+      name: production
+      url: https://api.aivolearning.com/health
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure GHCR pull secret
+        run: |
+          NS="aivo-prod"
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n "$NS" get secret ghcr-pull-secret 2>/dev/null || \
+            kubectl -n "$NS" create secret docker-registry ghcr-pull-secret \
+              --docker-server=ghcr.io \
+              --docker-username="${{ github.actor }}" \
+              --docker-password="${{ secrets.GHCR_PAT }}"
+
+      - name: Ensure web app secrets
+        run: |
+          NS="aivo-prod"
+          APPS_WITH_AUTH=(
+            web-learner web-teacher web-parent
+            web-district web-platform-admin web-author web-creator
+          )
+
+          for app in "${APPS_WITH_AUTH[@]}"; do
+            SECRET_NAME="${app}-secrets"
+            if ! kubectl -n "$NS" get secret "$SECRET_NAME" &>/dev/null; then
+              NEXTAUTH_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+              kubectl -n "$NS" create secret generic "$SECRET_NAME" \
+                --from-literal="nextauth-secret=${NEXTAUTH_SECRET}"
+              echo "✅ Created ${SECRET_NAME}"
+            else
+              echo "⏭  ${SECRET_NAME} exists"
+            fi
+          done
+
+      - name: Update image tags and deploy
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release-tag.outputs.version }}"
+          NS="aivo-prod"
+
+          echo "════════════════════════════════════════"
+          echo "  PRODUCTION ROLLOUT: AIVO $VERSION"
+          echo "════════════════════════════════════════"
+
+          cd infra/k8s/overlays/hetzner
+
+          ALL_SERVICES=(
+            auth-svc session-svc consent-svc profile-svc
+            content-svc assessment-svc personalization-svc life-skills-svc
+            ai-orchestrator analytics-svc notify-svc messaging-svc
+            goal-svc focus-svc billing-svc payments-svc
+            parent-svc baseline-svc
+            ai-inference-svc training-svc ml-recommendation-svc
+            brain-engine python-api-gateway vision-analysis-svc
+            speech-analysis-svc accessibility-ai-svc question-generation-svc
+            writing-assessment-svc content-intelligence-svc cognitive-load-svc
+            knowledge-graph-svc multimodal-analytics-svc document-intelligence-svc
+            specialized-support-svc rl-tutoring-svc peer-learning-svc
+            curriculum-py-svc grading-engine
+            web-learner web-teacher web-marketing web-parent
+            web-district web-platform-admin web-author web-creator
+            web-dev-portal
+          )
+
+          # Update all image tags
+          for svc in "${ALL_SERVICES[@]}"; do
+            kustomize edit set image \
+              "aivo/${svc}=${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}" 2>/dev/null || true
+          done
+
+          # Build and apply manifests
+          kustomize build . > /tmp/aivo-prod-manifests.yaml
+
+          WAVE_SIZE=6
+          TOTAL=${#ALL_SERVICES[@]}
+          WAVE=1
+          GLOBAL_FAILED=0
+
+          for (( i=0; i<TOTAL; i+=WAVE_SIZE )); do
+            WAVE_SERVICES=("${ALL_SERVICES[@]:i:WAVE_SIZE}")
+            echo ""
+            echo "═══ Wave $WAVE: ${WAVE_SERVICES[*]} ═══"
+
+            kubectl apply -f /tmp/aivo-prod-manifests.yaml 2>/dev/null || true
+
+            WAVE_FAILED=0
+            for svc in "${WAVE_SERVICES[@]}"; do
+              if kubectl rollout status "deployment/${svc}" -n "$NS" --timeout=300s 2>/dev/null; then
+                echo "  ✅ ${svc}"
+              else
+                echo "  ⚠  ${svc} rollout incomplete"
+                WAVE_FAILED=$((WAVE_FAILED + 1))
+              fi
+            done
+
+            GLOBAL_FAILED=$((GLOBAL_FAILED + WAVE_FAILED))
+            if [ $((i + WAVE_SIZE)) -lt $TOTAL ]; then
+              sleep 20
+            fi
+            WAVE=$((WAVE + 1))
+          done
+
+          # Clean up canary
+          kubectl delete deployments -l deployment-type=canary -n "$NS" --ignore-not-found
+
+          echo ""
+          echo "═══ Rollout: $((TOTAL - GLOBAL_FAILED))/${TOTAL} successful ═══"
+          kubectl get deployments -n "$NS"
+
+          if [[ $GLOBAL_FAILED -gt 5 ]]; then
+            echo "🚨 More than 5 services failed!"
+            exit 1
+          fi
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 8: Production — Smoke Tests
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-smoke:
+    name: Production — Smoke Tests
+    runs-on: [self-hosted, hetzner, production]
+    needs: [release-tag, prod-deploy]
+    if: success()
+    steps:
+      - name: Health checks
+        run: |
+          echo "Waiting 60s for stabilization..."
+          sleep 60
+          NS="aivo-prod"
+          FAILED=0
+
+          echo "═══ Backend Health ═══"
+          for svc in auth-svc session-svc content-svc assessment-svc ai-orchestrator analytics-svc billing-svc; do
+            if kubectl exec -n "$NS" "deploy/${svc}" -- \
+              curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
+              echo "✅ ${svc}"
+            else
+              echo "❌ ${svc}"
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "═══ Web Frontend Health ═══"
+          for app in web-learner web-teacher web-marketing web-parent web-platform-admin; do
+            if kubectl exec -n "$NS" "deploy/${app}" -- \
+              curl -sf http://localhost:3000/api/health --max-time 10 2>/dev/null; then
+              echo "✅ ${app}"
+            else
+              if kubectl exec -n "$NS" "deploy/${app}" -- \
+                curl -sf http://localhost:3000/ --max-time 10 -o /dev/null 2>/dev/null; then
+                echo "✅ ${app} (via /)"
+              else
+                echo "⚠️  ${app}"
+                FAILED=$((FAILED + 1))
+              fi
+            fi
+          done
+
+          echo ""
+          echo "═══ External Endpoints ═══"
+          for url in https://api.aivolearning.com/health https://app.aivolearning.com; do
+            if curl -sf "$url" --max-time 15 -o /dev/null 2>/dev/null; then
+              echo "✅ ${url}"
+            else
+              echo "⚠️  ${url}"
+            fi
+          done
+
+          if [[ $FAILED -gt 3 ]]; then
+            echo "🚨 Too many services unhealthy!"
+            exit 1
+          fi
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 9: Production — DB Migrations
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-migrations:
+    name: Production — DB Migrations
+    runs-on: [self-hosted, hetzner, production]
+    needs: [release-tag, prod-deploy]
+    if: success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Prisma migrations
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release-tag.outputs.version }}"
+          NS="aivo-prod"
+          RUN_ID="${{ github.run_number }}"
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: db-migrate-${RUN_ID}
+            namespace: ${NS}
+            labels:
+              app: db-migrate
+              version: ${VERSION}
+          spec:
+            ttlSecondsAfterFinished: 600
+            backoffLimit: 2
+            activeDeadlineSeconds: 600
+            template:
+              spec:
+                restartPolicy: Never
+                containers:
+                  - name: migrate
+                    image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
+                    command: ["npx", "prisma", "migrate", "deploy"]
+                    envFrom:
+                      - secretRef:
+                          name: shared-secrets
+                      - secretRef:
+                          name: auth-svc-secrets
+                    resources:
+                      requests:
+                        memory: "256Mi"
+                        cpu: "100m"
+                      limits:
+                        memory: "512Mi"
+                        cpu: "500m"
+                imagePullSecrets:
+                  - name: ghcr-pull-secret
+          EOF
+
+          echo "Waiting for migration job..."
+          if kubectl wait --for=condition=complete "job/db-migrate-${RUN_ID}" \
+            -n "$NS" --timeout=600s; then
+            kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
+            echo "✅ Migrations complete"
+          else
+            kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
+            echo "❌ Migration failed"
+            exit 1
+          fi
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 10: Production — Deployment Record
+  # ══════════════════════════════════════════════════════════════════════════
+  prod-record:
+    name: Production — Record
+    runs-on: ubuntu-latest
+    needs: [release-tag, prod-deploy, prod-smoke, prod-migrations]
+    if: success()
+    steps:
+      - name: Create deployment record
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: production
+          ref: ${{ needs.release-tag.outputs.version }}
+          description: "Production deploy ${{ needs.release-tag.outputs.version }}"
+
+      - name: Summary
+        run: |
+          VERSION="${{ needs.release-tag.outputs.version }}"
+          echo "# 🚀 Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${VERSION}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Services** | 18 TS + 20 Python + 9 Web = 47 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed by** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- API: https://api.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- App: https://app.aivolearning.com" >> $GITHUB_STEP_SUMMARY
+          echo "- Teacher: https://teacher.aivolearning.com" >> $GITHUB_STEP_SUMMARY
