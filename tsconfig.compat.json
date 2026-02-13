@@ -17,8 +17,6 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "baseUrl": ".",
-    "paths": {
-      "@aivo/*": ["./libs/*/src", "./packages/*/src", "./services/*/src", "./apps/*/src"]
-    }
+    "paths": {}
   }
 }

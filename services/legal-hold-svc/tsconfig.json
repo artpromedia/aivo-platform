@@ -6,7 +6,6 @@
     "module": "ESNext",
     "baseUrl": "../..",
     "paths": {
-      "@aivo/*": ["libs/*/src", "packages/*/src", "services/*/src", "apps/*/src"],
       "@aivo/ts-data-access": ["libs/ts-data-access/dist/index.d.ts"],
       "@aivo/events": ["libs/events/dist/index.d.ts"]
     },
