@@ -6,7 +6,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@aivo/ui-web'],
+  transpilePackages: ['@aivo/ui-web', '@aivo/ts-rbac'],
 
   // ============================================================================
   // PERFORMANCE OPTIMIZATIONS

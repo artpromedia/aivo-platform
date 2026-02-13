@@ -1,4 +1,4 @@
-import type { Role } from './roles';
+import type { Role } from './roles.js';
 
 export interface AuthContext {
   userId: string;
