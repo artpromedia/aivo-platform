@@ -86,7 +86,7 @@ export function hasRequiredRole(userRoles: Role[], requiredRoles: string[]): boo
 }
 
 // Re-export for convenience
-export { Role } from './roles.js';
+export { Role } from './roles';
 
 // =============================================================================
 // GraphQL Directive Transformers (require graphql and @graphql-tools/utils)
