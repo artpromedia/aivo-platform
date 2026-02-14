@@ -880,6 +880,7 @@ jobs:
                 containers:
                   - name: ${svc}
                     image: ${{ env.IMAGE_PREFIX }}/aivo-${svc}:${VERSION}
+                    imagePullPolicy: Always
                     ports:
                       - containerPort: 3000
                     livenessProbe:
