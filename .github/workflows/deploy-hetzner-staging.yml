@@ -203,8 +203,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}-${{ hashFiles('docker/Dockerfile.service') }}
+          cache-to: type=gha,scope=${{ matrix.service }}-${{ hashFiles('docker/Dockerfile.service') }},mode=max
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
             VERSION=${{ needs.ci.outputs.version }}
@@ -301,8 +301,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          cache-from: type=gha,scope=py-${{ matrix.service }}-${{ hashFiles(format('services/{0}/Dockerfile', matrix.service)) }}
+          cache-to: type=gha,scope=py-${{ matrix.service }}-${{ hashFiles(format('services/{0}/Dockerfile', matrix.service)) }},mode=max
 
       - name: Trivy container scan
         uses: aquasecurity/trivy-action@0.24.0
@@ -411,8 +411,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+          cache-from: type=gha,scope=${{ matrix.app }}-${{ hashFiles(format('apps/{0}/Dockerfile', matrix.app)) }}
+          cache-to: type=gha,scope=${{ matrix.app }}-${{ hashFiles(format('apps/{0}/Dockerfile', matrix.app)) }},mode=max
           build-args: ${{ steps.buildargs.outputs.args }}
 
       - name: Trivy container scan
@@ -1187,12 +1187,13 @@ jobs:
                   - name: migrate
                     image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
                     workingDir: /app
-                    command: ["node_modules/.bin/prisma", "migrate", "deploy", "--schema", "./prisma/schema.prisma"]
+                    command: ["sh", "-c", "echo '=== /app contents ===' ; ls -la /app/ ; echo '=== /app/prisma ===' ; ls -la /app/prisma/ 2>&1 ; echo '=== Running Prisma migrations ===' ; npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
                     envFrom:
                       - secretRef:
                           name: shared-secrets
                       - secretRef:
                           name: auth-svc-secrets
+                          optional: true
                     resources:
                       requests:
                         memory: "256Mi"
