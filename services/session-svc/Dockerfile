@@ -48,6 +48,11 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/session-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/session-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
+# Copy workspace lib dist artifacts into node_modules (pnpm deploy may not include built output)
+COPY --from=builder --chown=nodejs:nodejs /app/libs/billing-access/dist ./node_modules/@aivo/billing-access/dist
+COPY --from=builder --chown=nodejs:nodejs /app/libs/billing-common/dist ./node_modules/@aivo/billing-common/dist
+COPY --from=builder --chown=nodejs:nodejs /app/libs/ts-rbac/dist ./node_modules/@aivo/ts-rbac/dist
+
 # Set environment variables
 ENV NODE_ENV=production \
     PORT=3000

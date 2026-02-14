@@ -61,4 +61,4 @@ EXPOSE 3006
 
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/web-platform-admin/server.js"]

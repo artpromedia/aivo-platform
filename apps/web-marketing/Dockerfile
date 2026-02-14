@@ -62,4 +62,4 @@ EXPOSE 3007
 
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/web-marketing/server.js"]
