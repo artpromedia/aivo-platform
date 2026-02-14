@@ -834,6 +834,11 @@ jobs:
 
           CANARY_SERVICES=(auth-svc content-svc session-svc ai-orchestrator web-learner)
 
+          # Delete any existing canary deployments to ensure clean rollout
+          echo "Cleaning up previous canary deployments..."
+          kubectl delete deployment -l deployment-type=canary -n "$NS" --ignore-not-found=true --grace-period=10
+          sleep 5
+
           for svc in "${CANARY_SERVICES[@]}"; do
             echo "Creating canary for ${svc}..."
 
