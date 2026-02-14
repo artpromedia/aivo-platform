@@ -615,12 +615,12 @@ jobs:
           NAMESPACE="aivo-staging"
           FAILED=0
 
-          # Backend services
+          # Backend services (use wget - Alpine containers don't have curl)
           SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator)
 
           for svc in "${SERVICES[@]}"; do
             if kubectl exec -n "$NAMESPACE" "deploy/${svc}" -- \
-              curl -sf http://localhost:3000/health --max-time 5 2>/dev/null; then
+              wget -q -O /dev/null --timeout=5 http://localhost:3000/health 2>/dev/null; then
               echo "✅ ${svc}"
             else
               echo "⚠️  ${svc} health check failed"
@@ -633,7 +633,7 @@ jobs:
 
           for app in "${WEB_APPS[@]}"; do
             if kubectl exec -n "$NAMESPACE" "deploy/${app}" -- \
-              curl -sf http://localhost:3000/api/health --max-time 5 2>/dev/null; then
+              wget -q -O /dev/null --timeout=5 http://localhost:3000/api/health 2>/dev/null; then
               echo "✅ ${app}"
             else
               echo "⚠️  ${app} health check failed"
@@ -1100,9 +1100,10 @@ jobs:
           FAILED=0
 
           echo "═══ Backend Health ═══"
+          # Containers use Alpine with wget (no curl), so use wget for in-pod health checks
           for svc in auth-svc session-svc content-svc assessment-svc ai-orchestrator analytics-svc billing-svc; do
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
-              curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
+              wget -q -O /dev/null --timeout=10 http://localhost:3000/health 2>/dev/null; then
               echo "✅ ${svc}"
             else
               echo "❌ ${svc}"
@@ -1114,11 +1115,11 @@ jobs:
           echo "═══ Web Frontend Health ═══"
           for app in web-learner web-teacher web-marketing web-parent web-platform-admin; do
             if kubectl exec -n "$NS" "deploy/${app}" -- \
-              curl -sf http://localhost:3000/api/health --max-time 10 2>/dev/null; then
+              wget -q -O /dev/null --timeout=10 http://localhost:3000/api/health 2>/dev/null; then
               echo "✅ ${app}"
             else
               if kubectl exec -n "$NS" "deploy/${app}" -- \
-                curl -sf http://localhost:3000/ --max-time 10 -o /dev/null 2>/dev/null; then
+                wget -q -O /dev/null --timeout=10 http://localhost:3000/ 2>/dev/null; then
                 echo "✅ ${app} (via /)"
               else
                 echo "⚠️  ${app}"
@@ -1129,11 +1130,17 @@ jobs:
 
           echo ""
           echo "═══ External Endpoints ═══"
+          # Runner host has curl available for external checks
           for url in https://api.aivolearning.com/health https://app.aivolearning.com; do
             if curl -sf "$url" --max-time 15 -o /dev/null 2>/dev/null; then
               echo "✅ ${url}"
             else
-              echo "⚠️  ${url}"
+              # Fallback to wget if curl not available on runner
+              if wget -q -O /dev/null --timeout=15 "$url" 2>/dev/null; then
+                echo "✅ ${url}"
+              else
+                echo "⚠️  ${url}"
+              fi
             fi
           done
 
