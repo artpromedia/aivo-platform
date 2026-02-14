@@ -47,6 +47,7 @@ RUN apk add --no-cache dumb-init openssl
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/generated ./generated
+COPY --from=builder --chown=nodejs:nodejs /app/services/auth-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables

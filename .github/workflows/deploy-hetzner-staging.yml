@@ -1186,7 +1186,8 @@ jobs:
                 containers:
                   - name: migrate
                     image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
-                    command: ["npx", "prisma", "migrate", "deploy"]
+                    workingDir: /app
+                    command: ["npx", "prisma", "migrate", "deploy", "--schema", "./prisma/schema.prisma"]
                     envFrom:
                       - secretRef:
                           name: shared-secrets
