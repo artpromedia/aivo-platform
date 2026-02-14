@@ -55,6 +55,9 @@ RUN if [ -d "/app/services/${SERVICE_NAME}/node_modules/.prisma/client" ]; then 
       cp -r /app/node_modules/.prisma/client/* /app/prisma-default-client/ 2>/dev/null || true; \
     fi
 
+# Ensure prisma dir exists (empty if service has no schema) for COPY in runner stage
+RUN mkdir -p /app/services/${SERVICE_NAME}/prisma
+
 # Build the service
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
@@ -89,7 +92,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/dist ./d
 COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/generated/prisma-client ./generated/prisma-client
 # Copy default Prisma client for services using default output path (into node_modules/.prisma/client)
 COPY --from=builder --chown=nodejs:nodejs /app/prisma-default-client ./node_modules/.prisma/client/
-# Copy Prisma schema for runtime migrations support
+# Copy Prisma schema + migrations for runtime migration support
+COPY --from=builder --chown=nodejs:nodejs /app/services/${SERVICE_NAME}/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Create symlinks for Prisma client resolution from compiled dist directories
