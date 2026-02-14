@@ -31,6 +31,12 @@ RUN pnpm turbo build --filter="@aivo/session-svc..."
 # Create a deployable bundle with all production dependencies
 RUN pnpm deploy --filter="@aivo/session-svc" --prod /deploy
 
+# Copy built workspace lib dist into deployed node_modules (pnpm deploy doesn't include build artifacts)
+# Must resolve symlinks since pnpm uses symlinked node_modules
+RUN cp -rL /app/libs/billing-access/dist /deploy/node_modules/@aivo/billing-access/dist && \
+    cp -rL /app/libs/billing-common/dist /deploy/node_modules/@aivo/billing-common/dist && \
+    cp -rL /app/libs/ts-rbac/dist /deploy/node_modules/@aivo/ts-rbac/dist
+
 # Stage 2: Runner
 FROM node:20-alpine AS runner
 
@@ -47,11 +53,6 @@ COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/session-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/session-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
-
-# Copy workspace lib dist artifacts into node_modules (pnpm deploy may not include built output)
-COPY --from=builder --chown=nodejs:nodejs /app/libs/billing-access/dist ./node_modules/@aivo/billing-access/dist
-COPY --from=builder --chown=nodejs:nodejs /app/libs/billing-common/dist ./node_modules/@aivo/billing-common/dist
-COPY --from=builder --chown=nodejs:nodejs /app/libs/ts-rbac/dist ./node_modules/@aivo/ts-rbac/dist
 
 # Set environment variables
 ENV NODE_ENV=production \

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Shared billing types, SKU configurations, and utilities for Aivo platform",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
