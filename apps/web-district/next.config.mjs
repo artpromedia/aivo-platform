@@ -14,6 +14,15 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Resolve .js extension imports to .ts files (for libs using NodeNext module resolution)
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+    };
+    return config;
+  },
+
   async headers() {
     return [
       {
