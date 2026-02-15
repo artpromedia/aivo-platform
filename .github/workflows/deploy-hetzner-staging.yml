@@ -396,6 +396,7 @@ jobs:
               ;;
             web-marketing)
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://app.aivolearning.com"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_MARKETING_URL=https://aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_ANALYTICS_ID=${{ secrets.NEXT_PUBLIC_ANALYTICS_ID || '' }}"
               ;;
             web-parent)

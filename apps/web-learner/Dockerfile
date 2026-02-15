@@ -29,6 +29,7 @@ RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 COPY --from=deps /app ./
 
 # Build arguments for environment
+ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_WS_URL
 ARG NEXT_PUBLIC_VERSION
