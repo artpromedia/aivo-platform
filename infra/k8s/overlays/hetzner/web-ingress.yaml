@@ -20,11 +20,10 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
     # Cache static assets at the ingress level
     nginx.ingress.kubernetes.io/proxy-buffering: "on"
-    # HSTS (also set in Next.js, belt-and-suspenders)
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
-      more_set_headers "X-Content-Type-Options: nosniff";
-      more_set_headers "X-Frame-Options: DENY";
+    # NOTE: configuration-snippet is disabled on this cluster
+    # (allow-snippet-annotations: "false" in ingress-nginx ConfigMap).
+    # Security headers (HSTS, X-Content-Type-Options, X-Frame-Options)
+    # are set by the Next.js apps in their next.config.js headers config.
 spec:
   ingressClassName: nginx
   tls:

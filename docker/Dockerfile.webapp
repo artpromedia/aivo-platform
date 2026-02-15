@@ -50,8 +50,13 @@ RUN cd libs/ts-policy-engine && pnpm build || true
 RUN cd libs/ts-rbac && pnpm build || true
 
 # Build arguments for Next.js
+# These NEXT_PUBLIC_* vars are baked into the client JS bundle at build time
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_WS_URL
 ARG NEXT_PUBLIC_ANALYTICS_ID
+ARG NEXT_PUBLIC_VERSION
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -81,9 +86,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG APP_NAME
 
 # Copy necessary files
-COPY --from=builder /app/apps/${APP_NAME}/public ./public
+# Note: standalone output preserves monorepo structure (server.js at apps/${APP_NAME}/server.js)
+# so public and static must be placed relative to the app directory, not the workspace root
 COPY --from=builder /app/apps/${APP_NAME}/.next/standalone ./
-COPY --from=builder /app/apps/${APP_NAME}/.next/static ./.next/static
+COPY --from=builder /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
+COPY --from=builder /app/apps/${APP_NAME}/.next/static ./apps/${APP_NAME}/.next/static
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs .
@@ -95,8 +102,11 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Store APP_NAME in env so CMD can reference it
+ENV APP_NAME=${APP_NAME}
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-CMD ["node", "server.js"]
+CMD node apps/${APP_NAME}/server.js

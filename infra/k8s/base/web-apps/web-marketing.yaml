@@ -111,7 +111,7 @@ spec:
             - name: tmp
               mountPath: /tmp
             - name: nextjs-cache
-              mountPath: /app/.next/cache
+              mountPath: /app/apps/web-marketing/.next/cache
 
       volumes:
         - name: tmp

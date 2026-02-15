@@ -383,16 +383,39 @@ jobs:
           ARGS="NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.aivolearning.com' }}"
           ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_VERSION=${{ needs.ci.outputs.version }}"
 
-          # App-specific args
+          # Map each web app to its production domain for NEXT_PUBLIC_APP_URL
+          # This controls where login/register/CTA links point
           case "$APP" in
-            web-learner|web-teacher)
+            web-learner)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://app.aivolearning.com"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_WS_URL=${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://ws.aivolearning.com' }}"
+              ;;
+            web-teacher)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://teacher.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_WS_URL=${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://ws.aivolearning.com' }}"
               ;;
             web-marketing)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://app.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_ANALYTICS_ID=${{ secrets.NEXT_PUBLIC_ANALYTICS_ID || '' }}"
               ;;
             web-parent)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://parent.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '' }}"
+              ;;
+            web-platform-admin)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://admin.aivolearning.com"
+              ;;
+            web-district)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://district.aivolearning.com"
+              ;;
+            web-author)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://author.aivolearning.com"
+              ;;
+            web-creator)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://creator.aivolearning.com"
+              ;;
+            web-dev-portal)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://docs.aivolearning.com"
               ;;
           esac
 
