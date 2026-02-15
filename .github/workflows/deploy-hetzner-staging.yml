@@ -1160,12 +1160,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clean up old migration jobs
+        run: |
+          kubectl delete jobs -n aivo-prod -l app=db-migrate --ignore-not-found=true
+
       - name: Run Prisma migrations
         run: |
           set -euo pipefail
           VERSION="${{ needs.release-tag.outputs.version }}"
           NS="aivo-prod"
           RUN_ID="${{ github.run_number }}"
+
+          # Extract DATABASE_URL from shared-secrets and rewrite for auth-svc:
+          # - Use aivo_auth database (not generic "aivo")
+          # - Use direct PostgreSQL port 5432 (not PgBouncer 6432)
+          #   because Prisma migrate needs advisory locks / DDL
+          DB_URL_RAW=$(kubectl get secret shared-secrets -n "$NS" \
+            -o jsonpath='{.data.DATABASE_URL}' | base64 -d)
+          # Replace database name and port: .../aivo?... -> .../aivo_auth?...
+          # and :6432/ -> :5432/ to bypass PgBouncer
+          DB_URL_AUTH=$(echo "$DB_URL_RAW" | sed -e 's|:6432/|:5432/|' -e 's|/aivo?|/aivo_auth?|')
+          echo "Migration target: $(echo "$DB_URL_AUTH" | sed 's|://[^@]*@|://***@|')"
 
           cat <<EOF | kubectl apply -f -
           apiVersion: batch/v1
@@ -1179,7 +1194,7 @@ jobs:
           spec:
             ttlSecondsAfterFinished: 600
             backoffLimit: 2
-            activeDeadlineSeconds: 600
+            activeDeadlineSeconds: 300
             template:
               spec:
                 restartPolicy: Never
@@ -1187,7 +1202,10 @@ jobs:
                   - name: migrate
                     image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
                     workingDir: /app
-                    command: ["sh", "-c", "echo '=== /app contents ===' ; ls -la /app/ ; echo '=== /app/prisma ===' ; ls -la /app/prisma/ 2>&1 ; echo '=== Running Prisma migrations ===' ; npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
+                    command: ["sh", "-c", "echo '=== /app/prisma ===' && ls -la /app/prisma/ && echo '=== Running Prisma migrations ===' && npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
+                    env:
+                      - name: DATABASE_URL
+                        value: "${DB_URL_AUTH}"
                     envFrom:
                       - secretRef:
                           name: shared-secrets
