@@ -51,9 +51,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3005
 
 # Copy built application
-COPY --from=builder /app/apps/web-author/public ./public
+COPY --from=builder /app/apps/web-author/public ./apps/web-author/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web-author/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web-author/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web-author/.next/static ./apps/web-author/.next/static
 
 USER nextjs
 
