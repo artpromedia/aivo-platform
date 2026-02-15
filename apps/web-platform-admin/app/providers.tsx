@@ -7,6 +7,7 @@ import {
   OfflineBanner,
   useNetworkStatus,
 } from '@aivo/ui/components';
+import { ToastProvider, ConfirmProvider } from '@aivo/ui-web';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -68,7 +69,13 @@ export function AuthProvider({
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
           <NetworkStatusWrapper>
-            <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+            <AuthContext.Provider value={value}>
+              <ToastProvider>
+                <ConfirmProvider>
+                  {children}
+                </ConfirmProvider>
+              </ToastProvider>
+            </AuthContext.Provider>
           </NetworkStatusWrapper>
         </QueryClientProvider>
       </SessionProvider>

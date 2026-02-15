@@ -62,14 +62,14 @@ export function Header({ title, className }: HeaderProps) {
     >
       {/* Page Title */}
       <div className="flex items-center gap-4">
-        {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
+        {title && <h1 className="text-xl font-semibold text-text">{title}</h1>}
       </div>
 
       {/* Search */}
       <form onSubmit={handleSearch} className="hidden md:block">
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -88,9 +88,9 @@ export function Header({ title, className }: HeaderProps) {
               setSearchQuery(e.target.value);
             }}
             placeholder="Search students, classes, assignments..."
-            className="w-80 rounded-lg border bg-gray-50 py-2 pl-10 pr-4 text-sm placeholder:text-gray-400 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            className="w-80 rounded-lg border border-border bg-surface-muted py-2 pl-10 pr-4 text-sm text-text placeholder:text-muted focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-500">
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded bg-surface-muted px-1.5 py-0.5 text-xs text-muted">
             ⌘K
           </kbd>
         </div>
@@ -112,7 +112,7 @@ export function Header({ title, className }: HeaderProps) {
             onClick={() => {
               setShowNotifications(!showNotifications);
             }}
-            className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            className="relative rounded-lg p-2 text-muted hover:bg-surface-muted"
             aria-label="Notifications"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,16 +148,16 @@ export function Header({ title, className }: HeaderProps) {
             onClick={() => {
               setShowUserMenu(!showUserMenu);
             }}
-            className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100"
+            className="flex items-center gap-2 rounded-lg p-1 hover:bg-surface-muted"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
               {displayInitials}
             </div>
             <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-500">{displayRole}</p>
+              <p className="text-sm font-medium text-text">{displayName}</p>
+              <p className="text-xs text-muted">{displayRole}</p>
             </div>
-            <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-4 w-4 text-muted" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -212,7 +212,7 @@ function QuickAddButton() {
       </button>
 
       {showMenu && (
-        <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white py-1 shadow-lg">
+        <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-surface py-1 shadow-lg">
           {quickActions.map((action) => (
             <Link
               key={action.href}
@@ -220,7 +220,7 @@ function QuickAddButton() {
               onClick={() => {
                 setShowMenu(false);
               }}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-text hover:bg-surface-muted"
             >
               <span>{action.icon}</span>
               <span>{action.label}</span>
@@ -286,9 +286,9 @@ function NotificationsDropdown({ onClose }: DropdownProps) {
   ];
 
   return (
-    <div className="absolute right-0 mt-2 w-80 rounded-lg border bg-white shadow-lg">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="font-medium text-gray-900">Notifications</h3>
+    <div className="absolute right-0 mt-2 w-80 rounded-lg border border-border bg-surface shadow-lg">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <h3 className="font-medium text-text">Notifications</h3>
         <button className="text-sm text-primary-600 hover:text-primary-700">Mark all read</button>
       </div>
       <div className="max-h-96 overflow-y-auto">
@@ -296,7 +296,7 @@ function NotificationsDropdown({ onClose }: DropdownProps) {
           <div
             key={notification.id}
             className={cn(
-              'flex gap-3 border-b px-4 py-3 hover:bg-gray-50',
+              'flex gap-3 border-b border-border px-4 py-3 hover:bg-surface-muted',
               notification.unread && 'bg-primary-50/50'
             )}
           >
@@ -307,14 +307,14 @@ function NotificationsDropdown({ onClose }: DropdownProps) {
               )}
             />
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900">{notification.title}</p>
-              <p className="text-sm text-gray-600">{notification.message}</p>
-              <p className="mt-1 text-xs text-gray-400">{notification.time}</p>
+              <p className="text-sm font-medium text-text">{notification.title}</p>
+              <p className="text-sm text-muted">{notification.message}</p>
+              <p className="mt-1 text-xs text-muted/70">{notification.time}</p>
             </div>
           </div>
         ))}
       </div>
-      <div className="border-t p-3">
+      <div className="border-t border-border p-3">
         <Link
           href="/notifications"
           onClick={onClose}
@@ -340,10 +340,10 @@ function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProp
   ];
 
   return (
-    <div className="absolute right-0 mt-2 w-56 rounded-lg border bg-white py-1 shadow-lg">
-      <div className="border-b px-4 py-3">
-        <p className="font-medium text-gray-900">{userName}</p>
-        <p className="text-sm text-gray-500">{userEmail}</p>
+    <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-surface py-1 shadow-lg">
+      <div className="border-b border-border px-4 py-3">
+        <p className="font-medium text-text">{userName}</p>
+        <p className="text-sm text-muted">{userEmail}</p>
       </div>
       <div className="py-1">
         {menuItems.map((item) => {
@@ -359,8 +359,8 @@ function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProp
                   void item.action();
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50',
-                  item.danger ? 'text-red-600' : 'text-gray-700'
+                  'flex w-full items-center gap-2 px-4 py-2 text-sm hover:bg-surface-muted',
+                  item.danger ? 'text-red-400' : 'text-text'
                 )}
               >
                 <span>{item.icon}</span>
@@ -373,7 +373,7 @@ function UserMenuDropdown({ onClose, userName, userEmail }: UserMenuDropdownProp
               key={item.href}
               href={item.href}
               onClick={onClose}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-text hover:bg-surface-muted"
             >
               <span>{item.icon}</span>
               <span>{item.label}</span>

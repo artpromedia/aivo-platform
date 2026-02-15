@@ -16,6 +16,7 @@
 
 'use client';
 
+import { useConfirm } from '@aivo/ui-web';
 import {
   Loader2,
   RefreshCw,
@@ -561,6 +562,7 @@ function InstallationDetailsDialog({
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
 }) {
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncEnabled, setSyncEnabled] = useState(installation.syncEnabled);
@@ -601,7 +603,13 @@ function InstallationDetailsDialog({
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to remove this domain installation?')) return;
+    const ok = await confirm({
+      title: 'Remove Installation',
+      description: 'Are you sure you want to remove this domain installation?',
+      confirmLabel: 'Remove',
+      variant: 'destructive',
+    });
+    if (!ok) return;
 
     try {
       await fetch(`/api/admin/integrations/google-classroom/installations/${installation.id}`, {

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useConfirm, useToast } from '@aivo/ui-web';
+
 import { PolicyTab } from '../../../components/PolicyTab';
 import type {
   EffectivePolicy,
@@ -70,6 +72,8 @@ export function TenantDetailClient({
   tenantPolicyOverride,
 }: TenantDetailClientProps) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -80,7 +84,13 @@ export function TenantDetailClient({
         ? 'Are you sure you want to suspend this tenant? Users will lose access.'
         : 'Are you sure you want to activate this tenant?';
 
-    if (!confirm(confirmMsg)) return;
+    const ok = await confirm({
+      title: newStatus === 'SUSPENDED' ? 'Suspend Tenant' : 'Activate Tenant',
+      description: confirmMsg,
+      confirmLabel: newStatus === 'SUSPENDED' ? 'Suspend' : 'Activate',
+      variant: newStatus === 'SUSPENDED' ? 'destructive' : 'default',
+    });
+    if (!ok) return;
 
     setIsUpdating(true);
     try {
@@ -92,7 +102,7 @@ export function TenantDetailClient({
       if (!res.ok) throw new Error('Failed to update status');
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update status');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to update status', variant: 'destructive' });
     } finally {
       setIsUpdating(false);
     }
@@ -108,7 +118,7 @@ export function TenantDetailClient({
       if (!res.ok) throw new Error('Failed to update flag');
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update flag');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to update flag', variant: 'destructive' });
     }
   };
 

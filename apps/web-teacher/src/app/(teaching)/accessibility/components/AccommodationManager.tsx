@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 import * as api from '@/lib/accessibility-api';
 
 export function AccommodationManager() {
+  const confirm = useConfirm();
   const [accommodations, setAccommodations] = useState<api.Accommodation[]>([]);
   const [templates, setTemplates] = useState<api.AccommodationTemplate[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('student123');
@@ -74,7 +76,13 @@ export function AccommodationManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this accommodation?')) return;
+    const ok = await confirm({
+      title: 'Delete Accommodation',
+      description: 'Delete this accommodation?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     try {
       await api.deleteAccommodation(id);
       setAccommodations(accommodations.filter((a) => a.id !== id));

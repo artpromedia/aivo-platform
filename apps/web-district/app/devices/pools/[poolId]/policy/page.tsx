@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Heading } from '@aivo/ui-web';
+import { Button, Card, Heading, useConfirm } from '@aivo/ui-web';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -56,6 +56,7 @@ const defaultPolicy: PolicyConfig = {
 export default function PoolPolicyPage() {
   const params = useParams();
   const router = useRouter();
+  const confirm = useConfirm();
   const poolId = params.poolId as string;
 
   const [pool, setPool] = useState<DevicePool | null>(null);
@@ -121,9 +122,13 @@ export default function PoolPolicyPage() {
 
   async function deletePolicy() {
     if (!policyId) return;
-    if (!confirm('Are you sure you want to delete this policy? Devices will use default settings.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Delete Policy',
+      description: 'Are you sure you want to delete this policy? Devices will use default settings.',
+      confirmLabel: 'Delete Policy',
+      variant: 'destructive',
+    });
+    if (!ok) return;
 
     try {
       setSaving(true);

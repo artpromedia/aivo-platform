@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 
 // ============================================================================
 // TYPES
@@ -249,6 +250,7 @@ async function fetchSyncStatus(providerId: string): Promise<ProviderStatus> {
 // ============================================================================
 
 export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
+  const confirm = useConfirm();
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<SisProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<SisProvider | null>(null);
@@ -336,11 +338,13 @@ export function SisIntegrationPage({ tenantId }: SisIntegrationPageProps) {
 
   const handleDeleteProvider = useCallback(
     async (providerId: string) => {
-      if (
-        !confirm('Are you sure you want to delete this integration? All sync history will be lost.')
-      ) {
-        return;
-      }
+      const ok = await confirm({
+        title: 'Delete Integration',
+        description: 'Are you sure you want to delete this integration? All sync history will be lost.',
+        confirmLabel: 'Delete',
+        variant: 'destructive',
+      });
+      if (!ok) return;
       try {
         await deleteProvider(providerId);
         setProviders((p) => p.filter((provider) => provider.id !== providerId));
@@ -536,6 +540,7 @@ function ProviderDetails({
   onCancelSync,
   onConfigure,
 }: ProviderDetailsProps) {
+  const confirm = useConfirm();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [oauthStatus, setOauthStatus] = useState<{
@@ -617,11 +622,13 @@ function ProviderDetails({
   };
 
   const handleDisconnectOAuth = async () => {
-    if (
-      !confirm('Are you sure you want to disconnect? You will need to re-authorize to sync again.')
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Disconnect OAuth',
+      description: 'Are you sure you want to disconnect? You will need to re-authorize to sync again.',
+      confirmLabel: 'Disconnect',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     setOauthLoading(true);
     try {
       await disconnectOAuth(provider.id);

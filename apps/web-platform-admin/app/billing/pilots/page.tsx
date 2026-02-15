@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { useConfirm } from '@aivo/ui-web';
+
 import {
   usePilotPrograms,
   usePilotStats,
@@ -102,6 +104,7 @@ export default function PilotsPage() {
   const stats: PilotStats | null = statsData ?? null;
   const isLoading = pilotsLoading || statsLoading;
 
+  const confirm = useConfirm();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<PilotStatus | 'ALL'>('ALL');
   const [filterType, setFilterType] = useState<PilotType | 'ALL'>('ALL');
@@ -157,7 +160,13 @@ export default function PilotsPage() {
   };
 
   const handleConvertPilot = async (pilotId: string) => {
-    if (confirm('Convert this pilot to a paid contract? This action cannot be undone.')) {
+    const ok = await confirm({
+      title: 'Convert Pilot',
+      description: 'Convert this pilot to a paid contract? This action cannot be undone.',
+      confirmLabel: 'Convert to Paid',
+      variant: 'destructive',
+    });
+    if (ok) {
       convertPilotMutation.mutate({ id: pilotId });
     }
   };

@@ -8,6 +8,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
+import { useToast } from '@aivo/ui-web';
 
 import {
   SUBJECT_AREAS,
@@ -21,6 +22,7 @@ import { UploadCurriculumModal } from './upload-modal';
 export function CurriculumBrowser() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -179,7 +181,7 @@ export function CurriculumBrowser() {
               // Simulate LMS sync
               await new Promise(resolve => setTimeout(resolve, 2000));
               setIsSyncing(false);
-              alert('LMS sync completed successfully!');
+              toast({ title: 'Sync Complete', description: 'LMS sync completed successfully!', variant: 'success' });
             }}
           />
           <QuickAction
@@ -209,6 +211,7 @@ export function CurriculumBrowser() {
 }
 
 function ImportCSVModal({ onClose }: { onClose: () => void }) {
+  const toast = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -218,7 +221,7 @@ function ImportCSVModal({ onClose }: { onClose: () => void }) {
     // Simulate import
     await new Promise(resolve => setTimeout(resolve, 1500));
     setIsImporting(false);
-    alert('CSV imported successfully!');
+    toast({ title: 'Import Complete', description: 'CSV imported successfully!', variant: 'success' });
     onClose();
   };
 

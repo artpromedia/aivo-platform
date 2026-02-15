@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
+import { useToast } from '@aivo/ui-web';
 
 import { useAuth } from '../../providers';
 import { type CurriculumVersion, formatDateTime } from '../../../lib/curriculum-api';
@@ -17,6 +18,7 @@ interface VersionControlProps {
 
 export function VersionControl({ curriculumId }: VersionControlProps) {
   const { tenantId } = useAuth();
+  const toast = useToast();
   const [versions, setVersions] = useState<CurriculumVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +80,7 @@ export function VersionControl({ curriculumId }: VersionControlProps) {
 
       try {
         // In production, restore version via API
-        alert(`Restoring to version ${version.versionNumber}`);
+        toast({ title: 'Restoring', description: `Restoring to version ${version.versionNumber}`, variant: 'info' });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to restore version');
       }
@@ -442,7 +444,7 @@ function CompareVersionModal({
             disabled={!compareWith}
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => {
-              alert(`Opening detailed comparison between v${currentVersion.versionNumber} and selected version...`);
+              toast({ title: 'Comparing', description: `Opening detailed comparison between v${currentVersion.versionNumber} and selected version...`, variant: 'info' });
               onClose();
             }}
           >

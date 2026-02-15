@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900">
+      <body className="min-h-screen bg-background text-foreground antialiased">
         <AuthProvider initialAuth={initialAuth}>
           <Nav />
           <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>

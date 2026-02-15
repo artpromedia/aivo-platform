@@ -8,6 +8,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 import {
   Cpu,
   DollarSign,
@@ -53,6 +54,7 @@ function toDisplayProvider(provider: APIProvider): DisplayProvider {
 }
 
 export function AIOrchestrationPanel() {
+  const confirm = useConfirm();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -82,9 +84,14 @@ export function AIOrchestrationPanel() {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleSwitchPrimary = (providerId: string) => {
+  const handleSwitchPrimary = async (providerId: string) => {
     const providerName = providers.find(p => p.id === providerId)?.name;
-    if (confirm(`Switch primary AI provider to ${providerName}?`)) {
+    const ok = await confirm({
+      title: 'Switch Primary Provider',
+      description: `Switch primary AI provider to ${providerName}?`,
+      confirmLabel: 'Switch',
+    });
+    if (ok) {
       switchPrimaryMutation.mutate({ providerId: providerId as 'openai' | 'anthropic' | 'google' | 'meta' | 'cohere' | 'azure' });
     }
   };

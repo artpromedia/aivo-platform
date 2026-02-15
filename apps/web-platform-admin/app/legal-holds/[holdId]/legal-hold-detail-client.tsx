@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useToast } from '@aivo/ui-web';
+
 import type { LegalHold, LegalHoldCustodian, LegalHoldStatus, LegalHoldType } from '../../../lib/types';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -263,6 +265,7 @@ function DataScopePanel({ dataScope }: DataScopePanelProps) {
 
 export function LegalHoldDetailClient({ hold, accessToken }: LegalHoldDetailClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -286,7 +289,7 @@ export function LegalHoldDetailClient({ hold, accessToken }: LegalHoldDetailClie
       router.refresh();
     } catch (error) {
       console.error('Error releasing legal hold:', error);
-      alert('Failed to release legal hold. Please try again.');
+      toast({ title: 'Error', description: 'Failed to release legal hold. Please try again.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -305,10 +308,10 @@ export function LegalHoldDetailClient({ hold, accessToken }: LegalHoldDetailClie
         throw new Error('Failed to resend notification');
       }
 
-      alert('Notification resent successfully');
+      toast({ title: 'Success', description: 'Notification resent successfully', variant: 'success' });
     } catch (error) {
       console.error('Error resending notification:', error);
-      alert('Failed to resend notification. Please try again.');
+      toast({ title: 'Error', description: 'Failed to resend notification. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -335,7 +338,7 @@ export function LegalHoldDetailClient({ hold, accessToken }: LegalHoldDetailClie
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting:', error);
-      alert('Failed to export legal hold. Please try again.');
+      toast({ title: 'Error', description: 'Failed to export legal hold. Please try again.', variant: 'destructive' });
     }
   };
 

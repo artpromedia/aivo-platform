@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -690,6 +691,7 @@ function SecretModal({
 // ══════════════════════════════════════════════════════════════════════════════
 
 export default function WebhooksPage() {
+  const confirm = useConfirm();
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -735,7 +737,13 @@ export default function WebhooksPage() {
   };
 
   const handleDelete = async (webhook: WebhookEndpoint) => {
-    if (!confirm(`Are you sure you want to delete "${webhook.name}"?`)) return;
+    const ok = await confirm({
+      title: 'Delete Webhook',
+      description: `Are you sure you want to delete "${webhook.name}"?`,
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     try {
       await deleteWebhook(webhook.id);
       setWebhooks((prev) => prev.filter((w) => w.id !== webhook.id));

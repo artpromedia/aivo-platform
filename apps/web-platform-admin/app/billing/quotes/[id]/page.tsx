@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useToast } from '@aivo/ui-web';
+
 import { useAuth } from '../../../providers';
 
 // Types
@@ -142,6 +144,7 @@ export default function QuoteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // In real app, fetch quote by id
@@ -152,14 +155,14 @@ export default function QuoteDetailPage() {
     // API call here
     await new Promise((r) => setTimeout(r, 500));
     setIsLoading(false);
-    alert('Quote marked as sent!');
+    toast({ title: 'Quote Sent', description: 'Quote marked as sent!', variant: 'success' });
   };
 
   const handleMarkAccepted = async () => {
     setIsLoading(true);
     await new Promise((r) => setTimeout(r, 500));
     setIsLoading(false);
-    alert('Quote marked as accepted!');
+    toast({ title: 'Quote Accepted', description: 'Quote marked as accepted!', variant: 'success' });
   };
 
   const handleCreateContract = async () => {

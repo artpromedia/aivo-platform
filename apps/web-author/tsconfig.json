@@ -6,9 +6,7 @@
     "noEmit": true,
     "moduleResolution": "Bundler",
     "module": "esnext",
-    "ignoreDeprecations": "5.0",
     "exactOptionalPropertyTypes": false,
-    "baseUrl": ".",
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "@aivo/i18n": ["../../packages/i18n/dist"],

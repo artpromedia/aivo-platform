@@ -3,33 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --surface: 0 0% 100%;
-  --surface-muted: 210 40% 96.1%;
-  --success: 142 76% 36%;
-  --warning: 38 92% 50%;
-  --error: 0 84% 60%;
-}
-
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --surface: 222.2 84% 4.9%;
-  --surface-muted: 217.2 32.6% 17.5%;
-  --success: 142 76% 36%;
-  --warning: 38 92% 50%;
-  --error: 0 84% 60%;
+  color-scheme: dark;
+  --background: 260 47% 9%;
+  --foreground: 260 100% 97%;
+  --border: 260 30% 24%;
+  --primary: 262 83% 66%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 260 30% 18%;
+  --muted-foreground: 260 20% 65%;
+  --surface: 260 38% 14%;
+  --surface-muted: 260 30% 18%;
+  --success: 160 72% 42%;
+  --warning: 38 92% 56%;
+  --error: 0 74% 65%;
 }
 
 * {
@@ -39,4 +25,74 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark-theme overrides for legacy hardcoded Tailwind classes */
+@layer base {
+  /* Background overrides */
+  .bg-white     { background-color: hsl(var(--surface)) !important; }
+  .bg-white\/50 { background-color: hsl(var(--surface) / 0.5) !important; }
+  .bg-white\/60 { background-color: hsl(var(--surface) / 0.6) !important; }
+  .bg-white\/70 { background-color: hsl(var(--surface) / 0.7) !important; }
+  .bg-white\/80 { background-color: hsl(var(--surface) / 0.8) !important; }
+  .bg-white\/90 { background-color: hsl(var(--surface) / 0.9) !important; }
+  .bg-gray-50,
+  .bg-slate-50  { background-color: hsl(var(--surface-muted)) !important; }
+  .bg-gray-100,
+  .bg-slate-100 { background-color: hsl(var(--muted)) !important; }
+  .bg-gray-200,
+  .bg-slate-200 { background-color: hsl(var(--border)) !important; }
+  .bg-gray-300  { background-color: hsl(var(--border) / 0.8) !important; }
+
+  /* Text overrides */
+  .text-gray-900,
+  .text-slate-900,
+  .text-gray-950 { color: hsl(var(--foreground)) !important; }
+  .text-gray-800,
+  .text-slate-800 { color: hsl(var(--foreground)) !important; }
+  .text-gray-700,
+  .text-slate-700 { color: hsl(var(--foreground) / 0.85) !important; }
+  .text-gray-600,
+  .text-slate-600 { color: hsl(var(--muted-foreground)) !important; }
+  .text-gray-500,
+  .text-slate-500 { color: hsl(var(--muted-foreground)) !important; }
+  .text-gray-400,
+  .text-slate-400 { color: hsl(var(--muted-foreground) / 0.7) !important; }
+  .text-slate-200  { color: hsl(var(--muted-foreground) / 0.6) !important; }
+
+  /* Border overrides */
+  .border-gray-100,
+  .border-slate-100 { border-color: hsl(var(--border) / 0.5) !important; }
+  .border-gray-200,
+  .border-gray-300,
+  .border-slate-200,
+  .border-slate-300 { border-color: hsl(var(--border)) !important; }
+
+  /* Ring overrides */
+  .ring-offset-white { --tw-ring-offset-color: hsl(var(--surface)) !important; }
+
+  /* Hover state overrides */
+  .hover\:bg-white:hover { background-color: hsl(var(--surface)) !important; }
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-100:hover,
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover { background-color: hsl(var(--surface-muted)) !important; }
+  .hover\:bg-gray-200:hover,
+  .hover\:bg-slate-200:hover { background-color: hsl(var(--border)) !important; }
+  .hover\:border-gray-300:hover,
+  .hover\:border-slate-300:hover { border-color: hsl(var(--border)) !important; }
+  .hover\:text-gray-700:hover,
+  .hover\:text-slate-700:hover { color: hsl(var(--foreground) / 0.85) !important; }
+  .hover\:text-gray-900:hover,
+  .hover\:text-slate-900:hover { color: hsl(var(--foreground)) !important; }
+
+  /* Divide overrides */
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+  .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: hsl(var(--border)) !important; }
+
+  /* Focus overrides */
+  .focus\:ring-gray-500:focus,
+  .focus\:ring-slate-500:focus { --tw-ring-color: hsl(var(--ring) / 0.5) !important; }
 }

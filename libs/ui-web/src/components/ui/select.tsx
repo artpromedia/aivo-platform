@@ -43,7 +43,7 @@ export const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerPr
         ref={ref}
         type="button"
         onClick={() => context?.setOpen(!context.open)}
-        className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className ?? ''}`}
+        className={`flex h-10 w-full items-center justify-between rounded-[var(--radius-input)] border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] px-3 py-2 text-sm text-[rgb(var(--color-text))] placeholder:text-[rgb(var(--color-text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-focus))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--color-background))] disabled:cursor-not-allowed disabled:opacity-50 transition-all ${className ?? ''}`}
         {...props}
       >
         {children}
@@ -74,7 +74,7 @@ export const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps
     return (
       <div
         ref={ref}
-        className={`absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${className ?? ''}`}
+        className={`absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-[var(--radius-card)] border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] p-1 text-[rgb(var(--color-text))] shadow-[var(--shadow-elevated)] backdrop-blur-[var(--glass-blur)] ${className ?? ''}`}
         {...props}
       >
         {children}
@@ -102,8 +102,8 @@ export const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
           context?.onValueChange?.(value);
           context?.setOpen(false);
         }}
-        className={`relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground ${
-          isSelected ? 'bg-accent' : ''
+        className={`relative flex w-full cursor-pointer select-none items-center rounded-[var(--radius-button)] py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-[rgb(var(--color-surface-elevated))] hover:text-[rgb(var(--color-text))] focus:bg-[rgb(var(--color-surface-elevated))] transition-colors ${
+          isSelected ? 'bg-[rgb(var(--color-primary))]/10 text-[rgb(var(--color-primary))]' : ''
         } ${className ?? ''}`}
         {...props}
       >

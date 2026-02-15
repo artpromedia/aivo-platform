@@ -1,13 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "outDir": ".next",
     "jsx": "preserve",
     "noEmit": true,
     "moduleResolution": "Bundler",
     "module": "esnext",
-    "baseUrl": ".",
     "paths": {
       "@aivo/i18n": ["../../packages/i18n/src"],
       "@aivo/*": [

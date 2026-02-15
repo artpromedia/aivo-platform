@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useToast } from '@aivo/ui-web';
+
 import type {
   AiCallLogWithLinkReason,
   AiIncident,
@@ -69,6 +71,7 @@ const LINK_REASON_LABELS: Record<string, string> = {
 
 export function IncidentDetailClient({ incident, linkedCalls }: IncidentDetailClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const [status, setStatus] = useState<IncidentStatus>(incident.status);
   const [resolutionNotes, setResolutionNotes] = useState(incident.resolutionNotes ?? '');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -89,7 +92,7 @@ export function IncidentDetailClient({ incident, linkedCalls }: IncidentDetailCl
       setStatus(newStatus);
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update incident');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to update incident', variant: 'destructive' });
     } finally {
       setIsUpdating(false);
     }

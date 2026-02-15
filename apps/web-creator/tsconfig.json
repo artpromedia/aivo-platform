@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
     "rootDir": ".",
     "outDir": ".next",
     "jsx": "preserve",
@@ -9,7 +8,6 @@
     "moduleResolution": "Bundler",
     "module": "esnext",
     "exactOptionalPropertyTypes": false,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },

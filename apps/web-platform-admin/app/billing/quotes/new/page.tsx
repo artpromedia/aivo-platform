@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useToast } from '@aivo/ui-web';
+
 import { useAuth } from '../../../providers';
 
 // Mock price book data
@@ -56,6 +58,7 @@ function formatCurrency(cents: number): string {
 export default function NewQuotePage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
@@ -110,7 +113,7 @@ export default function NewQuotePage() {
 
   const handleSubmit = async (asDraft: boolean) => {
     if (!selectedTenantId || !validUntil || lineItems.length === 0) {
-      alert('Please fill in all required fields and add at least one line item.');
+      toast({ title: 'Validation Error', description: 'Please fill in all required fields and add at least one line item.', variant: 'warning' });
       return;
     }
 
@@ -122,9 +125,9 @@ export default function NewQuotePage() {
     setIsLoading(false);
 
     if (asDraft) {
-      alert('Quote saved as draft!');
+      toast({ title: 'Draft Saved', description: 'Quote saved as draft!', variant: 'success' });
     } else {
-      alert('Quote created and marked as sent!');
+      toast({ title: 'Quote Created', description: 'Quote created and marked as sent!', variant: 'success' });
     }
 
     router.push('/billing');

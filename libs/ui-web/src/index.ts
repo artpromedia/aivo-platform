@@ -268,6 +268,30 @@ export {
   NotificationApiClient,
 } from './components/notifications';
 
+// Toast Notification System
+export {
+  ToastProvider,
+  Toaster,
+  useToast,
+} from './components/ui/toast';
+export type {
+  Toast,
+  ToastVariant,
+  ToastContextValue,
+} from './components/ui/toast';
+
+// Confirmation Dialog System
+export {
+  ConfirmDialog,
+  ConfirmProvider,
+  useConfirm,
+} from './components/ui/confirm-dialog';
+export type { ConfirmDialogProps } from './components/ui/confirm-dialog';
+
+// Empty State Component
+export { EmptyState } from './components/ui/empty-state';
+export type { EmptyStateProps } from './components/ui/empty-state';
+
 // Consent Management Components (GDPR/CCPA/LGPD)
 export {
   ConsentProvider,

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 
+import { useToast } from '@aivo/ui-web';
+
 import type { LegalHoldListItem, LegalHoldStatus, LegalHoldType } from '../../lib/types';
 import { LEGAL_HOLD_STATUSES, LEGAL_HOLD_TYPES } from '../../lib/types';
 
@@ -284,6 +286,7 @@ export function LegalHoldsClient({
   accessToken,
 }: LegalHoldsClientProps) {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const totalPages = Math.ceil(total / pageSize);
 
@@ -360,7 +363,7 @@ export function LegalHoldsClient({
       router.refresh();
     } catch (error) {
       console.error('Error creating legal hold:', error);
-      alert('Failed to create legal hold. Please try again.');
+      toast({ title: 'Error', description: 'Failed to create legal hold. Please try again.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }

@@ -7,6 +7,7 @@ import {
   OfflineBanner,
   useNetworkStatus,
 } from '@aivo/ui/components';
+import { ToastProvider, ConfirmProvider } from '@aivo/ui-web';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
@@ -51,7 +52,15 @@ export function AuthProvider({
 
   const value = useMemo(() => ({ ...state, logout }), [state, logout]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <ToastProvider>
+        <ConfirmProvider>
+          {children}
+        </ConfirmProvider>
+      </ToastProvider>
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

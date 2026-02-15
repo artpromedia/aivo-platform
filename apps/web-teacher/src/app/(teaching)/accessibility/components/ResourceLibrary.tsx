@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 import * as api from '@/lib/accessibility-api';
 
 export function ResourceLibrary() {
+  const confirm = useConfirm();
   const [resources, setResources] = useState<api.AccessibilityResource[]>([]);
   const [collections, setCollections] = useState<api.ResourceCollection[]>([]);
   const [selectedResource, setSelectedResource] = useState<api.AccessibilityResource | null>(null);
@@ -96,7 +98,13 @@ export function ResourceLibrary() {
   };
 
   const handleDeleteResource = async (id: string) => {
-    if (!confirm('Delete this resource?')) return;
+    const ok = await confirm({
+      title: 'Delete Resource',
+      description: 'Delete this resource?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     try {
       await api.deleteResource(id);
       setResources(resources.filter((r) => r.id !== id));

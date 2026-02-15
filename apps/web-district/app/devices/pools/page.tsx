@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Button, Card, Heading } from '@aivo/ui-web';
+import { Badge, Button, Card, Heading, useConfirm } from '@aivo/ui-web';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -40,6 +40,7 @@ const gradeBandLabels: Record<string, string> = {
 
 export default function DevicePoolsPage() {
   const { tenantId } = useAuth();
+  const confirm = useConfirm();
   const [pools, setPools] = useState<DevicePool[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,9 +91,13 @@ export default function DevicePoolsPage() {
   }
 
   async function deletePool(poolId: string) {
-    if (!confirm('Are you sure you want to delete this pool? This will remove all device assignments.')) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Delete Pool',
+      description: 'Are you sure you want to delete this pool? This will remove all device assignments.',
+      confirmLabel: 'Delete Pool',
+      variant: 'destructive',
+    });
+    if (!ok) return;
 
     try {
       const response = await fetch(`/api/devices/pools/${poolId}`, {

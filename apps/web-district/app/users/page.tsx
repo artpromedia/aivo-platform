@@ -8,6 +8,8 @@
 
 import * as React from 'react';
 
+import { useConfirm } from '@aivo/ui-web';
+
 import { CsvImportModal } from './components/csv-import-modal';
 import { UserFilters } from './components/user-filters';
 import { UserFormModal } from './components/user-form-modal';
@@ -79,6 +81,7 @@ async function deleteUser(userId: string): Promise<void> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function UserManagementPage() {
+  const confirm = useConfirm();
   const [users, setUsers] = React.useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -161,7 +164,13 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete User',
+      description: 'Are you sure you want to delete this user? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     setLoading(true);
     setError(null);
     try {

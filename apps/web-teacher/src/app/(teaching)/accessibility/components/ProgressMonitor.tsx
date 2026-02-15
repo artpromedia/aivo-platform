@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useConfirm } from '@aivo/ui-web';
 import * as api from '@/lib/accessibility-api';
 import { Line } from 'react-chartjs-2';
 import {
@@ -17,6 +18,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export function ProgressMonitor() {
+  const confirm = useConfirm();
   const [goals, setGoals] = useState<api.ProgressGoal[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<api.ProgressGoal | null>(null);
   const [dataPoints, setDataPoints] = useState<api.ProgressDataPoint[]>([]);
@@ -124,7 +126,13 @@ export function ProgressMonitor() {
   };
 
   const handleDeleteGoal = async (id: string) => {
-    if (!confirm('Delete this goal?')) return;
+    const ok = await confirm({
+      title: 'Delete Goal',
+      description: 'Delete this goal?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     try {
       await api.deleteProgressGoal(id);
       setGoals(goals.filter((g) => g.id !== id));

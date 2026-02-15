@@ -4,56 +4,37 @@
 
 @layer base {
   :root {
-    /* CSS Variables for theming */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262.1 83.3% 57.8%;
+    color-scheme: dark;
+    /* CSS Variables — Nova Dark Purple Theme */
+    --background: 260 47% 9%;
+    --foreground: 260 100% 97%;
+    --card: 260 38% 14%;
+    --card-foreground: 260 100% 97%;
+    --popover: 260 38% 14%;
+    --popover-foreground: 260 100% 97%;
+    --primary: 262 83% 66%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 239 84% 67%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 260 30% 18%;
+    --muted-foreground: 260 20% 65%;
+    --accent: 27 96% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 74% 65%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%;
+    --border: 260 30% 24%;
+    --input: 260 30% 24%;
+    --ring: 262 83% 66%;
     --radius: 1rem;
 
     /* Brand Colors */
     --coral: 0 100% 73%;
     --salmon: 6 93% 71%;
-    --mint: 160 84% 39%;
+    --mint: 160 72% 42%;
     --sunshine: 45 93% 58%;
   }
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262.1 83.3% 57.8%;
-  }
+  /* Dark-first — no .dark class needed */
 
   * {
     @apply border-border;
@@ -94,6 +75,76 @@
   .text-foreground {
     color: hsl(var(--foreground));
   }
+
+  /* ==========================================
+   * HARDCODED COLOR OVERRIDES
+   * Remap Tailwind gray/slate/white to dark theme
+   * ========================================== */
+
+  /* Background overrides */
+  .bg-white     { background-color: hsl(var(--card)) !important; }
+  .bg-white\/50 { background-color: hsl(var(--card) / 0.5) !important; }
+  .bg-white\/60 { background-color: hsl(var(--card) / 0.6) !important; }
+  .bg-white\/70 { background-color: hsl(var(--card) / 0.7) !important; }
+  .bg-white\/80 { background-color: hsl(var(--card) / 0.8) !important; }
+  .bg-white\/90 { background-color: hsl(var(--card) / 0.9) !important; }
+  .bg-gray-50,
+  .bg-slate-50  { background-color: hsl(var(--muted)) !important; }
+  .bg-gray-100,
+  .bg-slate-100 { background-color: hsl(var(--muted)) !important; }
+  .bg-gray-200,
+  .bg-slate-200 { background-color: hsl(var(--border)) !important; }
+  .bg-gray-300  { background-color: hsl(var(--border) / 0.8) !important; }
+
+  /* Text overrides */
+  .text-gray-900,
+  .text-slate-900,
+  .text-gray-950 { color: hsl(var(--foreground)) !important; }
+  .text-gray-800,
+  .text-slate-800 { color: hsl(var(--foreground)) !important; }
+  .text-gray-700,
+  .text-slate-700 { color: hsl(var(--foreground) / 0.85) !important; }
+  .text-gray-600,
+  .text-slate-600 { color: hsl(var(--muted-foreground)) !important; }
+  .text-gray-500,
+  .text-slate-500 { color: hsl(var(--muted-foreground)) !important; }
+  .text-gray-400,
+  .text-slate-400 { color: hsl(var(--muted-foreground) / 0.7) !important; }
+
+  /* Border overrides */
+  .border-gray-100,
+  .border-slate-100 { border-color: hsl(var(--border) / 0.5) !important; }
+  .border-gray-200,
+  .border-gray-300,
+  .border-slate-200,
+  .border-slate-300 { border-color: hsl(var(--border)) !important; }
+
+  /* Ring overrides */
+  .ring-offset-white { --tw-ring-offset-color: hsl(var(--card)) !important; }
+
+  /* Hover state overrides */
+  .hover\:bg-white:hover { background-color: hsl(var(--card)) !important; }
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-100:hover,
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover { background-color: hsl(var(--muted)) !important; }
+  .hover\:bg-gray-200:hover,
+  .hover\:bg-slate-200:hover { background-color: hsl(var(--border)) !important; }
+  .hover\:border-gray-300:hover,
+  .hover\:border-slate-300:hover { border-color: hsl(var(--border)) !important; }
+  .hover\:text-gray-700:hover,
+  .hover\:text-slate-700:hover { color: hsl(var(--foreground) / 0.85) !important; }
+  .hover\:text-gray-900:hover,
+  .hover\:text-slate-900:hover { color: hsl(var(--foreground)) !important; }
+
+  /* Divide overrides */
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+  .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: hsl(var(--border)) !important; }
+
+  /* Focus overrides */
+  .focus\:ring-gray-500:focus,
+  .focus\:ring-slate-500:focus { --tw-ring-color: hsl(var(--ring) / 0.5) !important; }
+  .focus\:ring-indigo-500:focus { --tw-ring-color: hsl(var(--ring)) !important; }
 }
 
 @layer components {
@@ -116,7 +167,7 @@
    * CARD COMPONENTS
    * ========================================== */
   .card {
-    @apply bg-white rounded-3xl shadow-soft p-6 md:p-8;
+    @apply bg-[hsl(var(--card))] rounded-3xl shadow-soft p-6 md:p-8;
   }
 
   .card-hover {
@@ -128,7 +179,7 @@
   }
 
   .card-bordered {
-    @apply bg-white rounded-3xl border border-aivo-gray-200 p-6 md:p-8;
+    @apply bg-[hsl(var(--card))] rounded-3xl border border-[hsl(var(--border))] p-6 md:p-8;
   }
 
   /* ==========================================
@@ -151,15 +202,15 @@
   }
 
   .btn-outline {
-    @apply btn border-2 border-aivo-gray-200 bg-white text-aivo-gray-700 px-6 py-3 hover:border-theme-primary-500 hover:text-theme-primary-600 focus-visible:ring-theme-primary-500;
+    @apply btn border-2 border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground))] px-6 py-3 hover:border-theme-primary-500 hover:text-theme-primary-400 focus-visible:ring-theme-primary-500;
   }
 
   .btn-ghost {
-    @apply btn text-aivo-gray-600 hover:text-theme-primary-600 hover:bg-theme-primary-50 px-4 py-2;
+    @apply btn text-[hsl(var(--muted-foreground))] hover:text-theme-primary-400 hover:bg-theme-primary-500/10 px-4 py-2;
   }
 
   .btn-secondary {
-    @apply btn bg-aivo-gray-100 text-aivo-gray-900 px-6 py-3 hover:bg-aivo-gray-200 focus-visible:ring-aivo-gray-500;
+    @apply btn bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] px-6 py-3 hover:bg-[hsl(var(--accent))] focus-visible:ring-aivo-gray-500;
   }
 
   .btn-mint {
@@ -214,31 +265,31 @@
    * TYPOGRAPHY COMPONENTS
    * ========================================== */
   .heading-display {
-    @apply font-display tracking-tight text-aivo-gray-900;
+    @apply font-display tracking-tight text-[hsl(var(--foreground))];
   }
 
   .heading-section {
-    @apply font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-aivo-gray-900;
+    @apply font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-[hsl(var(--foreground))];
   }
 
   .heading-card {
-    @apply font-display text-xl md:text-2xl font-semibold text-aivo-gray-900;
+    @apply font-display text-xl md:text-2xl font-semibold text-[hsl(var(--foreground))];
   }
 
   .heading-subsection {
-    @apply font-display text-2xl md:text-3xl font-semibold text-aivo-gray-900;
+    @apply font-display text-2xl md:text-3xl font-semibold text-[hsl(var(--foreground))];
   }
 
   .text-body {
-    @apply text-aivo-gray-600 leading-relaxed;
+    @apply text-[hsl(var(--muted-foreground))] leading-relaxed;
   }
 
   .text-body-lg {
-    @apply text-lg md:text-xl text-aivo-gray-600 leading-relaxed;
+    @apply text-lg md:text-xl text-[hsl(var(--muted-foreground))] leading-relaxed;
   }
 
   .text-body-sm {
-    @apply text-sm text-aivo-gray-500 leading-relaxed;
+    @apply text-sm text-[hsl(var(--muted-foreground))] leading-relaxed;
   }
 
   /* ==========================================
@@ -256,7 +307,7 @@
    * INPUT COMPONENTS
    * ========================================== */
   .input {
-    @apply w-full rounded-xl border border-aivo-gray-300 px-4 py-3 text-aivo-gray-900 placeholder:text-aivo-gray-400 focus:border-theme-primary-500 focus:ring-2 focus:ring-theme-primary-500/20 focus:outline-none transition-all;
+    @apply w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 py-3 text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:border-theme-primary-500 focus:ring-2 focus:ring-theme-primary-500/20 focus:outline-none transition-all;
   }
 
   .input-lg {
@@ -267,11 +318,11 @@
    * DIVIDER COMPONENTS
    * ========================================== */
   .divider {
-    @apply h-px w-full bg-aivo-gray-200;
+    @apply h-px w-full bg-[hsl(var(--border))];
   }
 
   .divider-vertical {
-    @apply w-px h-full bg-aivo-gray-200;
+    @apply w-px h-full bg-[hsl(var(--border))];
   }
 
   /* ==========================================
@@ -312,7 +363,7 @@
   }
 
   .testimonial-quote {
-    @apply text-lg text-aivo-gray-700 italic leading-relaxed;
+    @apply text-lg text-[hsl(var(--muted-foreground))] italic leading-relaxed;
   }
 
   /* ==========================================
@@ -334,11 +385,11 @@
    * NAVIGATION COMPONENTS
    * ========================================== */
   .nav-link {
-    @apply text-aivo-gray-600 hover:text-theme-primary-600 font-medium transition-colors px-3 py-2;
+    @apply text-[hsl(var(--muted-foreground))] hover:text-theme-primary-400 font-medium transition-colors px-3 py-2;
   }
 
   .nav-link-active {
-    @apply text-theme-primary-600 font-semibold;
+    @apply text-theme-primary-400 font-semibold;
   }
 
   /* ==========================================

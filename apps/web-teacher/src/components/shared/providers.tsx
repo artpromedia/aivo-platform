@@ -16,7 +16,7 @@ import {
   OfflineBanner,
   useNetworkStatus,
 } from '@aivo/ui/components';
-import { GradeThemeProvider, AccessibilityProvider } from '@aivo/ui-web';
+import { GradeThemeProvider, AccessibilityProvider, ToastProvider, ConfirmProvider } from '@aivo/ui-web';
 import { WebPushProvider } from '@aivo/ui-web/components/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -149,7 +149,11 @@ export function Providers({ children, initialAuth }: ProvidersProps) {
                   registerEndpoint="/api/notifications/push/subscribe"
                   unregisterEndpoint="/api/notifications/push/unsubscribe"
                 >
-                  <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
+                  <ToastProvider>
+                    <ConfirmProvider>
+                      <NetworkStatusWrapper>{children}</NetworkStatusWrapper>
+                    </ConfirmProvider>
+                  </ToastProvider>
                 </WebPushProvider>
               </AccessibilityProvider>
             </GradeThemeProvider>

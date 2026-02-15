@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 
+import { useConfirm } from '@aivo/ui-web';
+
 import type {
   EffectivePolicy,
   Policy,
@@ -69,6 +71,7 @@ const DEFAULT_RETENTION_POLICY: RetentionPolicy = {
 
 export function PolicyTab({ tenantId, effectivePolicy, tenantOverride }: PolicyTabProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [activeSection, setActiveSection] = useState<PolicySection>('safety');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -108,13 +111,13 @@ export function PolicyTab({ tenantId, effectivePolicy, tenantOverride }: PolicyT
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to remove the tenant policy override? This will revert to global defaults.'
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: 'Remove Policy Override',
+      description: 'Are you sure you want to remove the tenant policy override? This will revert to global defaults.',
+      confirmLabel: 'Remove Override',
+      variant: 'destructive',
+    });
+    if (!ok) return;
 
     setIsSaving(true);
     setError(null);

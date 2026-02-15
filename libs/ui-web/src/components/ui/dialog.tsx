@@ -60,17 +60,17 @@ export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div
-          className="fixed inset-0 bg-black/50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           onClick={() => context.setOpen(false)}
         />
         <div
           ref={ref}
-          className={`relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg ${className ?? ''}`}
+          className={`relative z-50 grid w-full max-w-lg gap-4 border border-[rgb(var(--color-border))] bg-[rgb(var(--color-surface))] p-6 shadow-[var(--shadow-elevated)] sm:rounded-[var(--radius-modal)] text-[rgb(var(--color-text))] ${className ?? ''}`}
           {...props}
         >
           {children}
           <button
-            className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
+            className="absolute right-4 top-4 rounded-sm opacity-50 hover:opacity-100 text-[rgb(var(--color-text-muted))] transition-opacity"
             onClick={() => context.setOpen(false)}
           >
             <span className="sr-only">Close</span>
@@ -120,7 +120,7 @@ export const DialogDescription = React.forwardRef<HTMLParagraphElement, React.HT
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={`text-sm text-muted-foreground ${className ?? ''}`}
+      className={`text-sm text-[rgb(var(--color-text-muted))] ${className ?? ''}`}
       {...props}
     />
   )
