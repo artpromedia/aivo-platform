@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
-// AIVO Compliance Service - Prisma Schema
+// AIVO Compliance Service - Unified Prisma Schema
 // ══════════════════════════════════════════════════════════════════════════════
-// Multi-framework compliance monitoring and dashboard
+// Consolidated: compliance + consent (COPPA) + legal-hold + DSR modules
 
 generator client {
   provider      = "prisma-client-js"
@@ -782,4 +782,786 @@ model BreachAuditLog {
   
   @@index([breachId])
   @@index([tenantId, createdAt])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CONSENT MODULE (formerly consent-svc) — COPPA/FERPA consent management
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ConsentStatus {
+  PENDING
+  GRANTED
+  DENIED
+  REVOKED
+  EXPIRED
+}
+
+enum ConsentType {
+  COPPA
+  FERPA
+  MARKETING
+  DATA_SHARING
+  ANALYTICS
+  THIRD_PARTY
+  AI_FEATURES
+  COMMUNICATION
+}
+
+enum ConsentSource {
+  PARENT_PORTAL
+  EMAIL_LINK
+  PAPER_FORM
+  IN_PERSON
+  BULK_IMPORT
+  SCHOOL_ADMIN
+  API
+}
+
+model Consent {
+  id                String        @id @default(uuid()) @db.Uuid
+  tenantId          String        @db.Uuid
+  learnerId         String        @db.Uuid
+  parentId          String?       @db.Uuid
+  consentType       ConsentType
+  status            ConsentStatus @default(PENDING)
+  consentedAt       DateTime?
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  consentSource     ConsentSource
+  ipAddress         String?
+  userAgent         String?
+  version           Int           @default(1)
+  documentVersion   String?
+  legalGuardianName String?
+  relationship      String?
+  signatureData     String?
+  notes             String?
+  metadataJson      Json          @default("{}")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  auditLogs ConsentAuditLog[]
+
+  @@unique([tenantId, learnerId, consentType])
+  @@index([tenantId, learnerId])
+  @@index([tenantId, status])
+  @@index([expiresAt])
+  @@map("consents")
+}
+
+model ConsentAuditLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  consentId       String   @db.Uuid
+  tenantId        String   @db.Uuid
+  action          String
+  previousStatus  String?
+  newStatus       String?
+  performedBy     String   @db.Uuid
+  performedByRole String
+  ipAddress       String?
+  userAgent       String?
+  reason          String?
+  metadataJson    Json     @default("{}")
+  createdAt       DateTime @default(now())
+
+  consent Consent @relation(fields: [consentId], references: [id], onDelete: Cascade)
+
+  @@index([consentId])
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([performedBy])
+  @@map("consent_audit_log")
+}
+
+model ConsentLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  learnerId   String   @db.Uuid
+  parentEmail String
+  consentType String
+  grantedAt   DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
+  source      String   @default("WEB")
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, learnerId])
+  @@map("consent_logs")
+}
+
+model ParentalConsentLink {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @db.Uuid
+  learnerId      String    @db.Uuid
+  parentEmail    String
+  consentTypes   String[]  @default([])
+  token          String    @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  reminderSentAt DateTime?
+  reminderCount  Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  @@index([token])
+  @@index([tenantId, learnerId])
+  @@index([expiresAt])
+  @@map("parental_consent_links")
+}
+
+model ConsentVerificationMethod {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+  name              String
+  methodType        String
+  description       String?
+  isActive          Boolean  @default(true)
+  isDefault         Boolean  @default(false)
+  config            Json     @default("{}")
+  verificationLevel String   @default("STANDARD")
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([tenantId, methodType])
+  @@index([tenantId, isActive])
+  @@map("consent_verification_methods")
+}
+
+model ConsentStatusCache {
+  tenantId              String   @db.Uuid
+  learnerId             String   @db.Uuid
+  hasCoppaConsent       Boolean  @default(false)
+  hasFerpaConsent       Boolean  @default(false)
+  hasMarketingConsent   Boolean  @default(false)
+  hasDataSharingConsent Boolean  @default(false)
+  hasAiFeatures         Boolean  @default(false)
+  consentSummary        Json     @default("{}")
+  lastUpdatedAt         DateTime @default(now())
+
+  @@id([tenantId, learnerId])
+  @@map("consent_status_cache")
+}
+
+model TenantCoppaSettings {
+  tenantId                   String   @id @db.Uuid
+  requireVerifiableConsent   Boolean  @default(true)
+  defaultConsentExpiry       Int      @default(365)
+  allowedVerificationMethods String[] @default(["EMAIL", "PHONE"])
+  reminderEnabled            Boolean  @default(true)
+  reminderDays               Int[]    @default([7, 3, 1])
+  graceperiodDays            Int      @default(30)
+  customConsentDocument      String?
+  customPrivacyPolicy        String?
+  notificationEmail          String?
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@map("tenant_coppa_settings")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEGAL HOLD MODULE (formerly legal-hold-svc)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum MatterType {
+  LITIGATION
+  REGULATORY
+  INVESTIGATION
+  AUDIT
+  ARBITRATION
+  COMPLIANCE
+  OTHER
+}
+
+enum MatterStatus {
+  ACTIVE
+  ON_HOLD
+  SETTLED
+  CLOSED
+  ARCHIVED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum HoldStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ISSUED
+  ACTIVE
+  SUSPENDED
+  RELEASED
+  ARCHIVED
+}
+
+enum HoldPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum CustodianStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+}
+
+enum HoldCustodianStatus {
+  PENDING
+  NOTIFIED
+  ACKNOWLEDGED
+  NON_COMPLIANT
+  ESCALATED
+  RELEASED
+  EXEMPT
+}
+
+enum DataSourceType {
+  EMAIL
+  FILE_SHARE
+  SHAREPOINT
+  ONEDRIVE
+  GOOGLE_DRIVE
+  SLACK
+  TEAMS
+  DATABASE
+  APPLICATION
+  ARCHIVE
+  BACKUP
+  OTHER
+}
+
+enum PreservationStatus {
+  PENDING
+  IN_PROGRESS
+  PRESERVED
+  FAILED
+  RELEASED
+}
+
+model LegalMatter {
+  id              String       @id @default(uuid()) @db.Uuid
+  tenantId        String       @db.Uuid
+  matterNumber    String
+  name            String
+  description     String?
+  matterType      MatterType
+  status          MatterStatus @default(ACTIVE)
+  openedAt        DateTime     @default(now())
+  closedAt        DateTime?
+  anticipatedEnd  DateTime?
+  leadCounsel     String?
+  outsideCounsel  String?
+  paralegal       String?
+  jurisdiction    String?
+  caseNumber      String?
+  opposingParty   String?
+  claimAmount     Decimal?     @db.Decimal(15, 2)
+  riskLevel       RiskLevel    @default(MEDIUM)
+  riskNotes       String?
+  tags            String[]
+  metadata        Json?
+  createdBy       String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  holds           LegalHold[]
+  custodians      MatterCustodian[]
+  documents       MatterDocument[]
+  notes           MatterNote[]
+  activities      MatterActivity[]
+
+  @@unique([tenantId, matterNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, matterType])
+  @@index([tenantId, openedAt])
+  @@map("legal_matters")
+}
+
+model LegalHold {
+  id                  String       @id @default(uuid()) @db.Uuid
+  tenantId            String       @db.Uuid
+  matterId            String       @db.Uuid
+  holdNumber          String
+  name                String
+  description         String?
+  status              HoldStatus   @default(DRAFT)
+  scopeDescription    String?
+  dataTypes           String[]
+  dateRangeStart      DateTime?
+  dateRangeEnd        DateTime?
+  keywords            String[]
+  issuedAt            DateTime?
+  effectiveAt         DateTime?
+  releasedAt          DateTime?
+  notificationSubject String?
+  notificationBody    String?      @db.Text
+  reminderFrequency   Int?
+  escalationAfter     Int?
+  acknowledgmentDue   DateTime?
+  complianceDeadline  DateTime?
+  isConfidential      Boolean      @default(false)
+  priority            HoldPriority @default(NORMAL)
+  tags                String[]
+  metadata            Json?
+  createdBy           String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  matter              LegalMatter  @relation(fields: [matterId], references: [id])
+  custodians          HoldCustodian[]
+  dataSources         HoldDataSource[]
+  notifications       HoldNotification[]
+  acknowledgments     HoldAcknowledgment[]
+  releases            HoldRelease[]
+  auditLog            HoldAuditLog[]
+
+  @@unique([tenantId, holdNumber])
+  @@index([tenantId, status])
+  @@index([tenantId, matterId])
+  @@index([tenantId, issuedAt])
+  @@map("legal_holds")
+}
+
+model Custodian {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  userId          String?
+  employeeId      String?
+  email           String
+  firstName       String
+  lastName        String
+  displayName     String
+  department      String?
+  title           String?
+  location        String?
+  manager         String?
+  phone           String?
+  alternateEmail  String?
+  status          CustodianStatus @default(ACTIVE)
+  hireDate        DateTime?
+  terminationDate DateTime?
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  matters         MatterCustodian[]
+  holds           HoldCustodian[]
+  dataSources     CustodianDataSource[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, status])
+  @@index([tenantId, department])
+  @@index([tenantId, userId])
+  @@map("custodians")
+}
+
+model MatterCustodian {
+  id          String      @id @default(uuid()) @db.Uuid
+  matterId    String      @db.Uuid
+  custodianId String      @db.Uuid
+  role        String?
+  relevance   String?
+  notes       String?
+  addedAt     DateTime    @default(now())
+  addedBy     String
+  removedAt   DateTime?
+  removedBy   String?
+
+  matter      LegalMatter @relation(fields: [matterId], references: [id])
+  custodian   Custodian   @relation(fields: [custodianId], references: [id])
+
+  @@unique([matterId, custodianId])
+  @@index([matterId])
+  @@index([custodianId])
+  @@map("matter_custodians")
+}
+
+model HoldCustodian {
+  id                  String              @id @default(uuid()) @db.Uuid
+  holdId              String              @db.Uuid
+  custodianId         String              @db.Uuid
+  status              HoldCustodianStatus @default(PENDING)
+  notifiedAt          DateTime?
+  notificationMethod  String?
+  reminderCount       Int                 @default(0)
+  lastReminderAt      DateTime?
+  escalatedAt         DateTime?
+  escalatedTo         String?
+  acknowledgedAt      DateTime?
+  acknowledgmentNotes String?
+  releasedAt          DateTime?
+  releaseReason       String?
+  releasedBy          String?
+  notes               String?
+  metadata            Json?
+  addedAt             DateTime            @default(now())
+  addedBy             String
+
+  hold      LegalHold @relation(fields: [holdId], references: [id])
+  custodian Custodian @relation(fields: [custodianId], references: [id])
+
+  @@unique([holdId, custodianId])
+  @@index([holdId, status])
+  @@index([custodianId])
+  @@map("hold_custodians")
+}
+
+model DataSource {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  name           String
+  description    String?
+  sourceType     DataSourceType
+  connectionInfo Json?
+  canPreserve    Boolean        @default(true)
+  canExport      Boolean        @default(true)
+  canSearch      Boolean        @default(true)
+  isActive       Boolean        @default(true)
+  lastSyncAt     DateTime?
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  custodians CustodianDataSource[]
+  holds      HoldDataSource[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId, sourceType])
+  @@map("data_sources")
+}
+
+model CustodianDataSource {
+  id            String     @id @default(uuid()) @db.Uuid
+  custodianId   String     @db.Uuid
+  dataSourceId  String     @db.Uuid
+  identifier    String?
+  estimatedSize BigInt?
+  itemCount     Int?
+  lastScanned   DateTime?
+
+  custodian  Custodian  @relation(fields: [custodianId], references: [id])
+  dataSource DataSource @relation(fields: [dataSourceId], references: [id])
+
+  @@unique([custodianId, dataSourceId])
+  @@index([custodianId])
+  @@index([dataSourceId])
+  @@map("custodian_data_sources")
+}
+
+model HoldDataSource {
+  id              String             @id @default(uuid()) @db.Uuid
+  holdId          String             @db.Uuid
+  dataSourceId    String             @db.Uuid
+  status          PreservationStatus @default(PENDING)
+  preservedAt     DateTime?
+  preservedBy     String?
+  preservationId  String?
+  itemsPreserved  Int?
+  sizePreserved   BigInt?
+  releasedAt      DateTime?
+  releasedBy      String?
+  notes           String?
+
+  hold       LegalHold  @relation(fields: [holdId], references: [id])
+  dataSource DataSource @relation(fields: [dataSourceId], references: [id])
+
+  @@unique([holdId, dataSourceId])
+  @@index([holdId, status])
+  @@map("hold_data_sources")
+}
+
+model HoldNotification {
+  id               String    @id @default(uuid()) @db.Uuid
+  holdId           String    @db.Uuid
+  tenantId         String    @db.Uuid
+  notificationType String
+  recipientEmail   String
+  recipientName    String?
+  subject          String
+  body             String    @db.Text
+  status           String    @default("PENDING")
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  failureReason    String?
+  retryCount       Int       @default(0)
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  hold LegalHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+
+  @@index([holdId])
+  @@index([tenantId, status])
+  @@map("hold_notifications")
+}
+
+model HoldAcknowledgment {
+  id                  String    @id @default(uuid()) @db.Uuid
+  holdId              String    @db.Uuid
+  tenantId            String    @db.Uuid
+  custodianId         String    @db.Uuid
+  token               String    @unique
+  acknowledgedAt      DateTime?
+  ipAddress           String?
+  userAgent           String?
+  acknowledgmentNotes String?
+  isValid             Boolean   @default(true)
+  expiresAt           DateTime
+  createdAt           DateTime  @default(now())
+
+  hold LegalHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+
+  @@index([holdId])
+  @@index([token])
+  @@map("hold_acknowledgments")
+}
+
+model HoldRelease {
+  id          String   @id @default(uuid()) @db.Uuid
+  holdId      String   @db.Uuid
+  tenantId    String   @db.Uuid
+  releaseType String
+  releasedBy  String   @db.Uuid
+  reason      String?
+  notes       String?
+  effectiveAt DateTime @default(now())
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  hold LegalHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+
+  @@index([holdId])
+  @@map("hold_releases")
+}
+
+model HoldAuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  holdId      String   @db.Uuid
+  tenantId    String   @db.Uuid
+  action      String
+  performedBy String?  @db.Uuid
+  ipAddress   String?
+  userAgent   String?
+  details     Json?
+  createdAt   DateTime @default(now())
+
+  hold LegalHold @relation(fields: [holdId], references: [id], onDelete: Cascade)
+
+  @@index([holdId])
+  @@index([tenantId, createdAt])
+  @@map("hold_audit_log")
+}
+
+model MatterDocument {
+  id          String      @id @default(uuid()) @db.Uuid
+  matterId    String      @db.Uuid
+  tenantId    String      @db.Uuid
+  title       String
+  description String?
+  fileUrl     String?
+  fileName    String?
+  fileSize    Int?
+  mimeType    String?
+  uploadedBy  String      @db.Uuid
+  tags        String[]
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  matter LegalMatter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@index([tenantId])
+  @@map("matter_documents")
+}
+
+model MatterNote {
+  id        String      @id @default(uuid()) @db.Uuid
+  matterId  String      @db.Uuid
+  tenantId  String      @db.Uuid
+  content   String      @db.Text
+  createdBy String      @db.Uuid
+  isPrivate Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  matter LegalMatter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@map("matter_notes")
+}
+
+model MatterActivity {
+  id           String      @id @default(uuid()) @db.Uuid
+  matterId     String      @db.Uuid
+  tenantId     String      @db.Uuid
+  activityType String
+  description  String
+  performedBy  String?     @db.Uuid
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  matter LegalMatter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@index([tenantId, createdAt])
+  @@map("matter_activities")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DSR MODULE (formerly dsr-svc) — Data Subject Requests (GDPR/CCPA)
+// ══════════════════════════════════════════════════════════════════════════════
+
+model DsrRequest {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @db.Uuid
+  requestType        String    // ACCESS, DELETE, RECTIFY, PORTABILITY, RESTRICT
+  status             String    @default("PENDING")
+  requesterId        String    @db.Uuid
+  requesterEmail     String
+  requesterRole      String
+  subjectId          String    @db.Uuid
+  subjectType        String
+  relationship       String?
+  verificationMethod String?
+  verifiedAt         DateTime?
+  verifiedBy         String?   @db.Uuid
+  assignedTo         String?   @db.Uuid
+  priority           String    @default("NORMAL")
+  dueDate            DateTime
+  completedAt        DateTime?
+  completedBy        String?   @db.Uuid
+  rejectionReason    String?
+  notes              String?
+  metadataJson       Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  jobs      DsrJob[]
+  artifacts DsrExportArtifact[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, subjectId])
+  @@index([status, dueDate])
+  @@index([createdAt(sort: Desc)])
+  @@map("dsr_requests")
+}
+
+model DsrJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  requestId      String    @db.Uuid
+  tenantId       String    @db.Uuid
+  serviceName    String
+  jobType        String
+  status         String    @default("PENDING")
+  progress       Int       @default(0)
+  itemsProcessed Int       @default(0)
+  itemsTotal     Int       @default(0)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  error          String?
+  resultSummary  Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  request DsrRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([tenantId, status])
+  @@index([serviceName, status])
+  @@map("dsr_jobs")
+}
+
+model DsrExportArtifact {
+  id            String    @id @default(uuid()) @db.Uuid
+  requestId     String    @db.Uuid
+  tenantId      String    @db.Uuid
+  serviceName   String
+  artifactType  String
+  fileName      String
+  filePath      String?
+  storageUrl    String?
+  fileSizeBytes BigInt    @default(0)
+  checksum      String?
+  encryptionKey String?
+  expiresAt     DateTime
+  downloadedAt  DateTime?
+  downloadCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  request DsrRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([tenantId])
+  @@index([expiresAt])
+  @@map("dsr_export_artifacts")
+}
+
+model DataExport {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  dsrRequestId      String?   @db.Uuid
+  subjectId         String    @db.Uuid
+  subjectType       String
+  format            String
+  categories        Json      @default("[]")
+  dateRangeFrom     DateTime?
+  dateRangeTo       DateTime?
+  includeMetadata   Boolean   @default(true)
+  encryptExport     Boolean   @default(false)
+  encryptionKeyId   String?
+  status            String    @default("PENDING")
+  progress          Int       @default(0)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  failedAt          DateTime?
+  failureReason     String?
+  outputPath        String?
+  outputSize        BigInt?
+  checksum          String?
+  downloadUrl       String?
+  downloadExpiresAt DateTime?
+  downloadCount     Int       @default(0)
+  requestedByUserId String    @db.Uuid
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  jobs ExportJob[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, subjectId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("data_exports")
+}
+
+model ExportJob {
+  id          String    @id @default(uuid()) @db.Uuid
+  exportId    String    @db.Uuid
+  tenantId    String    @db.Uuid
+  status      String    @default("QUEUED")
+  priority    String    @default("NORMAL")
+  workerId    String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(3)
+  lastError   String?
+  nextRetryAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  export DataExport @relation(fields: [exportId], references: [id], onDelete: Cascade)
+
+  @@index([status, priority])
+  @@index([exportId])
+  @@index([tenantId])
+  @@map("export_jobs")
 }

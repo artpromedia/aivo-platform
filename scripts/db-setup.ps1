@@ -87,8 +87,7 @@ $ServiceOrder = @(
     "sis-sync-svc"         # SIS synchronization
     
     # 12. Safety & Compliance
-    "consent-svc"          # Consent management
-    "dsr-svc"              # Data subject requests (GDPR/CCPA)
+    "compliance-svc"       # Unified compliance (consent, legal-hold, DSR)
     
     # 13. Tools & Sandbox
     "embedded-tools-svc"   # Embedded tool configurations

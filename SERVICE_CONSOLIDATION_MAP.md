@@ -47,13 +47,13 @@ These services are required for the IEP & Communications Web App MVP.
 
 These services have overlapping domains and will be merged into a single service each.
 
-### Compliance Domain
+### Compliance Domain ✅ DONE (Sprint 2)
 
 ```
-compliance-svc (Fastify)  ← PRIMARY, absorbs:
-  + consent-svc (Fastify)
-  + legal-hold-svc (Fastify)
-  + dsr-svc (Fastify)
+compliance-svc (Fastify)  ← PRIMARY, absorbed:
+  ✅ consent-svc (Fastify)   → modules/coppa/
+  ✅ legal-hold-svc (Fastify) → modules/legal-hold/
+  ✅ dsr-svc (Fastify)        → modules/dsr/
 ```
 
 **Result:** 4 services → 1 service (`compliance-svc`)

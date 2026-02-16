@@ -1,24 +1,38 @@
 /**
  * AIVO Compliance Service - Entry Point
  *
- * Multi-framework compliance monitoring and dashboard.
+ * Unified compliance service: core monitoring, COPPA/consent,
+ * legal-hold management, and Data Subject Requests (DSR).
  */
 
 import 'dotenv/config';
 import { createApp } from './app.js';
 import { config } from './config.js';
+import { closePool } from './modules/shared/db.js';
+import { createDsrWorker } from './modules/dsr/worker.js';
+import { startGracePeriodScheduler, stopGracePeriodScheduler } from './modules/dsr/scheduler.js';
 import { prisma } from './prisma.js';
 
 async function main() {
   const app = createApp();
+
+  // Start DSR background worker
+  const dsrWorker = createDsrWorker();
+  dsrWorker.start();
+
+  // Start DSR grace-period scheduler
+  startGracePeriodScheduler();
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`Received ${signal}, shutting down gracefully...`);
 
     try {
+      dsrWorker.stop();
+      stopGracePeriodScheduler();
       await app.close();
       await prisma.$disconnect();
+      await closePool();
       console.log('Shutdown complete');
       process.exit(0);
     } catch (error) {
@@ -46,6 +60,7 @@ async function main() {
   } catch (error) {
     console.error('Failed to start server:', error);
     await prisma.$disconnect();
+    await closePool();
     process.exit(1);
   }
 }

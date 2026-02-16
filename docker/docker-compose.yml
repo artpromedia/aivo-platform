@@ -287,23 +287,8 @@ services:
       <<: *healthcheck-defaults
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
-  consent-svc:
-    <<: *node-service
-    build:
-      context: ..
-      dockerfile: services/consent-svc/Dockerfile
-    ports:
-      - "3004:3000"
-    environment:
-      <<: *common-env
-      SERVICE_NAME: consent-svc
-      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_consent
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+  # consent-svc: MERGED into compliance-svc (Sprint 2 consolidation)
+  # legal-hold-svc: MERGED into compliance-svc (Sprint 2 consolidation)
 
   # ════════════════════════════════════════════════════════════════════════════
   # Content Layer (Tier 2)
@@ -870,17 +855,19 @@ services:
   # Safety & Compliance (Tier 11)
   # ════════════════════════════════════════════════════════════════════════════
 
-  dsr-svc:
+  # dsr-svc: MERGED into compliance-svc (Sprint 2 consolidation)
+
+  compliance-svc:
     <<: *node-service
     build:
       context: ..
-      dockerfile: services/dsr-svc/Dockerfile
+      dockerfile: services/compliance-svc/Dockerfile
     ports:
-      - "3100:3000"
+      - "3052:3000"
     environment:
       <<: *common-env
-      SERVICE_NAME: dsr-svc
-      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_consent
+      SERVICE_NAME: compliance-svc
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_compliance
     depends_on:
       postgres:
         condition: service_healthy

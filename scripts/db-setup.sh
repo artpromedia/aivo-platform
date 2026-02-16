@@ -85,8 +85,7 @@ SERVICES=(
     "sis-sync-svc"
     
     # 12. Safety & Compliance
-    "consent-svc"
-    "dsr-svc"
+    "compliance-svc"
     
     # 13. Tools & Sandbox
     "embedded-tools-svc"
