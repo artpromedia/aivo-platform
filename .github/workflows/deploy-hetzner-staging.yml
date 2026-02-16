@@ -389,6 +389,9 @@ jobs:
             web-learner)
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://app.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_WS_URL=${{ secrets.NEXT_PUBLIC_WS_URL || 'wss://ws.aivolearning.com' }}"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_PARENT_APP_URL=https://parent.aivolearning.com"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_TEACHER_APP_URL=https://teacher.aivolearning.com"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_MARKETING_URL=https://aivolearning.com"
               ;;
             web-teacher)
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://teacher.aivolearning.com"
@@ -397,6 +400,7 @@ jobs:
             web-marketing)
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://app.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_MARKETING_URL=https://aivolearning.com"
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_PARENT_APP_URL=https://parent.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_ANALYTICS_ID=${{ secrets.NEXT_PUBLIC_ANALYTICS_ID || '' }}"
               ;;
             web-parent)

@@ -129,7 +129,7 @@ const staggerContainer = {
 };
 
 export function ForParentsPage() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+  const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
   return (
     <>
@@ -179,7 +179,7 @@ export function ForParentsPage() {
                   className="flex flex-col sm:flex-row items-start gap-4"
                 >
                   <Button variant="coral" size="lg" asChild>
-                    <Link href={`${appUrl}/register`}>
+                    <Link href={`${parentAppUrl}/register`}>
                       Start Free Trial
                       <ArrowRight className="w-5 h-5" />
                     </Link>
@@ -422,7 +422,7 @@ export function ForParentsPage() {
                 neurodiverse learner.
               </p>
               <Button size="lg" className="bg-white text-coral-600 hover:bg-white/90" asChild>
-                <Link href={`${appUrl}/register`}>
+                <Link href={`${parentAppUrl}/register`}>
                   Start Your Free Trial
                   <ArrowRight className="w-5 h-5" />
                 </Link>

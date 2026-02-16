@@ -13,6 +13,7 @@ import type { User, Subscription, AuthSession, CheckoutParams, ApiResponse } fro
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
 const MARKETING_URL = process.env.NEXT_PUBLIC_MARKETING_URL || 'http://localhost:3001';
+const PARENT_APP_URL = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'http://localhost:3005';
 
 /**
  * Whether to use the local proxy (Next.js rewrites) for API requests.
@@ -240,4 +241,4 @@ export const apiClient = new ApiClient(APP_URL);
 export { ApiClient };
 
 // Export constants
-export { APP_URL, MARKETING_URL };
+export { APP_URL, MARKETING_URL, PARENT_APP_URL };

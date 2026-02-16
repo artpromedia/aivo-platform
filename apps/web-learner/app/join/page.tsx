@@ -149,21 +149,13 @@ export default function JoinPage() {
             </p>
             <div className="flex gap-2">
               <a
-                href={
-                  process.env.NEXT_PUBLIC_PARENT_APP_URL
-                    ? `${process.env.NEXT_PUBLIC_PARENT_APP_URL}/register`
-                    : '/access'
-                }
+                href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
                 className="flex-1 py-2 px-3 text-sm text-center border border-[var(--aivo-purple-200)] rounded-lg hover:bg-[var(--aivo-purple-50)] hover:border-[var(--aivo-brand-primary)] transition-colors"
               >
                 👨‍👩‍👧 I&apos;m a Parent
               </a>
               <a
-                href={
-                  process.env.NEXT_PUBLIC_TEACHER_APP_URL
-                    ? `${process.env.NEXT_PUBLIC_TEACHER_APP_URL}/register`
-                    : '/access'
-                }
+                href={`${process.env.NEXT_PUBLIC_TEACHER_APP_URL || 'https://teacher.aivolearning.com'}/register`}
                 className="flex-1 py-2 px-3 text-sm text-center border border-[var(--aivo-purple-200)] rounded-lg hover:bg-[var(--aivo-purple-50)] hover:border-[var(--aivo-brand-primary)] transition-colors"
               >
                 👩‍🏫 I&apos;m a Teacher
@@ -174,12 +166,12 @@ export default function JoinPage() {
 
         {/* Back link */}
         <div className="mt-6 text-center">
-          <Link
-            href="/"
+          <a
+            href={process.env.NEXT_PUBLIC_MARKETING_URL || 'https://aivolearning.com'}
             className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] text-sm font-medium"
           >
             ← Back to home
-          </Link>
+          </a>
         </div>
       </div>
     </div>

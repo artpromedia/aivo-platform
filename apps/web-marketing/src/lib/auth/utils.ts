@@ -1,12 +1,14 @@
 import type { RegistrationContext, PlanId, BillingInterval } from './types';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+const PARENT_APP_URL = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
 /**
  * Build registration URL with context parameters
+ * Routes to the parent app for registration
  */
 export function buildRegistrationUrl(context?: RegistrationContext): string {
-  const baseUrl = `${APP_URL}/register`;
+  const baseUrl = `${PARENT_APP_URL}/register`;
 
   if (!context) return baseUrl;
 
@@ -26,7 +28,7 @@ export function buildRegistrationUrl(context?: RegistrationContext): string {
  * Build login URL with return path
  */
 export function buildLoginUrl(returnUrl?: string): string {
-  const baseUrl = `${APP_URL}/login`;
+  const baseUrl = `${APP_URL}/join`;
 
   if (!returnUrl) return baseUrl;
 

@@ -68,7 +68,7 @@ const itemVariants = {
 };
 
 export function HowItWorks() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+  const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
   return (
     <Section id="how-it-works" background="gray" padding="lg">
@@ -267,7 +267,7 @@ export function HowItWorks() {
         className="mt-16 text-center"
       >
         <Button variant="coral" size="lg" asChild>
-          <Link href={`${appUrl}/register`}>
+          <Link href={`${parentAppUrl}/register`}>
             Start Your Journey Today
             <ArrowRight className="w-5 h-5" />
           </Link>

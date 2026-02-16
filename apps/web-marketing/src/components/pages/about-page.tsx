@@ -114,7 +114,7 @@ const staggerContainer = {
 };
 
 export function AboutPage() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+  const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
   return (
     <>
@@ -407,7 +407,7 @@ export function AboutPage() {
                   className="bg-white text-theme-primary-600 hover:bg-white/90"
                   asChild
                 >
-                  <Link href={`${appUrl}/register`}>
+                  <Link href={`${parentAppUrl}/register`}>
                     Join Early Access
                     <ArrowRight className="w-5 h-5" />
                   </Link>

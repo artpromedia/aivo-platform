@@ -67,13 +67,13 @@ export default function LearnerPortal() {
             <span className="text-[var(--aivo-neutral-500)]">Don&apos;t have a code?</span>
             <div className="flex gap-3">
               <a
-                href={process.env.NEXT_PUBLIC_PARENT_APP_URL ? `${process.env.NEXT_PUBLIC_PARENT_APP_URL}/register` : '/access'}
+                href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
                 className="px-4 py-2 bg-white border border-[var(--aivo-purple-200)] rounded-xl text-[var(--aivo-neutral-700)] font-medium hover:border-[var(--aivo-brand-primary)] hover:text-[var(--aivo-brand-primary)] transition-colors flex items-center gap-2"
               >
                 <span>👨‍👩‍👧</span> Parent Sign Up
               </a>
               <a
-                href={process.env.NEXT_PUBLIC_TEACHER_APP_URL ? `${process.env.NEXT_PUBLIC_TEACHER_APP_URL}/register` : '/access'}
+                href={`${process.env.NEXT_PUBLIC_TEACHER_APP_URL || 'https://teacher.aivolearning.com'}/register`}
                 className="px-4 py-2 bg-white border border-[var(--aivo-purple-200)] rounded-xl text-[var(--aivo-neutral-700)] font-medium hover:border-[var(--aivo-brand-primary)] hover:text-[var(--aivo-brand-primary)] transition-colors flex items-center gap-2"
               >
                 <span>👩‍🏫</span> Teacher Sign Up

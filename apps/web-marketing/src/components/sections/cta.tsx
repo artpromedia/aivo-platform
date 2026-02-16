@@ -29,7 +29,7 @@ const trustPoints = [
 ];
 
 export function CTA() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+  const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
   return (
     <section className="relative py-24 overflow-hidden">
@@ -126,7 +126,7 @@ export function CTA() {
               className="bg-white text-coral-600 hover:bg-white/90 hover:shadow-2xl"
               asChild
             >
-              <Link href={`${appUrl}/register`}>
+              <Link href={`${parentAppUrl}/register`}>
                 Join Early Access
                 <ArrowRight className="w-5 h-5" />
               </Link>

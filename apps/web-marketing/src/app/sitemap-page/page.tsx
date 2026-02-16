@@ -62,9 +62,9 @@ const sitemapData: Record<string, SitemapLink[]> = {
     { title: 'Accessibility Statement', href: '/accessibility-statement' },
   ],
   Account: [
-    { title: 'Login', href: '/login', external: true },
-    { title: 'Register', href: '/register', external: true },
-    { title: 'Dashboard', href: '/dashboard', external: true },
+    { title: 'Login', href: 'https://app.aivolearning.com/join', external: true },
+    { title: 'Register', href: 'https://parent.aivolearning.com/register', external: true },
+    { title: 'Dashboard', href: 'https://app.aivolearning.com/dashboard', external: true },
   ],
 };
 

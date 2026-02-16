@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import { apiClient, APP_URL, MARKETING_URL } from '@/lib/api-client';
+import { apiClient, APP_URL, MARKETING_URL, PARENT_APP_URL } from '@/lib/api-client';
 import type { User, Subscription, BillingInterval, RegistrationParams } from '@/lib/types';
 
 // ============================================
@@ -155,7 +155,8 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
   // Navigation: Register
   // ----------------------------------------
   const navigateToRegister = React.useCallback((params?: RegistrationParams) => {
-    const url = buildUrl(APP_URL, '/register', {
+    // Registration goes to the parent app (parent signup flow)
+    const url = buildUrl(PARENT_APP_URL, '/register', {
       plan: params?.plan,
       interval: params?.interval,
       ref: params?.ref,
@@ -177,7 +178,8 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
   // Navigation: Login
   // ----------------------------------------
   const navigateToLogin = React.useCallback((returnUrl?: string) => {
-    const url = buildUrl(APP_URL, '/login', {
+    // Sign in goes to the learner join page
+    const url = buildUrl(APP_URL, '/join', {
       returnUrl: returnUrl || MARKETING_URL,
     });
 

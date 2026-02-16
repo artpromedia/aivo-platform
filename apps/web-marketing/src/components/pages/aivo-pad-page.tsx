@@ -186,7 +186,7 @@ const staggerContainer = {
 };
 
 export function AivoPadPage() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3004';
+  const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
   return (
     <>
@@ -531,7 +531,7 @@ export function AivoPadPage() {
                 className="bg-white text-theme-primary-600 hover:bg-gray-100 px-8 py-6 text-lg"
                 asChild
               >
-                <Link href={`${appUrl}/checkout?product=aivo-pad-preorder`}>
+                <Link href={`${parentAppUrl}/checkout?product=aivo-pad-preorder`}>
                   <Zap className="w-5 h-5 mr-2" />
                   Pre-Order Now
                 </Link>

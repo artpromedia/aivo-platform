@@ -34,7 +34,7 @@ export default function AccessPage() {
           <div className="space-y-4">
             {/* Parent access */}
             <a
-              href={process.env.NEXT_PUBLIC_PARENT_APP_URL ? `${process.env.NEXT_PUBLIC_PARENT_APP_URL}/register` : '#'}
+              href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
               className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
             >
               <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ export default function AccessPage() {
 
             {/* Teacher access */}
             <a
-              href={process.env.NEXT_PUBLIC_TEACHER_APP_URL ? `${process.env.NEXT_PUBLIC_TEACHER_APP_URL}/register` : '#'}
+              href={`${process.env.NEXT_PUBLIC_TEACHER_APP_URL || 'https://teacher.aivolearning.com'}/register`}
               className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
             >
               <div className="flex items-center gap-4">
