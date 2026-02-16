@@ -9,14 +9,14 @@
 
 ## Framework Audit Summary
 
-| Framework                    | Count | Services                                                                        |
-| ---------------------------- | :---: | ------------------------------------------------------------------------------- |
-| Fastify                      |  63   | Majority of Node.js services                                                    |
-| Python/FastAPI               |  20   | AI/ML services                                                                  |
-| Express                      |   4   | `assessment-svc`, `gradebook-svc`, `brain-orchestrator-svc`, `gamification-svc` |
-| NestJS                       |   3   | `api-gateway`, `parent-svc`, `import-export-svc`                                |
-| Hono                         |   1   | `translation-svc`                                                               |
-| Python module (no framework) |   1   | `auth/` (SSO utility, not a service)                                            |
+| Framework                    | Count | Services                                                                     |
+| ---------------------------- | :---: | ---------------------------------------------------------------------------- |
+| Fastify                      |  67   | Majority of Node.js services (including 4 migrated from Express in Sprint 1) |
+| Python/FastAPI               |  20   | AI/ML services                                                               |
+| ~~Express~~                  |   0   | All migrated to Fastify in Sprint 1                                          |
+| NestJS                       |   3   | `api-gateway`, `parent-svc`, `import-export-svc`                             |
+| Hono                         |   1   | `translation-svc`                                                            |
+| Python module (no framework) |   1   | `auth/` (SSO utility, not a service)                                         |
 
 ---
 
@@ -94,29 +94,29 @@ These services are not needed for Phase 1 launch but contain valuable code for f
 
 ### Session & Assessment Domain
 
-| Service          | Framework | Notes                                  |
-| ---------------- | --------- | -------------------------------------- |
-| `session-svc`    | Fastify   | Learning sessions                      |
-| `assessment-svc` | Express   | Assessments — Express migration target |
-| `baseline-svc`   | Fastify   | Baseline assessments                   |
-| `goal-svc`       | Fastify   | Goal tracking                          |
+| Service          | Framework | Notes                                          |
+| ---------------- | --------- | ---------------------------------------------- |
+| `session-svc`    | Fastify   | Learning sessions                              |
+| `assessment-svc` | Fastify   | Assessments — migrated from Express (Sprint 1) |
+| `baseline-svc`   | Fastify   | Baseline assessments                           |
+| `goal-svc`       | Fastify   | Goal tracking                                  |
 
 ### Engagement Domain (later merge into `engagement-svc`)
 
-| Service            | Framework | Notes                                   |
-| ------------------ | --------- | --------------------------------------- |
-| `engagement-svc`   | Fastify   | Primary engagement service              |
-| `gamification-svc` | Express   | Gamification — Express migration target |
-| `game-gen-svc`     | Fastify   | Game generation                         |
-| `game-library-svc` | Fastify   | Game library                            |
+| Service            | Framework | Notes                                           |
+| ------------------ | --------- | ----------------------------------------------- |
+| `engagement-svc`   | Fastify   | Primary engagement service                      |
+| `gamification-svc` | Fastify   | Gamification — migrated from Express (Sprint 1) |
+| `game-gen-svc`     | Fastify   | Game generation                                 |
+| `game-library-svc` | Fastify   | Game library                                    |
 
 ### AI/ML Domain (later merge into `ai-svc`)
 
-| Service                  | Framework      | Notes                                       |
-| ------------------------ | -------------- | ------------------------------------------- |
-| `ai-orchestrator`        | Fastify        | AI orchestration                            |
-| `brain-engine`           | Python/FastAPI | Core AI engine                              |
-| `brain-orchestrator-svc` | Express        | AI orchestration — Express migration target |
+| Service                  | Framework      | Notes                                               |
+| ------------------------ | -------------- | --------------------------------------------------- |
+| `ai-orchestrator`        | Fastify        | AI orchestration                                    |
+| `brain-engine`           | Python/FastAPI | Core AI engine                                      |
+| `brain-orchestrator-svc` | Fastify        | AI orchestration — migrated from Express (Sprint 1) |
 
 ### Speech Domain (later merge into `speech-svc`)
 
@@ -136,28 +136,28 @@ These services are not needed for Phase 1 launch but contain valuable code for f
 
 ### Individual Freeze
 
-| Service                     | Framework      | Notes                                |
-| --------------------------- | -------------- | ------------------------------------ |
-| `learner-model-svc`         | Fastify        | Learner modeling                     |
-| `personalization-svc`       | Fastify        | Personalization engine               |
-| `orchestrator-svc`          | Fastify        | General orchestration                |
-| `gradebook-svc`             | Express        | Gradebook — Express migration target |
-| `homework-helper-svc`       | Fastify        | Homework assistance                  |
-| `curriculum-svc`            | Fastify        | Curriculum management (TS)           |
-| `curriculum-py-svc`         | Python/FastAPI | Curriculum management (Python)       |
-| `knowledge-graph-svc`       | Python/FastAPI | Knowledge graph                      |
-| `question-generation-svc`   | Python/FastAPI | AI question generation               |
-| `grading-engine`            | Python/FastAPI | AI grading                           |
-| `document-intelligence-svc` | Python/FastAPI | Document processing AI               |
-| `coursework-ingest-svc`     | Fastify        | Coursework ingestion                 |
-| `embedded-tools-svc`        | Fastify        | Embedded tools                       |
-| `life-skills-svc`           | Fastify        | Life skills content                  |
-| `teacher-planning-svc`      | Fastify        | Teacher lesson planning              |
-| `search-svc`                | Fastify        | Search functionality                 |
-| `writing-pad-svc`           | Fastify        | Writing tool                         |
-| `writing-assessment-svc`    | Python/FastAPI | Writing assessment AI                |
-| `translation-svc`           | Hono           | Translation — Hono framework         |
-| `retention-svc`             | Fastify        | Student retention                    |
+| Service                     | Framework      | Notes                                        |
+| --------------------------- | -------------- | -------------------------------------------- |
+| `learner-model-svc`         | Fastify        | Learner modeling                             |
+| `personalization-svc`       | Fastify        | Personalization engine                       |
+| `orchestrator-svc`          | Fastify        | General orchestration                        |
+| `gradebook-svc`             | Fastify        | Gradebook — migrated from Express (Sprint 1) |
+| `homework-helper-svc`       | Fastify        | Homework assistance                          |
+| `curriculum-svc`            | Fastify        | Curriculum management (TS)                   |
+| `curriculum-py-svc`         | Python/FastAPI | Curriculum management (Python)               |
+| `knowledge-graph-svc`       | Python/FastAPI | Knowledge graph                              |
+| `question-generation-svc`   | Python/FastAPI | AI question generation                       |
+| `grading-engine`            | Python/FastAPI | AI grading                                   |
+| `document-intelligence-svc` | Python/FastAPI | Document processing AI                       |
+| `coursework-ingest-svc`     | Fastify        | Coursework ingestion                         |
+| `embedded-tools-svc`        | Fastify        | Embedded tools                               |
+| `life-skills-svc`           | Fastify        | Life skills content                          |
+| `teacher-planning-svc`      | Fastify        | Teacher lesson planning                      |
+| `search-svc`                | Fastify        | Search functionality                         |
+| `writing-pad-svc`           | Fastify        | Writing tool                                 |
+| `writing-assessment-svc`    | Python/FastAPI | Writing assessment AI                        |
+| `translation-svc`           | Hono           | Translation — Hono framework                 |
+| `retention-svc`             | Fastify        | Student retention                            |
 
 **Phase 2 FREEZE total: 39 services**
 

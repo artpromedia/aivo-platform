@@ -3,7 +3,7 @@
  *
  * Mobile-friendly API endpoints for gamification features.
  * Matches Flutter client expectations for badges, rewards, leaderboards.
- * 
+ *
  * Endpoints:
  * - GET /gamification/:learnerId/profile - Get gamification profile
  * - GET /gamification/:learnerId/badges - Get earned badges
@@ -14,18 +14,15 @@
  * - GET /gamification/:learnerId/badges/:badgeId/progress - Get badge progress
  */
 
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { 
-  gamificationService, 
-  achievementService, 
-  streakService, 
+import {
+  gamificationService,
+  achievementService,
+  streakService,
   leaderboardService,
 } from '../services/index.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -111,20 +108,14 @@ interface MobileReward {
 // HELPERS
 // ============================================================================
 
-function getLearnerIdFromAuth(req: Request): string {
+function getLearnerIdFromAuth(request: FastifyRequest): string {
   // In production, extract from JWT
-  const learnerId = req.headers['x-learner-id'] as string;
+  const learnerId = request.headers['x-learner-id'] as string;
   if (!learnerId) {
     throw new Error('Learner ID required');
   }
   return learnerId;
 }
-
-// Async handler wrapper
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
 
 /**
  * Transform backend profile to mobile format
@@ -139,11 +130,13 @@ function transformProfile(profile: any, learnerId: string): MobileGamificationPr
     longestStreak: profile.longestStreak || 0,
     recentBadges: profile.recentAchievements?.map((ach: any) => transformEarnedBadge(ach)) || [],
     totalBadges: profile.totalAchievements || 0,
-    leaderboardPosition: profile.leaderboardRank ? {
-      rank: profile.leaderboardRank,
-      totalParticipants: profile.totalParticipants || 100,
-      scope: 'class',
-    } : null,
+    leaderboardPosition: profile.leaderboardRank
+      ? {
+          rank: profile.leaderboardRank,
+          totalParticipants: profile.totalParticipants || 100,
+          scope: 'class',
+        }
+      : null,
   };
 }
 
@@ -171,72 +164,73 @@ function transformEarnedBadge(achievement: any): MobileEarnedBadge {
 // ROUTES
 // ============================================================================
 
-/**
- * GET /gamification/:learnerId/profile
- * Get gamification profile for a learner
- */
-router.get(
-  '/:learnerId/profile',
-  asyncHandler(async (req: Request, res: Response) => {
-    const paramsResult = learnerIdParamSchema.safeParse(req.params);
-    
-    if (!paramsResult.success) {
-      res.status(400).json({ error: 'Invalid learner ID' });
-      return;
+async function mobileGamificationRoutes(app: FastifyInstance) {
+  /**
+   * GET /gamification/:learnerId/profile
+   * Get gamification profile for a learner
+   */
+  app.get(
+    '/:learnerId/profile',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const paramsResult = learnerIdParamSchema.safeParse(request.params);
+
+      if (!paramsResult.success) {
+        reply.status(400);
+        return { error: 'Invalid learner ID' };
+      }
+
+      const { learnerId } = paramsResult.data;
+
+      try {
+        const [profile, streak] = await Promise.all([
+          gamificationService.getPlayerProfile(learnerId),
+          streakService.getCurrentStreak(learnerId),
+        ]);
+
+        const mobileProfile = transformProfile({ ...profile, ...streak }, learnerId);
+        return mobileProfile;
+      } catch (error) {
+        console.error('Error fetching gamification profile:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch profile' };
+      }
     }
+  );
 
-    const { learnerId } = paramsResult.data;
+  /**
+   * GET /gamification/:learnerId/badges
+   * Get all badges earned by a learner
+   */
+  app.get(
+    '/:learnerId/badges',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const paramsResult = learnerIdParamSchema.safeParse(request.params);
 
-    try {
-      const [profile, streak] = await Promise.all([
-        gamificationService.getPlayerProfile(learnerId),
-        streakService.getCurrentStreak(learnerId),
-      ]);
+      if (!paramsResult.success) {
+        reply.status(400);
+        return { error: 'Invalid learner ID' };
+      }
 
-      const mobileProfile = transformProfile({ ...profile, ...streak }, learnerId);
-      res.json(mobileProfile);
-    } catch (error) {
-      console.error('Error fetching gamification profile:', error);
-      res.status(500).json({ error: 'Failed to fetch profile' });
+      const { learnerId } = paramsResult.data;
+
+      try {
+        const achievements = await achievementService.getPlayerAchievements(learnerId);
+        const badges = achievements.map(transformEarnedBadge);
+
+        return { badges };
+      } catch (error) {
+        console.error('Error fetching earned badges:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch badges' };
+      }
     }
-  })
-);
+  );
 
-/**
- * GET /gamification/:learnerId/badges
- * Get all badges earned by a learner
- */
-router.get(
-  '/:learnerId/badges',
-  asyncHandler(async (req: Request, res: Response) => {
-    const paramsResult = learnerIdParamSchema.safeParse(req.params);
-    
-    if (!paramsResult.success) {
-      res.status(400).json({ error: 'Invalid learner ID' });
-      return;
-    }
-
-    const { learnerId } = paramsResult.data;
-
-    try {
-      const achievements = await achievementService.getPlayerAchievements(learnerId);
-      const badges = achievements.map(transformEarnedBadge);
-
-      res.json({ badges });
-    } catch (error) {
-      console.error('Error fetching earned badges:', error);
-      res.status(500).json({ error: 'Failed to fetch badges' });
-    }
-  })
-);
-
-/**
- * GET /gamification/badges
- * Get all available badges
- */
-router.get(
-  '/badges',
-  asyncHandler(async (_req: Request, res: Response) => {
+  /**
+   * GET /gamification/badges
+   * Get all available badges
+   */
+  app.get('/badges', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       // TODO: Implement getAllAvailableBadges in achievement service
       // For now, return mock data
@@ -283,30 +277,28 @@ router.get(
         },
       ];
 
-      res.json({ badges });
+      return { badges };
     } catch (error) {
       console.error('Error fetching available badges:', error);
-      res.status(500).json({ error: 'Failed to fetch badges' });
+      reply.status(500);
+      return { error: 'Failed to fetch badges' };
     }
-  })
-);
+  });
 
-/**
- * GET /gamification/leaderboard
- * Get leaderboard
- */
-router.get(
-  '/leaderboard',
-  asyncHandler(async (req: Request, res: Response) => {
-    const queryResult = leaderboardQuerySchema.safeParse(req.query);
-    
+  /**
+   * GET /gamification/leaderboard
+   * Get leaderboard
+   */
+  app.get('/leaderboard', async (request: FastifyRequest, reply: FastifyReply) => {
+    const queryResult = leaderboardQuerySchema.safeParse(request.query);
+
     if (!queryResult.success) {
-      res.status(400).json({ error: 'Invalid query parameters' });
-      return;
+      reply.status(400);
+      return { error: 'Invalid query parameters' };
     }
 
     const { scope, limit } = queryResult.data;
-    const currentLearnerId = getLearnerIdFromAuth(req);
+    const currentLearnerId = getLearnerIdFromAuth(request);
 
     try {
       const leaderboard = await leaderboardService.getLeaderboard({
@@ -325,21 +317,19 @@ router.get(
         isCurrentUser: entry.studentId === currentLearnerId,
       }));
 
-      res.json({ entries });
+      return { entries };
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
-      res.status(500).json({ error: 'Failed to fetch leaderboard' });
+      reply.status(500);
+      return { error: 'Failed to fetch leaderboard' };
     }
-  })
-);
+  });
 
-/**
- * GET /gamification/rewards
- * Get available rewards
- */
-router.get(
-  '/rewards',
-  asyncHandler(async (_req: Request, res: Response) => {
+  /**
+   * GET /gamification/rewards
+   * Get available rewards
+   */
+  app.get('/rewards', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
       // TODO: Implement rewards in shop service
       // For now, return mock data
@@ -373,70 +363,76 @@ router.get(
         },
       ];
 
-      res.json({ rewards });
+      return { rewards };
     } catch (error) {
       console.error('Error fetching rewards:', error);
-      res.status(500).json({ error: 'Failed to fetch rewards' });
+      reply.status(500);
+      return { error: 'Failed to fetch rewards' };
     }
-  })
-);
+  });
 
-/**
- * POST /gamification/rewards/:rewardId/redeem
- * Redeem a reward
- */
-router.post(
-  '/rewards/:rewardId/redeem',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { rewardId } = req.params;
-    const learnerId = getLearnerIdFromAuth(req);
+  /**
+   * POST /gamification/rewards/:rewardId/redeem
+   * Redeem a reward
+   */
+  app.post(
+    '/rewards/:rewardId/redeem',
+    async (request: FastifyRequest<{ Params: { rewardId: string } }>, reply: FastifyReply) => {
+      const { rewardId } = request.params;
+      const learnerId = getLearnerIdFromAuth(request);
 
-    try {
-      // TODO: Implement reward redemption in shop service
-      // For now, return mock success
-      console.log(`Learner ${learnerId} redeeming reward ${rewardId}`);
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error redeeming reward:', error);
-      res.status(500).json({ error: 'Failed to redeem reward' });
+      try {
+        // TODO: Implement reward redemption in shop service
+        // For now, return mock success
+        console.log(`Learner ${learnerId} redeeming reward ${rewardId}`);
+
+        return { success: true };
+      } catch (error) {
+        console.error('Error redeeming reward:', error);
+        reply.status(500);
+        return { error: 'Failed to redeem reward' };
+      }
     }
-  })
-);
+  );
 
-/**
- * GET /gamification/:learnerId/badges/:badgeId/progress
- * Get progress towards a specific badge
- */
-router.get(
-  '/:learnerId/badges/:badgeId/progress',
-  asyncHandler(async (req: Request, res: Response) => {
-    const paramsResult = badgeIdParamSchema.safeParse(req.params);
-    
-    if (!paramsResult.success) {
-      res.status(400).json({ error: 'Invalid parameters' });
-      return;
+  /**
+   * GET /gamification/:learnerId/badges/:badgeId/progress
+   * Get progress towards a specific badge
+   */
+  app.get(
+    '/:learnerId/badges/:badgeId/progress',
+    async (
+      request: FastifyRequest<{ Params: { learnerId: string; badgeId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const paramsResult = badgeIdParamSchema.safeParse(request.params);
+
+      if (!paramsResult.success) {
+        reply.status(400);
+        return { error: 'Invalid parameters' };
+      }
+
+      const { learnerId, badgeId } = paramsResult.data;
+
+      try {
+        // TODO: Implement badge progress tracking in achievement service
+        // For now, return mock data
+        const progress = {
+          badgeId,
+          learnerId,
+          progress: 5,
+          target: 10,
+          percentComplete: 0.5,
+        };
+
+        return progress;
+      } catch (error) {
+        console.error('Error fetching badge progress:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch badge progress' };
+      }
     }
+  );
+}
 
-    const { learnerId, badgeId } = paramsResult.data;
-
-    try {
-      // TODO: Implement badge progress tracking in achievement service
-      // For now, return mock data
-      const progress = {
-        badgeId,
-        learnerId,
-        progress: 5,
-        target: 10,
-        percentComplete: 0.5,
-      };
-
-      res.json(progress);
-    } catch (error) {
-      console.error('Error fetching badge progress:', error);
-      res.status(500).json({ error: 'Failed to fetch badge progress' });
-    }
-  })
-);
-
-export default router;
+export default mobileGamificationRoutes;

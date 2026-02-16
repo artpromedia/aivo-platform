@@ -6,13 +6,15 @@
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { gamificationService, achievementService, streakService, challengeService } from '../services/index.js';
-
-const router: IRouter = Router();
+import {
+  gamificationService,
+  achievementService,
+  streakService,
+  challengeService,
+} from '../services/index.js';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -34,52 +36,40 @@ const dailyGoalSchema = z.object({
 });
 
 // ============================================================================
-// MIDDLEWARE
+// HELPERS
 // ============================================================================
 
 // Extract studentId from authenticated request
-const extractStudentId = (req: Request): string => {
-  // In production, this would come from JWT/session
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-// Async handler wrapper
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * GET /api/gamification/profile
- * Get player profile and stats
- */
-router.get(
-  '/profile',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+async function gamificationRoutes(app: FastifyInstance) {
+  /**
+   * GET /api/gamification/profile
+   * Get player profile and stats
+   */
+  app.get('/profile', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const profile = await gamificationService.getPlayerProfile(studentId);
-    res.json({ success: true, data: profile });
-  })
-);
+    return { success: true, data: profile };
+  });
 
-/**
- * GET /api/gamification/dashboard
- * Get full gamification dashboard
- */
-router.get(
-  '/dashboard',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/dashboard
+   * Get full gamification dashboard
+   */
+  app.get('/dashboard', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
-    // Fetch all dashboard data in parallel
     const [profile, achievements, streak, activeChallenges] = await Promise.all([
       gamificationService.getPlayerProfile(studentId),
       achievementService.getPlayerAchievements(studentId),
@@ -87,7 +77,7 @@ router.get(
       challengeService.getActiveProgress(studentId),
     ]);
 
-    res.json({
+    return {
       success: true,
       data: {
         profile,
@@ -95,48 +85,42 @@ router.get(
         streak,
         activeChallenges,
       },
-    });
-  })
-);
+    };
+  });
 
-/**
- * POST /api/gamification/xp
- * Award XP for an activity
- */
-router.post(
-  '/xp',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const data = awardXPSchema.parse(req.body);
+  /**
+   * POST /api/gamification/xp
+   * Award XP for an activity
+   */
+  app.post('/xp', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const data = awardXPSchema.parse(request.body);
 
     const transaction = await gamificationService.awardXP(studentId, data.activityType, {
       bonusXp: data.amount,
       metadata: data.metadata,
     });
 
-    res.json({ success: true, data: transaction });
-  })
-);
+    return { success: true, data: transaction };
+  });
 
-/**
- * GET /api/gamification/levels
- * Get level configuration
- */
-router.get('/levels', (_req: Request, res: Response) => {
-  const { LEVEL_CONFIG } = require('../services/gamification.service.js');
-  res.json({ success: true, data: LEVEL_CONFIG });
-});
+  /**
+   * GET /api/gamification/levels
+   * Get level configuration
+   */
+  app.get('/levels', async (_request: FastifyRequest) => {
+    const { LEVEL_CONFIG } = require('../services/gamification.service.js');
+    return { success: true, data: LEVEL_CONFIG };
+  });
 
-/**
- * GET /api/gamification/xp/history
- * Get XP transaction history
- */
-router.get(
-  '/xp/history',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const limit = Number.parseInt(req.query.limit as string) || 20;
-    const offset = Number.parseInt(req.query.offset as string) || 0;
+  /**
+   * GET /api/gamification/xp/history
+   * Get XP transaction history
+   */
+  app.get('/xp/history', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const limit = Number.parseInt((request.query as any).limit as string) || 20;
+    const offset = Number.parseInt((request.query as any).offset as string) || 0;
 
     const { prisma } = await import('../prisma.js');
     const transactions = await prisma.xPTransaction.findMany({
@@ -146,19 +130,16 @@ router.get(
       skip: offset,
     });
 
-    res.json({ success: true, data: transactions });
-  })
-);
+    return { success: true, data: transactions };
+  });
 
-/**
- * PUT /api/gamification/daily-goal
- * Update daily goal settings
- */
-router.put(
-  '/daily-goal',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const goals = dailyGoalSchema.parse(req.body);
+  /**
+   * PUT /api/gamification/daily-goal
+   * Update daily goal settings
+   */
+  app.put('/daily-goal', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const goals = dailyGoalSchema.parse(request.body);
 
     const { prisma } = await import('../prisma.js');
     const profile = await prisma.playerProfile.update({
@@ -170,21 +151,18 @@ router.put(
       },
     });
 
-    res.json({ success: true, data: profile });
-  })
-);
+    return { success: true, data: profile };
+  });
 
-/**
- * GET /api/gamification/daily-progress
- * Get today's progress towards daily goals
- */
-router.get(
-  '/daily-progress',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/daily-progress
+   * Get today's progress towards daily goals
+   */
+  app.get('/daily-progress', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const progress = await gamificationService.getDailyGoalProgress(studentId);
-    res.json({ success: true, data: progress });
-  })
-);
+    return { success: true, data: progress };
+  });
+}
 
-export default router;
+export default gamificationRoutes;

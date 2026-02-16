@@ -161,6 +161,7 @@ export default [
       "services/auth-svc/**/*.{ts,tsx}",
       "services/billing-svc/**/*.{ts,tsx}",
       "services/benchmarking-svc/**/*.{ts,tsx}",
+      "services/brain-orchestrator-svc/**/*.{ts,tsx}",
       "services/content-svc/**/*.{ts,tsx}",
       "services/edfi-svc/**/*.{ts,tsx}",
       "services/analytics-svc/**/*.{ts,tsx}",

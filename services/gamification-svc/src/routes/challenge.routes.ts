@@ -4,15 +4,10 @@
  * Handles challenge-related API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { challengeService, CHALLENGE_TEMPLATES } from '../services/index.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION
@@ -34,121 +29,98 @@ const classChallengeSchema = z.object({
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * GET /api/gamification/challenges
- * Get all active challenges for the player
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+async function challengeRoutes(app: FastifyInstance) {
+  /**
+   * GET /api/gamification/challenges
+   * Get all active challenges for the player
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const challenges = await challengeService.getActiveProgress(studentId);
-    res.json({ success: true, data: challenges });
-  })
-);
+    return { success: true, data: challenges };
+  });
 
-/**
- * GET /api/gamification/challenges/templates
- * Get available challenge templates
- */
-router.get('/templates', (_req: Request, res: Response) => {
-  res.json({ success: true, data: CHALLENGE_TEMPLATES });
-});
+  /**
+   * GET /api/gamification/challenges/templates
+   * Get available challenge templates
+   */
+  app.get('/templates', async () => {
+    return { success: true, data: CHALLENGE_TEMPLATES };
+  });
 
-/**
- * GET /api/gamification/challenges/daily
- * Get today's daily challenges
- */
-router.get(
-  '/daily',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/challenges/daily
+   * Get today's daily challenges
+   */
+  app.get('/daily', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const challenges = await challengeService.getActiveProgress(studentId);
     const daily = challenges.filter((c) => c.type === 'daily');
-    res.json({ success: true, data: daily });
-  })
-);
+    return { success: true, data: daily };
+  });
 
-/**
- * GET /api/gamification/challenges/weekly
- * Get this week's weekly challenges
- */
-router.get(
-  '/weekly',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/challenges/weekly
+   * Get this week's weekly challenges
+   */
+  app.get('/weekly', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const challenges = await challengeService.getActiveProgress(studentId);
     const weekly = challenges.filter((c) => c.type === 'weekly');
-    res.json({ success: true, data: weekly });
-  })
-);
+    return { success: true, data: weekly };
+  });
 
-/**
- * GET /api/gamification/challenges/monthly
- * Get this month's monthly challenges
- */
-router.get(
-  '/monthly',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/challenges/monthly
+   * Get this month's monthly challenges
+   */
+  app.get('/monthly', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const challenges = await challengeService.getActiveProgress(studentId);
     const monthly = challenges.filter((c) => c.type === 'monthly');
-    res.json({ success: true, data: monthly });
-  })
-);
+    return { success: true, data: monthly };
+  });
 
-/**
- * GET /api/gamification/challenges/class/:classId
- * Get class challenges
- */
-router.get(
-  '/class/:classId',
-  asyncHandler(async (req: Request, res: Response) => {
-    const classId = req.params.classId;
-    const includeEnded = req.query.includeEnded === 'true';
+  /**
+   * GET /api/gamification/challenges/class/:classId
+   * Get class challenges
+   */
+  app.get('/class/:classId', async (request: FastifyRequest<{ Params: { classId: string } }>) => {
+    const classId = request.params.classId;
+    const includeEnded = (request.query as any).includeEnded === 'true';
 
     const { prisma } = await import('../prisma.js');
-    const where = includeEnded
-      ? { classId }
-      : { classId, endDate: { gte: new Date() } };
+    const where = includeEnded ? { classId } : { classId, endDate: { gte: new Date() } };
 
     const challenges = await prisma.classChallenge.findMany({
       where,
       orderBy: { startDate: 'desc' },
     });
 
-    res.json({ success: true, data: challenges });
-  })
-);
+    return { success: true, data: challenges };
+  });
 
-/**
- * POST /api/gamification/challenges/class
- * Create a class challenge (teacher only)
- */
-router.post(
-  '/class',
-  asyncHandler(async (req: Request, res: Response) => {
-    const data = classChallengeSchema.parse(req.body);
+  /**
+   * POST /api/gamification/challenges/class
+   * Create a class challenge (teacher only)
+   */
+  app.post('/class', async (request: FastifyRequest, reply: FastifyReply) => {
+    const data = classChallengeSchema.parse(request.body);
 
     // In production, verify teacher has permission for this class
-    const teacherId = extractStudentId(req); // Using student ID as teacher ID for now
+    const teacherId = extractStudentId(request); // Using student ID as teacher ID for now
     const challenge = await challengeService.createClassChallenge(data.classId, teacherId, {
       name: data.title,
       description: data.description,
@@ -163,57 +135,58 @@ router.post(
       },
     });
 
-    res.status(201).json({ success: true, data: challenge });
-  })
-);
+    reply.status(201);
+    return { success: true, data: challenge };
+  });
 
-/**
- * GET /api/gamification/challenges/class/:classId/:challengeId
- * Get class challenge details with participant progress
- */
-router.get(
-  '/class/:classId/:challengeId',
-  asyncHandler(async (req: Request, res: Response) => {
-    const { challengeId } = req.params;
+  /**
+   * GET /api/gamification/challenges/class/:classId/:challengeId
+   * Get class challenge details with participant progress
+   */
+  app.get(
+    '/class/:classId/:challengeId',
+    async (
+      request: FastifyRequest<{ Params: { classId: string; challengeId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const { challengeId } = request.params;
 
-    const { prisma } = await import('../prisma.js');
-    const challenge = await prisma.classChallenge.findUnique({
-      where: { id: challengeId },
-    });
+      const { prisma } = await import('../prisma.js');
+      const challenge = await prisma.classChallenge.findUnique({
+        where: { id: challengeId },
+      });
 
-    if (!challenge) {
-      res.status(404).json({ success: false, error: 'Challenge not found' });
-      return;
+      if (!challenge) {
+        reply.status(404);
+        return { success: false, error: 'Challenge not found' };
+      }
+
+      // Get participant progress
+      const progress = await prisma.classChallengeProgress.findMany({
+        where: { challengeId },
+        orderBy: { currentProgress: 'desc' },
+      });
+
+      return {
+        success: true,
+        data: {
+          challenge,
+          participants: progress,
+          totalParticipants: progress.length,
+          completedCount: progress.filter((p) => p.completed).length,
+        },
+      };
     }
+  );
 
-    // Get participant progress
-    const progress = await prisma.classChallengeProgress.findMany({
-      where: { challengeId },
-      orderBy: { currentProgress: 'desc' },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        challenge,
-        participants: progress,
-        totalParticipants: progress.length,
-        completedCount: progress.filter((p) => p.completed).length,
-      },
-    });
-  })
-);
-
-/**
- * GET /api/gamification/challenges/completed
- * Get completed challenges history
- */
-router.get(
-  '/completed',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const limit = Number.parseInt(req.query.limit as string) || 20;
-    const offset = Number.parseInt(req.query.offset as string) || 0;
+  /**
+   * GET /api/gamification/challenges/completed
+   * Get completed challenges history
+   */
+  app.get('/completed', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const limit = Number.parseInt((request.query as any).limit as string) || 20;
+    const offset = Number.parseInt((request.query as any).offset as string) || 0;
 
     const { prisma } = await import('../prisma.js');
     const completed = await prisma.activeChallenge.findMany({
@@ -226,44 +199,47 @@ router.get(
       skip: offset,
     });
 
-    res.json({ success: true, data: completed });
-  })
-);
+    return { success: true, data: completed };
+  });
 
-/**
- * GET /api/gamification/challenges/:id
- * Get specific challenge details
- */
-router.get(
-  '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const challengeId = req.params.id;
+  /**
+   * GET /api/gamification/challenges/:id
+   * Get specific challenge details
+   */
+  app.get(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const studentId = extractStudentId(request);
+      const challengeId = request.params.id;
 
-    const { prisma } = await import('../prisma.js');
-    const challenge = await prisma.activeChallenge.findFirst({
-      where: {
-        studentId,
-        id: challengeId,
-      },
-    });
+      const { prisma } = await import('../prisma.js');
+      const challenge = await prisma.activeChallenge.findFirst({
+        where: {
+          studentId,
+          id: challengeId,
+        },
+      });
 
-    if (!challenge) {
-      res.status(404).json({ success: false, error: 'Challenge not found' });
-      return;
+      if (!challenge) {
+        reply.status(404);
+        return { success: false, error: 'Challenge not found' };
+      }
+
+      const template = CHALLENGE_TEMPLATES.find((t) => t.id === challenge.templateId);
+
+      return {
+        success: true,
+        data: {
+          ...challenge,
+          template,
+          progressPercentage: Math.min(
+            100,
+            (challenge.currentProgress / challenge.targetValue) * 100
+          ),
+        },
+      };
     }
+  );
+}
 
-    const template = CHALLENGE_TEMPLATES.find((t) => t.id === challenge.templateId);
-
-    res.json({
-      success: true,
-      data: {
-        ...challenge,
-        template,
-        progressPercentage: Math.min(100, (challenge.currentProgress / challenge.targetValue) * 100),
-      },
-    });
-  })
-);
-
-export default router;
+export default challengeRoutes;

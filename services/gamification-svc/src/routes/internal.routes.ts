@@ -8,13 +8,10 @@
  * @module gamification-svc/routes/internal
  */
 
-import { Router } from 'express';
-import type { Request, Response, NextFunction, IRouter } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
-
-const router: IRouter = Router();
 
 // ════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -43,45 +40,38 @@ interface DeleteResult {
   deletedAt?: string;
 }
 
-// Async handler wrapper
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ════════════════════════════════════════════════════════════════════════════
 // INTERNAL DELETE ENDPOINT
 // ════════════════════════════════════════════════════════════════════════════
 
-/**
- * POST /internal/delete-learner
- *
- * Called by dsr-svc to delete or soft-delete all gamification data for a learner.
- *
- * SOFT mode: Sets deletedAt timestamp (preserves for audit, excludes from queries)
- * HARD mode: Permanently deletes records (full GDPR Article 17 compliance)
- */
-router.post(
-  '/delete-learner',
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+async function internalRoutes(app: FastifyInstance) {
+  /**
+   * POST /internal/delete-learner
+   *
+   * Called by dsr-svc to delete or soft-delete all gamification data for a learner.
+   *
+   * SOFT mode: Sets deletedAt timestamp (preserves for audit, excludes from queries)
+   * HARD mode: Permanently deletes records (full GDPR Article 17 compliance)
+   */
+  app.post('/delete-learner', async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify internal request header
-    const internalHeader = req.headers['x-internal-request'];
+    const internalHeader = request.headers['x-internal-request'];
     if (internalHeader !== 'true') {
-      res.status(403).json({
+      reply.status(403);
+      return {
         error: 'Forbidden',
         message: 'This endpoint is for internal service-to-service calls only',
-      });
-      return;
+      };
     }
 
     // Validate request body
-    const parseResult = DeleteLearnerSchema.safeParse(req.body);
+    const parseResult = DeleteLearnerSchema.safeParse(request.body);
     if (!parseResult.success) {
-      res.status(400).json({
+      reply.status(400);
+      return {
         error: 'Validation Error',
         details: parseResult.error.issues,
-      });
-      return;
+      };
     }
 
     const { tenantId, learnerId, mode } = parseResult.data;
@@ -120,14 +110,13 @@ router.post(
 
       if (!playerProfile) {
         // No data to delete
-        res.json({
+        return {
           success: true,
           recordsDeleted: 0,
           details,
           mode,
           message: 'No gamification data found for learner',
-        } as DeleteResult);
-        return;
+        } as DeleteResult;
       }
 
       if (mode === 'SOFT') {
@@ -188,7 +177,6 @@ router.post(
           data: { deletedAt },
         });
         details.playerProfiles = profileResult.count;
-
       } else {
         // ══════════════════════════════════════════════════════════════════
         // HARD DELETE - Permanently remove records
@@ -260,14 +248,13 @@ router.post(
         })
       );
 
-      res.json({
+      return {
         success: true,
         recordsDeleted: totalRecordsDeleted,
         details,
         mode,
         deletedAt: mode === 'SOFT' ? deletedAt.toISOString() : undefined,
-      } as DeleteResult);
-
+      } as DeleteResult;
     } catch (error) {
       console.error(
         JSON.stringify({
@@ -280,12 +267,13 @@ router.post(
         })
       );
 
-      res.status(500).json({
+      reply.status(500);
+      return {
         error: 'Internal Server Error',
         message: 'Failed to delete learner data',
-      });
+      };
     }
-  })
-);
+  });
+}
 
-export default router;
+export default internalRoutes;

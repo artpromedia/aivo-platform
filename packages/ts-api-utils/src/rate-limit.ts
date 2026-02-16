@@ -189,11 +189,7 @@ export function defaultKeyExtractor(request: unknown): string {
   const forwarded = extractForwardedIp(forwardedFor);
 
   return (
-    req.ip ||
-    forwarded ||
-    req.socket?.remoteAddress ||
-    req.connection?.remoteAddress ||
-    'unknown'
+    req.ip || forwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown'
   );
 }
 
@@ -264,77 +260,6 @@ export function createRateLimiter(options: RateLimitOptions) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// EXPRESS MIDDLEWARE FACTORY
-// ══════════════════════════════════════════════════════════════════════════════
-
-interface ExpressRequest {
-  ip?: string;
-  headers?: Record<string, string | string[] | undefined>;
-  socket?: { remoteAddress?: string };
-}
-
-interface ExpressResponse {
-  set(name: string, value: string | number): ExpressResponse;
-  status(code: number): ExpressResponse;
-  json(payload: unknown): void;
-}
-
-/**
- * Create a rate limiting middleware for Express
- */
-export function createExpressRateLimiter(options: RateLimitOptions) {
-  const {
-    max,
-    windowMs,
-    keyPrefix = 'ratelimit',
-    keyExtractor = defaultKeyExtractor,
-    message = 'Too many requests, please try again later.',
-    skip,
-  } = options;
-
-  // Start cleanup on first use
-  startCleanup();
-
-  return function expressRateLimitMiddleware(
-    req: ExpressRequest,
-    res: ExpressResponse,
-    next: (err?: Error) => void
-  ): void {
-    // Skip if skip function returns true
-    if (skip?.(req)) {
-      next();
-      return;
-    }
-
-    const identifier = keyExtractor(req);
-    const key = `${keyPrefix}:${identifier}`;
-
-    // Check current state
-    const result = checkRateLimit(key, max, windowMs);
-
-    // Set rate limit headers
-    res.set('X-RateLimit-Limit', max);
-    res.set('X-RateLimit-Remaining', result.info.remaining);
-    res.set('X-RateLimit-Reset', Math.ceil(result.info.resetAt / 1000));
-
-    // Record this request
-    recordRequest(key, windowMs);
-
-    if (!result.allowed) {
-      res.set('Retry-After', result.info.retryAfter);
-      res.status(429).json({
-        error: 'Too Many Requests',
-        message,
-        retryAfter: result.info.retryAfter,
-      });
-      return;
-    }
-
-    next();
-  };
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
 // HONO MIDDLEWARE FACTORY
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -364,7 +289,7 @@ export function createHonoRateLimiter(options: RateLimitOptions) {
   return async function honoRateLimitMiddleware(
     c: HonoContext,
     next: () => Promise<void>
-  ): Promise<Response | void> {
+  ): Promise<Response | undefined> {
     // Skip if skip function returns true
     if (skip?.(c)) {
       return next();
@@ -525,9 +450,7 @@ export const RateLimitPresets = {
 /**
  * Create a composite rate limiter that applies multiple limits
  */
-export function createCompositeRateLimiter(
-  limiters: ReturnType<typeof createRateLimiter>[]
-) {
+export function createCompositeRateLimiter(limiters: ReturnType<typeof createRateLimiter>[]) {
   return async function compositeMiddleware(
     request: FastifyRequest,
     reply: FastifyReply
@@ -541,11 +464,7 @@ export function createCompositeRateLimiter(
 /**
  * Get rate limit info for a key without recording a request
  */
-export function getRateLimitInfo(
-  key: string,
-  max: number,
-  windowMs: number
-): RateLimitInfo {
+export function getRateLimitInfo(key: string, max: number, windowMs: number): RateLimitInfo {
   return checkRateLimit(key, max, windowMs).info;
 }
 
@@ -555,7 +474,6 @@ export function getRateLimitInfo(
 
 export const RateLimit = {
   create: createRateLimiter,
-  createExpress: createExpressRateLimiter,
   createHono: createHonoRateLimiter,
   createComposite: createCompositeRateLimiter,
   check: checkRateLimit,
@@ -724,7 +642,10 @@ export function createStandardAllowList(additionalPaths: string[] = []) {
   ]);
 
   return (request: unknown): boolean => {
-    const req = request as { url?: string; headers?: Record<string, string | string[] | undefined> };
+    const req = request as {
+      url?: string;
+      headers?: Record<string, string | string[] | undefined>;
+    };
     const url = req.url?.split('?')[0] ?? '';
 
     // Skip health/ready endpoints

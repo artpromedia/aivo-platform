@@ -1,18 +1,14 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { TaskOrchestrator } from '../orchestration/task-orchestrator.js';
-import { TaskDecomposer } from '../orchestration/task-decomposer.js';
-import { TaskPrioritizer } from '../orchestration/task-prioritizer.js';
-import { ServiceCoordinator } from '../coordination/service-coordinator.js';
-import { CognitiveLoadManager } from '../cognitive/cognitive-load-manager.js';
-import { getContext } from '../middleware/auth.js';
-import {
-  CreateOrchestrationPlanSchema,
-  AdjustmentReasonSchema,
-} from '../validators/index.js';
-import type { LearnerContext, SchedulingConstraints } from '../types/index.js';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
 
-const router = Router();
+import { CognitiveLoadManager } from '../cognitive/cognitive-load-manager.js';
+import { ServiceCoordinator } from '../coordination/service-coordinator.js';
+import { getContext } from '../middleware/auth.js';
+import { TaskDecomposer } from '../orchestration/task-decomposer.js';
+import { TaskOrchestrator } from '../orchestration/task-orchestrator.js';
+import { TaskPrioritizer } from '../orchestration/task-prioritizer.js';
+import type { LearnerContext } from '../types/index.js';
+import { CreateOrchestrationPlanSchema, AdjustmentReasonSchema } from '../validators/index.js';
 
 // Initialize dependencies
 const cognitiveManager = new CognitiveLoadManager();
@@ -21,16 +17,15 @@ const prioritizer = new TaskPrioritizer();
 const coordinator = new ServiceCoordinator();
 const orchestrator = new TaskOrchestrator(decomposer, prioritizer, coordinator, cognitiveManager);
 
-/**
- * Create an orchestration plan for a learning goal
- * POST /api/v1/brain/orchestrate
- */
-router.post('/orchestrate', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { tenantId, userId } = getContext(req);
-    const input = CreateOrchestrationPlanSchema.parse(req.body);
+async function orchestrationRoutes(app: FastifyInstance) {
+  /**
+   * Create an orchestration plan for a learning goal
+   * POST /api/v1/brain/orchestrate
+   */
+  app.post('/orchestrate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { tenantId, userId: _userId } = getContext(request);
+    const input = CreateOrchestrationPlanSchema.parse(request.body);
 
-    // Build learner context
     const cognitiveState = await cognitiveManager.assessCurrentLoad(input.learnerId, []);
 
     const learnerContext: LearnerContext = {
@@ -67,219 +62,159 @@ router.post('/orchestrate', async (req: Request, res: Response, next: NextFuncti
       learnerContext
     );
 
-    res.status(201).json({
-      success: true,
-      data: plan,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    reply.status(201);
+    return { success: true, data: plan };
+  });
 
-/**
- * Get current plan for a learner
- * GET /api/v1/brain/learners/:learnerId/plan
- */
-router.get('/learners/:learnerId/plan', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { tenantId } = getContext(req);
-    const { learnerId } = req.params;
+  /**
+   * Get current plan for a learner
+   * GET /api/v1/brain/learners/:learnerId/plan
+   */
+  app.get(
+    '/learners/:learnerId/plan',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { tenantId } = getContext(request);
+      const { learnerId } = request.params;
 
-    const { prisma } = await import('../prisma.js');
+      const { prisma } = await import('../prisma.js');
 
-    const plan = await prisma.orchestrationPlan.findFirst({
-      where: {
-        learnerId,
-        tenantId,
-        status: { in: ['draft', 'active', 'paused'] },
-      },
-      include: { tasks: true },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!plan) {
-      res.status(404).json({
-        success: false,
-        error: 'No active plan found for learner',
+      const plan = await prisma.orchestrationPlan.findFirst({
+        where: {
+          learnerId,
+          tenantId,
+          status: { in: ['draft', 'active', 'paused'] },
+        },
+        include: { tasks: true },
+        orderBy: { createdAt: 'desc' },
       });
-      return;
+
+      if (!plan) {
+        reply.status(404);
+        return { success: false, error: 'No active plan found for learner' };
+      }
+
+      return { success: true, data: plan };
     }
+  );
 
-    res.json({
-      success: true,
-      data: plan,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Start a plan
- * POST /api/v1/brain/plans/:planId/start
- */
-router.post('/plans/:planId/start', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-
-    const plan = await orchestrator.startPlan(planId);
-
-    res.json({
-      success: true,
-      data: plan,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Adjust an existing plan
- * POST /api/v1/brain/plans/:planId/adjust
- */
-router.post('/plans/:planId/adjust', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-    const reason = AdjustmentReasonSchema.parse(req.body);
-
-    const adjustedPlan = await orchestrator.adjustPlan(planId, reason);
-
-    res.json({
-      success: true,
-      data: adjustedPlan,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Pause a plan
- * POST /api/v1/brain/plans/:planId/pause
- */
-router.post('/plans/:planId/pause', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-
-    await orchestrator.pausePlan(planId);
-
-    res.json({
-      success: true,
-      message: 'Plan paused successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Resume a plan
- * POST /api/v1/brain/plans/:planId/resume
- */
-router.post('/plans/:planId/resume', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-
-    await orchestrator.resumePlan(planId);
-
-    res.json({
-      success: true,
-      message: 'Plan resumed successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Cancel a plan
- * POST /api/v1/brain/plans/:planId/cancel
- */
-router.post('/plans/:planId/cancel', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-
-    await orchestrator.cancelPlan(planId);
-
-    res.json({
-      success: true,
-      message: 'Plan cancelled successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * Get next task for a plan
- * GET /api/v1/brain/plans/:planId/next-task
- */
-router.get('/plans/:planId/next-task', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
-
-    const nextTask = await orchestrator.getNextTask(planId);
-
-    if (!nextTask) {
-      res.json({
-        success: true,
-        data: null,
-        message: 'No more tasks available',
-      });
-      return;
+  /**
+   * Start a plan
+   * POST /api/v1/brain/plans/:planId/start
+   */
+  app.post(
+    '/plans/:planId/start',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      const plan = await orchestrator.startPlan(planId);
+      return { success: true, data: plan };
     }
+  );
 
-    res.json({
-      success: true,
-      data: nextTask,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+  /**
+   * Adjust an existing plan
+   * POST /api/v1/brain/plans/:planId/adjust
+   */
+  app.post(
+    '/plans/:planId/adjust',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      const reason = AdjustmentReasonSchema.parse(request.body);
+      const adjustedPlan = await orchestrator.adjustPlan(planId, reason);
+      return { success: true, data: adjustedPlan };
+    }
+  );
 
-/**
- * Get plan progress
- * GET /api/v1/brain/plans/:planId/progress
- */
-router.get('/plans/:planId/progress', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { planId } = req.params;
+  /**
+   * Pause a plan
+   * POST /api/v1/brain/plans/:planId/pause
+   */
+  app.post(
+    '/plans/:planId/pause',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      await orchestrator.pausePlan(planId);
+      return { success: true, message: 'Plan paused successfully' };
+    }
+  );
 
-    const progress = await orchestrator.getPlanProgress(planId);
+  /**
+   * Resume a plan
+   * POST /api/v1/brain/plans/:planId/resume
+   */
+  app.post(
+    '/plans/:planId/resume',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      await orchestrator.resumePlan(planId);
+      return { success: true, message: 'Plan resumed successfully' };
+    }
+  );
 
-    res.json({
-      success: true,
-      data: progress,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+  /**
+   * Cancel a plan
+   * POST /api/v1/brain/plans/:planId/cancel
+   */
+  app.post(
+    '/plans/:planId/cancel',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      await orchestrator.cancelPlan(planId);
+      return { success: true, message: 'Plan cancelled successfully' };
+    }
+  );
 
-/**
- * Execute a specific task
- * POST /api/v1/brain/plans/:planId/tasks/:taskId/execute
- */
-router.post(
-  '/plans/:planId/tasks/:taskId/execute',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { tenantId } = getContext(req);
-      const { planId, taskId } = req.params;
+  /**
+   * Get next task for a plan
+   * GET /api/v1/brain/plans/:planId/next-task
+   */
+  app.get(
+    '/plans/:planId/next-task',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      const nextTask = await orchestrator.getNextTask(planId);
 
-      // Build minimal learner context for execution
+      if (!nextTask) {
+        return { success: true, data: null, message: 'No more tasks available' };
+      }
+
+      return { success: true, data: nextTask };
+    }
+  );
+
+  /**
+   * Get plan progress
+   * GET /api/v1/brain/plans/:planId/progress
+   */
+  app.get(
+    '/plans/:planId/progress',
+    async (request: FastifyRequest<{ Params: { planId: string } }>) => {
+      const { planId } = request.params;
+      const progress = await orchestrator.getPlanProgress(planId);
+      return { success: true, data: progress };
+    }
+  );
+
+  /**
+   * Execute a specific task
+   * POST /api/v1/brain/plans/:planId/tasks/:taskId/execute
+   */
+  app.post(
+    '/plans/:planId/tasks/:taskId/execute',
+    async (
+      request: FastifyRequest<{ Params: { planId: string; taskId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const { tenantId } = getContext(request);
+      const { planId, taskId } = request.params;
+
       const { prisma } = await import('../prisma.js');
       const plan = await prisma.orchestrationPlan.findUnique({
         where: { id: planId },
       });
 
       if (!plan) {
-        res.status(404).json({
-          success: false,
-          error: 'Plan not found',
-        });
-        return;
+        reply.status(404);
+        return { success: false, error: 'Plan not found' };
       }
 
       const cognitiveState = await cognitiveManager.assessCurrentLoad(plan.learnerId, []);
@@ -312,14 +247,9 @@ router.post(
 
       const result = await orchestrator.executeTask(planId, taskId, learnerContext);
 
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: result };
     }
-  }
-);
+  );
+}
 
-export { router as orchestrationRoutes };
+export { orchestrationRoutes };

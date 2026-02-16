@@ -4,16 +4,11 @@
  * Handles team/guild-related API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type { TeamType} from '../services/team.service.js';
-import { teamService, TeamMemberRole } from '../services/team.service.js';
-
-const router: IRouter = Router();
+import type { TeamType } from '../services/team.service.js';
+import { teamService } from '../services/team.service.js';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -39,33 +34,26 @@ const updateRoleSchema = z.object({
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const asyncHandler =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * POST /api/gamification/teams
- * Create a new team
- */
-router.post(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const data = createTeamSchema.parse(req.body);
+async function teamRoutes(app: FastifyInstance) {
+  /**
+   * POST /api/gamification/teams
+   * Create a new team
+   */
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const studentId = extractStudentId(request);
+    const data = createTeamSchema.parse(request.body);
 
     const team = await teamService.createTeam({
       name: data.name,
@@ -79,23 +67,21 @@ router.post(
       createdBy: studentId,
     });
 
-    res.status(201).json({
+    reply.status(201);
+    return {
       success: true,
       data: team,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/teams
- * List/search teams
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const query = req.query.q as string;
-    const type = req.query.type as TeamType | undefined;
-    const schoolId = req.query.schoolId as string | undefined;
+  /**
+   * GET /api/gamification/teams
+   * List/search teams
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const query = (request.query as any).q as string;
+    const type = (request.query as any).type as TeamType | undefined;
+    const schoolId = (request.query as any).schoolId as string | undefined;
 
     let teams;
     if (query) {
@@ -107,119 +93,116 @@ router.get(
       teams = await teamService.getTeamLeaderboard({ limit: 20 });
     }
 
-    res.json({
+    return {
       success: true,
       data: teams,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/teams/:id
- * Get team details
- */
-router.get(
-  '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
-    const details = await teamService.getTeamDetails(teamId);
+  /**
+   * GET /api/gamification/teams/:id
+   * Get team details
+   */
+  app.get(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const teamId = request.params.id;
+      const details = await teamService.getTeamDetails(teamId);
 
-    if (!details) {
-      res.status(404).json({
-        success: false,
-        error: 'Team not found',
-      });
-      return;
-    }
+      if (!details) {
+        reply.status(404);
+        return {
+          success: false,
+          error: 'Team not found',
+        };
+      }
 
-    res.json({
-      success: true,
-      data: details,
-    });
-  })
-);
-
-/**
- * POST /api/gamification/teams/:id/join
- * Join a team
- */
-router.post(
-  '/:id/join',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
-    const studentId = extractStudentId(req);
-
-    try {
-      const success = await teamService.joinTeam(teamId, studentId);
-      res.json({
+      return {
         success: true,
-        data: { joined: success },
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to join team',
-      });
+        data: details,
+      };
     }
-  })
-);
+  );
 
-/**
- * POST /api/gamification/teams/:id/leave
- * Leave a team
- */
-router.post(
-  '/:id/leave',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
-    const studentId = extractStudentId(req);
+  /**
+   * POST /api/gamification/teams/:id/join
+   * Join a team
+   */
+  app.post(
+    '/:id/join',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const teamId = request.params.id;
+      const studentId = extractStudentId(request);
 
-    try {
-      const success = await teamService.leaveTeam(teamId, studentId);
-      res.json({
-        success: true,
-        data: { left: success },
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to leave team',
-      });
+      try {
+        const success = await teamService.joinTeam(teamId, studentId);
+        return {
+          success: true,
+          data: { joined: success },
+        };
+      } catch (error) {
+        reply.status(400);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to join team',
+        };
+      }
     }
-  })
-);
+  );
 
-/**
- * GET /api/gamification/teams/:id/members
- * Get team members
- */
-router.get(
-  '/:id/members',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
+  /**
+   * POST /api/gamification/teams/:id/leave
+   * Leave a team
+   */
+  app.post(
+    '/:id/leave',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const teamId = request.params.id;
+      const studentId = extractStudentId(request);
+
+      try {
+        const success = await teamService.leaveTeam(teamId, studentId);
+        return {
+          success: true,
+          data: { left: success },
+        };
+      } catch (error) {
+        reply.status(400);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to leave team',
+        };
+      }
+    }
+  );
+
+  /**
+   * GET /api/gamification/teams/:id/members
+   * Get team members
+   */
+  app.get('/:id/members', async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const teamId = request.params.id;
     const members = await teamService.getTeamMembers(teamId);
 
-    res.json({
+    return {
       success: true,
       data: members,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/teams/:id/leaderboard
- * Get team member rankings (leaderboard within team)
- */
-router.get(
-  '/:id/leaderboard',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
-    const period = (req.query.period as 'weekly' | 'monthly' | 'all_time') || 'all_time';
+  /**
+   * GET /api/gamification/teams/:id/leaderboard
+   * Get team member rankings (leaderboard within team)
+   */
+  app.get('/:id/leaderboard', async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const teamId = request.params.id;
+    const period =
+      ((request.query as any).period as 'weekly' | 'monthly' | 'all_time') || 'all_time';
 
     const members = await teamService.getTeamMembers(teamId);
 
     // Sort by appropriate period
-    const sorted = members.sort((a, b) => {
+    const sorted = [...members].sort((a, b) => {
       if (period === 'weekly') {
         return b.weeklyContribution - a.weeklyContribution;
       } else if (period === 'monthly') {
@@ -229,60 +212,64 @@ router.get(
       }
     });
 
-    const leaderboard = sorted.map((member, index) => ({
-      rank: index + 1,
-      studentId: member.studentId,
-      displayName: member.student
-        ? `${member.student.givenName} ${member.student.familyName}`
-        : 'Unknown',
-      role: member.role,
-      score:
-        period === 'weekly'
-          ? member.weeklyContribution
-          : period === 'monthly'
-          ? member.monthlyContribution
-          : member.contributedXp,
-      level: member.student?.level,
-    }));
+    const leaderboard = sorted.map((member, index) => {
+      let score: number;
+      if (period === 'weekly') {
+        score = member.weeklyContribution;
+      } else if (period === 'monthly') {
+        score = member.monthlyContribution;
+      } else {
+        score = member.contributedXp;
+      }
 
-    res.json({
+      return {
+        rank: index + 1,
+        studentId: member.studentId,
+        displayName: member.student
+          ? `${member.student.givenName} ${member.student.familyName}`
+          : 'Unknown',
+        role: member.role,
+        score,
+        level: member.student?.level,
+      };
+    });
+
+    return {
       success: true,
       data: {
         period,
         leaderboard,
       },
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/teams/school/:schoolId
- * List teams for a school
- */
-router.get(
-  '/school/:schoolId',
-  asyncHandler(async (req: Request, res: Response) => {
-    const schoolId = req.params.schoolId;
-    const teams = await teamService.listSchoolTeams(schoolId);
+  /**
+   * GET /api/gamification/teams/school/:schoolId
+   * List teams for a school
+   */
+  app.get(
+    '/school/:schoolId',
+    async (request: FastifyRequest<{ Params: { schoolId: string } }>) => {
+      const schoolId = request.params.schoolId;
+      const teams = await teamService.listSchoolTeams(schoolId);
 
-    res.json({
-      success: true,
-      data: teams,
-    });
-  })
-);
+      return {
+        success: true,
+        data: teams,
+      };
+    }
+  );
 
-/**
- * GET /api/gamification/teams/leaderboard
- * Get team leaderboard
- */
-router.get(
-  '/leaderboard/top',
-  asyncHandler(async (req: Request, res: Response) => {
-    const type = req.query.type as TeamType | undefined;
-    const schoolId = req.query.schoolId as string | undefined;
-    const period = (req.query.period as 'weekly' | 'monthly' | 'all_time') || 'all_time';
-    const limit = Number.parseInt(req.query.limit as string) || 20;
+  /**
+   * GET /api/gamification/teams/leaderboard
+   * Get team leaderboard
+   */
+  app.get('/leaderboard/top', async (request: FastifyRequest) => {
+    const type = (request.query as any).type as TeamType | undefined;
+    const schoolId = (request.query as any).schoolId as string | undefined;
+    const period =
+      ((request.query as any).period as 'weekly' | 'monthly' | 'all_time') || 'all_time';
+    const limit = Number.parseInt((request.query as any).limit as string) || 20;
 
     const teams = await teamService.getTeamLeaderboard({
       type,
@@ -291,68 +278,66 @@ router.get(
       limit,
     });
 
-    res.json({
+    return {
       success: true,
       data: {
         period,
         teams,
       },
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/teams/:id/stats
- * Get team statistics
- */
-router.get(
-  '/:id/stats',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
+  /**
+   * GET /api/gamification/teams/:id/stats
+   * Get team statistics
+   */
+  app.get('/:id/stats', async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const teamId = request.params.id;
     const stats = await teamService.getTeamStats(teamId);
 
-    res.json({
+    return {
       success: true,
       data: stats,
-    });
-  })
-);
+    };
+  });
 
-/**
- * PUT /api/gamification/teams/:id/members/:memberId/role
- * Update team member role (owner only)
- */
-router.put(
-  '/:id/members/:memberId/role',
-  asyncHandler(async (req: Request, res: Response) => {
-    const teamId = req.params.id;
-    const updatedBy = extractStudentId(req);
-    const data = updateRoleSchema.parse(req.body);
+  /**
+   * PUT /api/gamification/teams/:id/members/:memberId/role
+   * Update team member role (owner only)
+   */
+  app.put(
+    '/:id/members/:memberId/role',
+    async (
+      request: FastifyRequest<{ Params: { id: string; memberId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const teamId = request.params.id;
+      const updatedBy = extractStudentId(request);
+      const data = updateRoleSchema.parse(request.body);
 
-    try {
-      await teamService.updateMemberRole(teamId, data.studentId, data.role, updatedBy);
+      try {
+        await teamService.updateMemberRole(teamId, data.studentId, data.role, updatedBy);
 
-      res.json({
-        success: true,
-        message: 'Role updated successfully',
-      });
-    } catch (error) {
-      res.status(403).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to update role',
-      });
+        return {
+          success: true,
+          message: 'Role updated successfully',
+        };
+      } catch (error) {
+        reply.status(403);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to update role',
+        };
+      }
     }
-  })
-);
+  );
 
-/**
- * GET /api/gamification/teams/my-teams
- * Get teams the current user is a member of
- */
-router.get(
-  '/my/teams',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/teams/my-teams
+   * Get teams the current user is a member of
+   */
+  app.get('/my/teams', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
     const memberships = await prisma.teamMember.findMany({
@@ -375,11 +360,11 @@ router.get(
       myContribution: m.contributedXp,
     }));
 
-    res.json({
+    return {
       success: true,
       data: teams,
-    });
-  })
-);
+    };
+  });
+}
 
-export default router;
+export default teamRoutes;

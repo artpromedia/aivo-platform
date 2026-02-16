@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-The AIVO platform has grown to **92 services**, **14 apps**, and **35 shared packages** across `libs/` and `packages/`. The PRD specified Phase 1 as an **IEP & Communications Web App** requiring ~12–15 services. Implementation has drifted significantly — three backend frameworks (Fastify, Express, NestJS), plus Python/FastAPI services, premature Phase 2/3 services, and duplicated concerns.
+The AIVO platform has grown to **92 services**, **14 apps**, and **35 shared packages** across `libs/` and `packages/`. The PRD specified Phase 1 as an **IEP & Communications Web App** requiring ~12–15 services. Implementation has drifted significantly — two backend frameworks (Fastify, NestJS), plus Python/FastAPI services and Hono (translation-svc), premature Phase 2/3 services, and duplicated concerns. As of Sprint 1, all four Express services have been migrated to Fastify.
 
 This document defines the **target architecture** that the `v2-consolidation` branch will converge toward.
 
@@ -21,20 +21,20 @@ All **new** TypeScript/Node.js services and all **migrated** services MUST use *
 
 ### Rationale
 
-- 63 of 71 Node.js services already use Fastify — it is the clear majority.
+- 67 of 71 Node.js services now use Fastify — framework unification is nearly complete.
 - Superior performance vs Express (schema-based serialization, async-first).
 - Plugin architecture aligns well with per-service composition.
 
 ### Migration Targets
 
-| Service                  | Current Framework | Migration Sprint                        |
-| ------------------------ | ----------------- | --------------------------------------- |
-| `assessment-svc`         | Express           | Sprint 1 (Phase 2 FREEZE, low priority) |
-| `gradebook-svc`          | Express           | Sprint 1 (Phase 2 FREEZE, low priority) |
-| `brain-orchestrator-svc` | Express           | Sprint 1 (Phase 2 FREEZE, low priority) |
-| `gamification-svc`       | Express           | Sprint 1 (Phase 2 FREEZE, low priority) |
-| `parent-svc`             | NestJS            | Sprint 2 (Phase 1 KEEP, high priority)  |
-| `translation-svc`        | Hono              | Deferred (Phase 2 FREEZE)               |
+| Service                  | Current Framework   | Migration Status                       |
+| ------------------------ | ------------------- | -------------------------------------- |
+| `assessment-svc`         | ~~Express~~ Fastify | **DONE** — Sprint 1                    |
+| `gradebook-svc`          | ~~Express~~ Fastify | **DONE** — Sprint 1                    |
+| `brain-orchestrator-svc` | ~~Express~~ Fastify | **DONE** — Sprint 1                    |
+| `gamification-svc`       | ~~Express~~ Fastify | **DONE** — Sprint 1                    |
+| `parent-svc`             | NestJS              | Sprint 2 (Phase 1 KEEP, high priority) |
+| `translation-svc`        | Hono                | Deferred (Phase 2 FREEZE)              |
 
 ### Exception: `api-gateway` stays NestJS
 

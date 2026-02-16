@@ -2,9 +2,7 @@
  * Gamification Service - Entry Point
  */
 
- 
-
-import app from './app.js';
+import buildApp from './app.js';
 import { eventEmitter } from './events/event-emitter.js';
 import { startScheduledJobs } from './jobs/scheduled-jobs.js';
 import { prisma } from './prisma.js';
@@ -36,22 +34,21 @@ async function main() {
   startScheduledJobs();
   console.log('✓ Scheduled jobs started');
 
-  // Start HTTP server
-  const server = app.listen(PORT, () => {
-    console.log(`✓ HTTP server listening on port ${PORT}`);
-  });
+  // Build and start Fastify server
+  const app = await buildApp();
+  await app.listen({ port: PORT, host: '0.0.0.0' });
+  console.log(`✓ HTTP server listening on port ${PORT}`);
 
-  // Start WebSocket server
-  startWebSocketServer(server);
+  // Start WebSocket server on the underlying HTTP server
+  startWebSocketServer(app.server);
   console.log('✓ WebSocket server started');
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`\n${signal} received, shutting down gracefully...`);
 
-    server.close(() => {
-      console.log('HTTP server closed');
-    });
+    await app.close();
+    console.log('HTTP server closed');
 
     await prisma.$disconnect();
     console.log('Database disconnected');

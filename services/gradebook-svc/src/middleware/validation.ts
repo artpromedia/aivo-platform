@@ -1,11 +1,12 @@
 /**
- * Zod Validation Middleware
+ * Zod Validation Helpers
  *
- * Express middleware for validating request body, params, and query using Zod schemas.
- * Provides detailed validation error messages and proper TypeScript type inference.
+ * Validation helpers for Fastify route handlers using Zod schemas.
+ * In Fastify, validation is done inline in handlers rather than as middleware.
+ * These helpers provide consistent error formatting.
  */
 
-import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import type { FastifyReply } from 'fastify';
 import type { ZodSchema, ZodError } from 'zod';
 
 /**
@@ -22,7 +23,7 @@ export interface ValidationErrorResponse {
 /**
  * Format Zod errors into a consistent response format
  */
-function formatZodErrors(error: ZodError): ValidationErrorResponse {
+export function formatZodErrors(error: ZodError): ValidationErrorResponse {
   return {
     error: 'Validation failed',
     details: error.errors.map((err) => ({
@@ -42,116 +43,97 @@ export interface ValidationSchemas {
 }
 
 /**
- * Creates a validation middleware that validates request body, params, and/or query
+ * Validate request data against schemas and send error response if invalid.
+ * Returns the validated data or null if validation failed (reply already sent).
  *
  * @example
- * // Validate body only
- * router.post('/config', validate({ body: upsertGradebookConfigBodySchema }), handler);
- *
- * @example
- * // Validate params and body
- * router.put('/grades/:id', validate({
- *   params: gradeIdParamsSchema,
- *   body: updateGradeBodySchema
- * }), handler);
- *
- * @example
- * // Validate all three
- * router.get('/search', validate({
- *   params: idParamsSchema,
- *   query: searchQuerySchema,
- *   body: filterBodySchema
- * }), handler);
+ * app.post('/config', async (request, reply) => {
+ *   const data = validateRequest(reply, {
+ *     body: upsertGradebookConfigBodySchema,
+ *   }, { body: request.body });
+ *   if (!data) return;
+ *   // use data.body
+ * });
  */
-export function validate(schemas: ValidationSchemas): RequestHandler {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      // Validate params if schema provided
-      if (schemas.params) {
-        const paramsResult = schemas.params.safeParse(req.params);
-        if (!paramsResult.success) {
-          res.status(400).json(formatZodErrors(paramsResult.error));
-          return;
-        }
-        req.params = paramsResult.data;
-      }
-
-      // Validate query if schema provided
-      if (schemas.query) {
-        const queryResult = schemas.query.safeParse(req.query);
-        if (!queryResult.success) {
-          res.status(400).json(formatZodErrors(queryResult.error));
-          return;
-        }
-        req.query = queryResult.data;
-      }
-
-      // Validate body if schema provided
-      if (schemas.body) {
-        const bodyResult = schemas.body.safeParse(req.body);
-        if (!bodyResult.success) {
-          res.status(400).json(formatZodErrors(bodyResult.error));
-          return;
-        }
-        req.body = bodyResult.data;
-      }
-
-      next();
-    } catch (error) {
-      // Handle unexpected errors
-      console.error('Validation middleware error:', error);
-      res.status(500).json({ error: 'Internal validation error' });
+export function validateRequest<T extends ValidationSchemas>(
+  reply: FastifyReply,
+  schemas: T,
+  data: { params?: unknown; query?: unknown; body?: unknown }
+): { params: unknown; query: unknown; body: unknown } | null {
+  if (schemas.params) {
+    const result = schemas.params.safeParse(data.params);
+    if (!result.success) {
+      reply.status(400).send(formatZodErrors(result.error));
+      return null;
     }
-  };
+    data.params = result.data;
+  }
+
+  if (schemas.query) {
+    const result = schemas.query.safeParse(data.query);
+    if (!result.success) {
+      reply.status(400).send(formatZodErrors(result.error));
+      return null;
+    }
+    data.query = result.data;
+  }
+
+  if (schemas.body) {
+    const result = schemas.body.safeParse(data.body);
+    if (!result.success) {
+      reply.status(400).send(formatZodErrors(result.error));
+      return null;
+    }
+    data.body = result.data;
+  }
+
+  return data as { params: unknown; query: unknown; body: unknown };
 }
 
 /**
- * Convenience function for validating body only
- *
- * @example
- * router.post('/grades', validateBody(submitGradeBodySchema), handler);
+ * Validate body only. Returns validated body or null (reply already sent).
  */
-export function validateBody(schema: ZodSchema): RequestHandler {
-  return validate({ body: schema });
+export function validateBody<T>(
+  reply: FastifyReply,
+  schema: ZodSchema<T>,
+  body: unknown
+): T | null {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    reply.status(400).send(formatZodErrors(result.error));
+    return null;
+  }
+  return result.data;
 }
 
 /**
- * Convenience function for validating params only
- *
- * @example
- * router.get('/assignments/:id', validateParams(idParamsSchema), handler);
+ * Validate params only. Returns validated params or null (reply already sent).
  */
-export function validateParams(schema: ZodSchema): RequestHandler {
-  return validate({ params: schema });
+export function validateParams<T>(
+  reply: FastifyReply,
+  schema: ZodSchema<T>,
+  params: unknown
+): T | null {
+  const result = schema.safeParse(params);
+  if (!result.success) {
+    reply.status(400).send(formatZodErrors(result.error));
+    return null;
+  }
+  return result.data;
 }
 
 /**
- * Convenience function for validating query only
- *
- * @example
- * router.get('/search', validateQuery(searchQuerySchema), handler);
+ * Validate query only. Returns validated query or null (reply already sent).
  */
-export function validateQuery(schema: ZodSchema): RequestHandler {
-  return validate({ query: schema });
+export function validateQuery<T>(
+  reply: FastifyReply,
+  schema: ZodSchema<T>,
+  query: unknown
+): T | null {
+  const result = schema.safeParse(query);
+  if (!result.success) {
+    reply.status(400).send(formatZodErrors(result.error));
+    return null;
+  }
+  return result.data;
 }
-
-/**
- * Type helper for extracting validated request types
- * Use this in route handlers to get properly typed request data
- *
- * @example
- * import type { CreateAssignmentBody } from '../schemas/gradebook.schemas';
- *
- * router.post('/assignments',
- *   validateBody(createAssignmentBodySchema),
- *   async (req: Request<{}, {}, CreateAssignmentBody>, res) => {
- *     // req.body is now typed as CreateAssignmentBody
- *     const { title, totalPoints } = req.body;
- *   }
- * );
- */
-export type ValidatedRequest<
-  TParams = Record<string, string>,
-  TQuery = Record<string, string>,
-  TBody = unknown
-> = Request<TParams, unknown, TBody, TQuery>;

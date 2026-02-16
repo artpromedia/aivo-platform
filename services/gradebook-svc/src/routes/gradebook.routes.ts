@@ -4,10 +4,9 @@
  * RESTful API endpoints for gradebook operations
  */
 
-import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { validate, validateBody, validateParams } from '../middleware/validation.js';
+import { validateBody, validateParams, validateRequest } from '../middleware/validation.js';
 import {
   classroomIdParamsSchema,
   idParamsSchema,
@@ -21,371 +20,366 @@ import {
   gradeIdParamsSchema,
   updateGradeBodySchema,
   bulkImportGradesBodySchema,
-  type ClassroomIdParams,
-  type IdParams,
-  type StudentClassroomParams,
-  type UpsertGradebookConfigBody,
-  type CreateCategoryBody,
-  type UpdateCategoryWeightsBody,
-  type CreateAssignmentBody,
-  type UpdateAssignmentBody,
-  type SubmitGradeBody,
-  type GradeIdParams,
-  type UpdateGradeBody,
-  type BulkImportGradesBody,
 } from '../schemas/gradebook.schemas.js';
 import { gradebookService } from '../services/gradebook.service.js';
-import type { CreateAssignmentInput, UpdateGradeInput, BulkGradeImport } from '../services/gradebook.service.js';
+import type {
+  CreateAssignmentInput,
+  UpdateGradeInput,
+  BulkGradeImport,
+} from '../services/gradebook.service.js';
 
-const router = Router();
-
-/**
- * GET /gradebook/classroom/:classroomId
- * Get classroom gradebook with all students and grades
- */
-router.get(
-  '/classroom/:classroomId',
-  validateParams(classroomIdParamsSchema),
-  async (req: Request<ClassroomIdParams>, res: Response) => {
-    try {
-      const { classroomId } = req.params;
-      const gradebook = await gradebookService.getClassroomGradebook(classroomId);
-      res.json(gradebook);
-    } catch (error) {
-      console.error('Error fetching gradebook:', error);
-      res.status(500).json({ error: 'Failed to fetch gradebook' });
-    }
-  }
-);
-
-/**
- * GET /gradebook/config/:classroomId
- * Get gradebook configuration
- */
-router.get(
-  '/config/:classroomId',
-  validateParams(classroomIdParamsSchema),
-  async (req: Request<ClassroomIdParams>, res: Response) => {
-    try {
-      const { classroomId } = req.params;
-      const config = await gradebookService.getGradebookConfig(classroomId);
-
-      if (!config) {
-        res.status(404).json({ error: 'Gradebook config not found' });
-        return;
+async function gradebookRoutes(app: FastifyInstance) {
+  /**
+   * GET /gradebook/classroom/:classroomId
+   * Get classroom gradebook with all students and grades
+   */
+  app.get(
+    '/classroom/:classroomId',
+    async (request: FastifyRequest<{ Params: { classroomId: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, classroomIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const gradebook = await gradebookService.getClassroomGradebook(params.classroomId);
+        return gradebook;
+      } catch (error) {
+        console.error('Error fetching gradebook:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch gradebook' };
       }
-
-      res.json(config);
-    } catch (error) {
-      console.error('Error fetching gradebook config:', error);
-      res.status(500).json({ error: 'Failed to fetch gradebook config' });
     }
-  }
-);
+  );
 
-/**
- * POST /gradebook/config
- * Create or update gradebook configuration
- */
-router.post(
-  '/config',
-  validateBody(upsertGradebookConfigBodySchema),
-  async (req: Request<{}, {}, UpsertGradebookConfigBody>, res: Response) => {
+  /**
+   * GET /gradebook/config/:classroomId
+   * Get gradebook configuration
+   */
+  app.get(
+    '/config/:classroomId',
+    async (request: FastifyRequest<{ Params: { classroomId: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, classroomIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const config = await gradebookService.getGradebookConfig(params.classroomId);
+        if (!config) {
+          reply.status(404);
+          return { error: 'Gradebook config not found' };
+        }
+        return config;
+      } catch (error) {
+        console.error('Error fetching gradebook config:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch gradebook config' };
+      }
+    }
+  );
+
+  /**
+   * POST /gradebook/config
+   * Create or update gradebook configuration
+   */
+  app.post('/config', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, upsertGradebookConfigBodySchema, request.body);
+    if (!body) return;
     try {
-      const { classroomId, teacherId, tenantId, ...config } = req.body;
-
+      const { classroomId, teacherId, tenantId, ...config } = body;
       const result = await gradebookService.upsertGradebookConfig(
         classroomId,
         teacherId,
         tenantId,
         config
       );
-
-      res.json(result);
+      return result;
     } catch (error) {
       console.error('Error upserting gradebook config:', error);
-      res.status(500).json({ error: 'Failed to save gradebook config' });
+      reply.status(500);
+      return { error: 'Failed to save gradebook config' };
     }
-  }
-);
+  });
 
-/**
- * POST /gradebook/categories
- * Create grade category
- */
-router.post(
-  '/categories',
-  validateBody(createCategoryBodySchema),
-  async (req: Request<{}, {}, CreateCategoryBody>, res: Response) => {
+  /**
+   * POST /gradebook/categories
+   * Create grade category
+   */
+  app.post('/categories', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, createCategoryBodySchema, request.body);
+    if (!body) return;
     try {
-      const { gradebookConfigId, name, weight, color, dropLowest, orderIndex } = req.body;
-
-      const category = await gradebookService.createCategory(
-        gradebookConfigId,
-        name,
-        weight,
-        { color, dropLowest, orderIndex }
-      );
-
-      res.json(category);
+      const { gradebookConfigId, name, weight, color, dropLowest, orderIndex } = body;
+      const category = await gradebookService.createCategory(gradebookConfigId, name, weight, {
+        color,
+        dropLowest,
+        orderIndex,
+      });
+      return category;
     } catch (error) {
       console.error('Error creating category:', error);
-      res.status(500).json({ error: 'Failed to create category' });
+      reply.status(500);
+      return { error: 'Failed to create category' };
     }
-  }
-);
+  });
 
-/**
- * PUT /gradebook/categories/weights
- * Update category weights
- */
-router.put(
-  '/categories/weights',
-  validateBody(updateCategoryWeightsBodySchema),
-  async (req: Request<{}, {}, UpdateCategoryWeightsBody>, res: Response) => {
+  /**
+   * PUT /gradebook/categories/weights
+   * Update category weights
+   */
+  app.put('/categories/weights', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, updateCategoryWeightsBodySchema, request.body);
+    if (!body) return;
     try {
-      const { categories } = req.body;
-
-      // Type assertion is safe here because Zod has validated the data
-      await gradebookService.updateCategoryWeights(categories as { id: string; weight: number }[]);
-      res.json({ success: true });
+      await gradebookService.updateCategoryWeights(
+        body.categories as { id: string; weight: number }[]
+      );
+      return { success: true };
     } catch (error) {
       console.error('Error updating category weights:', error);
-      res.status(500).json({ error: 'Failed to update category weights' });
+      reply.status(500);
+      return { error: 'Failed to update category weights' };
     }
-  }
-);
+  });
 
-/**
- * POST /gradebook/assignments
- * Create assignment
- */
-router.post(
-  '/assignments',
-  validateBody(createAssignmentBodySchema),
-  async (req: Request<{}, {}, CreateAssignmentBody>, res: Response) => {
+  /**
+   * POST /gradebook/assignments
+   * Create assignment
+   */
+  app.post('/assignments', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, createAssignmentBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const assignment = await gradebookService.createAssignment(req.body as CreateAssignmentInput);
-      res.json(assignment);
+      const assignment = await gradebookService.createAssignment(body as CreateAssignmentInput);
+      return assignment;
     } catch (error) {
       console.error('Error creating assignment:', error);
-      res.status(500).json({ error: 'Failed to create assignment' });
+      reply.status(500);
+      return { error: 'Failed to create assignment' };
     }
-  }
-);
+  });
 
-/**
- * GET /gradebook/assignments/:id
- * Get assignment details
- */
-router.get(
-  '/assignments/:id',
-  validateParams(idParamsSchema),
-  async (req: Request<IdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const assignment = await gradebookService.getAssignment(id);
-
-      if (!assignment) {
-        return res.status(404).json({ error: 'Assignment not found' });
+  /**
+   * GET /gradebook/assignments/:id
+   * Get assignment details
+   */
+  app.get(
+    '/assignments/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, idParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const assignment = await gradebookService.getAssignment(params.id);
+        if (!assignment) {
+          reply.status(404);
+          return { error: 'Assignment not found' };
+        }
+        return assignment;
+      } catch (error) {
+        console.error('Error fetching assignment:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch assignment' };
       }
-
-      return res.json(assignment);
-    } catch (error) {
-      console.error('Error fetching assignment:', error);
-      return res.status(500).json({ error: 'Failed to fetch assignment' });
     }
-  }
-);
+  );
 
-/**
- * PUT /gradebook/assignments/:id
- * Update assignment
- */
-router.put(
-  '/assignments/:id',
-  validate({
-    params: idParamsSchema,
-    body: updateAssignmentBodySchema,
-  }),
-  async (req: Request<IdParams, {}, UpdateAssignmentBody>, res: Response) => {
-    try {
-      const { id } = req.params;
-      // Cast type to match Prisma AssignmentType enum
-      const updateData = {
-        ...req.body,
-        type: req.body.type as import('../../generated/prisma-client/index.js').AssignmentType | undefined,
-      };
-      const assignment = await gradebookService.updateAssignment(id, updateData);
-      return res.json(assignment);
-    } catch (error) {
-      console.error('Error updating assignment:', error);
-      return res.status(500).json({ error: 'Failed to update assignment' });
+  /**
+   * PUT /gradebook/assignments/:id
+   * Update assignment
+   */
+  app.put(
+    '/assignments/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: idParamsSchema, body: updateAssignmentBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { id } = validated.params as { id: string };
+        const body = validated.body as Record<string, unknown>;
+        const updateData = {
+          ...body,
+          type: body.type as string | undefined,
+        };
+        const assignment = await gradebookService.updateAssignment(id, updateData);
+        return assignment;
+      } catch (error) {
+        console.error('Error updating assignment:', error);
+        reply.status(500);
+        return { error: 'Failed to update assignment' };
+      }
     }
-  }
-);
+  );
 
-/**
- * POST /gradebook/assignments/:id/publish
- * Publish assignment
- */
-router.post(
-  '/assignments/:id/publish',
-  validateParams(idParamsSchema),
-  async (req: Request<IdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const assignment = await gradebookService.publishAssignment(id);
-      res.json(assignment);
-    } catch (error) {
-      console.error('Error publishing assignment:', error);
-      res.status(500).json({ error: 'Failed to publish assignment' });
+  /**
+   * POST /gradebook/assignments/:id/publish
+   * Publish assignment
+   */
+  app.post(
+    '/assignments/:id/publish',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, idParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const assignment = await gradebookService.publishAssignment(params.id);
+        return assignment;
+      } catch (error) {
+        console.error('Error publishing assignment:', error);
+        reply.status(500);
+        return { error: 'Failed to publish assignment' };
+      }
     }
-  }
-);
+  );
 
-/**
- * DELETE /gradebook/assignments/:id
- * Delete assignment
- */
-router.delete(
-  '/assignments/:id',
-  validateParams(idParamsSchema),
-  async (req: Request<IdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      await gradebookService.deleteAssignment(id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting assignment:', error);
-      res.status(500).json({ error: 'Failed to delete assignment' });
+  /**
+   * DELETE /gradebook/assignments/:id
+   * Delete assignment
+   */
+  app.delete(
+    '/assignments/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, idParamsSchema, request.params);
+      if (!params) return;
+      try {
+        await gradebookService.deleteAssignment(params.id);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting assignment:', error);
+        reply.status(500);
+        return { error: 'Failed to delete assignment' };
+      }
     }
-  }
-);
+  );
 
-/**
- * POST /gradebook/grades
- * Submit or update grade
- */
-router.post(
-  '/grades',
-  validateBody(submitGradeBodySchema),
-  async (req: Request<{}, {}, SubmitGradeBody>, res: Response) => {
+  /**
+   * POST /gradebook/grades
+   * Submit or update grade
+   */
+  app.post('/grades', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, submitGradeBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const grade = await gradebookService.submitGrade(req.body as UpdateGradeInput);
-      res.json(grade);
+      const grade = await gradebookService.submitGrade(body as UpdateGradeInput);
+      return grade;
     } catch (error) {
       console.error('Error submitting grade:', error);
-      res.status(500).json({ error: 'Failed to submit grade' });
+      reply.status(500);
+      return { error: 'Failed to submit grade' };
     }
-  }
-);
+  });
 
-/**
- * PUT /gradebook/grades/:id
- * Update grade
- */
-router.put(
-  '/grades/:id',
-  validate({
-    params: gradeIdParamsSchema,
-    body: updateGradeBodySchema,
-  }),
-  async (req: Request<GradeIdParams, {}, UpdateGradeBody>, res: Response) => {
-    try {
-      const { id } = req.params;
-      // Type assertion is safe here because Zod has validated the data
-      const grade = await gradebookService.submitGrade({
-        gradeId: id,
-        ...req.body,
-      } as UpdateGradeInput);
-      res.json(grade);
-    } catch (error) {
-      console.error('Error updating grade:', error);
-      res.status(500).json({ error: 'Failed to update grade' });
+  /**
+   * PUT /gradebook/grades/:id
+   * Update grade
+   */
+  app.put(
+    '/grades/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: gradeIdParamsSchema, body: updateGradeBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { id } = validated.params as { id: string };
+        const grade = await gradebookService.submitGrade({
+          gradeId: id,
+          ...validated.body,
+        } as UpdateGradeInput);
+        return grade;
+      } catch (error) {
+        console.error('Error updating grade:', error);
+        reply.status(500);
+        return { error: 'Failed to update grade' };
+      }
     }
-  }
-);
+  );
 
-/**
- * GET /gradebook/grades/:id/history
- * Get grade history (audit log)
- */
-router.get(
-  '/grades/:id/history',
-  validateParams(gradeIdParamsSchema),
-  async (req: Request<GradeIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const history = await gradebookService.getGradeHistory(id);
-      res.json(history);
-    } catch (error) {
-      console.error('Error fetching grade history:', error);
-      res.status(500).json({ error: 'Failed to fetch grade history' });
+  /**
+   * GET /gradebook/grades/:id/history
+   * Get grade history (audit log)
+   */
+  app.get(
+    '/grades/:id/history',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, gradeIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const history = await gradebookService.getGradeHistory(params.id);
+        return history;
+      } catch (error) {
+        console.error('Error fetching grade history:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch grade history' };
+      }
     }
-  }
-);
+  );
 
-/**
- * GET /gradebook/student/:studentId/classroom/:classroomId
- * Get student grades
- */
-router.get(
-  '/student/:studentId/classroom/:classroomId',
-  validateParams(studentClassroomParamsSchema),
-  async (req: Request<StudentClassroomParams>, res: Response) => {
-    try {
-      const { studentId, classroomId } = req.params;
-      const result = await gradebookService.getStudentGrades(classroomId, studentId);
-      res.json(result);
-    } catch (error) {
-      console.error('Error fetching student grades:', error);
-      res.status(500).json({ error: 'Failed to fetch student grades' });
+  /**
+   * GET /gradebook/student/:studentId/classroom/:classroomId
+   * Get student grades
+   */
+  app.get(
+    '/student/:studentId/classroom/:classroomId',
+    async (
+      request: FastifyRequest<{ Params: { studentId: string; classroomId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const params = validateParams(reply, studentClassroomParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const result = await gradebookService.getStudentGrades(
+          params.classroomId,
+          params.studentId
+        );
+        return result;
+      } catch (error) {
+        console.error('Error fetching student grades:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch student grades' };
+      }
     }
-  }
-);
+  );
 
-/**
- * POST /gradebook/import
- * Bulk import grades
- */
-router.post(
-  '/import',
-  validateBody(bulkImportGradesBodySchema),
-  async (req: Request<{}, {}, BulkImportGradesBody>, res: Response) => {
+  /**
+   * POST /gradebook/import
+   * Bulk import grades
+   */
+  app.post('/import', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, bulkImportGradesBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const result = await gradebookService.bulkImportGrades(req.body as BulkGradeImport);
-      res.json(result);
+      const result = await gradebookService.bulkImportGrades(body as BulkGradeImport);
+      return result;
     } catch (error) {
       console.error('Error importing grades:', error);
-      res.status(500).json({ error: 'Failed to import grades' });
+      reply.status(500);
+      return { error: 'Failed to import grades' };
     }
-  }
-);
+  });
 
-/**
- * GET /gradebook/export/:classroomId
- * Export gradebook as CSV
- */
-router.get(
-  '/export/:classroomId',
-  validateParams(classroomIdParamsSchema),
-  async (req: Request<ClassroomIdParams>, res: Response) => {
-    try {
-      const { classroomId } = req.params;
-      const csv = await gradebookService.exportGradebook(classroomId);
-
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="gradebook-${classroomId}.csv"`);
-      res.send(csv);
-    } catch (error) {
-      console.error('Error exporting gradebook:', error);
-      res.status(500).json({ error: 'Failed to export gradebook' });
+  /**
+   * GET /gradebook/export/:classroomId
+   * Export gradebook as CSV
+   */
+  app.get(
+    '/export/:classroomId',
+    async (request: FastifyRequest<{ Params: { classroomId: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, classroomIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const csv = await gradebookService.exportGradebook(params.classroomId);
+        reply.header('Content-Type', 'text/csv');
+        reply.header(
+          'Content-Disposition',
+          `attachment; filename="gradebook-${params.classroomId}.csv"`
+        );
+        return csv;
+      } catch (error) {
+        console.error('Error exporting gradebook:', error);
+        reply.status(500);
+        return { error: 'Failed to export gradebook' };
+      }
     }
-  }
-);
+  );
+}
 
-export default router;
+export default gradebookRoutes;

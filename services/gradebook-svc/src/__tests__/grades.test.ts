@@ -7,15 +7,21 @@
  * - GET /gradebook/grades/:id/history - Get grade history
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import express from 'express';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
 
 // Mock @aivo/ts-api-utils before importing app
 vi.mock('@aivo/ts-api-utils', () => ({
-  createExpressRateLimiter: vi.fn(() => (_req: any, _res: any, next: any) => next()),
-  RateLimitPresets: {
-    API_GENERAL: { windowMs: 60000, max: 100 },
+  FastifyRateLimitPresets: {
+    publicApi: () => ({
+      global: true,
+      max: 1000,
+      timeWindow: '1 minute',
+      keyGenerator: () => 'test',
+      errorResponseBuilder: () => ({ error: 'Rate limited' }),
+      allowList: () => false,
+    }),
   },
 }));
 
@@ -60,11 +66,16 @@ vi.mock('../../generated/prisma-client/index.js', () => ({
 import { createApp } from '../app.js';
 
 describe('Grades', () => {
-  let app: express.Application;
+  let app: FastifyInstance;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     app = createApp();
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('POST /api/v1/gradebook/grades', () => {
@@ -96,7 +107,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -131,7 +142,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -165,7 +176,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -202,7 +213,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -237,7 +248,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -252,7 +263,7 @@ describe('Grades', () => {
     it('should fail when grade not found', async () => {
       mockPrismaClient.grade.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'non-existent',
@@ -290,7 +301,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -323,7 +334,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -358,7 +369,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/grades/grade-1')
         .send({
           score: 80,
@@ -391,7 +402,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/grades/grade-1')
         .send({
           feedback: 'Updated feedback: Excellent improvement!',
@@ -405,7 +416,7 @@ describe('Grades', () => {
     it('should handle update of non-existent grade', async () => {
       mockPrismaClient.grade.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/grades/non-existent')
         .send({
           score: 85,
@@ -444,7 +455,7 @@ describe('Grades', () => {
 
       mockPrismaClient.gradeAuditLog.findMany.mockResolvedValue(mockHistory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/grades/grade-1/history')
         .expect(200);
 
@@ -457,7 +468,7 @@ describe('Grades', () => {
     it('should return empty array for grade with no history', async () => {
       mockPrismaClient.gradeAuditLog.findMany.mockResolvedValue([]);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/grades/grade-1/history')
         .expect(200);
 
@@ -473,9 +484,7 @@ describe('Grades', () => {
 
       mockPrismaClient.gradeAuditLog.findMany.mockResolvedValue(mockHistory);
 
-      const response = await request(app)
-        .get('/api/v1/gradebook/grades/grade-1/history')
-        .expect(200);
+      await request(app.server).get('/api/v1/gradebook/grades/grade-1/history').expect(200);
 
       expect(mockPrismaClient.gradeAuditLog.findMany).toHaveBeenCalledWith({
         where: { gradeId: 'grade-1' },
@@ -500,7 +509,7 @@ describe('Grades', () => {
 
       mockPrismaClient.gradeAuditLog.findMany.mockResolvedValue(mockHistory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/grades/grade-1/history')
         .expect(200);
 
@@ -509,11 +518,9 @@ describe('Grades', () => {
     });
 
     it('should handle database errors when fetching history', async () => {
-      mockPrismaClient.gradeAuditLog.findMany.mockRejectedValue(
-        new Error('Database error')
-      );
+      mockPrismaClient.gradeAuditLog.findMany.mockRejectedValue(new Error('Database error'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/grades/grade-1/history')
         .expect(500);
 
@@ -544,7 +551,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -578,7 +585,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -612,7 +619,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -647,7 +654,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -693,7 +700,7 @@ describe('Grades', () => {
         mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
         mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-        const response = await request(app)
+        const response = await request(app.server)
           .post('/api/v1/gradebook/grades')
           .send({
             gradeId: 'grade-1',
@@ -730,7 +737,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -764,7 +771,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -798,7 +805,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -833,7 +840,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -860,7 +867,7 @@ describe('Grades', () => {
         new Error('Concurrent modification detected')
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -894,7 +901,7 @@ describe('Grades', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -931,7 +938,7 @@ describe('Grades', () => {
         action: 'updated',
       });
 
-      await request(app)
+      await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',
@@ -973,7 +980,7 @@ describe('Grades', () => {
       });
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      await request(app)
+      await request(app.server)
         .post('/api/v1/gradebook/grades')
         .send({
           gradeId: 'grade-1',

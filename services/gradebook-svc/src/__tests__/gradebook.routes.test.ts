@@ -10,15 +10,21 @@
  * - GET /gradebook/export/:classroomId
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
-import express from 'express';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
 
 // Mock @aivo/ts-api-utils before importing app
 vi.mock('@aivo/ts-api-utils', () => ({
-  createExpressRateLimiter: vi.fn(() => (_req: any, _res: any, next: any) => next()),
-  RateLimitPresets: {
-    API_GENERAL: { windowMs: 60000, max: 100 },
+  FastifyRateLimitPresets: {
+    publicApi: () => ({
+      global: true,
+      max: 1000,
+      timeWindow: '1 minute',
+      keyGenerator: () => 'test',
+      errorResponseBuilder: () => ({ error: 'Rate limited' }),
+      allowList: () => false,
+    }),
   },
 }));
 
@@ -66,11 +72,16 @@ vi.mock('../../generated/prisma-client/index.js', () => ({
 import { createApp } from '../app.js';
 
 describe('Gradebook Routes', () => {
-  let app: express.Application;
+  let app: FastifyInstance;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     app = createApp();
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('GET /api/v1/gradebook/classroom/:classroomId', () => {
@@ -108,7 +119,7 @@ describe('Gradebook Routes', () => {
         { studentId: 'student-2' },
       ]);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/classroom/classroom-1')
         .expect(200);
 
@@ -124,7 +135,7 @@ describe('Gradebook Routes', () => {
     it('should handle non-existent classroom gracefully', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/classroom/non-existent')
         .expect(500);
 
@@ -136,7 +147,7 @@ describe('Gradebook Routes', () => {
         new Error('Database connection failed')
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/classroom/classroom-1')
         .expect(500);
 
@@ -159,7 +170,7 @@ describe('Gradebook Routes', () => {
 
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/config/classroom-1')
         .expect(200);
 
@@ -170,7 +181,7 @@ describe('Gradebook Routes', () => {
     it('should return 404 when config not found', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/config/non-existent')
         .expect(404);
 
@@ -178,11 +189,9 @@ describe('Gradebook Routes', () => {
     });
 
     it('should handle database errors', async () => {
-      mockPrismaClient.gradebookConfig.findUnique.mockRejectedValue(
-        new Error('Database error')
-      );
+      mockPrismaClient.gradebookConfig.findUnique.mockRejectedValue(new Error('Database error'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/config/classroom-1')
         .expect(500);
 
@@ -204,7 +213,7 @@ describe('Gradebook Routes', () => {
 
       mockPrismaClient.gradebookConfig.upsert.mockResolvedValue(mockConfig);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           classroomId: 'classroom-1',
@@ -220,7 +229,7 @@ describe('Gradebook Routes', () => {
     });
 
     it('should return 400 when classroomId is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           teacherId: 'teacher-1',
@@ -232,7 +241,7 @@ describe('Gradebook Routes', () => {
     });
 
     it('should return 400 when teacherId is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           classroomId: 'classroom-1',
@@ -244,7 +253,7 @@ describe('Gradebook Routes', () => {
     });
 
     it('should return 400 when tenantId is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           classroomId: 'classroom-1',
@@ -267,7 +276,7 @@ describe('Gradebook Routes', () => {
 
       mockPrismaClient.gradebookConfig.upsert.mockResolvedValue(mockConfig);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           classroomId: 'classroom-1',
@@ -281,11 +290,9 @@ describe('Gradebook Routes', () => {
     });
 
     it('should handle database errors during upsert', async () => {
-      mockPrismaClient.gradebookConfig.upsert.mockRejectedValue(
-        new Error('Upsert failed')
-      );
+      mockPrismaClient.gradebookConfig.upsert.mockRejectedValue(new Error('Upsert failed'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/config')
         .send({
           classroomId: 'classroom-1',
@@ -334,7 +341,7 @@ describe('Gradebook Routes', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.grade.findMany.mockResolvedValue(mockGrades);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/student/student-1/classroom/classroom-1')
         .expect(200);
 
@@ -345,7 +352,7 @@ describe('Gradebook Routes', () => {
     it('should handle non-existent student', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/student/non-existent/classroom/classroom-1')
         .expect(500);
 
@@ -381,7 +388,7 @@ describe('Gradebook Routes', () => {
       mockPrismaClient.grade.update.mockResolvedValue(mockUpdatedGrade);
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/import')
         .send({
           assignmentId: 'assign-1',
@@ -401,7 +408,7 @@ describe('Gradebook Routes', () => {
     it('should handle assignment not found during import', async () => {
       mockPrismaClient.assignment.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/import')
         .send({
           assignmentId: 'non-existent',
@@ -421,15 +428,21 @@ describe('Gradebook Routes', () => {
       };
 
       mockPrismaClient.assignment.findUnique.mockResolvedValue(mockAssignment);
-      mockPrismaClient.grade.upsert.mockResolvedValueOnce({ id: 'grade-1', assignment: mockAssignment });
-      mockPrismaClient.grade.findUnique.mockResolvedValueOnce({ id: 'grade-1', assignment: mockAssignment });
+      mockPrismaClient.grade.upsert.mockResolvedValueOnce({
+        id: 'grade-1',
+        assignment: mockAssignment,
+      });
+      mockPrismaClient.grade.findUnique.mockResolvedValueOnce({
+        id: 'grade-1',
+        assignment: mockAssignment,
+      });
       mockPrismaClient.grade.update.mockResolvedValueOnce({ id: 'grade-1', score: 85 });
       mockPrismaClient.gradeAuditLog.create.mockResolvedValue({});
 
       // Second student fails
       mockPrismaClient.grade.upsert.mockRejectedValueOnce(new Error('Student not enrolled'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/import')
         .send({
           assignmentId: 'assign-1',
@@ -468,7 +481,7 @@ describe('Gradebook Routes', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.grade.findMany.mockResolvedValue([{ studentId: 'student-1' }]);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/export/classroom-1')
         .expect(200);
 
@@ -480,7 +493,7 @@ describe('Gradebook Routes', () => {
     it('should handle export for non-existent classroom', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/export/non-existent')
         .expect(500);
 
@@ -502,7 +515,7 @@ describe('Gradebook Routes', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.grade.findMany.mockResolvedValue([]);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/classroom/classroom-1')
         .expect(200);
 
@@ -513,7 +526,7 @@ describe('Gradebook Routes', () => {
       const longId = 'a'.repeat(1000);
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get(`/api/v1/gradebook/config/${longId}`)
         .expect(404);
 
@@ -523,7 +536,7 @@ describe('Gradebook Routes', () => {
     it('should handle special characters in classroom ID', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/config/classroom-with-special-chars-123')
         .expect(404);
 

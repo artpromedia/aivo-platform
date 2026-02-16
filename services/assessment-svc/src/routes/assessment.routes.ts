@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 
 import { assessmentService } from '../services/assessment.service.js';
@@ -11,36 +10,10 @@ import {
   ReorderQuestionsSchema,
 } from '../validators/assessment.validator.js';
 
-const router = Router();
-
-// Middleware for validating request body
-function validateBody(schema: { parse: (data: unknown) => unknown }) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      req.body = schema.parse(req.body);
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-// Middleware for validating query params
-function validateQuery(schema: { parse: (data: unknown) => unknown }) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      req.query = schema.parse(req.query) as Record<string, string>;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
 // Error handler
-function handleError(error: unknown, res: Response): void {
+function handleError(error: unknown, reply: FastifyReply): void {
   if (error instanceof ZodError) {
-    res.status(400).json({
+    reply.status(400).send({
       error: 'Validation error',
       details: error.errors,
     });
@@ -49,23 +22,23 @@ function handleError(error: unknown, res: Response): void {
 
   if (error instanceof Error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ error: error.message });
+      reply.status(404).send({ error: error.message });
       return;
     }
     if (error.message.includes('Cannot')) {
-      res.status(400).json({ error: error.message });
+      reply.status(400).send({ error: error.message });
       return;
     }
   }
 
   console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
+  reply.status(500).send({ error: 'Internal server error' });
 }
 
 // Get tenant and user from request (set by auth middleware)
-function getContext(req: Request): { tenantId: string; userId: string } {
-  const tenantId = req.headers['x-tenant-id'] as string;
-  const userId = req.headers['x-user-id'] as string;
+function getContext(request: FastifyRequest): { tenantId: string; userId: string } {
+  const tenantId = request.headers['x-tenant-id'] as string;
+  const userId = request.headers['x-user-id'] as string;
 
   if (!tenantId || !userId) {
     throw new Error('Missing tenant or user context');
@@ -74,205 +47,240 @@ function getContext(req: Request): { tenantId: string; userId: string } {
   return { tenantId, userId };
 }
 
-// Get required URL parameter
-function getParam(req: Request, name: string): string {
-  const value = req.params[name];
-  if (!value) {
-    throw new Error(`Missing required parameter: ${name}`);
-  }
-  return value;
+export async function assessmentRoutes(app: FastifyInstance): Promise<void> {
+  /**
+   * GET /assessments
+   * List assessments with filtering and pagination
+   */
+  app.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { tenantId } = getContext(request);
+      const query = AssessmentQuerySchema.parse(request.query);
+      const result = await assessmentService.list(tenantId, query as any);
+      return result;
+    } catch (error) {
+      handleError(error, reply);
+    }
+  });
+
+  /**
+   * POST /assessments
+   * Create a new assessment
+   */
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { tenantId, userId } = getContext(request);
+      const body = CreateAssessmentSchema.parse(request.body);
+      const assessment = await assessmentService.create(tenantId, userId, body);
+      reply.status(201);
+      return assessment;
+    } catch (error) {
+      handleError(error, reply);
+    }
+  });
+
+  /**
+   * GET /assessments/:id
+   * Get assessment by ID
+   */
+  app.get(
+    '/:id',
+    async (
+      request: FastifyRequest<{
+        Params: { id: string };
+        Querystring: { includeQuestions?: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const includeQuestions = request.query.includeQuestions === 'true';
+        const assessment = await assessmentService.getById(tenantId, id, includeQuestions);
+
+        if (!assessment) {
+          reply.status(404);
+          return { error: 'Assessment not found' };
+        }
+
+        return assessment;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * PUT /assessments/:id
+   * Update an assessment
+   */
+  app.put(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const body = UpdateAssessmentSchema.parse(request.body);
+        const assessment = await assessmentService.update(tenantId, id, body);
+        return assessment;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/publish
+   * Publish an assessment
+   */
+  app.post(
+    '/:id/publish',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const assessment = await assessmentService.publish(tenantId, id);
+        return assessment;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/archive
+   * Archive an assessment
+   */
+  app.post(
+    '/:id/archive',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const assessment = await assessmentService.archive(tenantId, id);
+        return assessment;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * DELETE /assessments/:id
+   * Delete an assessment
+   */
+  app.delete(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        await assessmentService.delete(tenantId, id);
+        reply.status(204);
+        return;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/clone
+   * Clone an assessment
+   */
+  app.post(
+    '/:id/clone',
+    async (
+      request: FastifyRequest<{ Params: { id: string }; Body: { title?: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId, userId } = getContext(request);
+        const { id } = request.params;
+        const newTitle = (request.body as { title?: string })?.title;
+        const assessment = await assessmentService.clone(tenantId, id, userId, newTitle);
+        reply.status(201);
+        return assessment;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * GET /assessments/:id/questions
+   * Get questions for an assessment
+   */
+  app.get(
+    '/:id/questions',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { id } = request.params;
+        const questions = await assessmentService.getQuestions(id);
+        return questions;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/questions
+   * Add a question to an assessment
+   */
+  app.post(
+    '/:id/questions',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const body = AddQuestionToAssessmentSchema.parse(request.body);
+        const assessmentQuestion = await assessmentService.addQuestion(tenantId, id, body);
+        reply.status(201);
+        return assessmentQuestion;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * DELETE /assessments/:id/questions/:questionId
+   * Remove a question from an assessment
+   */
+  app.delete(
+    '/:id/questions/:questionId',
+    async (
+      request: FastifyRequest<{ Params: { id: string; questionId: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { id, questionId } = request.params;
+        await assessmentService.removeQuestion(id, questionId);
+        reply.status(204);
+        return;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * PUT /assessments/:id/questions/reorder
+   * Reorder questions in an assessment
+   */
+  app.put(
+    '/:id/questions/reorder',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { id } = request.params;
+        const body = ReorderQuestionsSchema.parse(request.body);
+        await assessmentService.reorderQuestions(id, body);
+        reply.status(204);
+        return;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
 }
-
-/**
- * GET /assessments
- * List assessments with filtering and pagination
- */
-router.get('/', validateQuery(AssessmentQuerySchema), async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const result = await assessmentService.list(tenantId, req.query as any);
-    res.json(result);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /assessments
- * Create a new assessment
- */
-router.post('/', validateBody(CreateAssessmentSchema), async (req: Request, res: Response) => {
-  try {
-    const { tenantId, userId } = getContext(req);
-    const assessment = await assessmentService.create(tenantId, userId, req.body);
-    res.status(201).json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * GET /assessments/:id
- * Get assessment by ID
- */
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const includeQuestions = req.query.includeQuestions === 'true';
-    const assessment = await assessmentService.getById(tenantId, id, includeQuestions);
-
-    if (!assessment) {
-      res.status(404).json({ error: 'Assessment not found' });
-      return;
-    }
-
-    res.json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * PUT /assessments/:id
- * Update an assessment
- */
-router.put('/:id', validateBody(UpdateAssessmentSchema), async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const assessment = await assessmentService.update(tenantId, id, req.body);
-    res.json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /assessments/:id/publish
- * Publish an assessment
- */
-router.post('/:id/publish', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const assessment = await assessmentService.publish(tenantId, id);
-    res.json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /assessments/:id/archive
- * Archive an assessment
- */
-router.post('/:id/archive', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const assessment = await assessmentService.archive(tenantId, id);
-    res.json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * DELETE /assessments/:id
- * Delete an assessment
- */
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    await assessmentService.delete(tenantId, id);
-    res.status(204).send();
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /assessments/:id/clone
- * Clone an assessment
- */
-router.post('/:id/clone', async (req: Request, res: Response) => {
-  try {
-    const { tenantId, userId } = getContext(req);
-    const id = getParam(req, 'id');
-    const newTitle = req.body.title as string | undefined;
-    const assessment = await assessmentService.clone(tenantId, id, userId, newTitle);
-    res.status(201).json(assessment);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * GET /assessments/:id/questions
- * Get questions for an assessment
- */
-router.get('/:id/questions', async (req: Request, res: Response) => {
-  try {
-    const id = getParam(req, 'id');
-    const questions = await assessmentService.getQuestions(id);
-    res.json(questions);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /assessments/:id/questions
- * Add a question to an assessment
- */
-router.post(
-  '/:id/questions',
-  validateBody(AddQuestionToAssessmentSchema),
-  async (req: Request, res: Response) => {
-    try {
-      const { tenantId } = getContext(req);
-      const id = getParam(req, 'id');
-      const assessmentQuestion = await assessmentService.addQuestion(tenantId, id, req.body);
-      res.status(201).json(assessmentQuestion);
-    } catch (error) {
-      handleError(error, res);
-    }
-  }
-);
-
-/**
- * DELETE /assessments/:id/questions/:questionId
- * Remove a question from an assessment
- */
-router.delete('/:id/questions/:questionId', async (req: Request, res: Response) => {
-  try {
-    const id = getParam(req, 'id');
-    const questionId = getParam(req, 'questionId');
-    await assessmentService.removeQuestion(id, questionId);
-    res.status(204).send();
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * PUT /assessments/:id/questions/reorder
- * Reorder questions in an assessment
- */
-router.put(
-  '/:id/questions/reorder',
-  validateBody(ReorderQuestionsSchema),
-  async (req: Request, res: Response) => {
-    try {
-      const id = getParam(req, 'id');
-      await assessmentService.reorderQuestions(id, req.body);
-      res.status(204).send();
-    } catch (error) {
-      handleError(error, res);
-    }
-  }
-);
-
-export const assessmentRoutes = router;

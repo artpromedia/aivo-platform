@@ -1,5 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 import { jwtVerify } from 'jose';
+
 import { config } from '../config.js';
 
 export interface AuthenticatedUser {
@@ -9,66 +11,64 @@ export interface AuthenticatedUser {
   classroomIds?: string[];
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: AuthenticatedUser;
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  // Skip auth for health check
-  if (req.path.startsWith('/health')) {
-    next();
-    return;
-  }
+export const authMiddleware = fp(async (fastify: FastifyInstance) => {
+  fastify.decorateRequest('user', undefined);
 
-  // Test mode bypass
-  if (process.env.NODE_ENV === 'test' && req.headers['x-test-user']) {
-    try {
-      req.user = JSON.parse(req.headers['x-test-user'] as string);
-      next();
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Skip auth for health check
+    if (request.url.startsWith('/health')) {
       return;
-    } catch {
-      // Fall through to normal auth
     }
-  }
 
-  // Development mode bypass
-  if (process.env.NODE_ENV === 'development' && req.headers['x-dev-user']) {
+    // Test mode bypass
+    if (process.env.NODE_ENV === 'test' && request.headers['x-test-user']) {
+      try {
+        request.user = JSON.parse(request.headers['x-test-user'] as string);
+        return;
+      } catch {
+        // Fall through to normal auth
+      }
+    }
+
+    // Development mode bypass
+    if (process.env.NODE_ENV === 'development' && request.headers['x-dev-user']) {
+      try {
+        request.user = JSON.parse(request.headers['x-dev-user'] as string);
+        return;
+      } catch {
+        // Fall through to normal auth
+      }
+    }
+
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      reply.status(401);
+      return reply.send({ error: 'Missing authorization header' });
+    }
+
+    const token = authHeader.slice(7);
+
     try {
-      req.user = JSON.parse(req.headers['x-dev-user'] as string);
-      next();
-      return;
-    } catch {
-      // Fall through to normal auth
-    }
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing authorization header' });
-    return;
-  }
-
-  const token = authHeader.slice(7);
-
-  verifyToken(token)
-    .then((payload) => {
-      req.user = {
+      const payload = await verifyToken(token);
+      request.user = {
         sub: payload.sub as string,
         tenantId: payload.tenantId as string,
         role: payload.role as string,
         classroomIds: payload.classroomIds as string[] | undefined,
       };
-      next();
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error('Auth error:', error);
-      res.status(401).json({ error: 'Invalid token' });
-    });
-}
+      reply.status(401);
+      return reply.send({ error: 'Invalid token' });
+    }
+  });
+});
 
 async function verifyToken(token: string): Promise<Record<string, unknown>> {
   const secret = new TextEncoder().encode(config.jwtSecret);
@@ -110,15 +110,19 @@ async function importPublicKey(pem: string): Promise<CryptoKey> {
 /**
  * Helper to extract user context from request
  */
-export function getContext(req: Request): { userId: string; tenantId: string; role: string } {
-  if (!req.user) {
+export function getContext(request: FastifyRequest): {
+  userId: string;
+  tenantId: string;
+  role: string;
+} {
+  if (!request.user) {
     throw new Error('User not authenticated');
   }
 
   return {
-    userId: req.user.sub,
-    tenantId: req.user.tenantId,
-    role: req.user.role,
+    userId: request.user.sub,
+    tenantId: request.user.tenantId,
+    role: request.user.role,
   };
 }
 
@@ -126,17 +130,15 @@ export function getContext(req: Request): { userId: string; tenantId: string; ro
  * Middleware to require specific roles
  */
 export function requireRole(...allowedRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    if (!request.user) {
+      reply.status(401);
+      return reply.send({ error: 'Not authenticated' });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
+    if (!allowedRoles.includes(request.user.role)) {
+      reply.status(403);
+      return reply.send({ error: 'Insufficient permissions' });
     }
-
-    next();
   };
 }
