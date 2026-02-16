@@ -1,153 +1,128 @@
 /**
- * Messaging Controller
+ * Messaging Routes
  *
  * REST API endpoints for parent-teacher messaging.
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { MessagingService } from './messaging.service.js';
-import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
-import { SendMessageInput } from './messaging.types.js';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-@Controller('messages')
-export class MessagingController {
-  constructor(private readonly messagingService: MessagingService) {}
+import { SenderType } from './messaging.types.js';
+
+export async function messagingRoutes(app: FastifyInstance) {
+  const messagingService = app.services.messaging;
 
   /**
    * Get all conversations for the parent
    */
-  @Get('conversations')
-  async getConversations(
-    @Req() req: ParentAuthRequest,
-    @Query('includeArchived') includeArchived?: string
-  ) {
-    return this.messagingService.getParentConversations(req.parent!.id, {
-      includeArchived: includeArchived === 'true',
-    });
-  }
+  app.get('/conversations', async (request: FastifyRequest) => {
+    const { includeArchived } = request.query as { includeArchived?: string };
+    return messagingService.getParentConversations(request.parent!.id);
+  });
 
   /**
    * Create a new conversation with a teacher
    */
-  @Post('conversations')
-  @HttpCode(HttpStatus.CREATED)
-  async createConversation(
-    @Req() req: ParentAuthRequest,
-    @Body() body: { teacherId: string; studentId: string; subject: string; message?: string }
-  ) {
-    const conversation = await this.messagingService.createConversation({
-      parentId: req.parent!.id,
+  app.post('/conversations', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
+      teacherId: string;
+      studentId: string;
+      subject: string;
+      message?: string;
+    };
+    const conversation = await messagingService.createConversation(request.parent!.id, {
       teacherId: body.teacherId,
       studentId: body.studentId,
       subject: body.subject,
     });
 
-    // Send initial message if provided
     if (body.message) {
-      await this.messagingService.sendMessage({
+      await messagingService.sendMessage(request.parent!.id, SenderType.PARENT, {
         conversationId: conversation.id,
-        senderId: req.parent!.id,
-        senderType: 'parent',
         content: body.message,
       });
     }
 
+    reply.status(201);
     return conversation;
-  }
+  });
 
   /**
    * Get messages in a conversation
    */
-  @Get('conversations/:conversationId')
-  async getConversationMessages(
-    @Req() req: ParentAuthRequest,
-    @Param('conversationId') conversationId: string,
-    @Query('limit') limit?: string,
-    @Query('before') before?: string
-  ) {
-    return this.messagingService.getConversationMessages(conversationId, req.parent!.id, {
-      limit: limit ? Number.parseInt(limit, 10) : undefined,
-      before: before || undefined,
-    });
-  }
+  app.get('/conversations/:conversationId', async (request: FastifyRequest) => {
+    const { conversationId } = request.params as { conversationId: string };
+    const { limit, before } = request.query as { limit?: string; before?: string };
+    return messagingService.getConversationMessages(
+      request.parent!.id,
+      SenderType.PARENT,
+      conversationId,
+      {
+        limit: limit ? Number.parseInt(limit, 10) : undefined,
+        cursor: before || undefined,
+      }
+    );
+  });
 
   /**
    * Send a message in a conversation
    */
-  @Post('conversations/:conversationId/messages')
-  @HttpCode(HttpStatus.CREATED)
-  async sendMessage(
-    @Req() req: ParentAuthRequest,
-    @Param('conversationId') conversationId: string,
-    @Body() body: { content: string }
-  ) {
-    return this.messagingService.sendMessage({
-      conversationId,
-      senderId: req.parent!.id,
-      senderType: 'parent',
-      content: body.content,
-    });
-  }
+  app.post(
+    '/conversations/:conversationId/messages',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { conversationId } = request.params as { conversationId: string };
+      const body = request.body as { content: string };
+      reply.status(201);
+      return messagingService.sendMessage(request.parent!.id, SenderType.PARENT, {
+        conversationId,
+        content: body.content,
+      });
+    }
+  );
 
   /**
    * Mark messages as read
    */
-  @Put('conversations/:conversationId/read')
-  async markAsRead(
-    @Req() req: ParentAuthRequest,
-    @Param('conversationId') conversationId: string
-  ) {
-    await this.messagingService.markAsRead(conversationId, req.parent!.id);
+  app.put('/conversations/:conversationId/read', async (request: FastifyRequest) => {
+    const { conversationId } = request.params as { conversationId: string };
+    await messagingService.getConversationMessages(
+      request.parent!.id,
+      SenderType.PARENT,
+      conversationId,
+      { limit: 0 }
+    );
     return { success: true };
-  }
+  });
 
   /**
    * Archive a conversation
    */
-  @Put('conversations/:conversationId/archive')
-  async archiveConversation(
-    @Req() req: ParentAuthRequest,
-    @Param('conversationId') conversationId: string
-  ) {
-    await this.messagingService.archiveConversation(conversationId, req.parent!.id);
+  app.put('/conversations/:conversationId/archive', async (request: FastifyRequest) => {
+    const { conversationId } = request.params as { conversationId: string };
+    await messagingService.archiveConversation(
+      request.parent!.id,
+      SenderType.PARENT,
+      conversationId
+    );
     return { success: true };
-  }
+  });
 
   /**
    * Report a message
    */
-  @Post('messages/:messageId/report')
-  @HttpCode(HttpStatus.CREATED)
-  async reportMessage(
-    @Req() req: ParentAuthRequest,
-    @Param('messageId') messageId: string,
-    @Body() body: { reason: string; details?: string }
-  ) {
-    return this.messagingService.reportMessage({
+  app.post('/messages/:messageId/report', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { messageId } = request.params as { messageId: string };
+    const body = request.body as { reason: string; details?: string };
+    reply.status(201);
+    return messagingService.reportMessage(request.parent!.id, SenderType.PARENT, {
       messageId,
-      reporterId: req.parent!.id,
-      reporterType: 'parent',
       reason: body.reason,
-      details: body.details,
     });
-  }
+  });
 
   /**
    * Get unread message count
    */
-  @Get('unread-count')
-  async getUnreadCount(@Req() req: ParentAuthRequest) {
-    return this.messagingService.getUnreadCount(req.parent!.id);
-  }
+  app.get('/unread-count', async (request: FastifyRequest) => {
+    return messagingService.getUnreadCount(request.parent!.id);
+  });
 }

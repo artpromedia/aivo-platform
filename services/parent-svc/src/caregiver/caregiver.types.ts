@@ -5,20 +5,6 @@
  * delegated access management.
  */
 
-import {
-  IsEmail,
-  IsString,
-  IsOptional,
-  IsUUID,
-  IsEnum,
-  IsBoolean,
-  MinLength,
-  MaxLength,
-  IsPhoneNumber,
-  ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-
 // ============================================================================
 // ENUMS
 // ============================================================================
@@ -86,148 +72,59 @@ export const DEFAULT_CAREGIVER_PERMISSIONS: CaregiverPermissions = {
 // DTOs - Input Types
 // ============================================================================
 
-export class CreateCaregiverInviteDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsEmail()
-  caregiverEmail!: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
+export interface CreateCaregiverInviteDto {
+  studentId: string;
+  caregiverEmail: string;
   caregiverName?: string;
-
-  @IsEnum(CaregiverRelationship)
-  @IsOptional()
   relationship?: CaregiverRelationship;
-
-  @IsOptional()
   permissions?: Partial<CaregiverPermissions>;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
   message?: string;
-
-  @IsString()
-  @IsOptional()
   language?: string;
 }
 
-export class AcceptCaregiverInviteDto {
-  @IsString()
-  inviteCode!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(8)
-  password!: string;
-
-  @IsString()
-  givenName!: string;
-
-  @IsString()
-  familyName!: string;
-
-  @IsString()
-  @IsOptional()
-  @IsPhoneNumber()
+export interface AcceptCaregiverInviteDto {
+  inviteCode: string;
+  email: string;
+  password: string;
+  givenName: string;
+  familyName: string;
   phone?: string;
-
-  @IsString()
-  @IsOptional()
   language?: string;
-
-  @IsString()
-  @IsOptional()
   timezone?: string;
 }
 
-export class UpdateCaregiverProfileDto {
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
+export interface UpdateCaregiverProfileDto {
   givenName?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
   familyName?: string;
-
-  @IsString()
-  @IsOptional()
-  @IsPhoneNumber()
   phone?: string;
-
-  @IsString()
-  @IsOptional()
   photoUrl?: string;
-
-  @IsString()
-  @IsOptional()
   language?: string;
-
-  @IsString()
-  @IsOptional()
   timezone?: string;
 }
 
-export class UpdateCaregiverPermissionsDto {
-  @IsUUID()
-  caregiverId!: string;
-
-  @IsUUID()
-  studentId!: string;
-
-  @IsBoolean()
-  @IsOptional()
+export interface UpdateCaregiverPermissionsDto {
+  caregiverId: string;
+  studentId: string;
   viewProgress?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewGrades?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewActivity?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewAchievements?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   receiveNotifications?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewTeacherNotes?: boolean;
 }
 
-export class RevokeCaregiverAccessDto {
-  @IsUUID()
-  caregiverId!: string;
-
-  @IsUUID()
-  studentId!: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
+export interface RevokeCaregiverAccessDto {
+  caregiverId: string;
+  studentId: string;
   reason?: string;
 }
 
-export class ResendCaregiverInviteDto {
-  @IsUUID()
-  inviteId!: string;
+export interface ResendCaregiverInviteDto {
+  inviteId: string;
 }
 
-export class CancelCaregiverInviteDto {
-  @IsUUID()
-  inviteId!: string;
+export interface CancelCaregiverInviteDto {
+  inviteId: string;
 }
 
 // ============================================================================

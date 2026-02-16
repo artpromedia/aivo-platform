@@ -1,113 +1,95 @@
 /**
- * Auth Controller
+ * Auth Routes
  *
  * Authentication endpoints for parent portal.
  */
 
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  Get,
-  Query,
-  Req,
-} from '@nestjs/common';
-import { ParentAuthService } from './parent-auth.service.js';
-import type { ParentAuthRequest } from './parent-auth.middleware.js';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-@Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: ParentAuthService) {}
+import { parentAuthHook } from './parent-auth.middleware.js';
+
+export async function authRoutes(app: FastifyInstance) {
+  const authService = app.services.parentAuth;
 
   /**
    * Login with email and password
    */
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password);
-  }
+  app.post('/login', async (request: FastifyRequest) => {
+    const { email, password } = request.body as { email: string; password: string };
+    return authService.login(email, password);
+  });
 
   /**
    * Register a new parent account
    */
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  async register(
-    @Body()
-    body: {
+  app.post('/register', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
       email: string;
       password: string;
-      firstName: string;
-      lastName: string;
+      givenName: string;
+      familyName: string;
       inviteCode: string;
       language?: string;
-    }
-  ) {
-    return this.authService.register(body);
-  }
+    };
+    reply.status(201);
+    return authService.register(body);
+  });
 
   /**
    * Refresh access token
    */
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  async refresh(@Body() body: { refreshToken: string }) {
-    return this.authService.refreshToken(body.refreshToken);
-  }
+  app.post('/refresh', async (request: FastifyRequest) => {
+    const { refreshToken } = request.body as { refreshToken: string };
+    return authService.refreshToken(refreshToken);
+  });
 
   /**
    * Logout and invalidate refresh token
    */
-  @Post('logout')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@Body() body: { refreshToken: string }) {
-    await this.authService.logout(body.refreshToken);
-  }
+  app.post('/logout', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { refreshToken } = request.body as { refreshToken: string };
+    await authService.logout(refreshToken);
+    return reply.status(204).send();
+  });
 
   /**
    * Verify email with token
    */
-  @Get('verify-email')
-  async verifyEmail(@Query('token') token: string) {
-    await this.authService.verifyEmail(token);
+  app.get('/verify-email', async (request: FastifyRequest) => {
+    const { token } = request.query as { token: string };
+    await authService.verifyEmail(token);
     return { success: true, message: 'Email verified successfully' };
-  }
+  });
 
   /**
    * Request password reset
    */
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() body: { email: string }) {
-    await this.authService.requestPasswordReset(body.email);
+  app.post('/forgot-password', async (request: FastifyRequest) => {
+    const { email } = request.body as { email: string };
+    await authService.requestPasswordReset(email);
     return { success: true, message: 'If the email exists, a reset link has been sent' };
-  }
+  });
 
   /**
    * Reset password with token
    */
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: { token: string; password: string }) {
-    await this.authService.resetPassword(body.token, body.password);
+  app.post('/reset-password', async (request: FastifyRequest) => {
+    const { token, password } = request.body as { token: string; password: string };
+    await authService.resetPassword(token, password);
     return { success: true, message: 'Password reset successfully' };
-  }
+  });
 
   /**
    * Get current user info (requires auth)
    */
-  @Get('me')
-  async getMe(@Req() req: ParentAuthRequest) {
+  app.get('/me', { preHandler: [parentAuthHook] }, async (request: FastifyRequest) => {
     return {
-      id: req.parent!.id,
-      email: req.parent!.email,
-      firstName: req.parent!.firstName,
-      lastName: req.parent!.lastName,
-      language: req.parent!.language,
-      verified: req.parent!.verified,
+      id: request.parent!.id,
+      email: request.parent!.email,
+      firstName: request.parent!.firstName,
+      lastName: request.parent!.lastName,
+      language: request.parent!.language,
+      verified: request.parent!.verified,
     };
-  }
+  });
 }

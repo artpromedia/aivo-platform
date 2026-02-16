@@ -14,7 +14,7 @@ declare module 'fastify' {
     summary?: string;
     consumes?: string[];
     produces?: string[];
-    security?: Array<Record<string, string[]>>;
+    security?: Record<string, string[]>[];
     deprecated?: boolean;
     externalDocs?: { description?: string; url: string };
     operationId?: string;

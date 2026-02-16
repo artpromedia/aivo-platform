@@ -8,12 +8,8 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "incremental": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "strictPropertyInitialization": false
+    "incremental": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
-

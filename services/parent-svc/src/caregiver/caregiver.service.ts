@@ -8,21 +8,24 @@
  * - Limit enforcement (2 caregivers per child per license)
  */
 
+import { logger } from '@aivo/ts-observability';
+
+import type { Prisma } from '../../generated/prisma-client/index.js';
+import { config } from '../config.js';
+import type { CryptoService } from '../crypto/crypto.service.js';
+import type { EmailService } from '../email/email.service.js';
 import {
-  Injectable,
   ForbiddenException,
   NotFoundException,
   BadRequestException,
   ConflictException,
-} from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CryptoService } from '../crypto/crypto.service.js';
-import { NotificationService } from '../notification/notification.service.js';
-import { I18nService } from '../i18n/i18n.service.js';
-import { EmailService } from '../email/email.service.js';
-import {
+} from '../errors.js';
+import type { eventBus } from '../event-bus.js';
+import type { I18nService } from '../i18n/i18n.service.js';
+import type { NotificationService } from '../notification/notification.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
   CreateCaregiverInviteDto,
   AcceptCaregiverInviteDto,
   UpdateCaregiverProfileDto,
@@ -32,34 +35,34 @@ import {
   CancelCaregiverInviteDto,
   CaregiverProfile,
   CaregiverStudentLink,
-  CaregiverInvite,
   CaregiverWithStudents,
   StudentCaregiverSummary,
   CreateCaregiverInviteResponse,
   AcceptCaregiverInviteResponse,
   CaregiverLimitInfo,
+  CaregiverPermissions,
+} from './caregiver.types.js';
+import {
+  CaregiverInvite,
   CaregiverStatus,
   CaregiverInviteStatus,
   CaregiverRelationship,
   CaregiverLinkStatus,
-  CaregiverPermissions,
   DelegationAction,
   DEFAULT_CAREGIVER_PERMISSIONS,
   DEFAULT_CAREGIVER_NOTIFICATION_PREFERENCES,
   CAREGIVER_INVITE_EXPIRY_DAYS,
   DEFAULT_MAX_CAREGIVERS_PER_STUDENT,
 } from './caregiver.types.js';
-import { config } from '../config.js';
 
-@Injectable()
 export class CaregiverService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: typeof eventBus,
     private readonly i18n: I18nService,
     private readonly crypto: CryptoService,
     private readonly notifications: NotificationService,
-    private readonly email: EmailService,
+    private readonly email: EmailService
   ) {}
 
   // ============================================================================
@@ -71,7 +74,7 @@ export class CaregiverService {
    */
   async createCaregiverInvite(
     parentId: string,
-    dto: CreateCaregiverInviteDto,
+    dto: CreateCaregiverInviteDto
   ): Promise<CreateCaregiverInviteResponse> {
     // Verify parent has access to the student
     const parentLink = await this.prisma.parentStudentLink.findFirst({
@@ -94,7 +97,7 @@ export class CaregiverService {
     const limitInfo = await this.getCaregiverLimitInfo(dto.studentId);
     if (!limitInfo.canAddMore) {
       throw new BadRequestException(
-        `Maximum number of caregivers (${limitInfo.maxCaregivers}) already reached for this child`,
+        `Maximum number of caregivers (${limitInfo.maxCaregivers}) already reached for this child`
       );
     }
 
@@ -134,7 +137,10 @@ export class CaregiverService {
         },
       });
 
-      if (existingLink && existingLink.status === CaregiverLinkStatus.ACTIVE) {
+      if (
+        existingLink &&
+        (existingLink.status as CaregiverLinkStatus) === CaregiverLinkStatus.ACTIVE
+      ) {
         throw new ConflictException('This caregiver already has access to this child');
       }
     }
@@ -159,7 +165,7 @@ export class CaregiverService {
         relationship: dto.relationship || CaregiverRelationship.CAREGIVER,
         invitedByParentId: parentId,
         status: CaregiverInviteStatus.PENDING,
-        permissions,
+        permissions: permissions as unknown as Prisma.InputJsonValue,
         message: dto.message,
         expiresAt,
         language: dto.language || 'en',
@@ -173,17 +179,20 @@ export class CaregiverService {
       actorId: parentId,
       actorType: 'parent',
       caregiverEmail: dto.caregiverEmail.toLowerCase(),
-      newValue: { permissions, relationship: dto.relationship },
+      newValue: { permissions, relationship: dto.relationship } as Record<string, unknown>,
     });
 
     // Send invite email
     await this.sendCaregiverInviteEmail(invite, parentLink.parent, parentLink.student);
 
-    logger.info('Caregiver invite created', {
-      studentId: dto.studentId,
-      invitedBy: parentId,
-      caregiverEmail: dto.caregiverEmail,
-    });
+    logger.info(
+      {
+        studentId: dto.studentId,
+        invitedBy: parentId,
+        caregiverEmail: dto.caregiverEmail,
+      },
+      'Caregiver invite created'
+    );
 
     return {
       inviteId: invite.id,
@@ -196,7 +205,9 @@ export class CaregiverService {
   /**
    * Accept a caregiver invite
    */
-  async acceptCaregiverInvite(dto: AcceptCaregiverInviteDto): Promise<AcceptCaregiverInviteResponse> {
+  async acceptCaregiverInvite(
+    dto: AcceptCaregiverInviteDto
+  ): Promise<AcceptCaregiverInviteResponse> {
     // Find and validate invite
     const invite = await this.prisma.caregiverInvite.findUnique({
       where: { code: dto.inviteCode },
@@ -210,7 +221,7 @@ export class CaregiverService {
       throw new NotFoundException('Invalid invite code');
     }
 
-    if (invite.status !== CaregiverInviteStatus.PENDING) {
+    if ((invite.status as CaregiverInviteStatus) !== CaregiverInviteStatus.PENDING) {
       throw new BadRequestException('This invite has already been used or revoked');
     }
 
@@ -226,9 +237,7 @@ export class CaregiverService {
     // Re-check caregiver limit (in case it changed)
     const limitInfo = await this.getCaregiverLimitInfo(invite.studentId);
     if (!limitInfo.canAddMore) {
-      throw new BadRequestException(
-        'Maximum number of caregivers has been reached for this child',
-      );
+      throw new BadRequestException('Maximum number of caregivers has been reached for this child');
     }
 
     // Check if caregiver account already exists
@@ -249,7 +258,8 @@ export class CaregiverService {
           timezone: dto.timezone || 'UTC',
           status: CaregiverStatus.ACTIVE,
           emailVerified: false,
-          notificationPreferences: DEFAULT_CAREGIVER_NOTIFICATION_PREFERENCES,
+          notificationPreferences:
+            DEFAULT_CAREGIVER_NOTIFICATION_PREFERENCES as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -266,7 +276,7 @@ export class CaregiverService {
         studentId: invite.studentId,
         relationship: invite.relationship,
         status: CaregiverLinkStatus.ACTIVE,
-        permissions,
+        permissions: permissions as unknown as Prisma.InputJsonValue,
         delegatedById: invite.invitedByParentId,
         delegatedAt: new Date(),
       },
@@ -293,16 +303,19 @@ export class CaregiverService {
       actorType: 'caregiver',
       caregiverId: caregiver.id,
       caregiverEmail: dto.email.toLowerCase(),
-      newValue: { permissions, relationship: invite.relationship },
+      newValue: { permissions, relationship: invite.relationship } as Record<string, unknown>,
     });
 
     // Notify parent that caregiver accepted
     await this.notifyParentOfAcceptance(invite.invitedByParentId, caregiver, invite.student);
 
-    logger.info('Caregiver invite accepted', {
-      studentId: invite.studentId,
-      caregiverId: caregiver.id,
-    });
+    logger.info(
+      {
+        studentId: invite.studentId,
+        caregiverId: caregiver.id,
+      },
+      'Caregiver invite accepted'
+    );
 
     this.eventEmitter.emit('caregiver.linked', {
       caregiverId: caregiver.id,
@@ -341,7 +354,7 @@ export class CaregiverService {
       throw new ForbiddenException('You cannot resend this invite');
     }
 
-    if (invite.status !== CaregiverInviteStatus.PENDING) {
+    if ((invite.status as CaregiverInviteStatus) !== CaregiverInviteStatus.PENDING) {
       throw new BadRequestException('This invite cannot be resent');
     }
 
@@ -357,7 +370,7 @@ export class CaregiverService {
     await this.sendCaregiverInviteEmail(
       { ...invite, expiresAt: newExpiresAt },
       invite.invitedByParent,
-      invite.student,
+      invite.student
     );
 
     // Log action
@@ -368,7 +381,6 @@ export class CaregiverService {
       actorType: 'parent',
       caregiverEmail: invite.caregiverEmail,
     });
-
   }
 
   /**
@@ -387,7 +399,7 @@ export class CaregiverService {
       throw new ForbiddenException('You cannot cancel this invite');
     }
 
-    if (invite.status !== CaregiverInviteStatus.PENDING) {
+    if ((invite.status as CaregiverInviteStatus) !== CaregiverInviteStatus.PENDING) {
       throw new BadRequestException('This invite cannot be cancelled');
     }
 
@@ -395,7 +407,6 @@ export class CaregiverService {
       where: { id: dto.inviteId },
       data: { status: CaregiverInviteStatus.REVOKED },
     });
-
   }
 
   // ============================================================================
@@ -407,7 +418,7 @@ export class CaregiverService {
    */
   async updateCaregiverPermissions(
     parentId: string,
-    dto: UpdateCaregiverPermissionsDto,
+    dto: UpdateCaregiverPermissionsDto
   ): Promise<CaregiverStudentLink> {
     // Verify parent has access to this child
     const parentLink = await this.prisma.parentStudentLink.findFirst({
@@ -436,7 +447,7 @@ export class CaregiverService {
       throw new NotFoundException('Caregiver access not found');
     }
 
-    if (caregiverLink.status !== CaregiverLinkStatus.ACTIVE) {
+    if ((caregiverLink.status as CaregiverLinkStatus) !== CaregiverLinkStatus.ACTIVE) {
       throw new BadRequestException('Caregiver access is not active');
     }
 
@@ -447,13 +458,15 @@ export class CaregiverService {
       ...(dto.viewGrades !== undefined && { viewGrades: dto.viewGrades }),
       ...(dto.viewActivity !== undefined && { viewActivity: dto.viewActivity }),
       ...(dto.viewAchievements !== undefined && { viewAchievements: dto.viewAchievements }),
-      ...(dto.receiveNotifications !== undefined && { receiveNotifications: dto.receiveNotifications }),
+      ...(dto.receiveNotifications !== undefined && {
+        receiveNotifications: dto.receiveNotifications,
+      }),
       ...(dto.viewTeacherNotes !== undefined && { viewTeacherNotes: dto.viewTeacherNotes }),
     };
 
     const updatedLink = await this.prisma.caregiverStudentLink.update({
       where: { id: caregiverLink.id },
-      data: { permissions: newPermissions },
+      data: { permissions: newPermissions as unknown as Prisma.InputJsonValue },
     });
 
     // Log action
@@ -463,10 +476,9 @@ export class CaregiverService {
       actorId: parentId,
       actorType: 'parent',
       caregiverId: dto.caregiverId,
-      previousValue: previousPermissions,
-      newValue: newPermissions,
+      previousValue: previousPermissions as Record<string, unknown>,
+      newValue: newPermissions as Record<string, unknown>,
     });
-
 
     return this.formatCaregiverStudentLink(updatedLink);
   }
@@ -505,7 +517,7 @@ export class CaregiverService {
       throw new NotFoundException('Caregiver access not found');
     }
 
-    if (caregiverLink.status === CaregiverLinkStatus.REVOKED) {
+    if ((caregiverLink.status as CaregiverLinkStatus) === CaregiverLinkStatus.REVOKED) {
       throw new BadRequestException('Caregiver access has already been revoked');
     }
 
@@ -535,7 +547,6 @@ export class CaregiverService {
 
     // Notify caregiver
     await this.notifyCaregiverOfRevocation(caregiverLink.caregiver, dto.studentId);
-
 
     this.eventEmitter.emit('caregiver.unlinked', {
       caregiverId: dto.caregiverId,
@@ -591,7 +602,10 @@ export class CaregiverService {
   /**
    * Get all caregivers for a student (for parent view)
    */
-  async getStudentCaregivers(parentId: string, studentId: string): Promise<StudentCaregiverSummary> {
+  async getStudentCaregivers(
+    parentId: string,
+    studentId: string
+  ): Promise<StudentCaregiverSummary> {
     // Verify parent has access
     const parentLink = await this.prisma.parentStudentLink.findFirst({
       where: {
@@ -708,7 +722,7 @@ export class CaregiverService {
    */
   async updateCaregiverProfile(
     caregiverId: string,
-    dto: UpdateCaregiverProfileDto,
+    dto: UpdateCaregiverProfileDto
   ): Promise<CaregiverProfile> {
     const caregiver = await this.prisma.caregiver.update({
       where: { id: caregiverId },
@@ -760,7 +774,7 @@ export class CaregiverService {
       message: invite.message,
       expiresAt: invite.expiresAt,
       isExpired: invite.expiresAt < new Date(),
-      isUsed: invite.status !== CaregiverInviteStatus.PENDING,
+      isUsed: (invite.status as CaregiverInviteStatus) !== CaregiverInviteStatus.PENDING,
     };
   }
 
@@ -769,7 +783,7 @@ export class CaregiverService {
    */
   async getStudentSummaryForCaregiver(
     caregiverId: string,
-    studentId: string,
+    studentId: string
   ): Promise<{
     id: string;
     givenName: string;
@@ -801,7 +815,7 @@ export class CaregiverService {
       },
     });
 
-    if (!link || link.status !== CaregiverLinkStatus.ACTIVE) {
+    if (!link || (link.status as CaregiverLinkStatus) !== CaregiverLinkStatus.ACTIVE) {
       throw new ForbiddenException('You do not have access to this child');
     }
 
@@ -831,7 +845,7 @@ export class CaregiverService {
       familyName: link.student.familyName,
       photoUrl: link.student.photoUrl,
       grade: link.student.grade,
-      overallMastery: permissions.viewProgress ? (link.student.learnerModel?.overallMastery || 0) : 0,
+      overallMastery: permissions.viewProgress ? link.student.learnerModel?.overallMastery || 0 : 0,
       lastActivityAt: link.student.learnerModel?.lastActivityAt || null,
       weeklyStats,
     };
@@ -843,15 +857,15 @@ export class CaregiverService {
   async getStudentProgressForCaregiver(
     caregiverId: string,
     studentId: string,
-    options: { startDate?: Date; endDate?: Date },
+    options: { startDate?: Date; endDate?: Date }
   ): Promise<{
     summary: {
       totalTimeMinutes: number;
       completedLessons: number;
       averageScore: number;
     };
-    dailyActivity: Array<{ date: string; minutes: number; completed: number }>;
-    subjectBreakdown: Array<{ subject: string; minutes: number; lessonsCompleted: number }>;
+    dailyActivity: { date: string; minutes: number; completed: number }[];
+    subjectBreakdown: { subject: string; minutes: number; lessonsCompleted: number }[];
   }> {
     // Verify caregiver has access
     const link = await this.prisma.caregiverStudentLink.findUnique({
@@ -863,7 +877,7 @@ export class CaregiverService {
       },
     });
 
-    if (!link || link.status !== CaregiverLinkStatus.ACTIVE) {
+    if (!link || (link.status as CaregiverLinkStatus) !== CaregiverLinkStatus.ACTIVE) {
       throw new ForbiddenException('You do not have access to this child');
     }
 
@@ -932,14 +946,16 @@ export class CaregiverService {
    */
   async getStudentAchievementsForCaregiver(
     caregiverId: string,
-    studentId: string,
-  ): Promise<Array<{
-    id: string;
-    name: string;
-    description: string;
-    iconUrl: string | null;
-    earnedAt: Date;
-  }>> {
+    studentId: string
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      description: string;
+      iconUrl: string | null;
+      earnedAt: Date;
+    }[]
+  > {
     // Verify caregiver has access
     const link = await this.prisma.caregiverStudentLink.findUnique({
       where: {
@@ -950,7 +966,7 @@ export class CaregiverService {
       },
     });
 
-    if (!link || link.status !== CaregiverLinkStatus.ACTIVE) {
+    if (!link || (link.status as CaregiverLinkStatus) !== CaregiverLinkStatus.ACTIVE) {
       throw new ForbiddenException('You do not have access to this child');
     }
 
@@ -981,10 +997,7 @@ export class CaregiverService {
   /**
    * Authenticate caregiver
    */
-  async authenticateCaregiver(
-    email: string,
-    password: string,
-  ): Promise<CaregiverProfile | null> {
+  async authenticateCaregiver(email: string, password: string): Promise<CaregiverProfile | null> {
     const caregiver = await this.prisma.caregiver.findUnique({
       where: { email: email.toLowerCase() },
     });
@@ -993,7 +1006,7 @@ export class CaregiverService {
       return null;
     }
 
-    if (caregiver.status !== CaregiverStatus.ACTIVE) {
+    if ((caregiver.status as CaregiverStatus) !== CaregiverStatus.ACTIVE) {
       throw new ForbiddenException('Account is not active');
     }
 
@@ -1054,8 +1067,8 @@ export class CaregiverService {
         actorType: data.actorType,
         caregiverId: data.caregiverId,
         caregiverEmail: data.caregiverEmail,
-        previousValue: data.previousValue,
-        newValue: data.newValue,
+        previousValue: data.previousValue as unknown as Prisma.InputJsonValue,
+        newValue: data.newValue as unknown as Prisma.InputJsonValue,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
       },
@@ -1067,16 +1080,22 @@ export class CaregiverService {
   }
 
   private async sendCaregiverInviteEmail(
-    invite: { code: string; caregiverEmail: string; caregiverName?: string | null; message?: string | null; expiresAt: Date },
+    invite: {
+      code: string;
+      caregiverEmail: string;
+      caregiverName?: string | null;
+      message?: string | null;
+      expiresAt: Date;
+    },
     parent: { givenName: string; familyName: string },
-    student: { givenName: string; familyName: string },
+    student: { givenName: string; familyName: string }
   ): Promise<void> {
     const inviteUrl = this.generateInviteUrl(invite.code);
 
-    await this.email.send({
+    await this.notifications.sendEmail({
       to: invite.caregiverEmail,
-      subject: `${parent.givenName} ${parent.familyName} has invited you to monitor ${student.givenName}'s learning`,
       template: 'caregiver-invite',
+      language: 'en',
       data: {
         caregiverName: invite.caregiverName || 'there',
         parentName: `${parent.givenName} ${parent.familyName}`,
@@ -1088,7 +1107,11 @@ export class CaregiverService {
     });
   }
 
-  private async sendCaregiverVerificationEmail(caregiver: { id: string; email: string; givenName: string }): Promise<void> {
+  private async sendCaregiverVerificationEmail(caregiver: {
+    id: string;
+    email: string;
+    givenName: string;
+  }): Promise<void> {
     const token = await this.crypto.generateSecureToken(32);
 
     await this.prisma.caregiverVerificationToken.create({
@@ -1099,10 +1122,10 @@ export class CaregiverService {
       },
     });
 
-    await this.email.send({
+    await this.notifications.sendEmail({
       to: caregiver.email,
-      subject: 'Verify your AIVO Caregiver account',
       template: 'caregiver-verification',
+      language: 'en',
       data: {
         name: caregiver.givenName,
         verifyUrl: `${config.parentPortalUrl}/caregiver/verify?token=${token}`,
@@ -1113,9 +1136,11 @@ export class CaregiverService {
   private async notifyParentOfAcceptance(
     parentId: string,
     caregiver: { givenName: string; familyName: string; email: string },
-    student: { givenName: string; familyName: string },
+    student: { givenName: string; familyName: string }
   ): Promise<void> {
-    await this.notifications.sendParentNotification(parentId, {
+    await this.notifications.send({
+      userId: parentId,
+      userType: 'parent',
       type: 'caregiver_accepted',
       title: 'Caregiver invitation accepted',
       body: `${caregiver.givenName} ${caregiver.familyName} has accepted your invitation to monitor ${student.givenName}'s learning.`,
@@ -1128,7 +1153,7 @@ export class CaregiverService {
 
   private async notifyCaregiverOfRevocation(
     caregiver: { id: string; email: string; givenName: string },
-    studentId: string,
+    studentId: string
   ): Promise<void> {
     const student = await this.prisma.profile.findUnique({
       where: { id: studentId },
@@ -1136,10 +1161,10 @@ export class CaregiverService {
 
     if (!student) return;
 
-    await this.email.send({
+    await this.notifications.sendEmail({
       to: caregiver.email,
-      subject: 'Your caregiver access has been revoked',
       template: 'caregiver-access-revoked',
+      language: 'en',
       data: {
         caregiverName: caregiver.givenName,
         studentName: `${student.givenName} ${student.familyName}`,

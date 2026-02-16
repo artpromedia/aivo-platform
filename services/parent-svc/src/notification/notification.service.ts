@@ -7,14 +7,14 @@
  * - SMS (optional)
  */
 
-import { Injectable } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
-import { Prisma } from '../../generated/prisma-client/index.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { EmailService } from '../email/email.service.js';
-import { I18nService } from '../i18n/i18n.service.js';
-import { FirebaseService } from '../firebase/firebase.service.js';
+
+import type { Prisma } from '../../generated/prisma-client/index.js';
 import { config } from '../config.js';
+import type { EmailService } from '../email/email.service.js';
+import type { FirebaseService } from '../firebase/firebase.service.js';
+import type { I18nService } from '../i18n/i18n.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 interface SendNotificationOptions {
   userId: string;
@@ -32,13 +32,12 @@ interface SendEmailOptions {
   data: Record<string, unknown>;
 }
 
-@Injectable()
 export class NotificationService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
     private readonly i18n: I18nService,
-    private readonly firebase: FirebaseService,
+    private readonly firebase: FirebaseService
   ) {}
 
   /**
@@ -81,11 +80,14 @@ export class NotificationService {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error({
-        userId,
-        type,
-        error: message,
-      }, 'Failed to send notification');
+      logger.error(
+        {
+          userId,
+          type,
+          error: message,
+        },
+        'Failed to send notification'
+      );
     }
   }
 
@@ -107,11 +109,14 @@ export class NotificationService {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error({
-        to,
-        template,
-        error: message,
-      }, 'Failed to send template email');
+      logger.error(
+        {
+          to,
+          template,
+          error: message,
+        },
+        'Failed to send template email'
+      );
       throw error;
     }
   }
@@ -120,7 +125,7 @@ export class NotificationService {
    * Send push notifications to all subscribed devices
    */
   private async sendPushNotification(
-    subscriptions: Array<{ platform: string; token?: string | null; endpoint: string }>,
+    subscriptions: { platform: string; token?: string | null; endpoint: string }[],
     title: string,
     body: string,
     data?: Record<string, unknown>
@@ -128,7 +133,7 @@ export class NotificationService {
     // Filter subscriptions that have valid tokens
     const validTokens = subscriptions
       .filter((sub): sub is { platform: string; token: string; endpoint: string } => !!sub.token)
-      .map(sub => ({ platform: sub.platform, token: sub.token, endpoint: sub.endpoint }));
+      .map((sub) => ({ platform: sub.platform, token: sub.token, endpoint: sub.endpoint }));
 
     if (validTokens.length === 0) {
       logger.debug('No valid push tokens to send to');
@@ -138,30 +143,34 @@ export class NotificationService {
     // In development mode without Firebase configured, just log
     if (config.environment === 'development' && !this.firebase.isConfigured()) {
       for (const sub of validTokens) {
-        logger.info({
-          platform: sub.platform,
-          title,
-        }, 'Push notification (dev mode, Firebase not configured)');
+        logger.info(
+          {
+            platform: sub.platform,
+            title,
+          },
+          'Push notification (dev mode, Firebase not configured)'
+        );
       }
       return;
     }
 
     // Convert data values to strings (FCM requires string values)
     const stringData = data
-      ? Object.fromEntries(
-          Object.entries(data).map(([k, v]) => [k, String(v)])
-        )
+      ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)]))
       : undefined;
 
     // Send to all tokens using multicast
-    const tokens = validTokens.map(sub => sub.token);
+    const tokens = validTokens.map((sub) => sub.token);
     const result = await this.firebase.sendMulticast(tokens, title, body, stringData);
 
     // Mark invalid tokens as inactive
     if (result.invalidTokens.length > 0) {
-      logger.info({
-        count: result.invalidTokens.length,
-      }, 'Deactivating invalid push tokens');
+      logger.info(
+        {
+          count: result.invalidTokens.length,
+        },
+        'Deactivating invalid push tokens'
+      );
       await this.prisma.pushSubscription.updateMany({
         where: {
           token: { in: result.invalidTokens },

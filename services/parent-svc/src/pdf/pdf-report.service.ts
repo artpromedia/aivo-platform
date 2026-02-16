@@ -4,11 +4,13 @@
  * Generates professional PDF progress reports for parents.
  */
 
-import { Injectable } from '@nestjs/common';
-import PDFDocument from 'pdfkit';
 import { logger } from '@aivo/ts-observability';
-import { I18nService } from '../i18n/i18n.service.js';
-import { ProgressReport, WeeklySummary } from '../parent/parent.types.js';
+import PDFDocument from 'pdfkit';
+
+import type { I18nService } from '../i18n/i18n.service.js';
+
+type PDFDoc = InstanceType<typeof PDFDocument>;
+import type { ProgressReport, WeeklySummary } from '../parent/parent.types.js';
 
 interface ReportData {
   studentName: string;
@@ -24,7 +26,6 @@ interface WeeklyReportData {
   language: string;
 }
 
-@Injectable()
 export class PdfReportService {
   constructor(private readonly i18n: I18nService) {}
 
@@ -64,7 +65,7 @@ export class PdfReportService {
           .fontSize(12)
           .fillColor('#666')
           .text(
-            `${t('progress.period')}: ${this.formatDate(report.periodStart, language)} - ${this.formatDate(report.periodEnd, language)}`,
+            `${t('progress.period')}: ${this.formatDate(report.startDate, language)} - ${this.formatDate(report.endDate, language)}`,
             { align: 'center' }
           );
 
@@ -77,9 +78,32 @@ export class PdfReportService {
         const colWidth = 150;
 
         // Overview metrics
-        this.renderMetricBox(doc, 50, overviewY, colWidth, t('progress.timeSpent'), report.overallTimeSpent, 'minutes');
-        this.renderMetricBox(doc, 220, overviewY, colWidth, t('progress.avgScore'), report.overallAverage.toString(), '%');
-        this.renderMetricBox(doc, 390, overviewY, colWidth, t('progress.activities'), report.totalActivities.toString());
+        this.renderMetricBox(
+          doc,
+          50,
+          overviewY,
+          colWidth,
+          t('progress.timeSpent'),
+          report.summary.totalTimeMinutes.toString(),
+          'minutes'
+        );
+        this.renderMetricBox(
+          doc,
+          220,
+          overviewY,
+          colWidth,
+          t('progress.avgScore'),
+          report.summary.averageScore.toString(),
+          '%'
+        );
+        this.renderMetricBox(
+          doc,
+          390,
+          overviewY,
+          colWidth,
+          t('progress.activities'),
+          report.summary.completedLessons.toString()
+        );
 
         doc.y = overviewY + 80;
         doc.moveDown();
@@ -87,8 +111,18 @@ export class PdfReportService {
         // Subject Progress
         this.renderSectionTitle(doc, t('progress.bySubject'));
 
-        for (const subject of report.subjectProgress) {
-          this.renderSubjectProgress(doc, subject, language, t);
+        for (const subject of report.subjectBreakdown) {
+          this.renderSubjectProgress(
+            doc,
+            {
+              subject: subject.subject,
+              average: subject.averageScore,
+              timeSpent: subject.minutes,
+              trend: 'stable',
+            },
+            language,
+            t
+          );
         }
 
         // Page break if needed
@@ -96,15 +130,15 @@ export class PdfReportService {
           doc.addPage();
         }
 
-        // Teacher Notes
-        if (report.teacherNotes && report.teacherNotes.length > 0) {
-          this.renderSectionTitle(doc, t('progress.teacherNotes'));
-          
-          for (const note of report.teacherNotes) {
+        // Strengths and Areas for Improvement
+        if (report.strengths && report.strengths.length > 0) {
+          this.renderSectionTitle(doc, t('progress.strengths'));
+
+          for (const item of report.strengths) {
             doc
               .fontSize(10)
               .fillColor('#333')
-              .text(note.content, { indent: 20 })
+              .text(`${item.skillName}: ${item.masteryLevel}%`, { indent: 20 })
               .moveDown(0.5);
           }
         }
@@ -114,8 +148,8 @@ export class PdfReportService {
 
         doc.end();
       } catch (error) {
-        logger.error('Failed to generate PDF', { error });
-        reject(error);
+        logger.error({ error }, 'Failed to generate PDF');
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
   }
@@ -161,9 +195,31 @@ export class PdfReportService {
         this.renderSectionTitle(doc, t('weekly.quickStats'));
 
         const statsY = doc.y;
-        this.renderMetricBox(doc, 50, statsY, 120, t('weekly.activeDays'), summary.activeDays.toString());
-        this.renderMetricBox(doc, 190, statsY, 120, t('weekly.totalTime'), summary.totalTimeSpent.toString(), 'min');
-        this.renderMetricBox(doc, 330, statsY, 120, t('weekly.completed'), summary.activitiesCompleted.toString());
+        this.renderMetricBox(
+          doc,
+          50,
+          statsY,
+          120,
+          t('weekly.activeDays'),
+          summary.activeDays.toString()
+        );
+        this.renderMetricBox(
+          doc,
+          190,
+          statsY,
+          120,
+          t('weekly.totalTime'),
+          summary.totalTimeSpent.toString(),
+          'min'
+        );
+        this.renderMetricBox(
+          doc,
+          330,
+          statsY,
+          120,
+          t('weekly.completed'),
+          summary.activitiesCompleted.toString()
+        );
 
         doc.y = statsY + 80;
         doc.moveDown();
@@ -171,7 +227,7 @@ export class PdfReportService {
         // Highlights
         if (summary.highlights && summary.highlights.length > 0) {
           this.renderSectionTitle(doc, t('weekly.highlights'));
-          
+
           for (const highlight of summary.highlights) {
             doc
               .fontSize(11)
@@ -186,13 +242,9 @@ export class PdfReportService {
         // Areas for Improvement
         if (summary.areasForImprovement && summary.areasForImprovement.length > 0) {
           this.renderSectionTitle(doc, t('weekly.areasForImprovement'));
-          
+
           for (const area of summary.areasForImprovement) {
-            doc
-              .fontSize(11)
-              .fillColor('#c62828')
-              .text(`• ${area}`, { indent: 20 })
-              .moveDown(0.3);
+            doc.fontSize(11).fillColor('#c62828').text(`• ${area}`, { indent: 20 }).moveDown(0.3);
           }
 
           doc.moveDown();
@@ -201,13 +253,9 @@ export class PdfReportService {
         // Upcoming Goals
         if (summary.upcomingGoals && summary.upcomingGoals.length > 0) {
           this.renderSectionTitle(doc, t('weekly.upcomingGoals'));
-          
+
           for (const goal of summary.upcomingGoals) {
-            doc
-              .fontSize(11)
-              .fillColor('#1565c0')
-              .text(`→ ${goal}`, { indent: 20 })
-              .moveDown(0.3);
+            doc.fontSize(11).fillColor('#1565c0').text(`→ ${goal}`, { indent: 20 }).moveDown(0.3);
           }
         }
 
@@ -216,8 +264,8 @@ export class PdfReportService {
 
         doc.end();
       } catch (error) {
-        logger.error('Failed to generate weekly PDF', { error });
-        reject(error);
+        logger.error({ error }, 'Failed to generate weekly PDF');
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     });
   }
@@ -226,7 +274,7 @@ export class PdfReportService {
    * Render document header
    */
   private renderHeader(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDoc,
     studentName: string,
     t: (key: string, vars?: Record<string, string | number>) => string
   ): void {
@@ -251,21 +299,12 @@ export class PdfReportService {
   /**
    * Render section title
    */
-  private renderSectionTitle(doc: PDFKit.PDFDocument, title: string): void {
-    doc
-      .fontSize(14)
-      .fillColor('#1a237e')
-      .text(title)
-      .moveDown(0.5);
+  private renderSectionTitle(doc: PDFDoc, title: string): void {
+    doc.fontSize(14).fillColor('#1a237e').text(title).moveDown(0.5);
 
     // Underline
     const lineY = doc.y - 5;
-    doc
-      .strokeColor('#1a237e')
-      .lineWidth(1)
-      .moveTo(50, lineY)
-      .lineTo(200, lineY)
-      .stroke();
+    doc.strokeColor('#1a237e').lineWidth(1).moveTo(50, lineY).lineTo(200, lineY).stroke();
 
     doc.moveDown(0.5);
   }
@@ -274,7 +313,7 @@ export class PdfReportService {
    * Render a metric box
    */
   private renderMetricBox(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDoc,
     x: number,
     y: number,
     width: number,
@@ -285,10 +324,7 @@ export class PdfReportService {
     const height = 60;
 
     // Box background
-    doc
-      .roundedRect(x, y, width, height, 5)
-      .fillColor('#f5f5f5')
-      .fill();
+    doc.roundedRect(x, y, width, height, 5).fillColor('#f5f5f5').fill();
 
     // Value
     doc
@@ -313,7 +349,7 @@ export class PdfReportService {
    * Render subject progress
    */
   private renderSubjectProgress(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDoc,
     subject: { subject: string; average: number; timeSpent: number; trend: string },
     _language: string,
     t: (key: string, vars?: Record<string, string | number>) => string
@@ -323,37 +359,25 @@ export class PdfReportService {
     const barHeight = 15;
 
     // Subject name
-    doc
-      .fontSize(11)
-      .fillColor('#333')
-      .text(subject.subject, 50, startY);
+    doc.fontSize(11).fillColor('#333').text(subject.subject, 50, startY);
 
     // Progress bar background
-    doc
-      .roundedRect(180, startY, barWidth, barHeight, 3)
-      .fillColor('#e0e0e0')
-      .fill();
+    doc.roundedRect(180, startY, barWidth, barHeight, 3).fillColor('#e0e0e0').fill();
 
     // Progress bar fill
     const fillWidth = (subject.average / 100) * barWidth;
-    const fillColor = subject.average >= 70 ? '#4caf50' : subject.average >= 50 ? '#ff9800' : '#f44336';
-    doc
-      .roundedRect(180, startY, fillWidth, barHeight, 3)
-      .fillColor(fillColor)
-      .fill();
+    const fillColor =
+      subject.average >= 70 ? '#4caf50' : subject.average >= 50 ? '#ff9800' : '#f44336';
+    doc.roundedRect(180, startY, fillWidth, barHeight, 3).fillColor(fillColor).fill();
 
     // Percentage
-    doc
-      .fontSize(10)
-      .fillColor('#333')
-      .text(`${subject.average}%`, 490, startY);
+    doc.fontSize(10).fillColor('#333').text(`${subject.average}%`, 490, startY);
 
     // Trend indicator
     const trendSymbol = subject.trend === 'up' ? '↑' : subject.trend === 'down' ? '↓' : '→';
-    const trendColor = subject.trend === 'up' ? '#4caf50' : subject.trend === 'down' ? '#f44336' : '#666';
-    doc
-      .fillColor(trendColor)
-      .text(trendSymbol, 530, startY);
+    const trendColor =
+      subject.trend === 'up' ? '#4caf50' : subject.trend === 'down' ? '#f44336' : '#666';
+    doc.fillColor(trendColor).text(trendSymbol, 530, startY);
 
     doc.y = startY + 25;
   }
@@ -362,26 +386,19 @@ export class PdfReportService {
    * Render footer
    */
   private renderFooter(
-    doc: PDFKit.PDFDocument,
+    doc: PDFDoc,
     t: (key: string, vars?: Record<string, string | number>) => string
   ): void {
     const pageCount = doc.bufferedPageRange().count;
-    
+
     doc
       .fontSize(8)
       .fillColor('#999')
-      .text(
-        t('footer.generated', { date: new Date().toLocaleDateString() }),
-        50,
-        750,
-        { align: 'center', width: 500 }
-      )
-      .text(
-        t('footer.confidential'),
-        50,
-        760,
-        { align: 'center', width: 500 }
-      );
+      .text(t('footer.generated', { date: new Date().toLocaleDateString() }), 50, 750, {
+        align: 'center',
+        width: 500,
+      })
+      .text(t('footer.confidential'), 50, 760, { align: 'center', width: 500 });
   }
 
   /**

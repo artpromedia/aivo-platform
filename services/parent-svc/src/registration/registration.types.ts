@@ -5,19 +5,6 @@
  * parents/caregivers with secure learner linking.
  */
 
-import {
-  IsEmail,
-  IsString,
-  IsOptional,
-  IsUUID,
-  IsEnum,
-  MinLength,
-  MaxLength,
-  IsPhoneNumber,
-  IsDateString,
-  Matches,
-} from 'class-validator';
-
 // ============================================================================
 // ENUMS (matching Prisma schema)
 // ============================================================================
@@ -73,141 +60,61 @@ export type LearnerIdentificationMethod = 'email' | 'studentId' | 'nameAndDob';
 // DTOs - Input Types
 // ============================================================================
 
-export class RegisterCaregiverDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @IsOptional()
-  @IsPhoneNumber()
+export interface RegisterCaregiverDto {
+  email: string;
   phone?: string;
-
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  firstName!: string;
-
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  lastName!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/,
-    {
-      message:
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-    },
-  )
-  password!: string;
-
-  @IsEnum(CaregiverRelationshipType)
-  relationship!: CaregiverRelationshipType;
-
-  @IsString()
-  @IsOptional()
+  firstName: string;
+  lastName: string;
+  password: string;
+  relationship: CaregiverRelationshipType;
   captchaToken?: string;
-
-  @IsString()
-  @IsOptional()
   tenantId?: string;
-
-  @IsString()
-  @IsOptional()
   language?: string;
 }
 
-export class VerifyEmailDto {
-  @IsUUID()
-  registrationId!: string;
-
-  @IsString()
-  @MinLength(6)
-  @MaxLength(6)
-  code!: string;
+export interface VerifyEmailDto {
+  registrationId: string;
+  code: string;
 }
 
-export class AddLearnerLinkDto {
-  @IsEnum(['email', 'studentId', 'nameAndDob'])
-  identificationMethod!: LearnerIdentificationMethod;
-
-  @IsEmail()
-  @IsOptional()
+export interface AddLearnerLinkDto {
+  identificationMethod: LearnerIdentificationMethod;
   learnerEmail?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
   studentId?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
   learnerFirstName?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
   learnerLastName?: string;
-
-  @IsDateString()
-  @IsOptional()
   learnerDateOfBirth?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(200)
   schoolName?: string;
-
-  @IsUUID()
-  @IsOptional()
   schoolId?: string;
-
-  @IsEnum(VerificationMethod)
-  verificationMethod!: VerificationMethod;
+  verificationMethod: VerificationMethod;
 }
 
-export class VerifyLearnerCodeDto {
-  @IsString()
-  @MinLength(6)
-  @MaxLength(10)
-  verificationCode!: string;
+export interface VerifyLearnerCodeDto {
+  verificationCode: string;
 }
 
-export class ResendVerificationDto {
-  @IsUUID()
-  registrationId!: string;
+export interface ResendVerificationDto {
+  registrationId: string;
 }
 
 // ============================================================================
 // School Admin DTOs
 // ============================================================================
 
-export class GetPendingLinkRequestsDto {
-  @IsEnum(VerificationStatus)
-  @IsOptional()
+export interface GetPendingLinkRequestsDto {
   status?: VerificationStatus;
 
   page?: number;
   limit?: number;
 }
 
-export class UpdateLinkRequestDto {
-  @IsEnum(['APPROVED', 'REJECTED'])
-  status!: 'APPROVED' | 'REJECTED';
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
+export interface UpdateLinkRequestDto {
+  status: 'APPROVED' | 'REJECTED';
   rejectionReason?: string;
 }
 
-export class GenerateParentCodeDto {
-  @IsUUID()
-  learnerId!: string;
+export interface GenerateParentCodeDto {
+  learnerId: string;
 }
 
 // ============================================================================
@@ -350,9 +257,8 @@ export interface ActivityItem {
   metadata?: Record<string, unknown>;
 }
 
-export class SetActiveLearnerDto {
-  @IsUUID()
-  learnerId!: string;
+export interface SetActiveLearnerDto {
+  learnerId: string;
 }
 
 // ============================================================================

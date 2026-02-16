@@ -1,25 +1,12 @@
 /**
- * Parent Controller
+ * Parent Routes
  *
  * REST API endpoints for parent portal functionality.
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { ParentService } from './parent.service.js';
-import type { AuthenticatedParentRequest } from '../auth/parent-auth.middleware.js';
-import {
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+
+import type {
   CreateConsentInput,
   UpdatePrivacySettingsInput,
   RespondToRecommendationDto,
@@ -27,158 +14,130 @@ import {
   UpdateDifficultyPreferencesDto,
 } from './parent.types.js';
 
-@Controller('parent')
-export class ParentController {
-  constructor(private readonly parentService: ParentService) {}
+export async function parentRoutes(app: FastifyInstance) {
+  const parentService = app.services.parent;
 
   /**
    * Get parent profile with linked students
    */
-  @Get('profile')
-  async getProfile(@Req() req: AuthenticatedParentRequest) {
-    return this.parentService.getParentProfile(req.parent.id);
-  }
+  app.get('/profile', async (request: FastifyRequest) => {
+    return parentService.getParentProfile(request.parent!.id);
+  });
 
   /**
    * Update parent profile
    */
-  @Put('profile')
-  async updateProfile(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: { firstName?: string; lastName?: string; phone?: string; language?: string }
-  ) {
-    return this.parentService.updateProfile(req.parent.id, body);
-  }
+  app.put('/profile', async (request: FastifyRequest) => {
+    const body = request.body as {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      language?: string;
+    };
+    return parentService.updateProfile(request.parent!.id, body);
+  });
 
   /**
    * Get summary for a linked student
    */
-  @Get('students/:studentId/summary')
-  async getStudentSummary(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string
-  ) {
-    return this.parentService.getStudentSummary(req.parent.id, studentId);
-  }
+  app.get('/students/:studentId/summary', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    return parentService.getStudentSummary(request.parent!.id, studentId);
+  });
 
   /**
    * Get detailed progress report for a student
    */
-  @Get('students/:studentId/progress')
-  async getProgressReport(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string
-  ) {
-    return this.parentService.getProgressReport(req.parent.id, studentId, {
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+  app.get('/students/:studentId/progress', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { period, classId } = request.query as {
+      period?: 'week' | 'month' | 'quarter' | 'year';
+      classId?: string;
+    };
+    return parentService.getProgressReport(studentId, request.parent!.id, {
+      period,
+      classId,
     });
-  }
+  });
 
   /**
    * Get weekly summary for a student
    */
-  @Get('students/:studentId/weekly-summary')
-  async getWeeklySummary(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string,
-    @Query('weekOf') weekOf?: string
-  ) {
-    return this.parentService.generateWeeklySummary(
-      req.parent.id,
-      studentId,
-      weekOf ? new Date(weekOf) : new Date()
-    );
-  }
+  app.get('/students/:studentId/weekly-summary', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { weekOf } = request.query as { weekOf?: string };
+    return parentService.generateWeeklySummary(studentId, request.parent!.id);
+  });
 
   /**
    * Get consent records for a student
    */
-  @Get('students/:studentId/consent')
-  async getConsentRecords(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string
-  ) {
-    return this.parentService.getConsentRecords(req.parent.id, studentId);
-  }
+  app.get('/students/:studentId/consent', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    return parentService.getConsentRecords(request.parent!.id, studentId);
+  });
 
   /**
    * Record consent for a student
    */
-  @Post('students/:studentId/consent')
-  @HttpCode(HttpStatus.CREATED)
-  async recordConsent(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string,
-    @Body() body: CreateConsentInput
-  ) {
-    return this.parentService.recordConsent(req.parent.id, {
+  app.post('/students/:studentId/consent', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { studentId } = request.params as { studentId: string };
+    const body = request.body as CreateConsentInput;
+    reply.status(201);
+    return parentService.recordConsent(request.parent!.id, {
       studentId,
       ...body,
     });
-  }
+  });
 
   /**
    * Update privacy settings
    */
-  @Put('privacy-settings')
-  async updatePrivacySettings(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: UpdatePrivacySettingsInput
-  ) {
-    return this.parentService.updatePrivacySettings(req.parent.id, body);
-  }
+  app.put('/privacy-settings', async (request: FastifyRequest) => {
+    const body = request.body as UpdatePrivacySettingsInput;
+    return parentService.updatePrivacySettings(request.parent!.id, body);
+  });
 
   /**
    * Get notifications
    */
-  @Get('notifications')
-  async getNotifications(
-    @Req() req: AuthenticatedParentRequest,
-    @Query('unreadOnly') unreadOnly?: string,
-    @Query('limit') limit?: string
-  ) {
-    return this.parentService.getNotifications(req.parent.id, {
+  app.get('/notifications', async (request: FastifyRequest) => {
+    const { unreadOnly, limit } = request.query as { unreadOnly?: string; limit?: string };
+    return parentService.getNotifications(request.parent!.id, {
       unreadOnly: unreadOnly === 'true',
       limit: limit ? Number.parseInt(limit, 10) : undefined,
     });
-  }
+  });
 
   /**
    * Mark notifications as read
    */
-  @Put('notifications/read')
-  async markNotificationsRead(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: { notificationIds: string[] }
-  ) {
-    return this.parentService.markNotificationsRead(req.parent.id, body.notificationIds);
-  }
+  app.put('/notifications/read', async (request: FastifyRequest) => {
+    const body = request.body as { notificationIds: string[] };
+    return parentService.markNotificationsRead(request.parent!.id, body.notificationIds);
+  });
 
   /**
    * Update notification preferences
    */
-  @Put('notification-preferences')
-  async updateNotificationPreferences(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: Record<string, boolean>
-  ) {
-    return this.parentService.updateNotificationPreferences(req.parent.id, body);
-  }
+  app.put('/notification-preferences', async (request: FastifyRequest) => {
+    const body = request.body as Record<string, boolean>;
+    return parentService.updateNotificationPreferences(request.parent!.id, body);
+  });
 
   /**
    * Register push subscription
    */
-  @Post('push-subscription')
-  @HttpCode(HttpStatus.CREATED)
-  async registerPushSubscription(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: { platform: string; token?: string; endpoint: string; keys?: Record<string, string> }
-  ) {
-    return this.parentService.registerPushSubscription(req.parent.id, body);
-  }
+  app.post('/push-subscription', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as {
+      platform: string;
+      token?: string;
+      endpoint: string;
+      keys?: Record<string, string>;
+    };
+    reply.status(201);
+    return parentService.registerPushSubscription(request.parent!.id, body);
+  });
 
   // ============================================================================
   // CHILD LINK MANAGEMENT (FERPA Compliance)
@@ -187,42 +146,29 @@ export class ParentController {
   /**
    * Get all linked students for the parent
    */
-  @Get('students')
-  async getLinkedStudents(
-    @Req() req: AuthenticatedParentRequest,
-    @Query('includeRevoked') includeRevoked?: string
-  ) {
-    return this.parentService.getLinkedStudents(req.parent.id, {
+  app.get('/students', async (request: FastifyRequest) => {
+    const { includeRevoked } = request.query as { includeRevoked?: string };
+    return parentService.getLinkedStudents(request.parent!.id, {
       includeRevoked: includeRevoked === 'true',
     });
-  }
+  });
 
   /**
    * Remove (unlink) a child from the parent's account.
    * FERPA REQUIREMENT: Parents have the right to request removal of their child's data.
-   *
-   * This endpoint allows parents to:
-   * - Revoke their connection to a child
-   * - Maintain audit trail for compliance
-   * - Trigger downstream data cleanup
    */
-  @Delete('students/:studentId')
-  @HttpCode(HttpStatus.OK)
-  async removeChildLink(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string,
-    @Body() body?: { reason?: string }
-  ) {
-    // Extract IP and user agent for audit logging
-    const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString().split(',')[0];
-    const userAgent = req.headers['user-agent'];
+  app.delete('/students/:studentId', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const body = (request.body || {}) as { reason?: string };
+    const ipAddress = request.ip || (request.headers['x-forwarded-for'] as string)?.split(',')[0];
+    const userAgent = request.headers['user-agent'];
 
-    return this.parentService.removeChildLink(req.parent.id, studentId, {
-      reason: body?.reason,
+    return parentService.removeChildLink(request.parent!.id, studentId, {
+      reason: body.reason,
       ipAddress,
       userAgent,
     });
-  }
+  });
 
   // ============================================================================
   // DIFFICULTY ADJUSTMENT MANAGEMENT
@@ -231,85 +177,61 @@ export class ParentController {
   /**
    * Get pending difficulty recommendations for a child
    */
-  @Get('students/:studentId/difficulty/recommendations')
-  async getDifficultyRecommendations(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string
-  ) {
-    return this.parentService.getDifficultyRecommendations(req.parent.id, studentId);
-  }
+  app.get('/students/:studentId/difficulty/recommendations', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    return parentService.getDifficultyRecommendations(request.parent!.id, studentId);
+  });
 
   /**
    * Respond to a difficulty recommendation (approve/modify/deny)
    */
-  @Post('difficulty/recommendations/respond')
-  @HttpCode(HttpStatus.OK)
-  async respondToRecommendation(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: RespondToRecommendationDto
-  ) {
-    return this.parentService.respondToRecommendation(req.parent.id, body);
-  }
+  app.post('/difficulty/recommendations/respond', async (request: FastifyRequest) => {
+    const body = request.body as RespondToRecommendationDto;
+    return parentService.respondToRecommendation(request.parent!.id, body);
+  });
 
   /**
    * Get current difficulty levels for a child by domain
    */
-  @Get('students/:studentId/difficulty/levels')
-  async getDifficultyLevels(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string
-  ) {
-    return this.parentService.getDifficultyLevels(req.parent.id, studentId);
-  }
+  app.get('/students/:studentId/difficulty/levels', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    return parentService.getDifficultyLevels(request.parent!.id, studentId);
+  });
 
   /**
    * Directly set difficulty level for a domain (parent override)
    */
-  @Post('difficulty/domain/set')
-  @HttpCode(HttpStatus.OK)
-  async setDomainDifficulty(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: SetDomainDifficultyDto
-  ) {
-    return this.parentService.setDomainDifficulty(req.parent.id, body);
-  }
+  app.post('/difficulty/domain/set', async (request: FastifyRequest) => {
+    const body = request.body as SetDomainDifficultyDto;
+    return parentService.setDomainDifficulty(request.parent!.id, body);
+  });
 
   /**
    * Get difficulty preferences for a child
    */
-  @Get('students/:studentId/difficulty/preferences')
-  async getDifficultyPreferences(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string
-  ) {
-    return this.parentService.getDifficultyPreferences(req.parent.id, studentId);
-  }
+  app.get('/students/:studentId/difficulty/preferences', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    return parentService.getDifficultyPreferences(request.parent!.id, studentId);
+  });
 
   /**
    * Update difficulty preferences for a child
    */
-  @Put('difficulty/preferences')
-  async updateDifficultyPreferences(
-    @Req() req: AuthenticatedParentRequest,
-    @Body() body: UpdateDifficultyPreferencesDto
-  ) {
-    return this.parentService.updateDifficultyPreferences(req.parent.id, body);
-  }
+  app.put('/difficulty/preferences', async (request: FastifyRequest) => {
+    const body = request.body as UpdateDifficultyPreferencesDto;
+    return parentService.updateDifficultyPreferences(request.parent!.id, body);
+  });
 
   /**
    * Get difficulty change history for a child
    */
-  @Get('students/:studentId/difficulty/history')
-  async getDifficultyHistory(
-    @Req() req: AuthenticatedParentRequest,
-    @Param('studentId') studentId: string,
-    @Query('limit') limit?: string
-  ) {
-    return this.parentService.getDifficultyHistory(
-      req.parent.id,
+  app.get('/students/:studentId/difficulty/history', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { limit } = request.query as { limit?: string };
+    return parentService.getDifficultyHistory(
+      request.parent!.id,
       studentId,
       limit ? Number.parseInt(limit, 10) : undefined
     );
-  }
+  });
 }
-

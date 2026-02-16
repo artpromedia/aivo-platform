@@ -1,23 +1,18 @@
 /**
- * Registration Rate Limit Guard
+ * Registration Rate Limit Hook
  *
  * Protects registration endpoints from abuse:
  * - Max 3 registration attempts per IP per hour
  * - Max 10 verification attempts per registration per hour
  * - Max 5 resend attempts per registration per hour
+ * Used as a Fastify preHandler hook.
  */
 
 import { logger } from '@aivo/ts-observability';
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import type { Request } from 'express';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { config } from '../../config.js';
+import { TooManyRequestsException } from '../../errors.js';
 
 interface RateLimitEntry {
   count: number;
@@ -53,218 +48,188 @@ const RATE_LIMITS = {
   },
 };
 
-@Injectable()
-export class RegistrationRateLimitGuard implements CanActivate {
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Skip in development if configured
-    if (config.environment === 'development') {
-      return true;
-    }
+export async function registrationRateLimitHook(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<void> {
+  // Skip in development if configured
+  if (config.environment === 'development') {
+    return;
+  }
 
-    const request = context.switchToHttp().getRequest<Request>();
-    const clientIp = this.getClientIp(request);
-    const endpoint = this.getEndpointType(request.path);
-    const limits = RATE_LIMITS[endpoint] || RATE_LIMITS.default;
+  const clientIp = request.ip;
+  const endpoint = getEndpointType(request.url);
+  const limits = RATE_LIMITS[endpoint] || RATE_LIMITS.default;
 
-    // Create unique key for this client + endpoint
-    const key = `${clientIp}:${endpoint}`;
+  // Create unique key for this client + endpoint
+  const key = `${clientIp}:${endpoint}`;
 
-    const now = Date.now();
-    let entry = rateLimitStore.get(key);
+  const now = Date.now();
+  let entry = rateLimitStore.get(key);
 
-    // Clean up expired entries periodically
-    this.cleanupExpiredEntries();
+  // Clean up expired entries periodically
+  cleanupExpiredEntries();
 
-    // Check if currently blocked
-    if (entry?.blocked && entry.blockExpires && entry.blockExpires > now) {
-      const remainingSeconds = Math.ceil((entry.blockExpires - now) / 1000);
-      logger.warn('Rate limit block active', {
+  // Check if currently blocked
+  if (entry?.blocked && entry.blockExpires && entry.blockExpires > now) {
+    const remainingSeconds = Math.ceil((entry.blockExpires - now) / 1000);
+    logger.warn(
+      {
         ip: clientIp,
         endpoint,
         remainingSeconds,
-      });
+      },
+      'Rate limit block active'
+    );
 
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: `Too many requests. Please try again in ${remainingSeconds} seconds.`,
-          retryAfter: remainingSeconds,
-        },
-        HttpStatus.TOO_MANY_REQUESTS
-      );
-    }
+    throw new TooManyRequestsException(
+      `Too many requests. Please try again in ${remainingSeconds} seconds.`
+    );
+  }
 
-    // Reset if window has passed
-    if (!entry || now - entry.firstAttempt > limits.windowMs) {
-      entry = {
-        count: 1,
-        firstAttempt: now,
-        blocked: false,
-      };
-      rateLimitStore.set(key, entry);
-      return true;
-    }
+  // Reset if window has passed
+  if (!entry || now - entry.firstAttempt > limits.windowMs) {
+    entry = {
+      count: 1,
+      firstAttempt: now,
+      blocked: false,
+    };
+    rateLimitStore.set(key, entry);
+    return;
+  }
 
-    // Increment count
-    entry.count++;
+  // Increment count
+  entry.count++;
 
-    // Check if limit exceeded
-    if (entry.count > limits.maxRequests) {
-      entry.blocked = true;
-      entry.blockExpires = now + limits.blockDurationMs;
-      rateLimitStore.set(key, entry);
+  // Check if limit exceeded
+  if (entry.count > limits.maxRequests) {
+    entry.blocked = true;
+    entry.blockExpires = now + limits.blockDurationMs;
+    rateLimitStore.set(key, entry);
 
-      const remainingSeconds = Math.ceil(limits.blockDurationMs / 1000);
+    const remainingSeconds = Math.ceil(limits.blockDurationMs / 1000);
 
-      logger.warn('Rate limit exceeded', {
+    logger.warn(
+      {
         ip: clientIp,
         endpoint,
         count: entry.count,
         maxRequests: limits.maxRequests,
-      });
+      },
+      'Rate limit exceeded'
+    );
 
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: `Too many requests. Please try again in ${remainingSeconds} seconds.`,
-          retryAfter: remainingSeconds,
-        },
-        HttpStatus.TOO_MANY_REQUESTS
-      );
-    }
-
-    rateLimitStore.set(key, entry);
-
-    // Set rate limit headers
-    const response = context.switchToHttp().getResponse();
-    const remaining = limits.maxRequests - entry.count;
-    const resetTime = Math.ceil((entry.firstAttempt + limits.windowMs) / 1000);
-
-    response.setHeader('X-RateLimit-Limit', limits.maxRequests);
-    response.setHeader('X-RateLimit-Remaining', Math.max(0, remaining));
-    response.setHeader('X-RateLimit-Reset', resetTime);
-
-    return true;
+    throw new TooManyRequestsException(
+      `Too many requests. Please try again in ${remainingSeconds} seconds.`
+    );
   }
 
-  private getClientIp(request: Request): string {
-    const forwarded = request.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+  rateLimitStore.set(key, entry);
+
+  // Set rate limit headers
+  const remaining = limits.maxRequests - entry.count;
+  const resetTime = Math.ceil((entry.firstAttempt + limits.windowMs) / 1000);
+
+  reply.header('X-RateLimit-Limit', limits.maxRequests);
+  reply.header('X-RateLimit-Remaining', Math.max(0, remaining));
+  reply.header('X-RateLimit-Reset', resetTime);
+}
+
+function getEndpointType(path: string): keyof typeof RATE_LIMITS {
+  if (path.endsWith('/register')) return 'register';
+  if (path.endsWith('/verify-email')) return 'verify-email';
+  if (path.endsWith('/resend-verification')) return 'resend-verification';
+  return 'default';
+}
+
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  let cleanupCount = 0;
+
+  // Only cleanup occasionally (1% of requests)
+  if (Math.random() > 0.01) return;
+
+  for (const [key, entry] of rateLimitStore.entries()) {
+    const isWindowExpired = now - entry.firstAttempt > RATE_LIMITS.default.windowMs;
+    const isBlockExpired = entry.blockExpires && entry.blockExpires < now;
+
+    if (isWindowExpired && (!entry.blocked || isBlockExpired)) {
+      rateLimitStore.delete(key);
+      cleanupCount++;
     }
-    if (Array.isArray(forwarded)) {
-      return forwarded[0];
-    }
-    return request.socket?.remoteAddress || 'unknown';
   }
 
-  private getEndpointType(path: string): keyof typeof RATE_LIMITS {
-    if (path.endsWith('/register')) return 'register';
-    if (path.endsWith('/verify-email')) return 'verify-email';
-    if (path.endsWith('/resend-verification')) return 'resend-verification';
-    return 'default';
-  }
-
-  private cleanupExpiredEntries(): void {
-    const now = Date.now();
-    let cleanupCount = 0;
-
-    // Only cleanup occasionally (1% of requests)
-    if (Math.random() > 0.01) return;
-
-    for (const [key, entry] of rateLimitStore.entries()) {
-      // Remove entries that are both expired and not blocked
-      // or blocked entries whose block has expired
-      const isWindowExpired = now - entry.firstAttempt > RATE_LIMITS.default.windowMs;
-      const isBlockExpired = entry.blockExpires && entry.blockExpires < now;
-
-      if (isWindowExpired && (!entry.blocked || isBlockExpired)) {
-        rateLimitStore.delete(key);
-        cleanupCount++;
-      }
-    }
-
-    if (cleanupCount > 0) {
-      logger.debug('Rate limit store cleanup', { removed: cleanupCount });
-    }
+  if (cleanupCount > 0) {
+    logger.debug({ removed: cleanupCount }, 'Rate limit store cleanup');
   }
 }
 
 /**
- * IP-based rate limit guard for fraud detection
+ * IP-based fraud detection hook
  * Tracks suspicious patterns across multiple registrations
  */
-@Injectable()
-export class FraudDetectionGuard implements CanActivate {
-  private static readonly suspiciousPatterns = new Map<
-    string,
-    {
-      registrationAttempts: number;
-      uniqueEmails: Set<string>;
-      firstSeen: number;
-      flagged: boolean;
-    }
-  >();
+const suspiciousPatterns = new Map<
+  string,
+  {
+    registrationAttempts: number;
+    uniqueEmails: Set<string>;
+    firstSeen: number;
+    flagged: boolean;
+  }
+>();
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (config.environment === 'development') {
-      return true;
-    }
+export async function fraudDetectionHook(
+  request: FastifyRequest,
+  _reply: FastifyReply
+): Promise<void> {
+  if (config.environment === 'development') {
+    return;
+  }
 
-    const request = context.switchToHttp().getRequest<Request>();
-    const clientIp = this.getClientIp(request);
-    const email = request.body?.email?.toLowerCase();
+  const clientIp = request.ip;
+  const body = request.body as Record<string, unknown> | undefined;
+  const email = (body?.email as string)?.toLowerCase();
 
-    if (!email) return true;
+  if (!email) return;
 
-    const now = Date.now();
-    let pattern = FraudDetectionGuard.suspiciousPatterns.get(clientIp);
+  const now = Date.now();
+  let pattern = suspiciousPatterns.get(clientIp);
 
-    // Reset if older than 24 hours
-    if (pattern && now - pattern.firstSeen > 24 * 60 * 60 * 1000) {
-      pattern = undefined;
-    }
+  // Reset if older than 24 hours
+  if (pattern && now - pattern.firstSeen > 24 * 60 * 60 * 1000) {
+    pattern = undefined;
+  }
 
-    if (!pattern) {
-      pattern = {
-        registrationAttempts: 1,
-        uniqueEmails: new Set([email]),
-        firstSeen: now,
-        flagged: false,
-      };
-    } else {
-      pattern.registrationAttempts++;
-      pattern.uniqueEmails.add(email);
-    }
+  if (!pattern) {
+    pattern = {
+      registrationAttempts: 1,
+      uniqueEmails: new Set([email]),
+      firstSeen: now,
+      flagged: false,
+    };
+  } else {
+    pattern.registrationAttempts++;
+    pattern.uniqueEmails.add(email);
+  }
 
-    // Flag suspicious activity:
-    // - More than 10 registration attempts from same IP in 24 hours
-    // - More than 5 unique emails from same IP in 24 hours
-    const isSuspicious = pattern.registrationAttempts > 10 || pattern.uniqueEmails.size > 5;
+  // Flag suspicious activity:
+  // - More than 10 registration attempts from same IP in 24 hours
+  // - More than 5 unique emails from same IP in 24 hours
+  const isSuspicious = pattern.registrationAttempts > 10 || pattern.uniqueEmails.size > 5;
 
-    if (isSuspicious && !pattern.flagged) {
-      pattern.flagged = true;
-      logger.warn('Suspicious registration pattern detected', {
+  if (isSuspicious && !pattern.flagged) {
+    pattern.flagged = true;
+    logger.warn(
+      {
         ip: clientIp,
         attempts: pattern.registrationAttempts,
         uniqueEmails: pattern.uniqueEmails.size,
-      });
-    }
-
-    FraudDetectionGuard.suspiciousPatterns.set(clientIp, pattern);
-
-    // Don't block, just flag for review
-    return true;
+      },
+      'Suspicious registration pattern detected'
+    );
   }
 
-  private getClientIp(request: Request): string {
-    const forwarded = request.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
-    }
-    if (Array.isArray(forwarded)) {
-      return forwarded[0];
-    }
-    return request.socket?.remoteAddress || 'unknown';
-  }
+  suspiciousPatterns.set(clientIp, pattern);
+
+  // Don't block, just flag for review
 }

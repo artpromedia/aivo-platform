@@ -5,15 +5,14 @@
  * in their preferred language.
  */
 
-import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { I18nService } from '../i18n/i18n.service.js';
-import { EmailService } from '../email/email.service.js';
-import { ParentService } from '../parent/parent.service.js';
+
 import { config } from '../config.js';
+import type { EmailService } from '../email/email.service.js';
+import type { I18nService } from '../i18n/i18n.service.js';
+import type { ParentService } from '../parent/parent.service.js';
 import { DigestFrequency } from '../parent/parent.types.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 interface DigestContent {
   parentName: string;
@@ -37,25 +36,24 @@ interface ChildDigest {
     trend: 'up' | 'down' | 'stable';
   };
   highlights: string[];
-  topSubjects: Array<{ subject: string; minutes: number }>;
-  achievements: Array<{ name: string; iconUrl?: string | null }>;
-  teacherNotes: Array<{ content: string; teacherName: string }>;
-  upcomingAssignments: Array<{ title: string; dueDate: Date }>;
+  topSubjects: { subject: string; minutes: number }[];
+  achievements: { name: string; iconUrl?: string | null }[];
+  teacherNotes: { content: string; teacherName: string }[];
+  upcomingAssignments: { title: string; dueDate: Date }[];
 }
 
-@Injectable()
 export class WeeklyDigestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly i18n: I18nService,
     private readonly email: EmailService,
-    private readonly parentService: ParentService,
+    private readonly parentService: ParentService
   ) {}
 
   /**
    * Send weekly digests every Sunday at 6 PM (user's timezone)
    */
-  @Cron('0 18 * * 0') // Sunday at 6 PM UTC
+  // Scheduled via cron in app.ts: '0 18 * * 0' (Sunday at 6 PM UTC)
   async sendWeeklyDigests(): Promise<void> {
     logger.info('Starting weekly digest job');
     const startTime = Date.now();
@@ -92,10 +90,13 @@ export class WeeklyDigestService {
           sent++;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          logger.error({
-            parentId: parent.id,
-            error: message,
-          }, 'Failed to send digest to parent');
+          logger.error(
+            {
+              parentId: parent.id,
+              error: message,
+            },
+            'Failed to send digest to parent'
+          );
           failed++;
         }
       }
@@ -116,7 +117,7 @@ export class WeeklyDigestService {
     email: string;
     givenName: string;
     language: string;
-    studentLinks: Array<{ student: { id: string } }>;
+    studentLinks: { student: { id: string } }[];
   }): Promise<void> {
     const weekRange = this.getWeekRange();
 
@@ -214,8 +215,7 @@ export class WeeklyDigestService {
     const averageScore =
       completedSessions.length > 0
         ? Math.round(
-            completedSessions.reduce((sum, s) => sum + (s.score || 0), 0) /
-              completedSessions.length
+            completedSessions.reduce((sum, s) => sum + (s.score || 0), 0) / completedSessions.length
           )
         : 0;
 

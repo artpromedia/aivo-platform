@@ -9,15 +9,18 @@
  * - Privacy-respecting data access
  */
 
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { logger } from '@aivo/ts-observability';
-import { Prisma } from '../../generated/prisma-client/index.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CryptoService } from '../crypto/crypto.service.js';
-import { NotificationService } from '../notification/notification.service.js';
-import { I18nService } from '../i18n/i18n.service.js';
-import {
+
+import type { Prisma } from '../../generated/prisma-client/index.js';
+import { config } from '../config.js';
+import type { CryptoService } from '../crypto/crypto.service.js';
+import { ForbiddenException, NotFoundException, BadRequestException } from '../errors.js';
+import type { eventBus } from '../event-bus.js';
+import type { I18nService } from '../i18n/i18n.service.js';
+import type { NotificationService } from '../notification/notification.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
   CreateParentInviteDto,
   AcceptInviteDto,
   UpdateParentProfileDto,
@@ -32,22 +35,23 @@ import {
   CreateInviteResponse,
   AcceptInviteResponse,
   ParentWithStudents,
+  NotificationPreferences,
+} from './parent.types.js';
+import {
   ParentStatus,
   InviteStatus,
   ConsentStatus,
+  ConsentType,
   DigestFrequency,
-  NotificationPreferences,
 } from './parent.types.js';
-import { config } from '../config.js';
 
-@Injectable()
 export class ParentService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: typeof eventBus,
     private readonly i18n: I18nService,
     private readonly crypto: CryptoService,
-    private readonly notifications: NotificationService,
+    private readonly notifications: NotificationService
   ) {}
 
   // ============================================================================
@@ -59,7 +63,7 @@ export class ParentService {
    */
   async createParentInvite(
     teacherId: string,
-    dto: CreateParentInviteDto,
+    dto: CreateParentInviteDto
   ): Promise<CreateInviteResponse> {
     // Verify teacher has access to the student
     const student = await this.prisma.profile.findFirst({
@@ -151,7 +155,7 @@ export class ParentService {
       throw new NotFoundException('Invalid invite code');
     }
 
-    if (invite.status !== InviteStatus.PENDING) {
+    if (invite.status !== (InviteStatus.PENDING as string)) {
       throw new BadRequestException('This invite has already been used');
     }
 
@@ -185,7 +189,8 @@ export class ParentService {
           status: ParentStatus.ACTIVE,
           emailVerified: false,
           digestFrequency: DigestFrequency.WEEKLY,
-          notificationPreferences: this.getDefaultNotificationPreferences() as unknown as Prisma.InputJsonValue,
+          notificationPreferences:
+            this.getDefaultNotificationPreferences() as unknown as Prisma.InputJsonValue,
         },
       });
 
@@ -248,7 +253,6 @@ export class ParentService {
       isNewParent,
     });
 
-
     return {
       parent: this.toParentProfile(parent),
       student: await this.getStudentSummary(invite.studentId, parent.id),
@@ -284,9 +288,7 @@ export class ParentService {
     }
 
     const students = await Promise.all(
-      parent.studentLinks.map((link) =>
-        this.getStudentSummary(link.studentId, parentId)
-      )
+      parent.studentLinks.map((link) => this.getStudentSummary(link.studentId, parentId))
     );
 
     return {
@@ -298,10 +300,7 @@ export class ParentService {
   /**
    * Update parent profile
    */
-  async updateProfile(
-    parentId: string,
-    dto: UpdateParentProfileDto
-  ): Promise<ParentProfile> {
+  async updateProfile(parentId: string, dto: UpdateParentProfileDto): Promise<ParentProfile> {
     const parent = await this.prisma.parent.update({
       where: { id: parentId },
       data: {
@@ -524,9 +523,7 @@ export class ParentService {
         completedLessons,
         averageScore,
         lessonsStarted: sessions.length,
-        daysActive: new Set(
-          sessions.map((s) => s.startedAt.toISOString().split('T')[0])
-        ).size,
+        daysActive: new Set(sessions.map((s) => s.startedAt.toISOString().split('T')[0])).size,
       },
       dailyActivity,
       subjectBreakdown,
@@ -628,9 +625,7 @@ export class ParentService {
         completedLessons: completedCount,
         averageScore,
         achievementsEarned: achievements.length,
-        daysActive: new Set(
-          sessions.map((s) => s.startedAt.toISOString().split('T')[0])
-        ).size,
+        daysActive: new Set(sessions.map((s) => s.startedAt.toISOString().split('T')[0])).size,
       },
       comparison: {
         minutesChange: totalMinutes - previousMinutes,
@@ -731,7 +726,10 @@ export class ParentService {
       reason: options.reason ?? 'Parent requested removal',
     });
 
-    logger.info({ parentId, studentId, reason: options.reason ?? 'Parent requested removal' }, 'Parent-child link removed');
+    logger.info(
+      { parentId, studentId, reason: options.reason ?? 'Parent requested removal' },
+      'Parent-child link removed'
+    );
 
     return {
       success: true,
@@ -820,7 +818,7 @@ export class ParentService {
     });
 
     // Update link consent status if COPPA consent
-    if (dto.consentType === 'coppa') {
+    if (dto.consentType === ConsentType.COPPA) {
       await this.prisma.parentStudentLink.update({
         where: { id: link.id },
         data: {
@@ -838,7 +836,10 @@ export class ParentService {
       granted: dto.granted,
     });
 
-    logger.info({ parentId, studentId: dto.studentId, consentType: dto.consentType, granted: dto.granted }, 'Consent recorded');
+    logger.info(
+      { parentId, studentId: dto.studentId, consentType: dto.consentType, granted: dto.granted },
+      'Consent recorded'
+    );
 
     return {
       id: consent.id,
@@ -884,7 +885,7 @@ export class ParentService {
   ): Promise<{
     studentId: string;
     pendingCount: number;
-    recommendations: Array<{
+    recommendations: {
       id: string;
       domain: string | null;
       currentLevel: number;
@@ -894,7 +895,7 @@ export class ParentService {
       evidence: unknown;
       expiresAt: string;
       createdAt: string;
-    }>;
+    }[];
   }> {
     await this.verifyParentAccess(parentId, studentId);
 
@@ -915,7 +916,10 @@ export class ParentService {
 
       return await response.json();
     } catch (error) {
-      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty recommendations');
+      logger.error(
+        { parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' },
+        'Failed to get difficulty recommendations'
+      );
       throw error;
     }
   }
@@ -925,7 +929,12 @@ export class ParentService {
    */
   async respondToRecommendation(
     parentId: string,
-    dto: { recommendationId: string; action: 'approve' | 'modify' | 'deny'; modifiedLevel?: number; parentNotes?: string }
+    dto: {
+      recommendationId: string;
+      action: 'approve' | 'modify' | 'deny';
+      modifiedLevel?: number;
+      parentNotes?: string;
+    }
   ): Promise<{
     success: boolean;
     status: string;
@@ -971,7 +980,14 @@ export class ParentService {
 
       return result;
     } catch (error) {
-      logger.error({ parentId, recommendationId: dto.recommendationId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to respond to recommendation');
+      logger.error(
+        {
+          parentId,
+          recommendationId: dto.recommendationId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Failed to respond to recommendation'
+      );
       throw error;
     }
   }
@@ -989,15 +1005,12 @@ export class ParentService {
     await this.verifyParentAccess(parentId, studentId);
 
     try {
-      const response = await fetch(
-        `${config.learnerModelSvcUrl}/difficulty/levels/${studentId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Parent-Id': parentId,
-          },
-        }
-      );
+      const response = await fetch(`${config.learnerModelSvcUrl}/difficulty/levels/${studentId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Parent-Id': parentId,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch difficulty levels: ${response.statusText}`);
@@ -1009,7 +1022,10 @@ export class ParentService {
         levels: data.levels,
       };
     } catch (error) {
-      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty levels');
+      logger.error(
+        { parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' },
+        'Failed to get difficulty levels'
+      );
       throw error;
     }
   }
@@ -1029,22 +1045,19 @@ export class ParentService {
     await this.verifyParentAccess(parentId, dto.studentId);
 
     try {
-      const response = await fetch(
-        `${config.learnerModelSvcUrl}/difficulty/domain/set`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Parent-Id': parentId,
-          },
-          body: JSON.stringify({
-            learnerId: dto.studentId,
-            domain: dto.domain,
-            level: dto.level,
-            reason: dto.reason,
-          }),
-        }
-      );
+      const response = await fetch(`${config.learnerModelSvcUrl}/difficulty/domain/set`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Parent-Id': parentId,
+        },
+        body: JSON.stringify({
+          learnerId: dto.studentId,
+          domain: dto.domain,
+          level: dto.level,
+          reason: dto.reason,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -1053,11 +1066,21 @@ export class ParentService {
 
       const result = await response.json();
 
-      logger.info({ parentId, studentId: dto.studentId, domain: dto.domain, level: dto.level }, 'Parent set domain difficulty');
+      logger.info(
+        { parentId, studentId: dto.studentId, domain: dto.domain, level: dto.level },
+        'Parent set domain difficulty'
+      );
 
       return result;
     } catch (error) {
-      logger.error({ parentId, studentId: dto.studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to set domain difficulty');
+      logger.error(
+        {
+          parentId,
+          studentId: dto.studentId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Failed to set domain difficulty'
+      );
       throw error;
     }
   }
@@ -1102,7 +1125,10 @@ export class ParentService {
         preferences: data.preferences,
       };
     } catch (error) {
-      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty preferences');
+      logger.error(
+        { parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' },
+        'Failed to get difficulty preferences'
+      );
       throw error;
     }
   }
@@ -1128,20 +1154,17 @@ export class ParentService {
     await this.verifyParentAccess(parentId, dto.studentId);
 
     try {
-      const response = await fetch(
-        `${config.learnerModelSvcUrl}/difficulty/preferences`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Parent-Id': parentId,
-          },
-          body: JSON.stringify({
-            learnerId: dto.studentId,
-            ...dto,
-          }),
-        }
-      );
+      const response = await fetch(`${config.learnerModelSvcUrl}/difficulty/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Parent-Id': parentId,
+        },
+        body: JSON.stringify({
+          learnerId: dto.studentId,
+          ...dto,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -1154,7 +1177,14 @@ export class ParentService {
 
       return result;
     } catch (error) {
-      logger.error({ parentId, studentId: dto.studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to update difficulty preferences');
+      logger.error(
+        {
+          parentId,
+          studentId: dto.studentId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Failed to update difficulty preferences'
+      );
       throw error;
     }
   }
@@ -1169,7 +1199,7 @@ export class ParentService {
   ): Promise<{
     studentId: string;
     count: number;
-    history: Array<{
+    history: {
       id: string;
       domain: string | null;
       previousLevel: number;
@@ -1178,7 +1208,7 @@ export class ParentService {
       changedByType: string;
       wasEffective: boolean | null;
       createdAt: string;
-    }>;
+    }[];
   }> {
     await this.verifyParentAccess(parentId, studentId);
 
@@ -1199,7 +1229,10 @@ export class ParentService {
 
       return await response.json();
     } catch (error) {
-      logger.error({ parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to get difficulty history');
+      logger.error(
+        { parentId, studentId, error: error instanceof Error ? error.message : 'Unknown error' },
+        'Failed to get difficulty history'
+      );
       throw error;
     }
   }
@@ -1215,15 +1248,15 @@ export class ParentService {
       },
     });
 
-    if (!link || link.status !== 'active') {
+    if (link?.status !== 'active') {
       throw new ForbiddenException('You do not have access to this student');
     }
   }
 
-  private async sendInviteEmail(invite: { 
-    code: string; 
-    parentEmail: string; 
-    parentName?: string | null; 
+  private async sendInviteEmail(invite: {
+    code: string;
+    parentEmail: string;
+    parentName?: string | null;
     language: string;
     expiresAt: Date;
   }): Promise<void> {
@@ -1241,9 +1274,9 @@ export class ParentService {
     });
   }
 
-  private async sendVerificationEmail(parent: { 
-    id: string; 
-    email: string; 
+  private async sendVerificationEmail(parent: {
+    id: string;
+    email: string;
     givenName: string;
     language: string;
   }): Promise<void> {
@@ -1415,7 +1448,9 @@ export class ParentService {
   private async getSubjectBreakdown(
     studentId: string,
     startDate: Date
-  ): Promise<{ subject: string; minutes: number; lessonsCompleted: number; averageScore: number }[]> {
+  ): Promise<
+    { subject: string; minutes: number; lessonsCompleted: number; averageScore: number }[]
+  > {
     const results = await this.prisma.learningSession.groupBy({
       by: ['lessonId'],
       where: {
@@ -1487,7 +1522,10 @@ export class ParentService {
     };
   }
 
-  private calculateTrend(skillMastery: { masteryLevel: number; attempts: number }): 'up' | 'down' | 'stable' {
+  private calculateTrend(skillMastery: {
+    masteryLevel: number;
+    attempts: number;
+  }): 'up' | 'down' | 'stable' {
     if (skillMastery.masteryLevel >= 0.8) return 'stable';
     if (skillMastery.attempts > 5) return 'up';
     return 'stable';
@@ -1496,7 +1534,9 @@ export class ParentService {
   private async getAchievementsForPeriod(
     studentId: string,
     startDate: Date
-  ): Promise<{ id: string; name: string; description: string; iconUrl?: string | null; earnedAt: Date }[]> {
+  ): Promise<
+    { id: string; name: string; description: string; iconUrl?: string | null; earnedAt: Date }[]
+  > {
     const achievements = await this.prisma.achievement.findMany({
       where: {
         studentId,
@@ -1544,9 +1584,7 @@ export class ParentService {
     }
 
     // Consistency highlight
-    const uniqueDays = new Set(
-      sessions.map((s) => s.startedAt.toISOString().split('T')[0])
-    ).size;
+    const uniqueDays = new Set(sessions.map((s) => s.startedAt.toISOString().split('T')[0])).size;
     if (uniqueDays >= 5) {
       highlights.push(`Active ${uniqueDays} days this week - great consistency! 🔥`);
     }

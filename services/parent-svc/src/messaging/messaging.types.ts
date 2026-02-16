@@ -5,8 +5,6 @@
  * conversations, and content moderation.
  */
 
-import { IsString, IsOptional, IsUUID, IsEnum, IsArray, MaxLength, IsUrl } from 'class-validator';
-
 // ============================================================================
 // ENUMS
 // ============================================================================
@@ -40,52 +38,27 @@ export enum ReportStatus {
 // DTOs - Input Types
 // ============================================================================
 
-export class CreateConversationDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsUUID()
-  teacherId!: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(200)
+export interface CreateConversationDto {
+  studentId: string;
+  teacherId: string;
   subject?: string;
 }
 
-export class SendMessageDto {
-  @IsUUID()
-  conversationId!: string;
-
-  @IsString()
-  @MaxLength(2000)
-  content!: string;
-
-  @IsArray()
-  @IsOptional()
+export interface SendMessageDto {
+  conversationId: string;
+  content: string;
   attachments?: MessageAttachment[];
 }
 
-export class ReportMessageDto {
-  @IsUUID()
-  messageId!: string;
-
-  @IsString()
-  @MaxLength(500)
-  reason!: string;
+export interface ReportMessageDto {
+  messageId: string;
+  reason: string;
 }
 
-export class MessageAttachment {
-  @IsString()
-  name!: string;
-
-  @IsUrl()
-  url!: string;
-
-  @IsString()
-  mimeType!: string;
-
-  @IsOptional()
+export interface MessageAttachment {
+  name: string;
+  url: string;
+  mimeType: string;
   size?: number;
 }
 

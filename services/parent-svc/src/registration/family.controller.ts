@@ -1,95 +1,44 @@
 /**
- * Family Dashboard Controller
+ * Family Dashboard Routes
  *
  * REST API endpoints for the family dashboard,
  * allowing caregivers to view and manage their linked learners.
+ * NOTE: These routes are registered under /api/v1/family prefix in app.ts
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Req,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-} from '@nestjs/common';
-import type { Request } from 'express';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
-import { FamilyService } from './family.service.js';
-import { FamilyDashboardResponse, LearnerOverview } from './registration.types.js';
+import { caregiverAuthHook } from './guards/caregiver-auth.guard.js';
 
-// Interface for authenticated caregiver request
-interface CaregiverAuthRequest extends Request {
-  caregiver?: {
-    id: string;
-    email: string;
-    givenName: string;
-    familyName: string;
-  };
-}
+export async function familyRoutes(app: FastifyInstance) {
+  const familyService = app.services.family;
 
-// Import the caregiver auth guard from the existing caregiver module
-// This should be replaced with the actual guard path
-import { CaregiverAuthGuard } from './guards/caregiver-auth.guard.js';
-
-@Controller('api/v1/family')
-@UseGuards(CaregiverAuthGuard)
-export class FamilyController {
-  constructor(private readonly familyService: FamilyService) {}
+  // All routes require caregiver auth
+  app.addHook('preHandler', caregiverAuthHook);
 
   /**
    * Get family dashboard overview
    * GET /api/v1/family/dashboard
    */
-  @Get('dashboard')
-  async getDashboard(@Req() req: CaregiverAuthRequest): Promise<FamilyDashboardResponse> {
-    const caregiverId = req.caregiver!.id;
-    return this.familyService.getFamilyDashboard(caregiverId);
-  }
+  app.get('/dashboard', async (request: FastifyRequest) => {
+    return familyService.getFamilyDashboard(request.caregiver!.id);
+  });
 
   /**
    * Switch active learner context
    * POST /api/v1/family/active-learner
    */
-  @Post('active-learner')
-  @HttpCode(HttpStatus.OK)
-  async setActiveLearner(
-    @Req() req: CaregiverAuthRequest,
-    @Body() body: { learnerId: string }
-  ): Promise<{ success: boolean; learner: { id: string; name: string } }> {
-    const caregiverId = req.caregiver!.id;
-    return this.familyService.setActiveLearner(caregiverId, body.learnerId);
-  }
+  app.post('/active-learner', async (request: FastifyRequest) => {
+    const body = request.body as { learnerId: string };
+    return familyService.setActiveLearner(request.caregiver!.id, body.learnerId);
+  });
 
   /**
    * Get learner details
    * GET /api/v1/family/learners/:learnerId
    */
-  @Get('learners/:learnerId')
-  async getLearnerDetails(
-    @Req() req: CaregiverAuthRequest,
-    @Param('learnerId') learnerId: string
-  ): Promise<
-    LearnerOverview & {
-      recentSessions: {
-        id: string;
-        subject: string;
-        duration: number;
-        score: number | null;
-        completedAt: Date;
-      }[];
-      achievements: {
-        id: string;
-        name: string;
-        description: string;
-        earnedAt: Date;
-      }[];
-    }
-  > {
-    const caregiverId = req.caregiver!.id;
-    return this.familyService.getLearnerDetails(caregiverId, learnerId);
-  }
+  app.get('/learners/:learnerId', async (request: FastifyRequest) => {
+    const { learnerId } = request.params as { learnerId: string };
+    return familyService.getLearnerDetails(request.caregiver!.id, learnerId);
+  });
 }

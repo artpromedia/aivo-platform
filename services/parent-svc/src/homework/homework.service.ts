@@ -5,10 +5,11 @@
  * Proxies requests to homework-helper-svc and aggregates data for parent dashboard.
  */
 
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
+
 import { config } from '../config.js';
+import { NotFoundException, ForbiddenException } from '../errors.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 // Types for homework monitoring
 export interface HomeworkSubmission {
@@ -68,7 +69,6 @@ export interface HomeworkTrend {
   avgStepsCompleted: number;
 }
 
-@Injectable()
 export class HomeworkService {
   private readonly homeworkServiceUrl: string;
 
@@ -147,7 +147,7 @@ export class HomeworkService {
         total: data.total || 0,
       };
     } catch (error) {
-      logger.error('Failed to fetch student homework', { error, studentId, parentId });
+      logger.error({ error, studentId, parentId }, 'Failed to fetch student homework');
       throw error;
     }
   }
@@ -184,7 +184,7 @@ export class HomeworkService {
 
       return response.json();
     } catch (error) {
-      logger.error('Failed to fetch homework detail', { error, studentId, homeworkId });
+      logger.error({ error, studentId, homeworkId }, 'Failed to fetch homework detail');
       throw error;
     }
   }
@@ -232,7 +232,7 @@ export class HomeworkService {
 
       return response.json();
     } catch (error) {
-      logger.error('Failed to fetch homework summary', { error, studentId, parentId });
+      logger.error({ error, studentId, parentId }, 'Failed to fetch homework summary');
       throw error;
     }
   }
@@ -276,7 +276,7 @@ export class HomeworkService {
 
       return response.json();
     } catch (error) {
-      logger.error('Failed to fetch homework trends', { error, studentId, parentId });
+      logger.error({ error, studentId, parentId }, 'Failed to fetch homework trends');
       throw error;
     }
   }
@@ -306,8 +306,8 @@ export class HomeworkService {
         student: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            givenName: true,
+            familyName: true,
           },
         },
       },
@@ -336,7 +336,7 @@ export class HomeworkService {
           if (!response.ok) {
             return {
               studentId: link.studentId,
-              studentName: `${link.student.firstName} ${link.student.lastName}`,
+              studentName: `${link.student.givenName} ${link.student.familyName}`,
               recentHomework: [],
               weeklyStats: { totalSessions: 0, completed: 0, avgCompletionRate: 0 },
             };
@@ -345,15 +345,19 @@ export class HomeworkService {
           const data = await response.json();
           return {
             studentId: link.studentId,
-            studentName: `${link.student.firstName} ${link.student.lastName}`,
+            studentName: `${link.student.givenName} ${link.student.familyName}`,
             recentHomework: data.recentHomework || [],
-            weeklyStats: data.weeklyStats || { totalSessions: 0, completed: 0, avgCompletionRate: 0 },
+            weeklyStats: data.weeklyStats || {
+              totalSessions: 0,
+              completed: 0,
+              avgCompletionRate: 0,
+            },
           };
         } catch (error) {
-          logger.warn('Failed to fetch homework for child', { studentId: link.studentId, error });
+          logger.warn({ studentId: link.studentId, error }, 'Failed to fetch homework for child');
           return {
             studentId: link.studentId,
-            studentName: `${link.student.firstName} ${link.student.lastName}`,
+            studentName: `${link.student.givenName} ${link.student.familyName}`,
             recentHomework: [],
             weeklyStats: { totalSessions: 0, completed: 0, avgCompletionRate: 0 },
           };

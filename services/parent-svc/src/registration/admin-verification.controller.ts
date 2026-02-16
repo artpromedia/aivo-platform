@@ -1,107 +1,70 @@
 /**
- * School Admin Verification Controller
+ * School Admin Verification Routes
  *
  * REST API endpoints for school administrators to verify
  * caregiver-learner link requests.
+ * NOTE: These routes are registered under /api/v1/admin prefix in app.ts
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-} from '@nestjs/common';
-import type { Request } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { RegistrationService } from './registration.service.js';
-import { UpdateLinkRequestDto, VerificationStatus } from './registration.types.js';
+import { BadRequestException } from '../errors.js';
 
-// This interface should match your auth middleware
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    role: string;
-    schoolId?: string;
-  };
+import { schoolAdminHook } from './guards/school-admin.guard.js';
+import type { UpdateLinkRequestDto, VerificationStatus } from './registration.types.js';
+
+function getClientIp(request: FastifyRequest): string {
+  const forwarded = request.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') {
+    return forwarded.split(',')[0].trim();
+  }
+  if (Array.isArray(forwarded)) {
+    return forwarded[0];
+  }
+  return request.ip || 'unknown';
 }
 
-// Placeholder guard - replace with actual school admin auth guard
-import { SchoolAdminGuard } from './guards/school-admin.guard.js';
+export async function adminVerificationRoutes(app: FastifyInstance) {
+  const registrationService = app.services.registration;
 
-@Controller('api/v1/admin')
-@UseGuards(SchoolAdminGuard)
-export class AdminVerificationController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  // All routes require school admin auth
+  app.addHook('preHandler', schoolAdminHook);
 
   /**
    * Get pending link requests for a school
    * GET /api/v1/admin/schools/:schoolId/learner-link-requests
    */
-  @Get('schools/:schoolId/learner-link-requests')
-  async getPendingLinkRequests(
-    @Param('schoolId') schoolId: string,
-    @Query('status') status?: VerificationStatus,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string
-  ): Promise<{
-    requests: {
-      id: string;
-      registrationId: string;
-      caregiverName: string;
-      caregiverEmail: string;
-      relationship: string;
-      identificationMethod: string;
-      learnerInfo: {
-        email?: string;
-        studentId?: string;
-        firstName?: string;
-        lastName?: string;
-        dateOfBirth?: string;
-      };
-      verificationMethod: string;
-      verificationStatus: string;
-      createdAt: Date;
-      matchedLearner?: { id: string; name: string; grade?: string };
-    }[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    return this.registrationService.getPendingLinkRequests(schoolId, {
+  app.get('/schools/:schoolId/learner-link-requests', async (request: FastifyRequest) => {
+    const { schoolId } = request.params as { schoolId: string };
+    const { status, page, limit } = request.query as {
+      status?: VerificationStatus;
+      page?: string;
+      limit?: string;
+    };
+    return registrationService.getPendingLinkRequests(schoolId, {
       status,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
-  }
+  });
 
   /**
    * Approve or reject a link request
    * PUT /api/v1/admin/learner-link-requests/:requestId
    */
-  @Put('learner-link-requests/:requestId')
-  @HttpCode(HttpStatus.OK)
-  async updateLinkRequest(
-    @Param('requestId') requestId: string,
-    @Body() dto: UpdateLinkRequestDto,
-    @Req() req: AuthenticatedRequest
-  ): Promise<{ success: boolean; message: string }> {
-    const adminUserId = req.user?.id || 'unknown';
+  app.put('/learner-link-requests/:requestId', async (request: FastifyRequest) => {
+    const { requestId } = request.params as { requestId: string };
+    const dto = request.body as UpdateLinkRequestDto;
+    const adminUserId = request.user?.id || 'unknown';
 
-    await this.registrationService.updateLinkRequestStatus(
+    await registrationService.updateLinkRequestStatus(
       requestId,
       dto.status,
       adminUserId,
       dto.rejectionReason,
       {
-        ipAddress: this.getClientIp(req),
-        userAgent: req.headers['user-agent'],
+        ipAddress: getClientIp(request),
+        userAgent: request.headers['user-agent'],
       }
     );
 
@@ -112,44 +75,25 @@ export class AdminVerificationController {
           ? 'Link request approved successfully.'
           : 'Link request rejected.',
     };
-  }
+  });
 
   /**
    * Generate verification code for parent pickup
    * POST /api/v1/admin/learners/:learnerId/generate-parent-code
    */
-  @Post('learners/:learnerId/generate-parent-code')
-  @HttpCode(HttpStatus.CREATED)
-  async generateParentCode(
-    @Param('learnerId') learnerId: string,
-    @Req() req: AuthenticatedRequest
-  ): Promise<{
-    code: string;
-    expiresAt: Date;
-    learnerId: string;
-    learnerName: string;
-  }> {
-    const schoolId = req.user?.schoolId;
-    const issuedById = req.user?.id;
+  app.post(
+    '/learners/:learnerId/generate-parent-code',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { learnerId } = request.params as { learnerId: string };
+      const schoolId = request.user?.schoolId;
+      const issuedById = request.user?.id;
 
-    if (!schoolId || !issuedById) {
-      throw new Error('School context required');
-    }
+      if (!schoolId || !issuedById) {
+        throw new BadRequestException('School context required');
+      }
 
-    return this.registrationService.generateParentVerificationCode(schoolId, learnerId, issuedById);
-  }
-
-  /**
-   * Get client IP address from request
-   */
-  private getClientIp(req: Request): string {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
+      reply.status(201);
+      return registrationService.generateParentVerificationCode(schoolId, learnerId, issuedById);
     }
-    if (Array.isArray(forwarded)) {
-      return forwarded[0];
-    }
-    return req.socket?.remoteAddress || 'unknown';
-  }
+  );
 }

@@ -1,92 +1,63 @@
 /**
- * Onboarding Controller
+ * Onboarding Routes
  *
  * REST API endpoints for family/learner onboarding with district detection.
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { OnboardingService } from './onboarding.service.js';
-import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
-import type {
-  LocationInput,
-  RegisterLearnerInput,
-} from './onboarding.types.js';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-@Controller('onboarding')
-export class OnboardingController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+import type { LocationInput, RegisterLearnerInput } from './onboarding.types.js';
+
+export async function onboardingRoutes(app: FastifyInstance) {
+  const onboardingService = app.services.onboarding;
 
   /**
    * Look up district and curriculum from ZIP code
-   * Called when parent enters their location
    */
-  @Post('lookup-location')
-  @HttpCode(HttpStatus.OK)
-  async lookupLocation(@Body() location: LocationInput) {
-    return this.onboardingService.lookupLocation(location);
-  }
+  app.post('/lookup-location', async (request: FastifyRequest) => {
+    const location = request.body as LocationInput;
+    return onboardingService.lookupLocation(location);
+  });
 
   /**
    * Get districts for a state (for manual selection)
    */
-  @Get('districts/state/:stateCode')
-  async getDistrictsByState(
-    @Param('stateCode') stateCode: string,
-    @Query('search') search?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string
-  ) {
-    return this.onboardingService.getDistrictsByState(stateCode, {
+  app.get('/districts/state/:stateCode', async (request: FastifyRequest) => {
+    const { stateCode } = request.params as { stateCode: string };
+    const { search, limit, offset } = request.query as {
+      search?: string;
+      limit?: string;
+      offset?: string;
+    };
+    return onboardingService.getDistrictsByState(stateCode, {
       search,
       limit: limit ? Number.parseInt(limit, 10) : undefined,
       offset: offset ? Number.parseInt(offset, 10) : undefined,
     });
-  }
+  });
 
   /**
    * Get current onboarding status
    */
-  @Get('status')
-  async getStatus(@Req() req: ParentAuthRequest) {
-    return this.onboardingService.getOnboardingStatus(req.parent!.id);
-  }
+  app.get('/status', async (request: FastifyRequest) => {
+    return onboardingService.getOnboardingStatus(request.parent!.id);
+  });
 
   /**
    * Register a new learner with location
    */
-  @Post('register-learner')
-  @HttpCode(HttpStatus.CREATED)
-  async registerLearner(
-    @Req() req: ParentAuthRequest,
-    @Body() input: RegisterLearnerInput
-  ) {
-    return this.onboardingService.registerLearner(req.parent!.id, input);
-  }
+  app.post('/register-learner', async (request: FastifyRequest, reply: FastifyReply) => {
+    const input = request.body as RegisterLearnerInput;
+    reply.status(201);
+    return onboardingService.registerLearner(request.parent!.id, input);
+  });
 
   /**
    * Update learner location (changes curriculum alignment)
    */
-  @Put('learners/:learnerId/location')
-  async updateLocation(
-    @Req() req: ParentAuthRequest,
-    @Param('learnerId') learnerId: string,
-    @Body() location: LocationInput
-  ) {
-    return this.onboardingService.updateLearnerLocation(
-      req.parent!.id,
-      learnerId,
-      location
-    );
-  }
+  app.put('/learners/:learnerId/location', async (request: FastifyRequest) => {
+    const { learnerId } = request.params as { learnerId: string };
+    const location = request.body as LocationInput;
+    return onboardingService.updateLearnerLocation(request.parent!.id, learnerId, location);
+  });
 }

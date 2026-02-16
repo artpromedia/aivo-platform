@@ -4,13 +4,14 @@
  * Handles parent authentication including login, registration, and token management.
  */
 
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import jwt from 'jsonwebtoken';
 import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CryptoService } from '../crypto/crypto.service.js';
-import { NotificationService } from '../notification/notification.service.js';
+import jwt from 'jsonwebtoken';
+
 import { config } from '../config.js';
+import type { CryptoService } from '../crypto/crypto.service.js';
+import { UnauthorizedException, BadRequestException } from '../errors.js';
+import type { NotificationService } from '../notification/notification.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 export interface LoginResult {
   accessToken: string;
@@ -19,8 +20,8 @@ export interface LoginResult {
   parent: {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
+    givenName: string;
+    familyName: string;
     language: string;
     verified: boolean;
   };
@@ -29,18 +30,17 @@ export interface LoginResult {
 interface RegisterInput {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  givenName: string;
+  familyName: string;
   inviteCode: string;
   language?: string;
 }
 
-@Injectable()
 export class ParentAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
-    private readonly notification: NotificationService,
+    private readonly notification: NotificationService
   ) {}
 
   /**
@@ -74,7 +74,6 @@ export class ParentAuthService {
     const accessToken = this.generateAccessToken(parent.id);
     const refreshToken = await this.generateRefreshToken(parent.id);
 
-
     return {
       accessToken,
       refreshToken,
@@ -82,8 +81,8 @@ export class ParentAuthService {
       parent: {
         id: parent.id,
         email: parent.email,
-        firstName: parent.firstName,
-        lastName: parent.lastName,
+        givenName: parent.givenName,
+        familyName: parent.familyName,
         language: parent.language || 'en',
         verified: parent.emailVerified,
       },
@@ -94,7 +93,7 @@ export class ParentAuthService {
    * Register a new parent using an invite code
    */
   async register(input: RegisterInput): Promise<LoginResult> {
-    const { email, password, firstName, lastName, inviteCode, language = 'en' } = input;
+    const { email, password, givenName, familyName, inviteCode, language = 'en' } = input;
 
     // Validate invite
     const invite = await this.prisma.parentInvite.findFirst({
@@ -128,16 +127,16 @@ export class ParentAuthService {
       data: {
         email: email.toLowerCase(),
         passwordHash,
-        firstName,
-        lastName,
+        givenName,
+        familyName,
         language,
         status: 'active',
         emailVerified: false,
-        students: {
+        studentLinks: {
           create: {
             studentId: invite.studentId,
             relationship: invite.relationship,
-            permissions: invite.permissions || {},
+            permissions: {},
             consentStatus: 'pending',
           },
         },
@@ -149,8 +148,6 @@ export class ParentAuthService {
       where: { id: invite.id },
       data: {
         status: 'accepted',
-        acceptedAt: new Date(),
-        acceptedById: parent.id,
       },
     });
 
@@ -161,7 +158,7 @@ export class ParentAuthService {
       template: 'verify-email',
       language,
       data: {
-        firstName,
+        firstName: givenName,
         verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
       },
     });
@@ -172,7 +169,7 @@ export class ParentAuthService {
       template: 'welcome',
       language,
       data: {
-        firstName,
+        firstName: givenName,
         dashboardUrl: `${config.appUrl}/dashboard`,
       },
     });
@@ -181,7 +178,7 @@ export class ParentAuthService {
     const accessToken = this.generateAccessToken(parent.id);
     const refreshToken = await this.generateRefreshToken(parent.id);
 
-    logger.info('Parent registered', { parentId: parent.id });
+    logger.info({ parentId: parent.id }, 'Parent registered');
 
     return {
       accessToken,
@@ -190,8 +187,8 @@ export class ParentAuthService {
       parent: {
         id: parent.id,
         email: parent.email,
-        firstName: parent.firstName,
-        lastName: parent.lastName,
+        givenName: parent.givenName,
+        familyName: parent.familyName,
         language: parent.language || 'en',
         verified: parent.emailVerified,
       },
@@ -202,16 +199,19 @@ export class ParentAuthService {
    * Refresh access token
    */
   async refreshToken(token: string): Promise<{ accessToken: string; expiresIn: number }> {
-    const session = await this.prisma.parentSession.findUnique({
-      where: { refreshToken: token },
-      include: { parent: true },
+    const session = await this.prisma.parentSession.findFirst({
+      where: { token },
     });
 
     if (!session || session.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    if (session.parent.status !== 'active') {
+    const parent = await this.prisma.parent.findUnique({
+      where: { id: session.parentId },
+    });
+
+    if (parent?.status !== 'active') {
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -228,7 +228,7 @@ export class ParentAuthService {
    */
   async logout(refreshToken: string): Promise<void> {
     await this.prisma.parentSession.deleteMany({
-      where: { refreshToken },
+      where: { token: refreshToken },
     });
   }
 
@@ -259,7 +259,7 @@ export class ParentAuthService {
       }),
     ]);
 
-    logger.info('Parent email verified', { parentId: verification.parentId });
+    logger.info({ parentId: verification.parentId }, 'Parent email verified');
   }
 
   /**
@@ -275,7 +275,7 @@ export class ParentAuthService {
       return;
     }
 
-    const token = this.crypto.generateSecureToken(32);
+    const token = await this.crypto.generateSecureToken(32);
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await this.prisma.passwordResetToken.create({
@@ -291,7 +291,7 @@ export class ParentAuthService {
       template: 'password-reset',
       language: parent.language || 'en',
       data: {
-        firstName: parent.firstName,
+        firstName: parent.givenName,
         resetUrl: `${config.appUrl}/reset-password?token=${token}`,
       },
     });
@@ -332,31 +332,29 @@ export class ParentAuthService {
       }),
     ]);
 
-    logger.info('Parent password reset', { parentId: reset.parentId });
+    logger.info({ parentId: reset.parentId }, 'Parent password reset');
   }
 
   /**
    * Generate access token
    */
   private generateAccessToken(parentId: string): string {
-    return jwt.sign(
-      { sub: parentId, type: 'parent' },
-      config.jwtSecret,
-      { expiresIn: config.accessTokenExpiresIn }
-    );
+    return jwt.sign({ sub: parentId, type: 'parent' }, config.jwtSecret, {
+      expiresIn: config.accessTokenExpiresIn,
+    });
   }
 
   /**
    * Generate refresh token and store session
    */
   private async generateRefreshToken(parentId: string): Promise<string> {
-    const token = this.crypto.generateSecureToken(32);
+    const token = await this.crypto.generateSecureToken(32);
     const expiresAt = new Date(Date.now() + config.refreshTokenExpiresIn * 1000);
 
     await this.prisma.parentSession.create({
       data: {
         parentId,
-        refreshToken: token,
+        token,
         expiresAt,
       },
     });
@@ -368,7 +366,7 @@ export class ParentAuthService {
    * Create email verification token
    */
   private async createEmailVerificationToken(parentId: string): Promise<string> {
-    const token = this.crypto.generateSecureToken(32);
+    const token = await this.crypto.generateSecureToken(32);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await this.prisma.emailVerificationToken.create({
