@@ -135,7 +135,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <SchemaScript schema={organizationSchema} />
         <SchemaScript schema={platformSchema} />
       </head>
-      <body className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans antialiased">
+      <body className="min-h-screen bg-white text-gray-900 font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>

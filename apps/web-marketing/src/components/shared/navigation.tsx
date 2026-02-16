@@ -135,7 +135,7 @@ export function Navigation() {
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
           isScrolled
-            ? 'bg-[hsl(var(--background))]/95 backdrop-blur-md shadow-soft border-b border-[hsl(var(--border))]'
+            ? 'bg-white/95 backdrop-blur-md shadow-soft border-b border-gray-200'
             : 'bg-transparent'
         )}
       >
@@ -163,8 +163,8 @@ export function Navigation() {
                         className={cn(
                           'flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
                           activeDropdown === item.label
-                            ? 'text-theme-primary-400 bg-theme-primary-500/10'
-                            : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50'
+                            ? 'text-theme-primary-600 bg-theme-primary-50'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
                         )}
                       >
                         {item.label}
@@ -184,7 +184,7 @@ export function Navigation() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute top-full left-0 mt-2 w-72 bg-[hsl(var(--card))] rounded-2xl shadow-soft-lg border border-[hsl(var(--border))] overflow-hidden"
+                            className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl shadow-soft-lg border border-gray-200 overflow-hidden"
                           >
                             <div className="p-2">
                               {item.children.map((child) => (
@@ -194,15 +194,15 @@ export function Navigation() {
                                   onClick={() => {
                                     handleNavClick(child.href);
                                   }}
-                                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-[hsl(var(--muted))]/50 transition-colors group"
+                                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
                                 >
                                   <div className="shrink-0 mt-0.5">{child.icon}</div>
                                   <div>
-                                    <div className="font-medium text-[hsl(var(--foreground))] group-hover:text-theme-primary-400 transition-colors">
+                                    <div className="font-medium text-gray-900 group-hover:text-theme-primary-600 transition-colors">
                                       {child.label}
                                     </div>
                                     {child.description && (
-                                      <div className="text-sm text-[hsl(var(--muted-foreground))] mt-0.5">
+                                      <div className="text-sm text-gray-500 mt-0.5">
                                         {child.description}
                                       </div>
                                     )}
@@ -222,7 +222,7 @@ export function Navigation() {
                       }}
                       className={cn(
                         'flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-                        'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50'
+                        'text-gray-600 hover:text-gray-900 hover:bg-gray-100/50'
                       )}
                       {...(item.external && {
                         target: '_blank',
@@ -252,7 +252,7 @@ export function Navigation() {
               onClick={() => {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
               }}
-              className="lg:hidden p-2 -mr-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 rounded-lg transition-colors"
+              className="lg:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 rounded-lg transition-colors"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -282,7 +282,7 @@ export function Navigation() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-[hsl(var(--card))] z-50 lg:hidden overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 w-full max-w-sm bg-white z-50 lg:hidden overflow-y-auto"
             >
               <div className="p-6">
                 {/* Header */}
@@ -292,7 +292,7 @@ export function Navigation() {
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                     }}
-                    className="p-2 -mr-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]/50 rounded-lg transition-colors"
+                    className="p-2 -mr-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100/50 rounded-lg transition-colors"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -304,7 +304,7 @@ export function Navigation() {
                     <div key={item.label}>
                       {item.children ? (
                         <div className="py-2">
-                          <div className="text-xs font-semibold text-[hsl(var(--muted-foreground))]/60 uppercase tracking-wider mb-2 px-3">
+                          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">
                             {item.label}
                           </div>
                           <div className="space-y-1">
@@ -315,10 +315,10 @@ export function Navigation() {
                                 onClick={() => {
                                   handleNavClick(child.href);
                                 }}
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[hsl(var(--muted))]/50 transition-colors"
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
                               >
                                 {child.icon}
-                                <span className="font-medium text-[hsl(var(--foreground))]">{child.label}</span>
+                                <span className="font-medium text-gray-900">{child.label}</span>
                               </Link>
                             ))}
                           </div>
@@ -329,7 +329,7 @@ export function Navigation() {
                           onClick={() => {
                             handleNavClick(item.href);
                           }}
-                          className="flex items-center gap-2 px-3 py-3 text-[hsl(var(--foreground))] font-medium rounded-xl hover:bg-[hsl(var(--muted))]/50 transition-colors"
+                          className="flex items-center gap-2 px-3 py-3 text-gray-900 font-medium rounded-xl hover:bg-gray-50 transition-colors"
                         >
                           {item.label}
                           {item.badge && (
@@ -344,7 +344,7 @@ export function Navigation() {
                 </div>
 
                 {/* Mobile CTAs */}
-                <div className="mt-8 pt-8 border-t border-[hsl(var(--border))]">
+                <div className="mt-8 pt-8 border-t border-gray-200">
                   <NavAuthSection
                     mobile
                     onAction={() => {
@@ -354,8 +354,8 @@ export function Navigation() {
                 </div>
 
                 {/* Trust Indicators */}
-                <div className="mt-8 p-4 bg-[hsl(var(--muted))]/30 rounded-2xl">
-                  <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+                <div className="mt-8 p-4 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Sparkles className="w-4 h-4 text-theme-primary-500" />
                     <span>Trusted by 150+ families in pilot program</span>
                   </div>
