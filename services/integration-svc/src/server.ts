@@ -12,6 +12,7 @@ import Fastify from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 import { ApiKeyService } from './api-key-service.js';
+import { registerEdfiRoutes, type LearnerDataSource } from './edfi/index.js';
 import { createGoogleClassroomIntegration } from './google-classroom/index.js';
 import { registerRoutes } from './routes.js';
 import { WebhookDispatcher } from './webhook-dispatcher.js';
@@ -25,6 +26,9 @@ export interface ServerConfig {
   host?: string;
   webhookWorkerIntervalMs?: number;
   webhookBatchSize?: number;
+  edfi?: {
+    learnerDataSource: LearnerDataSource;
+  };
   googleClassroom?: {
     clientId: string;
     clientSecret: string;
@@ -80,6 +84,12 @@ export async function createServer(config: ServerConfig): Promise<{
     apiKeyService,
     webhookDispatcher,
   });
+
+  // Initialize Ed-Fi integration if configured
+  if (config.edfi) {
+    await registerEdfiRoutes(app, prisma as any, config.edfi.learnerDataSource);
+    app.log.info('Ed-Fi integration routes registered');
+  }
 
   // Initialize Google Classroom integration if configured
   let googleClassroom: ReturnType<typeof createGoogleClassroomIntegration> | null = null;

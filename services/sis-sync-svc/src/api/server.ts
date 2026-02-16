@@ -14,6 +14,7 @@ import { SyncScheduler } from '../scheduler';
 
 import { registerOAuthRoutes } from './oauth';
 import { registerRoutes } from './routes';
+import { DeviceSyncService, deviceSyncRoutes, deviceSyncAuthMiddleware } from '../modules/device-sync/index.js';
 
 export async function createServer() {
   const prisma = new BasePrismaClient() as unknown as ExtendedPrismaClient;
@@ -54,6 +55,13 @@ export async function createServer() {
       tenantId: process.env.MICROSOFT_TENANT_ID || 'common',
     } : undefined,
   });
+
+  // Register device sync module (absorbed from sync-svc, Sprint 3)
+  const deviceSyncService = new DeviceSyncService(prisma as any);
+  await app.register(async (deviceSyncApp) => {
+    await deviceSyncApp.register(deviceSyncAuthMiddleware);
+    await deviceSyncApp.register(deviceSyncRoutes, { syncService: deviceSyncService });
+  }, { prefix: '/api/v1/device-sync' });
 
   // Graceful shutdown
   const shutdown = async () => {

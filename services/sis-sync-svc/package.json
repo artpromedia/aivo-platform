@@ -14,16 +14,25 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@aivo/events": "workspace:*",
     "@aivo/ts-api-utils": "workspace:*",
+    "@aivo/ts-rbac": "workspace:*",
+    "@aivo/ts-resilience": "workspace:*",
+    "@fastify/cors": "^9.0.1",
     "@fastify/rate-limit": "^9.1.0",
+    "@fastify/websocket": "^10.0.1",
     "@prisma/client": "^5.22.0",
+    "bullmq": "^5.12.0",
     "csv-parse": "^5.5.6",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
     "fastify-plugin": "^5.0.1",
+    "ioredis": "^5.4.1",
+    "jose": "^5.9.3",
     "node-cron": "^3.0.3",
     "pino": "^10.3.0",
     "ssh2-sftp-client": "^10.0.3",
+    "ws": "^8.18.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -32,6 +41,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/ssh2-sftp-client": "^9.0.4",
     "@types/supertest": "^2.0.16",
+    "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
     "eslint": "^9.12.0",

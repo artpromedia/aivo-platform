@@ -896,3 +896,250 @@ model GradePassbackLog {
   @@map("grade_passback_logs")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ED-FI DATA STANDARD INTEGRATION
+// Merged from edfi-svc
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum EdfiApiVersion {
+  V5_3
+  V6_1
+  V7_0
+}
+
+enum ExportStatus {
+  PENDING
+  QUEUED
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
+enum SubmissionStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  REJECTED
+  ERROR
+}
+
+enum ResourceType {
+  STUDENTS
+  STUDENT_SCHOOL_ASSOCIATIONS
+  STUDENT_SECTION_ASSOCIATIONS
+  STAFF
+  STAFF_SECTION_ASSOCIATIONS
+  SECTIONS
+  COURSES
+  SCHOOLS
+  LOCAL_EDUCATION_AGENCIES
+  STUDENT_ASSESSMENTS
+  GRADES
+  STUDENT_ATTENDANCE_EVENTS
+  LEARNING_STANDARDS
+  INTERVENTIONS
+  CALENDAR_DATES
+  GRADING_PERIODS
+}
+
+/// Ed-Fi API configuration per tenant
+model EdfiConfig {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @db.Uuid
+  name                String
+  stateCode           String          @db.VarChar(2)
+  apiVersion          EdfiApiVersion
+  baseUrl             String
+  clientId            String
+  clientSecretEnc     String
+  schoolYear          Int
+  enabled             Boolean         @default(true)
+
+  exportSchedule      String?
+  extensionsJson      Json?
+  enabledResources    ResourceType[]
+
+  lastExportAt        DateTime?
+  lastSuccessAt       DateTime?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  createdBy           String?         @db.Uuid
+
+  exports             EdfiExportRun[]
+  mappings            EdfiFieldMapping[]
+
+  @@unique([tenantId, stateCode])
+  @@index([tenantId])
+  @@index([enabled])
+  @@map("edfi_configs")
+}
+
+/// Custom field mappings for state-specific requirements
+model EdfiFieldMapping {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  aivoField           String
+  edfiField           String
+  transformRule       String?
+  required            Boolean         @default(false)
+  defaultValue        String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  config              EdfiConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, resourceType, edfiField])
+  @@index([configId])
+  @@map("edfi_field_mappings")
+}
+
+/// Export run tracking
+model EdfiExportRun {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  status              ExportStatus    @default(PENDING)
+
+  resourceTypes       ResourceType[]
+  fullSync            Boolean         @default(false)
+  sinceDate           DateTime?
+
+  totalRecords        Int             @default(0)
+  processedRecords    Int             @default(0)
+  successCount        Int             @default(0)
+  errorCount          Int             @default(0)
+
+  startedAt           DateTime?
+  completedAt         DateTime?
+
+  errorLog            Json?
+
+  isManual            Boolean         @default(false)
+  triggeredBy         String?         @db.Uuid
+
+  createdAt           DateTime        @default(now())
+
+  config              EdfiConfig      @relation(fields: [configId], references: [id], onDelete: Cascade)
+  submissions         EdfiSubmission[]
+
+  @@index([configId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("edfi_export_runs")
+}
+
+/// Individual record submissions to Ed-Fi API
+model EdfiSubmission {
+  id                  String          @id @default(uuid()) @db.Uuid
+  exportRunId         String          @db.Uuid
+  resourceType        ResourceType
+
+  aivoRecordId        String          @db.Uuid
+  edfiResourceId      String?
+
+  status              SubmissionStatus @default(PENDING)
+  attempts            Int             @default(0)
+
+  payloadJson         Json
+  responseJson        Json?
+
+  errorMessage        String?
+  errorCode           String?
+
+  sentAt              DateTime?
+  respondedAt         DateTime?
+
+  createdAt           DateTime        @default(now())
+
+  exportRun           EdfiExportRun   @relation(fields: [exportRunId], references: [id], onDelete: Cascade)
+
+  @@index([exportRunId])
+  @@index([resourceType])
+  @@index([status])
+  @@index([aivoRecordId])
+  @@map("edfi_submissions")
+}
+
+/// Tracks last sync timestamp per resource type
+model EdfiSyncCursor {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  lastSyncedAt        DateTime
+  lastRecordId        String?
+
+  updatedAt           DateTime        @updatedAt
+
+  @@unique([configId, resourceType])
+  @@index([configId])
+  @@map("edfi_sync_cursors")
+}
+
+/// OAuth token cache for Ed-Fi API
+model EdfiTokenCache {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid @unique
+  accessToken         String
+  tokenType           String          @default("Bearer")
+  expiresAt           DateTime
+  refreshToken        String?
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([configId])
+  @@index([expiresAt])
+  @@map("edfi_token_caches")
+}
+
+/// Validation errors found before export
+model EdfiValidationError {
+  id                  String          @id @default(uuid()) @db.Uuid
+  configId            String          @db.Uuid
+  resourceType        ResourceType
+  aivoRecordId        String          @db.Uuid
+  field               String
+  errorType           String
+  errorMessage        String
+  suggestedFix        String?
+
+  resolved            Boolean         @default(false)
+  resolvedAt          DateTime?
+  resolvedBy          String?         @db.Uuid
+
+  createdAt           DateTime        @default(now())
+
+  @@index([configId])
+  @@index([resourceType])
+  @@index([resolved])
+  @@map("edfi_validation_errors")
+}
+
+/// Audit log for all Ed-Fi operations
+model EdfiAuditLog {
+  id                  String          @id @default(uuid()) @db.Uuid
+  tenantId            String          @db.Uuid
+  configId            String?         @db.Uuid
+
+  action              String
+  resourceType        ResourceType?
+  recordId            String?         @db.Uuid
+
+  actorId             String?         @db.Uuid
+  actorType           String
+
+  details             Json?
+
+  createdAt           DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([configId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("edfi_audit_logs")
+}
+
