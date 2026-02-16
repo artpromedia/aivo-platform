@@ -62,9 +62,9 @@ function LoginForm() {
   };
 
   const handleGoogleSSO = () => {
-    const authSvcUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/api/auth';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const callbackUrl = `${window.location.origin}/api/auth/callback`;
-    window.location.href = `${authSvcUrl}/sso/google?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+    window.location.href = `${apiUrl}/auth/sso/google?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
   };
 
   return (

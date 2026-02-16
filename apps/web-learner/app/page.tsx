@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function LearnerPortal() {
   return (
@@ -15,12 +15,7 @@ export default function LearnerPortal() {
       {/* Header */}
       <header className="relative z-10 px-6 py-5">
         <div className="mx-auto max-w-5xl flex items-center justify-between">
-          <Image
-            src="/images/aivo-logo-horizontal-purple.svg"
-            alt="AIVO"
-            width={120}
-            height={40}
-          />
+          <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={120} height={40} />
           <Link
             href="/join"
             className="px-5 py-2.5 bg-white/80 backdrop-blur border border-[var(--aivo-purple-200)] rounded-full text-[var(--aivo-brand-primary)] font-semibold hover:bg-white hover:shadow-md transition-all"
@@ -89,7 +84,9 @@ export default function LearnerPortal() {
               <span className="text-3xl">🎮</span>
             </div>
             <h3 className="font-bold text-[var(--aivo-brand-navy)] mb-2">Fun Games</h3>
-            <p className="text-sm text-[var(--aivo-neutral-600)]">Learn through exciting games and challenges</p>
+            <p className="text-sm text-[var(--aivo-neutral-600)]">
+              Learn through exciting games and challenges
+            </p>
           </div>
 
           <div className="bg-white/70 backdrop-blur rounded-2xl p-6 border border-[var(--aivo-teal-100)] hover:shadow-lg transition-shadow">
@@ -97,7 +94,9 @@ export default function LearnerPortal() {
               <span className="text-3xl">🤖</span>
             </div>
             <h3 className="font-bold text-[var(--aivo-brand-navy)] mb-2">AI Buddy</h3>
-            <p className="text-sm text-[var(--aivo-neutral-600)]">Your friendly tutor helps whenever you&apos;re stuck</p>
+            <p className="text-sm text-[var(--aivo-neutral-600)]">
+              Your friendly tutor helps whenever you&apos;re stuck
+            </p>
           </div>
 
           <div className="bg-white/70 backdrop-blur rounded-2xl p-6 border border-[var(--aivo-purple-100)] hover:shadow-lg transition-shadow">
@@ -105,7 +104,9 @@ export default function LearnerPortal() {
               <span className="text-3xl">🏆</span>
             </div>
             <h3 className="font-bold text-[var(--aivo-brand-navy)] mb-2">Earn Badges</h3>
-            <p className="text-sm text-[var(--aivo-neutral-600)]">Collect rewards as you level up your skills</p>
+            <p className="text-sm text-[var(--aivo-neutral-600)]">
+              Collect rewards as you level up your skills
+            </p>
           </div>
         </div>
       </div>

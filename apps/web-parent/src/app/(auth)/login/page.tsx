@@ -73,9 +73,9 @@ function LoginContent() {
   };
 
   const handleSSOLogin = (provider: 'google' | 'clever' | 'classlink') => {
-    const authServiceUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:4001';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const callbackUrl = `${window.location.origin}/api/auth/callback`;
-    window.location.href = `${authServiceUrl}/sso/${provider}?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+    window.location.href = `${apiUrl}/auth/sso/${provider}?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
   };
 
   return (

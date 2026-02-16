@@ -112,10 +112,7 @@ export interface OidcDiscoveryResult {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
-async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -125,11 +122,11 @@ async function apiRequest<T>(
     const optHeaders = options.headers;
     if (optHeaders instanceof Headers) {
       optHeaders.forEach((value, key) => {
-        (headers as Record<string, string>)[key] = value;
+        headers[key] = value;
       });
     } else if (Array.isArray(optHeaders)) {
       for (const [key, value] of optHeaders) {
-        (headers as Record<string, string>)[key] = value;
+        headers[key] = value;
       }
     } else {
       Object.assign(headers, optHeaders);
@@ -143,7 +140,9 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Request failed' })) as { error?: string };
+    const errorData = (await response.json().catch(() => ({ error: 'Request failed' }))) as {
+      error?: string;
+    };
     throw new Error(errorData.error ?? `Request failed: ${response.status}`);
   }
 
@@ -243,9 +242,7 @@ export async function discoverOidc(issuerUrl: string): Promise<OidcDiscoveryResu
 /**
  * Parse SAML metadata XML and extract configuration.
  */
-export async function parseSamlMetadata(
-  metadataXml: string
-): Promise<{
+export async function parseSamlMetadata(metadataXml: string): Promise<{
   issuer: string;
   ssoUrl: string;
   sloUrl?: string;
@@ -265,7 +262,7 @@ export async function parseSamlMetadata(
  * Get SP metadata URL for IdP configuration.
  */
 export function getSpMetadataUrl(tenantSlug: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   return `${baseUrl}/auth/sso/metadata/${tenantSlug}`;
 }
 
@@ -273,7 +270,7 @@ export function getSpMetadataUrl(tenantSlug: string): string {
  * Get SSO callback URL for IdP configuration.
  */
 export function getSsoCallbackUrl(tenantSlug: string, protocol: IdpProtocol): string {
-  const baseUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   if (protocol === 'SAML') {
     return `${baseUrl}/auth/saml/acs/${tenantSlug}`;
   }
