@@ -63,5 +63,12 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^1.2.1"
+  },
+  "aivo": {
+    "phase": 1,
+    "disposition": "keep",
+    "framework": "nestjs",
+    "migrateTo": "fastify",
+    "migrateInSprint": 2
   }
 }

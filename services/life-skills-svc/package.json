@@ -33,5 +33,10 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "aivo": {
+    "phase": 2,
+    "disposition": "freeze",
+    "framework": "fastify"
   }
 }

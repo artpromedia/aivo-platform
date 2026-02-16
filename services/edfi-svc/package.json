@@ -38,5 +38,11 @@
   },
   "engines": {
     "node": "20.19.4"
+  },
+  "aivo": {
+    "phase": 1,
+    "disposition": "merge-source",
+    "framework": "fastify",
+    "mergeInto": "integration-svc"
   }
 }
