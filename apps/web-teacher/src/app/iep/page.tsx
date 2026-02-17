@@ -88,6 +88,7 @@ export default function IEPManagerPage() {
   const [progressLevel, setProgressLevel] = useState<GoalStatus>('in_progress');
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [savingProgress, setSavingProgress] = useState(false);
@@ -149,6 +150,42 @@ export default function IEPManagerPage() {
       setIsRecordingVoice(false);
     }
   }, [isRecordingVoice]);
+
+  /**
+   * Transcribe a recorded voice blob via the speech-analysis-svc /transcribe endpoint.
+   * The transcribed text is appended to the progress notes textarea.
+   */
+  const transcribeVoiceNote = useCallback(async (blob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'voice-note.webm');
+      formData.append('language', 'en');
+
+      const speechApiUrl = process.env.NEXT_PUBLIC_SPEECH_API_URL || '/api/speech';
+      const res = await fetch(`${speechApiUrl}/transcribe`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { text?: string };
+        if (data.text) {
+          setProgressNote((prev) => {
+            const separator = prev.trim() ? '\n\n' : '';
+            return `${prev}${separator}[Voice note] ${data.text}`;
+          });
+          setToastMessage({ text: 'Voice note transcribed successfully', type: 'success' });
+        }
+      } else {
+        setToastMessage({ text: 'Could not transcribe voice note', type: 'error' });
+      }
+    } catch {
+      setToastMessage({ text: 'Transcription service unavailable', type: 'error' });
+    } finally {
+      setIsTranscribing(false);
+    }
+  }, []);
 
   const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -977,6 +1014,17 @@ export default function IEPManagerPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-green-600">&#10003;</span>
                       <span className="text-sm text-muted">Voice note recorded</span>
+                      {!isTranscribing ? (
+                        <button
+                          type="button"
+                          onClick={() => void transcribeVoiceNote(voiceBlob)}
+                          className="text-xs text-primary hover:underline font-medium"
+                        >
+                          Transcribe
+                        </button>
+                      ) : (
+                        <span className="text-xs text-primary animate-pulse">Transcribing…</span>
+                      )}
                       <button
                         type="button"
                         onClick={() => {

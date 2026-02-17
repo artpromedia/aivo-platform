@@ -14,6 +14,8 @@ import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useIepTranslation } from '@/lib/hooks/useIepTranslation';
+
 // Jargon glossary — terms that appear in IEP documents with plain-language definitions
 const IEP_GLOSSARY: Record<string, string> = {
   IEP: 'Individualized Education Program — a written plan that describes the special education services your child will receive.',
@@ -302,7 +304,8 @@ function PlainText({ text }: { text: string }) {
 export default function IEPSummaryPage() {
   const { t } = useTranslation('parent');
   const router = useRouter();
-  const [iep] = useState<PlainLanguageIEP>(mockIEP);
+  const [iepRaw] = useState<PlainLanguageIEP>(mockIEP);
+  const { data: iep, isTranslating } = useIepTranslation(iepRaw);
   const [showOfficial, setShowOfficial] = useState<Record<string, boolean>>({});
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [correctionForm, setCorrectionForm] = useState({
@@ -349,6 +352,11 @@ export default function IEPSummaryPage() {
                 "Your child's IEP explained in clear, everyday language. Hover over highlighted terms for definitions."
               )}
             </p>
+            {isTranslating && (
+              <p className="text-sm text-indigo-600 animate-pulse mt-1">
+                {t('iep.translating', 'Translating IEP content…')}
+              </p>
+            )}
           </div>
           <button className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
             <Download className="h-4 w-4" />

@@ -752,3 +752,129 @@ async def analyze_batch(
         "failed": sum(1 for r in results if not r.get("success")),
         "results": results,
     }
+
+
+# ============================================================================
+# Transcription Response Model
+# ============================================================================
+
+class TranscriptionResponse(BaseModel):
+    """Speech-to-text transcription result"""
+    success: bool = True
+    text: str = Field(..., description="Transcribed text from audio")
+    language: Optional[str] = Field(None, description="Detected language code")
+    duration_seconds: float = Field(..., description="Audio duration in seconds")
+    confidence: float = Field(0.0, ge=0, le=1, description="Overall transcription confidence")
+    segments: List[dict] = Field(default_factory=list, description="Time-aligned segments")
+
+
+# ============================================================================
+# Transcription Endpoint
+# ============================================================================
+
+@router.post("/transcribe", response_model=TranscriptionResponse)
+async def transcribe_audio(
+    request: Request,
+    file: UploadFile = File(..., description="Audio file (WAV, MP3, WebM, OGG, FLAC, M4A)"),
+    language: Optional[str] = Form(None, description="Language hint (ISO 639-1 code, e.g. 'en'). Auto-detected if omitted."),
+):
+    """
+    Transcribe speech audio to text using Whisper.
+
+    Accepts common audio formats and returns the transcribed text along with
+    timing metadata. Used by the teacher IEP voice-note feature to convert
+    recorded observations into editable text.
+    """
+    valid_extensions = ['.wav', '.mp3', '.m4a', '.ogg', '.flac', '.webm']
+    filename_lower = (file.filename or "audio.webm").lower()
+    if not any(filename_lower.endswith(ext) for ext in valid_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format. Accepted: {', '.join(valid_extensions)}"
+        )
+
+    try:
+        import tempfile, os, time
+        content = await file.read()
+
+        if len(content) == 0:
+            raise HTTPException(status_code=400, detail="Empty audio file")
+
+        if len(content) > 25 * 1024 * 1024:  # 25 MB limit
+            raise HTTPException(status_code=400, detail="Audio file exceeds 25 MB limit")
+
+        # Write to temp file — Whisper requires a file path
+        suffix = os.path.splitext(filename_lower)[1] or '.webm'
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        start_time = time.time()
+
+        try:
+            import whisper  # type: ignore[import-untyped]
+
+            model_name = os.environ.get("WHISPER_MODEL", "base")
+            model = whisper.load_model(model_name)
+
+            transcribe_opts: dict = {"fp16": False}
+            if language:
+                transcribe_opts["language"] = language
+
+            result = model.transcribe(tmp_path, **transcribe_opts)
+
+            duration = time.time() - start_time
+            text: str = result.get("text", "").strip()
+            detected_language: str = result.get("language", language or "en")
+
+            # Build segments list
+            segments = []
+            total_confidence = 0.0
+            raw_segments = result.get("segments", [])
+            for seg in raw_segments:
+                segments.append({
+                    "start": round(seg.get("start", 0), 2),
+                    "end": round(seg.get("end", 0), 2),
+                    "text": seg.get("text", "").strip(),
+                })
+                # avg_logprob is negative; convert to 0-1 confidence
+                avg_logprob = seg.get("avg_logprob", -1.0)
+                import math
+                total_confidence += math.exp(avg_logprob)
+
+            avg_confidence = (total_confidence / len(raw_segments)) if raw_segments else 0.0
+
+            # Estimate audio duration from last segment end time
+            audio_duration = raw_segments[-1]["end"] if raw_segments else 0.0
+
+            logger.info(
+                "Transcription completed",
+                extra={
+                    "duration_seconds": round(audio_duration, 2),
+                    "processing_time": round(duration, 2),
+                    "text_length": len(text),
+                    "language": detected_language,
+                },
+            )
+
+            return TranscriptionResponse(
+                success=True,
+                text=text,
+                language=detected_language,
+                duration_seconds=round(audio_duration, 2),
+                confidence=round(avg_confidence, 3),
+                segments=segments,
+            )
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Transcription failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+

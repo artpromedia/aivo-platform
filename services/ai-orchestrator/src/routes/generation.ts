@@ -519,6 +519,54 @@ const generationRoutes: FastifyPluginAsync<GenerationRoutesOptions> = async (
   });
 
   // ──────────────────────────────────────────────────────────────────────────
+  // BATCH TRANSLATION
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const batchTranslationSchema = z.object({
+    contents: z.array(z.string().min(1)).min(1).max(200),
+    sourceLanguage: z.string().min(2).max(10),
+    targetLanguage: z.string().min(2).max(10),
+    contentType: z.enum(['lesson', 'question', 'feedback', 'general']).optional(),
+    preserveFormatting: z.boolean().optional(),
+    educationalContext: z.union([z.boolean(), z.string()]).optional(),
+  });
+
+  fastify.post<{
+    Body: z.infer<typeof batchTranslationSchema>;
+  }>('/translate/batch', {
+    schema: {
+      description: 'Translate multiple content strings in batch',
+      tags: ['AI Generation'],
+    },
+    handler: async (request, reply) => {
+      const parsed = batchTranslationSchema.parse(request.body);
+
+      const tenantId = (request.headers['x-tenant-id'] as string) ?? 'default';
+      const userId = (request.headers['x-user-id'] as string) ?? 'anonymous';
+
+      const items = parsed.contents.map((text, i) => ({
+        id: String(i),
+        content: text,
+        contentType: parsed.contentType ?? 'general',
+      }));
+
+      const results = await translationService.translateBatch(
+        items,
+        parsed.sourceLanguage,
+        parsed.targetLanguage,
+        { tenantId, userId },
+      );
+
+      // Map back to ordered translations array
+      const translations = results
+        .sort((a, b) => Number(a.id) - Number(b.id))
+        .map((r) => r.translatedContent || '');
+
+      return reply.status(200).send({ translations });
+    },
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
   // LEARNING PATH GENERATION
   // ──────────────────────────────────────────────────────────────────────────
 

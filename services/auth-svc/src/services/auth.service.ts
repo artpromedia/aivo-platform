@@ -15,6 +15,7 @@ import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
 import { notifyClient } from '../lib/notify-client.js';
+import { COMMON_PASSWORDS } from '../data/common-passwords.js';
 
 // PRD: Roles that require MFA to be enabled before login is allowed
 const MFA_REQUIRED_ROLES = new Set([
@@ -102,14 +103,7 @@ const PASSWORD_PATTERNS = {
   special: /[!@#$%^&*(),.?":{}|<>]/,
 };
 
-// PRD: Reject commonly-breached passwords
-const COMMON_PASSWORDS = new Set([
-  'password1234', 'password123!', 'admin1234567', 'letmein12345',
-  'welcome12345', 'changeme1234', 'qwerty123456', '123456789012',
-  'iloveyou1234', 'password!234', 'abc123456789', 'monkey123456',
-  'dragon123456', 'master123456', 'trustno1!!!!', 'baseball1234',
-  'shadow123456', 'michael12345', 'jennifer1234', 'jordan123456',
-]);
+// PRD: Reject commonly-breached passwords — 10k blocklist imported from data/common-passwords.ts
 
 function validatePasswordStrength(password: string): void {
   const errors: string[] = [];

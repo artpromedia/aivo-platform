@@ -12,6 +12,7 @@ import {
   shutdownPushService,
   setInvalidTokenCallback,
 } from './channels/push/push-service.js';
+import { startFerpaScheduler, stopFerpaScheduler } from './compliance/annual-ferpa-scheduler.js';
 import { config } from './config.js';
 import { initializeNats, closeNats } from './events/notification-events.js';
 import { onboardingRoutes } from './onboarding/index.js';
@@ -63,12 +64,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Initialize NATS for events
   await initializeNats();
 
+  // Start annual FERPA notification scheduler (34 CFR § 99.7)
+  startFerpaScheduler();
+
   // ════════════════════════════════════════════════════════════════════════════
   // SHUTDOWN HOOKS
   // ════════════════════════════════════════════════════════════════════════════
 
   app.addHook('onClose', async () => {
     await shutdownPushService();
+    stopFerpaScheduler();
     await closeNats();
   });
 
