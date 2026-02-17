@@ -36,6 +36,7 @@ import {
 } from './modules/legal-hold/index.js';
 import { registerDsrRoutes } from './modules/dsr/routes/dsr.js';
 import { registerDsrRoutesV2 } from './modules/dsr/routes/dsr-v2.js';
+import { registerConsentFormRoutes } from './routes/consent-forms.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -73,6 +74,9 @@ export function createApp() {
   void app.register(registerDataSourceRoutes as any, { prefix: '/api/v1/data-sources' });
   void app.register(registerReportRoutes as any, { prefix: '/api/v1/reports' });
   void app.register(registerAcknowledgeRoute as any, { prefix: '/api/v1' });
+
+  // ── Consent Form Tracking (district onboarding) ────────────────────────────
+  void app.register(registerConsentFormRoutes as any, { prefix: '/consent-forms' });
 
   // ── DSR (backward-compatible prefixes) ─────────────────────────────────────
   void app.register(registerDsrRoutes as any, { prefix: '/dsr' });

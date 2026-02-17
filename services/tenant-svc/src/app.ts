@@ -7,6 +7,7 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { registerClassroomRoutes } from './routes/classrooms.js';
 import { registerDistrictLookupRoutes } from './routes/district-lookup.js';
 import { registerInternalRoutes } from './routes/internal.js';
+import { registerOnboardingRoutes } from './routes/onboarding.js';
 import { registerResolveRoutes } from './routes/resolve.js';
 import { registerSchoolRoutes } from './routes/schools.js';
 import { registerTenantRoutes } from './routes/tenants.js';
@@ -57,6 +58,9 @@ export function createApp() {
 
   // Internal service-to-service routes (auth skipped via middleware)
   app.register(registerInternalRoutes);
+
+  // District onboarding wizard routes
+  app.register(registerOnboardingRoutes, { prefix: '/onboarding' });
 
   // Admin routes for domain management
   app.register(tenantDomainsRoutes, { prefix: '/admin' });
