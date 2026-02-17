@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { requireAuth } from '../../lib/auth';
 
-const consentSvcUrl = process.env.CONSENT_SVC_URL ?? 'http://localhost:4004';
+const complianceSvcUrl = process.env.COMPLIANCE_SVC_URL ?? 'http://localhost:4004';
 const privacyPolicyUrl = process.env.PRIVACY_POLICY_URL ?? '/privacy-policy';
 
 interface Aggregate {
@@ -22,7 +22,7 @@ async function fetchConsentAggregates(bearer: string): Promise<Aggregate[]> {
   }
 
   try {
-    const res = await fetch(`${consentSvcUrl}/privacy/consent-aggregates`, {
+    const res = await fetch(`${complianceSvcUrl}/privacy/consent-aggregates`, {
       headers: {
         authorization: `Bearer ${bearer}`,
       },
@@ -126,7 +126,7 @@ export default async function PrivacyPage() {
           </div>
           {grouped.length === 0 && (
             <p className="mt-4 text-sm text-slate-600">
-              No data yet. Connect consent-svc or enable mock data.
+              No data yet. Connect compliance-svc or enable mock data.
             </p>
           )}
           <div className="mt-4 grid gap-3">

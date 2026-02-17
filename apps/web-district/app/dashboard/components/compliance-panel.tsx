@@ -13,11 +13,11 @@ import {
   AlertTriangle,
   Clock,
   FileText,
-  Users,
   Calendar,
   TrendingUp,
   ChevronRight,
   RefreshCw,
+  Mail,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -43,11 +43,24 @@ export interface IEPComplianceStats {
   upcomingReviews90: number;
 }
 
+export interface AtRiskIEP {
+  id: string;
+  studentName: string;
+  school: string;
+  caseManager: string;
+  caseManagerEmail: string;
+  dueDate: string;
+  daysUntilDue: number;
+  isOverdue: boolean;
+}
+
 interface CompliancePanelProps {
   items?: ComplianceItem[];
   iepStats?: IEPComplianceStats;
+  atRiskIEPs?: AtRiskIEP[];
   onViewDetails?: (itemId: string) => void;
   onRefresh?: () => void | Promise<void>;
+  onEmailCaseManager?: (email: string, studentName: string) => void;
 }
 
 const mockComplianceItems: ComplianceItem[] = [
@@ -104,11 +117,66 @@ const mockIEPStats: IEPComplianceStats = {
   upcomingReviews90: 67,
 };
 
+const mockAtRiskIEPs: AtRiskIEP[] = [
+  {
+    id: 'iep-1',
+    studentName: 'Marcus Johnson',
+    school: 'Jefferson High',
+    caseManager: 'Sarah Miller',
+    caseManagerEmail: 'smiller@district.edu',
+    dueDate: '2026-02-01',
+    daysUntilDue: -15,
+    isOverdue: true,
+  },
+  {
+    id: 'iep-2',
+    studentName: 'Aisha Patel',
+    school: 'Washington Middle',
+    caseManager: 'David Chen',
+    caseManagerEmail: 'dchen@district.edu',
+    dueDate: '2026-02-10',
+    daysUntilDue: -6,
+    isOverdue: true,
+  },
+  {
+    id: 'iep-3',
+    studentName: 'Emily Rodriguez',
+    school: 'Adams Middle',
+    caseManager: 'Lisa Thompson',
+    caseManagerEmail: 'lthompson@district.edu',
+    dueDate: '2026-02-28',
+    daysUntilDue: 12,
+    isOverdue: false,
+  },
+  {
+    id: 'iep-4',
+    studentName: 'James Wilson',
+    school: 'Lincoln Elementary',
+    caseManager: 'Karen Davis',
+    caseManagerEmail: 'kdavis@district.edu',
+    dueDate: '2026-03-05',
+    daysUntilDue: 17,
+    isOverdue: false,
+  },
+];
+
+function buildCaseManagerEmailUrl(email: string, studentName: string, isOverdue: boolean): string {
+  const subject = isOverdue
+    ? `URGENT: Overdue IEP Annual Review – ${studentName}`
+    : `Upcoming IEP Annual Review – ${studentName}`;
+  const body = isOverdue
+    ? `Dear Case Manager,\n\nThis is a reminder that the annual IEP review for ${studentName} is past due. Please schedule the review meeting as soon as possible to maintain compliance.\n\nPlease update the IEP status in AIVO once the review is scheduled.\n\nThank you.`
+    : `Dear Case Manager,\n\nThis is a reminder that the annual IEP review for ${studentName} is coming up. Please begin preparations and schedule the review meeting.\n\nPlease update the IEP status in AIVO once the review is scheduled.\n\nThank you.`;
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export function CompliancePanel({
   items = mockComplianceItems,
   iepStats = mockIEPStats,
+  atRiskIEPs = mockAtRiskIEPs,
   onViewDetails,
   onRefresh,
+  onEmailCaseManager,
 }: CompliancePanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -294,6 +362,56 @@ export function CompliancePanel({
             </div>
           </div>
         </div>
+
+        {/* At-Risk & Overdue IEPs */}
+        {atRiskIEPs.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-medium text-gray-700">At-Risk &amp; Overdue IEPs</span>
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                {atRiskIEPs.filter((i) => i.isOverdue).length} overdue
+              </span>
+            </div>
+            <div className="space-y-2">
+              {atRiskIEPs.map((iep) => (
+                <div
+                  key={iep.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    iep.isOverdue ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900 text-sm">{iep.studentName}</span>
+                      {iep.isOverdue && (
+                        <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase">
+                          URGENT
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {iep.school} · Case Manager: {iep.caseManager} · Due: {iep.dueDate}
+                    </p>
+                  </div>
+                  <a
+                    href={buildCaseManagerEmailUrl(
+                      iep.caseManagerEmail,
+                      iep.studentName,
+                      iep.isOverdue
+                    )}
+                    onClick={() => onEmailCaseManager?.(iep.caseManagerEmail, iep.studentName)}
+                    className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    title={`Email ${iep.caseManager}`}
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Email
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

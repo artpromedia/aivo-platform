@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, Heading, Button } from '@aivo/ui-web';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { iepApi } from '@/lib/api/iep';
 
@@ -144,6 +144,58 @@ export default function IEPManagerPage() {
   const [showProgressModal, setShowProgressModal] = useState<IEPGoal | null>(null);
   const [progressNote, setProgressNote] = useState('');
   const [progressValue, setProgressValue] = useState('');
+  const [progressLevel, setProgressLevel] = useState<GoalStatus>('in_progress');
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const startVoiceRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setVoiceBlob(blob);
+        stream.getTracks().forEach((t) => {
+          t.stop();
+        });
+      };
+
+      mediaRecorder.start();
+      setIsRecordingVoice(true);
+    } catch {
+      // Microphone access denied or unavailable
+    }
+  }, []);
+
+  const stopVoiceRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecordingVoice) {
+      mediaRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+    }
+  }, [isRecordingVoice]);
+
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, []);
 
   // Fetch IEP students on mount
   useEffect(() => {
@@ -185,11 +237,32 @@ export default function IEPManagerPage() {
       setShowProgressModal(null);
       setProgressNote('');
       setProgressValue('');
+      setProgressLevel('in_progress');
+      setVoiceBlob(null);
+      setPhotoFile(null);
+      setPhotoPreview(null);
     } catch {
       // Error handling - could add toast notification
       setShowProgressModal(null);
     }
   };
+
+  // Determine which students need a progress update (no update in last 14 days)
+  const studentsNeedingUpdate = new Set(
+    students
+      .filter((s) =>
+        s.goals.some((g) => {
+          if (g.status === 'mastered' || g.status === 'discontinued') return false;
+          const lastEntry = g.progressHistory[g.progressHistory.length - 1];
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (!lastEntry) return true;
+          const daysSince =
+            (Date.now() - new Date(lastEntry.date).getTime()) / (1000 * 60 * 60 * 24);
+          return daysSince > 14;
+        })
+      )
+      .map((s) => s.id)
+  );
 
   if (loading) {
     return (
@@ -236,8 +309,11 @@ export default function IEPManagerPage() {
             <div>
               <h3 className="font-semibold text-red-800">Compliance Alerts</h3>
               <ul className="mt-2 space-y-1">
-                {urgentAlerts.map((alert, idx) => (
-                  <li key={idx} className="text-sm text-red-700">
+                {urgentAlerts.map((alert) => (
+                  <li
+                    key={`alert-${alert.studentId}-${alert.message.slice(0, 20)}`}
+                    className="text-sm text-red-700"
+                  >
                     <button
                       onClick={() => {
                         const student = students.find((s) => s.id === alert.studentId);
@@ -324,6 +400,14 @@ export default function IEPManagerPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                  {studentsNeedingUpdate.has(student.id) && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 animate-pulse"
+                      title="Progress update needed — no data recorded in 14+ days"
+                    >
+                      &#9200; Update Due
+                    </span>
+                  )}
                   <div className="text-right">
                     <span
                       className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${statusBadge.color}`}
@@ -419,8 +503,11 @@ export default function IEPManagerPage() {
           <Card className="border-red-200 bg-red-50 p-4">
             <h3 className="font-semibold text-red-800 mb-2">Compliance Alerts</h3>
             <ul className="space-y-2">
-              {selectedStudent.complianceAlerts.map((alert, idx) => (
-                <li key={idx} className="flex items-center justify-between text-sm text-red-700">
+              {selectedStudent.complianceAlerts.map((alert) => (
+                <li
+                  key={`ca-${alert.message.slice(0, 20)}`}
+                  className="flex items-center justify-between text-sm text-red-700"
+                >
                   <span>{alert.message}</span>
                   <span className="font-medium">
                     Due: {new Date(alert.dueDate).toLocaleDateString()}
@@ -474,29 +561,124 @@ export default function IEPManagerPage() {
                   />
                 </div>
 
+                {/* Progress Trend Chart */}
                 <div className="mt-4 border-t pt-4">
-                  <p className="text-xs text-muted mb-2">Progress History</p>
-                  <div className="flex items-end gap-1 h-16">
-                    {goal.progressHistory.map((entry, idx) => {
-                      const height = (entry.value / goal.targetProgress) * 100;
-                      return (
-                        <div key={idx} className="flex-1 flex flex-col items-center group relative">
-                          <div
-                            className="w-full bg-primary/60 rounded-t transition-all hover:bg-primary"
-                            style={{ height: `${Math.min(100, height)}%` }}
+                  <p className="text-xs font-medium text-muted mb-2">Progress Trend</p>
+                  {goal.progressHistory.length >= 2 ? (
+                    <div className="relative h-32 w-full">
+                      <svg
+                        viewBox="0 0 400 120"
+                        className="w-full h-full"
+                        role="img"
+                        aria-label={`Progress trend chart for ${goal.domain}`}
+                      >
+                        {/* Grid lines */}
+                        {[0, 25, 50, 75, 100].map((pct) => (
+                          <line
+                            key={pct}
+                            x1="40"
+                            y1={100 - pct}
+                            x2="390"
+                            y2={100 - pct}
+                            stroke="#e5e7eb"
+                            strokeWidth="0.5"
                           />
-                          <span className="text-[10px] text-muted mt-1">
-                            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short' })}
-                          </span>
-                          {entry.notes && (
-                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-lg whitespace-nowrap">
-                              {entry.notes}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        ))}
+                        {/* Target line */}
+                        <line
+                          x1="40"
+                          y1={100 - (goal.targetProgress > 0 ? 100 : 0)}
+                          x2="390"
+                          y2={100 - (goal.targetProgress > 0 ? 100 : 0)}
+                          stroke="#22c55e"
+                          strokeWidth="1"
+                          strokeDasharray="4 2"
+                        />
+                        <text
+                          x="42"
+                          y={100 - (goal.targetProgress > 0 ? 100 : 0) - 3}
+                          fontSize="8"
+                          fill="#22c55e"
+                        >
+                          Target
+                        </text>
+                        {/* Trend line */}
+                        <polyline
+                          fill="none"
+                          stroke="#3b82f6"
+                          strokeWidth="2"
+                          strokeLinejoin="round"
+                          points={goal.progressHistory
+                            .map((entry, idx) => {
+                              const x = 40 + (idx / (goal.progressHistory.length - 1)) * 350;
+                              const y =
+                                100 - Math.min(100, (entry.value / goal.targetProgress) * 100);
+                              return `${x},${y}`;
+                            })
+                            .join(' ')}
+                        />
+                        {/* Data points */}
+                        {goal.progressHistory.map((entry) => {
+                          const entryIdx = goal.progressHistory.indexOf(entry);
+                          const x = 40 + (entryIdx / (goal.progressHistory.length - 1)) * 350;
+                          const y = 100 - Math.min(100, (entry.value / goal.targetProgress) * 100);
+                          return (
+                            <g key={`ph-${entry.date}`}>
+                              <circle
+                                cx={x}
+                                cy={y}
+                                r="3"
+                                fill="#3b82f6"
+                                stroke="#fff"
+                                strokeWidth="1"
+                              />
+                              <text x={x} y="115" fontSize="7" textAnchor="middle" fill="#9ca3af">
+                                {new Date(entry.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </text>
+                            </g>
+                          );
+                        })}
+                        {/* Y-axis labels */}
+                        <text x="2" y="103" fontSize="7" fill="#9ca3af">
+                          0
+                        </text>
+                        <text x="2" y="53" fontSize="7" fill="#9ca3af">
+                          {Math.round(goal.targetProgress / 2)}
+                        </text>
+                        <text x="2" y="5" fontSize="7" fill="#9ca3af">
+                          {goal.targetProgress}
+                        </text>
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="flex items-end gap-1 h-16">
+                      {goal.progressHistory.map((entry) => {
+                        const height = (entry.value / goal.targetProgress) * 100;
+                        return (
+                          <div
+                            key={`bar-${entry.date}`}
+                            className="flex-1 flex flex-col items-center group relative"
+                          >
+                            <div
+                              className="w-full bg-primary/60 rounded-t transition-all hover:bg-primary"
+                              style={{ height: `${Math.min(100, height)}%` }}
+                            />
+                            <span className="text-[10px] text-muted mt-1">
+                              {new Date(entry.date).toLocaleDateString('en-US', { month: 'short' })}
+                            </span>
+                            {entry.notes && (
+                              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-lg whitespace-nowrap">
+                                {entry.notes}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <p className="text-xs text-muted mt-2">
@@ -542,8 +724,8 @@ export default function IEPManagerPage() {
           <h3 className="text-lg font-semibold mb-4">Accommodations</h3>
           <Card className="p-4">
             <ul className="grid gap-2 md:grid-cols-2">
-              {selectedStudent.accommodations.map((accommodation, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm">
+              {selectedStudent.accommodations.map((accommodation) => (
+                <li key={accommodation} className="flex items-start gap-2 text-sm">
                   <span className="text-green-500">&#10003;</span>
                   {accommodation}
                 </li>
@@ -583,14 +765,34 @@ export default function IEPManagerPage() {
       {/* Content */}
       {view === 'list' ? renderStudentList() : renderStudentDetail()}
 
-      {/* Progress Recording Modal */}
+      {/* Progress Recording Modal — Enhanced with level, voice, and photo */}
       {showProgressModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Record Progress</h3>
+          <Card className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-1">Record Progress</h3>
             <p className="text-sm text-muted mb-4">{showProgressModal.description}</p>
 
             <div className="space-y-4">
+              {/* Progress Level */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Progress Level</label>
+                <select
+                  value={progressLevel}
+                  onChange={(e) => {
+                    setProgressLevel(e.target.value as GoalStatus);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2 bg-white"
+                  aria-label="Progress level"
+                >
+                  <option value="not_started">Not Started</option>
+                  <option value="in_progress">Emerging / In Progress</option>
+                  <option value="on_track">Developing / On Track</option>
+                  <option value="at_risk">At Risk</option>
+                  <option value="mastered">Mastered</option>
+                </select>
+              </div>
+
+              {/* Numeric Value */}
               <div>
                 <label className="block text-sm font-medium mb-1">Current Value</label>
                 <input
@@ -601,8 +803,11 @@ export default function IEPManagerPage() {
                   }}
                   className="w-full rounded-lg border border-border px-3 py-2"
                   placeholder={`Target: ${showProgressModal.targetProgress}`}
+                  aria-label="Current progress value"
                 />
               </div>
+
+              {/* Written Notes */}
               <div>
                 <label className="block text-sm font-medium mb-1">Notes (optional)</label>
                 <textarea
@@ -613,7 +818,95 @@ export default function IEPManagerPage() {
                   className="w-full rounded-lg border border-border px-3 py-2"
                   rows={3}
                   placeholder="Add any observations or notes..."
+                  aria-label="Progress notes"
                 />
+              </div>
+
+              {/* Voice Note Recording */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Voice Note</label>
+                <div className="flex items-center gap-3">
+                  {!isRecordingVoice && !voiceBlob && (
+                    <button
+                      type="button"
+                      onClick={() => void startVoiceRecording()}
+                      className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                      aria-label="Start voice recording"
+                    >
+                      <span className="text-lg">&#127908;</span> Record Voice Note
+                    </button>
+                  )}
+                  {isRecordingVoice && (
+                    <button
+                      type="button"
+                      onClick={stopVoiceRecording}
+                      className="flex items-center gap-2 rounded-lg bg-red-100 border border-red-300 px-4 py-2 text-sm text-red-700 animate-pulse"
+                      aria-label="Stop voice recording"
+                    >
+                      <span className="h-3 w-3 rounded-full bg-red-600" /> Stop Recording
+                    </button>
+                  )}
+                  {voiceBlob && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600">&#10003;</span>
+                      <span className="text-sm text-muted">Voice note recorded</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVoiceBlob(null);
+                        }}
+                        className="text-xs text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Photo Upload */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Photo / Evidence</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  aria-label="Upload photo evidence"
+                />
+                {!photoPreview ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-6 text-sm text-muted hover:border-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <span className="text-2xl">&#128247;</span>
+                    <span>Click to upload photo evidence</span>
+                  </button>
+                ) : (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreview}
+                      alt="Photo evidence preview"
+                      className="w-full max-h-48 object-contain rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoFile(null);
+                        setPhotoPreview(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
+                      aria-label="Remove photo"
+                    >
+                      &#10005;
+                    </button>
+                    <p className="text-xs text-muted mt-1">{photoFile?.name}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -622,6 +915,10 @@ export default function IEPManagerPage() {
                 variant="ghost"
                 onClick={() => {
                   setShowProgressModal(null);
+                  setProgressLevel('in_progress');
+                  setVoiceBlob(null);
+                  setPhotoFile(null);
+                  setPhotoPreview(null);
                 }}
               >
                 Cancel
