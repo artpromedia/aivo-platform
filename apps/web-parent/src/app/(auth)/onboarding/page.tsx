@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
 
 interface LearnerForm {
   firstName: string;
@@ -884,9 +884,9 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
     }
 
     // Add specific recommendations based on responses
-    const hasIep = responses['has_iep'] === 'yes_current';
-    const has504 = responses['has_504'] === 'yes_current';
-    const disabilities = responses['disability_categories'] as string[] || [];
+    const hasIep = responses.has_iep === 'yes_current';
+    const has504 = responses.has_504 === 'yes_current';
+    const disabilities = responses.disability_categories as string[] || [];
     
     if (hasIep) {
       recommendations.push('Align assessment accommodations with IEP');
@@ -1132,7 +1132,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
           {categories.map((cat, idx) => (
             <button
               key={cat.id}
-              onClick={() => setCurrentCategoryIndex(idx)}
+              onClick={() => { setCurrentCategoryIndex(idx); }}
               className={`rounded px-2 py-0.5 text-xs transition ${
                 idx === currentCategoryIndex
                   ? 'bg-violet-600 text-white'
@@ -1196,7 +1196,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                       name={q.id}
                       value={option.value}
                       checked={responses[q.id] === option.value}
-                      onChange={() => handleSingleResponse(q.id, option.value)}
+                      onChange={() => { handleSingleResponse(q.id, option.value); }}
                       className="h-4 w-4 text-violet-600 focus:ring-violet-500"
                     />
                     <span className="ml-3 text-sm text-gray-700">{option.label}</span>
@@ -1222,7 +1222,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                       <input
                         type="checkbox"
                         checked={selected}
-                        onChange={() => handleMultiResponse(q.id, option.value)}
+                        onChange={() => { handleMultiResponse(q.id, option.value); }}
                         className="h-4 w-4 rounded text-violet-600 focus:ring-violet-500"
                       />
                       <span className="ml-3 text-sm text-gray-700">{option.label}</span>
@@ -1244,7 +1244,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                   min="1"
                   max="5"
                   value={(responses[q.id] as number) || 3}
-                  onChange={(e) => handleScaleResponse(q.id, parseInt(e.target.value))}
+                  onChange={(e) => { handleScaleResponse(q.id, parseInt(e.target.value)); }}
                   className="mt-2 w-full"
                 />
                 <div className="mt-1 text-center text-sm font-medium text-violet-600">
@@ -1270,7 +1270,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                     <input
                       type="file"
                       accept=".pdf,image/*"
-                      onChange={(e) => handleFileChange(e, 'iep')}
+                      onChange={(e) => { handleFileChange(e, 'iep'); }}
                       className="sr-only"
                     />
                     <div className="text-center">
@@ -1282,7 +1282,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                   <div className="mt-3 flex items-center justify-between rounded-lg bg-white p-3">
                     <span className="text-sm font-medium text-gray-700">📄 {iepFile.name}</span>
                     <button
-                      onClick={() => setIepFile(null)}
+                      onClick={() => { setIepFile(null); }}
                       className="text-red-500 hover:text-red-700"
                     >
                       Remove
@@ -1304,7 +1304,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                     <input
                       type="file"
                       accept=".pdf,image/*"
-                      onChange={(e) => handleFileChange(e, '504')}
+                      onChange={(e) => { handleFileChange(e, '504'); }}
                       className="sr-only"
                     />
                     <div className="text-center">
@@ -1316,7 +1316,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
                   <div className="mt-3 flex items-center justify-between rounded-lg bg-white p-3">
                     <span className="text-sm font-medium text-gray-700">📋 {section504File.name}</span>
                     <button
-                      onClick={() => setSection504File(null)}
+                      onClick={() => { setSection504File(null); }}
                       className="text-red-500 hover:text-red-700"
                     >
                       Remove
@@ -1337,7 +1337,7 @@ function ParentAssessmentStep({ learnerName, learnerId, onComplete, onSkip }: Pa
             </p>
             <textarea
               value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
+              onChange={(e) => { setAdditionalNotes(e.target.value); }}
               rows={4}
               className="mt-3 w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
               placeholder="Share any additional context about your child's strengths, challenges, or specific needs..."
@@ -1415,7 +1415,7 @@ function AssessmentResultsStep({ learnerName, results, onContinue }: AssessmentR
     const timer = setTimeout(() => {
       setIsAnalyzing(false);
     }, 2500);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, []);
 
   if (!results) {
@@ -1665,6 +1665,11 @@ export default function OnboardingPage() {
   const [assessmentResults, setAssessmentResults] = useState<AssessmentResultData | null>(null);
   const [pinCopied, setPinCopied] = useState(false);
   const [classCodeError, setClassCodeError] = useState<string | null>(null);
+  const [curriculumInfo, setCurriculumInfo] = useState<{
+    curriculumStandards: string[];
+    district: { name?: string; ncesId?: string } | null;
+    location: { zipCode?: string; state?: string } | null;
+  } | null>(null);
   const [learnerForm, setLearnerForm] = useState<LearnerForm>({
     firstName: '',
     lastName: '',
@@ -1760,6 +1765,10 @@ export default function OnboardingPage() {
       if (data.learner?.id) {
         setLearnerId(data.learner.id);
       }
+      // Capture detected curriculum standards from geo lookup
+      if (data.curriculumInfo) {
+        setCurriculumInfo(data.curriculumInfo);
+      }
 
       // Move to parent assessment step instead of complete
       setStep('assessment');
@@ -1840,7 +1849,7 @@ export default function OnboardingPage() {
 
         <div className="mt-8">
           <button
-            onClick={() => setStep('learner')}
+            onClick={() => { setStep('learner'); }}
             className="w-full rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 px-4 py-3 font-medium text-white transition hover:from-violet-700 hover:to-violet-800"
           >
             Get Started
@@ -2006,7 +2015,7 @@ export default function OnboardingPage() {
             </button>
             <button
               type="button"
-              onClick={() => setStep('intro')}
+              onClick={() => { setStep('intro'); }}
               className="mt-3 w-full rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 transition hover:bg-gray-50"
             >
               Back
@@ -2017,18 +2026,61 @@ export default function OnboardingPage() {
     );
   }
 
+  // Helper: format curriculum standard enum to readable label
+  const formatStandard = (s: string) => {
+    const labels: Record<string, string> = {
+      COMMON_CORE: 'Common Core',
+      NGSS: 'Next Generation Science Standards',
+      C3: 'C3 Social Studies Framework',
+      STATE_SPECIFIC: 'State-Specific Standards',
+      CUSTOM: 'Custom Standards',
+      // State abbreviation codes (TEKS, SOL, etc.) pass through titleized
+    };
+    return labels[s] || s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   // Parent Assessment Step - Determines normal vs non-functioning assessment
   if (step === 'assessment') {
     return (
-      <ParentAssessmentStep
-        learnerName={learnerForm.firstName}
-        learnerId={learnerId}
-        onComplete={(results) => {
-          setAssessmentResults(results);
-          setStep('results');
-        }}
-        onSkip={() => setStep('complete')}
-      />
+      <div className="space-y-4">
+        {/* Curriculum detection banner */}
+        {curriculumInfo && curriculumInfo.curriculumStandards.length > 0 && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-800">
+                  Curriculum Aligned
+                </p>
+                <p className="mt-1 text-sm text-emerald-700">
+                  {learnerForm.firstName}&apos;s learning will follow{' '}
+                  <span className="font-semibold">
+                    {curriculumInfo.curriculumStandards.map(formatStandard).join(', ')}
+                  </span>
+                  {curriculumInfo.district?.name && (
+                    <> based on <span className="font-semibold">{curriculumInfo.district.name}</span></>
+                  )}
+                  .
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ParentAssessmentStep
+          learnerName={learnerForm.firstName}
+          learnerId={learnerId}
+          onComplete={(results) => {
+            setAssessmentResults(results);
+            setStep('results');
+          }}
+          onSkip={() => { setStep('complete'); }}
+        />
+      </div>
     );
   }
 
@@ -2038,7 +2090,7 @@ export default function OnboardingPage() {
       <AssessmentResultsStep
         learnerName={learnerForm.firstName}
         results={assessmentResults}
-        onContinue={() => setStep('complete')}
+        onContinue={() => { setStep('complete'); }}
       />
     );
   }
@@ -2047,7 +2099,7 @@ export default function OnboardingPage() {
     if (learnerPin) {
       await navigator.clipboard.writeText(learnerPin);
       setPinCopied(true);
-      setTimeout(() => setPinCopied(false), 2000);
+      setTimeout(() => { setPinCopied(false); }, 2000);
     }
   };
 
@@ -2099,6 +2151,27 @@ export default function OnboardingPage() {
           <p className="mt-3 text-center text-sm text-gray-500">
             Use this code to log in on any device
           </p>
+        </div>
+      )}
+
+      {/* Curriculum Standards Detected */}
+      {curriculumInfo && curriculumInfo.curriculumStandards.length > 0 && (
+        <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <div className="flex items-start gap-3">
+            <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium text-emerald-800">
+                Curriculum: {curriculumInfo.curriculumStandards.map(formatStandard).join(', ')}
+              </p>
+              {curriculumInfo.district?.name && (
+                <p className="mt-0.5 text-xs text-emerald-600">
+                  District: {curriculumInfo.district.name}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

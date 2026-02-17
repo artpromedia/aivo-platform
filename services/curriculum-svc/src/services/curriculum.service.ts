@@ -113,7 +113,16 @@ export class CurriculumService {
     gradeBand?: GradeBand;
     academicYear?: string;
     isActive?: boolean;
+    standard?: CurriculumStandard;
+    standards?: CurriculumStandard[];
   }) {
+    // Build standard filter: prefer explicit array, then single value
+    const standardFilter = options?.standards?.length
+      ? { standard: { in: options.standards } }
+      : options?.standard
+        ? { standard: options.standard }
+        : {};
+
     return this.prisma.curriculum.findMany({
       where: {
         tenantId,
@@ -121,6 +130,7 @@ export class CurriculumService {
         ...(options?.gradeBand && { gradeBand: options.gradeBand }),
         ...(options?.academicYear && { academicYear: options.academicYear }),
         ...(options?.isActive !== undefined && { isActive: options.isActive }),
+        ...standardFilter,
       },
       include: {
         _count: {
@@ -810,8 +820,21 @@ export class CurriculumService {
 
   // --- Curricula Methods ---
 
-  async listCurricula(tenantId: string, _filters?: { subjectArea?: string; gradeLevel?: string; status?: string }) {
-    return this.getCurricula(tenantId);
+  async listCurricula(tenantId: string, filters?: {
+    subjectArea?: string;
+    gradeLevel?: string;
+    status?: string;
+    standard?: string;
+    standards?: string[];
+  }) {
+    // Map route-level filter names to getCurricula option names
+    return this.getCurricula(tenantId, {
+      ...(filters?.subjectArea && { subject: filters.subjectArea as SubjectArea }),
+      ...(filters?.gradeLevel && { gradeBand: filters.gradeLevel as GradeBand }),
+      ...(filters?.status === 'active' ? { isActive: true } : filters?.status === 'archived' ? { isActive: false } : {}),
+      ...(filters?.standard && { standard: filters.standard as CurriculumStandard }),
+      ...(filters?.standards?.length && { standards: filters.standards as CurriculumStandard[] }),
+    });
   }
 
   async getCurriculumById(id: string, _tenantId: string) {

@@ -38,7 +38,26 @@ export async function POST(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
-        return NextResponse.json(data);
+        // Normalize parent-svc response shape to match what the frontend expects.
+        // parent-svc returns { learnerId, learnerPin, location, district, curriculumStandards, needsBaseline }
+        // Frontend expects { learner: { id, pin, ... }, curriculumInfo: { ... } }
+        const normalized = {
+          learner: {
+            id: data.learnerId || data.learner?.id,
+            firstName,
+            lastName: lastName || '',
+            pin: data.learnerPin || data.learner?.pin,
+            gradeLevel,
+          },
+          curriculumInfo: {
+            curriculumStandards: data.curriculumStandards || ['COMMON_CORE'],
+            district: data.district || null,
+            location: data.location || location || null,
+          },
+          message: 'Learner registered successfully',
+          needsBaseline: data.needsBaseline ?? true,
+        };
+        return NextResponse.json(normalized);
       }
       
       // If parent-svc returns an error, log and continue with direct DB insert
@@ -99,6 +118,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       learner,
+      curriculumInfo: {
+        curriculumStandards: ['COMMON_CORE'],
+        district: null,
+        location: location || null,
+      },
       message: 'Learner registered successfully',
       joinedClass: classCode ? { code: classCode, name: 'Demo Classroom' } : null,
     });

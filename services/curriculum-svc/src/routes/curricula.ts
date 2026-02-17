@@ -23,11 +23,28 @@ const UpdateCurriculumSchema = CreateCurriculumSchema.partial();
 
 export async function curriculaRoutes(app: FastifyInstance) {
   // List curricula
+  // Supports filtering by standard (single) or standards (comma-separated list)
+  // e.g. GET /curricula?tenantId=...&standard=COMMON_CORE
+  // e.g. GET /curricula?tenantId=...&standards=COMMON_CORE,NGSS
   app.get('/', async (request: FastifyRequest<{
-    Querystring: { tenantId: string; subjectArea?: string; gradeLevel?: string; status?: string }
+    Querystring: {
+      tenantId: string;
+      subjectArea?: string;
+      gradeLevel?: string;
+      status?: string;
+      standard?: string;
+      standards?: string;
+    }
   }>) => {
-    const { tenantId, subjectArea, gradeLevel, status } = request.query;
-    return curriculumService.listCurricula(tenantId, { subjectArea, gradeLevel, status });
+    const { tenantId, subjectArea, gradeLevel, status, standard, standards: standardsCsv } = request.query;
+    const standardsList = standardsCsv ? standardsCsv.split(',').map(s => s.trim()) : undefined;
+    return curriculumService.listCurricula(tenantId, {
+      subjectArea,
+      gradeLevel,
+      status,
+      standard,
+      standards: standardsList,
+    });
   });
 
   // Get curriculum by ID

@@ -88,6 +88,62 @@ export class OnboardingService {
   }
 
   /**
+   * Persist detected curriculum standards to TenantConfig so that
+   * downstream services (curriculum-svc, session-svc) can use them
+   * to filter curricula by the tenant's geographic standards.
+   */
+  private async persistCurriculumStandards(
+    tenantId: string,
+    curriculumStandards: string[],
+    location?: LocationInput,
+    district?: DistrictInfo
+  ): Promise<void> {
+    try {
+      const body: Record<string, unknown> = {
+        curriculum_standards: curriculumStandards,
+      };
+
+      // Also persist geographic metadata when available
+      if (location?.zipCode) {
+        body.custom_settings = {
+          ...(location.stateCode && { state_code: location.stateCode }),
+          ...(location.zipCode && { zip_code: location.zipCode }),
+          ...(district?.ncesDistrictId && { nces_district_id: district.ncesDistrictId }),
+          ...(district?.name && { district_name: district.name }),
+        };
+      }
+
+      const response = await fetch(`${this.tenantServiceUrl}/internal/tenants/${tenantId}/curriculum-standards`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'parent-svc',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.warn(
+          { tenantId, status: response.status, error: errorText },
+          'Failed to persist curriculum standards to TenantConfig'
+        );
+      } else {
+        logger.info(
+          { tenantId, curriculumStandards },
+          'Persisted curriculum standards to TenantConfig'
+        );
+      }
+    } catch (error) {
+      // Non-critical — log and continue. Curriculum will still work with defaults.
+      logger.warn(
+        { tenantId, error },
+        'Error persisting curriculum standards to TenantConfig'
+      );
+    }
+  }
+
+  /**
    * Get districts for a state (for manual selection)
    */
   async getDistrictsByState(
@@ -130,6 +186,16 @@ export class OnboardingService {
   ): Promise<RegisterLearnerResult> {
     // Look up district and curriculum
     const locationResult = await this.lookupLocation(input.location);
+
+    // Persist detected curriculum standards to TenantConfig
+    // so curriculum-svc can filter curricula by the tenant's geo-based standards
+    const tenantId = process.env.CONSUMER_TENANT_ID || 'consumer';
+    await this.persistCurriculumStandards(
+      tenantId,
+      locationResult.curriculum.curriculumStandards,
+      input.location,
+      locationResult.district
+    );
 
     // Determine which district to use (selected or auto-detected)
     let district = locationResult.district;
@@ -327,6 +393,15 @@ export class OnboardingService {
 
     // Look up new district and curriculum
     const locationResult = await this.lookupLocation(location);
+
+    // Persist updated curriculum standards to TenantConfig
+    const tenantId = process.env.CONSUMER_TENANT_ID || 'consumer';
+    await this.persistCurriculumStandards(
+      tenantId,
+      locationResult.curriculum.curriculumStandards,
+      location,
+      locationResult.district
+    );
 
     // Note: Location fields are not stored on Profile model.
     // They are passed to brain-engine for curriculum alignment.
