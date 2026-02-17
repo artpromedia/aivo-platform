@@ -4,17 +4,18 @@
 
 import { fileURLToPath } from 'node:url';
 
-import { PrismaClient as BasePrismaClient } from '../prisma.js';
-import rateLimit from '@fastify/rate-limit';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
+import { DeviceSyncService, deviceSyncRoutes, deviceSyncAuthMiddleware } from '../modules/device-sync/index.js';
 import type { ExtendedPrismaClient } from '../prisma-types.js';
+import { PrismaClient as BasePrismaClient } from '../prisma.js';
+import { registerSyncRoutes } from '../routes/sync-routes.js';
 import { SyncScheduler } from '../scheduler';
 
 import { registerOAuthRoutes } from './oauth';
 import { registerRoutes } from './routes';
-import { DeviceSyncService, deviceSyncRoutes, deviceSyncAuthMiddleware } from '../modules/device-sync/index.js';
 
 export async function createServer() {
   const prisma = new BasePrismaClient() as unknown as ExtendedPrismaClient;
@@ -42,9 +43,12 @@ export async function createServer() {
   // Register routes
   registerRoutes(app, prisma, scheduler);
   
+  // Register delta-sync / webhook / sync-status routes
+  await registerSyncRoutes(app, prisma);
+  
   // Register OAuth routes for Google/Microsoft SSO
   registerOAuthRoutes(app, prisma, {
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    baseUrl: process.env.BASE_URL || 'http://localhost:4016',
     google: process.env.GOOGLE_CLIENT_ID ? {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -87,7 +91,7 @@ export async function createServer() {
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMainModule) {
   void createServer().then(async ({ app }) => {
-    const port = Number.parseInt(process.env.PORT || '3000', 10);
+    const port = Number.parseInt(process.env.PORT || '4016', 10);
     const host = process.env.HOST || '0.0.0.0';
     
     try {
