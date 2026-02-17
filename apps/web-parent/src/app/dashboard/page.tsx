@@ -9,6 +9,8 @@ import {
   CheckCircle,
   Settings,
   Users,
+  CreditCard,
+  Sparkles,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -53,13 +55,130 @@ import {
   useWeeklyReport,
   useChildrenEnhanced,
   useDismissInsight,
+  useSubscription,
 } from '@/hooks';
+
+/* ---------- Subscription Status Banner ---------- */
+interface SubscriptionBannerProps {
+  subscription?: {
+    status?: string;
+    trialEndDate?: string;
+    plan?: { name?: string };
+  } | null;
+  onUpgrade: () => void;
+  onManage: () => void;
+}
+
+function SubscriptionBanner({ subscription, onUpgrade, onManage }: SubscriptionBannerProps) {
+  if (!subscription) return null;
+
+  const { status, trialEndDate } = subscription;
+
+  // Calculate trial days remaining
+  const trialDaysLeft = trialEndDate
+    ? Math.max(0, Math.ceil((new Date(trialEndDate).getTime() - Date.now()) / 86_400_000))
+    : 0;
+
+  if (status === 'trialing') {
+    return (
+      <div className="mb-6 rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100">
+            <Sparkles className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-blue-900">Free Trial Active</p>
+            <p className="text-xs text-blue-700">
+              {trialDaysLeft > 0
+                ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} remaining`
+                : 'Trial ends today'}
+              {subscription.plan?.name ? ` · ${subscription.plan.name}` : ''}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onUpgrade}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+        >
+          <CreditCard className="h-3.5 w-3.5" />
+          Upgrade Now
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'past_due' || status === 'unpaid') {
+    return (
+      <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
+            <CreditCard className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Payment Issue</p>
+            <p className="text-xs text-amber-700">
+              Your subscription payment is overdue. Please update your payment method.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onManage}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition-colors"
+        >
+          Update Payment
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'canceled' || status === 'expired' || status === 'incomplete') {
+    return (
+      <div className="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200">
+            <CreditCard className="h-5 w-5 text-gray-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">No Active Subscription</p>
+            <p className="text-xs text-gray-600">
+              Subscribe to unlock AI tutoring, homework help, and progress tracking.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onUpgrade}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition-colors"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          View Plans
+        </button>
+      </div>
+    );
+  }
+
+  // Active status — show a subtle badge (no full banner)
+  if (status === 'active') {
+    return (
+      <div className="mb-6 flex items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          {subscription.plan?.name || 'Active'}
+        </span>
+      </div>
+    );
+  }
+
+  return null;
+}
 
 export default function DashboardPage() {
   const { t } = useTranslation('parent');
   const router = useRouter();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [selectedWeekStart, setSelectedWeekStart] = useState<Date | undefined>(undefined);
+
+  // Billing
+  const { data: subscription } = useSubscription();
 
   // Data hooks
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
@@ -174,6 +293,17 @@ export default function DashboardPage() {
   return (
     <main id="main-content" className="max-w-7xl mx-auto px-4 py-8">
       <DevModeIndicator />
+
+      {/* Subscription Status Banner */}
+      <SubscriptionBanner
+        subscription={subscription}
+        onUpgrade={() => {
+          router.push('/pricing');
+        }}
+        onManage={() => {
+          router.push('/billing');
+        }}
+      />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">

@@ -27,6 +27,21 @@ export interface StripePriceIds {
   districtAnnual?: string | undefined;
 }
 
+/**
+ * SKU-based price IDs for the parent billing flow
+ * Maps each SKU to its monthly and yearly Stripe price IDs
+ */
+export interface StripeSkuPriceIds {
+  baseMonthly: string;
+  baseYearly: string;
+  addonSelMonthly: string;
+  addonSelYearly: string;
+  addonSpeechMonthly: string;
+  addonSpeechYearly: string;
+  addonScienceMonthly: string;
+  addonScienceYearly: string;
+}
+
 export interface StripeWebhookConfig {
   /** Webhook endpoint secret for signature validation */
   secret: string;
@@ -43,6 +58,8 @@ export interface StripeConfig {
   webhook: StripeWebhookConfig;
   /** Price IDs for subscription plans */
   priceIds: StripePriceIds;
+  /** SKU-based price IDs for parent billing checkout */
+  skuPriceIds: StripeSkuPriceIds;
   /** Billing portal configuration ID (bpc_xxx) */
   portalConfigId?: string | undefined;
   /** Default tax rates to apply (txr_xxx) */
@@ -104,7 +121,7 @@ function getPriceIdEnvVar(name: string, isProduction: boolean): string {
   if (isProduction && !isValidStripePriceId(value)) {
     throw new Error(
       `Invalid Stripe price ID format for ${name}: "${value}". ` +
-      'Expected format: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
+        'Expected format: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
     );
   }
 
@@ -124,14 +141,17 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 export const stripeConfig: StripeConfig = {
   // API Keys
   secretKey: getEnvVar('STRIPE_SECRET_KEY', isDevelopment ? 'sk_test_placeholder' : undefined),
-  publishableKey: getEnvVar('STRIPE_PUBLISHABLE_KEY', isDevelopment ? 'pk_test_placeholder' : undefined),
-  
+  publishableKey: getEnvVar(
+    'STRIPE_PUBLISHABLE_KEY',
+    isDevelopment ? 'pk_test_placeholder' : undefined
+  ),
+
   // Webhook
   webhook: {
     secret: getEnvVar('STRIPE_WEBHOOK_SECRET', isDevelopment ? 'whsec_placeholder' : undefined),
     tolerance: Number.parseInt(getEnvVar('STRIPE_WEBHOOK_TOLERANCE', '300'), 10),
   },
-  
+
   // Price IDs for subscription plans
   // IMPORTANT: In production, real Stripe price IDs are REQUIRED
   // Format: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)
@@ -150,17 +170,59 @@ export const stripeConfig: StripeConfig = {
     schoolAnnual: getOptionalEnvVar('STRIPE_PRICE_SCHOOL_ANNUAL'),
     districtAnnual: getOptionalEnvVar('STRIPE_PRICE_DISTRICT_ANNUAL'),
   },
-  
+
+  // SKU-based price IDs for parent billing flow
+  // These map to the 4-SKU catalog defined in @aivo/billing-common
+  // Configure via environment variables:
+  //   - STRIPE_PRICE_BASE_MONTHLY / STRIPE_PRICE_BASE_YEARLY
+  //   - STRIPE_PRICE_ADDON_SEL_MONTHLY / STRIPE_PRICE_ADDON_SEL_YEARLY
+  //   - STRIPE_PRICE_ADDON_SPEECH_MONTHLY / STRIPE_PRICE_ADDON_SPEECH_YEARLY
+  //   - STRIPE_PRICE_ADDON_SCIENCE_MONTHLY / STRIPE_PRICE_ADDON_SCIENCE_YEARLY
+  skuPriceIds: {
+    baseMonthly: getEnvVar(
+      'STRIPE_PRICE_BASE_MONTHLY',
+      isDevelopment ? 'price_base_monthly_test' : ''
+    ),
+    baseYearly: getEnvVar(
+      'STRIPE_PRICE_BASE_YEARLY',
+      isDevelopment ? 'price_base_yearly_test' : ''
+    ),
+    addonSelMonthly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SEL_MONTHLY',
+      isDevelopment ? 'price_sel_monthly_test' : ''
+    ),
+    addonSelYearly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SEL_YEARLY',
+      isDevelopment ? 'price_sel_yearly_test' : ''
+    ),
+    addonSpeechMonthly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SPEECH_MONTHLY',
+      isDevelopment ? 'price_speech_monthly_test' : ''
+    ),
+    addonSpeechYearly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SPEECH_YEARLY',
+      isDevelopment ? 'price_speech_yearly_test' : ''
+    ),
+    addonScienceMonthly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SCIENCE_MONTHLY',
+      isDevelopment ? 'price_science_monthly_test' : ''
+    ),
+    addonScienceYearly: getEnvVar(
+      'STRIPE_PRICE_ADDON_SCIENCE_YEARLY',
+      isDevelopment ? 'price_science_yearly_test' : ''
+    ),
+  },
+
   // Portal and Tax
   portalConfigId: getOptionalEnvVar('STRIPE_PORTAL_CONFIG_ID'),
   taxRates: getOptionalEnvVar('STRIPE_TAX_RATES')?.split(',').filter(Boolean),
-  
+
   // API Configuration
   apiVersion: '2024-12-18.acacia',
-  
+
   // Connect (for marketplace features)
   connectAccountId: getOptionalEnvVar('STRIPE_CONNECT_ACCOUNT_ID'),
-  
+
   // Features
   automaticTax: process.env.STRIPE_AUTOMATIC_TAX === 'true',
   defaultTrialDays: Number.parseInt(getEnvVar('STRIPE_DEFAULT_TRIAL_DAYS', '14'), 10),
@@ -195,7 +257,7 @@ function checkPriceId(value: string, name: string, errors: string[], isRequired 
   if (!isValidStripePriceId(value)) {
     errors.push(
       `${name} has invalid format: "${value}". ` +
-      'Expected: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
+        'Expected: price_[alphanumeric14+chars] (e.g., price_1A2B3C4D5E6F7G8H)'
     );
   }
 }
@@ -243,10 +305,15 @@ export function validateStripeConfig(): void {
     }
   } else {
     // In development, warn if price IDs are missing but don't error
-    if (!priceIds.proMonthly || !priceIds.proAnnual || !priceIds.premiumMonthly || !priceIds.premiumAnnual) {
+    if (
+      !priceIds.proMonthly ||
+      !priceIds.proAnnual ||
+      !priceIds.premiumMonthly ||
+      !priceIds.premiumAnnual
+    ) {
       warnings.push(
         'Some Stripe price IDs are not configured. ' +
-        'Billing features may not work until STRIPE_PRICE_* environment variables are set.'
+          'Billing features may not work until STRIPE_PRICE_* environment variables are set.'
       );
     }
   }
@@ -260,8 +327,8 @@ export function validateStripeConfig(): void {
   if (errors.length > 0) {
     throw new Error(
       `Stripe configuration validation failed:\n` +
-      errors.map((e) => `  - ${e}`).join('\n') +
-      '\n\nPlease configure the required environment variables with valid Stripe values.'
+        errors.map((e) => `  - ${e}`).join('\n') +
+        '\n\nPlease configure the required environment variables with valid Stripe values.'
     );
   }
 
@@ -313,7 +380,9 @@ export function getPriceId(plan: PlanName, interval: BillingInterval): string | 
 /**
  * Get plan name from Stripe price ID
  */
-export function getPlanFromPriceId(priceId: string): { plan: PlanName; interval: BillingInterval } | null {
+export function getPlanFromPriceId(
+  priceId: string
+): { plan: PlanName; interval: BillingInterval } | null {
   if (!priceId) {
     return null;
   }
@@ -338,6 +407,73 @@ export function getPlanFromPriceId(priceId: string): { plan: PlanName; interval:
   }
   if (priceIds.districtAnnual && priceId === priceIds.districtAnnual) {
     return { plan: 'DISTRICT', interval: 'annual' };
+  }
+
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SKU-BASED PRICE HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+export type ParentSku = 'BASE' | 'ADDON_SEL' | 'ADDON_SPEECH' | 'ADDON_SCIENCE';
+export type SkuBillingInterval = 'monthly' | 'yearly';
+
+/**
+ * Get Stripe price ID for a parent SKU and billing interval
+ */
+export function getSkuPriceId(sku: ParentSku, interval: SkuBillingInterval): string | null {
+  const { skuPriceIds } = stripeConfig;
+
+  const getValid = (id: string | undefined): string | null => (id && id.length > 0 ? id : null);
+
+  switch (sku) {
+    case 'BASE':
+      return interval === 'monthly'
+        ? getValid(skuPriceIds.baseMonthly)
+        : getValid(skuPriceIds.baseYearly);
+    case 'ADDON_SEL':
+      return interval === 'monthly'
+        ? getValid(skuPriceIds.addonSelMonthly)
+        : getValid(skuPriceIds.addonSelYearly);
+    case 'ADDON_SPEECH':
+      return interval === 'monthly'
+        ? getValid(skuPriceIds.addonSpeechMonthly)
+        : getValid(skuPriceIds.addonSpeechYearly);
+    case 'ADDON_SCIENCE':
+      return interval === 'monthly'
+        ? getValid(skuPriceIds.addonScienceMonthly)
+        : getValid(skuPriceIds.addonScienceYearly);
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get SKU from a Stripe price ID (reverse lookup)
+ */
+export function getSkuFromPriceId(
+  priceId: string
+): { sku: ParentSku; interval: SkuBillingInterval } | null {
+  if (!priceId) return null;
+
+  const { skuPriceIds } = stripeConfig;
+
+  const mapping: [string, ParentSku, SkuBillingInterval][] = [
+    [skuPriceIds.baseMonthly, 'BASE', 'monthly'],
+    [skuPriceIds.baseYearly, 'BASE', 'yearly'],
+    [skuPriceIds.addonSelMonthly, 'ADDON_SEL', 'monthly'],
+    [skuPriceIds.addonSelYearly, 'ADDON_SEL', 'yearly'],
+    [skuPriceIds.addonSpeechMonthly, 'ADDON_SPEECH', 'monthly'],
+    [skuPriceIds.addonSpeechYearly, 'ADDON_SPEECH', 'yearly'],
+    [skuPriceIds.addonScienceMonthly, 'ADDON_SCIENCE', 'monthly'],
+    [skuPriceIds.addonScienceYearly, 'ADDON_SCIENCE', 'yearly'],
+  ];
+
+  for (const [configuredId, sku, interval] of mapping) {
+    if (configuredId && priceId === configuredId) {
+      return { sku, interval };
+    }
   }
 
   return null;
