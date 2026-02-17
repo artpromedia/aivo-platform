@@ -233,7 +233,7 @@ export function useTypeAhead<T>(
 ) {
   const { timeout = 500, onSelect } = options;
   const bufferRef = useRef('');
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

@@ -39,7 +39,7 @@ export const AccessibleTooltip = forwardRef<HTMLDivElement, AccessibleTooltipPro
     const tooltipId = id || `${baseId}-tooltip`;
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState({ top: 0, left: 0 });
-    const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     const triggerRef = useRef<HTMLElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
 

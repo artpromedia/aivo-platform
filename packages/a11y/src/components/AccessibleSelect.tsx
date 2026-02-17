@@ -87,7 +87,7 @@ export const AccessibleSelect = forwardRef<HTMLButtonElement, AccessibleSelectPr
     const [selectedValue, setSelectedValue] = useState(value ?? defaultValue ?? '');
     const [activeIndex, setActiveIndex] = useState(-1);
     const [typeAhead, setTypeAhead] = useState('');
-    const typeAheadTimeout = useRef<ReturnType<typeof setTimeout>>();
+    const typeAheadTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     const currentValue = value !== undefined ? value : selectedValue;
 
