@@ -10,6 +10,11 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
+    "seed:k5": "tsx prisma/seed-k5-curriculum.ts",
+    "seed:6-8": "tsx prisma/seed-6-8-curriculum.ts",
+    "seed:9-12": "tsx prisma/seed-9-12-curriculum.ts",
+    "seed:links": "tsx prisma/seed-content-links.ts",
+    "seed:all": "tsx prisma/seed-k5-curriculum.ts && tsx prisma/seed-6-8-curriculum.ts && tsx prisma/seed-9-12-curriculum.ts && tsx prisma/seed-content-links.ts",
     "lint": "eslint src",
     "test": "vitest"
   },

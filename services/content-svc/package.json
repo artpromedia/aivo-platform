@@ -15,7 +15,9 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "seed:content": "tsx prisma/seed-k12-content.ts",
+    "ingest": "tsx scripts/ingest-content.ts"
   },
   "dependencies": {
     "@aivo/events": "workspace:^",
