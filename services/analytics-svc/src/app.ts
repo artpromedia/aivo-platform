@@ -4,7 +4,6 @@ import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import Fastify from 'fastify';
 
 import { config } from './config.js';
-
 // Type assertion helper for Fastify plugins with type provider mismatches
 const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
 import { authMiddleware } from './middleware/auth.js';
@@ -22,6 +21,7 @@ import { learnerAnalyticsRoutes } from './routes/learnerAnalytics.js';
 import { mobileAnalyticsRoutes } from './routes/mobileAnalytics.js';
 import { modelCardsRoutes } from './routes/modelCardsRoutes.js';
 import { parentAnalyticsRoutes } from './routes/parentAnalytics.js';
+import { reportsRoutes } from './routes/reports.routes.js';
 import { researchExportRoutes } from './routes/researchExports.js';
 import teacherAnalyticsV2Routes from './routes/teacher-analytics.routes.js';
 import { teacherAnalyticsRoutes } from './routes/teacherAnalytics.js';
@@ -132,6 +132,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register teacher dashboard summary routes (aggregated data)
   await app.register(dashboardSummaryRoutes, { prefix: '/v2/dashboard' });
+
+  // Register reports routes (Sprint 3: Session → Reports pipeline)
+  await app.register(reportsRoutes, { prefix: '/reports' });
 
   return app;
 }

@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-const isDev = process.env.NODE_ENV === 'development';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
@@ -8,36 +7,6 @@ export async function GET(
 ) {
   const { studentId } = await params;
 
-  // In development, return mock data
-  if (isDev) {
-    return NextResponse.json({
-      studentId,
-      currentDifficulty: 'medium',
-      recommendations: [
-        {
-          subject: 'Math',
-          currentLevel: 'medium',
-          recommendedLevel: 'medium-high',
-          reason: 'Student has shown consistent improvement and high accuracy',
-        },
-        {
-          subject: 'Reading',
-          currentLevel: 'medium',
-          recommendedLevel: 'medium',
-          reason: 'Current level matches student performance well',
-        },
-        {
-          subject: 'Science',
-          currentLevel: 'easy',
-          recommendedLevel: 'medium',
-          reason: 'Student is ready for more challenging content',
-        },
-      ],
-      lastUpdated: new Date().toISOString(),
-    });
-  }
-
-  // In production, proxy to parent-svc
   try {
     const response = await fetch(
       `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/parent/students/${studentId}/difficulty/recommendations`,

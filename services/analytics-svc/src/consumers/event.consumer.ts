@@ -5,12 +5,7 @@
  * Updates real-time metrics as events arrive.
  */
 
-import type {
-  JetStreamClient,
-  JetStreamManager,
-  NatsConnection,
-  JsMsg,
-} from 'nats';
+import type { JetStreamClient, JetStreamManager, NatsConnection, JsMsg } from 'nats';
 import { AckPolicy, RetentionPolicy, StorageType } from 'nats';
 
 import { prisma } from '../prisma.js';
@@ -115,6 +110,16 @@ interface EventMapping {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const EVENT_TYPE_MAPPING: Record<string, EventMapping> = {
+  // === Learning events from session-svc (published as learning.* subjects) ===
+  'learning.session.started': { type: 'SESSION_STARTED', category: 'LEARNING' },
+  'learning.session.ended': { type: 'SESSION_ENDED', category: 'LEARNING' },
+  'learning.session.paused': { type: 'SESSION_PAUSED', category: 'LEARNING' },
+  'learning.session.resumed': { type: 'SESSION_RESUMED', category: 'LEARNING' },
+
+  // Activity events from session-svc
+  'activity.started': { type: 'CONTENT_STARTED', category: 'LEARNING' },
+  'activity.completed': { type: 'CONTENT_COMPLETED', category: 'LEARNING' },
+
   // Content events
   'content.viewed': { type: 'CONTENT_VIEWED', category: 'LEARNING' },
   'content.started': { type: 'CONTENT_STARTED', category: 'LEARNING' },
@@ -171,9 +176,7 @@ export class EventConsumer {
   private jsm: JetStreamManager | null = null;
   private isRunning = false;
 
-  constructor(
-    private readonly nc: NatsConnection,
-  ) {}
+  constructor(private readonly nc: NatsConnection) {}
 
   async start(): Promise<void> {
     if (this.isRunning) {
@@ -204,6 +207,8 @@ export class EventConsumer {
 
     const streamName = 'ANALYTICS_EVENTS';
     const subjects = [
+      // session-svc publishes under "learning.*" prefix (learning.session.started, etc.)
+      'learning.>',
       'content.>',
       'video.>',
       'assessment.>',
@@ -214,6 +219,11 @@ export class EventConsumer {
       'recommendation.>',
       'auth.user.logged_in',
       'auth.user.logged_out',
+      // transition & predictability events from session-svc
+      'transition.>',
+      'predictability.>',
+      // activity events from session-svc
+      'activity.>',
     ];
 
     try {
@@ -268,14 +278,38 @@ export class EventConsumer {
       if (!this.isRunning) break;
 
       try {
-        const event = JSON.parse(new TextDecoder().decode(msg.data)) as IncomingEvent;
+        const raw = JSON.parse(new TextDecoder().decode(msg.data)) as Record<string, unknown>;
+
+        // Normalize: @aivo/events publishes BaseEvent with 'eventType' field + 'payload' object.
+        // Map to our IncomingEvent shape so processEvent works uniformly.
+        const event: IncomingEvent = {
+          type: (raw.eventType ?? raw.type ?? msg.subject) as string,
+          userId: ((raw.payload as Record<string, unknown>)?.learnerId ??
+            raw.userId ??
+            '') as string,
+          tenantId: (raw.tenantId ?? '') as string,
+          timestamp: (raw.timestamp ?? new Date().toISOString()) as string,
+          data: (raw.payload ?? raw.data ?? {}) as Record<string, unknown>,
+          context: {
+            sessionId: ((raw.payload as Record<string, unknown>)?.sessionId ??
+              (raw.context as Record<string, unknown>)?.sessionId) as string | undefined,
+            contentId: ((raw.payload as Record<string, unknown>)?.contentId ??
+              (raw.context as Record<string, unknown>)?.contentId) as string | undefined,
+            subjectId: ((raw.payload as Record<string, unknown>)?.subjectId ??
+              (raw.context as Record<string, unknown>)?.subjectId) as string | undefined,
+            topicId: ((raw.payload as Record<string, unknown>)?.topicId ??
+              (raw.context as Record<string, unknown>)?.topicId) as string | undefined,
+          },
+        };
+
         await this.processEvent(event);
         msg.ack();
       } catch (error) {
         console.error('[EventConsumer] Error processing event:', error);
-        
+
         // Check redelivery count
-        const deliveryCount = (msg as unknown as { info?: { deliveryCount?: number } }).info?.deliveryCount ?? 1;
+        const deliveryCount =
+          (msg as unknown as { info?: { deliveryCount?: number } }).info?.deliveryCount ?? 1;
         if (deliveryCount >= 3) {
           console.error('[EventConsumer] Max retries reached, terminating message');
           msg.term();
@@ -333,6 +367,7 @@ export class EventConsumer {
   private extractDuration(event: IncomingEvent): number | null {
     const data = event.data;
     if (typeof data.duration === 'number') return data.duration;
+    if (typeof data.durationMs === 'number') return Math.round(data.durationMs / 1000); // convert ms→s
     if (typeof data.timeSpent === 'number') return data.timeSpent;
     if (typeof data.timeSpentSeconds === 'number') return data.timeSpentSeconds;
     return null;
@@ -342,6 +377,7 @@ export class EventConsumer {
     const data = event.data;
     if (typeof data.score === 'number') return data.score;
     if (typeof data.percentage === 'number') return data.percentage;
+    if (typeof data.masteryLevel === 'number') return data.masteryLevel * 100;
     return null;
   }
 
@@ -350,7 +386,7 @@ export class EventConsumer {
     type: LearningEventType,
     _category: LearningEventCategory,
     duration: number | null,
-    score: number | null,
+    score: number | null
   ): Promise<void> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -393,7 +429,7 @@ export class EventConsumer {
   private getMetricUpdates(
     type: LearningEventType,
     duration: number | null,
-    score: number | null,
+    score: number | null
   ): Record<string, { increment: number }> {
     const updates: Record<string, { increment: number }> = {};
 
@@ -401,9 +437,16 @@ export class EventConsumer {
       case 'SESSION_STARTED':
         updates.sessionsCount = { increment: 1 };
         break;
+      case 'SESSION_ENDED':
+        // Track total session time when a session completes
+        if (duration) updates.totalTimeSeconds = { increment: duration };
+        break;
       case 'CONTENT_VIEWED':
         updates.contentViewed = { increment: 1 };
         if (duration) updates.totalTimeSeconds = { increment: duration };
+        break;
+      case 'CONTENT_STARTED':
+        updates.contentViewed = { increment: 1 };
         break;
       case 'CONTENT_COMPLETED':
         updates.contentCompleted = { increment: 1 };
@@ -443,7 +486,7 @@ export class EventConsumer {
   private getMetricDefaults(
     type: LearningEventType,
     duration: number | null,
-    score: number | null,
+    score: number | null
   ): Partial<Record<string, number | boolean>> {
     const defaults: Partial<Record<string, number | boolean>> = {
       totalTimeSeconds: 0,
@@ -469,7 +512,7 @@ export class EventConsumer {
     event: IncomingEvent,
     type: LearningEventType,
     date: Date,
-    duration: number | null,
+    duration: number | null
   ): Promise<void> {
     const contentId = event.context?.contentId;
     const contentType = event.context?.contentType ?? 'unknown';
@@ -527,7 +570,7 @@ export class EventConsumer {
   private async updateTopicProgress(
     event: IncomingEvent,
     type: LearningEventType,
-    duration: number | null,
+    duration: number | null
   ): Promise<void> {
     const { userId, tenantId } = event;
     const topicId = event.context?.topicId;

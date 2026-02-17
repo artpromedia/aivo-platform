@@ -1,39 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-const isDev = process.env.NODE_ENV === 'development';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const parentId = url.searchParams.get('parentId') || 'parent-1';
 
-  // In development, return mock data
-  if (isDev) {
-    return NextResponse.json({
-      collections: [
-        {
-          id: 'col-1',
-          parentId,
-          name: 'Math Resources',
-          description: 'Saved math practice materials',
-          resourceCount: 5,
-          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'col-2',
-          parentId,
-          name: 'Reading List',
-          description: 'Books and reading materials for summer',
-          resourceCount: 8,
-          createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      ],
-      total: 2,
-    });
-  }
-
-  // In production, proxy to content service
   try {
     const response = await fetch(
       `${process.env.CONTENT_SERVICE_URL || 'http://localhost:4020'}/api/v1/parent/resource-collections?parentId=${parentId}`,
@@ -52,19 +23,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // In development, return mock response
-  if (isDev) {
-    const body = await request.json();
-    return NextResponse.json({
-      id: `col-${Date.now()}`,
-      ...body,
-      resourceCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-  }
-
-  // In production, proxy to content service
   try {
     const body = await request.json();
     const response = await fetch(

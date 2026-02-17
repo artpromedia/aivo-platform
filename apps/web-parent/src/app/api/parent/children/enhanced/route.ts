@@ -4,18 +4,20 @@
  * Returns enhanced children data with activity status.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
-const isDev = process.env.NODE_ENV === 'development';
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('auth-token')?.value || request.headers.get('Authorization')?.replace('Bearer ', '');
+    const token =
+      cookieStore.get('auth-token')?.value ||
+      request.headers.get('Authorization')?.replace('Bearer ', '');
 
     // Try to call parent-svc
     if (token) {
@@ -27,7 +29,9 @@ export async function GET(request: NextRequest) {
         });
 
         if (response.ok) {
-          const data = (await response.json()) as { students?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>;
+          const data = (await response.json()) as
+            | { students?: Record<string, unknown>[] }
+            | Record<string, unknown>[];
           const studentArray = Array.isArray(data) ? data : (data.students ?? []);
           // Transform to enhanced format
           const children = studentArray.map((student: Record<string, unknown>) => {
@@ -55,43 +59,13 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ children });
         }
       } catch {
-        console.log('[Children API] Parent service unavailable, using mock data');
+        console.log('[Children API] Parent service unavailable');
       }
     }
 
-    // Return mock data in development
-    if (isDev) {
-      return NextResponse.json({
-        children: [
-          {
-            id: 'learner_test123',
-            name: 'TestChild User',
-            firstName: 'TestChild',
-            lastName: 'User',
-            grade: '2',
-            avatar: null,
-            subjects: ['Math', 'ELA', 'Science'],
-            lastActive: new Date().toISOString(),
-            currentStreak: 5,
-            todayProgress: {
-              minutesLearned: 15,
-              lessonsCompleted: 2,
-            },
-            status: 'offline',
-          },
-        ],
-      });
-    }
-
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   } catch (error) {
     console.error('[Children API] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
