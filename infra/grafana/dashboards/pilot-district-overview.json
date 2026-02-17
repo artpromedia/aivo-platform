@@ -1,0 +1,770 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Deployments",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "AIVO Pilot District Overview — 500 students, 50 teachers, 400 parents",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "🏫 Pilot District — Key Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "red", "value": 0 },
+              { "color": "yellow", "value": 99 },
+              { "color": "green", "value": 99.9 }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Availability (SLO: 99.9%)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "100 * (1 - sum(rate(http_requests_total{code=~\"5..\", namespace=\"aivo-prod\"}[1h])) / sum(rate(http_requests_total{namespace=\"aivo-prod\"}[1h])))",
+          "legendFormat": "Availability %"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 0.3 },
+              { "color": "red", "value": 0.5 }
+            ]
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Error Rate (SLO: <0.5%)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{code=~\"5..\", namespace=\"aivo-prod\"}[5m])) / sum(rate(http_requests_total{namespace=\"aivo-prod\"}[5m]))",
+          "legendFormat": "Error Rate"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "API P95 Latency (SLO: <500ms)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95 ms"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Active Users (Now)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(aivo_active_sessions{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\"})",
+          "legendFormat": "Sessions"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "purple", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 15, "y": 1 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Teachers Online",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(aivo_active_sessions{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", role=\"teacher\"})",
+          "legendFormat": "Teachers"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "orange", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Parents Online",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(aivo_active_sessions{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", role=\"parent\"})",
+          "legendFormat": "Parents"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "IEPs Managed",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "aivo_ieps_total{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", status=\"ACTIVE\"}",
+          "legendFormat": "Active IEPs"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "📊 Traffic & Latency",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "title": "Request Rate by Service",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"aivo-prod\"}[5m])) by (service)",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "title": "API Latency (P50 / P95 / P99)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P99"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 12,
+      "title": "HTTP Status Codes",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total{namespace=\"aivo-prod\"}[5m])) by (code)",
+          "legendFormat": "{{code}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 15 },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 13,
+      "title": "Per-Endpoint P95 Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\", route=~\"/api/dashboard.*\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Dashboard"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\", route=~\"/api/ieps.*\"}[5m])) by (le)) * 1000",
+          "legendFormat": "IEP API"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\", route=~\"/api/auth.*\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Auth"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\", route=~\"/api/ai/tutor.*\"}[5m])) by (le)) * 1000",
+          "legendFormat": "AI Tutor"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"aivo-prod\", route=~\"/api/compliance.*\"}[5m])) by (le)) * 1000",
+          "legendFormat": "Compliance"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 102,
+      "title": "🗄️ Database & Infrastructure",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "unit": "percent",
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 23 },
+      "id": 20,
+      "title": "PgBouncer Pool Utilization",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "(pgbouncer_pools_server_active_connections / pgbouncer_pools_server_maxconnections) * 100",
+          "legendFormat": "Pool %"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 23 },
+      "id": 21,
+      "title": "Database Connections (Active / Idle)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "pgbouncer_pools_server_active_connections",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "pgbouncer_pools_server_idle_connections",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "pgbouncer_pools_client_waiting_connections",
+          "legendFormat": "Waiting"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 23 },
+      "id": 22,
+      "title": "Redis Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes",
+          "legendFormat": "Used"
+        },
+        {
+          "expr": "redis_memory_max_bytes",
+          "legendFormat": "Max"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 23 },
+      "id": 23,
+      "title": "Node CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 29 },
+      "id": 24,
+      "title": "Node Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 29 },
+      "id": 25,
+      "title": "Disk Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100",
+          "legendFormat": "{{instance}} /"
+        },
+        {
+          "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/var/lib/postgresql\"} / node_filesystem_size_bytes{mountpoint=\"/var/lib/postgresql\"})) * 100",
+          "legendFormat": "{{instance}} /pg"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 29 },
+      "id": 26,
+      "title": "K8s Pod Status",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(kube_pod_status_phase{namespace=\"aivo-prod\", phase=\"Running\"})",
+          "legendFormat": "Running"
+        },
+        {
+          "expr": "sum(kube_pod_status_phase{namespace=\"aivo-prod\", phase=\"Pending\"})",
+          "legendFormat": "Pending"
+        },
+        {
+          "expr": "sum(kube_pod_status_phase{namespace=\"aivo-prod\", phase=\"Failed\"})",
+          "legendFormat": "Failed"
+        },
+        {
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"aivo-prod\"}) by (pod)",
+          "legendFormat": "Restarts: {{pod}}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 103,
+      "title": "🔒 FERPA Compliance & Security",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 36 },
+      "id": 30,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Audit Log Gaps (24h)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "aivo_ferpa_audit_log_gaps_total{namespace=\"aivo-prod\"}",
+          "legendFormat": "Gaps"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 36 },
+      "id": 31,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Unauthorized Access Attempts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(http_requests_total{namespace=\"aivo-prod\", code=\"403\"}[24h]))",
+          "legendFormat": "403s"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": 0 },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 36 },
+      "id": 32,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Failed Logins (1h)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(aivo_auth_login_failures_total{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\"}[1h]))",
+          "legendFormat": "Failed"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "id": 33,
+      "title": "PII Access Events by Type",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(aivo_pii_access_total{namespace=\"aivo-prod\"}[5m])) by (resource_type)",
+          "legendFormat": "{{resource_type}}"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 1, "fillOpacity": 5 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 34,
+      "title": "Backup Status",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "aivo_backup_last_success_timestamp_seconds{namespace=\"aivo-prod\"}",
+          "legendFormat": "Last Success (epoch)"
+        },
+        {
+          "expr": "time() - aivo_backup_last_success_timestamp_seconds{namespace=\"aivo-prod\"}",
+          "legendFormat": "Age (seconds)"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "id": 104,
+      "title": "🤖 AI Services",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "ms"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
+      "id": 40,
+      "title": "AI Tutor Response Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(aivo_ai_tutor_response_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(aivo_ai_tutor_response_duration_seconds_bucket{namespace=\"aivo-prod\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 49 },
+      "id": 41,
+      "title": "AI Service Requests by Type",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(aivo_ai_requests_total{namespace=\"aivo-prod\"}[5m])) by (service)",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 57 },
+      "id": 105,
+      "title": "👥 User Adoption & Engagement",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 20 },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 58 },
+      "id": 50,
+      "title": "Daily Active Users by Role",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "aivo_daily_active_users{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", role=\"teacher\"}",
+          "legendFormat": "Teachers"
+        },
+        {
+          "expr": "aivo_daily_active_users{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", role=\"parent\"}",
+          "legendFormat": "Parents"
+        },
+        {
+          "expr": "aivo_daily_active_users{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", role=\"student\"}",
+          "legendFormat": "Students"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 58 },
+      "id": 51,
+      "title": "Average Session Duration",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "aivo_session_duration_seconds{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", quantile=\"0.5\"}",
+          "legendFormat": "Median"
+        },
+        {
+          "expr": "aivo_session_duration_seconds{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\", quantile=\"0.95\"}",
+          "legendFormat": "P95"
+        }
+      ]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 58 },
+      "id": 52,
+      "title": "Feature Usage (Events/5m)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(aivo_feature_usage_total{namespace=\"aivo-prod\", tenant_id=\"anoka-hennepin\"}[5m])) by (feature)",
+          "legendFormat": "{{feature}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["aivo", "pilot", "district"],
+  "templating": {
+    "list": [
+      {
+        "current": { "text": "anoka-hennepin", "value": "anoka-hennepin" },
+        "label": "Tenant",
+        "name": "tenant",
+        "type": "custom",
+        "query": "anoka-hennepin"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "America/Chicago",
+  "title": "AIVO Pilot District Overview",
+  "uid": "aivo-pilot-district",
+  "version": 1
+}

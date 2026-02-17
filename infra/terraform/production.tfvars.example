@@ -1,0 +1,41 @@
+# =============================================================================
+# AIVO Platform — Production Environment Values
+# =============================================================================
+# Copy to production.tfvars and fill in real values.
+# NEVER commit this file with real credentials.
+# =============================================================================
+
+# Hetzner Cloud API token
+hetzner_api_token = ""
+
+# SSH public key for deploy access
+ssh_public_key = "ssh-ed25519 AAAA... deploy@aivo"
+
+# Restrict SSH to your management IPs
+management_ips = [
+  "YOUR_OFFICE_IP/32",
+  "YOUR_VPN_IP/32",
+]
+
+# Set to false for dedicated servers (production), true for cloud (staging)
+use_cloud_servers = false
+
+# Cloudflare
+cloudflare_api_token = ""
+cloudflare_zone_id   = ""
+
+# Public IP of app-primary dedicated server (for DNS A records)
+app_primary_public_ip = ""
+
+# K3s cluster token (generate with: openssl rand -hex 32)
+k3s_token = ""
+
+# PostgreSQL tuning for 128GB RAM dedicated server
+pg_version           = "15"
+pg_max_connections    = 200
+pg_shared_buffers     = "32GB"
+pg_effective_cache_size = "96GB"
+
+# Backup encryption (generate with: openssl rand -hex 32)
+backup_encryption_key = ""
+backup_s3_bucket      = "aivo-backups"

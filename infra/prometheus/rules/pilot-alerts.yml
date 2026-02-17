@@ -1,0 +1,358 @@
+# AIVO Platform — Pilot District Alert Rules
+# Supplements the core alerts in monitoring/alerts.yaml
+# Specific to pilot operations and FERPA compliance
+
+groups:
+  # =========================================================================
+  # PILOT SLO ALERTS
+  # =========================================================================
+  - name: pilot-slo-alerts
+    rules:
+      # ---------- Availability ----------
+      - alert: PilotAvailabilityBelow999
+        expr: |
+          (1 - (
+            sum(rate(http_requests_total{namespace="aivo-prod", code=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{namespace="aivo-prod"}[1h]))
+          )) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Pilot availability dropped below 99.9% SLO"
+          description: "Current availability: {{ $value | humanizePercentage }}. SLO target: 99.9%."
+          runbook_url: "https://docs.aivo.com/runbooks/high-error-rate"
+          dashboard_url: "https://grafana.aivo.example/d/aivo-pilot-district"
+
+      # ---------- Latency ----------
+      - alert: PilotAPILatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{namespace="aivo-prod"}[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "API P95 latency exceeds 500ms target"
+          description: "P95 latency: {{ $value | humanizeDuration }}. Target: <500ms."
+          runbook_url: "https://docs.aivo.com/runbooks/performance-degradation"
+
+      - alert: PilotDashboardLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{namespace="aivo-prod", route=~"/api/dashboard.*"}[5m])) by (le)
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Dashboard P95 latency exceeds 2s target"
+          description: "Dashboard P95: {{ $value | humanizeDuration }}. Target: <2s."
+
+      - alert: PilotComplianceReportSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket{namespace="aivo-prod", route=~"/api/compliance.*"}[5m])) by (le)
+          ) > 5.0
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Compliance report P95 exceeds 5s target"
+          description: "Report P95: {{ $value | humanizeDuration }}. Target: <5s."
+
+      # ---------- Error Rate ----------
+      - alert: PilotErrorRateHigh
+        expr: |
+          sum(rate(http_requests_total{namespace="aivo-prod", code=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{namespace="aivo-prod"}[5m]))
+          > 0.005
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Error rate exceeds 0.5% SLO"
+          description: "Error rate: {{ $value | humanizePercentage }}. Target: <0.5%."
+          runbook_url: "https://docs.aivo.com/runbooks/high-error-rate"
+
+  # =========================================================================
+  # FERPA COMPLIANCE ALERTS
+  # =========================================================================
+  - name: ferpa-compliance-alerts
+    rules:
+      - alert: FERPAAuditLogGapDetected
+        expr: aivo_ferpa_audit_log_gaps_total{namespace="aivo-prod"} > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: security
+          compliance: ferpa
+          pilot: "true"
+        annotations:
+          summary: "FERPA audit log gap detected"
+          description: |
+            {{ $value }} audit log gap(s) detected in the last verification cycle.
+            FERPA requires continuous audit logging of all PII access.
+            Investigate immediately — this is a compliance violation risk.
+          runbook_url: "https://docs.aivo.com/runbooks/ferpa-audit-gap"
+
+      - alert: FERPAUnauthorizedPIIAccess
+        expr: |
+          sum(increase(aivo_pii_access_unauthorized_total{namespace="aivo-prod"}[15m])) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+          compliance: ferpa
+          pilot: "true"
+        annotations:
+          summary: "Unauthorized PII access attempt detected"
+          description: |
+            {{ $value }} unauthorized PII access attempt(s) in the last 15 minutes.
+            Review audit logs immediately. FERPA breach notification may be required.
+          runbook_url: "https://docs.aivo.com/runbooks/ferpa-unauthorized-access"
+
+      - alert: FERPABackupEncryptionFailure
+        expr: aivo_backup_encryption_failures_total{namespace="aivo-prod"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: security
+          compliance: ferpa
+          pilot: "true"
+        annotations:
+          summary: "Backup encryption failure detected"
+          description: "An unencrypted backup may have been created. Verify and delete immediately."
+
+      - alert: FERPADataRetentionViolation
+        expr: |
+          aivo_data_retention_violations_total{namespace="aivo-prod"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+          compliance: ferpa
+          pilot: "true"
+        annotations:
+          summary: "Data retention policy violation"
+          description: "Records found outside the 7-year retention policy window."
+
+  # =========================================================================
+  # INFRASTRUCTURE ALERTS (PILOT-SPECIFIC)
+  # =========================================================================
+  - name: pilot-infrastructure-alerts
+    rules:
+      # ---------- Database ----------
+      - alert: PilotDBConnectionPoolHigh
+        expr: |
+          (pgbouncer_pools_server_active_connections / pgbouncer_pools_server_maxconnections) > 0.7
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Database connection pool utilization > 70%"
+          description: "Pool at {{ $value | humanizePercentage }}. Consider scaling pool or reviewing query patterns."
+          runbook_url: "https://docs.aivo.com/runbooks/database-pool-exhaustion"
+
+      - alert: PilotDBConnectionPoolCritical
+        expr: |
+          (pgbouncer_pools_server_active_connections / pgbouncer_pools_server_maxconnections) > 0.9
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Database connection pool utilization > 90% — CRITICAL"
+          description: "Pool at {{ $value | humanizePercentage }}. Risk of connection exhaustion."
+          runbook_url: "https://docs.aivo.com/runbooks/database-pool-exhaustion"
+
+      - alert: PilotDBSlowQueries
+        expr: |
+          rate(pg_stat_activity_max_tx_duration{datname=~"aivo_.*"}[5m]) > 30
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Long-running database queries detected (>30s)"
+          description: "Database {{ $labels.datname }} has queries running > 30 seconds."
+
+      # ---------- Disk ----------
+      - alert: PilotDiskSpaceLow
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Disk usage above 80% on {{ $labels.instance }}"
+          description: "Disk at {{ $value | humanizePercentage }}. Plan cleanup or expansion."
+
+      - alert: PilotDiskSpaceCritical
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Disk usage above 90% on {{ $labels.instance }} — CRITICAL"
+          description: "Immediate action required. Risk of service disruption."
+
+      - alert: PilotPGDataDiskHigh
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/var/lib/postgresql"}
+                / node_filesystem_size_bytes{mountpoint="/var/lib/postgresql"})) > 0.75
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "PostgreSQL data disk above 75%"
+          description: "DB disk at {{ $value | humanizePercentage }}. Review data growth rate."
+
+      # ---------- Redis ----------
+      - alert: PilotRedisMemoryHigh
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Redis memory usage above 85%"
+          description: "Redis at {{ $value | humanizePercentage }} of max memory."
+
+      # ---------- K8s ----------
+      - alert: PilotPodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace="aivo-prod"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Pod {{ $labels.pod }} is crash-looping"
+          description: "Pod restarting frequently. Check logs: kubectl logs {{ $labels.pod }} -n aivo-prod"
+          runbook_url: "https://docs.aivo.com/runbooks/service-down"
+
+      - alert: PilotPodNotReady
+        expr: |
+          kube_pod_status_ready{namespace="aivo-prod", condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Pod {{ $labels.pod }} not ready for 5+ minutes"
+          description: "Pod may be stuck in init or failing readiness checks."
+
+      # ---------- Backup ----------
+      - alert: PilotBackupStale
+        expr: |
+          (time() - aivo_backup_last_success_timestamp_seconds{namespace="aivo-prod"}) > 7200
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Database backup is stale (>2 hours old)"
+          description: "Last successful backup: {{ $value | humanizeDuration }} ago. RPO target: 1 hour."
+          runbook_url: "https://docs.aivo.com/runbooks/backup-failure"
+
+  # =========================================================================
+  # AI SERVICE ALERTS
+  # =========================================================================
+  - name: pilot-ai-alerts
+    rules:
+      - alert: PilotAITutorLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(aivo_ai_tutor_response_duration_seconds_bucket{namespace="aivo-prod"}[5m])) by (le)
+          ) > 3.0
+        for: 5m
+        labels:
+          severity: warning
+          team: ai
+          pilot: "true"
+        annotations:
+          summary: "AI Tutor P95 response time exceeds 3s target"
+          description: "P95: {{ $value | humanizeDuration }}. Check model inference queue and GPU utilization."
+
+      - alert: PilotAIServiceDown
+        expr: |
+          up{namespace="aivo-prod", job=~".*ai.*|.*ml.*|.*tutor.*"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          team: ai
+          pilot: "true"
+        annotations:
+          summary: "AI service {{ $labels.job }} is down"
+          description: "AI service not responding. Check pod status and model loading."
+
+      - alert: PilotAIModelLoadFailure
+        expr: |
+          aivo_ai_model_load_failures_total{namespace="aivo-prod"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: ai
+          pilot: "true"
+        annotations:
+          summary: "AI model failed to load"
+          description: "Model {{ $labels.model }} failed to load. AI features may be degraded."
+
+  # =========================================================================
+  # USER EXPERIENCE ALERTS
+  # =========================================================================
+  - name: pilot-ux-alerts
+    rules:
+      - alert: PilotLoginFailureSpike
+        expr: |
+          sum(increase(aivo_auth_login_failures_total{namespace="aivo-prod", tenant_id="anoka-hennepin"}[15m])) > 10
+        for: 0m
+        labels:
+          severity: warning
+          team: platform
+          pilot: "true"
+        annotations:
+          summary: "Login failure spike detected (>10 failures in 15m)"
+          description: "{{ $value }} failed login attempts. May indicate credential issues or attack."
+
+      - alert: PilotNoTeacherActivity
+        expr: |
+          sum(aivo_active_sessions{namespace="aivo-prod", tenant_id="anoka-hennepin", role="teacher"}) == 0
+        for: 30m
+        labels:
+          severity: info
+          team: customer-success
+          pilot: "true"
+        annotations:
+          summary: "No teacher activity for 30 minutes during school hours"
+          description: "Zero active teacher sessions. Verify platform is accessible."

@@ -1,0 +1,295 @@
+#cloud-config
+# =============================================================================
+# AIVO Database Node — Cloud-Init
+# PostgreSQL 15 + PgBouncer + Redis 7
+# =============================================================================
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - gnupg
+  - lsb-release
+  - ca-certificates
+  - logrotate
+
+write_files:
+  # --- PostgreSQL configuration ---
+  - path: /etc/postgresql/${pg_version}/main/conf.d/aivo.conf
+    content: |
+      # AIVO Production PostgreSQL Configuration
+      # Tuned for 128GB ECC RAM, datacenter SSDs
+
+      # Connection Settings
+      max_connections = ${pg_max_connections}
+      superuser_reserved_connections = 3
+
+      # Memory
+      shared_buffers = ${pg_shared_buffers}
+      effective_cache_size = ${pg_effective_cache}
+      work_mem = 64MB
+      maintenance_work_mem = 2GB
+      huge_pages = try
+
+      # WAL Settings
+      wal_level = replica
+      max_wal_size = 4GB
+      min_wal_size = 1GB
+      wal_compression = on
+      archive_mode = on
+      archive_command = 'test ! -f /var/lib/postgresql/wal_archive/%f && cp %p /var/lib/postgresql/wal_archive/%f'
+
+      # Checkpoints
+      checkpoint_timeout = 15min
+      checkpoint_completion_target = 0.9
+
+      # Query Planner
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      default_statistics_target = 100
+
+      # Logging
+      log_statement = 'ddl'
+      log_min_duration_statement = 500
+      log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a '
+      log_checkpoints = on
+      log_connections = on
+      log_disconnections = on
+      log_lock_waits = on
+      log_temp_files = 0
+
+      # Security (FERPA)
+      ssl = on
+      ssl_cert_file = '/etc/ssl/certs/postgres.crt'
+      ssl_key_file = '/etc/ssl/private/postgres.key'
+      password_encryption = scram-sha-256
+
+      # Autovacuum
+      autovacuum_max_workers = 4
+      autovacuum_naptime = 30s
+      autovacuum_vacuum_scale_factor = 0.05
+      autovacuum_analyze_scale_factor = 0.025
+
+  # --- PgBouncer config ---
+  - path: /etc/pgbouncer/pgbouncer.ini
+    content: |
+      [databases]
+      * = host=127.0.0.1 port=5432
+
+      [pgbouncer]
+      listen_addr = 0.0.0.0
+      listen_port = 6432
+      auth_type = scram-sha-256
+      auth_file = /etc/pgbouncer/userlist.txt
+      pool_mode = transaction
+      max_client_conn = 1000
+      default_pool_size = 25
+      min_pool_size = 5
+      reserve_pool_size = 5
+      reserve_pool_timeout = 3
+      server_lifetime = 3600
+      server_idle_timeout = 600
+      log_connections = 1
+      log_disconnections = 1
+      stats_period = 60
+
+  # --- Redis config ---
+  - path: /etc/redis/redis-aivo.conf
+    content: |
+      # AIVO Production Redis Configuration
+      bind 0.0.0.0
+      port 6379
+      requirepass REDIS_PASSWORD_PLACEHOLDER
+      maxmemory 8gb
+      maxmemory-policy allkeys-lru
+
+      # Persistence
+      save 900 1
+      save 300 10
+      save 60 10000
+      rdbcompression yes
+      rdbchecksum yes
+      dbfilename aivo-dump.rdb
+      dir /var/lib/redis
+
+      # AOF
+      appendonly yes
+      appendfilename "aivo-appendonly.aof"
+      appendfsync everysec
+      auto-aof-rewrite-percentage 100
+      auto-aof-rewrite-min-size 64mb
+
+      # Security
+      rename-command FLUSHDB ""
+      rename-command FLUSHALL ""
+      rename-command DEBUG ""
+
+      # Logging
+      loglevel notice
+      logfile /var/log/redis/redis-aivo.log
+
+  # --- Automated backup script ---
+  - path: /opt/aivo/scripts/backup-db.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # AIVO Database Backup Script
+      # Runs hourly via cron, with daily full backups and WAL archiving
+      set -euo pipefail
+
+      BACKUP_DIR="/var/lib/postgresql/backups"
+      WAL_ARCHIVE="/var/lib/postgresql/wal_archive"
+      S3_BUCKET="${backup_s3_bucket}"
+      TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+      DAY_OF_WEEK=$(date +%u)
+      HOUR=$(date +%H)
+      ENCRYPTION_KEY="${backup_encryption_key}"
+
+      mkdir -p "$BACKUP_DIR"
+
+      # Daily full backup at 2 AM
+      if [ "$HOUR" = "02" ]; then
+        echo "[$(date)] Starting full database backup..."
+        
+        # Dump all AIVO databases
+        for db in aivo_auth aivo_content aivo_session aivo_assessment aivo_analytics \
+                  aivo_billing aivo_compliance aivo_iep aivo_parent aivo_profile \
+                  aivo_notifications aivo_messaging aivo_goals aivo_focus \
+                  aivo_personalization aivo_baseline aivo_payments aivo_tenant \
+                  aivo_sis_sync aivo_integration; do
+          pg_dump -U postgres -Fc --no-owner "$db" | \
+            openssl enc -aes-256-cbc -salt -pass "pass:$ENCRYPTION_KEY" \
+            > "$BACKUP_DIR/${db}_${TIMESTAMP}.dump.enc"
+        done
+
+        # Upload to S3-compatible storage
+        for f in "$BACKUP_DIR"/*_${TIMESTAMP}.dump.enc; do
+          aws s3 cp "$f" "s3://$S3_BUCKET/daily/$TIMESTAMP/$(basename $f)" \
+            --sse AES256
+        done
+
+        echo "[$(date)] Full backup complete."
+      fi
+
+      # Hourly WAL archive sync
+      if [ -d "$WAL_ARCHIVE" ]; then
+        aws s3 sync "$WAL_ARCHIVE" "s3://$S3_BUCKET/wal/" --sse AES256
+        # Keep only last 24h locally
+        find "$WAL_ARCHIVE" -mmin +1440 -delete 2>/dev/null || true
+      fi
+
+      # Cleanup: keep 7 days of local backups
+      find "$BACKUP_DIR" -name "*.dump.enc" -mtime +7 -delete 2>/dev/null || true
+
+      echo "[$(date)] Backup cycle complete."
+
+  # --- FERPA audit log verification ---
+  - path: /opt/aivo/scripts/verify-audit-logs.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Daily FERPA audit log verification
+      set -euo pipefail
+
+      YESTERDAY=$(date -d 'yesterday' +%Y-%m-%d)
+      REPORT_FILE="/var/log/aivo/audit-verification-${YESTERDAY}.json"
+
+      echo "Verifying FERPA audit logs for $YESTERDAY..."
+
+      # Check auth_svc audit log completeness
+      AUTH_COUNT=$(psql -U postgres -d aivo_auth -t -c \
+        "SELECT COUNT(*) FROM audit_logs WHERE created_at::date = '$YESTERDAY'")
+
+      # Check IEP access audit logs
+      IEP_COUNT=$(psql -U postgres -d aivo_iep -t -c \
+        "SELECT COUNT(*) FROM audit_logs WHERE created_at::date = '$YESTERDAY'" 2>/dev/null || echo "0")
+
+      # Check for any gaps in sequential audit log IDs
+      GAPS=$(psql -U postgres -d aivo_auth -t -c \
+        "SELECT COUNT(*) FROM (
+          SELECT id, LEAD(id) OVER (ORDER BY id) - id AS gap
+          FROM audit_logs WHERE created_at::date = '$YESTERDAY'
+        ) sub WHERE gap > 1" 2>/dev/null || echo "0")
+
+      cat > "$REPORT_FILE" << EOF
+      {
+        "date": "$YESTERDAY",
+        "auth_audit_entries": $AUTH_COUNT,
+        "iep_audit_entries": $IEP_COUNT,
+        "sequential_gaps": $GAPS,
+        "status": "$([ "$GAPS" -eq 0 ] && echo 'PASS' || echo 'FAIL')",
+        "verified_at": "$(date -Iseconds)"
+      }
+      EOF
+
+      echo "Audit verification report: $REPORT_FILE"
+
+      # Alert if gaps found
+      if [ "$GAPS" -gt 0 ]; then
+        echo "⚠️  FERPA AUDIT GAP DETECTED — $GAPS gaps in audit log sequence"
+        # Send alert via webhook
+        curl -s -X POST "${ALERT_WEBHOOK_URL:-http://localhost:9093/api/v1/alerts}" \
+          -H 'Content-Type: application/json' \
+          -d "[{\"labels\":{\"alertname\":\"FerpaAuditGap\",\"severity\":\"critical\"},\"annotations\":{\"summary\":\"FERPA audit log gap detected\",\"description\":\"$GAPS gaps found in audit log for $YESTERDAY\"}}]" || true
+      fi
+
+runcmd:
+  # --- Install PostgreSQL ---
+  - sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+  - wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+  - apt-get update
+  - apt-get install -y postgresql-${pg_version} postgresql-contrib-${pg_version} pgbouncer
+
+  # --- Install Redis ---
+  - apt-get install -y redis-server
+  - cp /etc/redis/redis-aivo.conf /etc/redis/redis.conf
+  - systemctl restart redis-server
+  - systemctl enable redis-server
+
+  # --- Configure PostgreSQL ---
+  - systemctl restart postgresql
+  - systemctl enable postgresql
+
+  # --- Create AIVO databases ---
+  - |
+    sudo -u postgres psql -c "CREATE ROLE aivo_app WITH LOGIN PASSWORD 'CHANGE_ME' CREATEDB;"
+    for db in aivo_auth aivo_content aivo_session aivo_assessment aivo_analytics \
+              aivo_billing aivo_compliance aivo_iep aivo_parent aivo_profile \
+              aivo_notifications aivo_messaging aivo_goals aivo_focus \
+              aivo_personalization aivo_baseline aivo_payments aivo_tenant \
+              aivo_sis_sync aivo_integration; do
+      sudo -u postgres createdb -O aivo_app "$db"
+    done
+
+  # --- Enable pgbouncer ---
+  - systemctl enable pgbouncer
+  - systemctl start pgbouncer
+
+  # --- Setup WAL archive directory ---
+  - mkdir -p /var/lib/postgresql/wal_archive
+  - chown postgres:postgres /var/lib/postgresql/wal_archive
+  - mkdir -p /var/lib/postgresql/backups
+  - chown postgres:postgres /var/lib/postgresql/backups
+  - mkdir -p /var/log/aivo
+  - mkdir -p /opt/aivo/scripts
+
+  # --- Cron jobs ---
+  - echo "0 * * * * root /opt/aivo/scripts/backup-db.sh >> /var/log/aivo/backup.log 2>&1" >> /etc/crontab
+  - echo "30 3 * * * root /opt/aivo/scripts/verify-audit-logs.sh >> /var/log/aivo/audit-verify.log 2>&1" >> /etc/crontab
+
+  # --- Firewall ---
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow from 10.0.0.0/24 to any port 5432
+  - ufw allow from 10.0.0.0/24 to any port 6379
+  - ufw allow from 10.0.0.0/24 to any port 6432
+  - ufw --force enable
+
+  # --- Fail2ban ---
+  - systemctl enable fail2ban
+  - systemctl start fail2ban

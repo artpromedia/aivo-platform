@@ -1,0 +1,185 @@
+# =============================================================================
+# AIVO Platform — IEP Document Storage (S3/MinIO)
+# AES-256 encrypted object storage for FERPA compliance
+# =============================================================================
+# Deployed on Server 3 (App Secondary) via MinIO or
+# connected to Cloudflare R2 for production CDN.
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iep-storage-config
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: aivo
+data:
+  # Storage provider: "minio" for self-hosted, "r2" for Cloudflare R2, "s3" for AWS S3
+  STORAGE_PROVIDER: "minio"
+  STORAGE_BUCKET: "aivo-iep-documents"
+  STORAGE_REGION: "us-east-1"
+  STORAGE_ENDPOINT: "http://minio.aivo-prod.svc.cluster.local:9000"
+
+  # Encryption: AES-256 server-side encryption is MANDATORY for IEP documents
+  STORAGE_ENCRYPTION: "AES256"
+  STORAGE_ENCRYPTION_ALGORITHM: "aws:kms"
+
+  # Document processing
+  MAX_UPLOAD_SIZE_MB: "50"
+  ALLOWED_MIME_TYPES: "application/pdf,image/png,image/jpeg,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+  # Retention policy (FERPA: educational records must be retained)
+  RETENTION_POLICY: "COMPLIANCE"
+  RETENTION_DAYS: "2555"  # 7 years per FERPA recommended retention
+
+  # Access logging for FERPA audit trail
+  ACCESS_LOGGING_ENABLED: "true"
+  ACCESS_LOG_BUCKET: "aivo-access-logs"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/component: storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: minio
+    spec:
+      nodeSelector:
+        role: app
+        tier: secondary
+      containers:
+        - name: minio
+          image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: root-password
+            - name: MINIO_KMS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: kms-secret-key
+          ports:
+            - containerPort: 9000
+              name: api
+            - containerPort: 9001
+              name: console
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: data
+          hostPath:
+            path: /mnt/minio-data
+            type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: aivo-prod
+spec:
+  selector:
+    app.kubernetes.io/name: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+    - name: console
+      port: 9001
+      targetPort: 9001
+
+---
+# MinIO bucket initialization job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-init-buckets
+  namespace: aivo-prod
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          image: minio/mc:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mc alias set aivo http://minio.aivo-prod.svc.cluster.local:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+
+              # Create IEP document bucket with encryption
+              mc mb --ignore-existing aivo/aivo-iep-documents
+              mc encrypt set sse-s3 aivo/aivo-iep-documents
+
+              # Create access log bucket
+              mc mb --ignore-existing aivo/aivo-access-logs
+              mc encrypt set sse-s3 aivo/aivo-access-logs
+
+              # Create backup bucket
+              mc mb --ignore-existing aivo/aivo-backups
+              mc encrypt set sse-s3 aivo/aivo-backups
+
+              # Set lifecycle: keep documents for 7 years
+              mc ilm rule add --expire-days 2555 aivo/aivo-access-logs
+
+              # Enable versioning for IEP documents (FERPA: no accidental deletions)
+              mc version enable aivo/aivo-iep-documents
+
+              echo "✅ MinIO buckets initialized with AES-256 encryption"
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: root-user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: minio-credentials
+                  key: root-password

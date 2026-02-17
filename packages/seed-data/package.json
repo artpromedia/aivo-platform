@@ -14,7 +14,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "seed:pilot": "tsx src/seed-pilot.ts",
+    "seed:pilot:dry-run": "tsx src/seed-pilot.ts --dry-run"
   },
   "files": [
     "dist",

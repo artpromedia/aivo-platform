@@ -1,0 +1,68 @@
+#cloud-config
+# =============================================================================
+# AIVO App Node — Cloud-Init (K3s Server or Agent)
+# =============================================================================
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - curl
+  - ca-certificates
+  - open-iscsi
+  - nfs-common
+
+runcmd:
+  # --- Install K3s ---
+  - |
+    if [ "${k3s_role}" = "server" ]; then
+      curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${k3s_version}" sh -s - server \
+        --token "${k3s_token}" \
+        --tls-san "$(hostname -I | awk '{print $1}')" \
+        --write-kubeconfig-mode 644 \
+        --disable traefik \
+        --disable servicelb \
+        --flannel-iface ens10 \
+        --node-label "role=app" \
+        --node-label "tier=primary" \
+        --kube-apiserver-arg "audit-log-path=/var/log/kubernetes/audit.log" \
+        --kube-apiserver-arg "audit-log-maxage=30" \
+        --kube-apiserver-arg "audit-log-maxbackup=10" \
+        --kube-apiserver-arg "audit-log-maxsize=100"
+    else
+      curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="${k3s_version}" sh -s - agent \
+        --token "${k3s_token}" \
+        --server "https://10.0.0.2:6443" \
+        --flannel-iface ens10 \
+        --node-label "role=app" \
+        --node-label "tier=secondary"
+    fi
+
+  # --- Setup directories ---
+  - mkdir -p /var/log/kubernetes
+  - mkdir -p /opt/aivo
+
+  # --- Install ingress-nginx (server only) ---
+  - |
+    if [ "${k3s_role}" = "server" ]; then
+      sleep 30  # Wait for K3s to be ready
+      kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/baremetal/deploy.yaml
+    fi
+
+  # --- Firewall ---
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow from 10.0.0.0/24 to any port 6443
+  - ufw allow from 10.0.0.0/24 to any port 10250
+  - ufw allow from 10.0.0.0/24 to any port 8472 proto udp
+  - ufw --force enable
+
+  # --- Fail2ban ---
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
