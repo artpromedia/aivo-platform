@@ -56,6 +56,7 @@ import {
   useChildrenEnhanced,
   useDismissInsight,
   useSubscription,
+  useCreateBillingPortal,
 } from '@/hooks';
 
 /* ---------- Subscription Status Banner ---------- */
@@ -171,6 +172,129 @@ function SubscriptionBanner({ subscription, onUpgrade, onManage }: SubscriptionB
   return null;
 }
 
+/* ---------- Subscription Status Card (Dashboard Sidebar) ---------- */
+interface SubscriptionCardProps {
+  subscription?: {
+    status?: string;
+    trialEndDate?: string;
+    currentPeriodEnd?: string;
+    billingPeriod?: string;
+    plan?: { name?: string };
+    pricePerPeriod?: number;
+    cancelAtPeriodEnd?: boolean;
+  } | null;
+  onManage: () => void;
+  onUpgrade: () => void;
+}
+
+function SubscriptionStatusCard({ subscription, onManage, onUpgrade }: SubscriptionCardProps) {
+  if (!subscription) {
+    return (
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-gray-400" />
+          Subscription
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">No active subscription</p>
+        <button
+          onClick={onUpgrade}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+        >
+          <Sparkles className="h-4 w-4" />
+          View Plans
+        </button>
+      </div>
+    );
+  }
+
+  const { status, plan, currentPeriodEnd, billingPeriod, pricePerPeriod, cancelAtPeriodEnd } =
+    subscription;
+
+  const renewalDate = currentPeriodEnd
+    ? new Date(currentPeriodEnd).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+
+  const statusColors: Record<string, string> = {
+    active: 'bg-green-100 text-green-800',
+    trialing: 'bg-blue-100 text-blue-800',
+    past_due: 'bg-amber-100 text-amber-800',
+    canceled: 'bg-gray-100 text-gray-600',
+    expired: 'bg-red-100 text-red-800',
+    incomplete: 'bg-yellow-100 text-yellow-800',
+  };
+
+  const statusLabels: Record<string, string> = {
+    active: 'Active',
+    trialing: 'Free Trial',
+    past_due: 'Past Due',
+    canceled: 'Canceled',
+    expired: 'Expired',
+    incomplete: 'Incomplete',
+  };
+
+  return (
+    <div className="card">
+      <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <CreditCard className="w-5 h-5 text-gray-400" />
+        Subscription
+      </h2>
+
+      {/* Plan & Status */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-900">{plan?.name || 'Aivo Plan'}</span>
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[status || ''] || 'bg-gray-100 text-gray-600'}`}
+        >
+          {statusLabels[status || ''] || status}
+        </span>
+      </div>
+
+      {/* Details */}
+      <div className="space-y-2 text-sm text-gray-600 mb-4">
+        {billingPeriod && (
+          <div className="flex justify-between">
+            <span>Billing</span>
+            <span className="font-medium text-gray-900 capitalize">{billingPeriod}</span>
+          </div>
+        )}
+        {pricePerPeriod != null && (
+          <div className="flex justify-between">
+            <span>Amount</span>
+            <span className="font-medium text-gray-900">
+              ${(pricePerPeriod / 100).toFixed(2)}/{billingPeriod === 'YEARLY' ? 'yr' : 'mo'}
+            </span>
+          </div>
+        )}
+        {renewalDate && (
+          <div className="flex justify-between">
+            <span>{cancelAtPeriodEnd ? 'Ends on' : 'Renews'}</span>
+            <span className="font-medium text-gray-900">{renewalDate}</span>
+          </div>
+        )}
+      </div>
+
+      {cancelAtPeriodEnd && (
+        <p className="text-xs text-amber-600 mb-3">
+          Your subscription will not renew after the current period.
+        </p>
+      )}
+
+      {/* Actions */}
+      <button
+        onClick={onManage}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <Settings className="h-4 w-4" />
+        Manage Subscription
+      </button>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { t } = useTranslation('parent');
   const router = useRouter();
@@ -179,6 +303,7 @@ export default function DashboardPage() {
 
   // Billing
   const { data: subscription } = useSubscription();
+  const createPortal = useCreateBillingPortal();
 
   // Data hooks
   const { data: profile, isLoading: profileLoading, error: profileError } = useParentProfile();
@@ -620,6 +745,27 @@ export default function DashboardPage() {
               }}
             />
           )}
+
+          {/* Subscription Status Card */}
+          <SubscriptionStatusCard
+            subscription={subscription}
+            onManage={async () => {
+              try {
+                const session = await createPortal.mutateAsync({
+                  returnUrl: window.location.href,
+                });
+                if (session?.url) {
+                  window.location.href = session.url;
+                }
+              } catch {
+                // Fallback to billing page
+                router.push('/billing');
+              }
+            }}
+            onUpgrade={() => {
+              router.push('/pricing');
+            }}
+          />
 
           {/* Achievements */}
           {summary?.achievements && (

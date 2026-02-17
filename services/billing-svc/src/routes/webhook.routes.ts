@@ -8,8 +8,6 @@
  * - customer.subscription.deleted - Handle subscription cancellation
  */
 
- 
-
 import * as crypto from 'node:crypto';
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -321,7 +319,7 @@ async function handleSubscriptionUpdated(
     where: { id: subscription.id },
     data: {
       // Cast to any since we're using inline enum values that match Prisma's enum
-       
+
       status: newStatus as any,
       currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
       currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
@@ -483,6 +481,20 @@ async function handleStripeWebhook(
   try {
     // Route to appropriate handler
     switch (eventType) {
+      case 'checkout.session.completed':
+        // Log and store — the full StripeWebhookController handles subscription creation
+        logger.info(
+          { eventId, sessionId: (body.data.object as any).id },
+          'Checkout session completed'
+        );
+        await storePaymentEvent(eventId, eventType, body.data.object);
+        break;
+
+      case 'customer.subscription.created':
+        // Treat the same as updated for status sync
+        await handleSubscriptionUpdated(body.data.object as StripeSubscription, eventId, logger);
+        break;
+
       case 'invoice.paid':
         await handleInvoicePaid(body.data.object as StripeInvoice, eventId, logger);
         break;

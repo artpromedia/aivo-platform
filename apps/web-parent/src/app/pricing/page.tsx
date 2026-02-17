@@ -15,7 +15,7 @@ import {
 import { useRouter } from 'next/navigation';
 import React, { useState, useCallback } from 'react';
 
-import { useSubscription, useCreateCheckout } from '@/hooks';
+import { useSubscription, useCreateCheckout, useParentProfile } from '@/hooks';
 
 // ============================================================================
 // SKU Catalog (mirrors @aivo/billing-common SkuConfig at build time)
@@ -261,10 +261,12 @@ function PlanCard({
 export default function PricingPage() {
   const router = useRouter();
   const { data: subscription } = useSubscription();
+  const { data: profile } = useParentProfile();
   const createCheckout = useCreateCheckout();
 
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [selectedSkus, setSelectedSkus] = useState<Set<string>>(new Set(['BASE']));
+  const [couponCode, setCouponCode] = useState('');
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const hasBase = selectedSkus.has('BASE');
@@ -304,20 +306,33 @@ export default function PricingPage() {
     if (selectedSkus.size === 0) return;
     setIsRedirecting(true);
 
+    // Collect learner IDs from the parent profile
+    const learnerIds = profile?.students?.map((s) => s.id) ?? [];
+    if (learnerIds.length === 0) {
+      // Fallback — use a placeholder so the backend can still create the session
+      learnerIds.push('00000000-0000-0000-0000-000000000000');
+    }
+
     try {
       const result = await createCheckout.mutateAsync({
-        planId: Array.from(selectedSkus).join(','),
-        billingPeriod: billingPeriod === 'monthly' ? 'MONTHLY' : 'YEARLY',
+        selectedSkus: Array.from(selectedSkus),
+        billingPeriod,
+        learnerIds,
+        couponCode: couponCode || undefined,
+        successUrl: `${window.location.origin}/pricing/success`,
+        cancelUrl: `${window.location.origin}/pricing/cancel`,
       });
 
-      if (result.url) {
-        window.location.href = result.url;
-      } else if (result.sessionId) {
+      // Backend returns { checkoutUrl, sessionId }
+      const redirectUrl = (result as any).checkoutUrl ?? (result as any).url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else if ((result as any).sessionId) {
         // Stripe.js redirect (fallback)
         const { loadStripe } = await import('@stripe/stripe-js');
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY || '');
         if (stripe) {
-          await stripe.redirectToCheckout({ sessionId: result.sessionId });
+          await stripe.redirectToCheckout({ sessionId: (result as any).sessionId });
         }
       }
     } catch {
@@ -418,6 +433,19 @@ export default function PricingPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Coupon Code */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value.toUpperCase());
+                }}
+                placeholder="Coupon code"
+                className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
             {hasActiveSubscription && (
               <button
                 type="button"

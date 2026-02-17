@@ -121,3 +121,12 @@ export * from './analytics.api';
 // Settings API (Sprint 3.4)
 export { settingsApi } from './settings.api';
 export * from './settings.api';
+
+// Billing API (Sprint T1-03)
+export { billingApi } from './billing.api';
+export type {
+  CheckoutSessionRequest,
+  CheckoutSessionResponse,
+  CouponValidationResult,
+  PortalSessionResponse,
+} from './billing.api';

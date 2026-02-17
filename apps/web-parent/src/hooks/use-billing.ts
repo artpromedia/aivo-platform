@@ -174,23 +174,33 @@ export function useAvailableChildren() {
 // ============================================================================
 
 /**
- * Create a Stripe checkout session
+ * Create a Stripe checkout session.
+ * Calls POST /billing/checkout-session matching the billing-svc schema.
  */
 export function useCreateCheckout() {
   return useMutation({
     mutationFn: ({
-      planId,
+      selectedSkus,
       billingPeriod,
+      learnerIds,
       couponCode,
+      successUrl,
+      cancelUrl,
     }: {
-      planId: string;
-      billingPeriod: BillingPeriod;
+      selectedSkus: string[];
+      billingPeriod: 'monthly' | 'yearly';
+      learnerIds: string[];
       couponCode?: string;
+      successUrl?: string;
+      cancelUrl?: string;
     }) =>
-      apiClient.post<CheckoutSession>('/billing/checkout', {
-        planId,
+      apiClient.post<CheckoutSession>('/billing/checkout-session', {
+        selectedSkus,
         billingPeriod,
+        learnerIds,
         couponCode,
+        successUrl: successUrl ?? `${window.location.origin}/pricing/success`,
+        cancelUrl: cancelUrl ?? `${window.location.origin}/pricing/cancel`,
       }),
   });
 }
@@ -338,11 +348,15 @@ export function useSetDefaultPaymentMethod() {
 }
 
 /**
- * Create Stripe billing portal session
+ * Create Stripe billing portal session.
+ * Calls POST /billing/portal-session matching the billing-svc route.
  */
 export function useCreateBillingPortal() {
   return useMutation({
-    mutationFn: () => apiClient.post<BillingPortalSession>('/billing/portal', {}),
+    mutationFn: ({ returnUrl }: { returnUrl?: string } = {}) =>
+      apiClient.post<BillingPortalSession>('/billing/portal-session', {
+        returnUrl: returnUrl ?? window.location.href,
+      }),
   });
 }
 
@@ -395,10 +409,9 @@ export function useApplyCoupon() {
 
   return useMutation({
     mutationFn: (couponCode: string) =>
-      apiClient.post<{ discount: number; message: string }>(
-        '/billing/subscription/apply-coupon',
-        { couponCode }
-      ),
+      apiClient.post<{ discount: number; message: string }>('/billing/subscription/apply-coupon', {
+        couponCode,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: billingQueryKeys.subscription() });
       void queryClient.invalidateQueries({ queryKey: billingQueryKeys.billingDetails() });
