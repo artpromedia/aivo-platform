@@ -10,20 +10,6 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import {
   DollarSign,
   Users,
@@ -39,6 +25,20 @@ import {
   ArrowRight,
   Building2,
 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 export interface SchoolResource {
   id: string;
@@ -75,60 +75,49 @@ interface ResourceAllocationProps {
   onDenyRequest?: (requestId: string) => void;
 }
 
-// Mock data
-const mockSchools: SchoolResource[] = [
-  { id: 'school-1', name: 'Lincoln Elementary', licensesAllocated: 500, licensesUsed: 487, budgetAllocated: 45000, budgetSpent: 38500, devicesAllocated: 120, devicesActive: 115 },
-  { id: 'school-2', name: 'Washington Middle', licensesAllocated: 700, licensesUsed: 623, budgetAllocated: 62000, budgetSpent: 55000, devicesAllocated: 180, devicesActive: 165 },
-  { id: 'school-3', name: 'Jefferson High', licensesAllocated: 1000, licensesUsed: 892, budgetAllocated: 85000, budgetSpent: 78000, devicesAllocated: 250, devicesActive: 230 },
-  { id: 'school-4', name: 'Roosevelt Elementary', licensesAllocated: 400, licensesUsed: 312, budgetAllocated: 35000, budgetSpent: 28000, devicesAllocated: 100, devicesActive: 85 },
-  { id: 'school-5', name: 'Adams Academy', licensesAllocated: 500, licensesUsed: 445, budgetAllocated: 48000, budgetSpent: 42000, devicesAllocated: 130, devicesActive: 120 },
-  { id: 'school-6', name: 'Madison Middle', licensesAllocated: 600, licensesUsed: 534, budgetAllocated: 55000, budgetSpent: 48000, devicesAllocated: 150, devicesActive: 138 },
-];
-
-const mockRequests: ResourceRequest[] = [
-  { id: 'req-1', schoolId: 'school-1', schoolName: 'Lincoln Elementary', type: 'licenses', amount: 50, reason: 'New student enrollment', status: 'pending', requestedAt: '2026-01-18T10:00:00Z', requestedBy: 'Dr. Sarah Johnson' },
-  { id: 'req-2', schoolId: 'school-3', schoolName: 'Jefferson High', type: 'budget', amount: 5000, reason: 'Extended learning program', status: 'pending', requestedAt: '2026-01-17T14:30:00Z', requestedBy: 'Ms. Emily Chen' },
-  { id: 'req-3', schoolId: 'school-4', schoolName: 'Roosevelt Elementary', type: 'devices', amount: 20, reason: 'Lab refresh needed', status: 'approved', requestedAt: '2026-01-15T09:00:00Z', requestedBy: 'Dr. Michael Brown' },
-];
-
 const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
 export function ResourceAllocation({
   districtId,
-  schools = mockSchools,
-  requests = mockRequests,
-  totalLicenses = 5000,
-  totalBudget = 350000,
-  totalDevices = 1000,
+  schools = [],
+  requests = [],
+  totalLicenses = 0,
+  totalBudget = 0,
+  totalDevices = 0,
   onAllocate,
   onApproveRequest,
   onDenyRequest,
 }: ResourceAllocationProps) {
-  const [activeView, setActiveView] = useState<'overview' | 'licenses' | 'budget' | 'devices' | 'requests'>('overview');
+  const [activeView, setActiveView] = useState<
+    'overview' | 'licenses' | 'budget' | 'devices' | 'requests'
+  >('overview');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Calculate totals
   const totals = useMemo(() => {
-    return schools.reduce((acc, school) => ({
-      licensesAllocated: acc.licensesAllocated + school.licensesAllocated,
-      licensesUsed: acc.licensesUsed + school.licensesUsed,
-      budgetAllocated: acc.budgetAllocated + school.budgetAllocated,
-      budgetSpent: acc.budgetSpent + school.budgetSpent,
-      devicesAllocated: acc.devicesAllocated + school.devicesAllocated,
-      devicesActive: acc.devicesActive + school.devicesActive,
-    }), {
-      licensesAllocated: 0,
-      licensesUsed: 0,
-      budgetAllocated: 0,
-      budgetSpent: 0,
-      devicesAllocated: 0,
-      devicesActive: 0,
-    });
+    return schools.reduce(
+      (acc, school) => ({
+        licensesAllocated: acc.licensesAllocated + school.licensesAllocated,
+        licensesUsed: acc.licensesUsed + school.licensesUsed,
+        budgetAllocated: acc.budgetAllocated + school.budgetAllocated,
+        budgetSpent: acc.budgetSpent + school.budgetSpent,
+        devicesAllocated: acc.devicesAllocated + school.devicesAllocated,
+        devicesActive: acc.devicesActive + school.devicesActive,
+      }),
+      {
+        licensesAllocated: 0,
+        licensesUsed: 0,
+        budgetAllocated: 0,
+        budgetSpent: 0,
+        devicesAllocated: 0,
+        devicesActive: 0,
+      }
+    );
   }, [schools]);
 
   // Pie chart data for license distribution
   const licensesPieData = useMemo(() => {
-    return schools.map(school => ({
+    return schools.map((school) => ({
       name: school.name,
       value: school.licensesAllocated,
     }));
@@ -136,17 +125,21 @@ export function ResourceAllocation({
 
   // Bar chart data for budget
   const budgetBarData = useMemo(() => {
-    return schools.map(school => ({
+    return schools.map((school) => ({
       name: school.name.split(' ')[0],
       allocated: school.budgetAllocated / 1000,
       spent: school.budgetSpent / 1000,
     }));
   }, [schools]);
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
+  const pendingRequests = requests.filter((r) => r.status === 'pending');
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -178,7 +171,9 @@ export function ResourceAllocation({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Resource Allocation</h2>
-              <p className="text-sm text-gray-500">Manage licenses, budgets, and devices across schools</p>
+              <p className="text-sm text-gray-500">
+                Manage licenses, budgets, and devices across schools
+              </p>
             </div>
           </div>
           {pendingRequests.length > 0 && (
@@ -196,11 +191,16 @@ export function ResourceAllocation({
             { id: 'licenses', label: 'Licenses' },
             { id: 'budget', label: 'Budget' },
             { id: 'devices', label: 'Devices' },
-            { id: 'requests', label: `Requests${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}` },
+            {
+              id: 'requests',
+              label: `Requests${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ''}`,
+            },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveView(tab.id as typeof activeView)}
+              onClick={() => {
+                setActiveView(tab.id as typeof activeView);
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 activeView === tab.id
                   ? 'bg-blue-100 text-blue-700'
@@ -225,7 +225,10 @@ export function ResourceAllocation({
                   <span className="font-semibold text-gray-900">Licenses</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {totals.licensesUsed.toLocaleString()} <span className="text-sm font-normal text-gray-500">/ {totalLicenses.toLocaleString()}</span>
+                  {totals.licensesUsed.toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-gray-500">
+                    / {totalLicenses.toLocaleString()}
+                  </span>
                 </p>
                 <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
@@ -233,7 +236,9 @@ export function ResourceAllocation({
                     style={{ width: `${(totals.licensesUsed / totalLicenses) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{(totalLicenses - totals.licensesUsed).toLocaleString()} available</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(totalLicenses - totals.licensesUsed).toLocaleString()} available
+                </p>
               </div>
 
               <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
@@ -242,7 +247,10 @@ export function ResourceAllocation({
                   <span className="font-semibold text-gray-900">Budget</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(totals.budgetSpent)} <span className="text-sm font-normal text-gray-500">/ {formatCurrency(totalBudget)}</span>
+                  {formatCurrency(totals.budgetSpent)}{' '}
+                  <span className="text-sm font-normal text-gray-500">
+                    / {formatCurrency(totalBudget)}
+                  </span>
                 </p>
                 <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
@@ -250,7 +258,9 @@ export function ResourceAllocation({
                     style={{ width: `${(totals.budgetSpent / totalBudget) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{formatCurrency(totalBudget - totals.budgetSpent)} remaining</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formatCurrency(totalBudget - totals.budgetSpent)} remaining
+                </p>
               </div>
 
               <div className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl border border-cyan-200">
@@ -259,7 +269,10 @@ export function ResourceAllocation({
                   <span className="font-semibold text-gray-900">Devices</span>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {totals.devicesActive.toLocaleString()} <span className="text-sm font-normal text-gray-500">/ {totalDevices.toLocaleString()}</span>
+                  {totals.devicesActive.toLocaleString()}{' '}
+                  <span className="text-sm font-normal text-gray-500">
+                    / {totalDevices.toLocaleString()}
+                  </span>
                 </p>
                 <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
@@ -267,7 +280,9 @@ export function ResourceAllocation({
                     style={{ width: `${(totals.devicesActive / totalDevices) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{(totalDevices - totals.devicesActive).toLocaleString()} available</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {(totalDevices - totals.devicesActive).toLocaleString()} available
+                </p>
               </div>
             </div>
 
@@ -308,7 +323,12 @@ export function ResourceAllocation({
                       <YAxis tickFormatter={(v) => `$${v}K`} />
                       <Tooltip formatter={(value: number) => [`$${value}K`, '']} />
                       <Legend />
-                      <Bar dataKey="allocated" name="Allocated" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="allocated"
+                        name="Allocated"
+                        fill="#94a3b8"
+                        radius={[4, 4, 0, 0]}
+                      />
                       <Bar dataKey="spent" name="Spent" fill="#10b981" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -322,7 +342,9 @@ export function ResourceAllocation({
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">
-                Total: {totals.licensesUsed.toLocaleString()} used of {totalLicenses.toLocaleString()} ({(totalLicenses - totals.licensesAllocated).toLocaleString()} unallocated)
+                Total: {totals.licensesUsed.toLocaleString()} used of{' '}
+                {totalLicenses.toLocaleString()} (
+                {(totalLicenses - totals.licensesAllocated).toLocaleString()} unallocated)
               </p>
               <button
                 onClick={() => onAllocate?.('', 'licenses', 0)}
@@ -334,13 +356,18 @@ export function ResourceAllocation({
             </div>
 
             {schools.map((school) => (
-              <div key={school.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+              <div
+                key={school.id}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <Building2 className="w-5 h-5 text-gray-400" />
                     <span className="font-semibold text-gray-900">{school.name}</span>
                   </div>
-                  <span className={`font-semibold ${getUsageColor(school.licensesUsed, school.licensesAllocated)}`}>
+                  <span
+                    className={`font-semibold ${getUsageColor(school.licensesUsed, school.licensesAllocated)}`}
+                  >
                     {school.licensesUsed} / {school.licensesAllocated}
                   </span>
                 </div>
@@ -351,7 +378,8 @@ export function ResourceAllocation({
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {Math.round((school.licensesUsed / school.licensesAllocated) * 100)}% utilized • {school.licensesAllocated - school.licensesUsed} available
+                  {Math.round((school.licensesUsed / school.licensesAllocated) * 100)}% utilized •{' '}
+                  {school.licensesAllocated - school.licensesUsed} available
                 </p>
               </div>
             ))}
@@ -362,7 +390,8 @@ export function ResourceAllocation({
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">
-                Total: {formatCurrency(totals.budgetSpent)} spent of {formatCurrency(totalBudget)} ({formatCurrency(totalBudget - totals.budgetAllocated)} unallocated)
+                Total: {formatCurrency(totals.budgetSpent)} spent of {formatCurrency(totalBudget)} (
+                {formatCurrency(totalBudget - totals.budgetAllocated)} unallocated)
               </p>
               <button
                 onClick={() => onAllocate?.('', 'budget', 0)}
@@ -374,13 +403,18 @@ export function ResourceAllocation({
             </div>
 
             {schools.map((school) => (
-              <div key={school.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+              <div
+                key={school.id}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <Building2 className="w-5 h-5 text-gray-400" />
                     <span className="font-semibold text-gray-900">{school.name}</span>
                   </div>
-                  <span className={`font-semibold ${getUsageColor(school.budgetSpent, school.budgetAllocated)}`}>
+                  <span
+                    className={`font-semibold ${getUsageColor(school.budgetSpent, school.budgetAllocated)}`}
+                  >
                     {formatCurrency(school.budgetSpent)} / {formatCurrency(school.budgetAllocated)}
                   </span>
                 </div>
@@ -391,7 +425,8 @@ export function ResourceAllocation({
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {Math.round((school.budgetSpent / school.budgetAllocated) * 100)}% spent • {formatCurrency(school.budgetAllocated - school.budgetSpent)} remaining
+                  {Math.round((school.budgetSpent / school.budgetAllocated) * 100)}% spent •{' '}
+                  {formatCurrency(school.budgetAllocated - school.budgetSpent)} remaining
                 </p>
               </div>
             ))}
@@ -402,7 +437,9 @@ export function ResourceAllocation({
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">
-                Total: {totals.devicesActive.toLocaleString()} active of {totalDevices.toLocaleString()} ({(totalDevices - totals.devicesAllocated).toLocaleString()} unallocated)
+                Total: {totals.devicesActive.toLocaleString()} active of{' '}
+                {totalDevices.toLocaleString()} (
+                {(totalDevices - totals.devicesAllocated).toLocaleString()} unallocated)
               </p>
               <button
                 onClick={() => onAllocate?.('', 'devices', 0)}
@@ -414,13 +451,18 @@ export function ResourceAllocation({
             </div>
 
             {schools.map((school) => (
-              <div key={school.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+              <div
+                key={school.id}
+                className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <Building2 className="w-5 h-5 text-gray-400" />
                     <span className="font-semibold text-gray-900">{school.name}</span>
                   </div>
-                  <span className={`font-semibold ${getUsageColor(school.devicesActive, school.devicesAllocated)}`}>
+                  <span
+                    className={`font-semibold ${getUsageColor(school.devicesActive, school.devicesAllocated)}`}
+                  >
                     {school.devicesActive} / {school.devicesAllocated}
                   </span>
                 </div>
@@ -431,7 +473,8 @@ export function ResourceAllocation({
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {Math.round((school.devicesActive / school.devicesAllocated) * 100)}% active • {school.devicesAllocated - school.devicesActive} available
+                  {Math.round((school.devicesActive / school.devicesAllocated) * 100)}% active •{' '}
+                  {school.devicesAllocated - school.devicesActive} available
                 </p>
               </div>
             ))}
@@ -452,23 +495,35 @@ export function ResourceAllocation({
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-gray-900">{request.schoolName}</span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
-                          request.type === 'licenses' ? 'bg-purple-100 text-purple-700' :
-                          request.type === 'budget' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-cyan-100 text-cyan-700'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
+                            request.type === 'licenses'
+                              ? 'bg-purple-100 text-purple-700'
+                              : request.type === 'budget'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-cyan-100 text-cyan-700'
+                          }`}
+                        >
                           {request.type}
                         </span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
-                          request.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                          request.status === 'approved' ? 'bg-green-100 text-green-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${
+                            request.status === 'pending'
+                              ? 'bg-amber-100 text-amber-700'
+                              : request.status === 'approved'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
                           {request.status}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        Requesting {request.type === 'budget' ? formatCurrency(request.amount) : request.amount} {request.type !== 'budget' ? request.type : ''}
+                        Requesting{' '}
+                        {request.type === 'budget'
+                          ? formatCurrency(request.amount)
+                          : request.amount}{' '}
+                        {request.type !== 'budget' ? request.type : ''}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">{request.reason}</p>
                       <p className="text-xs text-gray-400 mt-2">

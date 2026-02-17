@@ -2,159 +2,140 @@
  * District Admin Dashboard
  *
  * Comprehensive dashboard for district administrators with:
- * - Overview metrics and KPIs
- * - Compliance tracking (FERPA, COPPA, IDEA/IEP)
- * - School performance analytics with enhanced grid
- * - License management overview
- * - IEP compliance tracking
- * - Recent activity feed
+ * - Overview metrics and KPIs (from iep-svc + analytics-svc)
+ * - Compliance tracking from iep-svc compliance alerts
+ * - School performance analytics from analytics-svc
+ * - SIS sync status from sis-sync-svc
+ * - IEP compliance tracking from iep-svc dashboard
  *
- * Enhanced with compliance panel and school performance grid from legacy repos
+ * All data fetched from real backend APIs — zero mock data.
  */
 
 import Link from 'next/link';
 
+import { fetchDistrictDashboard } from '../../lib/api/district.api';
+import type { SISSyncStatus, ComplianceAlert } from '../../lib/api/district.api';
 import { resolveTenant } from '../../lib/tenant';
 
 import { CompliancePanel } from './components/compliance-panel';
+import type { IEPComplianceStats } from './components/compliance-panel';
 import { SchoolPerformanceGrid } from './components/school-performance-grid';
+import type { School } from './components/school-performance-grid';
 
-// Mock data - in production would fetch from API
-const districtMetrics = {
-  totalSchools: 14,
-  pendingOnboarding: 2,
-  totalStudents: 4523,
-  totalTeachers: 312,
-  activeIEPs: 487,
-  complianceRate: 94.2,
-  avgMastery: 76.8,
-  licensesUsed: 4200,
-  licensesTotal: 5000,
-};
-
-const schoolPerformance = [
-  {
-    id: '1',
-    name: 'Lincoln Elementary',
-    students: 420,
-    mastery: 82,
-    engagement: 88,
-    iepCompliance: 100,
-  },
-  {
-    id: '2',
-    name: 'Washington Middle School',
-    students: 680,
-    mastery: 75,
-    engagement: 79,
-    iepCompliance: 95,
-  },
-  {
-    id: '3',
-    name: 'Jefferson High School',
-    students: 890,
-    mastery: 71,
-    engagement: 72,
-    iepCompliance: 88,
-  },
-  {
-    id: '4',
-    name: 'Roosevelt Elementary',
-    students: 380,
-    mastery: 85,
-    engagement: 91,
-    iepCompliance: 100,
-  },
-  {
-    id: '5',
-    name: 'Adams Middle School',
-    students: 520,
-    mastery: 79,
-    engagement: 84,
-    iepCompliance: 92,
-  },
-];
-
-const complianceItems = [
-  {
-    id: '1',
-    school: 'Jefferson High',
-    item: 'IEP Review Overdue',
-    count: 3,
-    severity: 'high',
-    dueDate: '2026-01-15',
-  },
-  {
-    id: '2',
-    school: 'Washington Middle',
-    item: 'Missing Progress Reports',
-    count: 5,
-    severity: 'medium',
-    dueDate: '2026-01-20',
-  },
-  {
-    id: '3',
-    school: 'Adams Middle',
-    item: 'Evaluation Timeline',
-    count: 2,
-    severity: 'medium',
-    dueDate: '2026-01-25',
-  },
-];
-
-const recentActivity = [
-  {
-    id: '1',
-    type: 'iep',
-    action: 'IEP Approved',
-    school: 'Lincoln Elementary',
-    user: 'Dr. Sarah Johnson',
-    time: '10 min ago',
-  },
-  {
-    id: '2',
-    type: 'user',
-    action: 'New Teacher Added',
-    school: 'Roosevelt Elementary',
-    user: 'Admin',
-    time: '1 hour ago',
-  },
-  {
-    id: '3',
-    type: 'compliance',
-    action: 'Compliance Report Generated',
-    school: 'District-wide',
-    user: 'System',
-    time: '2 hours ago',
-  },
-  {
-    id: '4',
-    type: 'license',
-    action: '50 Licenses Allocated',
-    school: 'Jefferson High',
-    user: 'Admin',
-    time: '3 hours ago',
-  },
-  {
-    id: '5',
-    type: 'alert',
-    action: 'Data Sync Completed',
-    school: 'All Schools',
-    user: 'System',
-    time: '5 hours ago',
-  },
-];
-
-const upcomingDeadlines = [
-  { id: '1', title: 'Q2 Compliance Report Due', date: '2026-01-31', type: 'report' },
-  { id: '2', title: 'Annual IEP Audit', date: '2026-02-15', type: 'audit' },
-  { id: '3', title: 'License Renewal', date: '2026-03-01', type: 'license' },
-  { id: '4', title: 'State Reporting Deadline', date: '2026-03-15', type: 'report' },
-];
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const tenant = await resolveTenant();
-  const licensePercent = (districtMetrics.licensesUsed / districtMetrics.licensesTotal) * 100;
+  const tenantId = tenant?.tenant_id ?? '';
+
+  // Fetch all dashboard data in parallel from backend services
+  const dashboard = tenantId ? await fetchDistrictDashboard(tenantId) : null;
+
+  const { iepDashboard, complianceAlerts, schools, analyticsOverview, analyticsSchools } =
+    dashboard ?? {
+      iepDashboard: null,
+      complianceAlerts: null,
+      schools: null,
+      analyticsOverview: null,
+      analyticsSchools: null,
+      sisSyncStatuses: [],
+      errors: [],
+    };
+
+  const sisSyncStatuses: SISSyncStatus[] = dashboard?.sisSyncStatuses ?? [];
+
+  // Derive metrics from real data
+  const totalSchools = schools?.total ?? analyticsOverview?.engagement?.totalSchoolsCount ?? 0;
+  const totalStudents =
+    analyticsOverview?.engagement?.totalLearnersCount ?? iepDashboard?.totalStudents ?? 0;
+  const activeIEPs = iepDashboard?.activeIEPs ?? 0;
+  const complianceRate = iepDashboard?.compliance?.percentage ?? 0;
+  const avgMastery = analyticsOverview?.progress?.overallAvgMastery
+    ? Math.round(analyticsOverview.progress.overallAvgMastery * 100)
+    : 0;
+
+  // Build school performance table from analytics schools data
+  const schoolPerformance = (analyticsSchools?.schools ?? []).map((s) => ({
+    id: s.schoolId,
+    name: s.schoolName,
+    students: s.learnersCount,
+    mastery: Math.round(s.avgMastery * 100),
+    engagement: Math.round(s.engagementRate),
+    iepCompliance: complianceRate, // district-wide rate as default per school
+  }));
+
+  // Build compliance alerts for the sidebar
+  const alertItems = (complianceAlerts?.data ?? []).map((a: ComplianceAlert) => ({
+    id: a.id,
+    school: '', // alerts are tenant-wide
+    item: a.message ?? a.alertType,
+    count: 1,
+    severity: a.severity === 'HIGH' || a.severity === 'CRITICAL' ? 'high' : 'medium',
+    dueDate: a.dueDate ?? '',
+  }));
+
+  // Build IEP compliance stats for CompliancePanel
+  const iepStats: IEPComplianceStats | undefined = iepDashboard
+    ? {
+        totalIEPs: Object.values(iepDashboard.byStatus).reduce((a, b) => a + b, 0),
+        activeIEPs: iepDashboard.activeIEPs,
+        plans504: 0, // iep-svc doesn't track 504s separately
+        complianceRate: iepDashboard.compliance.percentage,
+        overdueCount:
+          iepDashboard.compliance.overdueAnnualReviews +
+          iepDashboard.compliance.overdueReevaluations,
+        upcomingReviews30: 0,
+        upcomingReviews60: 0,
+        upcomingReviews90: 0,
+      }
+    : undefined;
+
+  // Build school performance grid data from analytics
+  const schoolGridData: School[] = (analyticsSchools?.schools ?? []).map((s, idx) => ({
+    id: s.schoolId,
+    name: s.schoolName,
+    status:
+      s.avgMastery >= 0.8
+        ? ('excelling' as const)
+        : s.avgMastery >= 0.65
+          ? ('on-track' as const)
+          : ('needs-attention' as const),
+    studentCount: s.learnersCount,
+    teacherCount: 0,
+    neurodiversePercent: 0,
+    avgMastery: Math.round(s.avgMastery * 100),
+    iepComplianceRate: complianceRate,
+    seatUsage: s.activeLearnersCount,
+    totalSeats: s.learnersCount,
+    trend: 'stable' as const,
+    rankChange: 0,
+  }));
+
+  // License data placeholder — will come from billing/entitlements API
+  const licensesUsed = analyticsOverview?.engagement?.activeLearnersCount ?? 0;
+  const licensesTotal = analyticsOverview?.engagement?.totalLearnersCount ?? 1;
+  const licensePercent = licensesTotal > 0 ? (licensesUsed / licensesTotal) * 100 : 0;
+
+  // Upcoming meetings from iep-svc as activity items
+  const recentActivity = (iepDashboard?.upcomingMeetings ?? []).map((m, idx) => ({
+    id: m.id,
+    type: 'iep' as const,
+    action: `${m.status} Meeting`,
+    school: '',
+    user: `${m.iep.student.firstName} ${m.iep.student.lastName}`,
+    time: new Date(m.scheduledDate).toLocaleDateString(),
+  }));
+
+  // Upcoming deadlines from compliance alerts with due dates
+  const upcomingDeadlines = (complianceAlerts?.data ?? [])
+    .filter((a: ComplianceAlert) => a.dueDate)
+    .slice(0, 4)
+    .map((a: ComplianceAlert) => ({
+      id: a.id,
+      title: a.message ?? a.alertType,
+      date: a.dueDate!,
+      type: 'report' as const,
+    }));
 
   return (
     <section className="space-y-6">
@@ -183,31 +164,25 @@ export default async function DashboardPage() {
 
       {/* Key Metrics Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Schools"
-          value={districtMetrics.totalSchools}
-          subtitle={`${districtMetrics.pendingOnboarding} pending onboarding`}
-          icon="🏫"
-          color="blue"
-        />
+        <MetricCard title="Total Schools" value={totalSchools} subtitle="" icon="🏫" color="blue" />
         <MetricCard
           title="Total Students"
-          value={districtMetrics.totalStudents.toLocaleString()}
-          subtitle={`${districtMetrics.totalTeachers} teachers`}
+          value={totalStudents.toLocaleString()}
+          subtitle=""
           icon="👥"
           color="green"
         />
         <MetricCard
           title="Active IEPs"
-          value={districtMetrics.activeIEPs}
-          subtitle={`${districtMetrics.complianceRate}% compliance`}
+          value={activeIEPs}
+          subtitle={`${complianceRate}% compliance`}
           icon="📋"
           color="purple"
-          trend={districtMetrics.complianceRate >= 95 ? 'up' : 'down'}
+          trend={complianceRate >= 95 ? 'up' : complianceRate > 0 ? 'down' : undefined}
         />
         <MetricCard
           title="Avg Mastery"
-          value={`${districtMetrics.avgMastery}%`}
+          value={avgMastery > 0 ? `${avgMastery}%` : '—'}
           subtitle="Across all subjects"
           icon="📊"
           color="amber"
@@ -219,8 +194,7 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-gray-900">License Usage</h3>
           <span className="text-sm text-gray-500">
-            {districtMetrics.licensesUsed.toLocaleString()} /{' '}
-            {districtMetrics.licensesTotal.toLocaleString()} seats used
+            {licensesUsed.toLocaleString()} / {licensesTotal.toLocaleString()} active learners
           </span>
         </div>
         <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -246,10 +220,11 @@ export default async function DashboardPage() {
       {/* Enhanced Compliance & School Performance Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Compliance Panel - Enhanced with FERPA, COPPA, IDEA tracking */}
-        <CompliancePanel />
+        <CompliancePanel iepStats={iepStats} />
 
         {/* School Performance Grid - Visual school cards */}
         <SchoolPerformanceGrid
+          schools={schoolGridData.length > 0 ? schoolGridData : undefined}
           onSchoolClick={(schoolId) => {
             window.location.href = `/schools/${schoolId}`;
           }}
@@ -355,33 +330,37 @@ export default async function DashboardPage() {
                 <span className="text-amber-500">⚠️</span> Compliance Alerts
               </h2>
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                {complianceItems.length}
+                {alertItems.length}
               </span>
             </div>
             <div className="divide-y divide-gray-200">
-              {complianceItems.map((item) => (
-                <div key={item.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`mt-1 w-2 h-2 rounded-full ${
-                        item.severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
-                      }`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">{item.item}</p>
-                      <p className="text-sm text-gray-500">
-                        {item.school} - {item.count} items
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">Due: {item.dueDate}</p>
+              {alertItems.length === 0 ? (
+                <p className="p-4 text-sm text-gray-500">No open compliance alerts</p>
+              ) : (
+                alertItems.map((item) => (
+                  <div key={item.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`mt-1 w-2 h-2 rounded-full ${
+                          item.severity === 'high' ? 'bg-red-500' : 'bg-amber-500'
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900">{item.item}</p>
+                        {item.school && <p className="text-sm text-gray-500">{item.school}</p>}
+                        {item.dueDate && (
+                          <p className="text-xs text-gray-400 mt-1">Due: {item.dueDate}</p>
+                        )}
+                      </div>
+                      {item.severity === 'high' && (
+                        <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase mr-2">
+                          URGENT
+                        </span>
+                      )}
                     </div>
-                    {item.severity === 'high' && (
-                      <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase mr-2">
-                        URGENT
-                      </span>
-                    )}
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <div className="p-3 border-t border-gray-200">
               <Link
@@ -406,78 +385,97 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="p-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
-                ✓
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Clever</p>
-                <p className="text-xs text-gray-500">Connected &middot; Auto-sync daily</p>
-              </div>
-              <span className="ml-auto rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                Active
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-xs text-gray-500">Last Sync</p>
-                <p className="text-sm font-medium text-gray-900">Today, 6:00 AM</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Records Synced</p>
-                <p className="text-sm font-medium text-gray-900">4,523 students</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Schools</p>
-                <p className="text-sm font-medium text-gray-900">14 mapped</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Next Sync</p>
-                <p className="text-sm font-medium text-gray-900">Tomorrow, 6:00 AM</p>
-              </div>
-            </div>
-            <div className="text-xs text-gray-500 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Data synced: Students, Classes, Teachers, Enrollments
-            </div>
+            {sisSyncStatuses.length === 0 ? (
+              <p className="text-sm text-gray-500">No SIS providers configured</p>
+            ) : (
+              sisSyncStatuses.map((sync) => {
+                const isActive =
+                  sync.provider.enabled && sync.provider.integrationStatus === 'ACTIVE';
+                const lastRunOk = sync.lastSyncRun?.status === 'COMPLETED';
+                return (
+                  <div key={sync.provider.id}>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isActive && lastRunOk
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-amber-100 text-amber-600'
+                        }`}
+                      >
+                        {isActive && lastRunOk ? '✓' : '⚠'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{sync.provider.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {sync.provider.providerType}
+                          {sync.provider.syncSchedule ? ` · ${sync.provider.syncSchedule}` : ''}
+                        </p>
+                      </div>
+                      <span
+                        className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${
+                          isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {sync.provider.integrationStatus ?? 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg mt-3">
+                      <div>
+                        <p className="text-xs text-gray-500">Last Sync</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {sync.lastSyncRun?.startedAt
+                            ? new Date(sync.lastSyncRun.startedAt).toLocaleString()
+                            : 'Never'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Records Synced</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {sync.lastSyncRun?.recordsProcessed?.toLocaleString() ?? '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Status</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {sync.lastSyncRun?.status ?? '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Errors</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {sync.lastSyncRun?.recordsFailed ?? 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity (Upcoming Meetings) */}
         <div className="rounded-lg border border-gray-200 bg-white">
-          {' '}
           <div className="flex items-center justify-between border-b border-gray-200 p-4">
-            <h2 className="font-semibold text-gray-900">Recent Activity</h2>
+            <h2 className="font-semibold text-gray-900">Upcoming Meetings</h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="p-4 flex items-start gap-3">
-                <div
-                  className={`mt-1 w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                    activity.type === 'iep'
-                      ? 'bg-purple-100 text-purple-600'
-                      : activity.type === 'user'
-                        ? 'bg-blue-100 text-blue-600'
-                        : activity.type === 'compliance'
-                          ? 'bg-green-100 text-green-600'
-                          : activity.type === 'license'
-                            ? 'bg-amber-100 text-amber-600'
-                            : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {activity.type === 'iep' && '📋'}
-                  {activity.type === 'user' && '👤'}
-                  {activity.type === 'compliance' && '✓'}
-                  {activity.type === 'license' && '🔑'}
-                  {activity.type === 'alert' && '🔔'}
+            {recentActivity.length === 0 ? (
+              <p className="p-4 text-sm text-gray-500">No upcoming meetings</p>
+            ) : (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="p-4 flex items-start gap-3">
+                  <div className="mt-1 w-8 h-8 rounded-full flex items-center justify-center text-sm bg-purple-100 text-purple-600">
+                    📋
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900">{activity.action}</p>
+                    <p className="text-sm text-gray-500">{activity.user}</p>
+                  </div>
+                  <span className="text-xs text-gray-400">{activity.time}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900">{activity.action}</p>
-                  <p className="text-sm text-gray-500">{activity.school}</p>
-                </div>
-                <span className="text-xs text-gray-400">{activity.time}</span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -490,27 +488,21 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-gray-200">
-            {upcomingDeadlines.map((deadline) => (
-              <div key={deadline.id} className="p-4 flex items-center gap-4">
-                <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    deadline.type === 'report'
-                      ? 'bg-blue-100 text-blue-600'
-                      : deadline.type === 'audit'
-                        ? 'bg-purple-100 text-purple-600'
-                        : 'bg-amber-100 text-amber-600'
-                  }`}
-                >
-                  {deadline.type === 'report' && '📄'}
-                  {deadline.type === 'audit' && '🔍'}
-                  {deadline.type === 'license' && '🔑'}
+            {upcomingDeadlines.length === 0 ? (
+              <p className="p-4 text-sm text-gray-500">No upcoming deadlines</p>
+            ) : (
+              upcomingDeadlines.map((deadline) => (
+                <div key={deadline.id} className="p-4 flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-blue-100 text-blue-600">
+                    📄
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{deadline.title}</p>
+                    <p className="text-sm text-gray-500">{deadline.date}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{deadline.title}</p>
-                  <p className="text-sm text-gray-500">{deadline.date}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

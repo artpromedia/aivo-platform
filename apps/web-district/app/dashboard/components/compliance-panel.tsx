@@ -63,103 +63,6 @@ interface CompliancePanelProps {
   onEmailCaseManager?: (email: string, studentName: string) => void;
 }
 
-const mockComplianceItems: ComplianceItem[] = [
-  {
-    id: 'ferpa',
-    name: 'FERPA',
-    status: 'compliant',
-    score: 100,
-    lastAudit: '2024-01-05',
-    nextAudit: '2024-04-05',
-    issues: 0,
-    description: 'Family Educational Rights and Privacy Act',
-  },
-  {
-    id: 'coppa',
-    name: 'COPPA',
-    status: 'compliant',
-    score: 100,
-    lastAudit: '2024-01-03',
-    nextAudit: '2024-04-03',
-    issues: 0,
-    description: "Children's Online Privacy Protection Act",
-  },
-  {
-    id: 'idea',
-    name: 'IDEA/IEP',
-    status: 'attention',
-    score: 94,
-    lastAudit: '2024-01-08',
-    nextAudit: '2024-02-08',
-    issues: 12,
-    description: 'Individuals with Disabilities Education Act',
-  },
-  {
-    id: 'state',
-    name: 'State Privacy',
-    status: 'compliant',
-    score: 98,
-    lastAudit: '2024-01-02',
-    nextAudit: '2024-04-02',
-    issues: 2,
-    description: 'State-specific privacy requirements',
-  },
-];
-
-const mockIEPStats: IEPComplianceStats = {
-  totalIEPs: 487,
-  activeIEPs: 462,
-  plans504: 89,
-  complianceRate: 94.2,
-  overdueCount: 12,
-  upcomingReviews30: 28,
-  upcomingReviews60: 45,
-  upcomingReviews90: 67,
-};
-
-const mockAtRiskIEPs: AtRiskIEP[] = [
-  {
-    id: 'iep-1',
-    studentName: 'Marcus Johnson',
-    school: 'Jefferson High',
-    caseManager: 'Sarah Miller',
-    caseManagerEmail: 'smiller@district.edu',
-    dueDate: '2026-02-01',
-    daysUntilDue: -15,
-    isOverdue: true,
-  },
-  {
-    id: 'iep-2',
-    studentName: 'Aisha Patel',
-    school: 'Washington Middle',
-    caseManager: 'David Chen',
-    caseManagerEmail: 'dchen@district.edu',
-    dueDate: '2026-02-10',
-    daysUntilDue: -6,
-    isOverdue: true,
-  },
-  {
-    id: 'iep-3',
-    studentName: 'Emily Rodriguez',
-    school: 'Adams Middle',
-    caseManager: 'Lisa Thompson',
-    caseManagerEmail: 'lthompson@district.edu',
-    dueDate: '2026-02-28',
-    daysUntilDue: 12,
-    isOverdue: false,
-  },
-  {
-    id: 'iep-4',
-    studentName: 'James Wilson',
-    school: 'Lincoln Elementary',
-    caseManager: 'Karen Davis',
-    caseManagerEmail: 'kdavis@district.edu',
-    dueDate: '2026-03-05',
-    daysUntilDue: 17,
-    isOverdue: false,
-  },
-];
-
 function buildCaseManagerEmailUrl(email: string, studentName: string, isOverdue: boolean): string {
   const subject = isOverdue
     ? `URGENT: Overdue IEP Annual Review – ${studentName}`
@@ -171,9 +74,9 @@ function buildCaseManagerEmailUrl(email: string, studentName: string, isOverdue:
 }
 
 export function CompliancePanel({
-  items = mockComplianceItems,
-  iepStats = mockIEPStats,
-  atRiskIEPs = mockAtRiskIEPs,
+  items = [],
+  iepStats,
+  atRiskIEPs = [],
   onViewDetails,
   onRefresh,
   onEmailCaseManager,

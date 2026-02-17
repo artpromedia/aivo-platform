@@ -64,35 +64,8 @@ interface DistrictOverviewProps {
   onViewAnalytics?: () => void;
 }
 
-// Mock data for demonstration
-const mockDistrict: DistrictData = {
-  id: 'dist-001',
-  name: 'Westfield Unified School District',
-  totalSchools: 14,
-  activeSchools: 12,
-  pendingOnboarding: 2,
-  totalStudents: 4523,
-  totalTeachers: 312,
-  totalParents: 3892,
-  activeIEPs: 487,
-  plans504: 89,
-  avgMastery: 76.8,
-  avgEngagement: 82.4,
-  complianceRate: 94.2,
-  licensesUsed: 4200,
-  licensesTotal: 5000,
-  budgetUsed: 285000,
-  budgetTotal: 350000,
-  trends: {
-    students: 5.2,
-    mastery: 3.1,
-    engagement: 2.8,
-    compliance: 1.5,
-  },
-};
-
 export function DistrictOverview({
-  district = mockDistrict,
+  district = null,
   schools = [],
   onViewAllSchools,
   onViewAnalytics,
