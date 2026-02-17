@@ -4,77 +4,18 @@ import { Card, Heading, Button } from '@aivo/ui-web';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { iepApi } from '@/lib/api/iep';
+import type { IEPStudentSummary } from '@/lib/api/iep';
+import type { IEPGoal, IEPGoalStatus, IEPGoalCategory, CreateIEPGoalDto } from '@/lib/types/iep';
 
-// IEP Types matching the backend iep-svc
-type IEPStatus = 'draft' | 'active' | 'review_pending' | 'expired';
-type GoalStatus =
-  | 'not_started'
-  | 'in_progress'
-  | 'on_track'
-  | 'at_risk'
-  | 'mastered'
-  | 'discontinued';
-type GoalDomain =
-  | 'Reading'
-  | 'Writing'
-  | 'Math'
-  | 'Communication'
-  | 'Social/Emotional'
-  | 'Behavior'
-  | 'Motor Skills'
-  | 'Self-Help'
-  | 'Transition';
-
-interface IEPGoal {
-  id: string;
-  domain: GoalDomain;
-  description: string;
-  baseline: string;
-  target: string;
-  currentProgress: number;
-  targetProgress: number;
-  status: GoalStatus;
-  targetDate: string;
-  lastUpdated: string;
-  progressHistory: { date: string; value: number; notes?: string }[];
-}
-
-interface IEPService {
-  id: string;
-  type: string;
-  provider: string;
-  frequency: string;
-  duration: string;
-  location: string;
-  minutesDelivered: number;
-  minutesRequired: number;
-}
-
-interface IEPStudent {
-  id: string;
-  name: string;
-  grade: string;
-  avatar?: string;
-  iepId: string;
-  iepStatus: IEPStatus;
-  eligibilityCategory: string;
-  caseManager: string;
-  nextMeetingDate: string;
-  annualReviewDate: string;
-  goals: IEPGoal[];
-  services: IEPService[];
-  accommodations: string[];
-  complianceAlerts: {
-    type: string;
-    message: string;
-    dueDate: string;
-    severity: 'warning' | 'urgent';
-  }[];
-}
+// Re-export convenience aliases used throughout the page
+type IEPStatus = IEPStudentSummary['iepStatus'];
+type GoalStatus = IEPGoalStatus;
+type GoalDomain = IEPGoalCategory;
 
 function getStatusColor(status: GoalStatus): string {
   switch (status) {
     case 'mastered':
+    case 'met':
       return 'bg-green-100 text-green-800';
     case 'on_track':
       return 'bg-blue-100 text-blue-800';
@@ -136,10 +77,10 @@ function ProgressBar({
 }
 
 export default function IEPManagerPage() {
-  const [students, setStudents] = useState<IEPStudent[]>([]);
+  const [students, setStudents] = useState<IEPStudentSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<IEPStudent | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<IEPStudentSummary | null>(null);
   const [view, setView] = useState<'list' | 'detail'>('list');
   const [showProgressModal, setShowProgressModal] = useState<IEPGoal | null>(null);
   const [progressNote, setProgressNote] = useState('');
@@ -149,6 +90,30 @@ export default function IEPManagerPage() {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [savingProgress, setSavingProgress] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{
+    text: string;
+    type: 'success' | 'error';
+  } | null>(null);
+
+  // Add-Goal modal state
+  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
+  const [newGoalDomain, setNewGoalDomain] = useState<GoalDomain>('Reading');
+  const [newGoalDescription, setNewGoalDescription] = useState('');
+  const [newGoalBaseline, setNewGoalBaseline] = useState('');
+  const [newGoalTarget, setNewGoalTarget] = useState('');
+  const [newGoalTargetValue, setNewGoalTargetValue] = useState('100');
+  const [newGoalTargetDate, setNewGoalTargetDate] = useState('');
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  // Schedule-Meeting modal state
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [meetingType, setMeetingType] = useState('annual_review');
+  const [meetingDate, setMeetingDate] = useState('');
+  const [meetingNotes, setMeetingNotes] = useState('');
+  const [meetingStudentId, setMeetingStudentId] = useState('');
+  const [savingMeeting, setSavingMeeting] = useState(false);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -198,27 +163,46 @@ export default function IEPManagerPage() {
   }, []);
 
   // Fetch IEP students on mount
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const data = await iepApi.getStudentsWithIEP();
-        // Transform API response to local types
-        const transformed: IEPStudent[] = (data as unknown as IEPStudent[]).map((s) => ({
-          ...s,
-          goals: Array.isArray(s.goals) ? s.goals : [],
-          services: Array.isArray(s.services) ? s.services : [],
-          accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
-          complianceAlerts: Array.isArray(s.complianceAlerts) ? s.complianceAlerts : [],
-        }));
-        setStudents(transformed);
-      } catch (e) {
-        setError(e instanceof Error ? e : new Error('Failed to load IEP students'));
-      } finally {
-        setLoading(false);
+  const fetchStudents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await iepApi.getStudentsWithIEP();
+      // Normalise arrays defensively
+      const transformed: IEPStudentSummary[] = data.map((s) => ({
+        ...s,
+        goals: Array.isArray(s.goals) ? s.goals : [],
+        services: Array.isArray(s.services) ? s.services : [],
+        accommodations: Array.isArray(s.accommodations) ? s.accommodations : [],
+        complianceAlerts: Array.isArray(s.complianceAlerts) ? s.complianceAlerts : [],
+      }));
+      setStudents(transformed);
+      // Keep selected student in sync after refresh
+      if (selectedStudent) {
+        const updated = transformed.find((s) => s.id === selectedStudent.id);
+        if (updated) setSelectedStudent(updated);
       }
-    };
+    } catch (e) {
+      setError(e instanceof Error ? e : new Error('Failed to load IEP students'));
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedStudent]);
+
+  useEffect(() => {
     void fetchStudents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-dismiss toast after 4 seconds
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [toastMessage]);
 
   const urgentAlerts = students.flatMap((s) =>
     s.complianceAlerts
@@ -229,11 +213,46 @@ export default function IEPManagerPage() {
   const handleRecordProgress = async (goal: IEPGoal) => {
     try {
       if (!selectedStudent) return;
-      await iepApi.addProgress(selectedStudent.id, goal.id, {
+      setSavingProgress(true);
+
+      // Build evidence URLs from voice blob and photo file
+      const evidenceUrls: string[] = [];
+      if (voiceBlob) {
+        // Convert voice blob to data-URI for inclusion as evidence
+        const voiceDataUri = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(voiceBlob);
+        });
+        evidenceUrls.push(voiceDataUri);
+      }
+      if (photoFile) {
+        const photoDataUri = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(photoFile);
+        });
+        evidenceUrls.push(photoDataUri);
+      }
+
+      await iepApi.addProgress(selectedStudent.iepId, goal.id, {
         value: parseFloat(progressValue),
-        notes: progressNote,
+        notes: progressNote || undefined,
         date: new Date().toISOString(),
+        evidenceUrls: evidenceUrls.length > 0 ? evidenceUrls : undefined,
+        dataSource: voiceBlob ? 'observation' : photoFile ? 'work_sample' : undefined,
       });
+
+      // Also update the goal status if the teacher changed the level picker
+      if (progressLevel !== goal.status) {
+        await iepApi.updateGoal(selectedStudent.iepId, goal.id, { status: progressLevel });
+      }
+
+      setToastMessage({ text: 'Progress recorded successfully', type: 'success' });
       setShowProgressModal(null);
       setProgressNote('');
       setProgressValue('');
@@ -241,9 +260,102 @@ export default function IEPManagerPage() {
       setVoiceBlob(null);
       setPhotoFile(null);
       setPhotoPreview(null);
+
+      // Refresh data so the UI reflects the new progress entry
+      void fetchStudents();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to save progress';
+      setToastMessage({ text: msg, type: 'error' });
+    } finally {
+      setSavingProgress(false);
+    }
+  };
+
+  // -- Add Goal handler --
+  const handleAddGoal = async () => {
+    if (!selectedStudent || !newGoalDescription.trim()) return;
+    try {
+      setSavingGoal(true);
+      const dto: CreateIEPGoalDto = {
+        category: newGoalDomain,
+        areaOfNeed: newGoalDomain,
+        description: newGoalDescription,
+        baseline: newGoalBaseline,
+        targetCriteria: newGoalTarget,
+        targetValue: parseFloat(newGoalTargetValue) || 100,
+        measurementMethod: 'teacher observation',
+        targetDate: newGoalTargetDate
+          ? new Date(newGoalTargetDate)
+          : new Date(Date.now() + 365 * 86400000),
+      };
+      await iepApi.addGoal(selectedStudent.iepId, dto);
+      setToastMessage({ text: 'Goal added successfully', type: 'success' });
+      setShowAddGoalModal(false);
+      setNewGoalDescription('');
+      setNewGoalBaseline('');
+      setNewGoalTarget('');
+      setNewGoalTargetValue('100');
+      setNewGoalTargetDate('');
+      void fetchStudents();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to add goal';
+      setToastMessage({ text: msg, type: 'error' });
+    } finally {
+      setSavingGoal(false);
+    }
+  };
+
+  // -- Schedule Meeting handler --
+  const handleScheduleMeeting = async () => {
+    const targetStudent = meetingStudentId
+      ? students.find((s) => s.id === meetingStudentId)
+      : selectedStudent;
+    if (!targetStudent || !meetingDate) return;
+    try {
+      setSavingMeeting(true);
+      await iepApi.scheduleMeeting(targetStudent.iepId, {
+        type: meetingType,
+        scheduledDate: new Date(meetingDate).toISOString(),
+        notes: meetingNotes || undefined,
+      });
+      setToastMessage({ text: 'Meeting scheduled successfully', type: 'success' });
+      setShowMeetingModal(false);
+      setMeetingDate('');
+      setMeetingNotes('');
+      setMeetingStudentId('');
+      void fetchStudents();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to schedule meeting';
+      setToastMessage({ text: msg, type: 'error' });
+    } finally {
+      setSavingMeeting(false);
+    }
+  };
+
+  // -- Export Reports handler --
+  const handleExportReports = async () => {
+    try {
+      // Gather all student IEP data to generate a CSV download
+      const csvRows = ['Student,Grade,IEP Status,Goals On Track,Goals At Risk,Annual Review Date'];
+      for (const s of students) {
+        const onTrack = s.goals.filter(
+          (g) => g.status === 'on_track' || g.status === 'mastered'
+        ).length;
+        const atRisk = s.goals.filter((g) => g.status === 'at_risk').length;
+        csvRows.push(
+          `"${s.name}","${s.grade}","${s.iepStatus}",${onTrack},${atRisk},"${s.annualReviewDate}"`
+        );
+      }
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `iep-report-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setToastMessage({ text: 'Report exported', type: 'success' });
     } catch {
-      // Error handling - could add toast notification
-      setShowProgressModal(null);
+      setToastMessage({ text: 'Failed to export report', type: 'error' });
     }
   };
 
@@ -433,7 +545,7 @@ export default function IEPManagerPage() {
                     key={goal.id}
                     className={`inline-block rounded px-2 py-1 text-xs ${getStatusColor(goal.status)}`}
                   >
-                    {goal.domain}: {goal.status.replace('_', ' ')}
+                    {goal.domain || goal.category}: {goal.status.replace('_', ' ')}
                   </span>
                 ))}
               </div>
@@ -522,7 +634,13 @@ export default function IEPManagerPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">IEP Goals</h3>
-            <Button variant="primary" className="text-sm">
+            <Button
+              variant="primary"
+              className="text-sm"
+              onClick={() => {
+                setShowAddGoalModal(true);
+              }}
+            >
               + Add Goal
             </Button>
           </div>
@@ -534,7 +652,7 @@ export default function IEPManagerPage() {
                     <span
                       className={`inline-block rounded px-2 py-1 text-xs font-medium ${getStatusColor(goal.status)} mb-2`}
                     >
-                      {goal.domain} - {goal.status.replace('_', ' ')}
+                      {goal.domain || goal.category} - {goal.status.replace('_', ' ')}
                     </span>
                     <p className="text-sm">{goal.description}</p>
                   </div>
@@ -552,11 +670,11 @@ export default function IEPManagerPage() {
                 <div className="grid gap-4 md:grid-cols-2 mt-4">
                   <div>
                     <p className="text-xs text-muted mb-1">Baseline: {goal.baseline}</p>
-                    <p className="text-xs text-muted">Target: {goal.target}</p>
+                    <p className="text-xs text-muted">Target: {goal.targetCriteria}</p>
                   </div>
                   <ProgressBar
-                    current={goal.currentProgress}
-                    target={goal.targetProgress}
+                    current={goal.currentProgress ?? goal.currentValue}
+                    target={goal.targetProgress ?? goal.targetValue}
                     label="Progress toward goal"
                   />
                 </div>
@@ -570,7 +688,7 @@ export default function IEPManagerPage() {
                         viewBox="0 0 400 120"
                         className="w-full h-full"
                         role="img"
-                        aria-label={`Progress trend chart for ${goal.domain}`}
+                        aria-label={`Progress trend chart for ${goal.domain || goal.category}`}
                       >
                         {/* Grid lines */}
                         {[0, 25, 50, 75, 100].map((pct) => (
@@ -587,16 +705,16 @@ export default function IEPManagerPage() {
                         {/* Target line */}
                         <line
                           x1="40"
-                          y1={100 - (goal.targetProgress > 0 ? 100 : 0)}
+                          y1={100 - ((goal.targetProgress ?? goal.targetValue) > 0 ? 100 : 0)}
                           x2="390"
-                          y2={100 - (goal.targetProgress > 0 ? 100 : 0)}
+                          y2={100 - ((goal.targetProgress ?? goal.targetValue) > 0 ? 100 : 0)}
                           stroke="#22c55e"
                           strokeWidth="1"
                           strokeDasharray="4 2"
                         />
                         <text
                           x="42"
-                          y={100 - (goal.targetProgress > 0 ? 100 : 0) - 3}
+                          y={100 - ((goal.targetProgress ?? goal.targetValue) > 0 ? 100 : 0) - 3}
                           fontSize="8"
                           fill="#22c55e"
                         >
@@ -611,8 +729,8 @@ export default function IEPManagerPage() {
                           points={goal.progressHistory
                             .map((entry, idx) => {
                               const x = 40 + (idx / (goal.progressHistory.length - 1)) * 350;
-                              const y =
-                                100 - Math.min(100, (entry.value / goal.targetProgress) * 100);
+                              const tp = goal.targetProgress ?? goal.targetValue;
+                              const y = 100 - Math.min(100, (entry.value / (tp || 1)) * 100);
                               return `${x},${y}`;
                             })
                             .join(' ')}
@@ -621,7 +739,8 @@ export default function IEPManagerPage() {
                         {goal.progressHistory.map((entry) => {
                           const entryIdx = goal.progressHistory.indexOf(entry);
                           const x = 40 + (entryIdx / (goal.progressHistory.length - 1)) * 350;
-                          const y = 100 - Math.min(100, (entry.value / goal.targetProgress) * 100);
+                          const tp2 = goal.targetProgress ?? goal.targetValue;
+                          const y = 100 - Math.min(100, (entry.value / (tp2 || 1)) * 100);
                           return (
                             <g key={`ph-${entry.date}`}>
                               <circle
@@ -646,17 +765,18 @@ export default function IEPManagerPage() {
                           0
                         </text>
                         <text x="2" y="53" fontSize="7" fill="#9ca3af">
-                          {Math.round(goal.targetProgress / 2)}
+                          {Math.round((goal.targetProgress ?? goal.targetValue) / 2)}
                         </text>
                         <text x="2" y="5" fontSize="7" fill="#9ca3af">
-                          {goal.targetProgress}
+                          {goal.targetProgress ?? goal.targetValue}
                         </text>
                       </svg>
                     </div>
                   ) : (
                     <div className="flex items-end gap-1 h-16">
                       {goal.progressHistory.map((entry) => {
-                        const height = (entry.value / goal.targetProgress) * 100;
+                        const height =
+                          (entry.value / ((goal.targetProgress ?? goal.targetValue) || 1)) * 100;
                         return (
                           <div
                             key={`bar-${entry.date}`}
@@ -752,10 +872,17 @@ export default function IEPManagerPage() {
 
         {view === 'list' && (
           <div className="flex gap-2">
-            <Button variant="ghost" className="text-sm">
+            <Button variant="ghost" className="text-sm" onClick={() => void handleExportReports()}>
               Export Reports
             </Button>
-            <Button variant="primary" className="text-sm">
+            <Button
+              variant="primary"
+              className="text-sm"
+              onClick={() => {
+                setMeetingStudentId('');
+                setShowMeetingModal(true);
+              }}
+            >
               Schedule Meeting
             </Button>
           </div>
@@ -802,7 +929,7 @@ export default function IEPManagerPage() {
                     setProgressValue(e.target.value);
                   }}
                   className="w-full rounded-lg border border-border px-3 py-2"
-                  placeholder={`Target: ${showProgressModal.targetProgress}`}
+                  placeholder={`Target: ${showProgressModal.targetProgress ?? showProgressModal.targetValue}`}
                   aria-label="Current progress value"
                 />
               </div>
@@ -923,11 +1050,222 @@ export default function IEPManagerPage() {
               >
                 Cancel
               </Button>
-              <Button variant="primary" onClick={() => handleRecordProgress(showProgressModal)}>
-                Save Progress
+              <Button
+                variant="primary"
+                onClick={() => handleRecordProgress(showProgressModal)}
+                disabled={savingProgress}
+              >
+                {savingProgress ? 'Saving…' : 'Save Progress'}
               </Button>
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* Add Goal Modal */}
+      {showAddGoalModal && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Add IEP Goal</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Domain / Category</label>
+                <select
+                  value={newGoalDomain}
+                  onChange={(e) => {
+                    setNewGoalDomain(e.target.value as GoalDomain);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2 bg-white"
+                >
+                  <option value="Reading">Reading</option>
+                  <option value="Writing">Writing</option>
+                  <option value="Math">Math</option>
+                  <option value="Communication">Communication</option>
+                  <option value="Social/Emotional">Social/Emotional</option>
+                  <option value="Behavior">Behavior</option>
+                  <option value="Motor Skills">Motor Skills</option>
+                  <option value="Self-Help">Self-Help</option>
+                  <option value="Transition">Transition</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Goal Description</label>
+                <textarea
+                  value={newGoalDescription}
+                  onChange={(e) => {
+                    setNewGoalDescription(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2"
+                  rows={3}
+                  placeholder="By [date], [student] will [measurable behavior]..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Baseline</label>
+                  <input
+                    value={newGoalBaseline}
+                    onChange={(e) => {
+                      setNewGoalBaseline(e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-border px-3 py-2"
+                    placeholder="e.g., 30% accuracy"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Criteria</label>
+                  <input
+                    value={newGoalTarget}
+                    onChange={(e) => {
+                      setNewGoalTarget(e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-border px-3 py-2"
+                    placeholder="e.g., 80% accuracy"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Value</label>
+                  <input
+                    type="number"
+                    value={newGoalTargetValue}
+                    onChange={(e) => {
+                      setNewGoalTargetValue(e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-border px-3 py-2"
+                    placeholder="100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Date</label>
+                  <input
+                    type="date"
+                    value={newGoalTargetDate}
+                    onChange={(e) => {
+                      setNewGoalTargetDate(e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-border px-3 py-2"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowAddGoalModal(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => void handleAddGoal()}
+                disabled={savingGoal || !newGoalDescription.trim()}
+              >
+                {savingGoal ? 'Adding…' : 'Add Goal'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Schedule Meeting Modal */}
+      {showMeetingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-full max-w-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Schedule IEP Meeting</h3>
+            <div className="space-y-4">
+              {!selectedStudent && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Student</label>
+                  <select
+                    value={meetingStudentId}
+                    onChange={(e) => {
+                      setMeetingStudentId(e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-border px-3 py-2 bg-white"
+                  >
+                    <option value="">Select a student…</option>
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Meeting Type</label>
+                <select
+                  value={meetingType}
+                  onChange={(e) => {
+                    setMeetingType(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2 bg-white"
+                >
+                  <option value="annual_review">Annual Review</option>
+                  <option value="initial">Initial IEP</option>
+                  <option value="amendment">Amendment</option>
+                  <option value="reevaluation">Re-evaluation</option>
+                  <option value="transition">Transition</option>
+                  <option value="parent_conference">Parent Conference</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Date &amp; Time</label>
+                <input
+                  type="datetime-local"
+                  value={meetingDate}
+                  onChange={(e) => {
+                    setMeetingDate(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+                <textarea
+                  value={meetingNotes}
+                  onChange={(e) => {
+                    setMeetingNotes(e.target.value);
+                  }}
+                  className="w-full rounded-lg border border-border px-3 py-2"
+                  rows={2}
+                  placeholder="Additional notes for the meeting…"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowMeetingModal(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => void handleScheduleMeeting()}
+                disabled={savingMeeting || !meetingDate || (!selectedStudent && !meetingStudentId)}
+              >
+                {savingMeeting ? 'Scheduling…' : 'Schedule Meeting'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all ${
+            toastMessage.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}
+        >
+          {toastMessage.text}
         </div>
       )}
     </section>

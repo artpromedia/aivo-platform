@@ -1,12 +1,22 @@
 /**
  * IEP API Service
  *
- * API client for IEP (Individualized Education Program) management
+ * API client for IEP (Individualized Education Program) management.
+ * Uses relative URLs that route through the Next.js API proxy at
+ * /api/iep/[...path] → iep-svc (port 4070).
  */
 
-import type { IEPGoal, AddIEPProgressDto } from '../types/iep';
+import type {
+  IEPGoal,
+  IEPGoalStatus,
+  AddIEPProgressDto,
+  CreateIEPGoalDto,
+  GenerateIEPReportDto,
+} from '../types/iep';
 
-import { api } from './client';
+// ---------------------------------------------------------------------------
+// Summary DTOs (what the proxy returns, display-friendly shapes)
+// ---------------------------------------------------------------------------
 
 export interface IEPStudentSummary {
   id: string;
@@ -43,60 +53,168 @@ export interface ComplianceAlert {
   severity: 'warning' | 'urgent';
 }
 
+export interface IEPMeeting {
+  id: string;
+  iepId: string;
+  studentId?: string;
+  studentName?: string;
+  type: string;
+  scheduledDate: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  notes?: string;
+}
+
+export interface IEPDashboard {
+  totalStudents: number;
+  activeIEPs: number;
+  upcomingMeetings: IEPMeeting[];
+  complianceAlerts: ComplianceAlert[];
+  goalsAtRisk: number;
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers — every call goes through /api/iep → iep-svc proxy
+// ---------------------------------------------------------------------------
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    // Attempt to read the next-auth session for the Bearer token
+    const res = await fetch('/api/auth/session');
+    if (res.ok) {
+      const session = await res.json();
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+    }
+  } catch {
+    // Session unavailable — headers will go without auth
+  }
+  return headers;
+}
+
+async function iepFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`/api/iep${path}`, {
+    ...init,
+    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`IEP API ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ---------------------------------------------------------------------------
+// Exported API
+// ---------------------------------------------------------------------------
+
 export const iepApi = {
-  /**
-   * Get all students with IEPs for the current teacher
-   */
-  getStudentsWithIEP: () => api.get<IEPStudentSummary[]>('/api/teacher/iep/students'),
+  // -- Students (iep-svc /students) ----------------------------------------
 
-  /**
-   * Get IEP details for a specific student
-   */
-  getStudentIEP: (studentId: string) =>
-    api.get<IEPStudentSummary>(`/api/teacher/iep/students/${studentId}`),
+  /** List students with active IEPs for the current teacher */
+  getStudentsWithIEP: () => iepFetch<IEPStudentSummary[]>('/students'),
 
-  /**
-   * Get all IEP goals for a student
-   */
-  getGoals: (studentId: string) =>
-    api.get<IEPGoal[]>(`/api/teacher/students/${studentId}/iep-goals`),
+  /** Get a single student record */
+  getStudent: (studentId: string) => iepFetch<IEPStudentSummary>(`/students/${studentId}`),
 
-  /**
-   * Get a single IEP goal
-   */
-  getGoal: (studentId: string, goalId: string) =>
-    api.get<IEPGoal>(`/api/teacher/students/${studentId}/iep-goals/${goalId}`),
+  // -- IEP CRUD (iep-svc /ieps) --------------------------------------------
 
-  /**
-   * Add progress to an IEP goal
-   */
-  addProgress: (studentId: string, goalId: string, data: AddIEPProgressDto) =>
-    api.post<IEPGoal>(`/api/teacher/students/${studentId}/iep-goals/${goalId}/progress`, data),
+  /** List IEPs (optional query filters) */
+  getIEPs: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return iepFetch<unknown[]>(`/ieps${qs}`);
+  },
 
-  /**
-   * Get compliance alerts for all IEP students
-   */
-  getComplianceAlerts: () => api.get<ComplianceAlert[]>('/api/teacher/iep/compliance-alerts'),
+  /** Get IEP detail by ID */
+  getIEP: (iepId: string) => iepFetch<unknown>(`/ieps/${iepId}`),
 
-  /**
-   * Get upcoming IEP meetings
-   */
-  getUpcomingMeetings: (params?: { limit?: number }) =>
-    api.get<{ studentId: string; studentName: string; meetingDate: string; type: string }[]>(
-      '/api/teacher/iep/meetings/upcoming',
-      params
-    ),
+  /** Get the teacher dashboard (stats, upcoming meetings, alerts) */
+  getDashboard: () => iepFetch<IEPDashboard>('/ieps/dashboard'),
 
-  /**
-   * Log service delivery
-   */
+  // -- Goals (iep-svc /ieps/:iepId/goals) ----------------------------------
+
+  /** Add a goal to an IEP */
+  addGoal: (iepId: string, data: CreateIEPGoalDto) =>
+    iepFetch<IEPGoal>(`/ieps/${iepId}/goals`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /** Update goal fields (status, currentValue, etc.) */
+  updateGoal: (
+    iepId: string,
+    goalId: string,
+    data: Partial<CreateIEPGoalDto> & { status?: IEPGoalStatus; currentValue?: number }
+  ) =>
+    iepFetch<IEPGoal>(`/ieps/${iepId}/goals/${goalId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  /** Record a progress data-point for a goal */
+  addProgress: (iepId: string, goalId: string, data: AddIEPProgressDto) =>
+    iepFetch<IEPGoal>(`/ieps/${iepId}/goals/${goalId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // -- Services (iep-svc /ieps/:iepId/services) ----------------------------
+
+  /** Log service delivery minutes */
   logServiceDelivery: (
-    studentId: string,
+    iepId: string,
     serviceId: string,
     data: { minutes: number; date: string; notes?: string }
   ) =>
-    api.post<{ success: boolean }>(
-      `/api/teacher/iep/students/${studentId}/services/${serviceId}/log`,
-      data
-    ),
+    iepFetch<{ success: boolean }>(`/ieps/${iepId}/services/${serviceId}/logs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // -- Meetings (iep-svc /ieps/:iepId/meetings) ----------------------------
+
+  /** Schedule a new IEP meeting */
+  scheduleMeeting: (iepId: string, data: { type: string; scheduledDate: string; notes?: string }) =>
+    iepFetch<IEPMeeting>(`/ieps/${iepId}/meetings`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /** Mark a meeting as completed */
+  completeMeeting: (
+    iepId: string,
+    meetingId: string,
+    data: { notes?: string; outcomes?: string[] }
+  ) =>
+    iepFetch<IEPMeeting>(`/ieps/${iepId}/meetings/${meetingId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // -- Compliance (iep-svc /compliance) ------------------------------------
+
+  /** Get compliance alerts for all IEP students */
+  getComplianceAlerts: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return iepFetch<ComplianceAlert[]>(`/compliance/alerts${qs}`);
+  },
+
+  /** Trigger a compliance check for the current tenant */
+  runComplianceCheck: () =>
+    iepFetch<{ newAlerts: number; alerts: ComplianceAlert[] }>('/compliance/check', {
+      method: 'POST',
+    }),
+
+  // -- Reports (convenience — uses /ieps endpoints) ------------------------
+
+  /** Generate an IEP progress report */
+  generateReport: (iepId: string, data: GenerateIEPReportDto) =>
+    iepFetch<Blob>(`/ieps/${iepId}/goals`, {
+      // POST with report DTO; the download endpoint may differ on the backend
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { Accept: 'application/pdf' },
+    }),
 };
