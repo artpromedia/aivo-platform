@@ -224,6 +224,170 @@ async function main() {
       displayName: 'Earth Science Basics',
       description: 'Understand Earth systems and processes',
     },
+
+    // ── G6_8 Skills ─────────────────────────────────────────────────────────
+
+    // Math G6-8
+    {
+      id: '00000000-0000-0000-f100-000000000040',
+      skillCode: 'MATH.RP.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Ratios & Proportional Relationships',
+      description: 'Understand ratio concepts and use ratio reasoning',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000041',
+      skillCode: 'MATH.EE.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Expressions & Equations',
+      description: 'Apply properties of operations to generate equivalent expressions',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000042',
+      skillCode: 'MATH.G.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Geometry (Congruence & Similarity)',
+      description: 'Understand congruence and similarity using physical models or software',
+    },
+
+    // ELA G6-8
+    {
+      id: '00000000-0000-0000-f100-000000000050',
+      skillCode: 'ELA.RL.6',
+      domain: SkillDomain.ELA,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Textual Analysis & Evidence',
+      description: 'Cite textual evidence to support analysis of what the text says',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000051',
+      skillCode: 'ELA.W.6',
+      domain: SkillDomain.ELA,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Argumentative Writing',
+      description: 'Write arguments to support claims with clear reasons and relevant evidence',
+    },
+
+    // Science G6-8
+    {
+      id: '00000000-0000-0000-f100-000000000060',
+      skillCode: 'SCI.MS.PS.1',
+      domain: SkillDomain.SCIENCE,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Matter & Its Interactions',
+      description: 'Develop models to describe atomic composition of simple molecules',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000061',
+      skillCode: 'SCI.MS.LS.1',
+      domain: SkillDomain.SCIENCE,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Cell Biology & Genetics',
+      description: 'Conduct investigations to provide evidence that living things are made of cells',
+    },
+
+    // SEL G6-8
+    {
+      id: '00000000-0000-0000-f100-000000000070',
+      skillCode: 'SEL.SA.6',
+      domain: SkillDomain.SEL,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Identity & Self-Concept',
+      description: 'Analyze how personal qualities and strengths support healthy identity',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000071',
+      skillCode: 'SEL.RS.6',
+      domain: SkillDomain.SEL,
+      gradeBand: GradeBand.G6_8,
+      displayName: 'Conflict Resolution',
+      description: 'Apply strategies to resolve conflicts constructively',
+    },
+
+    // ── G9_12 Skills ────────────────────────────────────────────────────────
+
+    // Math G9-12
+    {
+      id: '00000000-0000-0000-f100-000000000080',
+      skillCode: 'MATH.HSA.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Algebra (Equations & Inequalities)',
+      description: 'Create equations and inequalities in one variable and use them to solve problems',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000081',
+      skillCode: 'MATH.HSF.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Functions',
+      description: 'Understand the concept of a function and use function notation',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000082',
+      skillCode: 'MATH.HSS.1',
+      domain: SkillDomain.MATH,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Statistics & Probability',
+      description: 'Summarize, represent, and interpret data on a single variable',
+    },
+
+    // ELA G9-12
+    {
+      id: '00000000-0000-0000-f100-000000000090',
+      skillCode: 'ELA.RI.9',
+      domain: SkillDomain.ELA,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Rhetorical Analysis',
+      description: 'Analyze seminal documents for themes, purposes, and rhetorical features',
+    },
+    {
+      id: '00000000-0000-0000-f100-000000000091',
+      skillCode: 'ELA.W.9',
+      domain: SkillDomain.ELA,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Research-Based Writing',
+      description: 'Conduct research projects to answer questions or solve problems',
+    },
+
+    // Science G9-12
+    {
+      id: '00000000-0000-0000-f100-0000000000a0',
+      skillCode: 'SCI.HS.PS.1',
+      domain: SkillDomain.SCIENCE,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Chemistry (Atomic Structure)',
+      description: 'Use the periodic table to predict properties of elements',
+    },
+    {
+      id: '00000000-0000-0000-f100-0000000000a1',
+      skillCode: 'SCI.HS.LS.1',
+      domain: SkillDomain.SCIENCE,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Biology (DNA & Heredity)',
+      description: 'Construct an explanation based on evidence for how DNA structure determines protein structure',
+    },
+
+    // SEL G9-12
+    {
+      id: '00000000-0000-0000-f100-0000000000b0',
+      skillCode: 'SEL.SA.9',
+      domain: SkillDomain.SEL,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Ethical Decision-Making',
+      description: 'Evaluate personal, ethical, safety, and civic impact of decisions',
+    },
+    {
+      id: '00000000-0000-0000-f100-0000000000b1',
+      skillCode: 'SEL.SM.9',
+      domain: SkillDomain.SEL,
+      gradeBand: GradeBand.G9_12,
+      displayName: 'Goal-Setting & Self-Regulation',
+      description: 'Set long-term goals and develop action plans with self-monitoring strategies',
+    },
   ];
 
   for (const skill of skills) {
@@ -298,6 +462,50 @@ async function main() {
       prerequisiteSkillId: '00000000-0000-0000-f100-000000000013',
       dependentSkillId: '00000000-0000-0000-f100-000000000015',
     }, // Fluency -> Vocabulary
+
+    // G6_8 progressions
+    {
+      id: '00000000-0000-0000-f200-000000000020',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000006',
+      dependentSkillId: '00000000-0000-0000-f100-000000000040',
+    }, // Fraction Concepts -> Ratios
+    {
+      id: '00000000-0000-0000-f200-000000000021',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000040',
+      dependentSkillId: '00000000-0000-0000-f100-000000000041',
+    }, // Ratios -> Expressions & Equations
+    {
+      id: '00000000-0000-0000-f200-000000000022',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000014',
+      dependentSkillId: '00000000-0000-0000-f100-000000000050',
+    }, // Key Ideas -> Textual Analysis
+    {
+      id: '00000000-0000-0000-f200-000000000023',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000016',
+      dependentSkillId: '00000000-0000-0000-f100-000000000051',
+    }, // Opinion Writing -> Argumentative Writing
+
+    // G9_12 progressions
+    {
+      id: '00000000-0000-0000-f200-000000000030',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000041',
+      dependentSkillId: '00000000-0000-0000-f100-000000000080',
+    }, // Expressions & Equations -> Algebra
+    {
+      id: '00000000-0000-0000-f200-000000000031',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000080',
+      dependentSkillId: '00000000-0000-0000-f100-000000000081',
+    }, // Algebra -> Functions
+    {
+      id: '00000000-0000-0000-f200-000000000032',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000050',
+      dependentSkillId: '00000000-0000-0000-f100-000000000090',
+    }, // Textual Analysis -> Rhetorical Analysis
+    {
+      id: '00000000-0000-0000-f200-000000000033',
+      prerequisiteSkillId: '00000000-0000-0000-f100-000000000051',
+      dependentSkillId: '00000000-0000-0000-f100-000000000091',
+    }, // Argumentative Writing -> Research-Based Writing
   ];
 
   for (const prereq of prerequisites) {
