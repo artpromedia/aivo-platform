@@ -21,15 +21,22 @@ export default function DashboardPage() {
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
-export default function DashboardPage() {
-  const { data, isLoading, error, refetch } = useDashboard();
-
   if (isLoading) return <PageSkeleton />;
   if (error || !data) {
     return <ErrorState message="Couldn't load your dashboard." onRetry={() => void refetch()} />;
   }
 
-  const { continueLearning, dailyGoals, achievements, upcoming, firstName } = data;
+  const {
+    continueLearning,
+    dailyGoals,
+    achievements,
+    upcoming,
+    firstName,
+    streakDays,
+    totalXp,
+    level,
+    xpToNextLevel,
+  } = data;
   const hour = new Date().getHours();
   function getGreeting() {
     if (hour < 12) return 'Good morning';
@@ -83,7 +90,9 @@ export default function DashboardPage() {
           </div>
           <div className="relative">
             <button
-              onClick={() => { setShowSubjectPicker(!showSubjectPicker); }}
+              onClick={() => {
+                setShowSubjectPicker(!showSubjectPicker);
+              }}
               disabled={startingSubject !== null}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/20 px-6 py-3 font-medium text-white backdrop-blur-sm transition hover:bg-white/30 disabled:opacity-60"
             >
@@ -94,7 +103,9 @@ export default function DashboardPage() {
                 {SUBJECTS.map((s) => (
                   <button
                     key={s.code}
-                    onClick={() => { void startLearningSession(s.code); }}
+                    onClick={() => {
+                      void startLearningSession(s.code);
+                    }}
                     className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-blue-50"
                   >
                     <span className="text-lg">{s.emoji}</span>
@@ -132,7 +143,9 @@ export default function DashboardPage() {
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {sessionError}
           <button
-            onClick={() => setSessionError(null)}
+            onClick={() => {
+              setSessionError(null);
+            }}
             className="ml-2 font-medium underline hover:text-red-900"
           >
             Dismiss
@@ -216,10 +229,7 @@ export default function DashboardPage() {
             <h2 className="mb-4 font-bold text-slate-900">📅 Upcoming</h2>
             <div className="space-y-3">
               {upcoming.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"
-                >
+                <div key={item.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
                   <span className="text-xl">{item.emoji}</span>
                   <div className="flex-1">
                     <div className="font-medium text-slate-900">{item.title}</div>
@@ -250,9 +260,40 @@ export default function DashboardPage() {
                   title={achievement.title}
                 >
                   <span className="text-2xl">{achievement.emoji}</span>
-                  <span className="text-[10px] text-slate-600">{achievement.earned ? '✓' : '?'}</span>
+                  <span className="text-[10px] text-slate-600">
+                    {achievement.earned ? '✓' : '?'}
+                  </span>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* XP & Level */}
+          <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
+                {level ?? 1}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-blue-900">Level {level ?? 1}</div>
+                <div className="text-xs text-blue-600">{totalXp?.toLocaleString() ?? 0} XP</div>
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="mb-1 flex justify-between text-xs text-blue-600">
+                <span>Next level</span>
+                <span>{xpToNextLevel ?? 100} XP to go</span>
+              </div>
+              <div className="h-2 rounded-full bg-blue-200">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
+                  style={{
+                    width: xpToNextLevel
+                      ? `${Math.max(5, 100 - (xpToNextLevel / (xpToNextLevel + 50)) * 100)}%`
+                      : '5%',
+                  }}
+                />
+              </div>
             </div>
           </section>
 
@@ -263,31 +304,33 @@ export default function DashboardPage() {
                 🔥
               </div>
               <div>
-                <div className="text-2xl font-bold text-orange-700">5 Days</div>
+                <div className="text-2xl font-bold text-orange-700">
+                  {streakDays ?? 0} Day{(streakDays ?? 0) !== 1 ? 's' : ''}
+                </div>
                 <div className="text-sm text-orange-600">Learning Streak!</div>
               </div>
             </div>
             <div className="mt-4 flex justify-between">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+                const streakCount = streakDays ?? 0;
                 function getDayClass() {
-                  if (i < 5) return 'bg-orange-500 text-white';
-                  if (i === 5) return 'border-2 border-dashed border-orange-300 text-orange-400';
+                  if (i < streakCount % 7) return 'bg-orange-500 text-white';
+                  if (i === streakCount % 7)
+                    return 'border-2 border-dashed border-orange-300 text-orange-400';
                   return 'bg-slate-100 text-slate-400';
                 }
                 return (
-                <div key={day + i} className="flex flex-col items-center gap-1">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs ${getDayClass()}`}
-                  >
-                    {i < 5 ? '✓' : day}
+                  <div key={day + i} className="flex flex-col items-center gap-1">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs ${getDayClass()}`}
+                    >
+                      {i < streakCount % 7 ? '✓' : day}
+                    </div>
                   </div>
-                </div>
                 );
               })}
             </div>
           </section>
-
-
         </div>
       </div>
     </div>

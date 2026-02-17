@@ -31,6 +31,7 @@ const nextConfig = {
     // Service URLs for production
     const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
     const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://localhost:4001';
+    const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
 
     // In development mode, don't proxy - use local API route handlers
     if (isDev) {
@@ -77,6 +78,11 @@ const nextConfig = {
       {
         source: '/api/learner/:path*',
         destination: `${PARENT_SVC_URL}/api/v1/learner/:path*`,
+      },
+      // Gamification service routes
+      {
+        source: '/api/gamification/:path*',
+        destination: `${GAMIFICATION_SVC_URL}/api/gamification/:path*`,
       },
       // Fallback to API gateway if configured
       {

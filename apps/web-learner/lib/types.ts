@@ -49,6 +49,8 @@ export interface DashboardData {
   upcoming: UpcomingItem[];
   streakDays: number;
   totalXp: number;
+  level: number;
+  xpToNextLevel: number;
   firstName: string;
 }
 

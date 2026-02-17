@@ -219,14 +219,39 @@ export class WeeklyDigestService {
           )
         : 0;
 
-    // Get achievements
-    const achievements = await this.prisma.achievement.findMany({
-      where: {
-        studentId,
-        earnedAt: { gte: weekRange.start, lte: weekRange.end },
-      },
-      take: 5,
-    });
+    // Get achievements — try gamification-svc first, fall back to local DB
+    let achievements: { name: string; iconUrl: string | null }[] = [];
+    try {
+      const gamificationUrl = config.gamificationSvcUrl || 'http://gamification-svc:3006';
+      const res = await fetch(`${gamificationUrl}/gamification/${studentId}/badges`, {
+        headers: { 'X-Internal-Service': 'parent-svc' },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          badges: { badge: { name: string; iconUrl?: string }; earnedAt: string }[];
+        };
+        achievements = (data.badges ?? [])
+          .filter((b) => {
+            const earnedDate = new Date(b.earnedAt);
+            return earnedDate >= weekRange.start && earnedDate <= weekRange.end;
+          })
+          .slice(0, 5)
+          .map((b) => ({ name: b.badge.name, iconUrl: b.badge.iconUrl ?? null }));
+      }
+    } catch {
+      // gamification-svc unreachable — fall back to local achievement table
+    }
+    if (achievements.length === 0) {
+      const localAchievements = await this.prisma.achievement.findMany({
+        where: {
+          studentId,
+          earnedAt: { gte: weekRange.start, lte: weekRange.end },
+        },
+        take: 5,
+      });
+      achievements = localAchievements.map((a) => ({ name: a.name, iconUrl: a.iconUrl }));
+    }
 
     // Get teacher notes
     const teacherNotes = await this.prisma.teacherNote.findMany({

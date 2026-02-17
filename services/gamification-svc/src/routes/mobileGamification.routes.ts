@@ -22,6 +22,8 @@ import {
   achievementService,
   streakService,
   leaderboardService,
+  rewardService,
+  ACHIEVEMENT_DEFINITIONS,
 } from '../services/index.js';
 
 // ============================================================================
@@ -232,50 +234,22 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
    */
   app.get('/badges', async (_request: FastifyRequest, reply: FastifyReply) => {
     try {
-      // TODO: Implement getAllAvailableBadges in achievement service
-      // For now, return mock data
-      const badges: MobileBadge[] = [
-        {
-          id: 'badge-1',
-          name: 'First Steps',
-          description: 'Complete your first lesson',
-          iconUrl: '/badges/first-steps.png',
-          category: 'achievement',
-          rarity: 'common',
-          pointsValue: 10,
-          requirement: {
-            type: 'lessons_completed',
-            targetValue: 1,
-          },
-        },
-        {
-          id: 'badge-2',
-          name: 'Math Master',
-          description: 'Complete 10 math lessons',
-          iconUrl: '/badges/math-master.png',
-          category: 'skill',
-          rarity: 'uncommon',
-          pointsValue: 50,
-          requirement: {
-            type: 'lessons_completed',
-            targetValue: 10,
-            skillId: 'math',
-          },
-        },
-        {
-          id: 'badge-3',
-          name: 'Weekly Warrior',
-          description: 'Maintain a 7-day streak',
-          iconUrl: '/badges/weekly-warrior.png',
-          category: 'streak',
-          rarity: 'rare',
-          pointsValue: 100,
-          requirement: {
-            type: 'streak_days',
-            targetValue: 7,
-          },
-        },
-      ];
+      const badges: MobileBadge[] = ACHIEVEMENT_DEFINITIONS.filter((d) => !d.secret).map((def) => ({
+        id: def.id,
+        name: def.name,
+        description: def.description,
+        iconUrl: def.iconUrl || `/badges/${def.id}.png`,
+        category: def.category,
+        rarity: def.rarity,
+        pointsValue: def.xpReward,
+        requirement: def.requirement
+          ? {
+              type: def.requirement.type,
+              targetValue: def.requirement.count ?? 1,
+              skillId: (def.requirement as any).skillId,
+            }
+          : undefined,
+      }));
 
       return { badges };
     } catch (error) {
@@ -329,41 +303,24 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
    * GET /gamification/rewards
    * Get available rewards
    */
-  app.get('/rewards', async (_request: FastifyRequest, reply: FastifyReply) => {
+  app.get('/rewards', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      // TODO: Implement rewards in shop service
-      // For now, return mock data
-      const rewards: MobileReward[] = [
-        {
-          id: 'reward-1',
-          name: 'Rainbow Avatar',
-          description: 'Unlock the rainbow avatar',
-          iconUrl: '/rewards/rainbow-avatar.png',
-          pointsCost: 100,
-          type: 'avatar',
-          isAvailable: true,
-        },
-        {
-          id: 'reward-2',
-          name: 'Dark Theme',
-          description: 'Unlock the dark theme',
-          iconUrl: '/rewards/dark-theme.png',
-          pointsCost: 200,
-          type: 'theme',
-          isAvailable: true,
-        },
-        {
-          id: 'reward-3',
-          name: 'Double XP',
-          description: 'Earn 2x XP for 1 hour',
-          iconUrl: '/rewards/double-xp.png',
-          pointsCost: 50,
-          type: 'power_up',
-          isAvailable: true,
-        },
-      ];
+      const learnerId = getLearnerIdFromAuth(request);
+      const shop = await rewardService.getShopItems(learnerId);
 
-      return { rewards };
+      const rewards: MobileReward[] = shop.categories.flatMap((cat) =>
+        cat.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          iconUrl: item.iconUrl || `/rewards/${item.id}.png`,
+          pointsCost: item.price,
+          type: item.category,
+          isAvailable: true,
+        }))
+      );
+
+      return { rewards, balance: shop.playerBalance };
     } catch (error) {
       console.error('Error fetching rewards:', error);
       reply.status(500);
@@ -382,9 +339,12 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
       const learnerId = getLearnerIdFromAuth(request);
 
       try {
-        // TODO: Implement reward redemption in shop service
-        // For now, return mock success
-        console.log(`Learner ${learnerId} redeeming reward ${rewardId}`);
+        const result = await rewardService.purchaseItem(learnerId, rewardId);
+
+        if (!result.success) {
+          reply.status(400);
+          return { success: false, error: result.message };
+        }
 
         return { success: true };
       } catch (error) {
@@ -415,14 +375,26 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
       const { learnerId, badgeId } = paramsResult.data;
 
       try {
-        // TODO: Implement badge progress tracking in achievement service
-        // For now, return mock data
+        const earned = await achievementService.getPlayerAchievements(learnerId);
+        const definition = ACHIEVEMENT_DEFINITIONS.find((d) => d.id === badgeId);
+
+        if (!definition) {
+          reply.status(404);
+          return { error: 'Badge not found' };
+        }
+
+        const isEarned = earned.some((a: any) => a.achievementType === badgeId || a.id === badgeId);
+        const target = definition.requirement?.count ?? 1;
+
         const progress = {
           badgeId,
           learnerId,
-          progress: 5,
-          target: 10,
-          percentComplete: 0.5,
+          name: definition.name,
+          description: definition.description,
+          progress: isEarned ? target : 0,
+          target,
+          percentComplete: isEarned ? 1 : 0,
+          earned: isEarned,
         };
 
         return progress;

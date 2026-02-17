@@ -12,6 +12,7 @@ import { getTokenPayload, getRawToken, proxyGet } from '../../../../lib/api-rout
 const PERSONALIZATION_SVC_URL = process.env.PERSONALIZATION_SVC_URL || 'http://localhost:3430';
 const GOAL_SVC_URL = process.env.GOAL_SVC_URL || 'http://localhost:3440';
 const ANALYTICS_SVC_URL = process.env.ANALYTICS_SVC_URL || 'http://localhost:3450';
+const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
 
 export async function GET() {
   const payload = getTokenPayload();
@@ -24,32 +25,33 @@ export async function GET() {
   const firstName = payload.firstName || 'Learner';
 
   // Fire all backend calls in parallel — gracefully degrade if any fail
-  const [continueLearning, dailyGoals, achievements, upcoming, streakData] =
+  const [continueLearning, dailyGoals, achievements, upcoming, streakData, gamification] =
     await Promise.all([
       proxyGet<{ items: unknown[] }>(
         PERSONALIZATION_SVC_URL,
         `/api/learners/${learnerId}/continue-learning`,
-        token,
+        token
       ),
-      proxyGet<{ goals: unknown[] }>(
-        GOAL_SVC_URL,
-        `/api/learners/${learnerId}/daily-goals`,
-        token,
-      ),
+      proxyGet<{ goals: unknown[] }>(GOAL_SVC_URL, `/api/learners/${learnerId}/daily-goals`, token),
       proxyGet<{ items: unknown[] }>(
         ANALYTICS_SVC_URL,
         `/api/learners/${learnerId}/achievements/recent`,
-        token,
+        token
       ),
       proxyGet<{ items: unknown[] }>(
         ANALYTICS_SVC_URL,
         `/api/learners/${learnerId}/upcoming`,
-        token,
+        token
       ),
       proxyGet<{ streakDays: number; totalXp: number }>(
         ANALYTICS_SVC_URL,
         `/api/learners/${learnerId}/streak`,
-        token,
+        token
+      ),
+      proxyGet<{ totalXP: number; level: number; xpToNextLevel: number; currentStreak: number }>(
+        GAMIFICATION_SVC_URL,
+        `/api/gamification/profile`,
+        token
       ),
     ]);
 
@@ -58,8 +60,10 @@ export async function GET() {
     dailyGoals: dailyGoals?.goals ?? [],
     achievements: achievements?.items ?? [],
     upcoming: upcoming?.items ?? [],
-    streakDays: streakData?.streakDays ?? 0,
-    totalXp: streakData?.totalXp ?? 0,
+    streakDays: gamification?.currentStreak ?? streakData?.streakDays ?? 0,
+    totalXp: gamification?.totalXP ?? streakData?.totalXp ?? 0,
+    level: gamification?.level ?? 1,
+    xpToNextLevel: gamification?.xpToNextLevel ?? 100,
     firstName,
   });
 }

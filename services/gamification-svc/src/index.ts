@@ -3,7 +3,9 @@
  */
 
 import buildApp from './app.js';
+import { config } from './config.js';
 import { eventEmitter } from './events/event-emitter.js';
+import { createLearningConsumer, type LearningEventConsumer } from './events/learning-consumer.js';
 import { startScheduledJobs } from './jobs/scheduled-jobs.js';
 import { prisma } from './prisma.js';
 import { redis, isRedisAvailable } from './redis.js';
@@ -34,6 +36,19 @@ async function main() {
   startScheduledJobs();
   console.log('✓ Scheduled jobs started');
 
+  // Start NATS learning-event consumer (non-blocking)
+  let learningConsumer: LearningEventConsumer | null = null;
+  try {
+    learningConsumer = createLearningConsumer(config.natsUrl);
+    // start() is a blocking async iterator — run in background
+    learningConsumer.start().catch((err) => {
+      console.error('✗ NATS consumer crashed:', err);
+    });
+    console.log('✓ NATS learning-event consumer started');
+  } catch (err) {
+    console.error('⚠ NATS consumer failed to start (gamification will miss live events):', err);
+  }
+
   // Build and start Fastify server
   const app = await buildApp();
   await app.listen({ port: PORT, host: '0.0.0.0' });
@@ -46,6 +61,12 @@ async function main() {
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`\n${signal} received, shutting down gracefully...`);
+
+    if (learningConsumer) {
+      learningConsumer.stop();
+      await learningConsumer.close();
+      console.log('NATS consumer closed');
+    }
 
     await app.close();
     console.log('HTTP server closed');

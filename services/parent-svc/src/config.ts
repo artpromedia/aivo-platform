@@ -50,6 +50,7 @@ const configSchema = z.object({
   // Internal service URLs
   learnerModelSvcUrl: z.string().default('http://localhost:4022'),
   notifySvcUrl: z.string().default('http://localhost:4040'),
+  gamificationSvcUrl: z.string().default('http://localhost:3006'),
 
   // External URLs
   parentPortalUrl: z.string().default('http://localhost:3000'),
@@ -97,6 +98,7 @@ function loadConfig() {
     parentInviteExpiryDays: process.env.PARENT_INVITE_EXPIRY_DAYS,
     learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL,
     notifySvcUrl: process.env.NOTIFY_SVC_URL,
+    gamificationSvcUrl: process.env.GAMIFICATION_SVC_URL,
     parentPortalUrl: process.env.PARENT_PORTAL_URL,
     registrationEmailVerificationExpiryHours:
       process.env.REGISTRATION_EMAIL_VERIFICATION_EXPIRY_HOURS,

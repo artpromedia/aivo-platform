@@ -13,7 +13,8 @@ import { prisma } from '../prisma.js';
 import type {
   Achievement,
   AchievementDefinition,
-  AchievementProgress} from '../types/gamification.types.js';
+  AchievementProgress,
+} from '../types/gamification.types.js';
 import {
   AchievementCategory,
   AchievementRarity,
@@ -455,6 +456,41 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     rarity: 'epic',
     secret: true,
   },
+
+  // PRD-specified badges
+  {
+    id: 'reading_rockstar',
+    name: 'Reading Rockstar',
+    description: 'Completed 10 reading lessons',
+    category: 'lessons',
+    iconUrl: '/achievements/reading_rockstar.svg',
+    xpReward: 75,
+    rarity: 'uncommon',
+    secret: false,
+    requirement: { type: 'reading_lessons_completed', count: 10 },
+  },
+  {
+    id: 'math_master',
+    name: 'Math Master',
+    description: 'Mastered all addition skills',
+    category: 'mastery',
+    iconUrl: '/achievements/math_master.svg',
+    xpReward: 200,
+    rarity: 'rare',
+    secret: false,
+    requirement: { type: 'addition_skills_mastered', count: 1 },
+  },
+  {
+    id: 'brain_break_champion',
+    name: 'Brain Break Champion',
+    description: 'Took 5 brain breaks during sessions',
+    category: 'engagement',
+    iconUrl: '/achievements/brain_break_champion.svg',
+    xpReward: 50,
+    rarity: 'common',
+    secret: false,
+    requirement: { type: 'brain_breaks_taken', count: 5 },
+  },
 ];
 
 // ============================================================================
@@ -486,7 +522,9 @@ class AchievementService {
     });
 
     const earnedIds = new Set(earned.map((e) => e.achievementId));
-    const visibleDefinitions = ACHIEVEMENT_DEFINITIONS.filter((a) => !a.secret || earnedIds.has(a.id));
+    const visibleDefinitions = ACHIEVEMENT_DEFINITIONS.filter(
+      (a) => !a.secret || earnedIds.has(a.id)
+    );
 
     // Get profile for progress calculation
     const profile = await prisma.playerProfile.findUnique({
@@ -543,14 +581,16 @@ class AchievementService {
       take: limit,
     });
 
-    return earned.map((e) => {
-      const def = ACHIEVEMENT_DEFINITIONS.find((d) => d.id === e.achievementId);
-      if (!def) return null;
-      return {
-        ...this.toAchievement(def),
-        earnedAt: e.earnedAt,
-      };
-    }).filter(Boolean) as Achievement[];
+    return earned
+      .map((e) => {
+        const def = ACHIEVEMENT_DEFINITIONS.find((d) => d.id === e.achievementId);
+        if (!def) return null;
+        return {
+          ...this.toAchievement(def),
+          earnedAt: e.earnedAt,
+        };
+      })
+      .filter(Boolean) as Achievement[];
   }
 
   /**
@@ -617,7 +657,9 @@ class AchievementService {
    * Check XP achievements
    */
   async checkXPAchievements(studentId: string, totalXp: number): Promise<void> {
-    const xpAchievements = ACHIEVEMENT_DEFINITIONS.filter((a) => a.requirement?.type === 'total_xp');
+    const xpAchievements = ACHIEVEMENT_DEFINITIONS.filter(
+      (a) => a.requirement?.type === 'total_xp'
+    );
 
     for (const achievement of xpAchievements) {
       if (totalXp >= achievement.requirement!.count) {
@@ -630,7 +672,9 @@ class AchievementService {
    * Check streak achievements
    */
   async checkStreakAchievements(studentId: string, streakDays: number): Promise<void> {
-    const streakAchievements = ACHIEVEMENT_DEFINITIONS.filter((a) => a.requirement?.type === 'streak_days');
+    const streakAchievements = ACHIEVEMENT_DEFINITIONS.filter(
+      (a) => a.requirement?.type === 'streak_days'
+    );
 
     for (const achievement of streakAchievements) {
       if (streakDays >= achievement.requirement!.count) {
@@ -718,7 +762,10 @@ class AchievementService {
   /**
    * Award an achievement
    */
-  private async awardAchievement(studentId: string, definition: AchievementDefinition): Promise<void> {
+  private async awardAchievement(
+    studentId: string,
+    definition: AchievementDefinition
+  ): Promise<void> {
     await prisma.earnedAchievement.create({
       data: {
         studentId,
