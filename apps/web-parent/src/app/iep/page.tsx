@@ -304,6 +304,18 @@ export default function IEPSummaryPage() {
   const router = useRouter();
   const [iep] = useState<PlainLanguageIEP>(mockIEP);
   const [showOfficial, setShowOfficial] = useState<Record<string, boolean>>({});
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [correctionForm, setCorrectionForm] = useState({
+    recordType: 'iep_goal',
+    currentValue: '',
+    requestedValue: '',
+    reason: '',
+  });
+  const [correctionSubmitting, setCorrectionSubmitting] = useState(false);
+  const [correctionResult, setCorrectionResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const toggleOfficial = (key: string) => {
     setShowOfficial((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -549,6 +561,174 @@ export default function IEPSummaryPage() {
             ))}
           </div>
         </div>
+
+        {/* FERPA Request Correction — Sprint T2-05 */}
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-6">
+          <h2 className="text-lg font-semibold text-amber-900 mb-2 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-amber-600" />
+            Your FERPA Rights
+          </h2>
+          <p className="text-sm text-amber-800 mb-4">
+            Under FERPA (34 CFR § 99.20), you have the right to request correction of any education
+            records you believe are inaccurate, misleading, or in violation of your child&apos;s
+            privacy rights. The district must respond within 15 business days.
+          </p>
+          <button
+            onClick={() => {
+              setShowCorrectionModal(true);
+              setCorrectionResult(null);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium"
+          >
+            <FileText className="h-4 w-4" />
+            Request a Correction
+          </button>
+        </div>
+
+        {/* Correction Request Modal */}
+        {showCorrectionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-lg bg-white rounded-xl shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Request Record Correction</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  FERPA 34 CFR § 99.20 — Describe what you believe is inaccurate.
+                </p>
+              </div>
+              <div className="p-6 space-y-4">
+                {correctionResult ? (
+                  <div
+                    className={`p-4 rounded-lg ${
+                      correctionResult.success
+                        ? 'bg-green-50 border border-green-200 text-green-800'
+                        : 'bg-red-50 border border-red-200 text-red-800'
+                    }`}
+                  >
+                    {correctionResult.message}
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Record Type
+                      </label>
+                      <select
+                        value={correctionForm.recordType}
+                        onChange={(e) => {
+                          setCorrectionForm({ ...correctionForm, recordType: e.target.value });
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        <option value="iep_goal">IEP Goal</option>
+                        <option value="present_level">Present Level / PLAAFP</option>
+                        <option value="service">Service</option>
+                        <option value="accommodation">Accommodation</option>
+                        <option value="eligibility">Eligibility Category</option>
+                        <option value="profile">Student Profile</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        What the record currently says
+                      </label>
+                      <textarea
+                        value={correctionForm.currentValue}
+                        onChange={(e) => {
+                          setCorrectionForm({ ...correctionForm, currentValue: e.target.value });
+                        }}
+                        rows={2}
+                        placeholder="Copy or describe the current text..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        What it should say
+                      </label>
+                      <textarea
+                        value={correctionForm.requestedValue}
+                        onChange={(e) => {
+                          setCorrectionForm({ ...correctionForm, requestedValue: e.target.value });
+                        }}
+                        rows={2}
+                        placeholder="Describe the correct information..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reason for correction *
+                      </label>
+                      <textarea
+                        value={correctionForm.reason}
+                        onChange={(e) => {
+                          setCorrectionForm({ ...correctionForm, reason: e.target.value });
+                        }}
+                        rows={3}
+                        placeholder="Explain why this information is inaccurate or misleading..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="p-4 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowCorrectionModal(false);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  {correctionResult ? 'Close' : 'Cancel'}
+                </button>
+                {!correctionResult && (
+                  <button
+                    disabled={!correctionForm.reason || correctionSubmitting}
+                    onClick={async () => {
+                      setCorrectionSubmitting(true);
+                      try {
+                        const res = await fetch('/api/data-rights/default/data/correction', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            recordType: correctionForm.recordType,
+                            recordId: 'current-iep',
+                            currentValue: correctionForm.currentValue,
+                            requestedValue: correctionForm.requestedValue,
+                            reason: correctionForm.reason,
+                          }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setCorrectionResult({
+                            success: true,
+                            message: data.message || 'Correction request submitted successfully.',
+                          });
+                        } else {
+                          setCorrectionResult({
+                            success: false,
+                            message: 'Failed to submit correction request. Please try again.',
+                          });
+                        }
+                      } catch {
+                        setCorrectionResult({
+                          success: false,
+                          message: 'Network error. Please check your connection and try again.',
+                        });
+                      } finally {
+                        setCorrectionSubmitting(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    {correctionSubmitting ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Glossary */}
         <div className="rounded-xl bg-white p-6 shadow-sm">

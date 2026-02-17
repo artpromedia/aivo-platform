@@ -4,8 +4,10 @@
  * Implements FERPA/GDPR parent data rights endpoints:
  * - GET /parent/students/{id}/data/export - Export all student data
  * - POST /parent/students/{id}/data/delete - Request data deletion
+ * - POST /parent/students/{id}/data/correction - Request record correction (T2-05)
  *
  * Created: January 2026 - Enterprise QA Audit requirement
+ * Updated: Sprint T2-05 - FERPA correction flow per 34 CFR § 99.20
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -15,6 +17,14 @@ import { BadRequestException } from '../errors.js';
 interface DeleteRequestDto {
   reason?: string;
   confirmEmail: string;
+}
+
+interface CorrectionRequestDto {
+  recordType: string;
+  recordId: string;
+  currentValue: string;
+  requestedValue: string;
+  reason: string;
 }
 
 export async function dataRightsRoutes(app: FastifyInstance) {
@@ -102,6 +112,44 @@ export async function dataRightsRoutes(app: FastifyInstance) {
       status: deletionRequest.status,
       createdAt: deletionRequest.createdAt.toISOString(),
       completedAt: deletionRequest.completedAt?.toISOString(),
+    };
+  });
+
+  /**
+   * Submit a FERPA correction request
+   *
+   * FERPA 34 CFR § 99.20: Parents can request amendment of education
+   * records they believe are inaccurate, misleading, or in violation
+   * of the student's privacy rights.
+   *
+   * Sprint T2-05
+   */
+  app.post('/:studentId/data/correction', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { studentId } = request.params as { studentId: string };
+    const parent = request.parent!;
+    const dto = request.body as CorrectionRequestDto;
+
+    if (!dto.recordType || !dto.recordId || !dto.reason) {
+      throw new BadRequestException('recordType, recordId, and reason are required');
+    }
+
+    const result = await dataRightsService.submitCorrectionRequest({
+      parentId: parent.id,
+      studentId,
+      tenantId: (parent as any).tenantId,
+      recordType: dto.recordType,
+      recordId: dto.recordId,
+      currentValue: dto.currentValue || '',
+      requestedValue: dto.requestedValue || '',
+      reason: dto.reason,
+    });
+
+    reply.status(201);
+    return {
+      requestId: result.id,
+      status: result.status,
+      message:
+        'Your correction request has been submitted. The school district will review it within 15 business days per FERPA requirements. You will receive a notification when it is resolved.',
     };
   });
 }

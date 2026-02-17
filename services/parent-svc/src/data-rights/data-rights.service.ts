@@ -29,6 +29,7 @@ export interface DataExport {
     assessments: AssessmentData;
     aiInteractions: AiInteractionData;
     consents: ConsentData;
+    iepRecords: IEPRecordData;
   };
   metadata: {
     format: string;
@@ -87,6 +88,43 @@ interface ConsentData {
   }[];
 }
 
+interface IEPRecordData {
+  totalIEPs: number;
+  ieps: {
+    iepId: string;
+    iepNumber: string;
+    status: string;
+    effectiveDate?: string;
+    annualReviewDate?: string;
+    goals: {
+      goalNumber: number;
+      description: string;
+      status: string;
+      targetDate?: string;
+      currentProgress?: number;
+    }[];
+    accommodations: string[];
+    services: string[];
+  }[];
+  note: string;
+}
+
+export interface CorrectionRequest {
+  id: string;
+  parentId: string;
+  studentId: string;
+  tenantId: string;
+  recordType: string;
+  recordId: string;
+  currentValue: string;
+  requestedValue: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'denied';
+  createdAt: Date;
+  reviewedAt?: Date;
+  reviewNote?: string;
+}
+
 export interface DeletionRequest {
   id: string;
   parentId: string;
@@ -140,13 +178,15 @@ export class DataRightsService {
     const exportDate = new Date().toISOString();
 
     // Fetch all data categories in parallel
-    const [profile, learningActivity, assessments, aiInteractions, consents] = await Promise.all([
-      this.getProfileData(studentId, tenantId),
-      this.getLearningActivityData(studentId, tenantId),
-      this.getAssessmentData(studentId, tenantId),
-      this.getAiInteractionData(studentId, tenantId),
-      this.getConsentData(studentId, parentId),
-    ]);
+    const [profile, learningActivity, assessments, aiInteractions, consents, iepRecords] =
+      await Promise.all([
+        this.getProfileData(studentId, tenantId),
+        this.getLearningActivityData(studentId, tenantId),
+        this.getAssessmentData(studentId, tenantId),
+        this.getAiInteractionData(studentId, tenantId),
+        this.getConsentData(studentId, parentId),
+        this.getIEPRecordData(studentId, tenantId),
+      ]);
 
     // Log the export for audit
     await this.logDataExport(studentId, parentId, exportId);
@@ -164,6 +204,7 @@ export class DataRightsService {
         assessments,
         aiInteractions,
         consents,
+        iepRecords,
       },
       metadata: {
         format: 'JSON',
@@ -326,6 +367,150 @@ export class DataRightsService {
         createdAt: new Date(),
       },
     });
+  }
+
+  /**
+   * Fetch IEP records from iep-svc
+   *
+   * Sprint T2-05: Include IEP data in FERPA data export
+   */
+  private async getIEPRecordData(studentId: string, tenantId: string): Promise<IEPRecordData> {
+    const iepSvcUrl = process.env.IEP_SVC_URL || 'http://localhost:4070';
+    try {
+      const response = await fetch(`${iepSvcUrl}/ieps?studentId=${encodeURIComponent(studentId)}`, {
+        headers: {
+          'x-tenant-id': tenantId,
+          'content-type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        logger.warn({ studentId, status: response.status }, 'IEP service returned non-OK status');
+        return { totalIEPs: 0, ieps: [], note: 'IEP records temporarily unavailable.' };
+      }
+
+      const data = await response.json();
+      const ieps = Array.isArray(data) ? data : (data.data ?? []);
+
+      return {
+        totalIEPs: ieps.length,
+        ieps: ieps.map((iep: any) => ({
+          iepId: iep.id,
+          iepNumber: iep.iepNumber || '',
+          status: iep.status || 'UNKNOWN',
+          effectiveDate: iep.effectiveDate
+            ? new Date(iep.effectiveDate).toISOString().split('T')[0]
+            : undefined,
+          annualReviewDate: iep.annualReviewDate
+            ? new Date(iep.annualReviewDate).toISOString().split('T')[0]
+            : undefined,
+          goals: (iep.goals ?? []).map((g: any) => ({
+            goalNumber: g.goalNumber ?? 0,
+            description: g.description ?? '',
+            status: g.status ?? 'UNKNOWN',
+            targetDate: g.targetDate
+              ? new Date(g.targetDate).toISOString().split('T')[0]
+              : undefined,
+            currentProgress: g.currentProgress ?? undefined,
+          })),
+          accommodations: iep.accommodations ?? [],
+          services: iep.services ?? [],
+        })),
+        note: 'IEP records retrieved from the Individualized Education Program service.',
+      };
+    } catch (err) {
+      logger.error({ studentId, err }, 'Failed to fetch IEP records from iep-svc');
+      return {
+        totalIEPs: 0,
+        ieps: [],
+        note: 'IEP records could not be fetched at this time. Contact support@aivo.ai for a complete copy.',
+      };
+    }
+  }
+
+  /**
+   * Submit a FERPA correction request
+   *
+   * FERPA 34 CFR § 99.20: Parents have the right to request amendment
+   * of education records they believe are inaccurate or misleading.
+   *
+   * Sprint T2-05: Forwarded to audit-svc correction endpoint.
+   */
+  async submitCorrectionRequest(params: {
+    parentId: string;
+    studentId: string;
+    tenantId: string;
+    recordType: string;
+    recordId: string;
+    currentValue: string;
+    requestedValue: string;
+    reason: string;
+  }): Promise<CorrectionRequest> {
+    await this.verifyParentStudentAccess(params.parentId, params.studentId);
+
+    const auditSvcUrl = process.env.AUDIT_SVC_URL || 'http://localhost:4050';
+
+    try {
+      const response = await fetch(`${auditSvcUrl}/corrections`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-tenant-id': params.tenantId,
+          'x-user-id': params.parentId,
+          'x-user-email': '', // filled by controller
+        },
+        body: JSON.stringify({
+          studentId: params.studentId,
+          recordType: params.recordType,
+          recordId: params.recordId,
+          currentValue: params.currentValue,
+          requestedValue: params.requestedValue,
+          reason: params.reason,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        logger.error(
+          { status: response.status, body: errText },
+          'Audit svc correction request failed'
+        );
+        throw new Error('Failed to submit correction request');
+      }
+
+      const result = await response.json();
+
+      // Emit event for notification
+      this.eventEmitter.emit('data.correction.requested', {
+        requestId: result.id,
+        parentId: params.parentId,
+        studentId: params.studentId,
+        tenantId: params.tenantId,
+        recordType: params.recordType,
+      });
+
+      logger.info(
+        { requestId: result.id, studentId: params.studentId, parentId: params.parentId },
+        'FERPA correction request submitted'
+      );
+
+      return {
+        id: result.id,
+        parentId: params.parentId,
+        studentId: params.studentId,
+        tenantId: params.tenantId,
+        recordType: params.recordType,
+        recordId: params.recordId,
+        currentValue: params.currentValue,
+        requestedValue: params.requestedValue,
+        reason: params.reason,
+        status: 'pending',
+        createdAt: new Date(result.createdAt ?? Date.now()),
+      };
+    } catch (err) {
+      logger.error({ err, studentId: params.studentId }, 'Failed to submit correction request');
+      throw err;
+    }
   }
 
   /**
