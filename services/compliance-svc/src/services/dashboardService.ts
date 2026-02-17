@@ -249,13 +249,15 @@ async function getRecentActivity(tenantId: string, limit: number = 10) {
   });
 
   const items = [
-    ...findings.map((f) => ({
-      type: `finding.${f.status.toLowerCase()}`,
-      title: f.title,
-      timestamp: f.updatedAt.toISOString(),
-    })),
+    ...findings
+      .filter((f) => f.status && f.updatedAt)
+      .map((f) => ({
+        type: `finding.${f.status.toLowerCase()}`,
+        title: f.title,
+        timestamp: f.updatedAt.toISOString(),
+      })),
     ...controls
-      .filter((c) => c.statusUpdatedAt)
+      .filter((c) => c.statusUpdatedAt && c.status)
       .map((c) => ({
         type: `control.${c.status.toLowerCase()}`,
         title: `${c.controlId}: ${c.title}`,

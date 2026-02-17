@@ -1022,7 +1022,9 @@ describe('Dashboard Audit Summary', () => {
       mockedPrisma.tenantFramework.findMany.mockResolvedValue([]);
       mockedPrisma.finding.count.mockResolvedValue(0);
       mockedPrisma.finding.groupBy.mockResolvedValue([]);
-      mockedPrisma.finding.findMany.mockResolvedValue([upcomingFinding] as any);
+      mockedPrisma.finding.findMany
+        .mockResolvedValueOnce([upcomingFinding] as any)  // deadlines
+        .mockResolvedValueOnce([]);  // recent activity
       mockedPrisma.evidence.findMany.mockResolvedValue([expiringEvidence] as any);
       mockedPrisma.remediation.findMany.mockResolvedValue([]);
       mockedPrisma.control.findMany.mockResolvedValue([]);
