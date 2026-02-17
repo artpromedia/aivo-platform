@@ -86,7 +86,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20.19.4"
+          node-version: "22.22.0"
           cache: "pnpm"
 
       - name: Get pnpm store path
@@ -451,7 +451,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20.19.4"
+          node-version: "22.22.0"
           cache: "pnpm"
 
       - name: Install dependencies

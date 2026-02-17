@@ -4,7 +4,7 @@
 # Multi-stage build for production deployment
 
 # Stage 1: Builder
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Enable corepack for pnpm
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -38,7 +38,7 @@ RUN pnpm deploy --filter="@aivo/model-registry-svc" --prod /deploy
 RUN cp -r services/model-registry-svc/generated /deploy/generated
 
 # Stage 2: Runner
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 # Install dumb-init for proper signal handling and openssl for Prisma
 RUN apk add --no-cache dumb-init openssl

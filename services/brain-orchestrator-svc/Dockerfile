@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 RUN apk add --no-cache g++ make python3
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -16,7 +16,7 @@ RUN pnpm turbo build --filter="@aivo/brain-orchestrator-svc..."
 RUN pnpm deploy --filter="@aivo/brain-orchestrator-svc" --prod /deploy
 
 # Stage 2: Runner
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001 -G nodejs
 RUN apk add --no-cache dumb-init openssl

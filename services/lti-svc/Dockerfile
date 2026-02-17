@@ -4,7 +4,7 @@
 # Multi-stage build for NestJS services
 
 # Stage 1: Builder
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache g++ make python3
@@ -32,7 +32,7 @@ RUN pnpm turbo build --filter="@aivo/lti-svc..."
 RUN pnpm deploy --filter="@aivo/lti-svc" --prod /deploy
 
 # Stage 2: Runner
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 # Security: Create non-root user
 RUN addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 -G nodejs

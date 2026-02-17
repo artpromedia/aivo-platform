@@ -4,7 +4,7 @@ This guide gets you productive in one day. Follow the steps in order.
 
 ## Prerequisites
 
-- Node 20.19.4 (use `.nvmrc`). Enable Corepack (`corepack enable`) to get pnpm 9.x.
+- Node 22.22.0 (use `.nvmrc`). Enable Corepack (`corepack enable`) to get pnpm 9.x.
 - Python 3.11 (see `.python-version`).
 - pnpm (managed by Corepack) and git.
 - Flutter SDK (3.19+ recommended), with Xcode (iOS) and Android Studio/SDK (Android) installed and an emulator or device configured.
@@ -68,7 +68,7 @@ Routes: PIN → Today Plan → Session Complete.
 
 ## Common pitfalls
 
-- **Node version mismatch**: if you see engine warnings, install Node 20.19.4 (`nvm use` on macOS/Linux). On Windows, install matching Node and rerun `pnpm install`.
+- **Node version mismatch**: if you see engine warnings, install Node 22.22.0 (`nvm use` on macOS/Linux). On Windows, install matching Node and rerun `pnpm install`.
 - **Corepack disabled**: run `corepack enable` before `pnpm install`.
 - **Flutter missing toolchains**: ensure Android SDK licenses accepted (`yes | sdkmanager --licenses`) and an emulator is running before `flutter run`.
 - **Husky prepare warning in CI**: Husky expects a git repo; locally it installs fine after `pnpm install` in a cloned repo.

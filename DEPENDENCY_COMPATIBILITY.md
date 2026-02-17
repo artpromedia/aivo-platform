@@ -11,7 +11,7 @@ This document analyzes the dependency compatibility between the source repositor
 
 | Component | Source (Legacy) | Target (Platform) | Status | Action |
 |-----------|-----------------|-------------------|--------|--------|
-| Node.js | >=20.19.4 | 20.19.4 | ✅ Compatible | None |
+| Node.js | >=22.22.0 | 22.22.0 | ✅ Compatible | None |
 | Package Manager | pnpm 10.0.0 | pnpm 9.12.0 | ⚠️ Minor diff | Upgrade target to 10.0.0 |
 | Build System | Turbo 2.0.0 | Turbo 2.1.0 | ✅ Compatible | None |
 
@@ -358,7 +358,7 @@ mypy>=1.8.0
 ## Version Lock Recommendations
 
 For stability during migration, lock these versions:
-- Node.js: 20.19.4 (exact)
+- Node.js: 22.22.0 (exact)
 - Python: 3.11.x (minor)
 - pnpm: 10.0.0 (exact)
 - FastAPI: 0.115.0 (exact)

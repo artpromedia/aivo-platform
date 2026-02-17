@@ -49,7 +49,7 @@ concurrency:
 # Global environment variables
 env:
   REGISTRY: ghcr.io/artpromedia
-  NODE_VERSION: '20.19.4'
+  NODE_VERSION: '22.22.0'
   PNPM_VERSION: '9.12.0'
   FLUTTER_VERSION: '3.22.0'
   

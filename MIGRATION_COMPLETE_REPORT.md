@@ -300,7 +300,7 @@ Results:
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| Node.js | 20.19.4 | LTS |
+| Node.js | 22.22.0 | Active LTS |
 | pnpm | 9.12.0 | Package manager |
 | Next.js | 15.0.3 | App router |
 | React | 18.3.x | Stable |

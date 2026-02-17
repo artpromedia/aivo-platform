@@ -4,7 +4,7 @@
 
 AIVO is a comprehensive educational technology platform designed to provide personalized, accessible learning experiences for students of all abilities, with special focus on neurodivergent learners (ADHD, Autism, Dyslexia, and more).
 
-[![Node.js](https://img.shields.io/badge/Node.js-20.19.4-green)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22.22.0-green)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-9.12.0-orange)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-yellow)](https://python.org/)
@@ -115,7 +115,7 @@ AIVO provides:
 
 ### Required
 
-- **Node.js 20.19.4** (managed via `.node` directory)
+- **Node.js 22.22.0** (managed via `.node` directory)
 - **pnpm 9.12.0** (package manager)
 - **Docker Desktop** (for infrastructure services)
 - **Git**
@@ -139,7 +139,7 @@ git clone https://github.com/artpromedia/aivo-platform.git
 cd aivo-platform
 
 # Windows: Set up Node.js environment
-. .\scripts\use-node20.ps1
+. .\scripts\use-node22.ps1
 
 # macOS/Linux: Set up Node.js environment
 source ./scripts/setup-local.sh
@@ -269,7 +269,7 @@ aivo/
 │   └── Dockerfile.*               # Service Dockerfiles
 │
 ├── scripts/                       # Utility scripts
-│   ├── use-node20.ps1             # Windows Node setup
+│   ├── use-node22.ps1             # Windows Node setup
 │   ├── setup-local.sh             # Unix local setup
 │   ├── db-setup.ps1               # Database setup
 │   ├── prisma-generate-all.ps1    # Generate all Prisma clients
@@ -425,7 +425,7 @@ The workspace includes pre-configured tasks in `.vscode/tasks.json`:
 
 ```powershell
 # Always source the Node.js environment first
-. .\scripts\use-node20.ps1
+. .\scripts\use-node22.ps1
 
 # Then run pnpm commands
 pnpm install
@@ -637,8 +637,8 @@ cp .env.example .env
 
 ```powershell
 # Always use the workspace Node.js
-. .\scripts\use-node20.ps1
-node --version  # Should show v20.19.4
+. .\scripts\use-node22.ps1
+node --version  # Should show v22.22.0
 ```
 
 #### Prisma client not generated

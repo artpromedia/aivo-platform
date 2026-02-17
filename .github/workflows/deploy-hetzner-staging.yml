@@ -43,7 +43,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/artpromedia
-  NODE_VERSION: '20.19.4'
+  NODE_VERSION: '22.22.0'
   PNPM_VERSION: '9.12.0'
   NAMESPACE: aivo-staging
   # SSH target — Server 2 (K3s control plane)

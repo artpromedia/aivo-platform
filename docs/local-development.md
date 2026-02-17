@@ -24,7 +24,7 @@ This guide explains how to set up and run the complete AIVO platform locally usi
 | Docker Desktop | 4.0+            | Latest                    | Enable WSL2 on Windows                   |
 | Docker Compose | v2.0+           | Built into Docker Desktop |                                          |
 | Git            | 2.30+           | Latest                    |                                          |
-| Node.js        | 20.x            | 20.19.4                   | Only for running services outside Docker |
+| Node.js        | 22.x            | 22.22.0                   | Only for running services outside Docker |
 | pnpm           | 8.x             | 9.x                       | Only for running services outside Docker |
 
 ### System Requirements
