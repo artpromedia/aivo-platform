@@ -268,3 +268,90 @@ export async function fetchClassroomLearners(
 ): Promise<LearnerInfoResponse[] | null> {
   return fetchJson(`${config.services.tenant}/classrooms/${classroomId}/learners`, token);
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SESSION SERVICE CLIENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface SessionListItem {
+  id: string;
+  tenantId: string;
+  learnerId: string;
+  sessionType: string;
+  origin: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationMs: number | null;
+  eventCount: number;
+  metadata: Record<string, unknown> | null;
+}
+
+interface SessionListResponse {
+  total: number;
+  items: SessionListItem[];
+  limit: number;
+  offset: number;
+}
+
+export async function fetchLearnerSessions(
+  learnerId: string,
+  tenantId: string,
+  token: string,
+  limit = 20,
+  offset = 0
+): Promise<SessionListResponse | null> {
+  return fetchJson(
+    `${config.services.session}/sessions?learnerId=${learnerId}&tenantId=${tenantId}&limit=${limit}&offset=${offset}&includeIncomplete=false`,
+    token
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARENT SERVICE CLIENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+interface LinkedStudent {
+  studentId: string;
+  studentName: string;
+  relationship: string;
+  linkedAt: string;
+}
+
+interface ParentStudentsResponse {
+  active: LinkedStudent[];
+  revoked: { studentId: string; studentName: string; revokedAt: string }[];
+}
+
+export async function fetchParentLinkedStudents(
+  token: string
+): Promise<ParentStudentsResponse | null> {
+  return fetchJson(`${config.services.parent}/api/v1/parent/students`, token);
+}
+
+interface StudentSummaryResponse {
+  id: string;
+  givenName: string;
+  familyName: string;
+  overallMastery: number;
+  weeklyStats: {
+    totalMinutes: number;
+    sessionsCount: number;
+    averageScore: number;
+    daysActive: number;
+  };
+  recentActivity: {
+    id: string;
+    lessonTitle: string;
+    startedAt: string;
+    completedAt: string | null;
+    score: number | null;
+    timeSpentMinutes: number;
+  }[];
+}
+
+export async function fetchStudentSummary(
+  studentId: string,
+  token: string
+): Promise<StudentSummaryResponse | null> {
+  return fetchJson(`${config.services.parent}/api/v1/parent/students/${studentId}/summary`, token);
+}

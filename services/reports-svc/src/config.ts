@@ -23,6 +23,8 @@ export const config = {
     analytics: requireEnvInProduction('ANALYTICS_SVC_URL', 'http://localhost:4030'),
     goal: requireEnvInProduction('GOAL_SVC_URL', 'http://localhost:4040'),
     tenant: requireEnvInProduction('TENANT_SVC_URL', 'http://localhost:4000'),
+    session: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:3020'),
+    parent: requireEnvInProduction('PARENT_SVC_URL', 'http://localhost:3010'),
   },
 
   // JWT validation

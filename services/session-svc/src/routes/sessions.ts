@@ -9,13 +9,13 @@ import {
 } from '../middleware/authHelpers.js';
 import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
 import { prisma } from '../prisma.js';
-import { sessionEventPublisher } from '../services/event-publisher.js';
 import {
   selectSessionContent,
   gradeToGradeBand,
   type Subject,
   type GradeBand,
 } from '../services/content-client.js';
+import { sessionEventPublisher } from '../services/event-publisher.js';
 import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -78,14 +78,16 @@ const StartLearningSchema = z.object({
   subject: z.enum(['ELA', 'MATH', 'SCIENCE', 'SEL', 'SPEECH', 'OTHER']),
   gradeBand: z.enum(['K_2', 'G3_5', 'G6_8', 'G9_12']).optional(),
   gradeLevel: z.string().optional(),
-  origin: z.enum([
-    SessionOrigin.MOBILE_LEARNER,
-    SessionOrigin.WEB_LEARNER,
-    SessionOrigin.TEACHER_LED,
-    SessionOrigin.HOMEWORK_HELPER,
-    SessionOrigin.PARENT_APP,
-    SessionOrigin.SYSTEM,
-  ]).default(SessionOrigin.WEB_LEARNER),
+  origin: z
+    .enum([
+      SessionOrigin.MOBILE_LEARNER,
+      SessionOrigin.WEB_LEARNER,
+      SessionOrigin.TEACHER_LED,
+      SessionOrigin.HOMEWORK_HELPER,
+      SessionOrigin.PARENT_APP,
+      SessionOrigin.SYSTEM,
+    ])
+    .default(SessionOrigin.WEB_LEARNER),
   minutesAvailable: z.number().int().min(5).max(120).default(30),
   metadata: z.record(z.any()).optional(),
 });
@@ -740,6 +742,25 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
 
+    // Publish event to NATS (non-blocking)
+    sessionEventPublisher
+      .publishSessionStarted({
+        id: session.id,
+        tenantId,
+        learnerId,
+        sessionType: finalSessionType,
+        origin: SessionOrigin.TEACHER_LED,
+        startedAt: now,
+        metadata: {
+          sessionPlanId,
+          initiatedByUserId: user.sub,
+          ...metadata,
+        } as Record<string, unknown>,
+      })
+      .catch((err: unknown) => {
+        logger.error({ err }, '[from-plan] Failed to publish session.started event');
+      });
+
     return reply.status(201).send({
       id: session.id,
       tenantId: session.tenantId,
@@ -829,7 +850,10 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
           '[start-learning] Content selected for session'
         );
       } catch (err) {
-        logger.warn({ err }, '[start-learning] Content selection failed, session will have no pre-selected content');
+        logger.warn(
+          { err },
+          '[start-learning] Content selection failed, session will have no pre-selected content'
+        );
       }
 
       const contentIds = selectedContent.map((c) => c.learningObjectId);
@@ -982,13 +1006,25 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
         note,
       } = bodyParsed.data;
 
+      const now = new Date();
+
+      // Count existing activity events to determine sequence number
+      const _activityEventsCount = await prisma.sessionEvent.count({
+        where: {
+          sessionId: session.id,
+          eventType: {
+            in: [SessionEventType.ACTIVITY_STARTED, SessionEventType.ACTIVITY_COMPLETED],
+          },
+        },
+      });
+
       const event = await prisma.sessionEvent.create({
         data: {
           sessionId: session.id,
           tenantId: session.tenantId,
           learnerId: session.learnerId,
           eventType: SessionEventType.ACTIVITY_COMPLETED,
-          eventTime: new Date(),
+          eventTime: now,
           metadataJson: {
             planItemId,
             activityType,
@@ -1001,6 +1037,27 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
           },
         },
       });
+
+      // Publish activity.completed event to NATS (non-blocking)
+      sessionEventPublisher
+        .publishActivityCompleted({
+          sessionId: session.id,
+          tenantId: session.tenantId,
+          learnerId: session.learnerId,
+          activityId: planItemId,
+          durationMs: durationMs ?? 0,
+          outcome: 'completed',
+          score: rating !== undefined ? rating / 4 : undefined,
+          attempts: 1,
+          masteryLevel: rating !== undefined ? rating / 4 : undefined,
+          completedAt: now,
+        })
+        .catch((err: unknown) => {
+          logger.error(
+            { err, sessionId: session.id, planItemId },
+            '[activity-completed] Failed to publish activity.completed event'
+          );
+        });
 
       return reply.status(201).send({
         eventId: event.id,
