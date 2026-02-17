@@ -3709,6 +3709,9 @@ importers:
 
   services/gamification-svc:
     dependencies:
+      '@aivo/events':
+        specifier: workspace:*
+        version: link:../../libs/events
       '@aivo/ts-api-utils':
         specifier: workspace:*
         version: link:../../packages/ts-api-utils
@@ -4032,6 +4035,9 @@ importers:
       ioredis:
         specifier: ^5.4.1
         version: 5.9.0
+      node-cron:
+        specifier: ^3.0.3
+        version: 3.0.3
       pino:
         specifier: ^9.4.0
         version: 9.14.0
@@ -4045,6 +4051,9 @@ importers:
       '@types/node':
         specifier: ^22.7.5
         version: 22.19.1
+      '@types/node-cron':
+        specifier: ^3.0.11
+        version: 3.0.11
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -4976,21 +4985,6 @@ importers:
       '@aws-sdk/client-comprehend':
         specifier: ^3.971.0
         version: 3.971.0
-      '@nestjs/common':
-        specifier: ^10.3.0
-        version: 10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core':
-        specifier: ^10.3.0
-        version: 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(@nestjs/websockets@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/event-emitter':
-        specifier: ^2.0.4
-        version: 2.1.1(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)
-      '@nestjs/platform-express':
-        specifier: ^10.3.0
-        version: 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)
-      '@nestjs/schedule':
-        specifier: ^4.0.0
-        version: 4.1.2(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)
       '@prisma/client':
         specifier: 5.22.0
         version: 5.22.0(prisma@5.22.0)
@@ -5000,18 +4994,9 @@ importers:
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
-      class-transformer:
-        specifier: ^0.5.1
-        version: 0.5.1
-      class-validator:
-        specifier: ^0.14.1
-        version: 0.14.3
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
-      express:
-        specifier: ^4.18.2
-        version: 4.22.1
       fastify:
         specifier: ^5.1.0
         version: 5.6.2
@@ -5030,9 +5015,6 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
-      nestjs-i18n:
-        specifier: ^10.4.0
-        version: 10.6.0(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)(class-validator@0.14.3)(rxjs@7.8.2)
       nodemailer:
         specifier: ^7.0.12
         version: 7.0.12
@@ -5046,9 +5028,6 @@ importers:
       '@types/bcryptjs':
         specifier: ^2.4.6
         version: 2.4.6
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
       '@types/jsonwebtoken':
         specifier: ^9.0.5
         version: 9.0.10
@@ -13299,9 +13278,6 @@ packages:
   abstract-logging@2.0.1:
     resolution: {integrity: sha512-2BjRTZxTPvheOvGbBslFSYOUkr+SjPtOnrLP33f+VIWLzezQpZcqVg7ja3L4dBXmzzgwT+a029jRx5PCi3JuiA==}
 
-  accept-language-parser@1.5.0:
-    resolution: {integrity: sha512-QhyTbMLYo0BBGg1aWbeMG4ekWtds/31BrEU+DONOg/7ax23vxpL03Pb7/zBmha2v7vdD3AyzZVWBVGEZxKOXWw==}
-
   accepts@1.3.8:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
     engines: {node: '>= 0.6'}
@@ -18440,15 +18416,6 @@ packages:
     resolution: {integrity: sha512-Z4SmBUweYa09+o6pG+eASabEpP6QkQ70yHj351pQoEXIs8uHbaU2DWVmzBANKgflPa47A50PtB2+NgRpQvr7vA==}
     engines: {node: '>= 10'}
 
-  nestjs-i18n@10.6.0:
-    resolution: {integrity: sha512-fPOgwrnb8u8UO6YXNlnamF7GDhNLOHQE8hD/pT/L7oUQibvL7PBZYZgquwppOFRaOPnH0uING2BzQGq7uQNNmQ==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@nestjs/common': '*'
-      '@nestjs/core': '*'
-      class-validator: '*'
-      rxjs: '*'
-
   next-auth@4.24.13:
     resolution: {integrity: sha512-sgObCfcfL7BzIK76SS5TnQtc3yo2Oifp/yIpfv6fMfeBOiBJkDWF3A2y9+yqnmJ4JKc2C+nMjSjmgDeTwgN1rQ==}
     peerDependencies:
@@ -20641,9 +20608,6 @@ packages:
   string-argv@0.3.2:
     resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
     engines: {node: '>=0.6.19'}
-
-  string-format@2.0.0:
-    resolution: {integrity: sha512-bbEs3scLeYNXLecRRuk6uJxdXUSj6le/8rNPHChIJTn2V79aXVTR1EH2OH5zLKKoz0V02fOUKZZcw01pLUShZA==}
 
   string-length@4.0.2:
     resolution: {integrity: sha512-+l6rNN5fYHNhZZy41RXsYptCjA2Igmq4EG7kZAYFQI1E1VTXarr6ZPXBg6eq7Y6eK4FEhY6AJlyuFIb/v/S0VQ==}
@@ -32750,8 +32714,6 @@ snapshots:
 
   abstract-logging@2.0.1: {}
 
-  accept-language-parser@1.5.0: {}
-
   accepts@1.3.8:
     dependencies:
       mime-types: 2.1.35
@@ -39582,19 +39544,6 @@ snapshots:
 
   neotraverse@0.6.18: {}
 
-  nestjs-i18n@10.6.0(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.20)(class-validator@0.14.3)(rxjs@7.8.2):
-    dependencies:
-      '@nestjs/common': 10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/core': 10.4.20(@nestjs/common@10.4.20(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.20)(@nestjs/websockets@10.4.20)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      accept-language-parser: 1.5.0
-      chokidar: 3.6.0
-      class-validator: 0.14.3
-      cookie: 0.7.2
-      iterare: 1.2.1
-      js-yaml: 4.1.1
-      rxjs: 7.8.2
-      string-format: 2.0.0
-
   next-auth@4.24.13(next@14.2.35(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@7.0.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.28.4
@@ -42246,8 +42195,6 @@ snapshots:
       - react-native-b4a
 
   string-argv@0.3.2: {}
-
-  string-format@2.0.0: {}
 
   string-length@4.0.2:
     dependencies:
