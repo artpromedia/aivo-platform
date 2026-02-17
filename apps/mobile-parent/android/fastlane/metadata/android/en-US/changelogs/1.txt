@@ -1,0 +1,8 @@
+Initial release of AIVO Parent!
+
+• Real-time progress tracking for your child's learning
+• Achievement notifications and milestone alerts
+• Detailed analytics with visual charts
+• Multi-child dashboard support
+• Session history and performance reviews
+• Secure, COPPA-compliant design

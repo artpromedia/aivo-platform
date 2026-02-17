@@ -21,7 +21,8 @@ flutter_native_splash:
   fullscreen: true
 
   # iOS settings
-  ios: false
+  ios: true
+  ios_content_mode: center
 
   # Web settings
   web: false

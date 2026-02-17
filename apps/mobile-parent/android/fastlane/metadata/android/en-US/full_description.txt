@@ -1,0 +1,22 @@
+AIVO Parent is the companion app for parents and guardians of children using AIVO Learn. Stay connected to your child's educational journey with real-time progress reports, achievement notifications, and detailed analytics — all from your phone.
+
+KEY FEATURES:
+
+• Real-Time Progress Tracking — See what your child is learning, how they're performing, and where they need support
+• Achievement Notifications — Get notified when your child earns badges, hits streaks, or completes milestones
+• Detailed Analytics — Visual charts and reports showing progress over time across all subjects
+• Multiple Children — Monitor all your children's learning from a single dashboard
+• Session History — Review completed lessons, scores, and time spent learning
+• Secure Communication — Direct messaging with teachers and educators through the platform
+• Privacy Controls — Manage your child's account settings and data privacy preferences
+
+DESIGNED FOR PARENTS:
+AIVO Parent gives you the insights you need to support your child's learning without being intrusive. Set learning goals, review progress, and celebrate achievements together.
+
+STAYING CONNECTED:
+Push notifications keep you informed about important milestones and daily activity summaries, so you always know how your child's learning is going.
+
+PRIVACY & SECURITY:
+Your family's data is protected with enterprise-grade security. We are fully COPPA-compliant and never sell or share your children's data.
+
+Download AIVO Parent and take an active role in your child's AI-powered education!

@@ -1,0 +1,16 @@
+# Android Release Signing Configuration
+# Copy this file to key.properties and fill in your keystore details.
+# DO NOT commit key.properties to version control.
+#
+# Generate a keystore:
+#   keytool -genkey -v -keystore aivo-parent.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 \
+#     -alias aivo-parent -storetype JKS
+#
+# For Play App Signing (recommended):
+#   Use an upload key and let Google manage the app signing key.
+
+storePassword=
+keyPassword=
+keyAlias=aivo-parent
+storeFile=aivo-parent.jks

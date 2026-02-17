@@ -1,0 +1,8 @@
+Initial release of AIVO Learn!
+
+• AI-powered personalized learning paths
+• Interactive lessons with audio, video, and activities
+• Gamification with XP, badges, and streaks
+• Speech recognition for pronunciation practice
+• Offline mode for learning anywhere
+• COPPA-compliant privacy and safety

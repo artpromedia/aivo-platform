@@ -1,0 +1,102 @@
+# Google Play Data Safety Declaration — AIVO Parent (com.aivo.parent)
+# =====================================================================
+# This file documents the data safety responses for the Google Play Console.
+# Fill these into the Play Console > App content > Data safety section.
+#
+# This app is NOT directed at children — it is a parent/guardian tool.
+# However, it processes children's educational data, so COPPA obligations
+# still apply to the data it displays.
+#
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  DATA COLLECTION & SHARING OVERVIEW                             ║
+# ╠══════════════════════════════════════════════════════════════════╣
+# ║  Does your app collect or share any user data?     YES          ║
+# ║  Does your app share data with third parties?      NO           ║
+# ║  Is all collected data encrypted in transit?       YES (TLS)    ║
+# ║  Do you provide a way for users to request         YES          ║
+# ║    that their data is deleted?                                  ║
+# ╚══════════════════════════════════════════════════════════════════╝
+#
+# ──────────────────────────────────────────────────────────────────
+# DATA TYPES COLLECTED
+# ──────────────────────────────────────────────────────────────────
+#
+# 1. Personal Info > Name
+#    - Collected: Yes
+#    - Shared: No
+#    - Purpose: App functionality, Account management
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 2. Personal Info > Email address
+#    - Collected: Yes
+#    - Shared: No
+#    - Purpose: App functionality, Account management
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 3. App Activity > App interactions
+#    - Collected: Yes
+#    - Shared: No
+#    - Purpose: App functionality (viewing child's progress)
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 4. App Info and Performance > Crash logs
+#    - Collected: Yes (via Firebase Crashlytics)
+#    - Shared: No
+#    - Purpose: App functionality (stability monitoring)
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 5. Financial Info > Purchase history
+#    - Collected: Yes (subscription status)
+#    - Shared: No
+#    - Purpose: App functionality (subscription management)
+#    - Required: No (free tier available)
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 6. Device or Other IDs > Device ID
+#    - Collected: Yes (Firebase Installation ID only)
+#    - Shared: No
+#    - Purpose: App functionality (push notifications)
+#    - Required: No (notifications are optional)
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# ──────────────────────────────────────────────────────────────────
+# DATA NOT COLLECTED
+# ──────────────────────────────────────────────────────────────────
+#
+# - Location (fine, coarse, or approximate)
+# - Phone number
+# - Photos or videos
+# - Audio recordings
+# - Health and fitness data
+# - Browsing history
+# - Search history
+# - Contacts
+# - Calendar
+# - Messages
+# - Advertising ID
+#
+# ──────────────────────────────────────────────────────────────────
+# CONTENT RATING QUESTIONNAIRE
+# ──────────────────────────────────────────────────────────────────
+#
+# Target audience: Parents/Guardians (18+)
+# Violence: None
+# Sexual content: None
+# Language: None
+# Controlled substances: None
+# IARC rating: Suitable for all ages
+# Interactive elements: Users Interact (messaging with teachers)
+# Contains ads: No
+# Does the app contain in-app purchases? Yes (subscription)
+# Does the app share user's location? No
+# Does the app allow unrestricted internet access? No (API calls only)

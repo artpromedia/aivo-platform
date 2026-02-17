@@ -1,0 +1,68 @@
+# Apple App Store Privacy Declaration — AIVO Parent (com.aivo.parent)
+# ====================================================================
+# This file documents the App Store Connect privacy label responses.
+# Fill these into App Store Connect > App Privacy section.
+#
+# Made for Kids: No (this is a parent/guardian app)
+# Age Rating: 4+
+#
+# ═══════════════════════════════════════════════════════════════════
+# APP PRIVACY DETAILS (Nutrition Labels)
+# ═══════════════════════════════════════════════════════════════════
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA LINKED TO YOU                                              │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ Name                                                            │
+# │   Purpose: App Functionality                                   │
+# │   Linked to identity: Yes                                      │
+# │   Used for tracking: No                                        │
+# │                                                                 │
+# │ Email Address                                                   │
+# │   Purpose: App Functionality, Account Management                │
+# │   Linked to identity: Yes                                      │
+# │   Used for tracking: No                                        │
+# │                                                                 │
+# │ Product Interaction                                             │
+# │   Purpose: App Functionality                                   │
+# │   Linked to identity: Yes                                      │
+# │   Used for tracking: No                                        │
+# │   Details: Child progress views, report generation              │
+# │                                                                 │
+# │ Purchase History                                                │
+# │   Purpose: App Functionality                                   │
+# │   Linked to identity: Yes                                      │
+# │   Used for tracking: No                                        │
+# │   Details: Subscription status only                             │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA NOT LINKED TO YOU                                          │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ Crash Data                                                      │
+# │   Purpose: App Functionality                                   │
+# │   Provider: Firebase Crashlytics                                │
+# │   Used for tracking: No                                        │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA NOT COLLECTED                                              │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ - Location                                                      │
+# │ - Health & Fitness                                              │
+# │ - Browsing History                                              │
+# │ - Search History                                                │
+# │ - Identifiers (Advertising ID, Device ID for tracking)         │
+# │ - Photos or Videos                                              │
+# │ - Audio Data                                                    │
+# │ - Contacts                                                      │
+# │ - Sensitive Info                                                │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ═══════════════════════════════════════════════════════════════════
+# TRACKING DECLARATION
+# ═══════════════════════════════════════════════════════════════════
+#
+# Does this app use tracking (ATT required)? NO
+# Does this app use the Advertising Identifier (IDFA)? NO
+# Third-party analytics SDKs: Firebase Analytics (no IDFA, anonymized)

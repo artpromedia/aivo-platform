@@ -1,0 +1,100 @@
+# Google Play Data Safety Declaration — AIVO Learn (com.aivo.learner)
+# =====================================================================
+# This file documents the data safety responses for the Google Play Console.
+# Fill these into the Play Console > App content > Data safety section.
+#
+# COPPA Compliance: This app is directed at children under 13.
+# - "Designed for Families" program enrollment required
+# - Target age group: 5-12 years old
+# - Content rating: ESRB Everyone / PEGI 3
+#
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  DATA COLLECTION & SHARING OVERVIEW                             ║
+# ╠══════════════════════════════════════════════════════════════════╣
+# ║  Does your app collect or share any user data?     YES          ║
+# ║  Does your app share data with third parties?      NO           ║
+# ║  Is all collected data encrypted in transit?       YES (TLS)    ║
+# ║  Do you provide a way for users to request         YES          ║
+# ║    that their data is deleted?                                  ║
+# ╚══════════════════════════════════════════════════════════════════╝
+#
+# ──────────────────────────────────────────────────────────────────
+# DATA TYPES COLLECTED
+# ──────────────────────────────────────────────────────────────────
+#
+# 1. Personal Info > Name
+#    - Collected: Yes
+#    - Shared: No
+#    - Purpose: App functionality (personalized learning experience)
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 2. App Activity > App interactions
+#    - Collected: Yes
+#    - Shared: No
+#    - Purpose: App functionality (lesson progress, quiz scores)
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 3. App Info and Performance > Crash logs
+#    - Collected: Yes (via Firebase Crashlytics)
+#    - Shared: No
+#    - Purpose: App functionality (stability monitoring)
+#    - Required: Yes
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# 4. Device or Other IDs > Device ID
+#    - Collected: Yes (Firebase Installation ID only)
+#    - Shared: No
+#    - Purpose: App functionality (push notifications)
+#    - Required: No (notifications are optional)
+#    - Encrypted in transit: Yes
+#    - User can request deletion: Yes
+#
+# ──────────────────────────────────────────────────────────────────
+# DATA NOT COLLECTED
+# ──────────────────────────────────────────────────────────────────
+#
+# - Location (fine, coarse, or approximate)
+# - Email address (parent provides via separate parent app)
+# - Phone number
+# - Photos or videos (camera used offline only, not uploaded)
+# - Audio recordings (speech recognition processed on-device)
+# - Financial info (no in-app purchases)
+# - Health and fitness data
+# - Browsing history
+# - Search history
+# - Contacts
+# - Calendar
+# - Messages
+# - Advertising ID
+#
+# ──────────────────────────────────────────────────────────────────
+# DESIGNED FOR FAMILIES
+# ──────────────────────────────────────────────────────────────────
+#
+# Target age: 5-12 (Under 13)
+# Contains ads: No
+# Ad networks: None
+# Compliant with COPPA: Yes
+# Compliant with GDPR-K (EU): Yes
+# Teacher approved program: Consider applying
+# Content rating: Everyone (ESRB) / PEGI 3
+#
+# ──────────────────────────────────────────────────────────────────
+# CONTENT RATING QUESTIONNAIRE
+# ──────────────────────────────────────────────────────────────────
+#
+# Violence: None
+# Sexual content: None
+# Language: None
+# Controlled substances: None
+# IARC rating: Suitable for all ages
+# Interactive elements: Users Interact (leaderboards), Digital Purchases (none)
+# Does the app share user's location? No
+# Does the app allow users to interact? Limited (leaderboard display names only)
+# Does the app allow users to purchase digital goods? No
+# Does the app contain unrestricted internet access? No (API calls only)

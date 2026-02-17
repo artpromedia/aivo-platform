@@ -58,7 +58,7 @@ flutter:
 # Configure app launcher icons  
 flutter_launcher_icons:
   android: "ic_launcher"
-  ios: false  # Not configured yet
+  ios: true
   image_path: "assets/icons/aivo-appicon-scholar.png"
   adaptive_icon_background: "#7C3AED"
   adaptive_icon_foreground: "assets/icons/aivo-icon-purple.png"
@@ -69,7 +69,7 @@ flutter_native_splash:
   color: "#7C3AED"  # AIVO brand purple
   image: "assets/splash/splash_logo_white.png"
   android: true
-  ios: false  # Not configured yet
+  ios: true
   web: false
   android_12:
     color: "#7C3AED"  # AIVO brand purple

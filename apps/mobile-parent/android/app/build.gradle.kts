@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.aivo.learner"
+    namespace = "com.aivo.parent"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,9 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.aivo.learner"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.aivo.parent"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

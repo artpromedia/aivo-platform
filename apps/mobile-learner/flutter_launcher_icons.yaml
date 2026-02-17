@@ -4,7 +4,7 @@
 
 flutter_launcher_icons:
   android: "ic_launcher"
-  ios: false
+  ios: true
   image_path: "assets/icons/aivo-appicon-scholar.png"
   min_sdk_android: 21
 

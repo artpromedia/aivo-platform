@@ -1,0 +1,22 @@
+AIVO Learn is a safe, engaging, AI-powered learning app designed for children. With personalized lessons, interactive activities, and gamified progress tracking, your child can explore subjects at their own pace — all in a COPPA-compliant, ad-free environment.
+
+KEY FEATURES:
+
+• Personalized Learning Paths — AI adapts lessons to each child's level and learning style
+• Interactive Lessons — Audio, video, and hands-on activities keep kids engaged
+• Gamified Progress — Earn XP, unlock badges, and build streaks to stay motivated
+• Speech & Voice — Practice pronunciation with built-in speech recognition
+• Offline Mode — Download lessons for learning anywhere, even without internet
+• Safe & Private — COPPA-compliant with no ads, no tracking, and no data sharing
+• Parent Dashboard — Parents can monitor progress through the companion AIVO Parent app
+
+SUBJECTS & SKILLS:
+Reading, writing, math, science, and more — all aligned with educational standards and crafted by experienced educators.
+
+DESIGNED FOR KIDS:
+AIVO Learn is built from the ground up with children's safety in mind. We collect only the minimum data necessary to personalize the learning experience, and we never sell or share children's data.
+
+PUSH NOTIFICATIONS:
+Optional notifications remind learners about their daily practice goals and celebrate achievements.
+
+Download AIVO Learn today and give your child a head start with AI-powered education!

@@ -1,5 +1,5 @@
 name: mobile_parent
-version: 0.1.0
+version: 1.0.0
 publish_to: "none"
 description: AIVO Parent Portal - Monitor your child's learning progress and communicate with teachers.
 environment:

@@ -1,0 +1,93 @@
+# Apple App Store Privacy Declaration — AIVO Learn (com.aivo.learner)
+# ====================================================================
+# This file documents the App Store Connect privacy label responses.
+# Fill these into App Store Connect > App Privacy section.
+#
+# COPPA / Made for Kids Category: Yes
+# Age Rating: 4+ (with parental gate for any external links)
+# Made for Kids primary age band: Ages 6-8
+# Made for Kids secondary age band: Ages 9-11
+#
+# ═══════════════════════════════════════════════════════════════════
+# APP PRIVACY DETAILS (Nutrition Labels)
+# ═══════════════════════════════════════════════════════════════════
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA LINKED TO YOU                                              │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ Name (first name only)                                         │
+# │   Purpose: App Functionality                                   │
+# │   Linked to identity: Yes (via parent account)                 │
+# │   Used for tracking: No                                        │
+# │                                                                 │
+# │ Product Interaction                                             │
+# │   Purpose: App Functionality                                   │
+# │   Linked to identity: Yes                                      │
+# │   Used for tracking: No                                        │
+# │   Details: Lesson completion, quiz scores, time spent           │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA NOT LINKED TO YOU                                          │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ Crash Data                                                      │
+# │   Purpose: App Functionality                                   │
+# │   Provider: Firebase Crashlytics                                │
+# │   Used for tracking: No                                        │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────────┐
+# │ DATA NOT COLLECTED                                              │
+# ├─────────────────────────────────────────────────────────────────┤
+# │ - Contact Info (email, phone — handled by parent app)          │
+# │ - Location                                                      │
+# │ - Financial Info                                                │
+# │ - Health & Fitness                                              │
+# │ - Browsing History                                              │
+# │ - Search History                                                │
+# │ - Identifiers (Advertising ID, Device ID for tracking)         │
+# │ - Purchases                                                     │
+# │ - Diagnostics (performance data)                                │
+# │ - Photos or Videos (camera used offline only)                  │
+# │ - Audio Data (speech recognition processed on-device)          │
+# │ - Contacts                                                      │
+# │ - Sensitive Info                                                │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# ═══════════════════════════════════════════════════════════════════
+# TRACKING DECLARATION
+# ═══════════════════════════════════════════════════════════════════
+#
+# Does this app use tracking (ATT required)? NO
+# Does this app use the Advertising Identifier (IDFA)? NO
+# Third-party analytics SDKs: Firebase Analytics (no IDFA, anonymized)
+#
+# ═══════════════════════════════════════════════════════════════════
+# MADE FOR KIDS REQUIREMENTS
+# ═══════════════════════════════════════════════════════════════════
+#
+# - No advertising of any kind
+# - No links out of the app without parental gate
+# - No social features without parental consent
+# - No in-app purchases within the child experience
+# - No collection of personal information without verifiable parental consent
+# - Age-appropriate content only
+# - No behavioral advertising or interest-based targeting
+# - Third-party SDKs (Firebase) configured for COPPA mode
+# - Analytics do not collect advertising identifiers
+#
+# ═══════════════════════════════════════════════════════════════════
+# APP STORE AGE RATING QUESTIONNAIRE
+# ═══════════════════════════════════════════════════════════════════
+#
+# Cartoon or Fantasy Violence: None
+# Realistic Violence: None
+# Sexual Content or Nudity: None
+# Profanity or Crude Humor: None
+# Mature/Suggestive Themes: None
+# Horror/Fear Themes: None
+# Medical/Treatment Info: None
+# Simulated Gambling: None
+# Alcohol, Tobacco, Drug Use: None
+# Unrestricted Web Access: No
+# Gambling and Contests: None
