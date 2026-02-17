@@ -36,4 +36,7 @@ export const config = {
   // Billing service configuration
   billingServiceUrl: process.env.BILLING_SERVICE_URL ?? 'http://localhost:4060',
   billingCheckDisabled: process.env.BILLING_CHECK_DISABLED === 'true',
+
+  // Content service configuration (for content selection in learning sessions)
+  contentServiceUrl: process.env.CONTENT_SERVICE_URL ?? 'http://localhost:4020',
 } as const;

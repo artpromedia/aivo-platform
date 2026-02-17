@@ -1,9 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
 import { useDashboard } from '@/lib/hooks/use-learner-api';
+
+const SUBJECTS = [
+  { code: 'MATH', label: 'Math', emoji: '🔢' },
+  { code: 'ELA', label: 'ELA', emoji: '📖' },
+  { code: 'SCIENCE', label: 'Science', emoji: '🔬' },
+  { code: 'SEL', label: 'Social-Emotional', emoji: '💚' },
+] as const;
+
+export default function DashboardPage() {
+  const { data, isLoading, error, refetch } = useDashboard();
+  const router = useRouter();
+  const [startingSubject, setStartingSubject] = useState<string | null>(null);
+  const [showSubjectPicker, setShowSubjectPicker] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
 export default function DashboardPage() {
   const { data, isLoading, error, refetch } = useDashboard();
@@ -22,6 +38,38 @@ export default function DashboardPage() {
   }
   const greeting = getGreeting();
 
+  async function startLearningSession(subject: string) {
+    setStartingSubject(subject);
+    setSessionError(null);
+    setShowSubjectPicker(false);
+
+    try {
+      const res = await fetch('/api/session/start-learning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, minutesAvailable: 30 }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          // Active session exists — redirect to courses
+          router.push('/courses');
+          return;
+        }
+        throw new Error(data.error || data.message || 'Failed to start session');
+      }
+
+      // Session started — navigate to courses (content will be available there)
+      router.push('/courses');
+    } catch (err) {
+      setSessionError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setStartingSubject(null);
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -33,12 +81,29 @@ export default function DashboardPage() {
             </h1>
             <p className="mt-2 text-blue-100">Ready to learn something amazing today?</p>
           </div>
-          <Link
-            href="/courses"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/20 px-6 py-3 font-medium text-white backdrop-blur-sm transition hover:bg-white/30"
-          >
-            Start Learning ▶️
-          </Link>
+          <div className="relative">
+            <button
+              onClick={() => { setShowSubjectPicker(!showSubjectPicker); }}
+              disabled={startingSubject !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/20 px-6 py-3 font-medium text-white backdrop-blur-sm transition hover:bg-white/30 disabled:opacity-60"
+            >
+              {startingSubject ? 'Starting...' : 'Start Learning ▶️'}
+            </button>
+            {showSubjectPicker && (
+              <div className="absolute right-0 top-full z-10 mt-2 w-48 overflow-hidden rounded-xl bg-white shadow-xl">
+                {SUBJECTS.map((s) => (
+                  <button
+                    key={s.code}
+                    onClick={() => { void startLearningSession(s.code); }}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-blue-50"
+                  >
+                    <span className="text-lg">{s.emoji}</span>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Daily Goals Progress */}
@@ -62,6 +127,18 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {sessionError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {sessionError}
+          <button
+            onClick={() => setSessionError(null)}
+            className="ml-2 font-medium underline hover:text-red-900"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content - Continue Learning */}

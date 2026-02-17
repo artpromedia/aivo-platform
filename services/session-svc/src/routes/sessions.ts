@@ -10,6 +10,12 @@ import {
 import { billingAccessPreHandler, checkAddonAccess } from '../middleware/billingAccess.js';
 import { prisma } from '../prisma.js';
 import { sessionEventPublisher } from '../services/event-publisher.js';
+import {
+  selectSessionContent,
+  gradeToGradeBand,
+  type Subject,
+  type GradeBand,
+} from '../services/content-client.js';
 import { SessionType, SessionOrigin, SessionEventType, type SessionWithEvents } from '../types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -63,6 +69,24 @@ const CreateFromPlanSchema = z.object({
       SessionType.ASSESSMENT,
     ])
     .optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+const StartLearningSchema = z.object({
+  tenantId: z.string().uuid(),
+  learnerId: z.string().uuid(),
+  subject: z.enum(['ELA', 'MATH', 'SCIENCE', 'SEL', 'SPEECH', 'OTHER']),
+  gradeBand: z.enum(['K_2', 'G3_5', 'G6_8', 'G9_12']).optional(),
+  gradeLevel: z.string().optional(),
+  origin: z.enum([
+    SessionOrigin.MOBILE_LEARNER,
+    SessionOrigin.WEB_LEARNER,
+    SessionOrigin.TEACHER_LED,
+    SessionOrigin.HOMEWORK_HELPER,
+    SessionOrigin.PARENT_APP,
+    SessionOrigin.SYSTEM,
+  ]).default(SessionOrigin.WEB_LEARNER),
+  minutesAvailable: z.number().int().min(5).max(120).default(30),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -727,6 +751,166 @@ export async function sessionRoutes(fastify: FastifyInstance): Promise<void> {
       sessionPlanId,
     });
   });
+
+  /**
+   * POST /sessions/start-learning
+   *
+   * Create a new LEARNING session AND select content from content-svc.
+   *
+   * This composite endpoint:
+   * 1. Creates a session envelope (same as POST /sessions)
+   * 2. Calls content-svc to search published Learning Objects matching
+   *    the requested subject and grade band
+   * 3. Stores selected content IDs in session metadata
+   * 4. Returns the session + selected content items
+   *
+   * Requires active subscription (billing gated).
+   */
+  fastify.post(
+    '/sessions/start-learning',
+    { preHandler: [billingAccessPreHandler] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const user = getUserFromRequest(request);
+      if (!user) {
+        return sendUnauthorized(reply);
+      }
+
+      const parsed = StartLearningSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Invalid request body',
+          details: parsed.error.flatten(),
+        });
+      }
+
+      const {
+        tenantId,
+        learnerId,
+        subject,
+        gradeBand: explicitGradeBand,
+        gradeLevel,
+        origin,
+        minutesAvailable,
+        metadata,
+      } = parsed.data;
+
+      if (!canAccessTenant(user, tenantId)) {
+        return reply.status(403).send({ error: 'Forbidden: tenant mismatch' });
+      }
+
+      // Resolve grade band: explicit > derived from gradeLevel > default G3_5
+      const gradeBand: GradeBand =
+        explicitGradeBand ?? (gradeLevel ? gradeToGradeBand(gradeLevel) : 'G3_5');
+
+      // Check for existing active session
+      const existingSession = await prisma.session.findFirst({
+        where: { tenantId, learnerId, endedAt: null },
+      });
+
+      if (existingSession) {
+        return reply.status(409).send({
+          error: 'Active session already exists',
+          existingSessionId: existingSession.id,
+          message: 'Complete or end the current session before starting a new one.',
+        });
+      }
+
+      // Select content from content-svc (non-blocking failure — session still created)
+      let selectedContent: Awaited<ReturnType<typeof selectSessionContent>> = [];
+      try {
+        selectedContent = await selectSessionContent({
+          tenantId,
+          subject: subject as Subject,
+          gradeBand,
+          maxItems: Math.max(3, Math.floor(minutesAvailable / 5)),
+        });
+        logger.info(
+          { subject, gradeBand, count: selectedContent.length },
+          '[start-learning] Content selected for session'
+        );
+      } catch (err) {
+        logger.warn({ err }, '[start-learning] Content selection failed, session will have no pre-selected content');
+      }
+
+      const contentIds = selectedContent.map((c) => c.learningObjectId);
+      const now = new Date();
+
+      // Create session with content metadata
+      const session = await prisma.session.create({
+        data: {
+          tenantId,
+          learnerId,
+          sessionType: SessionType.LEARNING,
+          origin,
+          startedAt: now,
+          metadataJson: {
+            subject,
+            gradeBand,
+            minutesAvailable,
+            selectedContentIds: contentIds,
+            contentCount: selectedContent.length,
+            ...metadata,
+          },
+          events: {
+            create: {
+              tenantId,
+              learnerId,
+              eventType: SessionEventType.SESSION_STARTED,
+              eventTime: now,
+              metadataJson: {
+                origin,
+                sessionType: SessionType.LEARNING,
+                subject,
+                gradeBand,
+                contentCount: selectedContent.length,
+              },
+            },
+          },
+        },
+        include: {
+          events: true,
+        },
+      });
+
+      // Publish event to NATS (non-blocking)
+      sessionEventPublisher
+        .publishSessionStarted({
+          id: session.id,
+          tenantId,
+          learnerId,
+          sessionType: SessionType.LEARNING,
+          origin,
+          startedAt: now,
+          metadata: {
+            subject,
+            gradeBand,
+            contentCount: selectedContent.length,
+            ...metadata,
+          } as Record<string, unknown>,
+        })
+        .catch((err: unknown) => {
+          logger.error({ err }, '[start-learning] Failed to publish session.started event');
+        });
+
+      return reply.status(201).send({
+        session: {
+          id: session.id,
+          tenantId: session.tenantId,
+          learnerId: session.learnerId,
+          sessionType: session.sessionType,
+          origin: session.origin,
+          startedAt: session.startedAt,
+          metadata: session.metadataJson,
+        },
+        content: {
+          items: selectedContent,
+          total: selectedContent.length,
+          subject,
+          gradeBand,
+        },
+      });
+    }
+  );
 
   /**
    * POST /sessions/:id/activity-completed
