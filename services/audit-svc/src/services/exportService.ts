@@ -91,19 +91,53 @@ export async function processExport(exportId: string) {
       orderBy: { occurredAt: 'asc' },
     });
 
-    // In production, this would:
-    // 1. Stream records to S3/storage
-    // 2. Generate the file in the requested format
-    // 3. Update the export record with the file URL
+    // PRD: Generate actual export file content
+    let fileContent: string;
+    let mimeType: string;
 
-    // For now, we just update the status
+    if (exportRequest.format === 'CSV') {
+      // Generate CSV
+      const headers = [
+        'eventId', 'eventType', 'category', 'severity', 'outcome',
+        'actorId', 'actorEmail', 'actorRoles', 'targetType', 'targetId',
+        'action', 'description', 'purpose', 'dataAccessed', 'dataClassification',
+        'complianceFlags', 'sourceService', 'occurredAt',
+      ];
+      const csvRows = [headers.join(',')];
+      for (const r of records) {
+        csvRows.push([
+          r.eventId, r.eventType, r.category, r.severity, r.outcome,
+          r.actorId || '', r.actorEmail || '', (r.actorRoles || []).join(';'),
+          r.targetType || '', r.targetId || '',
+          r.action, `"${(r.description || '').replace(/"/g, '""')}"`,
+          r.purpose || '', (r.dataAccessed || []).join(';'),
+          r.dataClassification || '', (r.complianceFlags || []).join(';'),
+          r.sourceService, r.occurredAt.toISOString(),
+        ].join(','));
+      }
+      fileContent = csvRows.join('\n');
+      mimeType = 'text/csv';
+    } else {
+      // Default JSON
+      fileContent = JSON.stringify(records, null, 2);
+      mimeType = 'application/json';
+    }
+
+    const { createHash } = await import('node:crypto');
+    const fileChecksum = createHash('sha256').update(fileContent).digest('hex');
+    const fileSizeBytes = Buffer.byteLength(fileContent, 'utf-8');
+
+    // In production, fileContent would be uploaded to S3/storage
+    // and fileUrl would point to the download location
     await prisma.auditExport.update({
       where: { id: exportId },
       data: {
         status: 'COMPLETED',
         completedAt: new Date(),
         recordCount: records.length,
-        // fileUrl would be set here in production
+        fileSizeBytes: BigInt(fileSizeBytes),
+        checksum: fileChecksum,
+        // fileUrl would be set here after S3 upload in production
       },
     });
   } catch (error) {

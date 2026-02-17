@@ -393,7 +393,7 @@ export async function checkCompliance(tenantId: string) {
   const now = new Date();
   const alerts: any[] = [];
 
-  // Check annual reviews
+  // Check annual reviews coming due (within 1 month)
   const annualReviewsDue = await prisma.iEP.findMany({
     where: {
       tenantId,
@@ -418,7 +418,31 @@ export async function checkCompliance(tenantId: string) {
     });
   }
 
-  // Check reevaluations
+  // PRD: Check OVERDUE annual reviews (past due date)
+  const annualReviewsOverdue = await prisma.iEP.findMany({
+    where: {
+      tenantId,
+      status: 'ACTIVE',
+      annualReviewDate: {
+        lt: now,
+      },
+    },
+    include: { student: { select: { firstName: true, lastName: true, studentId: true } } },
+  });
+
+  for (const iep of annualReviewsOverdue) {
+    const daysOverdue = differenceInDays(now, iep.annualReviewDate!);
+    alerts.push({
+      alertType: 'ANNUAL_REVIEW_OVERDUE',
+      severity: 'Critical',
+      studentId: iep.studentId,
+      iepId: iep.id,
+      description: `Annual review OVERDUE by ${daysOverdue} days for ${iep.student.firstName} ${iep.student.lastName}`,
+      dueDate: iep.annualReviewDate,
+    });
+  }
+
+  // Check reevaluations coming due (within 3 months)
   const reevaluationsDue = await prisma.iEP.findMany({
     where: {
       tenantId,
@@ -439,6 +463,55 @@ export async function checkCompliance(tenantId: string) {
       iepId: iep.id,
       description: `Reevaluation due for ${iep.student.firstName} ${iep.student.lastName}`,
       dueDate: iep.reevaluationDate,
+    });
+  }
+
+  // PRD: Check OVERDUE reevaluations
+  const reevaluationsOverdue = await prisma.iEP.findMany({
+    where: {
+      tenantId,
+      status: 'ACTIVE',
+      reevaluationDate: {
+        lt: now,
+      },
+    },
+    include: { student: { select: { firstName: true, lastName: true, studentId: true } } },
+  });
+
+  for (const iep of reevaluationsOverdue) {
+    const daysOverdue = differenceInDays(now, iep.reevaluationDate!);
+    alerts.push({
+      alertType: 'REEVALUATION_OVERDUE',
+      severity: 'Critical',
+      studentId: iep.studentId,
+      iepId: iep.id,
+      description: `Reevaluation OVERDUE by ${daysOverdue} days for ${iep.student.firstName} ${iep.student.lastName}`,
+      dueDate: iep.reevaluationDate,
+    });
+  }
+
+  // PRD: Check goals past their target date without completion
+  const overdueGoals = await prisma.iEPGoal.findMany({
+    where: {
+      iep: { tenantId, status: 'ACTIVE' },
+      targetDate: { lt: now },
+      status: { notIn: ['COMPLETED', 'DISCONTINUED'] },
+    },
+    include: {
+      iep: {
+        include: { student: { select: { firstName: true, lastName: true, studentId: true } } },
+      },
+    },
+  });
+
+  for (const goal of overdueGoals) {
+    alerts.push({
+      alertType: 'GOAL_OVERDUE',
+      severity: 'High',
+      studentId: goal.iep.studentId,
+      iepId: goal.iepId,
+      description: `Goal #${goal.goalNumber} overdue for ${goal.iep.student.firstName} ${goal.iep.student.lastName}: ${goal.description?.substring(0, 60)}`,
+      dueDate: goal.targetDate,
     });
   }
 
@@ -495,12 +568,19 @@ export async function getComplianceAlerts(tenantId: string, options: any = {}) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export async function getDashboard(tenantId: string) {
+  const now = new Date();
+
   const [
     totalStudents,
     activeIEPs,
     statusCounts,
     upcomingMeetings,
     complianceAlerts,
+    overdueReviews,
+    overdueReevals,
+    totalGoals,
+    completedGoals,
+    overdueGoals,
   ] = await Promise.all([
     prisma.student.count({ where: { tenantId, status: 'ACTIVE' } }),
     prisma.iEP.count({ where: { tenantId, status: 'ACTIVE' } }),
@@ -526,7 +606,40 @@ export async function getDashboard(tenantId: string) {
     prisma.complianceAlert.count({
       where: { tenantId, status: 'OPEN' },
     }),
+    // PRD: Overdue annual reviews count
+    prisma.iEP.count({
+      where: { tenantId, status: 'ACTIVE', annualReviewDate: { lt: now } },
+    }),
+    // PRD: Overdue reevaluations count
+    prisma.iEP.count({
+      where: { tenantId, status: 'ACTIVE', reevaluationDate: { lt: now } },
+    }),
+    // PRD: Goal metrics
+    prisma.iEPGoal.count({
+      where: { iep: { tenantId, status: 'ACTIVE' } },
+    }),
+    prisma.iEPGoal.count({
+      where: { iep: { tenantId, status: 'ACTIVE' }, status: 'COMPLETED' },
+    }),
+    prisma.iEPGoal.count({
+      where: {
+        iep: { tenantId, status: 'ACTIVE' },
+        targetDate: { lt: now },
+        status: { notIn: ['COMPLETED', 'DISCONTINUED'] },
+      },
+    }),
   ]);
+
+  // PRD: Calculate compliance percentage
+  const totalIEPsChecked = activeIEPs || 1;
+  const nonCompliantCount = overdueReviews + overdueReevals;
+  const compliancePercentage = Math.round(
+    ((totalIEPsChecked - nonCompliantCount) / totalIEPsChecked) * 100
+  );
+
+  // PRD: Goal on-time rate
+  const goalOnTimeRate =
+    totalGoals > 0 ? Math.round(((totalGoals - overdueGoals) / totalGoals) * 100) : 100;
 
   return {
     totalStudents,
@@ -534,5 +647,19 @@ export async function getDashboard(tenantId: string) {
     byStatus: Object.fromEntries(statusCounts.map((s) => [s.status, s._count.status])),
     upcomingMeetings,
     openComplianceAlerts: complianceAlerts,
+    // PRD: Compliance dashboard metrics
+    compliance: {
+      percentage: compliancePercentage,
+      overdueAnnualReviews: overdueReviews,
+      overdueReevaluations: overdueReevals,
+      totalAlerts: complianceAlerts,
+    },
+    // PRD: Goal progress metrics
+    goals: {
+      total: totalGoals,
+      completed: completedGoals,
+      overdue: overdueGoals,
+      onTimeRate: goalOnTimeRate,
+    },
   };
 }

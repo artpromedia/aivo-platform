@@ -103,4 +103,9 @@ export {
 // Route Registrations
 export { registerConsentRoutes } from './routes/consents.js';
 export { registerCoppaRoutes } from './routes/coppa.js';
+export { registerPiiRoutes } from './routes/pii.js';
 export { registerPrivacyRoutes } from './routes/privacy.js';
+
+// PII Detection (PRD: COPPA PII protection for minors)
+export { detectPii, sanitizeMessage, shouldBlockMessage } from './pii-detection.js';
+export type { PiiDetectionResult, PiiMatch, PiiType } from './pii-detection.js';

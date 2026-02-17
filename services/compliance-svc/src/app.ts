@@ -24,6 +24,7 @@ import {
   registerConsentRoutes,
   registerPrivacyRoutes,
   registerCoppaRoutes,
+  registerPiiRoutes,
 } from './modules/coppa/index.js';
 import {
   registerMatterRoutes,
@@ -63,6 +64,7 @@ export function createApp() {
   void app.register(registerConsentRoutes as any, { prefix: '/consents' });
   void app.register(registerPrivacyRoutes as any, { prefix: '/privacy' });
   void app.register(registerCoppaRoutes as any, { prefix: '/coppa' });
+  void app.register(registerPiiRoutes as any, { prefix: '/pii' });
 
   // ── Legal Hold (backward-compatible prefixes) ──────────────────────────────
   void app.register(registerMatterRoutes as any, { prefix: '/api/v1/matters' });

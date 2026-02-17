@@ -16,6 +16,13 @@ import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
 import { notifyClient } from '../lib/notify-client.js';
 
+// PRD: Roles that require MFA to be enabled before login is allowed
+const MFA_REQUIRED_ROLES = new Set([
+  'DISTRICT_ADMIN',
+  'SCHOOL_ADMIN',
+  'PLATFORM_ADMIN',
+]);
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -84,14 +91,25 @@ export interface SessionInfo {
 // ============================================================================
 
 const BCRYPT_ROUNDS = 12;
-const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_HISTORY_COUNT = 5; // Prevent reuse of last 5 passwords
+const MAX_CONCURRENT_SESSIONS = 3;
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const PASSWORD_PATTERNS = {
   uppercase: /[A-Z]/,
   lowercase: /[a-z]/,
   number: /\d/,
   special: /[!@#$%^&*(),.?":{}|<>]/,
 };
+
+// PRD: Reject commonly-breached passwords
+const COMMON_PASSWORDS = new Set([
+  'password1234', 'password123!', 'admin1234567', 'letmein12345',
+  'welcome12345', 'changeme1234', 'qwerty123456', '123456789012',
+  'iloveyou1234', 'password!234', 'abc123456789', 'monkey123456',
+  'dragon123456', 'master123456', 'trustno1!!!!', 'baseball1234',
+  'shadow123456', 'michael12345', 'jennifer1234', 'jordan123456',
+]);
 
 function validatePasswordStrength(password: string): void {
   const errors: string[] = [];
@@ -110,6 +128,9 @@ function validatePasswordStrength(password: string): void {
   }
   if (!PASSWORD_PATTERNS.special.test(password)) {
     errors.push('Password must contain at least one special character');
+  }
+  if (COMMON_PASSWORDS.has(password.toLowerCase())) {
+    errors.push('This password is too common. Please choose a more unique password');
   }
 
   if (errors.length > 0) {
@@ -243,6 +264,22 @@ export class AuthService {
     // Clear failed attempts on successful login
     await this.clearFailedLogins(email, user.tenantId);
 
+    // PRD: Enforce MFA for admin roles
+    const roles = user.roles.map((r: UserRole) => r.role);
+    const requiresMfa = roles.some((role: string) => MFA_REQUIRED_ROLES.has(role));
+    if (requiresMfa) {
+      // Check if user has MFA enabled
+      const mfaConfig = await this.prisma.mfaConfig?.findFirst({
+        where: { userId: user.id, tenantId: user.tenantId, enabled: true },
+      });
+      if (!mfaConfig) {
+        throw new Error(
+          'Multi-factor authentication is required for administrator accounts. ' +
+          'Please set up MFA before logging in.'
+        );
+      }
+    }
+
     // Update last login
     await this.prisma.user.update({
       where: { id: user.id },
@@ -294,6 +331,13 @@ export class AuthService {
 
     if (session.expiresAt < new Date()) {
       throw new Error('Session has expired');
+    }
+
+    // PRD: 30-minute idle timeout enforcement
+    const idleTime = Date.now() - session.lastActivityAt.getTime();
+    if (idleTime > IDLE_TIMEOUT_MS) {
+      await this.revokeSession(session.id, 'idle_timeout');
+      throw new Error('Session expired due to inactivity');
     }
 
     // Verify refresh token hash matches
@@ -367,7 +411,7 @@ export class AuthService {
   async createEmailVerificationToken(userId: string, email: string): Promise<string> {
     const token = randomBytes(32).toString('hex');
     const tokenHash = hashToken(token);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours (PRD requirement)
 
     await this.prisma.emailVerificationToken.create({
       data: {
@@ -667,7 +711,25 @@ export class AuthService {
     tenantId: string,
     deviceInfo?: DeviceInfo
   ): Promise<Session> {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // PRD: Enforce max concurrent sessions
+    const activeSessions = await this.prisma.session.findMany({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastActivityAt: 'asc' },
+    });
+
+    if (activeSessions.length >= MAX_CONCURRENT_SESSIONS) {
+      // Revoke oldest sessions to make room
+      const toRevoke = activeSessions.slice(0, activeSessions.length - MAX_CONCURRENT_SESSIONS + 1);
+      for (const oldSession of toRevoke) {
+        await this.revokeSession(oldSession.id, 'max_sessions_exceeded');
+      }
+    }
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days absolute
 
     const session = await this.prisma.session.create({
       data: {
