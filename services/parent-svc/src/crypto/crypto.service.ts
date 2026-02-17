@@ -4,13 +4,12 @@
  * Cryptographic utilities for password hashing and token generation.
  */
 
-import { Injectable } from '@nestjs/common';
 import { randomBytes, randomInt, createHash } from 'node:crypto';
+
 import bcrypt from 'bcryptjs';
 
 const BCRYPT_ROUNDS = 12;
 
-@Injectable()
 export class CryptoService {
   /**
    * Hash a password using bcrypt
@@ -29,7 +28,7 @@ export class CryptoService {
   /**
    * Generate a cryptographically secure random token
    */
-  async generateSecureToken(length: number = 32): Promise<string> {
+  async generateSecureToken(length = 32): Promise<string> {
     return randomBytes(length).toString('hex');
   }
 
@@ -37,7 +36,7 @@ export class CryptoService {
    * Generate a cryptographically secure numeric code (for SMS/email verification)
    * Uses crypto.randomInt() instead of Math.random() for security
    */
-  generateNumericCode(length: number = 6): string {
+  generateNumericCode(length = 6): string {
     const max = Math.pow(10, length);
     const min = Math.pow(10, length - 1);
     // Use cryptographically secure randomInt instead of Math.random()

@@ -30,5 +30,11 @@
     "prisma": "^5.22.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
+  },
+  "aivo": {
+    "phase": 2,
+    "disposition": "freeze",
+    "framework": "fastify",
+    "laterMergeInto": "engagement-svc"
   }
 }

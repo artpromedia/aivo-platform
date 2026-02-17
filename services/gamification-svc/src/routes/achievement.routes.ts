@@ -4,108 +4,105 @@
  * Handles achievement-related API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { achievementService, ACHIEVEMENT_DEFINITIONS } from '../services/index.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+function computeProgressPercentage(
+  threshold: number | null | undefined,
+  currentProgress: number,
+  isEarned: boolean
+): number {
+  if (threshold) {
+    return Math.min(100, (currentProgress / threshold) * 100);
+  }
+  return isEarned ? 100 : 0;
+}
+
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * GET /api/gamification/achievements
- * Get all achievements and player progress
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+async function achievementRoutes(app: FastifyInstance) {
+  /**
+   * GET /api/gamification/achievements
+   * Get all achievements and player progress
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const achievements = await achievementService.getPlayerAchievements(studentId);
-    res.json({ success: true, data: achievements });
-  })
-);
+    return { success: true, data: achievements };
+  });
 
-/**
- * GET /api/gamification/achievements/definitions
- * Get all achievement definitions
- */
-router.get('/definitions', (_req: Request, res: Response) => {
-  res.json({ success: true, data: ACHIEVEMENT_DEFINITIONS });
-});
+  /**
+   * GET /api/gamification/achievements/definitions
+   * Get all achievement definitions
+   */
+  app.get('/definitions', async () => {
+    return { success: true, data: ACHIEVEMENT_DEFINITIONS };
+  });
 
-/**
- * GET /api/gamification/achievements/:id
- * Get specific achievement details
- */
-router.get(
-  '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const achievementId = req.params.id;
+  /**
+   * GET /api/gamification/achievements/:id
+   * Get specific achievement details
+   */
+  app.get(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const studentId = extractStudentId(request);
+      const achievementId = request.params.id;
 
-    const definition = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === achievementId);
-    if (!definition) {
-      res.status(404).json({ success: false, error: 'Achievement not found' });
-      return;
+      const definition = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === achievementId);
+      if (!definition) {
+        reply.status(404);
+        return { success: false, error: 'Achievement not found' };
+      }
+
+      const { prisma } = await import('../prisma.js');
+      const earned = await prisma.earnedAchievement.findFirst({
+        where: { studentId, achievementId },
+      });
+
+      const progress = await prisma.achievementProgress.findFirst({
+        where: { studentId, achievementId },
+      });
+
+      return {
+        success: true,
+        data: {
+          ...definition,
+          earned: !!earned,
+          earnedAt: earned?.earnedAt,
+          currentProgress: progress?.currentProgress || 0,
+          progressPercentage: computeProgressPercentage(
+            definition.threshold,
+            progress?.currentProgress || 0,
+            !!earned
+          ),
+        },
+      };
     }
+  );
 
-    const { prisma } = await import('../prisma.js');
-    const earned = await prisma.earnedAchievement.findFirst({
-      where: { studentId, achievementId },
-    });
-
-    const progress = await prisma.achievementProgress.findFirst({
-      where: { studentId, achievementId },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        ...definition,
-        earned: !!earned,
-        earnedAt: earned?.earnedAt,
-        currentProgress: progress?.currentProgress || 0,
-        progressPercentage: definition.threshold
-          ? Math.min(100, ((progress?.currentProgress || 0) / definition.threshold) * 100)
-          : earned
-            ? 100
-            : 0,
-      },
-    });
-  })
-);
-
-/**
- * GET /api/gamification/achievements/recent
- * Get recently earned achievements
- */
-router.get(
-  '/recent/list',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const limit = Number.parseInt(req.query.limit as string) || 5;
+  /**
+   * GET /api/gamification/achievements/recent
+   * Get recently earned achievements
+   */
+  app.get('/recent/list', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const limit = Number.parseInt((request.query as any).limit as string) || 5;
 
     const { prisma } = await import('../prisma.js');
     const recent = await prisma.earnedAchievement.findMany({
@@ -122,18 +119,15 @@ router.get(
       };
     });
 
-    res.json({ success: true, data: achievements });
-  })
-);
+    return { success: true, data: achievements };
+  });
 
-/**
- * GET /api/gamification/achievements/categories
- * Get achievements grouped by category
- */
-router.get(
-  '/categories/list',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/achievements/categories
+   * Get achievements grouped by category
+   */
+  app.get('/categories/list', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
     const earned = await prisma.earnedAchievement.findMany({
@@ -143,14 +137,18 @@ router.get(
 
     const earnedSet = new Set(earned.map((e) => e.achievementId));
 
-    const categories = new Map<string, { total: number; earned: number; achievements: unknown[] }>();
+    const categories = new Map<
+      string,
+      { total: number; earned: number; achievements: unknown[] }
+    >();
 
     for (const achievement of ACHIEVEMENT_DEFINITIONS) {
       if (!categories.has(achievement.category)) {
         categories.set(achievement.category, { total: 0, earned: 0, achievements: [] });
       }
 
-      const cat = categories.get(achievement.category)!;
+      const cat = categories.get(achievement.category);
+      if (!cat) continue;
       cat.total++;
       if (earnedSet.has(achievement.id)) {
         cat.earned++;
@@ -167,8 +165,8 @@ router.get(
       percentage: Math.round((data.earned / data.total) * 100),
     }));
 
-    res.json({ success: true, data: result });
-  })
-);
+    return { success: true, data: result };
+  });
+}
 
-export default router;
+export default achievementRoutes;

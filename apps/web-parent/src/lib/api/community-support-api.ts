@@ -1,7 +1,13 @@
-const BASE_URL = 'http://localhost:8099';
+const BASE_URL = process.env.NEXT_PUBLIC_COMMUNITY_SUPPORT_URL || '/api/community';
 
 // Forum types
-export type ForumCategory = 'general' | 'learning-support' | 'behavior' | 'iep' | 'social-emotional' | 'transition';
+export type ForumCategory =
+  | 'general'
+  | 'learning-support'
+  | 'behavior'
+  | 'iep'
+  | 'social-emotional'
+  | 'transition';
 export type PostStatus = 'active' | 'locked' | 'archived';
 
 export interface ForumPost {
@@ -42,7 +48,13 @@ export interface ForumReply {
 
 // Q&A types
 export type QuestionStatus = 'open' | 'answered' | 'closed';
-export type QuestionCategory = 'academic' | 'behavioral' | 'social' | 'medical' | 'legal' | 'resources';
+export type QuestionCategory =
+  | 'academic'
+  | 'behavioral'
+  | 'social'
+  | 'medical'
+  | 'legal'
+  | 'resources';
 
 export interface Question {
   id: string;
@@ -244,14 +256,11 @@ export async function createAnswer(questionId: string, content: string): Promise
 }
 
 export async function markBestAnswer(questionId: string, answerId: string): Promise<void> {
-  const response = await fetch(
-    `${BASE_URL}/api/parent/qa/questions/${questionId}/best-answer`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ answerId }),
-    }
-  );
+  const response = await fetch(`${BASE_URL}/api/parent/qa/questions/${questionId}/best-answer`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answerId }),
+  });
   if (!response.ok) throw new Error('Failed to mark best answer');
 }
 

@@ -1,9 +1,12 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { LearningPathOptimizer } from '../learning/learning-path-optimizer.js';
-import { ActivitySequencer } from '../learning/activity-sequencer.js';
-import { MasteryTracker } from '../learning/mastery-tracker.js';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+
 import { CognitiveLoadManager } from '../cognitive/cognitive-load-manager.js';
+import { ActivitySequencer } from '../learning/activity-sequencer.js';
+import { LearningPathOptimizer } from '../learning/learning-path-optimizer.js';
+import { MasteryTracker } from '../learning/mastery-tracker.js';
 import { getContext } from '../middleware/auth.js';
+import { prisma } from '../prisma.js';
 import {
   CompleteActivitySchema,
   MasteryEvidenceSchema,
@@ -11,10 +14,6 @@ import {
   ActivitySchema,
   LearningGoalSchema,
 } from '../validators/index.js';
-import { prisma } from '../prisma.js';
-import { z } from 'zod';
-
-const router = Router();
 
 // Initialize components
 const pathOptimizer = new LearningPathOptimizer();
@@ -22,98 +21,68 @@ const activitySequencer = new ActivitySequencer();
 const masteryTracker = new MasteryTracker();
 const cognitiveManager = new CognitiveLoadManager();
 
-/**
- * Get next recommended activity for a learner
- * GET /api/v1/brain/learners/:learnerId/next-activity
- */
-router.get(
-  '/learners/:learnerId/next-activity',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { tenantId } = getContext(req);
-      const { learnerId } = req.params;
+async function learningRoutes(app: FastifyInstance) {
+  /**
+   * Get next recommended activity for a learner
+   * GET /api/v1/brain/learners/:learnerId/next-activity
+   */
+  app.get(
+    '/learners/:learnerId/next-activity',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>) => {
+      const { tenantId } = getContext(request);
+      const { learnerId } = request.params;
 
-      // Get cognitive state
       const cognitiveState = await cognitiveManager.assessCurrentLoad(learnerId, []);
 
-      // Get available activities from current learning path
       const currentPath = await prisma.learningPath.findFirst({
-        where: {
-          learnerId,
-          tenantId,
-        },
+        where: { learnerId, tenantId },
         include: { progress: true },
         orderBy: { updatedAt: 'desc' },
       });
 
       if (!currentPath) {
-        res.json({
-          success: true,
-          data: null,
-          message: 'No active learning path found',
-        });
-        return;
+        return { success: true, data: null, message: 'No active learning path found' };
       }
 
-      // Parse activities from path (stored as JSON)
       const activities = (currentPath.activities as any)?.orderedActivities ?? [];
       const completedIds = new Set(currentPath.progress?.completedActivityIds ?? []);
 
-      // Filter to available activities
       const availableActivities = activities
         .filter((a: any) => !completedIds.has(a.activity.id))
         .map((a: any) => a.activity);
 
       if (availableActivities.length === 0) {
-        res.json({
-          success: true,
-          data: null,
-          message: 'All activities completed',
-        });
-        return;
+        return { success: true, data: null, message: 'All activities completed' };
       }
 
-      // Get recommendation
       const recommendation = await cognitiveManager.recommendNextActivity(
         learnerId,
         availableActivities,
         cognitiveState
       );
 
-      res.json({
-        success: true,
-        data: recommendation,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: recommendation };
     }
-  }
-);
+  );
 
-/**
- * Complete an activity and record results
- * POST /api/v1/brain/learners/:learnerId/complete-activity
- */
-router.post(
-  '/learners/:learnerId/complete-activity',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { tenantId } = getContext(req);
-      const { learnerId } = req.params;
-      const input = CompleteActivitySchema.parse(req.body);
+  /**
+   * Complete an activity and record results
+   * POST /api/v1/brain/learners/:learnerId/complete-activity
+   */
+  app.post(
+    '/learners/:learnerId/complete-activity',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { tenantId } = getContext(request);
+      const { learnerId } = request.params;
+      const input = CompleteActivitySchema.parse(request.body);
 
-      // Get activity details
       const activity = await getActivityDetails(input.activityId);
 
       if (!activity) {
-        res.status(404).json({
-          success: false,
-          error: 'Activity not found',
-        });
-        return;
+        reply.status(404);
+        return { success: false, error: 'Activity not found' };
       }
 
-      // Update mastery for each skill in the activity
       const masteryUpdates = [];
       for (const skillId of activity.skillIds) {
         const evidence = {
@@ -122,8 +91,8 @@ router.post(
           outcome: input.result.success
             ? 'success'
             : input.result.score && input.result.score >= 50
-            ? 'partial'
-            : 'failure',
+              ? 'partial'
+              : 'failure',
           score: input.result.score,
           timeSpent: input.result.timeSpent,
           attemptCount: 1,
@@ -134,24 +103,18 @@ router.post(
         masteryUpdates.push(update);
       }
 
-      // Update learning path progress
       await prisma.learningPathProgress.updateMany({
-        where: {
-          path: { learnerId, tenantId },
-        },
+        where: { path: { learnerId, tenantId } },
         data: {
-          completedActivityIds: {
-            push: input.activityId,
-          },
+          completedActivityIds: { push: input.activityId },
           lastActivityAt: new Date(),
         },
       });
 
-      // Get next steps
       const nextActivity = await getNextActivityForLearner(learnerId, tenantId);
       const masterySummary = await masteryTracker.getMasterySummary(learnerId);
 
-      res.json({
+      return {
         success: true,
         data: {
           masteryUpdates,
@@ -163,28 +126,25 @@ router.post(
             milestones: [
               {
                 name: 'Skills mastered',
-                progress: masterySummary.masteredSkills / Math.max(1, masterySummary.totalSkills) * 100,
+                progress:
+                  (masterySummary.masteredSkills / Math.max(1, masterySummary.totalSkills)) * 100,
               },
             ],
           },
         },
-      });
-    } catch (error) {
-      next(error);
+      };
     }
-  }
-);
+  );
 
-/**
- * Get learning path for a learner
- * GET /api/v1/brain/learners/:learnerId/learning-path
- */
-router.get(
-  '/learners/:learnerId/learning-path',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { tenantId } = getContext(req);
-      const { learnerId } = req.params;
+  /**
+   * Get learning path for a learner
+   * GET /api/v1/brain/learners/:learnerId/learning-path
+   */
+  app.get(
+    '/learners/:learnerId/learning-path',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { tenantId } = getContext(request);
+      const { learnerId } = request.params;
 
       const path = await prisma.learningPath.findFirst({
         where: { learnerId, tenantId },
@@ -193,39 +153,27 @@ router.get(
       });
 
       if (!path) {
-        res.status(404).json({
-          success: false,
-          error: 'No learning path found for learner',
-        });
-        return;
+        reply.status(404);
+        return { success: false, error: 'No learning path found for learner' };
       }
 
-      res.json({
-        success: true,
-        data: path,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: path };
     }
-  }
-);
+  );
 
-/**
- * Optimize learning path
- * POST /api/v1/brain/learners/:learnerId/optimize-path
- */
-router.post(
-  '/learners/:learnerId/optimize-path',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { tenantId } = getContext(req);
-      const { learnerId } = req.params;
+  /**
+   * Optimize learning path
+   * POST /api/v1/brain/learners/:learnerId/optimize-path
+   */
+  app.post(
+    '/learners/:learnerId/optimize-path',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { tenantId } = getContext(request);
+      const { learnerId } = request.params;
 
-      const goalsInput = req.body.goals
-        ? z.array(LearningGoalSchema).parse(req.body.goals)
-        : [];
+      const body = request.body as any;
+      const goalsInput = body.goals ? z.array(LearningGoalSchema).parse(body.goals) : [];
 
-      // Get current path
       const pathRecord = await prisma.learningPath.findFirst({
         where: { learnerId, tenantId },
         include: { progress: true },
@@ -233,21 +181,20 @@ router.post(
       });
 
       if (!pathRecord) {
-        res.status(404).json({
-          success: false,
-          error: 'No learning path found to optimize',
-        });
-        return;
+        reply.status(404);
+        return { success: false, error: 'No learning path found to optimize' };
       }
 
-      // Convert to LearningPath type
       const currentPath = {
         id: pathRecord.id,
         learnerId: pathRecord.learnerId,
         tenantId: pathRecord.tenantId,
         name: pathRecord.name,
         description: pathRecord.description ?? '',
-        activities: (pathRecord.activities as any) ?? { orderedActivities: [], branchingPoints: [] },
+        activities: (pathRecord.activities as any) ?? {
+          orderedActivities: [],
+          branchingPoints: [],
+        },
         estimatedTotalDuration: pathRecord.estimatedDuration,
         progress: pathRecord.progress
           ? {
@@ -266,7 +213,6 @@ router.post(
         updatedAt: pathRecord.updatedAt,
       };
 
-      // Get learner progress
       const learnerProgress = {
         totalActivitiesCompleted: currentPath.progress.completedActivityIds.length,
         recentScores: [],
@@ -274,34 +220,25 @@ router.post(
         lastActivityDate: currentPath.progress.lastActivityAt ?? null,
       };
 
-      // Optimize
       const optimizedPath = await pathOptimizer.optimizePath(
         currentPath,
         learnerProgress,
-        goalsInput.map(g => ({ ...g, id: g.id ?? '' }))
+        goalsInput.map((g) => ({ ...g, id: g.id ?? '' }))
       );
 
-      res.json({
-        success: true,
-        data: optimizedPath,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: optimizedPath };
     }
-  }
-);
+  );
 
-/**
- * Get path adjustment suggestions
- * GET /api/v1/brain/paths/:pathId/suggestions
- */
-router.get(
-  '/paths/:pathId/suggestions',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { pathId } = req.params;
+  /**
+   * Get path adjustment suggestions
+   * GET /api/v1/brain/paths/:pathId/suggestions
+   */
+  app.get(
+    '/paths/:pathId/suggestions',
+    async (request: FastifyRequest<{ Params: { pathId: string } }>) => {
+      const { pathId } = request.params;
 
-      // Get performance data (placeholder - would be calculated from actual data)
       const performanceData = {
         learnerId: '',
         period: { start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), end: new Date() },
@@ -314,27 +251,19 @@ router.get(
 
       const suggestions = await pathOptimizer.suggestPathAdjustments(pathId, performanceData);
 
-      res.json({
-        success: true,
-        data: suggestions,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: suggestions };
     }
-  }
-);
+  );
 
-/**
- * Predict path completion
- * GET /api/v1/brain/paths/:pathId/completion-prediction
- */
-router.get(
-  '/paths/:pathId/completion-prediction',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { pathId } = req.params;
+  /**
+   * Predict path completion
+   * GET /api/v1/brain/paths/:pathId/completion-prediction
+   */
+  app.get(
+    '/paths/:pathId/completion-prediction',
+    async (request: FastifyRequest<{ Params: { pathId: string } }>) => {
+      const { pathId } = request.params;
 
-      // Get learner profile (placeholder)
       const learnerProfile = {
         id: '',
         tenantId: '',
@@ -349,28 +278,21 @@ router.get(
 
       const prediction = await pathOptimizer.predictCompletion(pathId, learnerProfile);
 
-      res.json({
-        success: true,
-        data: prediction,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: prediction };
     }
-  }
-);
+  );
 
-/**
- * Sequence activities
- * POST /api/v1/brain/sequence-activities
- */
-router.post('/sequence-activities', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const activities = z.array(ActivitySchema).parse(req.body.activities);
-    const constraints = SequencingConstraintsSchema.parse(req.body.constraints ?? {});
+  /**
+   * Sequence activities
+   * POST /api/v1/brain/sequence-activities
+   */
+  app.post('/sequence-activities', async (request: FastifyRequest) => {
+    const body = request.body as any;
+    const activities = z.array(ActivitySchema).parse(body.activities);
+    const constraints = SequencingConstraintsSchema.parse(body.constraints ?? {});
 
-    // Get learner profile (placeholder - would come from learner-model-svc)
     const learnerProfile = {
-      id: req.body.learnerId ?? '',
+      id: body.learnerId ?? '',
       tenantId: '',
       skillLevels: new Map<string, number>(),
       learningRate: 1.0,
@@ -382,7 +304,7 @@ router.post('/sequence-activities', async (req: Request, res: Response, next: Ne
     };
 
     const sequence = await activitySequencer.sequenceActivities(
-      activities.map(a => ({
+      activities.map((a) => ({
         ...a,
         description: a.description ?? '',
         prerequisites: a.prerequisites ?? [],
@@ -392,109 +314,81 @@ router.post('/sequence-activities', async (req: Request, res: Response, next: Ne
       learnerProfile
     );
 
-    res.json({
-      success: true,
-      data: sequence,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+    return { success: true, data: sequence };
+  });
 
-/**
- * Get mastery state for a learner
- * GET /api/v1/brain/learners/:learnerId/mastery
- */
-router.get(
-  '/learners/:learnerId/mastery',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { learnerId } = req.params;
-      const skillIds = (req.query.skillIds as string)?.split(',') ?? [];
+  /**
+   * Get mastery state for a learner
+   * GET /api/v1/brain/learners/:learnerId/mastery
+   */
+  app.get(
+    '/learners/:learnerId/mastery',
+    async (
+      request: FastifyRequest<{ Params: { learnerId: string }; Querystring: { skillIds?: string } }>
+    ) => {
+      const { learnerId } = request.params;
+      const skillIds = (request.query.skillIds as string)?.split(',') ?? [];
 
       if (skillIds.length === 0) {
-        // Return summary
         const summary = await masteryTracker.getMasterySummary(learnerId);
-        res.json({
-          success: true,
-          data: summary,
-        });
-        return;
+        return { success: true, data: summary };
       }
 
       const masteryState = await masteryTracker.getMasteryState(learnerId, skillIds);
 
-      res.json({
+      return {
         success: true,
         data: {
           learnerId: masteryState.learnerId,
           skills: Object.fromEntries(masteryState.skills),
           lastUpdated: masteryState.lastUpdated,
         },
-      });
-    } catch (error) {
-      next(error);
+      };
     }
-  }
-);
+  );
 
-/**
- * Update mastery with evidence
- * POST /api/v1/brain/learners/:learnerId/mastery
- */
-router.post(
-  '/learners/:learnerId/mastery',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { learnerId } = req.params;
-      const evidence = MasteryEvidenceSchema.parse(req.body);
+  /**
+   * Update mastery with evidence
+   * POST /api/v1/brain/learners/:learnerId/mastery
+   */
+  app.post(
+    '/learners/:learnerId/mastery',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>) => {
+      const { learnerId } = request.params;
+      const evidence = MasteryEvidenceSchema.parse(request.body);
 
       const update = await masteryTracker.updateMastery(learnerId, evidence.skillId, evidence);
 
-      res.json({
-        success: true,
-        data: update,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: update };
     }
-  }
-);
+  );
 
-/**
- * Get skills needing review
- * GET /api/v1/brain/learners/:learnerId/review-needed
- */
-router.get(
-  '/learners/:learnerId/review-needed',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { learnerId } = req.params;
+  /**
+   * Get skills needing review
+   * GET /api/v1/brain/learners/:learnerId/review-needed
+   */
+  app.get(
+    '/learners/:learnerId/review-needed',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>) => {
+      const { learnerId } = request.params;
 
       const skillsNeedingReview = await masteryTracker.getSkillsNeedingReview(learnerId);
 
-      res.json({
-        success: true,
-        data: skillsNeedingReview,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: skillsNeedingReview };
     }
-  }
-);
+  );
 
-/**
- * Predict mastery gain from an activity
- * POST /api/v1/brain/learners/:learnerId/predict-mastery-gain
- */
-router.post(
-  '/learners/:learnerId/predict-mastery-gain',
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { learnerId } = req.params;
-      const activity = ActivitySchema.parse(req.body.activity);
+  /**
+   * Predict mastery gain from an activity
+   * POST /api/v1/brain/learners/:learnerId/predict-mastery-gain
+   */
+  app.post(
+    '/learners/:learnerId/predict-mastery-gain',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>) => {
+      const { learnerId } = request.params;
+      const body = request.body as any;
+      const activity = ActivitySchema.parse(body.activity);
 
-      // Get current mastery state
       const masteryState = await masteryTracker.getMasteryState(learnerId, activity.skillIds);
 
       const prediction = await masteryTracker.predictMasteryGain(
@@ -507,15 +401,10 @@ router.post(
         masteryState
       );
 
-      res.json({
-        success: true,
-        data: prediction,
-      });
-    } catch (error) {
-      next(error);
+      return { success: true, data: prediction };
     }
-  }
-);
+  );
+}
 
 // Helper functions
 
@@ -530,10 +419,7 @@ async function getActivityDetails(activityId: string): Promise<any | null> {
   };
 }
 
-async function getNextActivityForLearner(
-  learnerId: string,
-  tenantId: string
-): Promise<any | null> {
+async function getNextActivityForLearner(learnerId: string, tenantId: string): Promise<any | null> {
   const path = await prisma.learningPath.findFirst({
     where: { learnerId, tenantId },
     include: { progress: true },
@@ -550,4 +436,4 @@ async function getNextActivityForLearner(
   return nextActivity?.activity ?? null;
 }
 
-export { router as learningRoutes };
+export { learningRoutes };

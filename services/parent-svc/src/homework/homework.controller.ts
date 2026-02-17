@@ -1,50 +1,36 @@
 /**
- * Homework Controller
+ * Homework Routes
  *
  * REST API endpoints for parent homework monitoring.
  * Provides visibility into student homework helper sessions.
  */
 
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Req,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { HomeworkService } from './homework.service.js';
-import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
-@Controller('homework')
-export class HomeworkController {
-  constructor(private readonly homeworkService: HomeworkService) {}
+export async function homeworkRoutes(app: FastifyInstance) {
+  const homeworkService = app.services.homework;
 
   /**
    * Get homework overview for all linked children
-   * Provides a dashboard view of recent homework activity across all students
    */
-  @Get('overview')
-  async getHomeworkOverview(@Req() req: ParentAuthRequest) {
-    return this.homeworkService.getHomeworkOverview(req.parent!.id);
-  }
+  app.get('/overview', async (request: FastifyRequest) => {
+    return homeworkService.getHomeworkOverview(request.parent!.id);
+  });
 
   /**
    * Get homework submissions for a specific student
    */
-  @Get('students/:studentId')
-  async getStudentHomework(
-    @Req() req: ParentAuthRequest,
-    @Param('studentId') studentId: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
-    @Query('subject') subject?: string,
-    @Query('status') status?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string
-  ) {
-    return this.homeworkService.getStudentHomework(req.parent!.id, studentId, {
+  app.get('/students/:studentId', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { limit, offset, subject, status, startDate, endDate } = request.query as {
+      limit?: string;
+      offset?: string;
+      subject?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+    return homeworkService.getStudentHomework(request.parent!.id, studentId, {
       limit: limit ? Number.parseInt(limit, 10) : undefined,
       offset: offset ? Number.parseInt(offset, 10) : undefined,
       subject,
@@ -52,54 +38,42 @@ export class HomeworkController {
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
-  }
+  });
 
   /**
    * Get detailed view of a specific homework session
-   * Includes all steps, responses, and progress
    */
-  @Get('students/:studentId/sessions/:homeworkId')
-  async getHomeworkDetail(
-    @Req() req: ParentAuthRequest,
-    @Param('studentId') studentId: string,
-    @Param('homeworkId') homeworkId: string
-  ) {
-    return this.homeworkService.getHomeworkDetail(req.parent!.id, studentId, homeworkId);
-  }
+  app.get('/students/:studentId/sessions/:homeworkId', async (request: FastifyRequest) => {
+    const { studentId, homeworkId } = request.params as { studentId: string; homeworkId: string };
+    return homeworkService.getHomeworkDetail(request.parent!.id, studentId, homeworkId);
+  });
 
   /**
    * Get homework summary for a student over a time period
-   * Aggregated stats including completion rates by subject
    */
-  @Get('students/:studentId/summary')
-  async getHomeworkSummary(
-    @Req() req: ParentAuthRequest,
-    @Param('studentId') studentId: string,
-    @Query('days') days?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string
-  ) {
-    return this.homeworkService.getHomeworkSummary(req.parent!.id, studentId, {
+  app.get('/students/:studentId/summary', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { days, startDate, endDate } = request.query as {
+      days?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+    return homeworkService.getHomeworkSummary(request.parent!.id, studentId, {
       days: days ? Number.parseInt(days, 10) : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
-  }
+  });
 
   /**
    * Get homework trends over time for a student
-   * Shows daily or weekly progression data
    */
-  @Get('students/:studentId/trends')
-  async getHomeworkTrends(
-    @Req() req: ParentAuthRequest,
-    @Param('studentId') studentId: string,
-    @Query('days') days?: string,
-    @Query('granularity') granularity?: 'day' | 'week'
-  ) {
-    return this.homeworkService.getHomeworkTrends(req.parent!.id, studentId, {
+  app.get('/students/:studentId/trends', async (request: FastifyRequest) => {
+    const { studentId } = request.params as { studentId: string };
+    const { days, granularity } = request.query as { days?: string; granularity?: 'day' | 'week' };
+    return homeworkService.getHomeworkTrends(request.parent!.id, studentId, {
       days: days ? Number.parseInt(days, 10) : undefined,
       granularity,
     });
-  }
+  });
 }

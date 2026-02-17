@@ -4,16 +4,14 @@
  * Internationalization service for multi-language support.
  */
 
-import { Injectable } from '@nestjs/common';
-
 // Translation dictionaries
 const translations: Record<string, Record<string, string>> = {
   en: {
     'digest.weekly.title': 'Weekly Learning Summary',
     'digest.weekly.subject': 'Weekly Progress Report - {{weekStart}}',
-    'digest.weekly.greeting': 'Hi {{name}}! Here\'s how your child did this week.',
+    'digest.weekly.greeting': "Hi {{name}}! Here's how your child did this week.",
     'digest.weekly.viewDashboard': 'View Full Dashboard',
-    'digest.weekly.highlights': 'This Week\'s Highlights',
+    'digest.weekly.highlights': "This Week's Highlights",
     'digest.weekly.achievements': 'Achievements Earned',
     'digest.weekly.teacherNotes': 'Notes from Teachers',
     'digest.weekly.upcoming': 'Upcoming Assignments',
@@ -22,12 +20,14 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'Avg Score',
     'digest.weekly.moreThanlastWeek': 'more than last week',
     'digest.weekly.lessThanlastWeek': 'less than last week',
-    'digest.weekly.footer.receivingBecause': 'You\'re receiving this because you\'re signed up for weekly progress updates.',
+    'digest.weekly.footer.receivingBecause':
+      "You're receiving this because you're signed up for weekly progress updates.",
     'digest.weekly.footer.managePreferences': 'Manage Preferences',
     'digest.weekly.footer.unsubscribe': 'Unsubscribe',
-    'email.invite.subject': 'You\'re invited to track {{studentName}}\'s learning progress',
+    'email.invite.subject': "You're invited to track {{studentName}}'s learning progress",
     'email.invite.greeting': 'Hi {{parentName}},',
-    'email.invite.body': 'A teacher has invited you to join AIVO and track your child\'s learning progress.',
+    'email.invite.body':
+      "A teacher has invited you to join AIVO and track your child's learning progress.",
     'email.invite.cta': 'Accept Invitation',
     'email.invite.expires': 'This invitation expires on {{expiresAt}}.',
     'email.verify.subject': 'Verify your email address',
@@ -36,9 +36,10 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': 'Verify Email',
     'email.welcome.subject': 'Welcome to AIVO Learning!',
     'email.welcome.greeting': 'Welcome, {{name}}!',
-    'email.welcome.body': 'Thank you for joining AIVO! We\'re excited to have you on board. With AIVO, you can track your child\'s learning progress, communicate with teachers, and stay engaged in their educational journey.',
+    'email.welcome.body':
+      "Thank you for joining AIVO! We're excited to have you on board. With AIVO, you can track your child's learning progress, communicate with teachers, and stay engaged in their educational journey.",
     'email.welcome.cta': 'Go to Dashboard',
-    'email.welcome.features': 'Here\'s what you can do:',
+    'email.welcome.features': "Here's what you can do:",
     'email.welcome.feature1': '📊 Track learning progress in real-time',
     'email.welcome.feature2': '💬 Communicate with teachers',
     'email.welcome.feature3': '🏆 Celebrate achievements together',
@@ -58,21 +59,25 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'Promedio',
     'digest.weekly.moreThanlastWeek': 'más que la semana pasada',
     'digest.weekly.lessThanlastWeek': 'menos que la semana pasada',
-    'digest.weekly.footer.receivingBecause': 'Recibes esto porque estás suscrito a actualizaciones semanales de progreso.',
+    'digest.weekly.footer.receivingBecause':
+      'Recibes esto porque estás suscrito a actualizaciones semanales de progreso.',
     'digest.weekly.footer.managePreferences': 'Gestionar Preferencias',
     'digest.weekly.footer.unsubscribe': 'Cancelar Suscripción',
     'email.invite.subject': 'Estás invitado a seguir el progreso de aprendizaje de {{studentName}}',
     'email.invite.greeting': 'Hola {{parentName}},',
-    'email.invite.body': 'Un maestro te ha invitado a unirte a AIVO y seguir el progreso de aprendizaje de tu hijo.',
+    'email.invite.body':
+      'Un maestro te ha invitado a unirte a AIVO y seguir el progreso de aprendizaje de tu hijo.',
     'email.invite.cta': 'Aceptar Invitación',
     'email.invite.expires': 'Esta invitación expira el {{expiresAt}}.',
     'email.verify.subject': 'Verifica tu dirección de correo electrónico',
     'email.verify.greeting': 'Hola {{name}},',
-    'email.verify.body': 'Por favor verifica tu dirección de correo electrónico para completar la configuración de tu cuenta.',
+    'email.verify.body':
+      'Por favor verifica tu dirección de correo electrónico para completar la configuración de tu cuenta.',
     'email.verify.cta': 'Verificar Correo',
     'email.welcome.subject': '¡Bienvenido a AIVO Learning!',
     'email.welcome.greeting': '¡Bienvenido, {{name}}!',
-    'email.welcome.body': '¡Gracias por unirte a AIVO! Estamos emocionados de tenerte. Con AIVO, puedes seguir el progreso de aprendizaje de tu hijo, comunicarte con los maestros y mantenerte involucrado en su viaje educativo.',
+    'email.welcome.body':
+      '¡Gracias por unirte a AIVO! Estamos emocionados de tenerte. Con AIVO, puedes seguir el progreso de aprendizaje de tu hijo, comunicarte con los maestros y mantenerte involucrado en su viaje educativo.',
     'email.welcome.cta': 'Ir al Panel',
     'email.welcome.features': 'Esto es lo que puedes hacer:',
     'email.welcome.feature1': '📊 Seguir el progreso de aprendizaje en tiempo real',
@@ -81,7 +86,7 @@ const translations: Record<string, Record<string, string>> = {
     'email.welcome.feature4': '📅 Mantenerte actualizado sobre tareas y eventos',
   },
   fr: {
-    'digest.weekly.title': 'Résumé Hebdomadaire d\'Apprentissage',
+    'digest.weekly.title': "Résumé Hebdomadaire d'Apprentissage",
     'digest.weekly.subject': 'Rapport de Progrès Hebdomadaire - {{weekStart}}',
     'digest.weekly.greeting': 'Bonjour {{name}} ! Voici les progrès de votre enfant cette semaine.',
     'digest.weekly.viewDashboard': 'Voir le Tableau de Bord',
@@ -94,24 +99,28 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'Moyenne',
     'digest.weekly.moreThanlastWeek': 'de plus que la semaine dernière',
     'digest.weekly.lessThanlastWeek': 'de moins que la semaine dernière',
-    'digest.weekly.footer.receivingBecause': 'Vous recevez ceci car vous êtes inscrit aux mises à jour hebdomadaires.',
+    'digest.weekly.footer.receivingBecause':
+      'Vous recevez ceci car vous êtes inscrit aux mises à jour hebdomadaires.',
     'digest.weekly.footer.managePreferences': 'Gérer les Préférences',
     'digest.weekly.footer.unsubscribe': 'Se Désabonner',
     'email.invite.subject': 'Vous êtes invité à suivre les progrès de {{studentName}}',
     'email.invite.greeting': 'Bonjour {{parentName}},',
-    'email.invite.body': 'Un enseignant vous a invité à rejoindre AIVO et suivre les progrès d\'apprentissage de votre enfant.',
-    'email.invite.cta': 'Accepter l\'Invitation',
+    'email.invite.body':
+      "Un enseignant vous a invité à rejoindre AIVO et suivre les progrès d'apprentissage de votre enfant.",
+    'email.invite.cta': "Accepter l'Invitation",
     'email.invite.expires': 'Cette invitation expire le {{expiresAt}}.',
     'email.verify.subject': 'Vérifiez votre adresse e-mail',
     'email.verify.greeting': 'Bonjour {{name}},',
-    'email.verify.body': 'Veuillez vérifier votre adresse e-mail pour terminer la configuration de votre compte.',
-    'email.verify.cta': 'Vérifier l\'E-mail',
+    'email.verify.body':
+      'Veuillez vérifier votre adresse e-mail pour terminer la configuration de votre compte.',
+    'email.verify.cta': "Vérifier l'E-mail",
     'email.welcome.subject': 'Bienvenue sur AIVO Learning !',
     'email.welcome.greeting': 'Bienvenue, {{name}} !',
-    'email.welcome.body': 'Merci d\'avoir rejoint AIVO ! Nous sommes ravis de vous avoir. Avec AIVO, vous pouvez suivre les progrès d\'apprentissage de votre enfant, communiquer avec les enseignants et rester engagé dans leur parcours éducatif.',
+    'email.welcome.body':
+      "Merci d'avoir rejoint AIVO ! Nous sommes ravis de vous avoir. Avec AIVO, vous pouvez suivre les progrès d'apprentissage de votre enfant, communiquer avec les enseignants et rester engagé dans leur parcours éducatif.",
     'email.welcome.cta': 'Accéder au Tableau de Bord',
     'email.welcome.features': 'Voici ce que vous pouvez faire :',
-    'email.welcome.feature1': '📊 Suivre les progrès d\'apprentissage en temps réel',
+    'email.welcome.feature1': "📊 Suivre les progrès d'apprentissage en temps réel",
     'email.welcome.feature2': '💬 Communiquer avec les enseignants',
     'email.welcome.feature3': '🏆 Célébrer les réussites ensemble',
     'email.welcome.feature4': '📅 Rester informé des devoirs et événements',
@@ -130,21 +139,25 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'Durchschnitt',
     'digest.weekly.moreThanlastWeek': 'mehr als letzte Woche',
     'digest.weekly.lessThanlastWeek': 'weniger als letzte Woche',
-    'digest.weekly.footer.receivingBecause': 'Sie erhalten diese E-Mail, weil Sie wöchentliche Updates abonniert haben.',
+    'digest.weekly.footer.receivingBecause':
+      'Sie erhalten diese E-Mail, weil Sie wöchentliche Updates abonniert haben.',
     'digest.weekly.footer.managePreferences': 'Einstellungen Verwalten',
     'digest.weekly.footer.unsubscribe': 'Abmelden',
     'email.invite.subject': 'Sie sind eingeladen, {{studentName}}s Lernfortschritt zu verfolgen',
     'email.invite.greeting': 'Hallo {{parentName}},',
-    'email.invite.body': 'Ein Lehrer hat Sie eingeladen, AIVO beizutreten und den Lernfortschritt Ihres Kindes zu verfolgen.',
+    'email.invite.body':
+      'Ein Lehrer hat Sie eingeladen, AIVO beizutreten und den Lernfortschritt Ihres Kindes zu verfolgen.',
     'email.invite.cta': 'Einladung Annehmen',
     'email.invite.expires': 'Diese Einladung läuft am {{expiresAt}} ab.',
     'email.verify.subject': 'Bestätigen Sie Ihre E-Mail-Adresse',
     'email.verify.greeting': 'Hallo {{name}},',
-    'email.verify.body': 'Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Kontoeinrichtung abzuschließen.',
+    'email.verify.body':
+      'Bitte bestätigen Sie Ihre E-Mail-Adresse, um die Kontoeinrichtung abzuschließen.',
     'email.verify.cta': 'E-Mail Bestätigen',
     'email.welcome.subject': 'Willkommen bei AIVO Learning!',
     'email.welcome.greeting': 'Willkommen, {{name}}!',
-    'email.welcome.body': 'Vielen Dank, dass Sie AIVO beigetreten sind! Wir freuen uns, Sie an Bord zu haben. Mit AIVO können Sie den Lernfortschritt Ihres Kindes verfolgen, mit Lehrern kommunizieren und an der Bildungsreise teilhaben.',
+    'email.welcome.body':
+      'Vielen Dank, dass Sie AIVO beigetreten sind! Wir freuen uns, Sie an Bord zu haben. Mit AIVO können Sie den Lernfortschritt Ihres Kindes verfolgen, mit Lehrern kommunizieren und an der Bildungsreise teilhaben.',
     'email.welcome.cta': 'Zum Dashboard',
     'email.welcome.features': 'Das können Sie tun:',
     'email.welcome.feature1': '📊 Lernfortschritt in Echtzeit verfolgen',
@@ -166,21 +179,25 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'Média',
     'digest.weekly.moreThanlastWeek': 'mais que semana passada',
     'digest.weekly.lessThanlastWeek': 'menos que semana passada',
-    'digest.weekly.footer.receivingBecause': 'Você recebe isso porque está inscrito para atualizações semanais.',
+    'digest.weekly.footer.receivingBecause':
+      'Você recebe isso porque está inscrito para atualizações semanais.',
     'digest.weekly.footer.managePreferences': 'Gerenciar Preferências',
     'digest.weekly.footer.unsubscribe': 'Cancelar Inscrição',
     'email.invite.subject': 'Você foi convidado a acompanhar o progresso de {{studentName}}',
     'email.invite.greeting': 'Olá {{parentName}},',
-    'email.invite.body': 'Um professor convidou você a se juntar ao AIVO e acompanhar o progresso de aprendizado do seu filho.',
+    'email.invite.body':
+      'Um professor convidou você a se juntar ao AIVO e acompanhar o progresso de aprendizado do seu filho.',
     'email.invite.cta': 'Aceitar Convite',
     'email.invite.expires': 'Este convite expira em {{expiresAt}}.',
     'email.verify.subject': 'Verifique seu endereço de e-mail',
     'email.verify.greeting': 'Olá {{name}},',
-    'email.verify.body': 'Por favor, verifique seu endereço de e-mail para concluir a configuração da sua conta.',
+    'email.verify.body':
+      'Por favor, verifique seu endereço de e-mail para concluir a configuração da sua conta.',
     'email.verify.cta': 'Verificar E-mail',
     'email.welcome.subject': 'Bem-vindo ao AIVO Learning!',
     'email.welcome.greeting': 'Bem-vindo, {{name}}!',
-    'email.welcome.body': 'Obrigado por se juntar ao AIVO! Estamos animados por tê-lo conosco. Com o AIVO, você pode acompanhar o progresso de aprendizado do seu filho, comunicar-se com os professores e participar da jornada educacional.',
+    'email.welcome.body':
+      'Obrigado por se juntar ao AIVO! Estamos animados por tê-lo conosco. Com o AIVO, você pode acompanhar o progresso de aprendizado do seu filho, comunicar-se com os professores e participar da jornada educacional.',
     'email.welcome.cta': 'Ir para o Painel',
     'email.welcome.features': 'Veja o que você pode fazer:',
     'email.welcome.feature1': '📊 Acompanhar o progresso de aprendizado em tempo real',
@@ -216,7 +233,8 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': '验证邮箱',
     'email.welcome.subject': '欢迎加入AIVO Learning！',
     'email.welcome.greeting': '欢迎您，{{name}}！',
-    'email.welcome.body': '感谢您加入AIVO！我们很高兴您的到来。通过AIVO，您可以跟踪孩子的学习进度，与老师沟通，并参与他们的教育旅程。',
+    'email.welcome.body':
+      '感谢您加入AIVO！我们很高兴您的到来。通过AIVO，您可以跟踪孩子的学习进度，与老师沟通，并参与他们的教育旅程。',
     'email.welcome.cta': '前往仪表板',
     'email.welcome.features': '您可以做到：',
     'email.welcome.feature1': '📊 实时跟踪学习进度',
@@ -238,7 +256,8 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': '平均点',
     'digest.weekly.moreThanlastWeek': '先週より多い',
     'digest.weekly.lessThanlastWeek': '先週より少ない',
-    'digest.weekly.footer.receivingBecause': '週間進捗更新にご登録いただいているため、このメールをお送りしています。',
+    'digest.weekly.footer.receivingBecause':
+      '週間進捗更新にご登録いただいているため、このメールをお送りしています。',
     'digest.weekly.footer.managePreferences': '設定を管理',
     'digest.weekly.footer.unsubscribe': '配信停止',
     'email.invite.subject': '{{studentName}}の学習進捗を追跡するよう招待されました',
@@ -252,7 +271,8 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': 'メールを確認',
     'email.welcome.subject': 'AIVO Learningへようこそ！',
     'email.welcome.greeting': 'ようこそ、{{name}}さん！',
-    'email.welcome.body': 'AIVOにご参加いただきありがとうございます！お子様の学習進捗を追跡し、先生とコミュニケーションを取り、教育の旅に参加できます。',
+    'email.welcome.body':
+      'AIVOにご参加いただきありがとうございます！お子様の学習進捗を追跡し、先生とコミュニケーションを取り、教育の旅に参加できます。',
     'email.welcome.cta': 'ダッシュボードへ',
     'email.welcome.features': 'できること：',
     'email.welcome.feature1': '📊 リアルタイムで学習進捗を追跡',
@@ -274,12 +294,14 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': '평균 점수',
     'digest.weekly.moreThanlastWeek': '지난주보다 증가',
     'digest.weekly.lessThanlastWeek': '지난주보다 감소',
-    'digest.weekly.footer.receivingBecause': '주간 진행 업데이트를 구독하셨기 때문에 이 이메일을 받으셨습니다.',
+    'digest.weekly.footer.receivingBecause':
+      '주간 진행 업데이트를 구독하셨기 때문에 이 이메일을 받으셨습니다.',
     'digest.weekly.footer.managePreferences': '환경설정 관리',
     'digest.weekly.footer.unsubscribe': '구독 취소',
     'email.invite.subject': '{{studentName}}의 학습 진행 상황을 추적하도록 초대되었습니다',
     'email.invite.greeting': '안녕하세요 {{parentName}}님,',
-    'email.invite.body': '선생님이 AIVO에 가입하여 자녀의 학습 진행 상황을 추적하도록 초대했습니다.',
+    'email.invite.body':
+      '선생님이 AIVO에 가입하여 자녀의 학습 진행 상황을 추적하도록 초대했습니다.',
     'email.invite.cta': '초대 수락',
     'email.invite.expires': '이 초대는 {{expiresAt}}에 만료됩니다.',
     'email.verify.subject': '이메일 주소를 확인하세요',
@@ -288,7 +310,8 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': '이메일 확인',
     'email.welcome.subject': 'AIVO Learning에 오신 것을 환영합니다!',
     'email.welcome.greeting': '환영합니다, {{name}}님!',
-    'email.welcome.body': 'AIVO에 가입해 주셔서 감사합니다! 자녀의 학습 진행 상황을 추적하고, 선생님과 소통하며, 교육 여정에 참여할 수 있습니다.',
+    'email.welcome.body':
+      'AIVO에 가입해 주셔서 감사합니다! 자녀의 학습 진행 상황을 추적하고, 선생님과 소통하며, 교육 여정에 참여할 수 있습니다.',
     'email.welcome.cta': '대시보드로 이동',
     'email.welcome.features': '할 수 있는 것:',
     'email.welcome.feature1': '📊 실시간으로 학습 진행 상황 추적',
@@ -310,7 +333,8 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'المعدل',
     'digest.weekly.moreThanlastWeek': 'أكثر من الأسبوع الماضي',
     'digest.weekly.lessThanlastWeek': 'أقل من الأسبوع الماضي',
-    'digest.weekly.footer.receivingBecause': 'تتلقى هذا البريد لأنك مشترك في تحديثات التقدم الأسبوعية.',
+    'digest.weekly.footer.receivingBecause':
+      'تتلقى هذا البريد لأنك مشترك في تحديثات التقدم الأسبوعية.',
     'digest.weekly.footer.managePreferences': 'إدارة التفضيلات',
     'digest.weekly.footer.unsubscribe': 'إلغاء الاشتراك',
     'email.invite.subject': 'أنت مدعو لتتبع تقدم تعلم {{studentName}}',
@@ -324,7 +348,8 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': 'تحقق من البريد الإلكتروني',
     'email.welcome.subject': 'مرحباً بك في AIVO Learning!',
     'email.welcome.greeting': 'أهلاً بك، {{name}}!',
-    'email.welcome.body': 'شكراً لانضمامك إلى AIVO! يسعدنا وجودك معنا. مع AIVO، يمكنك تتبع تقدم طفلك في التعلم والتواصل مع المعلمين والمشاركة في رحلتهم التعليمية.',
+    'email.welcome.body':
+      'شكراً لانضمامك إلى AIVO! يسعدنا وجودك معنا. مع AIVO، يمكنك تتبع تقدم طفلك في التعلم والتواصل مع المعلمين والمشاركة في رحلتهم التعليمية.',
     'email.welcome.cta': 'الذهاب إلى لوحة القيادة',
     'email.welcome.features': 'إليك ما يمكنك فعله:',
     'email.welcome.feature1': '📊 تتبع تقدم التعلم في الوقت الفعلي',
@@ -346,12 +371,15 @@ const translations: Record<string, Record<string, string>> = {
     'digest.weekly.stats.avgScore': 'औसत अंक',
     'digest.weekly.moreThanlastWeek': 'पिछले सप्ताह से अधिक',
     'digest.weekly.lessThanlastWeek': 'पिछले सप्ताह से कम',
-    'digest.weekly.footer.receivingBecause': 'आप यह इसलिए प्राप्त कर रहे हैं क्योंकि आपने साप्ताहिक अपडेट के लिए सब्सक्राइब किया है।',
+    'digest.weekly.footer.receivingBecause':
+      'आप यह इसलिए प्राप्त कर रहे हैं क्योंकि आपने साप्ताहिक अपडेट के लिए सब्सक्राइब किया है।',
     'digest.weekly.footer.managePreferences': 'प्राथमिकताएं प्रबंधित करें',
     'digest.weekly.footer.unsubscribe': 'सदस्यता रद्द करें',
-    'email.invite.subject': 'आपको {{studentName}} की सीखने की प्रगति ट्रैक करने के लिए आमंत्रित किया गया है',
+    'email.invite.subject':
+      'आपको {{studentName}} की सीखने की प्रगति ट्रैक करने के लिए आमंत्रित किया गया है',
     'email.invite.greeting': 'नमस्ते {{parentName}},',
-    'email.invite.body': 'एक शिक्षक ने आपको AIVO से जुड़ने और अपने बच्चे की सीखने की प्रगति को ट्रैक करने के लिए आमंत्रित किया है।',
+    'email.invite.body':
+      'एक शिक्षक ने आपको AIVO से जुड़ने और अपने बच्चे की सीखने की प्रगति को ट्रैक करने के लिए आमंत्रित किया है।',
     'email.invite.cta': 'आमंत्रण स्वीकार करें',
     'email.invite.expires': 'यह आमंत्रण {{expiresAt}} को समाप्त होगा।',
     'email.verify.subject': 'अपना ईमेल पता सत्यापित करें',
@@ -360,7 +388,8 @@ const translations: Record<string, Record<string, string>> = {
     'email.verify.cta': 'ईमेल सत्यापित करें',
     'email.welcome.subject': 'AIVO Learning में आपका स्वागत है!',
     'email.welcome.greeting': 'स्वागत है, {{name}}!',
-    'email.welcome.body': 'AIVO से जुड़ने के लिए धन्यवाद! हमें आपको साथ पाकर खुशी है। AIVO के साथ, आप अपने बच्चे की सीखने की प्रगति को ट्रैक कर सकते हैं, शिक्षकों से संवाद कर सकते हैं और उनकी शैक्षिक यात्रा में भाग ले सकते हैं।',
+    'email.welcome.body':
+      'AIVO से जुड़ने के लिए धन्यवाद! हमें आपको साथ पाकर खुशी है। AIVO के साथ, आप अपने बच्चे की सीखने की प्रगति को ट्रैक कर सकते हैं, शिक्षकों से संवाद कर सकते हैं और उनकी शैक्षिक यात्रा में भाग ले सकते हैं।',
     'email.welcome.cta': 'डैशबोर्ड पर जाएं',
     'email.welcome.features': 'आप क्या कर सकते हैं:',
     'email.welcome.feature1': '📊 वास्तविक समय में सीखने की प्रगति ट्रैक करें',
@@ -370,14 +399,13 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
-@Injectable()
 export class I18nService {
   /**
    * Translate a key with optional interpolation
    */
   t(key: string, language: string, args?: Record<string, unknown>): string {
-    const lang = translations[language] || translations['en'];
-    let text = lang[key] || translations['en'][key] || key;
+    const lang = translations[language] || translations.en;
+    let text = lang[key] || translations.en[key] || key;
 
     // Interpolate arguments
     if (args) {

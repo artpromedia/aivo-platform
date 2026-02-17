@@ -1,5 +1,5 @@
 /**
- * Data Rights Controller
+ * Data Rights Routes
  *
  * Implements FERPA/GDPR parent data rights endpoints:
  * - GET /parent/students/{id}/data/export - Export all student data
@@ -8,32 +8,17 @@
  * Created: January 2026 - Enterprise QA Audit requirement
  */
 
-import { Controller, Get, Post, Param, Body, Res, UseGuards, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import type { Response, Request } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { CurrentParent } from '../auth/current-parent.decorator.js';
-import { ParentAuthGuard } from '../auth/parent-auth.guard.js';
-
-import { DataRightsService } from './data-rights.service.js';
-
-interface ParentPayload {
-  id: string;
-  email: string;
-  tenantId: string;
-}
+import { BadRequestException } from '../errors.js';
 
 interface DeleteRequestDto {
   reason?: string;
   confirmEmail: string;
 }
 
-@ApiTags('Parent Data Rights')
-@Controller('parent/students')
-@UseGuards(ParentAuthGuard)
-@ApiBearerAuth()
-export class DataRightsController {
-  constructor(private readonly dataRightsService: DataRightsService) {}
+export async function dataRightsRoutes(app: FastifyInstance) {
+  const dataRightsService = app.services.dataRights;
 
   /**
    * Export all data for a linked student
@@ -41,103 +26,82 @@ export class DataRightsController {
    * FERPA: Parents have the right to inspect and review education records
    * GDPR: Right to data portability (Article 20)
    */
-  @Get(':studentId/data/export')
-  @ApiOperation({ summary: 'Export all student data (FERPA/GDPR compliance)' })
-  @ApiResponse({ status: 200, description: 'Data export initiated' })
-  @ApiResponse({ status: 403, description: 'Not authorized to access this student' })
-  async exportStudentData(
-    @Param('studentId') studentId: string,
-    @CurrentParent() parent: ParentPayload,
-    @Res() res: Response
-  ): Promise<void> {
-    // Verify parent has access to this student
-    await this.dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+  app.get('/:studentId/data/export', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { studentId } = request.params as { studentId: string };
+    const parent = request.parent!;
 
-    // Generate export
-    const exportData = await this.dataRightsService.generateDataExport(
+    await dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+
+    const exportData = await dataRightsService.generateDataExport(
       studentId,
       parent.id,
-      parent.tenantId
+      (parent as any).tenantId
     );
 
-    // Set headers for JSON download
     const filename = `student-data-export-${studentId}-${new Date().toISOString().split('T')[0]}.json`;
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('X-Data-Export-Id', exportData.exportId);
 
-    res.json(exportData);
-  }
+    return reply
+      .header('Content-Type', 'application/json')
+      .header('Content-Disposition', `attachment; filename="${filename}"`)
+      .header('X-Data-Export-Id', exportData.exportId)
+      .send(exportData);
+  });
 
   /**
    * Request deletion of all student data
    *
    * FERPA: Parents can request deletion of inaccurate records
    * GDPR: Right to erasure / "Right to be forgotten" (Article 17)
-   *
-   * Note: This creates a deletion request that will be processed
-   * within 30 days per GDPR requirements.
    */
-  @Post(':studentId/data/delete')
-  @ApiOperation({ summary: 'Request student data deletion (FERPA/GDPR compliance)' })
-  @ApiResponse({ status: 202, description: 'Deletion request accepted' })
-  @ApiResponse({ status: 403, description: 'Not authorized to access this student' })
-  async requestDataDeletion(
-    @Param('studentId') studentId: string,
-    @CurrentParent() parent: ParentPayload,
-    @Body() dto: DeleteRequestDto,
-    @Req() req: Request
-  ): Promise<{ requestId: string; status: string; estimatedCompletion: string; message: string }> {
-    // Verify parent has access to this student
-    await this.dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+  app.post('/:studentId/data/delete', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { studentId } = request.params as { studentId: string };
+    const parent = request.parent!;
+    const dto = request.body as DeleteRequestDto;
 
-    // Verify email confirmation matches
+    await dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+
     if (dto.confirmEmail.toLowerCase() !== parent.email.toLowerCase()) {
-      throw new Error('Email confirmation does not match your account email');
+      throw new BadRequestException('Email confirmation does not match your account email');
     }
 
-    // Create deletion request
-    const request = await this.dataRightsService.createDeletionRequest({
+    const deletionRequest = await dataRightsService.createDeletionRequest({
       parentId: parent.id,
       studentId,
-      tenantId: parent.tenantId,
+      tenantId: (parent as any).tenantId,
       reason: dto.reason || 'Parent requested data deletion',
-      ipAddress: req.ip || 'unknown',
-      userAgent: req.headers['user-agent'] || 'unknown',
+      ipAddress: request.ip || 'unknown',
+      userAgent: request.headers['user-agent'] || 'unknown',
     });
 
-    // Calculate estimated completion (30 days per GDPR)
     const estimatedCompletion = new Date();
     estimatedCompletion.setDate(estimatedCompletion.getDate() + 30);
 
+    reply.status(202);
     return {
-      requestId: request.id,
+      requestId: deletionRequest.id,
       status: 'pending',
       estimatedCompletion: estimatedCompletion.toISOString().split('T')[0] || '',
       message:
         'Your data deletion request has been received. We will process it within 30 days and notify you upon completion. You will receive a confirmation email.',
     };
-  }
+  });
 
   /**
    * Get status of a deletion request
    */
-  @Get(':studentId/data/delete/:requestId/status')
-  @ApiOperation({ summary: 'Check data deletion request status' })
-  async getDeletionStatus(
-    @Param('studentId') studentId: string,
-    @Param('requestId') requestId: string,
-    @CurrentParent() parent: ParentPayload
-  ): Promise<{ requestId: string; status: string; createdAt: string; completedAt?: string }> {
-    await this.dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+  app.get('/:studentId/data/delete/:requestId/status', async (request: FastifyRequest) => {
+    const { studentId, requestId } = request.params as { studentId: string; requestId: string };
+    const parent = request.parent!;
 
-    const request = await this.dataRightsService.getDeletionRequest(requestId, parent.id);
+    await dataRightsService.verifyParentStudentAccess(parent.id, studentId);
+
+    const deletionRequest = await dataRightsService.getDeletionRequest(requestId, parent.id);
 
     return {
-      requestId: request.id,
-      status: request.status,
-      createdAt: request.createdAt.toISOString(),
-      completedAt: request.completedAt?.toISOString(),
+      requestId: deletionRequest.id,
+      status: deletionRequest.status,
+      createdAt: deletionRequest.createdAt.toISOString(),
+      completedAt: deletionRequest.completedAt?.toISOString(),
     };
-  }
+  });
 }

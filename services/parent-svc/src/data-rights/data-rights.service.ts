@@ -9,10 +9,10 @@
  */
 
 import { logger } from '@aivo/ts-observability';
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { PrismaService } from '../prisma/prisma.service.js';
+import { ForbiddenException, NotFoundException } from '../errors.js';
+import type { eventBus } from '../event-bus.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -102,11 +102,10 @@ export interface DeletionRequest {
 // SERVICE
 // ════════════════════════════════════════════════════════════════════════════════
 
-@Injectable()
 export class DataRightsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2
+    private readonly eventEmitter: typeof eventBus
   ) {}
 
   /**
@@ -152,7 +151,7 @@ export class DataRightsService {
     // Log the export for audit
     await this.logDataExport(studentId, parentId, exportId);
 
-    logger.info('Data export generated', { studentId, parentId, exportId });
+    logger.info({ studentId, parentId, exportId }, 'Data export generated');
 
     return {
       exportId,
@@ -177,14 +176,13 @@ export class DataRightsService {
 
   private async getProfileData(studentId: string, tenantId: string): Promise<ProfileData> {
     const profile = await this.prisma.profile.findFirst({
-      where: { id: studentId, tenantId },
+      where: { id: studentId },
       select: {
         givenName: true,
         familyName: true,
         dateOfBirth: true,
-        gradeLevel: true,
+        grade: true,
         createdAt: true,
-        accommodations: true,
       },
     });
 
@@ -196,9 +194,9 @@ export class DataRightsService {
       givenName: profile.givenName || '',
       familyName: profile.familyName || '',
       dateOfBirth: profile.dateOfBirth?.toISOString().split('T')[0],
-      gradeLevel: profile.gradeLevel || undefined,
+      gradeLevel: profile.grade || undefined,
       createdAt: profile.createdAt.toISOString(),
-      accommodations: profile.accommodations as string[] | undefined,
+      accommodations: undefined,
     };
   }
 
@@ -209,7 +207,8 @@ export class DataRightsService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const sessions = await this.prisma.session.findMany({
+    const prismaAny = this.prisma as any;
+    const sessions = await prismaAny.session.findMany({
       where: {
         learnerId: studentId,
         tenantId,
@@ -223,11 +222,11 @@ export class DataRightsService {
       orderBy: { startedAt: 'desc' },
     });
 
-    const totalSessions = await this.prisma.session.count({
+    const totalSessions = await prismaAny.session.count({
       where: { learnerId: studentId, tenantId },
     });
 
-    const totalMinutesResult = await this.prisma.session.aggregate({
+    const totalMinutesResult = await prismaAny.session.aggregate({
       where: { learnerId: studentId, tenantId },
       _sum: { duration: true },
     });
@@ -244,7 +243,8 @@ export class DataRightsService {
   }
 
   private async getAssessmentData(studentId: string, tenantId: string): Promise<AssessmentData> {
-    const assessments = await this.prisma.assessmentResult.findMany({
+    const prismaAny = this.prisma as any;
+    const assessments = await prismaAny.assessmentResult.findMany({
       where: { learnerId: studentId, tenantId },
       select: {
         assessmentId: true,
@@ -257,7 +257,7 @@ export class DataRightsService {
       take: 100, // Limit to recent 100
     });
 
-    const totalAssessments = await this.prisma.assessmentResult.count({
+    const totalAssessments = await prismaAny.assessmentResult.count({
       where: { learnerId: studentId, tenantId },
     });
 
@@ -317,7 +317,7 @@ export class DataRightsService {
     parentId: string,
     exportId: string
   ): Promise<void> {
-    await this.prisma.dataExportLog.create({
+    await (this.prisma as any).dataExportLog.create({
       data: {
         exportId,
         studentId,
@@ -342,7 +342,7 @@ export class DataRightsService {
     userAgent: string;
   }): Promise<DeletionRequest> {
     // Check for existing pending request
-    const existing = await this.prisma.dataDeletionRequest.findFirst({
+    const existing = await (this.prisma as any).dataDeletionRequest.findFirst({
       where: {
         parentId: params.parentId,
         studentId: params.studentId,
@@ -364,7 +364,7 @@ export class DataRightsService {
     }
 
     // Create new deletion request
-    const request = await this.prisma.dataDeletionRequest.create({
+    const request = await (this.prisma as any).dataDeletionRequest.create({
       data: {
         parentId: params.parentId,
         studentId: params.studentId,
@@ -385,11 +385,14 @@ export class DataRightsService {
       reason: params.reason,
     });
 
-    logger.info('Data deletion request created', {
-      requestId: request.id,
-      studentId: params.studentId,
-      parentId: params.parentId,
-    });
+    logger.info(
+      {
+        requestId: request.id,
+        studentId: params.studentId,
+        parentId: params.parentId,
+      },
+      'Data deletion request created'
+    );
 
     return {
       id: request.id,
@@ -406,7 +409,7 @@ export class DataRightsService {
    * Get deletion request status
    */
   async getDeletionRequest(requestId: string, parentId: string): Promise<DeletionRequest> {
-    const request = await this.prisma.dataDeletionRequest.findFirst({
+    const request = await (this.prisma as any).dataDeletionRequest.findFirst({
       where: {
         id: requestId,
         parentId,

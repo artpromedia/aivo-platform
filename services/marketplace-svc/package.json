@@ -33,5 +33,10 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
+  },
+  "aivo": {
+    "phase": 3,
+    "disposition": "defer",
+    "framework": "fastify"
   }
 }

@@ -75,6 +75,20 @@ export interface ExtendedPrismaClient extends BasePrismaClient {
   webhookConfig: ModelDelegate;
   webhookLog: ModelDelegate;
   webhookDeadLetter: ModelDelegate;
+
+  // Device sync models (absorbed from sync-svc, Sprint 3)
+  deviceSyncConflict: ModelDelegate;
+  deviceSyncHistory: ModelDelegate;
+  deviceSyncState: ModelDelegate;
+  syncLearningSession: ModelDelegate;
+  syncResponse: ModelDelegate;
+  syncProgress: ModelDelegate;
+  syncSkillMastery: ModelDelegate;
+  syncSettings: ModelDelegate;
+  syncBookmark: ModelDelegate;
+  syncNote: ModelDelegate;
+  offlineContent: ModelDelegate;
+  contentVersion: ModelDelegate;
 }
 
 /**

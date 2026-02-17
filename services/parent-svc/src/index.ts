@@ -9,51 +9,40 @@
  * - Multi-language support
  */
 
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
-import { AppModule } from './app.module.js';
+
+import { buildApp } from './app.js';
 import { config } from './config.js';
+import { disconnectDatabase } from './prisma/prisma.service.js';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log'],
-  });
+async function start() {
+  const app = await buildApp();
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    })
-  );
+  const shutdown = async (signal: string) => {
+    app.log.info({ signal }, 'Received shutdown signal');
+    await app.close();
+    await disconnectDatabase();
+    process.exit(0);
+  };
 
-  // CORS configuration
-  app.enableCors({
-    origin: config.corsOrigins,
-    credentials: true,
-  });
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 
-  // Global prefix
-  app.setGlobalPrefix('api/v1');
-
-  const port = config.port || 3010;
-  await app.listen(port);
-
-  logger.info(
-    { service: 'parent-svc', environment: config.environment },
-    `Parent service running on port ${port}`
-  );
+  try {
+    const port = config.port || 3010;
+    await app.listen({ port, host: '0.0.0.0' });
+    logger.info(
+      { service: 'parent-svc', environment: config.environment },
+      `Parent service running on port ${port}`
+    );
+  } catch (err) {
+    logger.error({ error: err }, 'Failed to start parent service');
+    await disconnectDatabase();
+    process.exit(1);
+  }
 }
 
-bootstrap().catch((error) => {
-  logger.error({ error }, 'Failed to start parent service');
-  process.exit(1);
-});
+start();
 
 export * from './parent/parent.service.js';
 export * from './parent/parent.types.js';

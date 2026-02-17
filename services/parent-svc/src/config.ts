@@ -6,7 +6,7 @@ import { z } from 'zod';
 import 'dotenv/config';
 
 const configSchema = z.object({
-  environment: z.enum(['development', 'staging', 'production']).default('development'),
+  environment: z.enum(['development', 'staging', 'production', 'test']).default('development'),
   port: z.coerce.number().default(3010),
   databaseUrl: z.string(),
   redisUrl: z.string().optional(),
@@ -64,6 +64,7 @@ const configSchema = z.object({
   captchaEnabled: z.coerce.boolean().default(false),
   recaptchaSiteKey: z.string().optional(),
   recaptchaSecretKey: z.string().optional(),
+  enableRateLimitInDev: z.coerce.boolean().default(false),
 });
 
 function loadConfig() {
@@ -97,13 +98,15 @@ function loadConfig() {
     learnerModelSvcUrl: process.env.LEARNER_MODEL_SVC_URL,
     notifySvcUrl: process.env.NOTIFY_SVC_URL,
     parentPortalUrl: process.env.PARENT_PORTAL_URL,
-    registrationEmailVerificationExpiryHours: process.env.REGISTRATION_EMAIL_VERIFICATION_EXPIRY_HOURS,
+    registrationEmailVerificationExpiryHours:
+      process.env.REGISTRATION_EMAIL_VERIFICATION_EXPIRY_HOURS,
     registrationSchoolCodeExpiryDays: process.env.REGISTRATION_SCHOOL_CODE_EXPIRY_DAYS,
     registrationMaxFailedAttempts: process.env.REGISTRATION_MAX_FAILED_ATTEMPTS,
     registrationLockoutMinutes: process.env.REGISTRATION_LOCKOUT_MINUTES,
     captchaEnabled: process.env.CAPTCHA_ENABLED,
     recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
     recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY,
+    enableRateLimitInDev: process.env.ENABLE_RATE_LIMIT_IN_DEV,
   });
 
   if (!result.success) {

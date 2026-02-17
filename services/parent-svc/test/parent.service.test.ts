@@ -2,11 +2,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ParentService } from '../src/parent/parent.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { CryptoService } from '../src/crypto/crypto.service';
+import { I18nService } from '../src/i18n/i18n.service';
+import { NotificationService } from '../src/notification/notification.service';
+import { eventBus } from '../src/event-bus';
+import { NotFoundException } from '../src/errors';
 
 describe('ParentService', () => {
   let parentService: ParentService;
   let prisma: any;
   let crypto: CryptoService;
+  let i18n: I18nService;
+  let notifications: any;
 
   beforeEach(() => {
     prisma = {
@@ -17,174 +23,211 @@ describe('ParentService', () => {
         update: vi.fn(),
       },
       parentStudentLink: {
+        findUnique: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
+        update: vi.fn(),
         delete: vi.fn(),
       },
       parentInvite: {
+        findFirst: vi.fn(),
         findUnique: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
       },
       consentRecord: {
         findMany: vi.fn(),
-        upsert: vi.fn(),
+        create: vi.fn(),
+      },
+      profile: {
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
       },
     };
     crypto = new CryptoService();
-    parentService = new ParentService(prisma as unknown as PrismaService, crypto);
+    i18n = new I18nService();
+    notifications = {
+      send: vi.fn().mockResolvedValue(undefined),
+    };
+    parentService = new ParentService(
+      prisma as unknown as PrismaService,
+      eventBus,
+      i18n,
+      crypto,
+      notifications as unknown as NotificationService
+    );
   });
 
-  describe('getParentById', () => {
-    it('should return parent with students', async () => {
+  describe('getParentProfile', () => {
+    it('should return parent with linked students', async () => {
       const mockParent = {
         id: 'parent-1',
         email: 'parent@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        studentLinks: [
-          {
-            student: {
-              id: 'student-1',
-              firstName: 'Jane',
-              lastName: 'Doe',
-              grade: '5',
-            },
-            relationship: 'parent',
-          },
-        ],
+        givenName: 'John',
+        familyName: 'Doe',
+        phone: null,
+        photoUrl: null,
+        language: 'en',
+        timezone: 'UTC',
+        status: 'active',
+        digestFrequency: 'weekly',
+        notificationPreferences: {},
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        studentLinks: [],
       };
 
       prisma.parent.findUnique.mockResolvedValue(mockParent);
 
-      const result = await parentService.getParentById('parent-1');
+      const result = await parentService.getParentProfile('parent-1');
 
       expect(result).toBeDefined();
-      expect(result?.email).toBe('parent@example.com');
-      expect(prisma.parent.findUnique).toHaveBeenCalledWith({
-        where: { id: 'parent-1' },
-        include: expect.any(Object),
-      });
+      expect(result.email).toBe('parent@example.com');
+      expect(prisma.parent.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'parent-1' },
+          include: expect.any(Object),
+        })
+      );
     });
 
-    it('should return null for non-existent parent', async () => {
+    it('should throw NotFoundException for non-existent parent', async () => {
       prisma.parent.findUnique.mockResolvedValue(null);
 
-      const result = await parentService.getParentById('non-existent');
-
-      expect(result).toBeNull();
+      await expect(parentService.getParentProfile('non-existent')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
-  describe('createParent', () => {
-    it('should create a new parent with hashed password', async () => {
-      const createDto = {
-        email: 'new@example.com',
-        password: 'SecurePass123!',
-        firstName: 'New',
-        lastName: 'Parent',
-        tenantId: 'tenant-1',
-        locale: 'en',
+  describe('updateProfile', () => {
+    it('should update parent profile fields', async () => {
+      const updateDto = {
+        givenName: 'Updated',
+        familyName: 'Name',
+        phone: '555-0100',
       };
 
-      const mockCreated = {
-        id: 'new-parent-id',
-        ...createDto,
-        passwordHash: 'hashed-password',
+      const mockUpdated = {
+        id: 'parent-1',
+        email: 'parent@example.com',
+        givenName: 'Updated',
+        familyName: 'Name',
+        phone: '555-0100',
+        photoUrl: null,
+        language: 'en',
+        timezone: 'UTC',
+        status: 'active',
+        digestFrequency: 'weekly',
+        notificationPreferences: {},
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
-      prisma.parent.findFirst.mockResolvedValue(null);
-      prisma.parent.create.mockResolvedValue(mockCreated);
+      prisma.parent.update.mockResolvedValue(mockUpdated);
 
-      const result = await parentService.createParent(createDto);
+      const result = await parentService.updateProfile('parent-1', updateDto);
 
       expect(result).toBeDefined();
-      expect(result.id).toBe('new-parent-id');
-      expect(prisma.parent.create).toHaveBeenCalled();
-    });
-
-    it('should throw error if email already exists', async () => {
-      prisma.parent.findFirst.mockResolvedValue({ id: 'existing' });
-
-      await expect(
-        parentService.createParent({
-          email: 'existing@example.com',
-          password: 'pass',
-          firstName: 'Test',
-          lastName: 'User',
-          tenantId: 'tenant-1',
-          locale: 'en',
-        })
-      ).rejects.toThrow('Email already registered');
+      expect(result.givenName).toBe('Updated');
+      expect(prisma.parent.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'parent-1' } })
+      );
     });
   });
 
-  describe('linkStudentToParent', () => {
-    it('should create parent-student link', async () => {
-      const mockLink = {
+  describe('recordConsent', () => {
+    it('should create consent record for student', async () => {
+      // verifyParentAccess needs the link to exist
+      prisma.parentStudentLink.findUnique.mockResolvedValue({
         id: 'link-1',
         parentId: 'parent-1',
         studentId: 'student-1',
-        relationship: 'parent',
-      };
+        status: 'active',
+      });
 
-      prisma.parentStudentLink.create.mockResolvedValue(mockLink);
+      prisma.consentRecord.create.mockResolvedValue({
+        id: 'consent-1',
+        consentType: 'coppa',
+        granted: true,
+        consentVersion: '1.0',
+        grantedAt: new Date(),
+        revokedAt: null,
+      });
 
-      const result = await parentService.linkStudentToParent(
-        'parent-1',
-        'student-1',
-        'parent'
-      );
+      prisma.parentStudentLink.update.mockResolvedValue({});
 
-      expect(result).toBeDefined();
-      expect(result.studentId).toBe('student-1');
+      const result = await parentService.recordConsent('parent-1', {
+        studentId: 'student-1',
+        consentType: 'coppa' as any,
+        granted: true,
+      });
+
+      expect(result.granted).toBe(true);
+      expect(result.consentType).toBe('coppa');
+      expect(prisma.consentRecord.create).toHaveBeenCalled();
     });
   });
 
   describe('getConsentRecords', () => {
-    it('should return consent records for parent', async () => {
+    it('should return consent records for parent and student', async () => {
+      prisma.parentStudentLink.findUnique.mockResolvedValue({
+        id: 'link-1',
+        parentId: 'parent-1',
+        studentId: 'student-1',
+        status: 'active',
+      });
+
       const mockRecords = [
         {
           id: 'consent-1',
-          type: 'learning_analytics',
+          consentType: 'coppa',
           granted: true,
+          consentVersion: '1.0',
           grantedAt: new Date(),
+          revokedAt: null,
+          createdAt: new Date(),
         },
         {
           id: 'consent-2',
-          type: 'push_notifications',
+          consentType: 'ai_chat',
           granted: false,
+          consentVersion: '1.0',
+          grantedAt: null,
           revokedAt: new Date(),
+          createdAt: new Date(),
         },
       ];
 
       prisma.consentRecord.findMany.mockResolvedValue(mockRecords);
 
-      const result = await parentService.getConsentRecords('parent-1');
+      const result = await parentService.getConsentRecords('parent-1', 'student-1');
 
       expect(result).toHaveLength(2);
-      expect(result[0].type).toBe('learning_analytics');
+      expect(result[0].consentType).toBe('coppa');
     });
   });
 
-  describe('updateConsent', () => {
-    it('should update consent record', async () => {
+  describe('updatePreferences', () => {
+    it('should update parent preferences', async () => {
       const mockUpdated = {
-        id: 'consent-1',
-        type: 'push_notifications',
-        granted: true,
-        grantedAt: new Date(),
+        language: 'es',
+        timezone: 'America/New_York',
+        digestFrequency: 'weekly',
+        notificationPreferences: { email: true, push: true },
       };
 
-      prisma.consentRecord.upsert.mockResolvedValue(mockUpdated);
+      prisma.parent.update.mockResolvedValue(mockUpdated);
 
-      const result = await parentService.updateConsent(
-        'parent-1',
-        'push_notifications',
-        true
-      );
+      const result = await parentService.updatePreferences('parent-1', {
+        language: 'es',
+        timezone: 'America/New_York',
+      });
 
-      expect(result.granted).toBe(true);
+      expect(result.language).toBe('es');
+      expect(result.timezone).toBe('America/New_York');
     });
   });
 });

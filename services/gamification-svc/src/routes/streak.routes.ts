@@ -4,142 +4,123 @@
  * Handles streak-related API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { streakService } from '../services/index.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION
 // ============================================================================
 
 const freezeSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * GET /api/gamification/streaks
- * Get current streak info
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+async function streakRoutes(app: FastifyInstance) {
+  /**
+   * GET /api/gamification/streaks
+   * Get current streak info
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const streak = await streakService.getCurrentStreak(studentId);
-    res.json({ success: true, data: streak });
-  })
-);
+    return { success: true, data: streak };
+  });
 
-/**
- * GET /api/gamification/streaks/calendar
- * Get streak calendar for a month
- */
-router.get(
-  '/calendar',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const timezone = (req.query.timezone as string) || 'UTC';
+  /**
+   * GET /api/gamification/streaks/calendar
+   * Get streak calendar for a month
+   */
+  app.get('/calendar', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
+    const query = request.query as any;
 
-    const year = Number.parseInt(req.query.year as string) || new Date().getFullYear();
-    const month = Number.parseInt(req.query.month as string);
+    const year = Number.parseInt(query.year as string) || new Date().getFullYear();
+    const month = Number.parseInt(query.month as string);
 
     let startDate: Date;
     let endDate: Date;
 
-    if (!isNaN(month)) {
-      // Specific month requested
+    if (Number.isFinite(month)) {
       startDate = new Date(year, month - 1, 1);
       endDate = new Date(year, month, 0);
     } else {
-      // Default: last 30 days
       endDate = new Date();
       startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
     }
 
-    // Calculate days from date range
     const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const calendar = await streakService.getStreakCalendar(studentId, days);
 
-    res.json({ success: true, data: calendar });
-  })
-);
+    return { success: true, data: calendar };
+  });
 
-/**
- * POST /api/gamification/streaks/freeze
- * Use a streak freeze
- */
-router.post(
-  '/freeze',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const data = freezeSchema.parse(req.body);
+  /**
+   * POST /api/gamification/streaks/freeze
+   * Use a streak freeze
+   */
+  app.post('/freeze', async (request: FastifyRequest, reply: FastifyReply) => {
+    const studentId = extractStudentId(request);
+    freezeSchema.parse(request.body);
 
     const result = await streakService.useStreakFreeze(studentId);
 
     if (result) {
-      res.json({ success: true, message: 'Streak freeze applied' });
+      return { success: true, message: 'Streak freeze applied' };
     } else {
-      res.status(400).json({
+      reply.status(400);
+      return {
         success: false,
         error: 'Unable to apply streak freeze. Check if you have freezes available.',
-      });
+      };
     }
-  })
-);
+  });
 
-/**
- * GET /api/gamification/streaks/milestones
- * Get streak milestones
- */
-router.get('/milestones', (_req: Request, res: Response) => {
-  const milestones = [
-    { days: 3, name: 'Getting Started', xpBonus: 25, icon: '🌱' },
-    { days: 7, name: 'Week Warrior', xpBonus: 50, icon: '⚡' },
-    { days: 14, name: 'Fortnight Fighter', xpBonus: 100, icon: '🔥' },
-    { days: 30, name: 'Month Master', xpBonus: 250, icon: '⭐' },
-    { days: 50, name: 'Consistency Champion', xpBonus: 400, icon: '🏆' },
-    { days: 100, name: 'Century Sage', xpBonus: 1000, icon: '💎' },
-    { days: 365, name: 'Year-Long Legend', xpBonus: 5000, icon: '👑' },
-  ];
+  /**
+   * GET /api/gamification/streaks/milestones
+   * Get streak milestones
+   */
+  app.get('/milestones', async () => {
+    const milestones = [
+      { days: 3, name: 'Getting Started', xpBonus: 25, icon: '🌱' },
+      { days: 7, name: 'Week Warrior', xpBonus: 50, icon: '⚡' },
+      { days: 14, name: 'Fortnight Fighter', xpBonus: 100, icon: '🔥' },
+      { days: 30, name: 'Month Master', xpBonus: 250, icon: '⭐' },
+      { days: 50, name: 'Consistency Champion', xpBonus: 400, icon: '🏆' },
+      { days: 100, name: 'Century Sage', xpBonus: 1000, icon: '💎' },
+      { days: 365, name: 'Year-Long Legend', xpBonus: 5000, icon: '👑' },
+    ];
 
-  res.json({ success: true, data: milestones });
-});
+    return { success: true, data: milestones };
+  });
 
-/**
- * GET /api/gamification/streaks/stats
- * Get detailed streak statistics
- */
-router.get(
-  '/stats',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/streaks/stats
+   * Get detailed streak statistics
+   */
+  app.get('/stats', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
 
@@ -161,7 +142,7 @@ router.get(
       where: { studentId },
     });
 
-    res.json({
+    return {
       success: true,
       data: {
         currentStreak: profile?.currentStreak || 0,
@@ -171,8 +152,8 @@ router.get(
         totalActiveDays,
         lastActivityDate: profile?.lastActivityDate,
       },
-    });
-  })
-);
+    };
+  });
+}
 
-export default router;
+export default streakRoutes;

@@ -1,109 +1,90 @@
 /**
- * Reports Controller
+ * Reports Routes
  *
  * REST API endpoints for generating and downloading reports.
  */
 
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  Req,
-  Res,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import type { Response } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import type { ParentAuthRequest } from '../auth/parent-auth.middleware.js';
-import { ParentService } from '../parent/parent.service.js';
-
-import { PdfReportService } from './pdf-report.service.js';
-
-@Controller('reports')
-export class ReportsController {
-  constructor(
-    private readonly parentService: ParentService,
-    private readonly pdfService: PdfReportService
-  ) {}
+export async function reportsRoutes(app: FastifyInstance) {
+  const parentService = app.services.parent;
+  const pdfService = app.services.pdfReport;
 
   /**
    * Generate and download progress report PDF
    */
-  @Get('students/:studentId/progress.pdf')
-  async downloadProgressReport(
-    @Req() req: ParentAuthRequest,
-    @Res() res: Response,
-    @Param('studentId') studentId: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string
-  ) {
-    const report = await this.parentService.getProgressReport(req.parent!.id, studentId, {
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-    });
+  app.get(
+    '/students/:studentId/progress.pdf',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { studentId } = request.params as { studentId: string };
+      const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
 
-    const summary = await this.parentService.getStudentSummary(req.parent!.id, studentId);
+      const report = await parentService.getProgressReport(request.parent!.id, studentId, {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      });
 
-    const pdf = await this.pdfService.generateProgressReport({
-      studentName: summary.name,
-      parentName: `${req.parent!.firstName} ${req.parent!.lastName}`,
-      report,
-      language: req.parent!.language,
-    });
+      const summary = await parentService.getStudentSummary(request.parent!.id, studentId);
 
-    const filename = `progress-report-${summary.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      const pdf = await pdfService.generateProgressReport({
+        studentName: summary.name,
+        parentName: `${request.parent!.firstName} ${request.parent!.lastName}`,
+        report,
+        language: request.parent!.language,
+      });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Length', pdf.length);
-    res.send(pdf);
-  }
+      const filename = `progress-report-${summary.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+
+      return reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .header('Content-Length', pdf.length)
+        .send(pdf);
+    }
+  );
 
   /**
    * Generate and download weekly summary PDF
    */
-  @Get('students/:studentId/weekly.pdf')
-  async downloadWeeklySummary(
-    @Req() req: ParentAuthRequest,
-    @Res() res: Response,
-    @Param('studentId') studentId: string,
-    @Query('weekOf') weekOf?: string
-  ) {
-    const summary = await this.parentService.generateWeeklySummary(
-      req.parent!.id,
-      studentId,
-      weekOf ? new Date(weekOf) : new Date()
-    );
+  app.get(
+    '/students/:studentId/weekly.pdf',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { studentId } = request.params as { studentId: string };
+      const { weekOf } = request.query as { weekOf?: string };
 
-    const studentSummary = await this.parentService.getStudentSummary(req.parent!.id, studentId);
+      const summary = await parentService.generateWeeklySummary(
+        request.parent!.id,
+        studentId,
+        weekOf ? new Date(weekOf) : new Date()
+      );
 
-    const pdf = await this.pdfService.generateWeeklySummary({
-      studentName: studentSummary.name,
-      parentName: `${req.parent!.firstName} ${req.parent!.lastName}`,
-      summary,
-      language: req.parent!.language,
-    });
+      const studentSummary = await parentService.getStudentSummary(request.parent!.id, studentId);
 
-    const filename = `weekly-summary-${studentSummary.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      const pdf = await pdfService.generateWeeklySummary({
+        studentName: studentSummary.name,
+        parentName: `${request.parent!.firstName} ${request.parent!.lastName}`,
+        summary,
+        language: request.parent!.language,
+      });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Length', pdf.length);
-    res.send(pdf);
-  }
+      const filename = `weekly-summary-${studentSummary.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+
+      return reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .header('Content-Length', pdf.length)
+        .send(pdf);
+    }
+  );
 
   /**
    * Get list of available reports
    */
-  @Get('available')
-  async getAvailableReports(@Req() req: ParentAuthRequest) {
-    const profile = await this.parentService.getParentProfile(req.parent!.id);
+  app.get('/available', async (request: FastifyRequest) => {
+    const profile = await parentService.getParentProfile(request.parent!.id);
 
     return {
-      reports: profile.students.map((student) => ({
+      reports: profile.students.map((student: { id: string; name: string }) => ({
         studentId: student.id,
         studentName: student.name,
         available: [
@@ -122,5 +103,5 @@ export class ReportsController {
         ],
       })),
     };
-  }
+  });
 }

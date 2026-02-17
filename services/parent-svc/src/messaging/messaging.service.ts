@@ -9,15 +9,17 @@
  * - Audit logging
  */
 
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { logger } from '@aivo/ts-observability';
-import { Prisma } from '../../generated/prisma-client/index.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { NotificationService } from '../notification/notification.service.js';
-import { ContentModerationService } from '../moderation/content-moderation.service.js';
+
+import type { Prisma } from '../../generated/prisma-client/index.js';
 import { config } from '../config.js';
-import {
+import { ForbiddenException, NotFoundException, BadRequestException } from '../errors.js';
+import type { eventBus } from '../event-bus.js';
+import type { ContentModerationService } from '../moderation/content-moderation.service.js';
+import type { NotificationService } from '../notification/notification.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
   CreateConversationDto,
   SendMessageDto,
   ReportMessageDto,
@@ -25,31 +27,24 @@ import {
   ConversationWithParticipants,
   Message,
   MessageThread,
-  SenderType,
-  ConversationStatus,
-  MessageStatus,
-  ReportStatus,
   ModerationResult,
 } from './messaging.types.js';
+import { SenderType, ConversationStatus, MessageStatus, ReportStatus } from './messaging.types.js';
 
-@Injectable()
 export class MessagingService {
   private readonly MAX_MESSAGE_LENGTH = 2000;
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: typeof eventBus,
     private readonly notifications: NotificationService,
-    private readonly moderation: ContentModerationService,
+    private readonly moderation: ContentModerationService
   ) {}
 
   /**
    * Create a new conversation thread
    */
-  async createConversation(
-    parentId: string,
-    dto: CreateConversationDto
-  ): Promise<Conversation> {
+  async createConversation(parentId: string, dto: CreateConversationDto): Promise<Conversation> {
     // Verify parent has access to student
     const link = await this.prisma.parentStudentLink.findUnique({
       where: {
@@ -120,11 +115,14 @@ export class MessagingService {
         },
       });
 
-      logger.info({
-        conversationId: conversation.id,
-        parentId,
-        teacherId: dto.teacherId,
-      }, 'Conversation created');
+      logger.info(
+        {
+          conversationId: conversation.id,
+          parentId,
+          teacherId: dto.teacherId,
+        },
+        'Conversation created'
+      );
     }
 
     return this.toConversation(conversation);
@@ -293,9 +291,10 @@ export class MessagingService {
       unreadCount: c.parentLastReadAt
         ? c.messages.filter(
             (m) =>
-              m.createdAt > c.parentLastReadAt! && m.senderType === SenderType.TEACHER
+              m.createdAt > c.parentLastReadAt! &&
+              (m.senderType as SenderType) === SenderType.TEACHER
           ).length
-        : c.messages.filter((m) => m.senderType === SenderType.TEACHER).length,
+        : c.messages.filter((m) => (m.senderType as SenderType) === SenderType.TEACHER).length,
     }));
   }
 
@@ -353,9 +352,10 @@ export class MessagingService {
       unreadCount: c.teacherLastReadAt
         ? c.messages.filter(
             (m) =>
-              m.createdAt > c.teacherLastReadAt! && m.senderType === SenderType.PARENT
+              m.createdAt > c.teacherLastReadAt! &&
+              (m.senderType as SenderType) === SenderType.PARENT
           ).length
-        : c.messages.filter((m) => m.senderType === SenderType.PARENT).length,
+        : c.messages.filter((m) => (m.senderType as SenderType) === SenderType.PARENT).length,
     }));
   }
 
@@ -486,11 +486,7 @@ export class MessagingService {
   /**
    * Report a message
    */
-  async reportMessage(
-    userId: string,
-    userType: SenderType,
-    dto: ReportMessageDto
-  ): Promise<void> {
+  async reportMessage(userId: string, userType: SenderType, dto: ReportMessageDto): Promise<void> {
     const message = await this.prisma.parentMessage.findUnique({
       where: { id: dto.messageId },
       include: { conversation: true },
@@ -519,11 +515,14 @@ export class MessagingService {
       },
     });
 
-    logger.warn({
-      messageId: dto.messageId,
-      reporterId: userId,
-      reason: dto.reason,
-    }, 'Message reported');
+    logger.warn(
+      {
+        messageId: dto.messageId,
+        reporterId: userId,
+        reason: dto.reason,
+      },
+      'Message reported'
+    );
   }
 
   /**

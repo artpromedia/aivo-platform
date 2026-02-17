@@ -19,12 +19,13 @@
   "dependencies": {
     "@aivo/ts-api-utils": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/helmet": "^13.0.1",
     "@prisma/client": "^5.22.0",
-    "cors": "^2.8.5",
     "dataloader": "^2.2.3",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
-    "helmet": "^8.0.0",
+    "fastify": "^5.2.1",
+    "fastify-plugin": "^5.0.1",
     "jose": "^5.9.2",
     "nats": "^2.28.2",
     "uuid": "^10.0.0",
@@ -32,13 +33,17 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.0",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
     "@types/uuid": "^10.0.0",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "aivo": {
+    "phase": 2,
+    "disposition": "freeze",
+    "framework": "fastify",
+    "laterMergeInto": "ai-svc"
   }
 }

@@ -1,5 +1,5 @@
-import { AccessibilityProvider, GradeThemeProvider } from '@aivo/ui-web';
 import type { Role } from '@aivo/ts-rbac';
+import { AccessibilityProvider, GradeThemeProvider } from '@aivo/ui-web';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -29,13 +29,24 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" data-grade-theme="navigator">
       <body className="min-h-screen bg-background text-text antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <RootProviders>
           <GradeThemeProvider gradeLevel="MS">
             <AccessibilityProvider>
               <AuthProvider initialAuth={initialAuth}>
                 <EducatorModeProvider>
                   <Nav />
-                  <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">{children}</main>
+                  <main
+                    id="main-content"
+                    className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6"
+                  >
+                    {children}
+                  </main>
                 </EducatorModeProvider>
               </AuthProvider>
             </AccessibilityProvider>

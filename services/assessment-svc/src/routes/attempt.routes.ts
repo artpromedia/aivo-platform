@@ -1,5 +1,4 @@
-import { Router } from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 
 import { publishEvent } from '../events/publisher.js';
@@ -16,36 +15,10 @@ import {
   BulkManualGradeSchema,
 } from '../validators/assessment.validator.js';
 
-const router = Router();
-
-// Middleware for validating request body
-function validateBody(schema: { parse: (data: unknown) => unknown }) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      req.body = schema.parse(req.body);
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-// Middleware for validating query params
-function validateQuery(schema: { parse: (data: unknown) => unknown }) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    try {
-      req.query = schema.parse(req.query) as Record<string, string>;
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
 // Error handler
-function handleError(error: unknown, res: Response): void {
+function handleError(error: unknown, reply: FastifyReply): void {
   if (error instanceof ZodError) {
-    res.status(400).json({
+    reply.status(400).send({
       error: 'Validation error',
       details: error.errors,
     });
@@ -54,23 +27,23 @@ function handleError(error: unknown, res: Response): void {
 
   if (error instanceof Error) {
     if (error.message.includes('not found')) {
-      res.status(404).json({ error: error.message });
+      reply.status(404).send({ error: error.message });
       return;
     }
     if (error.message.includes('Cannot') || error.message.includes('Maximum')) {
-      res.status(400).json({ error: error.message });
+      reply.status(400).send({ error: error.message });
       return;
     }
   }
 
   console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
+  reply.status(500).send({ error: 'Internal server error' });
 }
 
 // Get tenant and user from request (set by auth middleware)
-function getContext(req: Request): { tenantId: string; userId: string } {
-  const tenantId = req.headers['x-tenant-id'] as string;
-  const userId = req.headers['x-user-id'] as string;
+function getContext(request: FastifyRequest): { tenantId: string; userId: string } {
+  const tenantId = request.headers['x-tenant-id'] as string;
+  const userId = request.headers['x-user-id'] as string;
 
   if (!tenantId || !userId) {
     throw new Error('Missing tenant or user context');
@@ -79,426 +52,456 @@ function getContext(req: Request): { tenantId: string; userId: string } {
   return { tenantId, userId };
 }
 
-// Get required URL parameter
-function getParam(req: Request, name: string): string {
-  const value = req.params[name];
-  if (!value) {
-    throw new Error(`Missing required parameter: ${name}`);
-  }
-  return value;
-}
-
-/**
- * GET /attempts
- * List attempts with filtering and pagination
- */
-router.get('/', validateQuery(AttemptQuerySchema), async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const result = await attemptService.list(tenantId, req.query as any);
-    res.json(result);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /attempts
- * Start a new attempt
- */
-router.post('/', validateBody(StartAttemptSchema), async (req: Request, res: Response) => {
-  try {
-    const { tenantId, userId } = getContext(req);
-    const attempt = await attemptService.start(
-      tenantId,
-      userId,
-      req.body.assessmentId,
-      req.body.metadata
-    );
-    res.status(201).json(attempt);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * GET /attempts/:id
- * Get attempt by ID
- */
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const includeResponses = req.query.includeResponses === 'true';
-    const attempt = await attemptService.getById(tenantId, id, includeResponses);
-
-    if (!attempt) {
-      res.status(404).json({ error: 'Attempt not found' });
-      return;
-    }
-
-    res.json(attempt);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /attempts/:id/submit
- * Submit an attempt for grading
- */
-router.post('/:id/submit', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const attempt = await attemptService.submit(tenantId, id);
-    res.json(attempt);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /attempts/:id/abandon
- * Abandon an attempt
- */
-router.post('/:id/abandon', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
-    const attempt = await attemptService.abandon(tenantId, id);
-    res.json(attempt);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * GET /attempts/:id/next-question
- * Get next question for adaptive assessment
- */
-router.get('/:id/next-question', async (req: Request, res: Response) => {
-  try {
-    const id = getParam(req, 'id');
-    const question = await adaptiveService.getNextQuestion(id);
-
-    if (!question) {
-      res.json({ complete: true, message: 'All questions answered' });
-      return;
-    }
-
-    // Don't include correct answer
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { correctAnswer, ...questionWithoutAnswer } = question;
-    res.json(questionWithoutAnswer);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /attempts/:id/responses
- * Submit a response for a question
- */
-router.post(
-  '/:id/responses',
-  validateBody(SubmitResponseSchema.omit({ attemptId: true })),
-  async (req: Request, res: Response) => {
+export async function attemptRoutes(app: FastifyInstance): Promise<void> {
+  /**
+   * GET /attempts
+   * List attempts with filtering and pagination
+   */
+  app.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { tenantId } = getContext(req);
-      const attemptId = getParam(req, 'id');
-
-      // Verify attempt exists and is in progress
-      const attempt = await attemptService.getById(tenantId, attemptId);
-      if (!attempt) {
-        res.status(404).json({ error: 'Attempt not found' });
-        return;
-      }
-      if (attempt.status !== 'IN_PROGRESS') {
-        res.status(400).json({ error: 'Attempt is not in progress' });
-        return;
-      }
-
-      // Check if response already exists
-      const existingResponse = await prisma.questionResponse.findUnique({
-        where: {
-          attemptId_questionId: {
-            attemptId,
-            questionId: req.body.questionId,
-          },
-        },
-      });
-
-      if (existingResponse) {
-        // Update existing response
-        const updated = await prisma.questionResponse.update({
-          where: { id: existingResponse.id },
-          data: {
-            response: req.body.response,
-            responseText: typeof req.body.response === 'string' ? req.body.response : null,
-            answeredAt: new Date(),
-            timeSpentSeconds: existingResponse.timeSpentSeconds + (req.body.timeSpentSeconds ?? 0),
-          },
-        });
-        res.json(updated);
-      } else {
-        // Create new response
-        const response = await prisma.questionResponse.create({
-          data: {
-            attemptId,
-            questionId: req.body.questionId,
-            response: req.body.response,
-            responseText: typeof req.body.response === 'string' ? req.body.response : null,
-            timeSpentSeconds: req.body.timeSpentSeconds ?? 0,
-          },
-        });
-
-        await publishEvent('response.submitted', {
-          responseId: response.id,
-          attemptId,
-          questionId: req.body.questionId,
-          tenantId,
-        });
-
-        res.status(201).json(response);
-      }
+      const { tenantId } = getContext(request);
+      const query = AttemptQuerySchema.parse(request.query);
+      const result = await attemptService.list(tenantId, query as any);
+      return result;
     } catch (error) {
-      handleError(error, res);
+      handleError(error, reply);
     }
-  }
-);
+  });
 
-/**
- * POST /attempts/:id/responses/bulk
- * Submit multiple responses at once
- */
-router.post(
-  '/:id/responses/bulk',
-  validateBody(BulkSubmitResponsesSchema.omit({ attemptId: true })),
-  async (req: Request, res: Response) => {
+  /**
+   * POST /attempts
+   * Start a new attempt
+   */
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { tenantId } = getContext(req);
-      const attemptId = getParam(req, 'id');
+      const { tenantId, userId } = getContext(request);
+      const body = StartAttemptSchema.parse(request.body);
+      const attempt = await attemptService.start(
+        tenantId,
+        userId,
+        body.assessmentId,
+        body.metadata
+      );
+      reply.status(201);
+      return attempt;
+    } catch (error) {
+      handleError(error, reply);
+    }
+  });
 
-      // Verify attempt exists and is in progress
-      const attempt = await attemptService.getById(tenantId, attemptId);
-      if (!attempt) {
-        res.status(404).json({ error: 'Attempt not found' });
-        return;
+  /**
+   * GET /attempts/:id
+   * Get attempt by ID
+   */
+  app.get(
+    '/:id',
+    async (
+      request: FastifyRequest<{
+        Params: { id: string };
+        Querystring: { includeResponses?: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const includeResponses = request.query.includeResponses === 'true';
+        const attempt = await attemptService.getById(tenantId, id, includeResponses);
+
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
+
+        return attempt;
+      } catch (error) {
+        handleError(error, reply);
       }
-      if (attempt.status !== 'IN_PROGRESS') {
-        res.status(400).json({ error: 'Attempt is not in progress' });
-        return;
+    }
+  );
+
+  /**
+   * POST /attempts/:id/submit
+   * Submit an attempt for grading
+   */
+  app.post(
+    '/:id/submit',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const attempt = await attemptService.submit(tenantId, id);
+        return attempt;
+      } catch (error) {
+        handleError(error, reply);
       }
+    }
+  );
 
-      const responses = await prisma.$transaction(async (tx) => {
-        const results = [];
+  /**
+   * POST /attempts/:id/abandon
+   * Abandon an attempt
+   */
+  app.post(
+    '/:id/abandon',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
+        const attempt = await attemptService.abandon(tenantId, id);
+        return attempt;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
 
-        for (const responseData of req.body.responses) {
-          const existing = await tx.questionResponse.findUnique({
-            where: {
-              attemptId_questionId: {
-                attemptId,
-                questionId: responseData.questionId,
-              },
+  /**
+   * GET /attempts/:id/next-question
+   * Get next question for adaptive assessment
+   */
+  app.get(
+    '/:id/next-question',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { id } = request.params;
+        const question = await adaptiveService.getNextQuestion(id);
+
+        if (!question) {
+          return { complete: true, message: 'All questions answered' };
+        }
+
+        // Don't include correct answer
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { correctAnswer, ...questionWithoutAnswer } = question;
+        return questionWithoutAnswer;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /attempts/:id/responses
+   * Submit a response for a question
+   */
+  app.post(
+    '/:id/responses',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const attemptId = request.params.id;
+        const body = SubmitResponseSchema.omit({ attemptId: true }).parse(request.body);
+
+        // Verify attempt exists and is in progress
+        const attempt = await attemptService.getById(tenantId, attemptId);
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
+        if (attempt.status !== 'IN_PROGRESS') {
+          reply.status(400);
+          return { error: 'Attempt is not in progress' };
+        }
+
+        // Check if response already exists
+        const existingResponse = await prisma.questionResponse.findUnique({
+          where: {
+            attemptId_questionId: {
+              attemptId,
+              questionId: body.questionId,
+            },
+          },
+        });
+
+        if (existingResponse) {
+          // Update existing response
+          const updated = await prisma.questionResponse.update({
+            where: { id: existingResponse.id },
+            data: {
+              response: body.response,
+              responseText: typeof body.response === 'string' ? body.response : null,
+              answeredAt: new Date(),
+              timeSpentSeconds: existingResponse.timeSpentSeconds + (body.timeSpentSeconds ?? 0),
+            },
+          });
+          return updated;
+        } else {
+          // Create new response
+          const response = await prisma.questionResponse.create({
+            data: {
+              attemptId,
+              questionId: body.questionId,
+              response: body.response,
+              responseText: typeof body.response === 'string' ? body.response : null,
+              timeSpentSeconds: body.timeSpentSeconds ?? 0,
             },
           });
 
-          if (existing) {
-            const updated = await tx.questionResponse.update({
-              where: { id: existing.id },
-              data: {
-                response: responseData.response,
-                answeredAt: new Date(),
-                timeSpentSeconds: existing.timeSpentSeconds + (responseData.timeSpentSeconds ?? 0),
-              },
-            });
-            results.push(updated);
-          } else {
-            const created = await tx.questionResponse.create({
-              data: {
-                attemptId,
-                questionId: responseData.questionId,
-                response: responseData.response,
-                timeSpentSeconds: responseData.timeSpentSeconds ?? 0,
-              },
-            });
-            results.push(created);
-          }
+          await publishEvent('response.submitted', {
+            responseId: response.id,
+            attemptId,
+            questionId: body.questionId,
+            tenantId,
+          });
+
+          reply.status(201);
+          return response;
+        }
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+
+  /**
+   * POST /attempts/:id/responses/bulk
+   * Submit multiple responses at once
+   */
+  app.post(
+    '/:id/responses/bulk',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const attemptId = request.params.id;
+        const body = BulkSubmitResponsesSchema.omit({ attemptId: true }).parse(request.body);
+
+        // Verify attempt exists and is in progress
+        const attempt = await attemptService.getById(tenantId, attemptId);
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
+        if (attempt.status !== 'IN_PROGRESS') {
+          reply.status(400);
+          return { error: 'Attempt is not in progress' };
         }
 
-        return results;
-      });
+        const responses = await prisma.$transaction(async (tx) => {
+          const results = [];
 
-      res.json({ submitted: responses.length, responses });
-    } catch (error) {
-      handleError(error, res);
+          for (const responseData of body.responses) {
+            const existing = await tx.questionResponse.findUnique({
+              where: {
+                attemptId_questionId: {
+                  attemptId,
+                  questionId: responseData.questionId,
+                },
+              },
+            });
+
+            if (existing) {
+              const updated = await tx.questionResponse.update({
+                where: { id: existing.id },
+                data: {
+                  response: responseData.response,
+                  answeredAt: new Date(),
+                  timeSpentSeconds:
+                    existing.timeSpentSeconds + (responseData.timeSpentSeconds ?? 0),
+                },
+              });
+              results.push(updated);
+            } else {
+              const created = await tx.questionResponse.create({
+                data: {
+                  attemptId,
+                  questionId: responseData.questionId,
+                  response: responseData.response,
+                  timeSpentSeconds: responseData.timeSpentSeconds ?? 0,
+                },
+              });
+              results.push(created);
+            }
+          }
+
+          return results;
+        });
+
+        return { submitted: responses.length, responses };
+      } catch (error) {
+        handleError(error, reply);
+      }
     }
-  }
-);
+  );
 
-/**\n * GET /attempts/:id/responses\n * Get all responses for an attempt\n */
-router.get('/:id/responses', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const id = getParam(req, 'id');
+  /**
+   * GET /attempts/:id/responses
+   * Get all responses for an attempt
+   */
+  app.get(
+    '/:id/responses',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { id } = request.params;
 
-    // Verify attempt access
-    const attempt = await attemptService.getById(tenantId, id);
-    if (!attempt) {
-      res.status(404).json({ error: 'Attempt not found' });
-      return;
-    }
+        // Verify attempt access
+        const attempt = await attemptService.getById(tenantId, id);
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
 
-    const responses = await prisma.questionResponse.findMany({
-      where: { attemptId: id },
-      include: {
-        question: {
-          select: {
-            id: true,
-            stem: true,
-            type: true,
-            options: true,
-            // Only include correct answer if attempt is graded
-            ...(attempt.status === 'GRADED' && {
-              correctAnswer: true,
-              explanation: true,
-            }),
+        const responses = await prisma.questionResponse.findMany({
+          where: { attemptId: id },
+          include: {
+            question: {
+              select: {
+                id: true,
+                stem: true,
+                type: true,
+                options: true,
+                // Only include correct answer if attempt is graded
+                ...(attempt.status === 'GRADED' && {
+                  correctAnswer: true,
+                  explanation: true,
+                }),
+              },
+            },
           },
-        },
-      },
-      orderBy: { startedAt: 'asc' },
-    });
+          orderBy: { startedAt: 'asc' },
+        });
 
-    res.json(responses);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * POST /attempts/:id/grade
- * Manual grade an entire attempt
- */
-router.post(
-  '/:id/grade',
-  validateBody(BulkManualGradeSchema.omit({ attemptId: true })),
-  async (req: Request, res: Response) => {
-    try {
-      const { tenantId, userId } = getContext(req);
-      const attemptId = getParam(req, 'id');
-
-      // Verify attempt exists and needs grading
-      const attempt = await attemptService.getById(tenantId, attemptId);
-      if (!attempt) {
-        res.status(404).json({ error: 'Attempt not found' });
-        return;
+        return responses;
+      } catch (error) {
+        handleError(error, reply);
       }
-      if (attempt.status !== 'GRADING' && attempt.status !== 'SUBMITTED') {
-        res.status(400).json({ error: 'Attempt cannot be graded' });
-        return;
+    }
+  );
+
+  /**
+   * POST /attempts/:id/grade
+   * Manual grade an entire attempt
+   */
+  app.post(
+    '/:id/grade',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      try {
+        const { tenantId, userId } = getContext(request);
+        const attemptId = request.params.id;
+        const body = BulkManualGradeSchema.omit({ attemptId: true }).parse(request.body);
+
+        // Verify attempt exists and needs grading
+        const attempt = await attemptService.getById(tenantId, attemptId);
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
+        if (attempt.status !== 'GRADING' && attempt.status !== 'SUBMITTED') {
+          reply.status(400);
+          return { error: 'Attempt cannot be graded' };
+        }
+
+        await scoringService.bulkManualGrade(attemptId, body.grades, body.overallFeedback, userId);
+
+        const gradedAttempt = await attemptService.getById(tenantId, attemptId, true);
+
+        await publishEvent('attempt.graded', {
+          attemptId,
+          gradedBy: userId,
+          tenantId,
+        });
+
+        return gradedAttempt;
+      } catch (error) {
+        handleError(error, reply);
       }
-
-      await scoringService.bulkManualGrade(
-        attemptId,
-        req.body.grades,
-        req.body.overallFeedback,
-        userId
-      );
-
-      const gradedAttempt = await attemptService.getById(tenantId, attemptId, true);
-
-      await publishEvent('attempt.graded', {
-        attemptId,
-        gradedBy: userId,
-        tenantId,
-      });
-
-      res.json(gradedAttempt);
-    } catch (error) {
-      handleError(error, res);
     }
-  }
-);
+  );
 
-/**
- * POST /attempts/:id/responses/:responseId/grade
- * Manual grade a single response
- */
-router.post(
-  '/:id/responses/:responseId/grade',
-  validateBody(ManualGradeSchema.omit({ responseId: true })),
-  async (req: Request, res: Response) => {
-    try {
-      const { tenantId, userId } = getContext(req);
-      const id = getParam(req, 'id');
-      const responseId = getParam(req, 'responseId');
+  /**
+   * POST /attempts/:id/responses/:responseId/grade
+   * Manual grade a single response
+   */
+  app.post(
+    '/:id/responses/:responseId/grade',
+    async (
+      request: FastifyRequest<{ Params: { id: string; responseId: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId, userId } = getContext(request);
+        const { id, responseId } = request.params;
+        const body = ManualGradeSchema.omit({ responseId: true }).parse(request.body);
 
-      // Verify attempt access
-      const attempt = await attemptService.getById(tenantId, id);
-      if (!attempt) {
-        res.status(404).json({ error: 'Attempt not found' });
-        return;
+        // Verify attempt access
+        const attempt = await attemptService.getById(tenantId, id);
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'Attempt not found' };
+        }
+
+        await scoringService.manualGrade(
+          responseId,
+          body.pointsEarned,
+          body.isCorrect,
+          body.feedback,
+          userId
+        );
+
+        await publishEvent('response.graded', {
+          responseId,
+          attemptId: id,
+          gradedBy: userId,
+          tenantId,
+        });
+
+        return { success: true };
+      } catch (error) {
+        handleError(error, reply);
       }
-
-      await scoringService.manualGrade(
-        responseId,
-        req.body.pointsEarned,
-        req.body.isCorrect,
-        req.body.feedback,
-        userId
-      );
-
-      await publishEvent('response.graded', {
-        responseId,
-        attemptId: id,
-        gradedBy: userId,
-        tenantId,
-      });
-
-      res.json({ success: true });
-    } catch (error) {
-      handleError(error, res);
     }
-  }
-);
+  );
 
-/**
- * GET /attempts/user/:userId/assessment/:assessmentId
- * Get all attempts for a user on an assessment
- */
-router.get('/user/:userId/assessment/:assessmentId', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const userId = getParam(req, 'userId');
-    const assessmentId = getParam(req, 'assessmentId');
-    const attempts = await attemptService.getByUserAndAssessment(tenantId, userId, assessmentId);
-    res.json(attempts);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
-
-/**
- * GET /attempts/user/:userId/assessment/:assessmentId/best
- * Get best attempt for a user on an assessment
- */
-router.get('/user/:userId/assessment/:assessmentId/best', async (req: Request, res: Response) => {
-  try {
-    const { tenantId } = getContext(req);
-    const userId = getParam(req, 'userId');
-    const assessmentId = getParam(req, 'assessmentId');
-    const attempt = await attemptService.getBestAttempt(tenantId, userId, assessmentId);
-
-    if (!attempt) {
-      res.status(404).json({ error: 'No completed attempts found' });
-      return;
+  /**
+   * GET /attempts/user/:userId/assessment/:assessmentId
+   * Get all attempts for a user on an assessment
+   */
+  app.get(
+    '/user/:userId/assessment/:assessmentId',
+    async (
+      request: FastifyRequest<{ Params: { userId: string; assessmentId: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { userId, assessmentId } = request.params;
+        const attempts = await attemptService.getByUserAndAssessment(
+          tenantId,
+          userId,
+          assessmentId
+        );
+        return attempts;
+      } catch (error) {
+        handleError(error, reply);
+      }
     }
+  );
 
-    res.json(attempt);
-  } catch (error) {
-    handleError(error, res);
-  }
-});
+  /**
+   * GET /attempts/user/:userId/assessment/:assessmentId/best
+   * Get best attempt for a user on an assessment
+   */
+  app.get(
+    '/user/:userId/assessment/:assessmentId/best',
+    async (
+      request: FastifyRequest<{ Params: { userId: string; assessmentId: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const { tenantId } = getContext(request);
+        const { userId, assessmentId } = request.params;
+        const attempt = await attemptService.getBestAttempt(tenantId, userId, assessmentId);
 
-export const attemptRoutes = router;
+        if (!attempt) {
+          reply.status(404);
+          return { error: 'No completed attempts found' };
+        }
+
+        return attempt;
+      } catch (error) {
+        handleError(error, reply);
+      }
+    }
+  );
+}

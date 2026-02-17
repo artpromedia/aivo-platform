@@ -8,25 +8,22 @@
  * - Recent activity feed
  */
 
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import {
+
+import { NotFoundException, ForbiddenException } from '../errors.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
   FamilyDashboardResponse,
   CaregiverSummary,
   LearnerOverview,
   LearnerLinkSummary,
   ActivityItem,
-  CaregiverRelationshipType,
   VerificationMethod,
   VerificationStatus,
 } from './registration.types.js';
+import { CaregiverRelationshipType } from './registration.types.js';
 
-@Injectable()
 export class FamilyService {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -67,9 +64,8 @@ export class FamilyService {
       caregiver.studentLinks.map(async (link) => {
         const weeklyMinutes = await this.getWeeklyLearningMinutes(link.student.id);
         return this.formatLearnerOverview(link, weeklyMinutes);
-      }),
+      })
     );
-
 
     return {
       caregiver: this.formatCaregiverSummary(caregiver),
@@ -82,7 +78,10 @@ export class FamilyService {
   /**
    * Set the active learner context for a caregiver session
    */
-  async setActiveLearner(caregiverId: string, learnerId: string): Promise<{
+  async setActiveLearner(
+    caregiverId: string,
+    learnerId: string
+  ): Promise<{
     success: boolean;
     learner: { id: string; name: string };
   }> {
@@ -105,7 +104,7 @@ export class FamilyService {
 
     // In a real implementation, this would store the active learner in a session
     // For now, we just validate access and return success
-    logger.info('Active learner set', { caregiverId, learnerId });
+    logger.info({ caregiverId, learnerId }, 'Active learner set');
 
     return {
       success: true,
@@ -121,22 +120,24 @@ export class FamilyService {
    */
   async getLearnerDetails(
     caregiverId: string,
-    learnerId: string,
-  ): Promise<LearnerOverview & {
-    recentSessions: Array<{
-      id: string;
-      subject: string;
-      duration: number;
-      score: number | null;
-      completedAt: Date;
-    }>;
-    achievements: Array<{
-      id: string;
-      name: string;
-      description: string;
-      earnedAt: Date;
-    }>;
-  }> {
+    learnerId: string
+  ): Promise<
+    LearnerOverview & {
+      recentSessions: {
+        id: string;
+        subject: string;
+        duration: number;
+        score: number | null;
+        completedAt: Date;
+      }[];
+      achievements: {
+        id: string;
+        name: string;
+        description: string;
+        earnedAt: Date;
+      }[];
+    }
+  > {
     // Verify access
     const link = await this.prisma.caregiverStudentLink.findUnique({
       where: {
@@ -246,7 +247,7 @@ export class FamilyService {
 
   private async getRecentActivity(
     studentIds: string[],
-    _caregiverId: string,
+    _caregiverId: string
   ): Promise<ActivityItem[]> {
     if (studentIds.length === 0) return [];
 
@@ -268,9 +269,7 @@ export class FamilyService {
       where: { id: { in: studentIds } },
       select: { id: true, givenName: true, familyName: true },
     });
-    const studentMap = new Map(
-      students.map((s) => [s.id, `${s.givenName} ${s.familyName}`]),
-    );
+    const studentMap = new Map(students.map((s) => [s.id, `${s.givenName} ${s.familyName}`]));
 
     for (const achievement of achievements) {
       activities.push({
@@ -336,10 +335,7 @@ export class FamilyService {
       select: { timeSpentSeconds: true },
     });
 
-    const totalSeconds = sessions.reduce(
-      (sum, s) => sum + (s.timeSpentSeconds || 0),
-      0,
-    );
+    const totalSeconds = sessions.reduce((sum, s) => sum + (s.timeSpentSeconds || 0), 0);
 
     return Math.round(totalSeconds / 60);
   }
@@ -352,7 +348,7 @@ export class FamilyService {
     phone: string | null;
     emailVerified: boolean;
     createdAt: Date;
-    studentLinks: Array<{ relationship: string }>;
+    studentLinks: { relationship: string }[];
   }): CaregiverSummary {
     // Get the most common relationship type
     const relationship = caregiver.studentLinks[0]?.relationship || 'caregiver';
@@ -381,7 +377,7 @@ export class FamilyService {
       };
       delegatedAt: Date;
     },
-    weeklyMinutes: number,
+    weeklyMinutes: number
   ): LearnerOverview {
     return {
       id: link.student.id,

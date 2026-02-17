@@ -65,4 +65,37 @@ export const config = {
     evidenceExpiryWarningDays: Number(process.env.EVIDENCE_EXPIRY_WARNING_DAYS || 30),
     findingOverdueDays: Number(process.env.FINDING_OVERDUE_DAYS || 90),
   },
+
+  // ── Consolidated modules (consent / legal-hold / dsr) ───────────────────
+  // PostgreSQL raw pool (used by consent & DSR modules that don't use Prisma)
+  pgSsl: process.env.PGSSL === 'true',
+
+  // Privacy / COPPA
+  privacyPolicyUrl:
+    process.env.PRIVACY_POLICY_URL || 'https://aivo.com/privacy',
+
+  // DSR
+  exportEventLimit: Number(process.env.EXPORT_EVENT_LIMIT || 500),
+
+  // Email (used by legal-hold notifications)
+  email: {
+    host: process.env.EMAIL_HOST || 'localhost',
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: process.env.EMAIL_SECURE === 'true',
+    user: process.env.EMAIL_USER || '',
+    pass: process.env.EMAIL_PASS || '',
+    from: process.env.EMAIL_FROM || 'compliance@aivo.com',
+  },
+
+  // Legal-hold
+  holds: {
+    reminderDays: Number(process.env.HOLD_REMINDER_DAYS || 7),
+    maxHoldsPerMatter: Number(process.env.MAX_HOLDS_PER_MATTER || 100),
+  },
+
+  // Notification service URL (used by DSR notification-service)
+  notifySvc: {
+    host: process.env.NOTIFY_SVC_HOST || 'localhost',
+    port: Number(process.env.NOTIFY_SVC_PORT || 3000),
+  },
 } as const;

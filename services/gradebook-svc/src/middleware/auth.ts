@@ -3,7 +3,8 @@
  * Validates JWT tokens and extracts user context.
  */
 
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 import { jwtVerify } from 'jose';
 
 import { config } from '../config.js';
@@ -16,79 +17,76 @@ export interface AuthenticatedUser {
   learnerId?: string;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: AuthenticatedUser;
   }
 }
 
 /**
- * JWT authentication middleware for Express
+ * JWT authentication plugin for Fastify
  * Requires JWT_SECRET environment variable in production
  */
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  // Skip auth for health checks
-  if (req.path.startsWith('/health') || req.path === '/ready') {
-    next();
-    return;
-  }
+export const authMiddleware = fp(async (fastify: FastifyInstance) => {
+  fastify.decorateRequest('user', undefined);
 
-  // In tests, allow bypassing JWT verification
-  if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
-    const testUserHeader = req.headers['x-test-user'] as string | undefined;
-    if (testUserHeader) {
-      try {
-        req.user = JSON.parse(testUserHeader) as AuthenticatedUser;
-        next();
-        return;
-      } catch {
-        // Fall through to JWT verification
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Skip auth for health checks
+    if (request.url.startsWith('/health') || request.url === '/ready') {
+      return;
+    }
+
+    // In tests, allow bypassing JWT verification
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+      const testUserHeader = request.headers['x-test-user'] as string | undefined;
+      if (testUserHeader) {
+        try {
+          request.user = JSON.parse(testUserHeader) as AuthenticatedUser;
+          return;
+        } catch {
+          // Fall through to JWT verification
+        }
       }
     }
-  }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing authorization header' });
-    return;
-  }
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      reply.status(401);
+      return reply.send({ error: 'Missing authorization header' });
+    }
 
-  const token = authHeader.slice(7);
-  const secret = new TextEncoder().encode(config.jwtSecret);
+    const token = authHeader.slice(7);
+    const secret = new TextEncoder().encode(config.jwtSecret);
 
-  jwtVerify(token, secret)
-    .then(({ payload }) => {
-      req.user = {
+    try {
+      const { payload } = await jwtVerify(token, secret);
+      request.user = {
         sub: payload.sub as string,
         tenantId: payload.tenantId as string,
         role: payload.role as string,
         classroomIds: payload.classroomIds as string[] | undefined,
         learnerId: payload.learnerId as string | undefined,
       };
-      next();
-    })
-    .catch(() => {
-      res.status(401).json({ error: 'Invalid token' });
-    });
-}
+    } catch {
+      reply.status(401);
+      return reply.send({ error: 'Invalid token' });
+    }
+  });
+});
 
 /**
  * Require specific roles for access
  */
 export function requireRoles(...allowedRoles: string[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    if (!request.user) {
+      reply.status(401);
+      return reply.send({ error: 'Authentication required' });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
+    if (!allowedRoles.includes(request.user.role)) {
+      reply.status(403);
+      return reply.send({ error: 'Insufficient permissions' });
     }
-
-    next();
   };
 }

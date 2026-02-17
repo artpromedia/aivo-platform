@@ -9,15 +9,21 @@
  * - DELETE /gradebook/assignments/:id - Delete assignment
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import express from 'express';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
 
 // Mock @aivo/ts-api-utils before importing app
 vi.mock('@aivo/ts-api-utils', () => ({
-  createExpressRateLimiter: vi.fn(() => (_req: any, _res: any, next: any) => next()),
-  RateLimitPresets: {
-    API_GENERAL: { windowMs: 60000, max: 100 },
+  FastifyRateLimitPresets: {
+    publicApi: () => ({
+      global: true,
+      max: 1000,
+      timeWindow: '1 minute',
+      keyGenerator: () => 'test',
+      errorResponseBuilder: () => ({ error: 'Rate limited' }),
+      allowList: () => false,
+    }),
   },
 }));
 
@@ -62,11 +68,16 @@ vi.mock('../../generated/prisma-client/index.js', () => ({
 import { createApp } from '../app.js';
 
 describe('Assignments', () => {
-  let app: express.Application;
+  let app: FastifyInstance;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     app = createApp();
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('POST /api/v1/gradebook/assignments', () => {
@@ -95,7 +106,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -135,7 +146,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -169,7 +180,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -205,7 +216,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -225,7 +236,7 @@ describe('Assignments', () => {
     it('should fail when gradebook config not found', async () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(null);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'non-existent',
@@ -244,11 +255,9 @@ describe('Assignments', () => {
         id: 'config-1',
         tenantId: 'tenant-1',
       });
-      mockPrismaClient.assignment.create.mockRejectedValue(
-        new Error('Database error')
-      );
+      mockPrismaClient.assignment.create.mockRejectedValue(new Error('Database error'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -277,7 +286,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/assignments/assign-1')
         .expect(200);
 
@@ -286,11 +295,9 @@ describe('Assignments', () => {
     });
 
     it('should return 404 when assignment not found', async () => {
-      mockPrismaClient.assignment.update.mockRejectedValue(
-        new Error('Record not found')
-      );
+      mockPrismaClient.assignment.update.mockRejectedValue(new Error('Record not found'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .get('/api/v1/gradebook/assignments/non-existent')
         .expect(500);
 
@@ -312,7 +319,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/assignments/assign-1')
         .send({ title: 'Updated Quiz Title' })
         .expect(200);
@@ -332,7 +339,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/assignments/assign-1')
         .send({ totalPoints: 100 })
         .expect(200);
@@ -354,7 +361,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/assignments/assign-1')
         .send({ dueDate: '2025-03-01' })
         .expect(200);
@@ -374,7 +381,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/assignments/assign-1')
         .send({ categoryId: 'cat-2' })
         .expect(200);
@@ -383,11 +390,9 @@ describe('Assignments', () => {
     });
 
     it('should handle update of non-existent assignment', async () => {
-      mockPrismaClient.assignment.update.mockRejectedValue(
-        new Error('Record not found')
-      );
+      mockPrismaClient.assignment.update.mockRejectedValue(new Error('Record not found'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/assignments/non-existent')
         .send({ title: 'New Title' })
         .expect(500);
@@ -407,7 +412,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments/assign-1/publish')
         .expect(200);
 
@@ -416,11 +421,9 @@ describe('Assignments', () => {
     });
 
     it('should handle publishing non-existent assignment', async () => {
-      mockPrismaClient.assignment.update.mockRejectedValue(
-        new Error('Record not found')
-      );
+      mockPrismaClient.assignment.update.mockRejectedValue(new Error('Record not found'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments/non-existent/publish')
         .expect(500);
 
@@ -437,7 +440,7 @@ describe('Assignments', () => {
 
       mockPrismaClient.assignment.update.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments/assign-1/publish')
         .expect(200);
 
@@ -455,7 +458,7 @@ describe('Assignments', () => {
     it('should delete assignment', async () => {
       mockPrismaClient.assignment.delete.mockResolvedValue({ id: 'assign-1' });
 
-      const response = await request(app)
+      const response = await request(app.server)
         .delete('/api/v1/gradebook/assignments/assign-1')
         .expect(200);
 
@@ -466,11 +469,9 @@ describe('Assignments', () => {
     });
 
     it('should handle deleting non-existent assignment', async () => {
-      mockPrismaClient.assignment.delete.mockRejectedValue(
-        new Error('Record not found')
-      );
+      mockPrismaClient.assignment.delete.mockRejectedValue(new Error('Record not found'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .delete('/api/v1/gradebook/assignments/non-existent')
         .expect(500);
 
@@ -483,7 +484,7 @@ describe('Assignments', () => {
         new Error('Foreign key constraint failed')
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .delete('/api/v1/gradebook/assignments/assign-with-grades')
         .expect(500);
 
@@ -519,7 +520,7 @@ describe('Assignments', () => {
         mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
         mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-        const response = await request(app)
+        const response = await request(app.server)
           .post('/api/v1/gradebook/assignments')
           .send({
             gradebookConfigId: 'config-1',
@@ -551,7 +552,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -579,7 +580,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -607,7 +608,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -638,7 +639,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -657,7 +658,7 @@ describe('Assignments', () => {
     });
 
     it('should handle special characters in assignment title', async () => {
-      const specialTitle = "Chapter 5 Quiz: The \"Great\" Gatsby & More!";
+      const specialTitle = 'Chapter 5 Quiz: The "Great" Gatsby & More!';
       const mockConfig = { id: 'config-1', tenantId: 'tenant-1' };
       const mockAssignment = {
         id: 'assign-1',
@@ -671,7 +672,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',
@@ -700,7 +701,7 @@ describe('Assignments', () => {
       mockPrismaClient.gradebookConfig.findUnique.mockResolvedValue(mockConfig);
       mockPrismaClient.assignment.create.mockResolvedValue(mockAssignment);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/assignments')
         .send({
           gradebookConfigId: 'config-1',

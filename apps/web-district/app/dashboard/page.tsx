@@ -13,7 +13,6 @@
  */
 
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 import { resolveTenant } from '../../lib/tenant';
 
@@ -375,6 +374,11 @@ export default async function DashboardPage() {
                       </p>
                       <p className="text-xs text-gray-400 mt-1">Due: {item.dueDate}</p>
                     </div>
+                    {item.severity === 'high' && (
+                      <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white uppercase mr-2">
+                        URGENT
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -392,9 +396,56 @@ export default async function DashboardPage() {
       </div>
 
       {/* Bottom Grid: Activity & Deadlines */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* SIS Sync Status */}
+        <div className="rounded-lg border border-gray-200 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-900">🔄 SIS Sync Status</h2>
+            <Link href="/integrations/sis" className="text-sm text-indigo-600 hover:underline">
+              Manage
+            </Link>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                ✓
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Clever</p>
+                <p className="text-xs text-gray-500">Connected &middot; Auto-sync daily</p>
+              </div>
+              <span className="ml-auto rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                Active
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-xs text-gray-500">Last Sync</p>
+                <p className="text-sm font-medium text-gray-900">Today, 6:00 AM</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Records Synced</p>
+                <p className="text-sm font-medium text-gray-900">4,523 students</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Schools</p>
+                <p className="text-sm font-medium text-gray-900">14 mapped</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Next Sync</p>
+                <p className="text-sm font-medium text-gray-900">Tomorrow, 6:00 AM</p>
+              </div>
+            </div>
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+              Data synced: Students, Classes, Teachers, Enrollments
+            </div>
+          </div>
+        </div>
+
         {/* Recent Activity */}
         <div className="rounded-lg border border-gray-200 bg-white">
+          {' '}
           <div className="flex items-center justify-between border-b border-gray-200 p-4">
             <h2 className="font-semibold text-gray-900">Recent Activity</h2>
           </div>

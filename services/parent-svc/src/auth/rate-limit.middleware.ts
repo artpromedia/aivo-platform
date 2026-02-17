@@ -1,14 +1,15 @@
 /**
- * Rate Limiting Middleware
+ * Rate Limiting Hook
  *
  * Implements rate limiting for parent API endpoints.
+ * Used as a Fastify onRequest hook.
  */
 
 import { logger } from '@aivo/ts-observability';
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { config } from '../config.js';
+import { TooManyRequestsException } from '../errors.js';
 
 interface RateLimitEntry {
   count: number;
@@ -25,95 +26,80 @@ const RATE_LIMITS: Record<string, { requests: number; windowMs: number }> = {
   api: { requests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
 };
 
-@Injectable()
-export class RateLimitMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    // Skip in development if configured
-    if (config.environment === 'development' && !config.enableRateLimitInDev) {
-      return next();
-    }
+export async function rateLimitHook(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  // Skip in development if configured
+  if (config.environment === 'development' && !config.enableRateLimitInDev) {
+    return;
+  }
 
-    const category = this.getCategory(req.path);
-    const limit = RATE_LIMITS[category] || RATE_LIMITS.api;
-    const identifier = this.getIdentifier(req, category);
-    const key = `${category}:${identifier}`;
-    const now = Date.now();
+  const category = getCategory(request.url);
+  const limit = RATE_LIMITS[category] || RATE_LIMITS.api;
+  const identifier = getIdentifier(request, category);
+  const key = `${category}:${identifier}`;
+  const now = Date.now();
 
-    // Get or create rate limit entry
-    let entry = rateLimitStore.get(key);
+  // Get or create rate limit entry
+  let entry = rateLimitStore.get(key);
 
-    if (!entry || now > entry.resetTime) {
-      entry = {
-        count: 0,
-        resetTime: now + limit.windowMs,
-      };
-    }
+  if (!entry || now > entry.resetTime) {
+    entry = {
+      count: 0,
+      resetTime: now + limit.windowMs,
+    };
+  }
 
-    entry.count++;
-    rateLimitStore.set(key, entry);
+  entry.count++;
+  rateLimitStore.set(key, entry);
 
-    // Set rate limit headers
-    res.setHeader('X-RateLimit-Limit', limit.requests);
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, limit.requests - entry.count));
-    res.setHeader('X-RateLimit-Reset', Math.ceil(entry.resetTime / 1000));
+  // Set rate limit headers
+  reply.header('X-RateLimit-Limit', limit.requests);
+  reply.header('X-RateLimit-Remaining', Math.max(0, limit.requests - entry.count));
+  reply.header('X-RateLimit-Reset', Math.ceil(entry.resetTime / 1000));
 
-    // Check if over limit
-    if (entry.count > limit.requests) {
-      const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-      res.setHeader('Retry-After', retryAfter);
+  // Check if over limit
+  if (entry.count > limit.requests) {
+    const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
+    reply.header('Retry-After', retryAfter);
 
-      logger.warn('Rate limit exceeded', {
+    logger.warn(
+      {
         category,
         identifier,
         count: entry.count,
-      });
+      },
+      'Rate limit exceeded'
+    );
 
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message: 'Too many requests. Please try again later.',
-          retryAfter,
-        },
-        HttpStatus.TOO_MANY_REQUESTS
-      );
-    }
+    throw new TooManyRequestsException('Too many requests. Please try again later.');
+  }
+}
 
-    next();
+/**
+ * Determine rate limit category from path
+ */
+function getCategory(path: string): string {
+  if (path.includes('/auth') || path.includes('/login') || path.includes('/register')) {
+    return 'auth';
+  }
+  if (path.includes('/messages') || path.includes('/conversations')) {
+    return 'messaging';
+  }
+  return 'api';
+}
+
+/**
+ * Get identifier for rate limiting
+ */
+function getIdentifier(request: FastifyRequest, _category: string): string {
+  // For authenticated requests, use user ID
+  const authReq = request as FastifyRequest & { parent?: { id: string } };
+
+  if (authReq.parent?.id) {
+    return authReq.parent.id;
   }
 
-  /**
-   * Determine rate limit category from path
-   */
-  private getCategory(path: string): string {
-    if (path.includes('/auth') || path.includes('/login') || path.includes('/register')) {
-      return 'auth';
-    }
-    if (path.includes('/messages') || path.includes('/conversations')) {
-      return 'messaging';
-    }
-    return 'api';
-  }
-
-  /**
-   * Get identifier for rate limiting
-   */
-  private getIdentifier(req: Request, category: string): string {
-    // For authenticated requests, use user ID
-    // For unauthenticated requests, use IP address
-    const authReq = req as { parent?: { id: string } };
-
-    if (authReq.parent?.id) {
-      return authReq.parent.id;
-    }
-
-    // Use forwarded IP if behind proxy
-    const forwarded = req.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string') {
-      return forwarded.split(',')[0].trim();
-    }
-
-    return req.ip || 'unknown';
-  }
+  // Use forwarded IP if behind proxy
+  return request.ip || 'unknown';
 }
 
 /**
@@ -131,6 +117,6 @@ setInterval(() => {
   }
 
   if (cleaned > 0) {
-    logger.debug('Rate limit store cleanup', { cleaned });
+    logger.debug({ cleaned }, 'Rate limit store cleanup');
   }
 }, 60 * 1000); // Run every minute

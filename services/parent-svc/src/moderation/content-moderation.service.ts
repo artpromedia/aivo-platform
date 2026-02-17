@@ -8,7 +8,6 @@
  * - Local pattern matching (fallback)
  */
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
 import {
   ComprehendClient,
@@ -17,7 +16,7 @@ import {
 } from '@aws-sdk/client-comprehend';
 
 import { config } from '../config.js';
-import { ModerationResult } from '../messaging/messaging.types.js';
+import type { ModerationResult } from '../messaging/messaging.types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -25,7 +24,13 @@ import { ModerationResult } from '../messaging/messaging.types.js';
 
 // Blocklist of inappropriate words for children's platform
 const BLOCKLIST = [
-  'damn', 'hell', 'crap', 'stupid', 'idiot', 'dumb', 'shut up',
+  'damn',
+  'hell',
+  'crap',
+  'stupid',
+  'idiot',
+  'dumb',
+  'shut up',
   // Add more age-appropriate restrictions
 ];
 
@@ -60,14 +65,15 @@ const PERSPECTIVE_ATTRIBUTES = [
 // ══════════════════════════════════════════════════════════════════════════════
 
 interface PerspectiveResponse {
-  attributeScores: {
-    [key: string]: {
+  attributeScores: Record<
+    string,
+    {
       summaryScore: {
         value: number;
         type: string;
       };
-    };
-  };
+    }
+  >;
   languages: string[];
 }
 
@@ -81,14 +87,9 @@ interface ExternalModerationResult {
 // SERVICE
 // ══════════════════════════════════════════════════════════════════════════════
 
-@Injectable()
-export class ContentModerationService implements OnModuleInit {
+export class ContentModerationService {
   private comprehendClient: ComprehendClient | null = null;
   private isInitialized = false;
-
-  async onModuleInit(): Promise<void> {
-    await this.initialize();
-  }
 
   /**
    * Initialize moderation providers
@@ -112,9 +113,12 @@ export class ContentModerationService implements OnModuleInit {
         },
       });
 
-      logger.info({
-        region: config.awsRegion,
-      }, 'Content moderation initialized with AWS Comprehend');
+      logger.info(
+        {
+          region: config.awsRegion,
+        },
+        'Content moderation initialized with AWS Comprehend'
+      );
     } else if (provider === 'perspective') {
       if (!config.moderationApiKey) {
         logger.warn('Perspective API configured but API key missing');
@@ -168,11 +172,14 @@ export class ContentModerationService implements OnModuleInit {
       const approved = score < 0.5;
 
       if (!approved) {
-        logger.warn({
-          score,
-          categories: flaggedCategories,
-          provider: config.moderationProvider,
-        }, 'Content moderation blocked message');
+        logger.warn(
+          {
+            score,
+            categories: flaggedCategories,
+            provider: config.moderationProvider,
+          },
+          'Content moderation blocked message'
+        );
       }
 
       return {
@@ -204,7 +211,7 @@ export class ContentModerationService implements OnModuleInit {
     for (const word of BLOCKLIST) {
       if (lowerContent.includes(word.toLowerCase())) {
         categories.push('blocklist');
-        details['blocklist'] = 0.6;
+        details.blocklist = 0.6;
         score = Math.max(score, 0.6);
         break;
       }
@@ -214,7 +221,7 @@ export class ContentModerationService implements OnModuleInit {
     for (const pattern of HARMFUL_PATTERNS) {
       if (pattern.test(content)) {
         categories.push('harmful');
-        details['harmful'] = 0.7;
+        details.harmful = 0.7;
         score = Math.max(score, 0.7);
         break;
       }
@@ -224,7 +231,7 @@ export class ContentModerationService implements OnModuleInit {
     for (const pattern of PII_PATTERNS) {
       if (pattern.test(content)) {
         categories.push('pii');
-        details['pii'] = 0.3;
+        details.pii = 0.3;
         score = Math.max(score, 0.3);
         break;
       }
@@ -236,9 +243,7 @@ export class ContentModerationService implements OnModuleInit {
   /**
    * Check content with external moderation API
    */
-  private async checkWithExternalApi(
-    content: string
-  ): Promise<ExternalModerationResult | null> {
+  private async checkWithExternalApi(content: string): Promise<ExternalModerationResult | null> {
     switch (config.moderationProvider) {
       case 'perspective':
         return this.checkWithPerspectiveApi(content);
@@ -252,9 +257,7 @@ export class ContentModerationService implements OnModuleInit {
   /**
    * Check content with Google Perspective API
    */
-  private async checkWithPerspectiveApi(
-    content: string
-  ): Promise<ExternalModerationResult | null> {
+  private async checkWithPerspectiveApi(content: string): Promise<ExternalModerationResult | null> {
     if (!config.moderationApiKey) {
       return null;
     }
@@ -282,10 +285,13 @@ export class ContentModerationService implements OnModuleInit {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error({
-          status: response.status,
-          error: errorText,
-        }, 'Perspective API error');
+        logger.error(
+          {
+            status: response.status,
+            error: errorText,
+          },
+          'Perspective API error'
+        );
         return null;
       }
 
@@ -308,8 +314,8 @@ export class ContentModerationService implements OnModuleInit {
       }
 
       // Weight SEVERE_TOXICITY and THREAT higher
-      const severeToxicity = details['severe_toxicity'] ?? 0;
-      const threat = details['threat'] ?? 0;
+      const severeToxicity = details.severe_toxicity ?? 0;
+      const threat = details.threat ?? 0;
       if (severeToxicity > 0.3 || threat > 0.3) {
         maxScore = Math.max(maxScore, severeToxicity * 1.2, threat * 1.2);
       }
@@ -320,9 +326,12 @@ export class ContentModerationService implements OnModuleInit {
         details,
       };
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, 'Perspective API request failed');
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Perspective API request failed'
+      );
       return null;
     }
   }
@@ -330,9 +339,7 @@ export class ContentModerationService implements OnModuleInit {
   /**
    * Check content with AWS Comprehend
    */
-  private async checkWithComprehend(
-    content: string
-  ): Promise<ExternalModerationResult | null> {
+  private async checkWithComprehend(content: string): Promise<ExternalModerationResult | null> {
     if (!this.comprehendClient) {
       return null;
     }
@@ -355,7 +362,7 @@ export class ContentModerationService implements OnModuleInit {
 
         // Overall toxicity
         if (result.Toxicity !== undefined) {
-          details['toxicity'] = result.Toxicity;
+          details.toxicity = result.Toxicity;
           if (result.Toxicity >= 0.5) {
             categories.push('toxicity');
             maxScore = Math.max(maxScore, result.Toxicity);
@@ -387,8 +394,8 @@ export class ContentModerationService implements OnModuleInit {
       const sentimentResult = await this.comprehendClient.send(sentimentCommand);
 
       if (sentimentResult.SentimentScore) {
-        details['sentiment_negative'] = sentimentResult.SentimentScore.Negative ?? 0;
-        details['sentiment_positive'] = sentimentResult.SentimentScore.Positive ?? 0;
+        details.sentiment_negative = sentimentResult.SentimentScore.Negative ?? 0;
+        details.sentiment_positive = sentimentResult.SentimentScore.Positive ?? 0;
 
         // Very negative sentiment adds to score
         const negativeScore = sentimentResult.SentimentScore.Negative ?? 0;
@@ -403,9 +410,12 @@ export class ContentModerationService implements OnModuleInit {
         details,
       };
     } catch (error) {
-      logger.error({
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }, 'AWS Comprehend request failed');
+      logger.error(
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'AWS Comprehend request failed'
+      );
       return null;
     }
   }
@@ -413,9 +423,7 @@ export class ContentModerationService implements OnModuleInit {
   /**
    * Batch check multiple content items
    */
-  async checkContentBatch(
-    items: string[]
-  ): Promise<Map<number, ModerationResult>> {
+  async checkContentBatch(items: string[]): Promise<Map<number, ModerationResult>> {
     const results = new Map<number, ModerationResult>();
 
     // Process in parallel with concurrency limit

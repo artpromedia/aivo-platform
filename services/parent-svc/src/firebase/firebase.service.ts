@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@aivo/ts-observability';
-import { Injectable, OnModuleInit } from '@nestjs/common';
 
 import { config } from '../config.js';
 
@@ -40,14 +39,9 @@ async function loadFirebaseAdmin(): Promise<FirebaseAdminSDK | null> {
   }
 }
 
-@Injectable()
-export class FirebaseService implements OnModuleInit {
+export class FirebaseService {
   private app: unknown = null;
   private initialized = false;
-
-  async onModuleInit(): Promise<void> {
-    await this.initialize();
-  }
 
   /**
    * Initialize Firebase Admin SDK
@@ -144,8 +138,10 @@ export class FirebaseService implements OnModuleInit {
       logger.error(`Failed to send push notification: ${errorMessage} (${errorCode})`);
 
       // Handle specific FCM errors
-      if (errorCode === 'messaging/invalid-registration-token' ||
-          errorCode === 'messaging/registration-token-not-registered') {
+      if (
+        errorCode === 'messaging/invalid-registration-token' ||
+        errorCode === 'messaging/registration-token-not-registered'
+      ) {
         return { success: false, error: 'invalid_token' };
       }
 
@@ -197,13 +193,15 @@ export class FirebaseService implements OnModuleInit {
       };
 
       const response = await admin.messaging().sendEachForMulticast(message);
-      
+
       const invalidTokens: string[] = [];
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
           const code = resp.error?.code;
-          if (code === 'messaging/invalid-registration-token' ||
-              code === 'messaging/registration-token-not-registered') {
+          if (
+            code === 'messaging/invalid-registration-token' ||
+            code === 'messaging/registration-token-not-registered'
+          ) {
             invalidTokens.push(tokens[idx]);
           }
         }
@@ -223,4 +221,3 @@ export class FirebaseService implements OnModuleInit {
     }
   }
 }
-

@@ -1,73 +1,64 @@
 /**
- * Learner Authentication Middleware
+ * Learner Authentication Hook
  *
  * Verifies JWT tokens for learner authentication.
- * Used by endpoints called from web-learner/mobile-learner apps.
+ * Used as a Fastify preHandler hook for endpoints called from learner apps.
  */
 
 import { logger } from '@aivo/ts-observability';
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
-import type { Request, Response, NextFunction } from 'express';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 
 import { config } from '../config.js';
+import { UnauthorizedException } from '../errors.js';
 
-export interface LearnerAuthRequest extends Request {
-  learner?: {
-    id: string;
-    givenName: string;
-  };
+export interface LearnerContext {
+  id: string;
+  givenName: string;
 }
 
-/**
- * Request type for routes protected by LearnerAuthMiddleware.
- * After middleware runs, learner is guaranteed to be present.
- */
-export interface AuthenticatedLearnerRequest extends Request {
-  learner: {
-    id: string;
-    givenName: string;
-  };
+declare module 'fastify' {
+  interface FastifyRequest {
+    learner?: LearnerContext;
+  }
 }
 
-@Injectable()
-export class LearnerAuthMiddleware implements NestMiddleware {
-  async use(req: LearnerAuthRequest, _res: Response, next: NextFunction) {
-    const authHeader = req.headers.authorization;
+export async function learnerAuthHook(
+  request: FastifyRequest,
+  _reply: FastifyReply
+): Promise<void> {
+  const authHeader = request.headers.authorization;
 
-    if (!authHeader?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid authorization header');
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw new UnauthorizedException('Missing or invalid authorization header');
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const payload = jwt.verify(token, config.jwtSecret) as {
+      sub: string;
+      type: string;
+      givenName?: string;
+      iat: number;
+      exp: number;
+    };
+
+    if (payload.type !== 'learner') {
+      throw new UnauthorizedException('Invalid token type - expected learner token');
     }
 
-    const token = authHeader.substring(7);
+    request.learner = {
+      id: payload.sub,
+      givenName: payload.givenName || 'Learner',
+    };
 
-    try {
-      const payload = jwt.verify(token, config.jwtSecret) as {
-        sub: string;
-        type: string;
-        givenName?: string;
-        iat: number;
-        exp: number;
-      };
-
-      if (payload.type !== 'learner') {
-        throw new UnauthorizedException('Invalid token type - expected learner token');
-      }
-
-      req.learner = {
-        id: payload.sub,
-        givenName: payload.givenName || 'Learner',
-      };
-
-      logger.debug('Learner authenticated', { learnerId: req.learner.id });
-
-      next();
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      logger.error('Learner auth error', { error: String(error) });
-      throw new UnauthorizedException('Invalid or expired token');
+    logger.debug({ learnerId: request.learner.id }, 'Learner authenticated');
+  } catch (error) {
+    if (error instanceof UnauthorizedException) {
+      throw error;
     }
+    logger.error({ error: String(error) }, 'Learner auth error');
+    throw new UnauthorizedException('Invalid or expired token');
   }
 }

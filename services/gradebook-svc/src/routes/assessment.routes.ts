@@ -4,10 +4,14 @@
  * RESTful API endpoints for assessment building
  */
 
-import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
-import { validate, validateBody, validateParams, validateQuery } from '../middleware/validation.js';
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+  validateRequest,
+} from '../middleware/validation.js';
 import {
   assessmentIdParamsSchema,
   questionIdParamsSchema,
@@ -25,22 +29,6 @@ import {
   addToQuestionBankBodySchema,
   rubricQuerySchema,
   createRubricBodySchema,
-  type AssessmentIdParams,
-  type QuestionIdParams,
-  type SubmissionIdParams,
-  type RubricIdParams,
-  type CreateAssessmentBody,
-  type UpdateAssessmentBody,
-  type AddQuestionBody,
-  type UpdateQuestionBody,
-  type ReorderQuestionsBody,
-  type GradeSubmissionBody,
-  type ImportQuestionsBody,
-  type AutoGenerateBody,
-  type QuestionBankQuery,
-  type AddToQuestionBankBody,
-  type RubricQuery,
-  type CreateRubricBody,
 } from '../schemas/assessment.schemas.js';
 import { assessmentBuilderService } from '../services/assessment-builder.service.js';
 import type {
@@ -50,404 +38,413 @@ import type {
   CreateRubricInput,
 } from '../services/assessment-builder.service.js';
 
-const router = Router();
-
-/**
- * POST /assessments
- * Create new assessment
- */
-router.post(
-  '/',
-  validateBody(createAssessmentBodySchema),
-  async (req: Request<{}, {}, CreateAssessmentBody>, res: Response) => {
+async function assessmentRoutes(app: FastifyInstance) {
+  /**
+   * POST /assessments
+   * Create new assessment
+   */
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, createAssessmentBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const assessment = await assessmentBuilderService.createAssessment(req.body as CreateAssessmentInput);
-      res.json(assessment);
+      const assessment = await assessmentBuilderService.createAssessment(
+        body as CreateAssessmentInput
+      );
+      return assessment;
     } catch (error) {
       console.error('Error creating assessment:', error);
-      res.status(500).json({ error: 'Failed to create assessment' });
+      reply.status(500);
+      return { error: 'Failed to create assessment' };
     }
-  }
-);
+  });
 
-/**
- * GET /assessments/:id
- * Get assessment by ID
- */
-router.get(
-  '/:id',
-  validateParams(assessmentIdParamsSchema),
-  async (req: Request<AssessmentIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const assessment = await assessmentBuilderService.getAssessment(id);
-
-      if (!assessment) {
-        res.status(404).json({ error: 'Assessment not found' });
-        return;
+  /**
+   * GET /assessments/:id
+   * Get assessment by ID
+   */
+  app.get(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, assessmentIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const assessment = await assessmentBuilderService.getAssessment(params.id);
+        if (!assessment) {
+          reply.status(404);
+          return { error: 'Assessment not found' };
+        }
+        return assessment;
+      } catch (error) {
+        console.error('Error fetching assessment:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch assessment' };
       }
-
-      res.json(assessment);
-    } catch (error) {
-      console.error('Error fetching assessment:', error);
-      res.status(500).json({ error: 'Failed to fetch assessment' });
     }
-  }
-);
+  );
 
-/**
- * PUT /assessments/:id
- * Update assessment
- */
-router.put(
-  '/:id',
-  validate({
-    params: assessmentIdParamsSchema,
-    body: updateAssessmentBodySchema,
-  }),
-  async (req: Request<AssessmentIdParams, {}, UpdateAssessmentBody>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const assessment = await assessmentBuilderService.updateAssessment(id, req.body);
-      res.json(assessment);
-    } catch (error) {
-      console.error('Error updating assessment:', error);
-      res.status(500).json({ error: 'Failed to update assessment' });
-    }
-  }
-);
-
-/**
- * POST /assessments/:id/publish
- * Publish assessment
- */
-router.post(
-  '/:id/publish',
-  validateParams(assessmentIdParamsSchema),
-  async (req: Request<AssessmentIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const assessment = await assessmentBuilderService.publishAssessment(id);
-      res.json(assessment);
-    } catch (error) {
-      console.error('Error publishing assessment:', error);
-      res.status(500).json({ error: 'Failed to publish assessment' });
-    }
-  }
-);
-
-/**
- * DELETE /assessments/:id
- * Delete assessment
- */
-router.delete(
-  '/:id',
-  validateParams(assessmentIdParamsSchema),
-  async (req: Request<AssessmentIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      await assessmentBuilderService.deleteAssessment(id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting assessment:', error);
-      res.status(500).json({ error: 'Failed to delete assessment' });
-    }
-  }
-);
-
-/**
- * POST /assessments/:id/questions
- * Add question to assessment
- */
-router.post(
-  '/:id/questions',
-  validate({
-    params: assessmentIdParamsSchema,
-    body: addQuestionBodySchema,
-  }),
-  async (req: Request<AssessmentIdParams, {}, AddQuestionBody>, res: Response) => {
-    try {
-      const { id } = req.params;
-      // Type assertion is safe here because Zod has validated the data
-      const question = await assessmentBuilderService.addQuestion({
-        assessmentId: id,
-        ...req.body,
-      } as CreateQuestionInput);
-      res.json(question);
-    } catch (error) {
-      console.error('Error adding question:', error);
-      res.status(500).json({ error: 'Failed to add question' });
-    }
-  }
-);
-
-/**
- * PUT /assessments/questions/:questionId
- * Update question
- */
-router.put(
-  '/questions/:questionId',
-  validate({
-    params: questionIdParamsSchema,
-    body: updateQuestionBodySchema,
-  }),
-  async (req: Request<QuestionIdParams, {}, UpdateQuestionBody>, res: Response) => {
-    try {
-      const { questionId } = req.params;
-      const question = await assessmentBuilderService.updateQuestion(questionId, req.body);
-      res.json(question);
-    } catch (error) {
-      console.error('Error updating question:', error);
-      res.status(500).json({ error: 'Failed to update question' });
-    }
-  }
-);
-
-/**
- * DELETE /assessments/questions/:questionId
- * Delete question
- */
-router.delete(
-  '/questions/:questionId',
-  validateParams(questionIdParamsSchema),
-  async (req: Request<QuestionIdParams>, res: Response) => {
-    try {
-      const { questionId } = req.params;
-      await assessmentBuilderService.deleteQuestion(questionId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting question:', error);
-      res.status(500).json({ error: 'Failed to delete question' });
-    }
-  }
-);
-
-/**
- * PUT /assessments/:id/questions/reorder
- * Reorder questions
- */
-router.put(
-  '/:id/questions/reorder',
-  validate({
-    params: assessmentIdParamsSchema,
-    body: reorderQuestionsBodySchema,
-  }),
-  async (req: Request<AssessmentIdParams, {}, ReorderQuestionsBody>, res: Response) => {
-    try {
-      const { questions } = req.body;
-
-      // Type assertion is safe here because Zod has validated the data
-      await assessmentBuilderService.reorderQuestions(questions as { id: string; orderIndex: number }[]);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error reordering questions:', error);
-      res.status(500).json({ error: 'Failed to reorder questions' });
-    }
-  }
-);
-
-/**
- * GET /assessments/:id/submissions
- * Get assessment submissions
- */
-router.get(
-  '/:id/submissions',
-  validateParams(assessmentIdParamsSchema),
-  async (req: Request<AssessmentIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const submissions = await assessmentBuilderService.getSubmissions(id);
-      res.json(submissions);
-    } catch (error) {
-      console.error('Error fetching submissions:', error);
-      res.status(500).json({ error: 'Failed to fetch submissions' });
-    }
-  }
-);
-
-/**
- * POST /assessments/submissions/:submissionId/grade
- * Grade assessment submission
- */
-router.post(
-  '/submissions/:submissionId/grade',
-  validate({
-    params: submissionIdParamsSchema,
-    body: gradeSubmissionBodySchema,
-  }),
-  async (req: Request<SubmissionIdParams, {}, GradeSubmissionBody>, res: Response) => {
-    try {
-      const { submissionId } = req.params;
-      const { gradedBy, feedback } = req.body;
-
-      const submission = await assessmentBuilderService.gradeSubmission(
-        submissionId,
-        gradedBy,
-        feedback
+  /**
+   * PUT /assessments/:id
+   * Update assessment
+   */
+  app.put(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: assessmentIdParamsSchema, body: updateAssessmentBodySchema },
+        { params: request.params, body: request.body }
       );
-      res.json(submission);
-    } catch (error) {
-      console.error('Error grading submission:', error);
-      res.status(500).json({ error: 'Failed to grade submission' });
+      if (!validated) return;
+      try {
+        const { id } = validated.params as { id: string };
+        const assessment = await assessmentBuilderService.updateAssessment(
+          id,
+          validated.body as Record<string, unknown>
+        );
+        return assessment;
+      } catch (error) {
+        console.error('Error updating assessment:', error);
+        reply.status(500);
+        return { error: 'Failed to update assessment' };
+      }
     }
-  }
-);
+  );
 
-/**
- * POST /assessments/:id/import
- * Import questions from another assessment
- */
-router.post(
-  '/:id/import',
-  validate({
-    params: assessmentIdParamsSchema,
-    body: importQuestionsBodySchema,
-  }),
-  async (req: Request<AssessmentIdParams, {}, ImportQuestionsBody>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const { sourceAssessmentId } = req.body;
-
-      const questions = await assessmentBuilderService.importQuestions(id, sourceAssessmentId);
-      res.json(questions);
-    } catch (error) {
-      console.error('Error importing questions:', error);
-      res.status(500).json({ error: 'Failed to import questions' });
+  /**
+   * POST /assessments/:id/publish
+   * Publish assessment
+   */
+  app.post(
+    '/:id/publish',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, assessmentIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const assessment = await assessmentBuilderService.publishAssessment(params.id);
+        return assessment;
+      } catch (error) {
+        console.error('Error publishing assessment:', error);
+        reply.status(500);
+        return { error: 'Failed to publish assessment' };
+      }
     }
-  }
-);
+  );
 
-/**
- * POST /assessments/auto-generate
- * Auto-generate assessment from question bank
- */
-router.post(
-  '/auto-generate',
-  validateBody(autoGenerateBodySchema),
-  async (req: Request<{}, {}, AutoGenerateBody>, res: Response) => {
+  /**
+   * DELETE /assessments/:id
+   * Delete assessment
+   */
+  app.delete(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, assessmentIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        await assessmentBuilderService.deleteAssessment(params.id);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting assessment:', error);
+        reply.status(500);
+        return { error: 'Failed to delete assessment' };
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/questions
+   * Add question to assessment
+   */
+  app.post(
+    '/:id/questions',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: assessmentIdParamsSchema, body: addQuestionBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { id } = validated.params as { id: string };
+        const question = await assessmentBuilderService.addQuestion({
+          assessmentId: id,
+          ...validated.body,
+        } as CreateQuestionInput);
+        return question;
+      } catch (error) {
+        console.error('Error adding question:', error);
+        reply.status(500);
+        return { error: 'Failed to add question' };
+      }
+    }
+  );
+
+  /**
+   * PUT /assessments/questions/:questionId
+   * Update question
+   */
+  app.put(
+    '/questions/:questionId',
+    async (request: FastifyRequest<{ Params: { questionId: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: questionIdParamsSchema, body: updateQuestionBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { questionId } = validated.params as { questionId: string };
+        const question = await assessmentBuilderService.updateQuestion(
+          questionId,
+          validated.body as Record<string, unknown>
+        );
+        return question;
+      } catch (error) {
+        console.error('Error updating question:', error);
+        reply.status(500);
+        return { error: 'Failed to update question' };
+      }
+    }
+  );
+
+  /**
+   * DELETE /assessments/questions/:questionId
+   * Delete question
+   */
+  app.delete(
+    '/questions/:questionId',
+    async (request: FastifyRequest<{ Params: { questionId: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, questionIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        await assessmentBuilderService.deleteQuestion(params.questionId);
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting question:', error);
+        reply.status(500);
+        return { error: 'Failed to delete question' };
+      }
+    }
+  );
+
+  /**
+   * PUT /assessments/:id/questions/reorder
+   * Reorder questions
+   */
+  app.put(
+    '/:id/questions/reorder',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: assessmentIdParamsSchema, body: reorderQuestionsBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const body = validated.body as { questions: { id: string; orderIndex: number }[] };
+        await assessmentBuilderService.reorderQuestions(body.questions);
+        return { success: true };
+      } catch (error) {
+        console.error('Error reordering questions:', error);
+        reply.status(500);
+        return { error: 'Failed to reorder questions' };
+      }
+    }
+  );
+
+  /**
+   * GET /assessments/:id/submissions
+   * Get assessment submissions
+   */
+  app.get(
+    '/:id/submissions',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, assessmentIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const submissions = await assessmentBuilderService.getSubmissions(params.id);
+        return submissions;
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch submissions' };
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/submissions/:submissionId/grade
+   * Grade assessment submission
+   */
+  app.post(
+    '/submissions/:submissionId/grade',
+    async (request: FastifyRequest<{ Params: { submissionId: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: submissionIdParamsSchema, body: gradeSubmissionBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { submissionId } = validated.params as { submissionId: string };
+        const { gradedBy, feedback } = validated.body as { gradedBy: string; feedback?: string };
+        const submission = await assessmentBuilderService.gradeSubmission(
+          submissionId,
+          gradedBy,
+          feedback
+        );
+        return submission;
+      } catch (error) {
+        console.error('Error grading submission:', error);
+        reply.status(500);
+        return { error: 'Failed to grade submission' };
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/:id/import
+   * Import questions from another assessment
+   */
+  app.post(
+    '/:id/import',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const validated = validateRequest(
+        reply,
+        { params: assessmentIdParamsSchema, body: importQuestionsBodySchema },
+        { params: request.params, body: request.body }
+      );
+      if (!validated) return;
+      try {
+        const { id } = validated.params as { id: string };
+        const { sourceAssessmentId } = validated.body as { sourceAssessmentId: string };
+        const questions = await assessmentBuilderService.importQuestions(id, sourceAssessmentId);
+        return questions;
+      } catch (error) {
+        console.error('Error importing questions:', error);
+        reply.status(500);
+        return { error: 'Failed to import questions' };
+      }
+    }
+  );
+
+  /**
+   * POST /assessments/auto-generate
+   * Auto-generate assessment from question bank
+   */
+  app.post('/auto-generate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, autoGenerateBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const assessment = await assessmentBuilderService.autoGenerateAssessment(req.body as AutoGenerateInput);
-      res.json(assessment);
+      const assessment = await assessmentBuilderService.autoGenerateAssessment(
+        body as AutoGenerateInput
+      );
+      return assessment;
     } catch (error) {
       console.error('Error auto-generating assessment:', error);
-      res.status(500).json({ error: 'Failed to auto-generate assessment' });
+      reply.status(500);
+      return { error: 'Failed to auto-generate assessment' };
     }
-  }
-);
+  });
 
-/**
- * GET /question-bank
- * Browse question bank
- */
-router.get(
-  '/question-bank',
-  validateQuery(questionBankQuerySchema),
-  async (req: Request<{}, {}, {}, QuestionBankQuery>, res: Response) => {
+  /**
+   * GET /question-bank
+   * Browse question bank
+   */
+  app.get('/question-bank', async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = validateQuery(reply, questionBankQuerySchema, request.query);
+    if (!query) return;
     try {
-      const { teacherId, tenantId, tags, type, subjectId, gradeLevel, difficulty } = req.query;
-
       const questions = await assessmentBuilderService.browseQuestionBank({
-        teacherId,
-        tenantId,
-        tags: tags ? tags.split(',') : undefined,
-        type,
-        subjectId,
-        gradeLevel,
-        difficulty,
+        teacherId: query.teacherId,
+        tenantId: query.tenantId,
+        tags: query.tags ? query.tags.split(',') : undefined,
+        type: query.type,
+        subjectId: query.subjectId,
+        gradeLevel: query.gradeLevel,
+        difficulty: query.difficulty,
       });
-
-      res.json(questions);
+      return questions;
     } catch (error) {
       console.error('Error browsing question bank:', error);
-      res.status(500).json({ error: 'Failed to browse question bank' });
+      reply.status(500);
+      return { error: 'Failed to browse question bank' };
     }
-  }
-);
+  });
 
-/**
- * POST /question-bank
- * Add question to question bank
- */
-router.post(
-  '/question-bank',
-  validateBody(addToQuestionBankBodySchema),
-  async (req: Request<{}, {}, AddToQuestionBankBody>, res: Response) => {
+  /**
+   * POST /question-bank
+   * Add question to question bank
+   */
+  app.post('/question-bank', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, addToQuestionBankBodySchema, request.body);
+    if (!body) return;
     try {
-      // Parse body through schema to ensure all required fields and defaults
-      const parsed = addToQuestionBankBodySchema.parse(req.body);
-      const question = await assessmentBuilderService.addToQuestionBank(parsed as any);
-      res.json(question);
+      const question = await assessmentBuilderService.addToQuestionBank(body as any);
+      return question;
     } catch (error) {
       console.error('Error adding to question bank:', error);
-      res.status(500).json({ error: 'Failed to add to question bank' });
+      reply.status(500);
+      return { error: 'Failed to add to question bank' };
     }
-  }
-);
+  });
 
-/**
- * GET /rubrics
- * List rubrics
- */
-router.get(
-  '/rubrics',
-  validateQuery(rubricQuerySchema),
-  async (req: Request<{}, {}, {}, RubricQuery>, res: Response) => {
+  /**
+   * GET /rubrics
+   * List rubrics
+   */
+  app.get('/rubrics', async (request: FastifyRequest, reply: FastifyReply) => {
+    const query = validateQuery(reply, rubricQuerySchema, request.query);
+    if (!query) return;
     try {
-      const { teacherId, tenantId } = req.query;
-
-      const rubrics = await assessmentBuilderService.listRubrics(teacherId, tenantId);
-      res.json(rubrics);
+      const rubrics = await assessmentBuilderService.listRubrics(query.teacherId, query.tenantId);
+      return rubrics;
     } catch (error) {
       console.error('Error listing rubrics:', error);
-      res.status(500).json({ error: 'Failed to list rubrics' });
+      reply.status(500);
+      return { error: 'Failed to list rubrics' };
     }
-  }
-);
+  });
 
-/**
- * POST /rubrics
- * Create rubric
- */
-router.post(
-  '/rubrics',
-  validateBody(createRubricBodySchema),
-  async (req: Request<{}, {}, CreateRubricBody>, res: Response) => {
+  /**
+   * POST /rubrics
+   * Create rubric
+   */
+  app.post('/rubrics', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = validateBody(reply, createRubricBodySchema, request.body);
+    if (!body) return;
     try {
-      // Type assertion is safe here because Zod has validated the data
-      const rubric = await assessmentBuilderService.createRubric(req.body as CreateRubricInput);
-      res.json(rubric);
+      const rubric = await assessmentBuilderService.createRubric(body as CreateRubricInput);
+      return rubric;
     } catch (error) {
       console.error('Error creating rubric:', error);
-      res.status(500).json({ error: 'Failed to create rubric' });
+      reply.status(500);
+      return { error: 'Failed to create rubric' };
     }
-  }
-);
+  });
 
-/**
- * GET /rubrics/:id
- * Get rubric
- */
-router.get(
-  '/rubrics/:id',
-  validateParams(rubricIdParamsSchema),
-  async (req: Request<RubricIdParams>, res: Response) => {
-    try {
-      const { id } = req.params;
-      const rubric = await assessmentBuilderService.getRubric(id);
-
-      if (!rubric) {
-        res.status(404).json({ error: 'Rubric not found' });
-        return;
+  /**
+   * GET /rubrics/:id
+   * Get rubric
+   */
+  app.get(
+    '/rubrics/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const params = validateParams(reply, rubricIdParamsSchema, request.params);
+      if (!params) return;
+      try {
+        const rubric = await assessmentBuilderService.getRubric(params.id);
+        if (!rubric) {
+          reply.status(404);
+          return { error: 'Rubric not found' };
+        }
+        return rubric;
+      } catch (error) {
+        console.error('Error fetching rubric:', error);
+        reply.status(500);
+        return { error: 'Failed to fetch rubric' };
       }
-
-      res.json(rubric);
-    } catch (error) {
-      console.error('Error fetching rubric:', error);
-      res.status(500).json({ error: 'Failed to fetch rubric' });
     }
-  }
-);
+  );
+}
 
-export default router;
+export default assessmentRoutes;

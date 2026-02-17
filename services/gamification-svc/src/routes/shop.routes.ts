@@ -4,15 +4,10 @@
  * Handles shop and inventory API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { rewardService } from '../services/index.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION
@@ -31,132 +26,113 @@ const equipSchema = z.object({
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * GET /api/gamification/shop
- * Get shop items
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+async function shopRoutes(app: FastifyInstance) {
+  /**
+   * GET /api/gamification/shop
+   * Get shop items
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const shop = await rewardService.getShopItems(studentId);
-    res.json({ success: true, data: shop });
-  })
-);
+    return { success: true, data: shop };
+  });
 
-/**
- * GET /api/gamification/shop/featured
- * Get featured shop items
- */
-router.get(
-  '/featured',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/shop/featured
+   * Get featured shop items
+   */
+  app.get('/featured', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const shop = await rewardService.getShopItems(studentId);
-    res.json({ success: true, data: shop.featured });
-  })
-);
+    return { success: true, data: shop.featured };
+  });
 
-/**
- * GET /api/gamification/shop/category/:category
- * Get items by category
- */
-router.get(
-  '/category/:category',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const category = req.params.category;
+  /**
+   * GET /api/gamification/shop/category/:category
+   * Get items by category
+   */
+  app.get(
+    '/category/:category',
+    async (request: FastifyRequest<{ Params: { category: string } }>, reply: FastifyReply) => {
+      const studentId = extractStudentId(request);
+      const category = request.params.category;
 
-    const shop = await rewardService.getShopItems(studentId);
-    const categoryData = shop.categories.find((c) => c.id === category);
+      const shop = await rewardService.getShopItems(studentId);
+      const categoryData = shop.categories.find((c) => c.id === category);
 
-    if (!categoryData) {
-      res.status(404).json({ success: false, error: 'Category not found' });
-      return;
+      if (!categoryData) {
+        reply.status(404);
+        return { success: false, error: 'Category not found' };
+      }
+
+      return { success: true, data: categoryData };
     }
+  );
 
-    res.json({ success: true, data: categoryData });
-  })
-);
-
-/**
- * POST /api/gamification/shop/purchase
- * Purchase an item
- */
-router.post(
-  '/purchase',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const { itemId } = purchaseSchema.parse(req.body);
+  /**
+   * POST /api/gamification/shop/purchase
+   * Purchase an item
+   */
+  app.post('/purchase', async (request: FastifyRequest, reply: FastifyReply) => {
+    const studentId = extractStudentId(request);
+    const { itemId } = purchaseSchema.parse(request.body);
 
     const result = await rewardService.purchaseItem(studentId, itemId);
 
     if (result.success) {
-      res.json({ success: true, data: result });
+      return { success: true, data: result };
     } else {
-      res.status(400).json({ success: false, error: result.message });
+      reply.status(400);
+      return { success: false, error: result.message };
     }
-  })
-);
+  });
 
-/**
- * GET /api/gamification/shop/inventory
- * Get player's inventory
- */
-router.get(
-  '/inventory',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/shop/inventory
+   * Get player's inventory
+   */
+  app.get('/inventory', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const inventory = await rewardService.getInventory(studentId);
-    res.json({ success: true, data: inventory });
-  })
-);
+    return { success: true, data: inventory };
+  });
 
-/**
- * POST /api/gamification/shop/equip
- * Equip an item
- */
-router.post(
-  '/equip',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
-    const { itemId, slot } = equipSchema.parse(req.body);
+  /**
+   * POST /api/gamification/shop/equip
+   * Equip an item
+   */
+  app.post('/equip', async (request: FastifyRequest, reply: FastifyReply) => {
+    const studentId = extractStudentId(request);
+    const { itemId, slot } = equipSchema.parse(request.body);
 
     const success = await rewardService.equipItem(studentId, itemId, slot);
 
     if (success) {
-      res.json({ success: true, message: 'Item equipped' });
+      return { success: true, message: 'Item equipped' };
     } else {
-      res.status(400).json({ success: false, error: 'Unable to equip item' });
+      reply.status(400);
+      return { success: false, error: 'Unable to equip item' };
     }
-  })
-);
+  });
 
-/**
- * GET /api/gamification/shop/equipped
- * Get currently equipped items
- */
-router.get(
-  '/equipped',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/shop/equipped
+   * Get currently equipped items
+   */
+  app.get('/equipped', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
     const equipped = await prisma.equippedItem.findMany({
@@ -173,18 +149,15 @@ router.get(
       };
     }
 
-    res.json({ success: true, data: result });
-  })
-);
+    return { success: true, data: result };
+  });
 
-/**
- * GET /api/gamification/shop/balance
- * Get player's currency balance
- */
-router.get(
-  '/balance',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/shop/balance
+   * Get player's currency balance
+   */
+  app.get('/balance', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
     const profile = await prisma.playerProfile.findUnique({
@@ -192,14 +165,14 @@ router.get(
       select: { coins: true, gems: true },
     });
 
-    res.json({
+    return {
       success: true,
       data: {
         coins: profile?.coins || 0,
         gems: profile?.gems || 0,
       },
-    });
-  })
-);
+    };
+  });
+}
 
-export default router;
+export default shopRoutes;

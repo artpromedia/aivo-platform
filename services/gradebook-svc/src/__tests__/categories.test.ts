@@ -6,15 +6,21 @@
  * - PUT /gradebook/categories/weights - Update weights
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import express from 'express';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
 
 // Mock @aivo/ts-api-utils before importing app
 vi.mock('@aivo/ts-api-utils', () => ({
-  createExpressRateLimiter: vi.fn(() => (_req: any, _res: any, next: any) => next()),
-  RateLimitPresets: {
-    API_GENERAL: { windowMs: 60000, max: 100 },
+  FastifyRateLimitPresets: {
+    publicApi: () => ({
+      global: true,
+      max: 1000,
+      timeWindow: '1 minute',
+      keyGenerator: () => 'test',
+      errorResponseBuilder: () => ({ error: 'Rate limited' }),
+      allowList: () => false,
+    }),
   },
 }));
 
@@ -60,11 +66,16 @@ vi.mock('../../generated/prisma-client/index.js', () => ({
 import { createApp } from '../app.js';
 
 describe('Grade Categories', () => {
-  let app: express.Application;
+  let app: FastifyInstance;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     app = createApp();
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   describe('POST /api/v1/gradebook/categories', () => {
@@ -81,7 +92,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -121,7 +132,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -135,7 +146,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when gradebookConfigId is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           name: 'Homework',
@@ -147,7 +158,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when name is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -159,7 +170,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when weight is missing', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -182,7 +193,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -199,7 +210,7 @@ describe('Grade Categories', () => {
         new Error('Foreign key constraint failed')
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'non-existent-config',
@@ -216,7 +227,7 @@ describe('Grade Categories', () => {
         new Error('Unique constraint violation')
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -236,7 +247,7 @@ describe('Grade Categories', () => {
         .mockResolvedValueOnce({ id: 'cat-2', weight: 60 });
       mockPrismaClient.$transaction.mockImplementation((operations) => Promise.all(operations));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: [
@@ -250,7 +261,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when categories is not an array', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: 'invalid',
@@ -261,7 +272,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when categories is null', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: null,
@@ -272,7 +283,7 @@ describe('Grade Categories', () => {
     });
 
     it('should return 400 when categories is an object', async () => {
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: { id: 'cat-1', weight: 40 },
@@ -285,7 +296,7 @@ describe('Grade Categories', () => {
     it('should handle empty categories array', async () => {
       mockPrismaClient.$transaction.mockResolvedValue([]);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: [],
@@ -299,7 +310,7 @@ describe('Grade Categories', () => {
       mockPrismaClient.gradeCategory.update.mockResolvedValue({ id: 'cat-1', weight: 100 });
       mockPrismaClient.$transaction.mockImplementation((operations) => Promise.all(operations));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: [{ id: 'cat-1', weight: 100 }],
@@ -310,11 +321,9 @@ describe('Grade Categories', () => {
     });
 
     it('should handle database transaction errors', async () => {
-      mockPrismaClient.$transaction.mockRejectedValue(
-        new Error('Transaction failed')
-      );
+      mockPrismaClient.$transaction.mockRejectedValue(new Error('Transaction failed'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: [
@@ -328,16 +337,12 @@ describe('Grade Categories', () => {
     });
 
     it('should handle non-existent category in batch update', async () => {
-      mockPrismaClient.$transaction.mockRejectedValue(
-        new Error('Record not found')
-      );
+      mockPrismaClient.$transaction.mockRejectedValue(new Error('Record not found'));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
-          categories: [
-            { id: 'non-existent', weight: 50 },
-          ],
+          categories: [{ id: 'non-existent', weight: 50 }],
         })
         .expect(500);
 
@@ -353,7 +358,7 @@ describe('Grade Categories', () => {
         .mockResolvedValueOnce({ id: 'cat-3', weight: 40 });
       mockPrismaClient.$transaction.mockImplementation((operations) => Promise.all(operations));
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({
           categories: [
@@ -379,7 +384,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -404,7 +409,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -432,7 +437,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -445,7 +450,7 @@ describe('Grade Categories', () => {
     });
 
     it('should handle category name with special characters', async () => {
-      const specialName = "Homework & Projects (Week 1-4) - Extra Credit!";
+      const specialName = 'Homework & Projects (Week 1-4) - Extra Credit!';
       const mockCategory = {
         id: 'cat-1',
         gradebookConfigId: 'config-1',
@@ -457,7 +462,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -481,7 +486,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -505,7 +510,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',
@@ -528,7 +533,7 @@ describe('Grade Categories', () => {
         categories.map((c) => ({ id: c.id, weight: c.weight }))
       );
 
-      const response = await request(app)
+      const response = await request(app.server)
         .put('/api/v1/gradebook/categories/weights')
         .send({ categories })
         .expect(200);
@@ -549,7 +554,7 @@ describe('Grade Categories', () => {
 
       mockPrismaClient.gradeCategory.create.mockResolvedValue(mockCategory);
 
-      const response = await request(app)
+      const response = await request(app.server)
         .post('/api/v1/gradebook/categories')
         .send({
           gradebookConfigId: 'config-1',

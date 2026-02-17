@@ -5,7 +5,6 @@ import { startEventSubscriber, stopEventSubscriber } from './events/subscriber.j
 import { prisma } from './prisma.js';
 
 const app = createApp();
-let server: ReturnType<typeof app.listen>;
 
 async function start(): Promise<void> {
   try {
@@ -24,9 +23,8 @@ async function start(): Promise<void> {
     }
 
     // Start HTTP server
-    server = app.listen(config.port, () => {
-      console.log(`Brain Orchestrator Service listening on port ${config.port}`);
-    });
+    await app.listen({ port: config.port, host: '0.0.0.0' });
+    console.log(`Brain Orchestrator Service listening on port ${config.port}`);
 
     // Handle graceful shutdown
     process.on('SIGTERM', shutdown);
@@ -41,13 +39,9 @@ async function shutdown(): Promise<void> {
   console.log('Shutting down gracefully...');
 
   try {
-    // Stop accepting new requests
-    if (server) {
-      await new Promise<void>((resolve) => {
-        server.close(() => resolve());
-      });
-      console.log('HTTP server closed');
-    }
+    // Close Fastify server
+    await app.close();
+    console.log('HTTP server closed');
 
     // Stop event subscriber
     await stopEventSubscriber();

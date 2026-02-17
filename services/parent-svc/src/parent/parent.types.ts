@@ -5,8 +5,6 @@
  * progress tracking, and consent management.
  */
 
-import { IsEmail, IsString, IsOptional, IsUUID, IsEnum, IsBoolean, MinLength, MaxLength, IsPhoneNumber } from 'class-validator';
-
 // ============================================================================
 // ENUMS
 // ============================================================================
@@ -64,157 +62,62 @@ export enum LinkStatus {
 // DTOs - Input Types
 // ============================================================================
 
-export class CreateParentInviteDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsEmail()
-  parentEmail!: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
+export interface CreateParentInviteDto {
+  studentId: string;
+  parentEmail: string;
   parentName?: string;
-
-  @IsEnum(ParentRelationship)
-  @IsOptional()
   relationship?: ParentRelationship;
-
-  @IsString()
-  @IsOptional()
   language?: string;
 }
 
-export class AcceptInviteDto {
-  @IsString()
-  inviteCode!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(8)
-  password!: string;
-
-  @IsString()
-  @IsOptional()
+export interface AcceptInviteDto {
+  inviteCode: string;
+  email: string;
+  password: string;
   givenName?: string;
-
-  @IsString()
-  @IsOptional()
   familyName?: string;
-
-  @IsString()
-  @IsOptional()
-  @IsPhoneNumber()
   phone?: string;
-
-  @IsString()
-  @IsOptional()
   language?: string;
-
-  @IsString()
-  @IsOptional()
   timezone?: string;
 }
 
-export class UpdateParentProfileDto {
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
+export interface UpdateParentProfileDto {
   givenName?: string;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
   familyName?: string;
-
-  @IsString()
-  @IsOptional()
-  @IsPhoneNumber()
   phone?: string;
-
-  @IsString()
-  @IsOptional()
   photoUrl?: string;
 }
 
-export class UpdateParentPreferencesDto {
-  @IsString()
-  @IsOptional()
+export interface UpdateParentPreferencesDto {
   language?: string;
-
-  @IsString()
-  @IsOptional()
   timezone?: string;
-
-  @IsEnum(DigestFrequency)
-  @IsOptional()
   digestFrequency?: DigestFrequency;
-
-  @IsOptional()
   notifications?: NotificationPreferences;
 }
 
-export class UpdatePrivacySettingsInput extends UpdateParentPreferencesDto {}
+export type UpdatePrivacySettingsInput = UpdateParentPreferencesDto;
 
-export class CreateConsentInput {
-  @IsEnum(ConsentType)
-  consentType!: ConsentType;
-
-  @IsBoolean()
-  granted!: boolean;
-
-  @IsString()
-  @IsOptional()
+export interface CreateConsentInput {
+  consentType: ConsentType;
+  granted: boolean;
   ipAddress?: string;
-
-  @IsString()
-  @IsOptional()
   userAgent?: string;
 }
 
-export class RecordConsentDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsEnum(ConsentType)
-  consentType!: ConsentType;
-
-  @IsBoolean()
-  granted!: boolean;
-
-  @IsString()
-  @IsOptional()
+export interface RecordConsentDto {
+  studentId: string;
+  consentType: ConsentType;
+  granted: boolean;
   ipAddress?: string;
-
-  @IsString()
-  @IsOptional()
   userAgent?: string;
 }
 
-export class UpdateStudentPermissionsDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsBoolean()
-  @IsOptional()
+export interface UpdateStudentPermissionsDto {
+  studentId: string;
   viewProgress?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewGrades?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   viewAttendance?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   receiveNotifications?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   messageTeacher?: boolean;
 }
 
@@ -517,56 +420,26 @@ export interface DifficultyChangeRecord {
   createdAt: string;
 }
 
-export class RespondToRecommendationDto {
-  @IsUUID()
-  recommendationId!: string;
-
-  @IsEnum(['approve', 'modify', 'deny'])
-  action!: 'approve' | 'modify' | 'deny';
-
-  @IsOptional()
+export interface RespondToRecommendationDto {
+  recommendationId: string;
+  action: 'approve' | 'modify' | 'deny';
   modifiedLevel?: number;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
   parentNotes?: string;
 }
 
-export class SetDomainDifficultyDto {
-  @IsUUID()
-  studentId!: string;
+export interface SetDomainDifficultyDto {
+  studentId: string;
+  domain: SkillDomain;
 
-  @IsEnum(SkillDomain)
-  domain!: SkillDomain;
-
-  level!: number;
-
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
+  level: number;
   reason?: string;
 }
 
-export class UpdateDifficultyPreferencesDto {
-  @IsUUID()
-  studentId!: string;
-
-  @IsBoolean()
-  @IsOptional()
+export interface UpdateDifficultyPreferencesDto {
+  studentId: string;
   autoApproveIncreases?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   autoApproveDecreases?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
   notifyOnRecommendation?: boolean;
-
-  @IsOptional()
   maxDifficultyLevel?: number | null;
-
-  @IsOptional()
   minDifficultyLevel?: number | null;
 }

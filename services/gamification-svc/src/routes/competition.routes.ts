@@ -4,23 +4,15 @@
  * Handles competition/tournament API endpoints
  */
 
- 
-
-import type { Request, Response, NextFunction, IRouter } from 'express';
-import { Router } from 'express';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import type {
-  CompetitionType,
-  CompetitionPrize,
-} from '../services/competition.service.js';
+import type { CompetitionType, CompetitionPrize } from '../services/competition.service.js';
 import {
   competitionService,
   CompetitionDuration,
   CompetitionCategory,
 } from '../services/competition.service.js';
-
-const router: IRouter = Router();
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -69,38 +61,31 @@ const joinCompetitionSchema = z.object({
 // HELPERS
 // ============================================================================
 
-const extractStudentId = (req: Request): string => {
-  const studentId = req.headers['x-student-id'] as string;
+const extractStudentId = (request: FastifyRequest): string => {
+  const studentId = request.headers['x-student-id'] as string;
   if (!studentId) {
     throw new Error('Student ID required');
   }
   return studentId;
 };
 
-const extractTeacherId = (req: Request): string => {
+const extractTeacherId = (request: FastifyRequest): string => {
   // In production, verify teacher role
-  return req.headers['x-teacher-id'] as string || req.headers['x-student-id'] as string;
+  return (request.headers['x-teacher-id'] as string) || (request.headers['x-student-id'] as string);
 };
-
-const asyncHandler =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
 
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-/**
- * POST /api/gamification/competitions
- * Create a new competition (teacher/admin only)
- */
-router.post(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const createdBy = extractTeacherId(req);
-    const data = createCompetitionSchema.parse(req.body);
+async function competitionRoutes(app: FastifyInstance) {
+  /**
+   * POST /api/gamification/competitions
+   * Create a new competition (teacher/admin only)
+   */
+  app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const createdBy = extractTeacherId(request);
+    const data = createCompetitionSchema.parse(request.body);
 
     const competition = await competitionService.createCompetition({
       name: data.name,
@@ -121,23 +106,22 @@ router.post(
       createdBy,
     });
 
-    res.status(201).json({
+    reply.status(201);
+    return {
       success: true,
       data: competition,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/competitions
- * List active competitions
- */
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    const type = req.query.type as CompetitionType | undefined;
-    const schoolId = req.query.schoolId as string | undefined;
-    const studentId = req.query.forStudent === 'true' ? extractStudentId(req) : undefined;
+  /**
+   * GET /api/gamification/competitions
+   * List active competitions
+   */
+  app.get('/', async (request: FastifyRequest) => {
+    const type = (request.query as any).type as CompetitionType | undefined;
+    const schoolId = (request.query as any).schoolId as string | undefined;
+    const studentId =
+      (request.query as any).forStudent === 'true' ? extractStudentId(request) : undefined;
 
     const competitions = await competitionService.listActiveCompetitions({
       type,
@@ -145,202 +129,191 @@ router.get(
       studentId,
     });
 
-    res.json({
+    return {
       success: true,
       data: competitions,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/competitions/recommended
- * Get recommended competitions for the current student
- */
-router.get(
-  '/recommended',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/competitions/recommended
+   * Get recommended competitions for the current student
+   */
+  app.get('/recommended', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
     const competitions = await competitionService.getRecommendedCompetitions(studentId);
 
-    res.json({
+    return {
       success: true,
       data: competitions,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/competitions/history
- * Get past competition results
- */
-router.get(
-  '/history',
-  asyncHandler(async (req: Request, res: Response) => {
-    const participantId = req.query.participantId as string | undefined;
-    const limit = Number.parseInt(req.query.limit as string) || 20;
+  /**
+   * GET /api/gamification/competitions/history
+   * Get past competition results
+   */
+  app.get('/history', async (request: FastifyRequest) => {
+    const participantId = (request.query as any).participantId as string | undefined;
+    const limit = Number.parseInt((request.query as any).limit as string) || 20;
 
     const competitions = await competitionService.listCompletedCompetitions({
       participantId,
       limit,
     });
 
-    res.json({
+    return {
       success: true,
       data: competitions,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/competitions/:id
- * Get competition details and standings
- */
-router.get(
-  '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
-    const competitionId = req.params.id;
-    const currentUserId = req.query.studentId as string | undefined ||
-                          (req.headers['x-student-id'] as string | undefined);
+  /**
+   * GET /api/gamification/competitions/:id
+   * Get competition details and standings
+   */
+  app.get(
+    '/:id',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const competitionId = request.params.id;
+      const currentUserId =
+        ((request.query as any).studentId as string | undefined) ||
+        (request.headers['x-student-id'] as string | undefined);
 
-    const details = await competitionService.getCompetitionDetails(
-      competitionId,
-      currentUserId
-    );
+      const details = await competitionService.getCompetitionDetails(competitionId, currentUserId);
 
-    if (!details) {
-      res.status(404).json({
-        success: false,
-        error: 'Competition not found',
-      });
-      return;
-    }
+      if (!details) {
+        reply.status(404);
+        return {
+          success: false,
+          error: 'Competition not found',
+        };
+      }
 
-    res.json({
-      success: true,
-      data: details,
-    });
-  })
-);
-
-/**
- * POST /api/gamification/competitions/:id/join
- * Join a competition
- */
-router.post(
-  '/:id/join',
-  asyncHandler(async (req: Request, res: Response) => {
-    const competitionId = req.params.id;
-    const studentId = extractStudentId(req);
-
-    try {
-      const body = req.body as { participantId?: string; participantType?: CompetitionType };
-      const participantId = body.participantId || studentId;
-      const participantType = body.participantType;
-
-      const success = await competitionService.joinCompetition(
-        competitionId,
-        participantId,
-        participantType
-      );
-
-      res.json({
+      return {
         success: true,
-        data: { joined: success },
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to join competition',
-      });
+        data: details,
+      };
     }
-  })
-);
+  );
 
-/**
- * POST /api/gamification/competitions/:id/leave
- * Leave a competition (only if not started)
- */
-router.post(
-  '/:id/leave',
-  asyncHandler(async (req: Request, res: Response) => {
-    const competitionId = req.params.id;
-    const studentId = extractStudentId(req);
+  /**
+   * POST /api/gamification/competitions/:id/join
+   * Join a competition
+   */
+  app.post(
+    '/:id/join',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const competitionId = request.params.id;
+      const studentId = extractStudentId(request);
 
-    try {
-      const success = await competitionService.leaveCompetition(competitionId, studentId);
+      try {
+        const body = request.body as { participantId?: string; participantType?: CompetitionType };
+        const participantId = body.participantId || studentId;
+        const participantType = body.participantType;
 
-      res.json({
-        success: true,
-        data: { left: success },
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to leave competition',
-      });
+        const success = await competitionService.joinCompetition(
+          competitionId,
+          participantId,
+          participantType
+        );
+
+        return {
+          success: true,
+          data: { joined: success },
+        };
+      } catch (error) {
+        reply.status(400);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to join competition',
+        };
+      }
     }
-  })
-);
+  );
 
-/**
- * GET /api/gamification/competitions/:id/standings
- * Get competition standings/leaderboard
- */
-router.get(
-  '/:id/standings',
-  asyncHandler(async (req: Request, res: Response) => {
-    const competitionId = req.params.id;
-    const currentUserId = req.query.studentId as string | undefined ||
-                          (req.headers['x-student-id'] as string | undefined);
+  /**
+   * POST /api/gamification/competitions/:id/leave
+   * Leave a competition (only if not started)
+   */
+  app.post(
+    '/:id/leave',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const competitionId = request.params.id;
+      const studentId = extractStudentId(request);
+
+      try {
+        const success = await competitionService.leaveCompetition(competitionId, studentId);
+
+        return {
+          success: true,
+          data: { left: success },
+        };
+      } catch (error) {
+        reply.status(400);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to leave competition',
+        };
+      }
+    }
+  );
+
+  /**
+   * GET /api/gamification/competitions/:id/standings
+   * Get competition standings/leaderboard
+   */
+  app.get('/:id/standings', async (request: FastifyRequest<{ Params: { id: string } }>) => {
+    const competitionId = request.params.id;
+    const currentUserId =
+      ((request.query as any).studentId as string | undefined) ||
+      (request.headers['x-student-id'] as string | undefined);
 
     const standings = await competitionService.getCompetitionStandings(
       competitionId,
       currentUserId
     );
 
-    res.json({
+    return {
       success: true,
       data: standings,
-    });
-  })
-);
+    };
+  });
 
-/**
- * POST /api/gamification/competitions/:id/finalize
- * Finalize competition and award prizes (admin only)
- */
-router.post(
-  '/:id/finalize',
-  asyncHandler(async (req: Request, res: Response) => {
-    const competitionId = req.params.id;
-    // In production, verify admin role
-    const adminId = extractTeacherId(req);
+  /**
+   * POST /api/gamification/competitions/:id/finalize
+   * Finalize competition and award prizes (admin only)
+   */
+  app.post(
+    '/:id/finalize',
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const competitionId = request.params.id;
+      // In production, verify admin role
+      const adminId = extractTeacherId(request);
 
-    if (!adminId) {
-      res.status(403).json({
-        success: false,
-        error: 'Admin access required',
-      });
-      return;
+      if (!adminId) {
+        reply.status(403);
+        return {
+          success: false,
+          error: 'Admin access required',
+        };
+      }
+
+      await competitionService.finalizeCompetition(competitionId);
+
+      return {
+        success: true,
+        message: 'Competition finalized and prizes awarded',
+      };
     }
+  );
 
-    await competitionService.finalizeCompetition(competitionId);
-
-    res.json({
-      success: true,
-      message: 'Competition finalized and prizes awarded',
-    });
-  })
-);
-
-/**
- * GET /api/gamification/competitions/my/participations
- * Get competitions the current user is participating in
- */
-router.get(
-  '/my/participations',
-  asyncHandler(async (req: Request, res: Response) => {
-    const studentId = extractStudentId(req);
+  /**
+   * GET /api/gamification/competitions/my/participations
+   * Get competitions the current user is participating in
+   */
+  app.get('/my/participations', async (request: FastifyRequest) => {
+    const studentId = extractStudentId(request);
 
     const { prisma } = await import('../prisma.js');
     const participations = await prisma.competitionParticipant.findMany({
@@ -371,20 +344,17 @@ router.get(
       },
     }));
 
-    res.json({
+    return {
       success: true,
       data,
-    });
-  })
-);
+    };
+  });
 
-/**
- * GET /api/gamification/competitions/stats/overview
- * Get competition statistics (admin)
- */
-router.get(
-  '/stats/overview',
-  asyncHandler(async (req: Request, res: Response) => {
+  /**
+   * GET /api/gamification/competitions/stats/overview
+   * Get competition statistics (admin)
+   */
+  app.get('/stats/overview', async () => {
     const { prisma } = await import('../prisma.js');
 
     const [total, active, completed, upcoming] = await Promise.all([
@@ -396,7 +366,7 @@ router.get(
 
     const totalParticipations = await prisma.competitionParticipant.count();
 
-    res.json({
+    return {
       success: true,
       data: {
         total,
@@ -406,8 +376,8 @@ router.get(
         totalParticipations,
         averageParticipants: total > 0 ? Math.round(totalParticipations / total) : 0,
       },
-    });
-  })
-);
+    };
+  });
+}
 
-export default router;
+export default competitionRoutes;

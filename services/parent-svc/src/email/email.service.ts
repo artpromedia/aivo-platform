@@ -5,7 +5,6 @@
  * Uses nodemailer for SMTP delivery in production environments.
  */
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 const { createTransport } = nodemailer;
@@ -22,11 +21,10 @@ interface SendEmailOptions {
   tags?: string[];
 }
 
-@Injectable()
-export class EmailService implements OnModuleInit {
+export class EmailService {
   private transporter: Transporter<SMTPTransport.SentMessageInfo> | null = null;
 
-  onModuleInit() {
+  initialize() {
     // Initialize SMTP transporter if credentials are configured
     if (config.smtpHost && config.smtpUser && config.smtpPassword) {
       this.transporter = createTransport({

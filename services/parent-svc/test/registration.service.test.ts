@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ConflictException, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+} from '../src/errors';
 import { RegistrationService } from '../src/registration/registration.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { CryptoService } from '../src/crypto/crypto.service';
 import { EmailService } from '../src/email/email.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { eventBus } from '../src/event-bus';
 import {
   CaregiverRelationshipType,
   RegistrationStatus,
@@ -80,9 +85,9 @@ describe('RegistrationService', () => {
 
     registrationService = new RegistrationService(
       prisma as unknown as PrismaService,
-      eventEmitter as unknown as EventEmitter2,
+      eventEmitter as unknown as typeof eventBus,
       crypto,
-      email as unknown as EmailService,
+      email as unknown as EmailService
     );
   });
 
@@ -123,9 +128,9 @@ describe('RegistrationService', () => {
         email: validRegisterDto.email,
       });
 
-      await expect(
-        registrationService.registerCaregiver(validRegisterDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(registrationService.registerCaregiver(validRegisterDto)).rejects.toThrow(
+        ConflictException
+      );
     });
 
     it('should throw ConflictException if email already exists as parent', async () => {
@@ -135,9 +140,9 @@ describe('RegistrationService', () => {
         email: validRegisterDto.email,
       });
 
-      await expect(
-        registrationService.registerCaregiver(validRegisterDto),
-      ).rejects.toThrow(ConflictException);
+      await expect(registrationService.registerCaregiver(validRegisterDto)).rejects.toThrow(
+        ConflictException
+      );
     });
 
     it('should return existing registration ID if pending registration exists', async () => {
@@ -207,7 +212,7 @@ describe('RegistrationService', () => {
         registrationService.verifyEmail({
           registrationId: 'reg-1',
           code: 'WRONG1',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -231,7 +236,7 @@ describe('RegistrationService', () => {
         registrationService.verifyEmail({
           registrationId: 'reg-1',
           code: 'ABC123',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -256,7 +261,7 @@ describe('RegistrationService', () => {
         registrationService.verifyEmail({
           registrationId: 'reg-1',
           code: 'WRONG1',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -276,7 +281,7 @@ describe('RegistrationService', () => {
         registrationService.verifyEmail({
           registrationId: 'reg-1',
           code: 'ABC123',
-        }),
+        })
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -333,9 +338,9 @@ describe('RegistrationService', () => {
 
       prisma.caregiverRegistration.findUnique.mockResolvedValue(registration);
 
-      await expect(
-        registrationService.addLearnerLink('reg-1', validLinkDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(registrationService.addLearnerLink('reg-1', validLinkDto)).rejects.toThrow(
+        BadRequestException
+      );
     });
 
     it('should reject if max learners reached', async () => {
@@ -347,9 +352,9 @@ describe('RegistrationService', () => {
 
       prisma.caregiverRegistration.findUnique.mockResolvedValue(registration);
 
-      await expect(
-        registrationService.addLearnerLink('reg-1', validLinkDto),
-      ).rejects.toThrow(BadRequestException);
+      await expect(registrationService.addLearnerLink('reg-1', validLinkDto)).rejects.toThrow(
+        BadRequestException
+      );
     });
 
     it('should validate required fields for nameAndDob method', async () => {
@@ -367,7 +372,7 @@ describe('RegistrationService', () => {
           learnerFirstName: 'Jane',
           // Missing lastName and dateOfBirth
           verificationMethod: VerificationMethod.SCHOOL_ADMIN_APPROVAL,
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -415,8 +420,21 @@ describe('RegistrationService', () => {
       });
       prisma.caregiverRegistration.findUnique.mockResolvedValue({
         id: 'reg-1',
+        email: 'caregiver@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        passwordHash: 'hash',
+        phone: null,
+        relationship: 'parent',
+        tenantId: null,
         learnerLinks: [{ ...linkRequest, verificationStatus: VerificationStatus.APPROVED }],
       });
+      // Finalization mocks
+      prisma.caregiver.create.mockResolvedValue({ id: 'caregiver-1' });
+      prisma.parentStudentLink.findFirst.mockResolvedValue(null);
+      prisma.caregiverStudentLink.create.mockResolvedValue({});
+      prisma.caregiverRegistration.update.mockResolvedValue({});
+      prisma.registrationAuditLog.create.mockResolvedValue({});
 
       const result = await registrationService.verifyLearnerCode('link-1', {
         verificationCode: 'SCHOOL123',
@@ -440,7 +458,7 @@ describe('RegistrationService', () => {
       await expect(
         registrationService.verifyLearnerCode('link-1', {
           verificationCode: 'INVALID',
-        }),
+        })
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -488,9 +506,9 @@ describe('RegistrationService', () => {
     it('should throw NotFoundException for non-existent registration', async () => {
       prisma.caregiverRegistration.findUnique.mockResolvedValue(null);
 
-      await expect(
-        registrationService.getRegistrationStatus('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(registrationService.getRegistrationStatus('non-existent')).rejects.toThrow(
+        NotFoundException
+      );
     });
   });
 
@@ -515,7 +533,7 @@ describe('RegistrationService', () => {
       const result = await registrationService.generateParentVerificationCode(
         'school-1',
         'learner-1',
-        'admin-1',
+        'admin-1'
       );
 
       expect(result.code).toHaveLength(8);
@@ -527,7 +545,7 @@ describe('RegistrationService', () => {
       prisma.profile.findUnique.mockResolvedValue(null);
 
       await expect(
-        registrationService.generateParentVerificationCode('school-1', 'non-existent', 'admin-1'),
+        registrationService.generateParentVerificationCode('school-1', 'non-existent', 'admin-1')
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -564,9 +582,9 @@ describe('RegistrationService', () => {
 
       prisma.caregiverRegistration.findUnique.mockResolvedValue(registration);
 
-      await expect(
-        registrationService.resendVerificationEmail('reg-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(registrationService.resendVerificationEmail('reg-1')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 });

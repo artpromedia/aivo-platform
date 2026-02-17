@@ -5,11 +5,14 @@
  * and curriculum alignment based on ZIP code.
  */
 
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import type { LocationInput, RegisterLearnerInput } from './onboarding.types.js';
-import {
+
+import { NotFoundException } from '../errors.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
+  LocationInput,
+  RegisterLearnerInput,
   DistrictInfo,
   CurriculumInfo,
   OnboardingLocationResult,
@@ -29,7 +32,6 @@ const DEFAULT_CURRICULUM: CurriculumInfo = {
   curriculumStandards: ['COMMON_CORE', 'NGSS', 'C3'],
 };
 
-@Injectable()
 export class OnboardingService {
   private readonly tenantServiceUrl: string;
   private readonly notifySvcUrl: string;
@@ -39,7 +41,8 @@ export class OnboardingService {
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
     this.notifySvcUrl = process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4012';
-    this.learnerModelSvcUrl = process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
+    this.learnerModelSvcUrl =
+      process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
     this.brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://brain-engine:8001';
   }
 
@@ -49,14 +52,11 @@ export class OnboardingService {
    */
   async lookupLocation(location: LocationInput): Promise<OnboardingLocationResult> {
     try {
-      const response = await fetch(
-        `${this.tenantServiceUrl}/districts/auto-detect`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(location),
-        }
-      );
+      const response = await fetch(`${this.tenantServiceUrl}/districts/auto-detect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(location),
+      });
 
       if (!response.ok) {
         // If lookup fails, return default curriculum
@@ -67,7 +67,7 @@ export class OnboardingService {
         };
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         district?: DistrictInfo;
         curriculum: CurriculumInfo;
       };
@@ -109,7 +109,7 @@ export class OnboardingService {
         return { districts: [], total: 0 };
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         districts: DistrictInfo[];
         total: number;
       };
@@ -141,7 +141,7 @@ export class OnboardingService {
           { method: 'GET' }
         );
         if (response.ok) {
-          const data = await response.json() as { district: DistrictInfo };
+          const data = (await response.json()) as { district: DistrictInfo };
           district = data.district;
         }
       } catch (error) {
@@ -151,7 +151,7 @@ export class OnboardingService {
 
     // Generate a PIN for the learner
     const learnerPin = this.generateLearnerPin();
-    
+
     // Hash the PIN for storage
     const crypto = await import('node:crypto');
     const pinHash = crypto.createHash('sha256').update(learnerPin).digest('hex');
@@ -212,11 +212,7 @@ export class OnboardingService {
 
     // Align learner's brain with curriculum based on location
     // This initializes the brain-engine with curriculum-specific knowledge
-    await this.alignBrainWithCurriculum(
-      learner.id,
-      input.location,
-      district
-    );
+    await this.alignBrainWithCurriculum(learner.id, input.location, district);
 
     return {
       learnerId: learner.id,
@@ -261,11 +257,11 @@ export class OnboardingService {
         logger.info('Learner app download notification sent successfully');
       } else {
         const errorBody = await response.text();
-        logger.error('Failed to send learner app notification', { error: errorBody });
+        logger.error({ error: errorBody }, 'Failed to send learner app notification');
       }
     } catch (error) {
       // Don't fail the registration if notification fails
-      logger.error('Error sending learner app notification', { error });
+      logger.error({ error }, 'Error sending learner app notification');
     }
   }
 
@@ -326,7 +322,7 @@ export class OnboardingService {
     });
 
     if (!link) {
-      throw new HttpException('Learner not found', HttpStatus.NOT_FOUND);
+      throw new NotFoundException('Learner not found');
     }
 
     // Look up new district and curriculum
@@ -343,11 +339,7 @@ export class OnboardingService {
     );
 
     // Call brain-engine to align the learner's brain with curriculum
-    await this.alignBrainWithCurriculum(
-      learnerId,
-      location,
-      locationResult.district
-    );
+    await this.alignBrainWithCurriculum(learnerId, location, locationResult.district);
 
     return {
       curriculumStandards: locationResult.curriculum.curriculumStandards,
@@ -365,42 +357,48 @@ export class OnboardingService {
     stateCode?: string | null
   ): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.learnerModelSvcUrl}/learners/${learnerId}/curriculum`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Service-Name': 'parent-svc',
-          },
-          body: JSON.stringify({
-            curriculumStandards,
-            stateCode: stateCode || undefined,
-            updatedAt: new Date().toISOString(),
-          }),
-        }
-      );
+      const response = await fetch(`${this.learnerModelSvcUrl}/learners/${learnerId}/curriculum`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'parent-svc',
+        },
+        body: JSON.stringify({
+          curriculumStandards,
+          stateCode: stateCode || undefined,
+          updatedAt: new Date().toISOString(),
+        }),
+      });
 
       if (response.ok) {
-        logger.info('Learner model curriculum updated successfully', {
-          learnerId,
-          curriculumStandards,
-        });
+        logger.info(
+          {
+            learnerId,
+            curriculumStandards,
+          },
+          'Learner model curriculum updated successfully'
+        );
       } else {
         const errorBody = await response.text();
-        logger.warn('Failed to update learner model curriculum', {
-          learnerId,
-          status: response.status,
-          error: errorBody,
-        });
+        logger.warn(
+          {
+            learnerId,
+            status: response.status,
+            error: errorBody,
+          },
+          'Failed to update learner model curriculum'
+        );
         // Don't throw - this is a non-critical operation that shouldn't block the main flow
       }
     } catch (error) {
       // Log but don't throw - curriculum sync can be retried later
-      logger.error('Error calling learner-model-svc to update curriculum', {
-        learnerId,
-        error,
-      });
+      logger.error(
+        {
+          learnerId,
+          error,
+        },
+        'Error calling learner-model-svc to update curriculum'
+      );
     }
   }
 
@@ -415,44 +413,50 @@ export class OnboardingService {
     district?: DistrictInfo
   ): Promise<void> {
     try {
-      const response = await fetch(
-        `${this.brainEngineUrl}/brain/${learnerId}/curriculum`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Service-Name': 'parent-svc',
-          },
-          body: JSON.stringify({
-            state_code: location.stateCode || district?.stateCode,
-            zip_code: location.zipCode,
-            district_id: district?.ncesDistrictId,
-            district_name: district?.districtName,
-          }),
-        }
-      );
+      const response = await fetch(`${this.brainEngineUrl}/brain/${learnerId}/curriculum`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'parent-svc',
+        },
+        body: JSON.stringify({
+          state_code: location.stateCode || district?.stateCode,
+          zip_code: location.zipCode,
+          district_id: district?.ncesDistrictId,
+          district_name: district?.districtName,
+        }),
+      });
 
       if (response.ok) {
-        logger.info('Brain curriculum alignment successful', {
-          learnerId,
-          stateCode: location.stateCode || district?.stateCode,
-          districtId: district?.ncesDistrictId,
-        });
+        logger.info(
+          {
+            learnerId,
+            stateCode: location.stateCode || district?.stateCode,
+            districtId: district?.ncesDistrictId,
+          },
+          'Brain curriculum alignment successful'
+        );
       } else {
         const errorBody = await response.text();
-        logger.warn('Failed to align brain with curriculum', {
-          learnerId,
-          status: response.status,
-          error: errorBody,
-        });
+        logger.warn(
+          {
+            learnerId,
+            status: response.status,
+            error: errorBody,
+          },
+          'Failed to align brain with curriculum'
+        );
         // Don't throw - brain alignment can be retried later
       }
     } catch (error) {
       // Log but don't throw - brain alignment is async and non-blocking
-      logger.error('Error calling brain-engine to align curriculum', {
-        learnerId,
-        error,
-      });
+      logger.error(
+        {
+          learnerId,
+          error,
+        },
+        'Error calling brain-engine to align curriculum'
+      );
     }
   }
 }

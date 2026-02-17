@@ -3,7 +3,7 @@ import { createApp } from './app.js';
 import { initNats, closeNats } from './events/index.js';
 import { prisma } from './prisma.js';
 
-const PORT = process.env.PORT ?? 3006;
+const PORT = Number(process.env.PORT ?? 3006);
 
 try {
   // Connect to database
@@ -15,29 +15,21 @@ try {
     await initNats();
   }
 
-  // Create and start Express app
+  // Create and start Fastify app
   const app = createApp();
 
-  const server = app.listen(PORT, () => {
-    console.log(`Assessment service listening on port ${PORT}`);
-  });
+  await app.listen({ port: PORT, host: '0.0.0.0' });
+  console.log(`Assessment service listening on port ${PORT}`);
 
   // Graceful shutdown
   const shutdown = async () => {
     console.log('Shutting down...');
 
-    server.close(async () => {
-      await closeNats();
-      await prisma.$disconnect();
-      console.log('Shutdown complete');
-      process.exit(0);
-    });
-
-    // Force shutdown after 30 seconds
-    setTimeout(() => {
-      console.error('Forced shutdown after timeout');
-      process.exit(1);
-    }, 30000);
+    await app.close();
+    await closeNats();
+    await prisma.$disconnect();
+    console.log('Shutdown complete');
+    process.exit(0);
   };
 
   process.on('SIGTERM', shutdown);

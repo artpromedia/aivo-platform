@@ -1,104 +1,96 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import { config } from './config.js';
-import { authMiddleware } from './middleware/auth.js';
-import { orchestrationRoutes } from './routes/orchestration.routes.js';
-import { cognitiveRoutes } from './routes/cognitive.routes.js';
-import { learningRoutes } from './routes/learning.routes.js';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
 
-export function createApp(): Express {
-  const app = express();
+import { config } from './config.js';
+import { authMiddleware } from './middleware/auth.js';
+import { cognitiveRoutes } from './routes/cognitive.routes.js';
+import { learningRoutes } from './routes/learning.routes.js';
+import { orchestrationRoutes } from './routes/orchestration.routes.js';
 
-  // Security middleware
-  app.use(helmet());
-  app.use(
-    cors({
-      origin: config.corsOrigins,
-      credentials: true,
-    })
-  );
+export function createApp(): FastifyInstance {
+  const app = Fastify({
+    logger: true,
+    bodyLimit: 10 * 1024 * 1024, // 10mb
+  });
 
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
+  // Security plugins
+  app.register(helmet);
+  app.register(cors, {
+    origin: config.corsOrigins,
+    credentials: true,
+  });
 
   // Health check (unauthenticated)
-  app.get('/health', (_req: Request, res: Response) => {
-    res.json({
+  app.get('/health', async () => {
+    return {
       status: 'ok',
       service: 'brain-orchestrator-svc',
       timestamp: new Date().toISOString(),
-    });
+    };
   });
 
   // Auth middleware for all other routes
-  app.use(authMiddleware);
+  app.register(authMiddleware);
 
   // API routes
-  app.use('/api/v1/brain', orchestrationRoutes);
-  app.use('/api/v1/brain', cognitiveRoutes);
-  app.use('/api/v1/brain', learningRoutes);
+  app.register(orchestrationRoutes, { prefix: '/api/v1/brain' });
+  app.register(cognitiveRoutes, { prefix: '/api/v1/brain' });
+  app.register(learningRoutes, { prefix: '/api/v1/brain' });
 
-  // Error handling middleware
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Error:', err);
+  // Error handler
+  app.setErrorHandler(async (error, _request, reply) => {
+    console.error('Error:', error);
 
     // Handle Zod validation errors
-    if (err instanceof ZodError) {
-      res.status(400).json({
+    if (error instanceof ZodError) {
+      reply.status(400);
+      return {
         success: false,
         error: 'Validation error',
-        details: err.errors.map((e) => ({
+        details: error.errors.map((e) => ({
           path: e.path.join('.'),
           message: e.message,
         })),
-      });
-      return;
+      };
     }
 
     // Handle known errors
-    if (err.message.includes('not found')) {
-      res.status(404).json({
-        success: false,
-        error: err.message,
-      });
-      return;
+    if (error.message.includes('not found')) {
+      reply.status(404);
+      return { success: false, error: error.message };
     }
 
-    if (err.message.includes('already exists') || err.message.includes('duplicate')) {
-      res.status(409).json({
-        success: false,
-        error: err.message,
-      });
-      return;
+    if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+      reply.status(409);
+      return { success: false, error: error.message };
     }
 
     if (
-      err.message.includes('Invalid') ||
-      err.message.includes('Cannot') ||
-      err.message.includes('Missing')
+      error.message.includes('Invalid') ||
+      error.message.includes('Cannot') ||
+      error.message.includes('Missing')
     ) {
-      res.status(400).json({
-        success: false,
-        error: err.message,
-      });
-      return;
+      reply.status(400);
+      return { success: false, error: error.message };
     }
 
     // Generic error
-    res.status(500).json({
+    reply.status(error.statusCode ?? 500);
+    return {
       success: false,
-      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-    });
+      error: process.env.NODE_ENV === 'production' ? 'Internal server error' : error.message,
+    };
   });
 
   // 404 handler
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({
+  app.setNotFoundHandler(async (_request, reply) => {
+    reply.status(404);
+    return {
       success: false,
       error: 'Endpoint not found',
-    });
+    };
   });
 
   return app;

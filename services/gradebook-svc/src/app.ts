@@ -1,11 +1,12 @@
 /**
- * Express Application Setup
+ * Fastify Application Setup
  */
 
-import { createExpressRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils';
-import cors from 'cors';
-import express from 'express';
-import helmet from 'helmet';
+import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/auth.js';
@@ -13,52 +14,45 @@ import assessmentRoutes from './routes/assessment.routes.js';
 import gradebookRoutes from './routes/gradebook.routes.js';
 
 export function createApp() {
-  const app = express();
-
-  // Security middleware
-  app.use(helmet());
-  app.use(cors({
-    origin: config.corsOrigin,
-    credentials: true
-  }));
-
-  // Rate limiting
-  app.use(createExpressRateLimiter(RateLimitPresets.API_GENERAL));
-
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
-
-  // Request logging (simple)
-  app.use((req, _res, next) => {
-    console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
-    next();
+  const app = Fastify({
+    logger: true,
+    bodyLimit: 10 * 1024 * 1024, // 10mb
   });
 
+  // Security plugins
+  app.register(helmet);
+  app.register(cors, {
+    origin: config.corsOrigin,
+    credentials: true,
+  });
+
+  // Rate limiting
+  app.register(rateLimit, FastifyRateLimitPresets.publicApi('gradebook-svc'));
+
   // Health check (unauthenticated)
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'gradebook-svc' });
+  app.get('/health', async () => {
+    return { status: 'ok', service: 'gradebook-svc' };
   });
 
   // JWT authentication for all API routes
-  app.use(authMiddleware);
+  app.register(authMiddleware);
 
   // API routes
-  app.use('/api/v1/gradebook', gradebookRoutes);
-  app.use('/api/v1/assessments', assessmentRoutes);
+  app.register(gradebookRoutes, { prefix: '/api/v1/gradebook' });
+  app.register(assessmentRoutes, { prefix: '/api/v1/assessments' });
 
   // 404 handler
-  app.use((_req, res) => {
-    res.status(404).json({ error: 'Not found' });
+  app.setNotFoundHandler(async (_request, reply) => {
+    reply.status(404);
+    return { error: 'Not found' };
   });
 
   // Error handler
-  app.use(
-    (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-      console.error('Unhandled error:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  );
+  app.setErrorHandler(async (error, _request, reply) => {
+    console.error('Unhandled error:', error);
+    reply.status(error.statusCode ?? 500);
+    return { error: error.message ?? 'Internal server error' };
+  });
 
   return app;
 }

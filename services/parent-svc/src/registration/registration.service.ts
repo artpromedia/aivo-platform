@@ -7,20 +7,21 @@
  * - Account creation upon successful verification
  */
 
+import { logger } from '@aivo/ts-observability';
+
+import { config } from '../config.js';
+import type { CryptoService } from '../crypto/crypto.service.js';
+import type { EmailService } from '../email/email.service.js';
 import {
-  Injectable,
   BadRequestException,
   NotFoundException,
   ConflictException,
   ForbiddenException,
-} from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { logger } from '@aivo/ts-observability';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { CryptoService } from '../crypto/crypto.service.js';
-import { EmailService } from '../email/email.service.js';
-import { config } from '../config.js';
-import {
+} from '../errors.js';
+import type { eventBus } from '../event-bus.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
+
+import type {
   RegisterCaregiverDto,
   VerifyEmailDto,
   AddLearnerLinkDto,
@@ -31,12 +32,14 @@ import {
   VerifyLearnerCodeResponse,
   RegistrationStatusResponse,
   LearnerLinkSummary,
+  CaregiverRelationshipType,
+  LearnerIdentificationMethod,
+} from './registration.types.js';
+import {
   RegistrationStatus,
   VerificationMethod,
   VerificationStatus,
   RegistrationAuditAction,
-  CaregiverRelationshipType,
-  LearnerIdentificationMethod,
   REGISTRATION_EMAIL_CODE_LENGTH,
   REGISTRATION_SCHOOL_CODE_LENGTH,
   MAX_LEARNERS_PER_REGISTRATION,
@@ -48,13 +51,12 @@ interface RequestContext {
   userAgent?: string;
 }
 
-@Injectable()
 export class RegistrationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: typeof eventBus,
     private readonly crypto: CryptoService,
-    private readonly email: EmailService,
+    private readonly email: EmailService
   ) {}
 
   // ============================================================================
@@ -66,7 +68,7 @@ export class RegistrationService {
    */
   async registerCaregiver(
     dto: RegisterCaregiverDto,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<RegistrationResponse> {
     const email = dto.email.toLowerCase().trim();
 
@@ -77,7 +79,7 @@ export class RegistrationService {
 
     if (existingCaregiver) {
       throw new ConflictException(
-        'An account with this email already exists. Please login instead.',
+        'An account with this email already exists. Please login instead.'
       );
     }
 
@@ -88,7 +90,7 @@ export class RegistrationService {
 
     if (existingParent) {
       throw new ConflictException(
-        'An account with this email already exists. Please login instead.',
+        'An account with this email already exists. Please login instead.'
       );
     }
 
@@ -124,7 +126,7 @@ export class RegistrationService {
     // Generate verification code (6-digit alphanumeric)
     const verificationCode = this.generateAlphanumericCode(REGISTRATION_EMAIL_CODE_LENGTH);
     const codeExpiresAt = new Date(
-      Date.now() + config.registrationEmailVerificationExpiryHours * 60 * 60 * 1000,
+      Date.now() + config.registrationEmailVerificationExpiryHours * 60 * 60 * 1000
     );
 
     // Hash password
@@ -160,10 +162,13 @@ export class RegistrationService {
     // Send verification email
     await this.sendVerificationEmail(registration);
 
-    logger.info('Caregiver registration started', {
-      registrationId: registration.id,
-      email: registration.email,
-    });
+    logger.info(
+      {
+        registrationId: registration.id,
+        email: registration.email,
+      },
+      'Caregiver registration started'
+    );
 
     return {
       registrationId: registration.id,
@@ -181,7 +186,7 @@ export class RegistrationService {
    */
   async verifyEmail(
     dto: VerifyEmailDto,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<VerifyEmailResponse> {
     const registration = await this.prisma.caregiverRegistration.findUnique({
       where: { id: dto.registrationId },
@@ -203,11 +208,9 @@ export class RegistrationService {
 
     // Check lockout
     if (registration.lockedUntil && registration.lockedUntil > new Date()) {
-      const remainingMinutes = Math.ceil(
-        (registration.lockedUntil.getTime() - Date.now()) / 60000,
-      );
+      const remainingMinutes = Math.ceil((registration.lockedUntil.getTime() - Date.now()) / 60000);
       throw new ForbiddenException(
-        `Too many failed attempts. Please try again in ${remainingMinutes} minutes.`,
+        `Too many failed attempts. Please try again in ${remainingMinutes} minutes.`
       );
     }
 
@@ -215,7 +218,7 @@ export class RegistrationService {
     if (registration.codeExpiresAt < new Date()) {
       await this.updateRegistrationStatus(registration.id, 'EXPIRED');
       throw new BadRequestException(
-        'Verification code has expired. Please start a new registration.',
+        'Verification code has expired. Please start a new registration.'
       );
     }
 
@@ -226,9 +229,7 @@ export class RegistrationService {
       const updates: { failedAttempts: number; lockedUntil?: Date } = { failedAttempts };
 
       if (failedAttempts >= config.registrationMaxFailedAttempts) {
-        updates.lockedUntil = new Date(
-          Date.now() + config.registrationLockoutMinutes * 60 * 1000,
-        );
+        updates.lockedUntil = new Date(Date.now() + config.registrationLockoutMinutes * 60 * 1000);
       }
 
       await this.prisma.caregiverRegistration.update({
@@ -257,7 +258,7 @@ export class RegistrationService {
       userAgent: context.userAgent,
     });
 
-    logger.info('Caregiver email verified', { registrationId: registration.id });
+    logger.info({ registrationId: registration.id }, 'Caregiver email verified');
 
     return {
       success: true,
@@ -272,7 +273,7 @@ export class RegistrationService {
    */
   async resendVerificationEmail(
     registrationId: string,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<{ success: boolean; message: string }> {
     const registration = await this.prisma.caregiverRegistration.findUnique({
       where: { id: registrationId },
@@ -289,7 +290,7 @@ export class RegistrationService {
     // Generate new code and extend expiry
     const verificationCode = this.generateAlphanumericCode(REGISTRATION_EMAIL_CODE_LENGTH);
     const codeExpiresAt = new Date(
-      Date.now() + config.registrationEmailVerificationExpiryHours * 60 * 60 * 1000,
+      Date.now() + config.registrationEmailVerificationExpiryHours * 60 * 60 * 1000
     );
 
     await this.prisma.caregiverRegistration.update({
@@ -314,7 +315,6 @@ export class RegistrationService {
       userAgent: context.userAgent,
     });
 
-
     return {
       success: true,
       message: 'A new verification code has been sent to your email.',
@@ -331,7 +331,7 @@ export class RegistrationService {
   async addLearnerLink(
     registrationId: string,
     dto: AddLearnerLinkDto,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<LearnerLinkResponse> {
     const registration = await this.prisma.caregiverRegistration.findUnique({
       where: { id: registrationId },
@@ -344,15 +344,13 @@ export class RegistrationService {
 
     // Verify registration is in correct state
     if (!['EMAIL_VERIFIED', 'SCHOOL_VERIFICATION_PENDING'].includes(registration.status)) {
-      throw new BadRequestException(
-        'Email must be verified before adding learners.',
-      );
+      throw new BadRequestException('Email must be verified before adding learners.');
     }
 
     // Check max learners limit
     if (registration.learnerLinks.length >= MAX_LEARNERS_PER_REGISTRATION) {
       throw new BadRequestException(
-        `Maximum of ${MAX_LEARNERS_PER_REGISTRATION} learners can be linked per registration.`,
+        `Maximum of ${MAX_LEARNERS_PER_REGISTRATION} learners can be linked per registration.`
       );
     }
 
@@ -413,7 +411,7 @@ export class RegistrationService {
         message += 'Please enter the verification code provided by the school.';
         break;
 
-      case VerificationMethod.EXISTING_FAMILY_LINK:
+      case VerificationMethod.EXISTING_FAMILY_LINK: {
         // Check for existing family connection
         const canAutoApprove = await this.checkExistingFamilyLink(registration.email, dto);
         if (canAutoApprove) {
@@ -426,22 +424,28 @@ export class RegistrationService {
           message += 'Could not verify via family link. Waiting for school administrator approval.';
         }
         break;
+      }
 
       case VerificationMethod.DOCUMENT_UPLOAD:
         message += 'Please upload verification documents.';
         break;
     }
 
-    logger.info('Learner link request created', {
-      registrationId,
-      linkRequestId: linkRequest.id,
-      verificationMethod: dto.verificationMethod,
-    });
+    logger.info(
+      {
+        registrationId,
+        linkRequestId: linkRequest.id,
+        verificationMethod: dto.verificationMethod,
+      },
+      'Learner link request created'
+    );
 
     return {
       linkRequestId: linkRequest.id,
       verificationMethod: dto.verificationMethod,
-      verificationStatus: requiresSchoolApproval ? VerificationStatus.PENDING : VerificationStatus.APPROVED,
+      verificationStatus: requiresSchoolApproval
+        ? VerificationStatus.PENDING
+        : VerificationStatus.APPROVED,
       message,
       requiresSchoolApproval,
     };
@@ -457,7 +461,7 @@ export class RegistrationService {
   async verifyLearnerCode(
     linkRequestId: string,
     dto: VerifyLearnerCodeDto,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<VerifyLearnerCodeResponse> {
     const linkRequest = await this.prisma.learnerLinkRequest.findUnique({
       where: { id: linkRequestId },
@@ -472,7 +476,10 @@ export class RegistrationService {
       throw new BadRequestException('This link request has already been processed.');
     }
 
-    if (linkRequest.verificationMethod !== VerificationMethod.VERIFICATION_CODE_FROM_SCHOOL) {
+    if (
+      (linkRequest.verificationMethod as VerificationMethod) !==
+      VerificationMethod.VERIFICATION_CODE_FROM_SCHOOL
+    ) {
       throw new BadRequestException('This link request does not use code verification.');
     }
 
@@ -537,10 +544,13 @@ export class RegistrationService {
     // Check if all links are approved and finalize if so
     await this.checkAndFinalizeRegistration(linkRequest.registrationId, context);
 
-    logger.info('Learner code verified', {
-      linkRequestId,
-      learnerId: schoolCode.learnerId,
-    });
+    logger.info(
+      {
+        linkRequestId,
+        learnerId: schoolCode.learnerId,
+      },
+      'Learner code verified'
+    );
 
     return {
       success: true,
@@ -576,16 +586,15 @@ export class RegistrationService {
       .filter((l) => l.learnerId)
       .map((l) => l.learnerId!);
 
-    const learners = learnerIds.length > 0
-      ? await this.prisma.profile.findMany({
-          where: { id: { in: learnerIds } },
-          select: { id: true, givenName: true, familyName: true },
-        })
-      : [];
+    const learners =
+      learnerIds.length > 0
+        ? await this.prisma.profile.findMany({
+            where: { id: { in: learnerIds } },
+            select: { id: true, givenName: true, familyName: true },
+          })
+        : [];
 
-    const learnerMap = new Map(
-      learners.map((l) => [l.id, `${l.givenName} ${l.familyName}`]),
-    );
+    const learnerMap = new Map(learners.map((l) => [l.id, `${l.givenName} ${l.familyName}`]));
 
     const learnerLinks: LearnerLinkSummary[] = registration.learnerLinks.map((link) => ({
       id: link.id,
@@ -621,9 +630,9 @@ export class RegistrationService {
    */
   async getPendingLinkRequests(
     schoolId: string,
-    options: { status?: VerificationStatus; page?: number; limit?: number } = {},
+    options: { status?: VerificationStatus; page?: number; limit?: number } = {}
   ): Promise<{
-    requests: Array<{
+    requests: {
       id: string;
       registrationId: string;
       caregiverName: string;
@@ -641,7 +650,7 @@ export class RegistrationService {
       verificationStatus: VerificationStatus;
       createdAt: Date;
       matchedLearner?: { id: string; name: string; grade?: string };
-    }>;
+    }[];
     total: number;
     page: number;
     limit: number;
@@ -669,20 +678,17 @@ export class RegistrationService {
     ]);
 
     // Get matched learner details
-    const learnerIds = requests
-      .filter((r) => r.learnerId)
-      .map((r) => r.learnerId!);
+    const learnerIds = requests.filter((r) => r.learnerId).map((r) => r.learnerId!);
 
-    const matchedLearners = learnerIds.length > 0
-      ? await this.prisma.profile.findMany({
-          where: { id: { in: learnerIds } },
-          select: { id: true, givenName: true, familyName: true, grade: true },
-        })
-      : [];
+    const matchedLearners =
+      learnerIds.length > 0
+        ? await this.prisma.profile.findMany({
+            where: { id: { in: learnerIds } },
+            select: { id: true, givenName: true, familyName: true, grade: true },
+          })
+        : [];
 
-    const learnerMap = new Map(
-      matchedLearners.map((l) => [l.id, l]),
-    );
+    const learnerMap = new Map(matchedLearners.map((l) => [l.id, l]));
 
     return {
       requests: requests.map((r) => {
@@ -727,7 +733,7 @@ export class RegistrationService {
     status: 'APPROVED' | 'REJECTED',
     adminUserId: string,
     rejectionReason?: string,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<void> {
     const linkRequest = await this.prisma.learnerLinkRequest.findUnique({
       where: { id: requestId },
@@ -755,7 +761,7 @@ export class RegistrationService {
   async generateParentVerificationCode(
     schoolId: string,
     learnerId: string,
-    issuedById: string,
+    issuedById: string
   ): Promise<{ code: string; expiresAt: Date; learnerId: string; learnerName: string }> {
     // Verify learner exists and belongs to school
     const learner = await this.prisma.profile.findUnique({
@@ -775,7 +781,7 @@ export class RegistrationService {
     // Generate secure code
     const code = this.generateAlphanumericCode(REGISTRATION_SCHOOL_CODE_LENGTH);
     const expiresAt = new Date(
-      Date.now() + config.registrationSchoolCodeExpiryDays * 24 * 60 * 60 * 1000,
+      Date.now() + config.registrationSchoolCodeExpiryDays * 24 * 60 * 60 * 1000
     );
 
     // Invalidate any existing codes for this learner
@@ -800,11 +806,14 @@ export class RegistrationService {
       },
     });
 
-    logger.info('Parent verification code generated', {
-      schoolId,
-      learnerId,
-      issuedById,
-    });
+    logger.info(
+      {
+        schoolId,
+        learnerId,
+        issuedById,
+      },
+      'Parent verification code generated'
+    );
 
     return {
       code,
@@ -821,7 +830,7 @@ export class RegistrationService {
   private async approveLink(
     requestId: string,
     approvedById: string,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<void> {
     const linkRequest = await this.prisma.learnerLinkRequest.findUnique({
       where: { id: requestId },
@@ -860,14 +869,14 @@ export class RegistrationService {
     // Check if all links are approved and finalize if so
     await this.checkAndFinalizeRegistration(linkRequest.registrationId, context);
 
-    logger.info('Link request approved', { requestId, approvedById });
+    logger.info({ requestId, approvedById }, 'Link request approved');
   }
 
   private async rejectLink(
     requestId: string,
     rejectedById: string,
     reason?: string,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<void> {
     const linkRequest = await this.prisma.learnerLinkRequest.findUnique({
       where: { id: requestId },
@@ -903,12 +912,12 @@ export class RegistrationService {
     // Notify caregiver
     await this.notifyLinkRejected(linkRequest, reason);
 
-    logger.info('Link request rejected', { requestId, rejectedById, reason });
+    logger.info({ requestId, rejectedById, reason }, 'Link request rejected');
   }
 
   private async checkAndFinalizeRegistration(
     registrationId: string,
-    context: RequestContext = {},
+    context: RequestContext = {}
   ): Promise<void> {
     const registration = await this.prisma.caregiverRegistration.findUnique({
       where: { id: registrationId },
@@ -919,12 +928,12 @@ export class RegistrationService {
 
     // Check if there are any approved links
     const approvedLinks = registration.learnerLinks.filter(
-      (l) => l.verificationStatus === 'APPROVED',
+      (l) => l.verificationStatus === 'APPROVED'
     );
 
     // Check if all links are processed (no pending)
     const pendingLinks = registration.learnerLinks.filter(
-      (l) => l.verificationStatus === 'PENDING',
+      (l) => l.verificationStatus === 'PENDING'
     );
 
     // If we have at least one approved link and no pending links, finalize
@@ -944,8 +953,8 @@ export class RegistrationService {
       relationship: string;
       tenantId: string | null;
     },
-    approvedLinks: Array<{ id: string; learnerId: string | null }>,
-    context: RequestContext = {},
+    approvedLinks: { id: string; learnerId: string | null }[],
+    context: RequestContext = {}
   ): Promise<void> {
     // Create actual caregiver account
     const caregiver = await this.prisma.caregiver.create({
@@ -1018,10 +1027,13 @@ export class RegistrationService {
       learnerIds: approvedLinks.map((l) => l.learnerId).filter(Boolean),
     });
 
-    logger.info('Caregiver registration completed', {
-      registrationId: registration.id,
-      caregiverId: caregiver.id,
-    });
+    logger.info(
+      {
+        registrationId: registration.id,
+        caregiverId: caregiver.id,
+      },
+      'Caregiver registration completed'
+    );
   }
 
   private async sendVerificationEmail(registration: {
@@ -1051,7 +1063,7 @@ export class RegistrationService {
 
   private async sendWelcomeEmail(
     caregiver: { id: string; email: string; givenName: string },
-    learnerCount: number,
+    learnerCount: number
   ): Promise<void> {
     await this.email.send({
       to: caregiver.email,
@@ -1069,18 +1081,21 @@ export class RegistrationService {
   private async notifySchoolAdmin(
     linkRequest: { id: string; schoolId: string | null },
     registration: { firstName: string; lastName: string; email: string; relationship: string },
-    matchedLearner?: { id: string; givenName: string; familyName: string } | null,
+    matchedLearner?: { id: string; givenName: string; familyName: string } | null
   ): Promise<void> {
     // In a real implementation, this would send an email/notification to school admins
     // For now, we'll just log it
-    logger.info('School admin notification would be sent', {
-      linkRequestId: linkRequest.id,
-      schoolId: linkRequest.schoolId,
-      caregiverName: `${registration.firstName} ${registration.lastName}`,
-      matchedLearner: matchedLearner
-        ? `${matchedLearner.givenName} ${matchedLearner.familyName}`
-        : 'No match',
-    });
+    logger.info(
+      {
+        linkRequestId: linkRequest.id,
+        schoolId: linkRequest.schoolId,
+        caregiverName: `${registration.firstName} ${registration.lastName}`,
+        matchedLearner: matchedLearner
+          ? `${matchedLearner.givenName} ${matchedLearner.familyName}`
+          : 'No match',
+      },
+      'School admin notification would be sent'
+    );
 
     await this.logAuditAction({
       linkRequestId: linkRequest.id,
@@ -1122,7 +1137,7 @@ export class RegistrationService {
       registrationId: string;
       registration: { email: string; firstName: string };
     },
-    reason?: string,
+    reason?: string
   ): Promise<void> {
     await this.email.send({
       to: linkRequest.registration.email,
@@ -1138,7 +1153,7 @@ export class RegistrationService {
   }
 
   private async findMatchingLearner(
-    dto: AddLearnerLinkDto,
+    dto: AddLearnerLinkDto
   ): Promise<{ id: string; givenName: string; familyName: string } | null> {
     // Try to find matching learner based on provided information
     if (dto.learnerEmail) {
@@ -1179,7 +1194,7 @@ export class RegistrationService {
 
   private async checkExistingFamilyLink(
     caregiverEmail: string,
-    dto: AddLearnerLinkDto,
+    dto: AddLearnerLinkDto
   ): Promise<boolean> {
     // Check if there's an existing parent with this email who has other children linked
     const existingParent = await this.prisma.parent.findUnique({
@@ -1232,7 +1247,7 @@ export class RegistrationService {
       case 'nameAndDob':
         if (!dto.learnerFirstName || !dto.learnerLastName || !dto.learnerDateOfBirth) {
           throw new BadRequestException(
-            'First name, last name, and date of birth are required for name identification.',
+            'First name, last name, and date of birth are required for name identification.'
           );
         }
         break;
@@ -1241,7 +1256,7 @@ export class RegistrationService {
 
   private async updateRegistrationStatus(
     registrationId: string,
-    status: RegistrationStatus | string,
+    status: RegistrationStatus | string
   ): Promise<void> {
     await this.prisma.caregiverRegistration.update({
       where: { id: registrationId },
@@ -1284,7 +1299,7 @@ export class RegistrationService {
   }
 
   private getNextStep(
-    status: RegistrationStatus,
+    status: RegistrationStatus
   ): 'verify_email' | 'add_learners' | 'pending_verification' | 'complete' {
     switch (status) {
       case RegistrationStatus.PENDING:

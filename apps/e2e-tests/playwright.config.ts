@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 export default defineConfig({
-  testDir: './src/compliance',
+  testDir: './src',
   testMatch: '**/*.spec.ts',
   timeout: 120000, // Compliance tests may need longer timeouts
   expect: {
@@ -24,11 +24,11 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1, // Single worker for audit consistency
   reporter: [
-    ['html', { outputFolder: '../../test-results/compliance-report' }],
-    ['json', { outputFile: '../../test-results/compliance-results.json' }],
+    ['html', { outputFolder: '../../test-results/e2e-report' }],
+    ['json', { outputFile: '../../test-results/e2e-results.json' }],
     ['list'],
   ],
-  outputDir: '../../test-results/compliance-output',
+  outputDir: '../../test-results/e2e-output',
   use: {
     trace: 'on', // Always trace for compliance audit
     screenshot: 'on', // Screenshot all for compliance evidence
@@ -36,14 +36,21 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'compliance-chrome',
+      name: 'compliance',
+      testDir: './src/compliance',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'prd-acceptance',
+      testDir: './src/prd-acceptance',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
   // Metadata for compliance reporting
   metadata: {
-    testSuite: 'AIVO Compliance Tests',
+    testSuite: 'AIVO E2E Tests',
     complianceFrameworks: ['COPPA', 'GDPR', 'AI-Safety'],
-    version: '1.0.0',
+    testCategories: ['compliance', 'prd-acceptance'],
+    version: '2.0.0',
   },
 });
