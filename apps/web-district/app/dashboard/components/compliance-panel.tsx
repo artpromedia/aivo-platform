@@ -139,6 +139,21 @@ export function CompliancePanel({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
+                // Download PDF compliance report via IEP proxy
+                const a = document.createElement('a');
+                a.href = '/api/iep/compliance/report?format=pdf';
+                a.download = `compliance-report-${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <FileText className="w-4 h-4" />
+              Export PDF
+            </button>
+            <button
+              onClick={() => {
                 // Download CSV compliance report via IEP proxy
                 const a = document.createElement('a');
                 a.href = '/api/iep/compliance/report?format=csv';

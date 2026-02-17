@@ -571,7 +571,7 @@ export default function IEPSummaryPage() {
           <p className="text-sm text-amber-800 mb-4">
             Under FERPA (34 CFR § 99.20), you have the right to request correction of any education
             records you believe are inaccurate, misleading, or in violation of your child&apos;s
-            privacy rights. The district must respond within 15 business days.
+            privacy rights. The district must respond within 45 days per FERPA requirements.
           </p>
           <button
             onClick={() => {
@@ -700,10 +700,19 @@ export default function IEPSummaryPage() {
                           }),
                         });
                         if (res.ok) {
-                          const data = await res.json();
+                          const data = (await res.json()) as {
+                            message?: string;
+                            responseDeadline?: string;
+                          };
+                          const deadline = data.responseDeadline
+                            ? ` The district must respond by ${data.responseDeadline}.`
+                            : '';
                           setCorrectionResult({
                             success: true,
-                            message: data.message || 'Correction request submitted successfully.',
+                            message:
+                              (data.message ?? 'Correction request submitted successfully.') +
+                              deadline +
+                              ' A confirmation email has been sent to your registered email address.',
                           });
                         } else {
                           setCorrectionResult({

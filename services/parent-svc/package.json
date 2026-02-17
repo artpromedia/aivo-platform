@@ -30,6 +30,7 @@
     "@aws-sdk/client-comprehend": "^3.971.0",
     "@prisma/client": "^5.10.0",
     "@types/nodemailer": "^7.0.5",
+    "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.2.3",
     "firebase-admin": "^12.7.0",
@@ -45,6 +46,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^1.0.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/archiver": "^6.0.3",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.5",
     "@types/pdfkit": "^0.13.4",

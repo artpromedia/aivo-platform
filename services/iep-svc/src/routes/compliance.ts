@@ -1,25 +1,26 @@
 /**
  * AIVO IEP Service - Compliance Routes
  *
- * Sprint T2-05: Added GET /report for CSV/JSON compliance report generation.
+ * Sprint T2-05: Added GET /report for CSV/JSON/PDF compliance report generation.
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { getComplianceCronScheduler } from '../services/compliance-cron.js';
 import * as iepService from '../services/iepService.js';
+import { generateComplianceReportPdf } from '../services/compliancePdfGenerator.js';
 
 export default async function complianceRoutes(fastify: FastifyInstance): Promise<void> {
   // Get compliance alerts
   fastify.get('/alerts', async (request: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (request as any).tenantId;
+    const tenantId = (request as Record<string, string>).tenantId;
     const result = await iepService.getComplianceAlerts(tenantId, request.query);
     return reply.send(result);
   });
 
   // Run compliance check (single tenant)
   fastify.post('/check', async (request: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (request as any).tenantId;
+    const tenantId = (request as Record<string, string>).tenantId;
     const alerts = await iepService.checkCompliance(tenantId);
     return reply.send({ newAlerts: alerts.length, alerts });
   });
@@ -38,7 +39,7 @@ export default async function complianceRoutes(fastify: FastifyInstance): Promis
    * Generate compliance report (CSV or JSON)
    *
    * Sprint T2-05: District compliance report export for board presentations.
-   * GET /compliance/report?format=csv|json
+   * GET /compliance/report?format=csv|json|pdf
    *
    * Returns a full compliance snapshot including:
    *  - Overall compliance percentage
@@ -48,7 +49,7 @@ export default async function complianceRoutes(fastify: FastifyInstance): Promis
    *  - At-risk IEPs with student name, case manager, days until due
    */
   fastify.get('/report', async (request: FastifyRequest, reply: FastifyReply) => {
-    const tenantId = (request as any).tenantId;
+    const tenantId = (request as Record<string, string>).tenantId;
     const { format = 'json' } = request.query as { format?: string };
 
     // Gather dashboard data (includes compliance & goal metrics)
@@ -82,7 +83,7 @@ export default async function complianceRoutes(fastify: FastifyInstance): Promis
         goalsCompleted: dashboard.goals.completed,
         goalsOverdue: dashboard.goals.overdue,
       },
-      alerts: alertsResult.data.map((a: any) => ({
+      alerts: (alertsResult.data as Array<Record<string, string>>).map((a) => ({
         id: a.id,
         alertType: a.alertType,
         severity: a.severity,
@@ -93,6 +94,16 @@ export default async function complianceRoutes(fastify: FastifyInstance): Promis
         status: a.status,
       })),
     };
+
+    if (format === 'pdf') {
+      const pdfBuffer = await generateComplianceReportPdf(report);
+      const filename = `compliance-report-${tenantId}-${generatedAt.split('T')[0]}.pdf`;
+
+      return reply
+        .header('Content-Type', 'application/pdf')
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .send(pdfBuffer);
+    }
 
     if (format === 'csv') {
       // Build CSV with summary header + alert rows
@@ -117,7 +128,7 @@ export default async function complianceRoutes(fastify: FastifyInstance): Promis
       lines.push('Alert Type,Severity,Student ID,IEP ID,Description,Due Date,Status');
 
       for (const a of report.alerts) {
-        const desc = (a.description || '').replace(/,/g, ';').replace(/\n/g, ' ');
+        const desc = (a.description ?? '').replace(/,/g, ';').replace(/\n/g, ' ');
         lines.push(
           `${a.alertType},${a.severity},${a.studentId},${a.iepId},${desc},${a.dueDate || ''},${a.status}`
         );

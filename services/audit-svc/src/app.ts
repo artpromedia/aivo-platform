@@ -9,6 +9,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { registerAccessLogRoutes } from './routes/access-log.js';
 import { registerAlertRoutes } from './routes/alert.js';
 import { registerAuditRoutes } from './routes/audit.js';
 import { registerCorrectionRoutes } from './routes/correction.js';
@@ -41,6 +42,7 @@ export function createApp() {
   void app.register(registerPolicyRoutes as any, { prefix: '/audit/policies' });
   void app.register(registerAlertRoutes as any, { prefix: '/audit/alerts' });
   void app.register(registerCorrectionRoutes as any, { prefix: '/audit/corrections' });
+  void app.register(registerAccessLogRoutes as any, { prefix: '/audit' });
 
   return app;
 }

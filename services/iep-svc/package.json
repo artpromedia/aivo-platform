@@ -26,6 +26,7 @@
     "@fastify/swagger-ui": "^4.1.0",
     "@prisma/client": "^5.22.0",
     "date-fns": "^3.6.0",
+    "pdfkit": "^0.14.0",
     "fast-jwt": "^4.0.5",
     "fastify": "^4.28.1",
     "ioredis": "^5.4.1",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/node": "^22.7.5",
     "@types/node-cron": "^3.0.11",
+    "@types/pdfkit": "^0.13.9",
     "@types/uuid": "^10.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "prisma": "^5.22.0",

@@ -399,14 +399,14 @@ function PrivacySettingsPanel({ onBack }: { onBack: () => void }) {
     setIsExporting(true);
     setExportDone(false);
     try {
-      // Uses first linked student; a full implementation would let parent choose
-      const res = await fetch('/api/data-rights/default/data/export');
+      // Sprint T2-05: ZIP export with cover letter, IEP PDFs, progress CSVs
+      const res = await fetch('/api/data-rights/default/data/export-zip', { method: 'POST' });
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `my-childs-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `my-childs-data-${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -457,19 +457,31 @@ function PrivacySettingsPanel({ onBack }: { onBack: () => void }) {
             <Download className="w-5 h-5 text-indigo-500" />
             Download My Child&apos;s Data
           </h4>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 mb-3">
             Under FERPA, you have the right to inspect and review your child&apos;s education
-            records. Download a complete copy including profile information, learning activity,
-            assessment results, IEP records, and consent history.
+            records. Download a complete ZIP package including:
           </p>
+          <ul className="text-sm text-gray-600 mb-4 list-disc list-inside space-y-1">
+            <li>Cover letter explaining your FERPA rights</li>
+            <li>IEP records (PDF) with goals, accommodations, and services</li>
+            <li>Learning activity history (CSV)</li>
+            <li>Assessment results (CSV)</li>
+            <li>Consent records (CSV)</li>
+            <li>Full machine-readable export (JSON)</li>
+          </ul>
           <button
             onClick={handleDownloadData}
             disabled={isExporting}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            {isExporting ? 'Preparing Download...' : exportDone ? 'Downloaded ✓' : 'Download Data'}
+            {isExporting ? 'Preparing ZIP Package...' : exportDone ? 'Downloaded ✓' : 'Download Data (ZIP)'}
           </button>
+          {exportDone && (
+            <p className="mt-2 text-sm text-green-700">
+              ✓ Download complete. A confirmation email has been sent to your registered email address.
+            </p>
+          )}
         </div>
 
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">

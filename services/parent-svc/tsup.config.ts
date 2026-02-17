@@ -14,6 +14,7 @@ export default defineConfig({
     'pdfkit',
     'handlebars',
     'firebase-admin',
+    'archiver',
   ],
   // Keep Node.js builtins and Prisma as externals
   external: [/^node:/, '@prisma/client'],
