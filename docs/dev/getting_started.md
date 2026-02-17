@@ -4,7 +4,7 @@ This guide gets you productive in one day. Follow the steps in order.
 
 ## Prerequisites
 
-- Node 22.22.0 (use `.nvmrc`). Enable Corepack (`corepack enable`) to get pnpm 9.x.
+- Node 22.22.0 (use `.nvmrc`). Enable Corepack (`corepack enable`) to get pnpm 10.x.
 - Python 3.11 (see `.python-version`).
 - pnpm (managed by Corepack) and git.
 - Flutter SDK (3.19+ recommended), with Xcode (iOS) and Android Studio/SDK (Android) installed and an emulator or device configured.

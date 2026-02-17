@@ -2,7 +2,7 @@
   "name": "aivo-monorepo",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.12.0",
+  "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=22.22.0"
   },
@@ -36,6 +36,32 @@
     "seed:families:build": "pnpm --filter @aivo/seed-data build"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "fsevents",
+      "sharp",
+      "better-sqlite3",
+      "bcrypt",
+      "argon2",
+      "@nestjs/core",
+      "@playwright/browser-chromium",
+      "@scarf/scarf",
+      "@swc/core",
+      "@tree-sitter-grammars/tree-sitter-yaml",
+      "core-js",
+      "core-js-pure",
+      "cpu-features",
+      "esbuild",
+      "msgpackr-extract",
+      "protobufjs",
+      "ssh2",
+      "tree-sitter",
+      "tree-sitter-json",
+      "unix-dgram",
+      "unrs-resolver"
+    ],
     "overrides": {
       "qs": ">=6.14.1",
       "prisma": "5.22.0",

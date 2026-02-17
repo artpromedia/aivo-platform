@@ -5,7 +5,7 @@
 AIVO is a comprehensive educational technology platform designed to provide personalized, accessible learning experiences for students of all abilities, with special focus on neurodivergent learners (ADHD, Autism, Dyslexia, and more).
 
 [![Node.js](https://img.shields.io/badge/Node.js-22.22.0-green)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-9.12.0-orange)](https://pnpm.io/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.29.3-orange)](https://pnpm.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-yellow)](https://python.org/)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
@@ -116,7 +116,7 @@ AIVO provides:
 ### Required
 
 - **Node.js 22.22.0** (managed via `.node` directory)
-- **pnpm 9.12.0** (package manager)
+- **pnpm 10.29.3** (package manager)
 - **Docker Desktop** (for infrastructure services)
 - **Git**
 

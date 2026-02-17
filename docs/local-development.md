@@ -25,7 +25,7 @@ This guide explains how to set up and run the complete AIVO platform locally usi
 | Docker Compose | v2.0+           | Built into Docker Desktop |                                          |
 | Git            | 2.30+           | Latest                    |                                          |
 | Node.js        | 22.x            | 22.22.0                   | Only for running services outside Docker |
-| pnpm           | 8.x             | 9.x                       | Only for running services outside Docker |
+| pnpm           | 10.x            | 10.x                      | Only for running services outside Docker |
 
 ### System Requirements
 
