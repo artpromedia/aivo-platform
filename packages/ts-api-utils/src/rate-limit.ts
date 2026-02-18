@@ -292,7 +292,8 @@ export function createHonoRateLimiter(options: RateLimitOptions) {
   ): Promise<Response | undefined> {
     // Skip if skip function returns true
     if (skip?.(c)) {
-      return next();
+      await next();
+      return;
     }
 
     // Extract IP from Hono request headers
@@ -325,7 +326,8 @@ export function createHonoRateLimiter(options: RateLimitOptions) {
       );
     }
 
-    return next();
+    await next();
+    return;
   };
 }
 

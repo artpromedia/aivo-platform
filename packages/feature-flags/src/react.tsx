@@ -9,6 +9,7 @@ import {
   useState,
   useMemo,
   type ReactNode,
+  type JSX,
 } from 'react';
 import {
   featureFlags,

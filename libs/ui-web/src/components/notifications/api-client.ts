@@ -315,7 +315,7 @@ export function useNotifications({
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const fetchNotifications = useCallback(
     async (pageNum = 1, append = false) => {
