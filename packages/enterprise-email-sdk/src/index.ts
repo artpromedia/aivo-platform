@@ -12,6 +12,8 @@
  * - Rate limiting: 100 requests/sec
  */
 
+import { createHmac } from 'crypto';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -292,18 +294,27 @@ export class AivolearningEmail {
     this.timeout = config.timeout ?? 30_000;
   }
 
+  /** Root URL for endpoints that live outside /v1 (e.g. /health) */
+  private get rootUrl(): string {
+    return this.baseUrl.replace(/\/v\d+\/?$/, '');
+  }
+
   /**
    * Send a single email message
    */
   async send(message: OonruMailMessage): Promise<OonruMailSendResult> {
-    return this.request<OonruMailSendResult>('POST', '/messages', message);
+    const apiBody = this.toApiSendBody(message);
+    const raw = await this.request<Record<string, unknown>>('POST', '/send', apiBody);
+    return this.fromApiSendResult(raw);
   }
 
   /**
    * Send using a server-side template
    */
   async sendTemplate(message: OonruMailTemplateMessage): Promise<OonruMailSendResult> {
-    return this.request<OonruMailSendResult>('POST', '/messages/template', message);
+    const apiBody = this.toApiTemplateBody(message);
+    const raw = await this.request<Record<string, unknown>>('POST', '/send', apiBody);
+    return this.fromApiSendResult(raw);
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -434,7 +445,11 @@ export class AivolearningEmail {
    * Send batch messages (up to 1000)
    */
   async sendBatch(messages: OonruMailMessage[]): Promise<OonruMailBatchResult> {
-    return this.request<OonruMailBatchResult>('POST', '/messages/batch', { messages });
+    const apiMessages = messages.map((m) => this.toApiSendBody(m));
+    const raw = await this.request<Record<string, unknown>>('POST', '/batch', {
+      messages: apiMessages,
+    });
+    return this.fromApiBatchResult(raw);
   }
 
   /**
@@ -446,9 +461,33 @@ export class AivolearningEmail {
 
   /**
    * Check API health
+   *
+   * The health endpoint lives at the API root (outside /v1).
    */
   async health(): Promise<OonruMailHealthResponse> {
-    return this.request<OonruMailHealthResponse>('GET', '/health');
+    const raw = await this.request<Record<string, unknown>>(
+      'GET',
+      '/health',
+      undefined,
+      this.rootUrl,
+    );
+    return {
+      status:
+        (raw.status as OonruMailHealthResponse['status'] | undefined) ??
+        'healthy',
+      latencyMs:
+        typeof raw.latency_ms === 'number'
+          ? raw.latency_ms
+          : typeof raw.latencyMs === 'number'
+            ? raw.latencyMs
+            : 0,
+      version:
+        typeof raw.version === 'string'
+          ? raw.version
+          : typeof raw.service === 'string'
+            ? raw.service
+            : '',
+    };
   }
 
   /**
@@ -466,7 +505,6 @@ export class AivolearningEmail {
     }
 
     try {
-      const { createHmac } = require('crypto') as typeof import('crypto');
       const expectedSignature = createHmac('sha256', secret)
         .update(typeof payload === 'string' ? payload : payload.toString('utf8'))
         .digest('hex');
@@ -480,11 +518,141 @@ export class AivolearningEmail {
   // PRIVATE
   // ════════════════════════════════════════════════════════════════════════════
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
+  // ════════════════════════════════════════════════════════════════════════════
+  // WIRE-FORMAT TRANSFORMATIONS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Convert SDK recipients (string | string[]) to OonruMail API objects.
+   */
+  private toApiRecipients(addresses: string | string[]): { email: string }[] {
+    const list = Array.isArray(addresses) ? addresses : [addresses];
+    return list.map((email) => ({ email }));
+  }
+
+  /**
+   * Transform an OonruMailMessage into the OonruMail POST /v1/send body.
+   */
+  private toApiSendBody(message: OonruMailMessage): Record<string, unknown> {
+    return {
+      from: {
+        email: message.from ?? '',
+        ...(message.fromName ? { name: message.fromName } : {}),
+      },
+      to: this.toApiRecipients(message.to),
+      subject: message.subject,
+      ...(message.html ? { html_body: message.html } : {}),
+      ...(message.text ? { text_body: message.text } : {}),
+      ...(message.cc?.length
+        ? { cc: message.cc.map((email) => ({ email })) }
+        : {}),
+      ...(message.bcc?.length
+        ? { bcc: message.bcc.map((email) => ({ email })) }
+        : {}),
+      ...(message.replyTo ? { reply_to: { email: message.replyTo } } : {}),
+      ...(message.tags?.length ? { tags: message.tags } : {}),
+      ...(message.metadata
+        ? { metadata: message.metadata }
+        : {}),
+      ...(message.attachments?.length
+        ? { attachments: message.attachments }
+        : {}),
+      ...(message.scheduledAt
+        ? { scheduled_at: message.scheduledAt }
+        : {}),
+    };
+  }
+
+  /**
+   * Transform an OonruMailTemplateMessage into the OonruMail POST /v1/send body
+   * (with template_id instead of subject + html/text).
+   */
+  private toApiTemplateBody(
+    message: OonruMailTemplateMessage,
+  ): Record<string, unknown> {
+    return {
+      from: {
+        email: message.from ?? '',
+        ...(message.fromName ? { name: message.fromName } : {}),
+      },
+      to: this.toApiRecipients(message.to),
+      template_id: message.templateId,
+      template_data: message.templateData,
+      ...(message.cc?.length
+        ? { cc: message.cc.map((email) => ({ email })) }
+        : {}),
+      ...(message.bcc?.length
+        ? { bcc: message.bcc.map((email) => ({ email })) }
+        : {}),
+      ...(message.replyTo ? { reply_to: { email: message.replyTo } } : {}),
+      ...(message.tags?.length ? { tags: message.tags } : {}),
+      ...(message.metadata
+        ? { metadata: message.metadata }
+        : {}),
+      ...(message.attachments?.length
+        ? { attachments: message.attachments }
+        : {}),
+      ...(message.scheduledAt
+        ? { scheduled_at: message.scheduledAt }
+        : {}),
+    };
+  }
+
+  /**
+   * Parse the OonruMail send-response into the SDK's OonruMailSendResult type.
+   *
+   * OonruMail returns snake_case:
+   *   { message_id, status, queued_at }
+   */
+  private fromApiSendResult(
+    data: Record<string, unknown>,
+  ): OonruMailSendResult {
+    return {
+      messageId: (data.message_id ?? data.messageId ?? '') as string,
+      status: (data.status ?? 'accepted') as OonruMailSendResult['status'],
+      acceptedAt: (data.queued_at ??
+        data.accepted_at ??
+        new Date().toISOString()) as string,
+    };
+  }
+
+  /**
+   * Parse the OonruMail batch-response into OonruMailBatchResult.
+   */
+  private fromApiBatchResult(
+    data: Record<string, unknown>,
+  ): OonruMailBatchResult {
+    const items = (data.results as Record<string, unknown>[] | undefined) ?? [];
+    const results = items.map((r) => ({
+      to: typeof r.to === 'string' ? r.to : typeof r.email === 'string' ? r.email : '',
+      messageId: r.message_id as string | undefined,
+      status: r.status as 'accepted' | 'rejected',
+      error: r.error as string | undefined,
+    }));
+    return {
+      batchId: (data.batch_id ?? data.batchId ?? '') as string,
+      totalAccepted: (data.total_accepted ?? data.totalAccepted ?? 0) as number,
+      totalRejected: (data.total_rejected ?? data.totalRejected ?? 0) as number,
+      results,
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // HTTP
+  // ════════════════════════════════════════════════════════════════════════════
+
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    baseUrlOverride?: string,
+  ): Promise<T> {
+    const url = `${baseUrlOverride ?? this.baseUrl}${path}`;
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeout);
+    const timer = setTimeout(() => {
+      controller.abort();
+    }, this.timeout);
 
     try {
       const response = await fetch(url, {

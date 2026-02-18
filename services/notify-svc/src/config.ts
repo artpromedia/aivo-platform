@@ -60,9 +60,9 @@ export const config = {
     enabled: process.env.EMAIL_ENABLED === 'true',
     
     // Default sender
-    fromEmail: process.env.EMAIL_FROM ?? 'noreply@aivo.app',
-    fromName: process.env.EMAIL_FROM_NAME ?? 'AIVO',
-    replyToEmail: process.env.EMAIL_REPLY_TO ?? 'support@aivo.app',
+    fromEmail: process.env.EMAIL_FROM ?? 'noreply@aivolearning.com',
+    fromName: process.env.EMAIL_FROM_NAME ?? 'AIVO Learning',
+    replyToEmail: process.env.EMAIL_REPLY_TO ?? 'support@aivolearning.com',
     
     // Provider selection
     primaryProvider: process.env.EMAIL_PRIMARY_PROVIDER ?? 'sendgrid', // 'sendgrid' | 'ses' | 'oonrumail'
