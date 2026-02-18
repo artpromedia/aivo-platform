@@ -18,6 +18,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { classroomReportRoutes } from './routes/classroomReport.js';
 import { parentReportRoutes } from './routes/parentReport.js';
 import { mobileProgressReportRoutes } from './routes/mobileProgressReport.js';
+import reportRoutes from './routes/reports.routes.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const isDevelopment = config.nodeEnv !== 'production';
@@ -49,6 +50,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register mobile progress report routes under /progress prefix
   await app.register(mobileProgressReportRoutes, { prefix: '/progress' });
+
+  // Register enterprise report generation, scheduling, and history routes
+  await app.register(asPlugin(reportRoutes), { prefix: '/reports' });
 
   return app;
 }

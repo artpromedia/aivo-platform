@@ -757,3 +757,41 @@ enum AlertStatus {
   RESOLVED
   DISMISSED
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IEP DOCUMENT PIPELINE (upload, OCR, review)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Uploaded IEP documents with OCR extraction tracking.
+model IEPDocument {
+  id              String    @id @default(uuid())
+  tenantId        String
+  studentId       String
+
+  // File metadata
+  fileName        String
+  fileUrl         String
+  fileSize        Int
+  pageCount       Int?
+  mimeType        String    @default("application/pdf")
+
+  // Processing status: UPLOADED → PROCESSING → EXTRACTED / NEEDS_REVIEW / OCR_FAILED → REVIEWED / REJECTED
+  status          String    @default("UPLOADED")
+
+  // OCR results
+  extractedData   Json?     // Extracted student name, dates, goals, services, accommodations
+  ocrConfidence   Float?    // 0.0-1.0 confidence score; <0.8 triggers human review
+
+  // Human review
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+
+  // Tracking
+  uploadedBy      String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, studentId])
+}

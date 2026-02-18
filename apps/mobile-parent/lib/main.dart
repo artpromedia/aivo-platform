@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthStatus;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +31,7 @@ import 'screens/progress_report_screen.dart';
 import 'screens/subscription_management_screen.dart';
 import 'screens/virtual_brain_screen.dart';
 import 'home_activities/home_activities_screen.dart';
+import 'l10n/app_localizations.dart';
 import 'theme/parent_theme.dart';
 
 final _routerProvider = Provider<GoRouter>((ref) {
@@ -293,7 +295,17 @@ class _ParentAppState extends ConsumerState<ParentApp> {
         theme: theme,
         routerConfig: router,
         locale: const Locale('en'),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [
+          Locale('en'),
+          Locale('es'),
+          Locale('fr'),
+        ],
+        localizationsDelegates: const [
+          AppLocalizationsDelegate(),
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         debugShowCheckedModeBanner: false,
       ),
     );

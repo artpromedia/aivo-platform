@@ -9,7 +9,7 @@ import sensible from '@fastify/sensible';
 import Fastify from 'fastify';
 
 import { authenticate } from './middleware/auth.js';
-import { studentRoutes, iepRoutes, complianceRoutes } from './routes/index.js';
+import { studentRoutes, iepRoutes, complianceRoutes, progressRoutes, documentPipelineRoutes } from './routes/index.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -82,6 +82,8 @@ export function createApp() {
     protectedApp.register(studentRoutes, { prefix: '/students' });
     protectedApp.register(iepRoutes, { prefix: '/ieps' });
     protectedApp.register(complianceRoutes, { prefix: '/compliance' });
+    protectedApp.register(progressRoutes, { prefix: '/progress' });
+    protectedApp.register(documentPipelineRoutes, { prefix: '/documents' });
   });
 
   return app;

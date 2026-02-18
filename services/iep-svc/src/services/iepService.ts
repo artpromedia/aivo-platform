@@ -237,12 +237,21 @@ export async function updateGoal(tenantId: string, goalId: string, input: any) {
 export async function recordProgress(tenantId: string, goalId: string, input: any) {
   const goal = await prisma.iEPGoal.findFirst({
     where: { id: goalId },
-    include: { iep: { select: { tenantId: true } } },
+    include: {
+      iep: {
+        select: {
+          tenantId: true,
+          id: true,
+          studentId: true,
+          student: { select: { firstName: true, lastName: true } },
+        },
+      },
+    },
   });
 
   if (goal?.iep.tenantId !== tenantId) throw new Error('Goal not found');
 
-  return prisma.progressData.create({
+  const progress = await prisma.progressData.create({
     data: {
       goalId,
       recordDate: input.recordDate ? new Date(input.recordDate) : new Date(),
@@ -253,6 +262,56 @@ export async function recordProgress(tenantId: string, goalId: string, input: an
       recordedBy: input.recordedBy,
     },
   });
+
+  // Fire-and-forget: notify parent of progress update via notify-svc
+  void notifyParentOfProgress(tenantId, goal.iep, goal, progress).catch(() => {});
+
+  return progress;
+}
+
+/**
+ * Send progress update notification to parent via notify-svc.
+ * Fire-and-forget — errors are logged but do not block the response.
+ */
+async function notifyParentOfProgress(
+  tenantId: string,
+  iep: { id: string; studentId: string; student: { firstName: string; lastName: string } },
+  goal: { goalNumber: number; domain: string; description: string | null },
+  progress: { progressLevel: string; notes: string | null; recordDate: Date },
+): Promise<void> {
+  if (!config.notifications.enabled) return;
+
+  const NOTIFY_SVC_URL = process.env.NOTIFY_SVC_URL ?? 'http://localhost:4080';
+
+  try {
+    await fetch(`${NOTIFY_SVC_URL}/api/v1/email/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-service-name': 'iep-svc',
+      },
+      body: JSON.stringify({
+        templateName: 'iep-progress-update',
+        to: `parent:${iep.studentId}`, // notify-svc resolves parent contact from student ID
+        context: {
+          subject: `Progress Update: ${iep.student.firstName} ${iep.student.lastName}`,
+          studentName: `${iep.student.firstName} ${iep.student.lastName}`,
+          goalNumber: goal.goalNumber,
+          goalDomain: goal.domain,
+          goalDescription: goal.description,
+          progressLevel: progress.progressLevel,
+          notes: progress.notes,
+          recordDate: progress.recordDate.toISOString(),
+          tenantId,
+          iepId: iep.id,
+        },
+        category: 'iep-progress',
+        tags: ['iep', 'progress-update'],
+      }),
+    });
+  } catch {
+    // Fire-and-forget: notification failures should not affect the progress recording
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

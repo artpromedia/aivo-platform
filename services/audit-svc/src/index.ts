@@ -9,6 +9,7 @@ import { config } from './config.js';
 import { prisma } from './prisma.js';
 import { startEventConsumer, stopEventConsumer } from './consumers/eventConsumer.js';
 import { startEscalationScheduler, stopEscalationScheduler } from './schedulers/correction-escalation.js';
+import { registerWormMiddleware } from './services/wormService.js';
 
 async function main() {
   const app = createApp();
@@ -33,6 +34,10 @@ async function main() {
   process.on('SIGINT', () => shutdown('SIGINT'));
 
   try {
+    // Register WORM (Write Once Read Many) enforcement on audit logs
+    registerWormMiddleware();
+    app.log.info('WORM storage enforcement enabled for audit logs');
+
     // Start event consumer for capturing audit events from other services
     await startEventConsumer();
 

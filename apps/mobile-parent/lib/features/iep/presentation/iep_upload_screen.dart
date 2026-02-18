@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/environment.dart';
+import '../data/iep_api_service.dart';
+
 /// IEP Document
 class IEPDocument {
   final String id;
@@ -82,71 +85,7 @@ class _IEPUploadScreenState extends ConsumerState<IEPUploadScreen> {
   bool _isLoading = true;
   bool _isUploading = false;
   List<IEPDocument> _documents = [];
-
-  // Mock data
-  final List<IEPDocument> _mockDocuments = [
-    IEPDocument(
-      id: '1',
-      fileName: 'IEP_2024_Annual_Review.pdf',
-      uploadedAt: DateTime.now().subtract(const Duration(days: 30)),
-      iepDate: DateTime(2024, 1, 15),
-      status: IEPStatus.active,
-      goals: const [
-        IEPGoal(
-          id: 'g1',
-          area: 'Reading',
-          description: 'Improve reading fluency',
-          objective: 'Read 100 words per minute with 95% accuracy',
-          progressPercent: 75,
-          targetDate: null,
-        ),
-        IEPGoal(
-          id: 'g2',
-          area: 'Math',
-          description: 'Master multiplication facts',
-          objective: 'Complete multiplication facts 0-12 with 90% accuracy',
-          progressPercent: 60,
-        ),
-        IEPGoal(
-          id: 'g3',
-          area: 'Writing',
-          description: 'Improve written expression',
-          objective: 'Write a 5-paragraph essay with proper structure',
-          progressPercent: 45,
-        ),
-        IEPGoal(
-          id: 'g4',
-          area: 'Executive Function',
-          description: 'Improve task completion',
-          objective: 'Complete 80% of classroom assignments independently',
-          progressPercent: 55,
-        ),
-      ],
-    ),
-    IEPDocument(
-      id: '2',
-      fileName: 'IEP_2023_Annual_Review.pdf',
-      uploadedAt: DateTime.now().subtract(const Duration(days: 365)),
-      iepDate: DateTime(2023, 1, 15),
-      status: IEPStatus.expired,
-      goals: const [
-        IEPGoal(
-          id: 'g5',
-          area: 'Reading',
-          description: 'Improve reading comprehension',
-          objective: 'Answer comprehension questions with 80% accuracy',
-          progressPercent: 100,
-        ),
-        IEPGoal(
-          id: 'g6',
-          area: 'Math',
-          description: 'Master addition and subtraction',
-          objective: 'Complete basic facts with 95% accuracy',
-          progressPercent: 100,
-        ),
-      ],
-    ),
-  ];
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -155,11 +94,61 @@ class _IEPUploadScreenState extends ConsumerState<IEPUploadScreen> {
   }
 
   Future<void> _loadDocuments() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _documents = _mockDocuments;
-      _isLoading = false;
-    });
+    if (EnvironmentConfig.useMockServices) {
+      // Fallback to mock data only in development with mocks enabled
+      await Future.delayed(const Duration(milliseconds: 500));
+      setState(() {
+        _documents = _getMockDocuments();
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      // TODO: Obtain auth token from auth controller via Riverpod
+      const authToken = '';
+      final apiService = IepApiService(authToken: authToken);
+      final docs = await apiService.getIepsForStudent(widget.childId);
+      setState(() {
+        _documents = docs;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Failed to load IEP documents: $e');
+      setState(() {
+        _errorMessage = 'Unable to load IEP documents. Please try again.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<IEPDocument> _getMockDocuments() {
+    return [
+      IEPDocument(
+        id: '1',
+        fileName: 'IEP_2024_Annual_Review.pdf',
+        uploadedAt: DateTime.now().subtract(const Duration(days: 30)),
+        iepDate: DateTime(2024, 1, 15),
+        status: IEPStatus.active,
+        goals: const [
+          IEPGoal(id: 'g1', area: 'Reading', description: 'Improve reading fluency', objective: 'Read 100 words per minute with 95% accuracy', progressPercent: 75),
+          IEPGoal(id: 'g2', area: 'Math', description: 'Master multiplication facts', objective: 'Complete multiplication facts 0-12 with 90% accuracy', progressPercent: 60),
+          IEPGoal(id: 'g3', area: 'Writing', description: 'Improve written expression', objective: 'Write a 5-paragraph essay with proper structure', progressPercent: 45),
+          IEPGoal(id: 'g4', area: 'Executive Function', description: 'Improve task completion', objective: 'Complete 80% of classroom assignments independently', progressPercent: 55),
+        ],
+      ),
+      IEPDocument(
+        id: '2',
+        fileName: 'IEP_2023_Annual_Review.pdf',
+        uploadedAt: DateTime.now().subtract(const Duration(days: 365)),
+        iepDate: DateTime(2023, 1, 15),
+        status: IEPStatus.expired,
+        goals: const [
+          IEPGoal(id: 'g5', area: 'Reading', description: 'Improve reading comprehension', objective: 'Answer comprehension questions with 80% accuracy', progressPercent: 100),
+          IEPGoal(id: 'g6', area: 'Math', description: 'Master addition and subtraction', objective: 'Complete basic facts with 95% accuracy', progressPercent: 100),
+        ],
+      ),
+    ];
   }
 
   @override

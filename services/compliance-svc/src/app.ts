@@ -37,6 +37,7 @@ import {
 import { registerDsrRoutes } from './modules/dsr/routes/dsr.js';
 import { registerDsrRoutesV2 } from './modules/dsr/routes/dsr-v2.js';
 import { registerConsentFormRoutes } from './routes/consent-forms.js';
+import { registerAiConversationRoutes } from './routes/ai-conversations.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -77,6 +78,9 @@ export function createApp() {
 
   // ── Consent Form Tracking (district onboarding) ────────────────────────────
   void app.register(registerConsentFormRoutes as any, { prefix: '/consent-forms' });
+
+  // ── Parent AI Conversation Viewer (COPPA requirement) ─────────────────────
+  void app.register(registerAiConversationRoutes as any, { prefix: '/ai-conversations' });
 
   // ── DSR (backward-compatible prefixes) ─────────────────────────────────────
   void app.register(registerDsrRoutes as any, { prefix: '/dsr' });

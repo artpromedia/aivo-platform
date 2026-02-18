@@ -1442,6 +1442,63 @@ model MatterActivity {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// MASTER AGREEMENT MODULE (district-level blanket consent)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// District-level master agreement for blanket COPPA/FERPA consent.
+/// Allows a district admin to execute a single agreement that covers all
+/// students in the district, rather than requiring individual parent consent.
+model MasterAgreement {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @db.Uuid
+
+  // Agreement details
+  title             String
+  description       String?
+  agreementType     String   @default("DISTRICT_BLANKET") // DISTRICT_BLANKET, SCHOOL_LEVEL, VENDOR
+  version           String   @default("1.0")
+
+  // Coverage
+  districtId        String   @db.Uuid
+  schoolIds         String[] @default([]) @db.Uuid // Empty = all schools in district
+  coverageScope     String   @default("ALL_STUDENTS") // ALL_STUDENTS, SPECIFIC_GRADES, SPECIFIC_PROGRAMS
+
+  // Dates
+  effectiveDate     DateTime
+  expirationDate    DateTime?
+  renewalDate       DateTime?
+
+  // Status
+  status            String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, ACTIVE, EXPIRED, TERMINATED, RENEWED
+
+  // Signatories
+  signedBy          String?  @db.Uuid  // District admin who signed
+  signedAt          DateTime?
+  signedByTitle     String?  // e.g. "Superintendent", "Director of Technology"
+
+  // Document
+  documentUrl       String?  // Signed agreement PDF
+  documentHash      String?  // SHA-256 of the signed document
+
+  // COPPA/FERPA specifics
+  coppaCompliant    Boolean  @default(true)
+  ferpaCompliant    Boolean  @default(true)
+  dataUsagePurpose  String?  // "Legitimate educational interest"
+  dataRetentionDays Int      @default(2555) // ~7 years
+  thirdPartySharing Boolean  @default(false)
+
+  // Metadata
+  createdBy         String   @db.Uuid
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, districtId])
+  @@index([expirationDate])
+  @@map("master_agreements")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // DSR MODULE (formerly dsr-svc) — Data Subject Requests (GDPR/CCPA)
 // ══════════════════════════════════════════════════════════════════════════════
 

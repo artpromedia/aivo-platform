@@ -228,6 +228,12 @@ class EnvironmentConfig {
     'HOME_ACTIVITIES_BASE_URL',
     defaultValue: 'https://api.aivo.app/home-activities',
   );
+
+  /// IEP service base URL.
+  static const String iepBaseUrl = String.fromEnvironment(
+    'IEP_BASE_URL',
+    defaultValue: 'http://localhost:4070',
+  );
   // ══════════════════════════════════════════════════════════════════════════
   // VALIDATION
   // ══════════════════════════════════════════════════════════════════════════

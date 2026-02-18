@@ -1,0 +1,138 @@
+// ══════════════════════════════════════════════════════════════════════════════
+// AIVO Reports Service - Prisma Schema
+// ══════════════════════════════════════════════════════════════════════════════
+// Persistence for generated report history and scheduled report configuration.
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ReportType {
+  student_progress
+  class_overview
+  skill_mastery
+  at_risk_students
+  engagement_summary
+  assessment_results
+  standard_alignment
+  parent_summary
+  district_dashboard
+  teacher_effectiveness
+}
+
+enum ReportFormat {
+  pdf
+  excel
+  csv
+  html
+  json
+}
+
+enum ReportStatus {
+  pending
+  generating
+  completed
+  failed
+  expired
+}
+
+enum ScheduleFrequency {
+  daily
+  weekly
+  monthly
+  quarterly
+}
+
+enum ScheduleStatus {
+  active
+  paused
+  cancelled
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks every report generation request and its outcome.
+model ReportHistory {
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @db.Uuid
+  type          ReportType
+  format        ReportFormat
+  status        ReportStatus @default(pending)
+  requestedBy   String       @db.Uuid
+  requestedAt   DateTime     @default(now())
+  completedAt   DateTime?
+  parameters    Json         @default("{}")
+  dateRange     Json?        // { startDate, endDate }
+  options       Json         @default("{}")
+  s3Key         String?      // S3 object key for the generated file
+  downloadUrl   String?      // Pre-signed download URL
+  urlExpiresAt  DateTime?    // When the download URL expires
+  fileSizeBytes Int?
+  errorMessage  String?
+  durationMs    Int?         // How long generation took
+
+  // Link to the schedule that triggered this (null if ad-hoc)
+  scheduledReportId String?        @db.Uuid
+  scheduledReport   ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+
+  @@index([tenantId, requestedBy])
+  @@index([tenantId, type])
+  @@index([status])
+  @@index([requestedAt])
+  @@map("report_history")
+}
+
+/// Persists recurring report schedules.
+model ScheduledReport {
+  id          String            @id @default(uuid()) @db.Uuid
+  tenantId    String            @db.Uuid
+  type        ReportType
+  format      ReportFormat      @default(pdf)
+  status      ScheduleStatus    @default(active)
+  createdBy   String            @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Schedule configuration
+  frequency   ScheduleFrequency
+  dayOfWeek   Int?              // 0-6 (Sunday=0), for weekly
+  dayOfMonth  Int?              // 1-28, for monthly/quarterly
+  time        String            @default("06:00") // HH:mm
+  timezone    String            @default("America/New_York")
+  nextRunAt   DateTime
+
+  // Report parameters
+  parameters  Json              @default("{}")
+  options     Json              @default("{}")
+
+  // Delivery configuration
+  deliveryMethod String         @default("email") // email | download | both
+  recipients     String[]       // email addresses
+  ccRecipients   String[]       @default([])
+  emailSubject   String?
+  emailMessage   String?
+
+  // History
+  lastRunAt    DateTime?
+  lastRunStatus ReportStatus?
+  runCount     Int              @default(0)
+
+  reports      ReportHistory[]
+
+  @@index([tenantId, createdBy])
+  @@index([status, nextRunAt])
+  @@map("scheduled_reports")
+}
