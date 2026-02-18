@@ -10,6 +10,11 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { getUserFromRequest, requireAuth } from '../auth.js';
+import {
+  entitlementPreHandler,
+  requireFeature,
+  requireLimit,
+} from '../middleware/entitlementGuard.js';
 import { prisma } from '../prisma.js';
 import * as sharingService from '../services/content-sharing.service.js';
 
@@ -77,7 +82,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/content/:id/share',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler, requireLimit('contentItems')] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
@@ -103,6 +108,13 @@ export async function sharingRoutes(fastify: FastifyInstance) {
       const { id: learningObjectId } = paramsResult.data;
       const { visibility, description, tags, license, requiresAttribution, schoolId } =
         bodyResult.data;
+
+      // Gate DISTRICT / PUBLIC visibility behind the "collaboration" feature
+      if (visibility === 'DISTRICT' || visibility === 'PUBLIC') {
+        const featureGuard = requireFeature('collaboration');
+        await featureGuard(request, reply);
+        if (reply.sent) return;
+      }
 
       try {
         const contentShare = await sharingService.shareContent({
@@ -151,7 +163,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/content/:id/fork',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler, requireLimit('contentItems')] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
@@ -310,7 +322,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/content/:id/rate',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
@@ -408,7 +420,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/content/:id/review',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
