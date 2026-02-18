@@ -959,6 +959,32 @@ model TenantCoppaSettings {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// CONSENT FORM TRACKING (district onboarding workflow)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Physical consent form collection tracking during district onboarding.
+/// Replaces the previous in-memory Map store to prevent data loss on restart.
+model ConsentForm {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  studentId   String
+  studentName String
+  parentName  String
+  parentEmail String   @default("")
+  status      String   @default("PENDING") // PENDING, RECEIVED, EXPIRED
+  signedDate  DateTime?
+  fileUrl     String?
+  fileName    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, studentId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("consent_forms")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // LEGAL HOLD MODULE (formerly legal-hold-svc)
 // ══════════════════════════════════════════════════════════════════════════════
 

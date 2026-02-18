@@ -20,6 +20,7 @@ enum UserRoleEnum {
   LEARNER
   TEACHER
   THERAPIST
+  SCHOOL_ADMIN
   DISTRICT_ADMIN
   PLATFORM_ADMIN
   SUPPORT
@@ -175,7 +176,7 @@ model IdpConfig {
   loginHintTemplate     String?
   
   // Allow specific user types to use this IdP
-  allowedUserTypes      UserRoleEnum[] @default([TEACHER, THERAPIST, DISTRICT_ADMIN])
+  allowedUserTypes      UserRoleEnum[] @default([TEACHER, THERAPIST, SCHOOL_ADMIN, DISTRICT_ADMIN])
   
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt

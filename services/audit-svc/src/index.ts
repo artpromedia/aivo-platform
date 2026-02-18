@@ -8,6 +8,7 @@ import { createApp } from './app.js';
 import { config } from './config.js';
 import { prisma } from './prisma.js';
 import { startEventConsumer, stopEventConsumer } from './consumers/eventConsumer.js';
+import { startEscalationScheduler, stopEscalationScheduler } from './schedulers/correction-escalation.js';
 
 async function main() {
   const app = createApp();
@@ -16,6 +17,7 @@ async function main() {
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully...`);
     try {
+      stopEscalationScheduler();
       await stopEventConsumer();
       await app.close();
       await prisma.$disconnect();
@@ -33,6 +35,9 @@ async function main() {
   try {
     // Start event consumer for capturing audit events from other services
     await startEventConsumer();
+
+    // Start FERPA correction request escalation scheduler (daily check)
+    startEscalationScheduler(app.log);
 
     await app.listen({ port: config.port, host: config.host });
     app.log.info(`audit-svc running on port ${config.port}`);

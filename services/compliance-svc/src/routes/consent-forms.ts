@@ -17,6 +17,8 @@ import { Role, requireRole, type AuthContext } from '@aivo/ts-rbac';
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
+import { prisma } from '../prisma.js';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // Schemas
 // ══════════════════════════════════════════════════════════════════════════════
@@ -52,36 +54,6 @@ const reminderSchema = z.object({
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// In-memory consent form store (backed by settings JSON until dedicated table)
-// In production this would be a dedicated Prisma model or raw SQL table.
-// For the onboarding MVP, we store consent tracking in a simple in-memory
-// structure that gets persisted to the tenant's settings via the tenant-svc.
-// ══════════════════════════════════════════════════════════════════════════════
-
-interface ConsentFormRecord {
-  id: string;
-  tenantId: string;
-  studentId: string;
-  studentName: string;
-  parentName: string;
-  parentEmail: string;
-  status: 'PENDING' | 'RECEIVED' | 'EXPIRED';
-  signedDate: string | null;
-  fileUrl: string | null;
-  fileName: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Per-tenant consent form cache (would be DB-backed in production)
-const consentFormStore = new Map<string, ConsentFormRecord[]>();
-
-let nextId = 1;
-function generateId(): string {
-  return `cf-${Date.now()}-${nextId++}`;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
 // Route Registration
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -109,44 +81,37 @@ export const registerConsentFormRoutes: FastifyPluginAsync = async (
       }
 
       const { tenantId, forms } = parsed.data;
-      const now = new Date().toISOString();
 
-      if (!consentFormStore.has(tenantId)) {
-        consentFormStore.set(tenantId, []);
-      }
-      const store = consentFormStore.get(tenantId)!;
-
-      const results: ConsentFormRecord[] = [];
+      const results = [];
       for (const form of forms) {
-        // Check if student already has a record
-        const existing = store.find((r) => r.studentId === form.studentId);
-        if (existing) {
-          existing.status = form.consentStatus;
-          existing.parentName = form.parentName;
-          existing.parentEmail = form.parentEmail ?? existing.parentEmail;
-          existing.signedDate = form.signedDate ?? existing.signedDate;
-          existing.fileUrl = form.fileUrl ?? existing.fileUrl;
-          existing.fileName = form.fileName ?? existing.fileName;
-          existing.updatedAt = now;
-          results.push(existing);
-        } else {
-          const record: ConsentFormRecord = {
-            id: generateId(),
+        const record = await prisma.consentForm.upsert({
+          where: {
+            tenantId_studentId: {
+              tenantId,
+              studentId: form.studentId,
+            },
+          },
+          update: {
+            status: form.consentStatus,
+            parentName: form.parentName,
+            parentEmail: form.parentEmail ?? undefined,
+            signedDate: form.signedDate ? new Date(form.signedDate) : undefined,
+            fileUrl: form.fileUrl ?? undefined,
+            fileName: form.fileName ?? undefined,
+          },
+          create: {
             tenantId,
             studentId: form.studentId,
             studentName: form.studentName ?? form.studentId,
             parentName: form.parentName,
             parentEmail: form.parentEmail ?? '',
             status: form.consentStatus,
-            signedDate: form.signedDate ?? null,
+            signedDate: form.signedDate ? new Date(form.signedDate) : null,
             fileUrl: form.fileUrl ?? null,
             fileName: form.fileName ?? null,
-            createdAt: now,
-            updatedAt: now,
-          };
-          store.push(record);
-          results.push(record);
-        }
+          },
+        });
+        results.push(record);
       }
 
       return reply.status(201).send({
@@ -178,23 +143,25 @@ export const registerConsentFormRoutes: FastifyPluginAsync = async (
       }
 
       const { tenantId, status, page, pageSize } = parsed.data;
-      const store = consentFormStore.get(tenantId) ?? [];
 
-      let filtered = store;
-      if (status) {
-        filtered = filtered.filter((r) => r.status === status);
-      }
+      const baseWhere = { tenantId };
+      const filteredWhere = status ? { tenantId, status } : baseWhere;
 
-      const total = filtered.length;
-      const totalAll = store.length;
-      const received = store.filter((r) => r.status === 'RECEIVED').length;
-      const pending = store.filter((r) => r.status === 'PENDING').length;
-      const expired = store.filter((r) => r.status === 'EXPIRED').length;
+      const [totalAll, received, pending, expired, totalFiltered, paginated] = await Promise.all([
+        prisma.consentForm.count({ where: baseWhere }),
+        prisma.consentForm.count({ where: { tenantId, status: 'RECEIVED' } }),
+        prisma.consentForm.count({ where: { tenantId, status: 'PENDING' } }),
+        prisma.consentForm.count({ where: { tenantId, status: 'EXPIRED' } }),
+        prisma.consentForm.count({ where: filteredWhere }),
+        prisma.consentForm.findMany({
+          where: filteredWhere,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+
       const consentPercentage = totalAll > 0 ? Math.round((received / totalAll) * 100) : 0;
-
-      // Paginate
-      const start = (page - 1) * pageSize;
-      const paginated = filtered.slice(start, start + pageSize);
 
       return reply.send({
         summary: {
@@ -208,8 +175,8 @@ export const registerConsentFormRoutes: FastifyPluginAsync = async (
         pagination: {
           page,
           pageSize,
-          totalFiltered: total,
-          totalPages: Math.ceil(total / pageSize),
+          totalFiltered,
+          totalPages: Math.ceil(totalFiltered / pageSize),
         },
       });
     },
@@ -236,12 +203,17 @@ export const registerConsentFormRoutes: FastifyPluginAsync = async (
       }
 
       const { tenantId, studentIds } = parsed.data;
-      const store = consentFormStore.get(tenantId) ?? [];
 
-      let pendingForms = store.filter((r) => r.status === 'PENDING' && r.parentEmail);
+      const where: any = {
+        tenantId,
+        status: 'PENDING',
+        parentEmail: { not: '' },
+      };
       if (studentIds && studentIds.length > 0) {
-        pendingForms = pendingForms.filter((r) => studentIds.includes(r.studentId));
+        where.studentId = { in: studentIds };
       }
+
+      const pendingForms = await prisma.consentForm.findMany({ where });
 
       // In production, this would call the notification service to send emails
       const reminders = pendingForms.map((form) => ({

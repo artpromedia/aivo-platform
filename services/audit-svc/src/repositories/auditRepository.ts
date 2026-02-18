@@ -86,6 +86,8 @@ export async function createAuditLog(
       dataClassification: entry.dataClassification,
       complianceFlags: entry.complianceFlags || [],
       retentionPolicy: entry.retentionPolicy,
+      purpose: entry.purpose,
+      dataAccessed: entry.dataAccessed || [],
       checksum,
       previousHash,
       occurredAt,

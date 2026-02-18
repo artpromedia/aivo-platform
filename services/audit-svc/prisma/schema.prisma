@@ -459,6 +459,14 @@ model CorrectionRequest {
   // Audit trail
   auditLogId      String?        @db.Uuid  // Link to audit log entry for the correction
 
+  // FERPA SLA tracking (45-day response deadline, 40-day auto-escalation)
+  responseDeadline  DateTime?    // 45 days from requestedAt per FERPA
+  escalationDate    DateTime?    // 40 days from requestedAt — auto-escalation trigger
+  escalatedAt       DateTime?    // When the request was actually escalated
+  escalatedTo       String?      @db.Uuid  // User ID the request was escalated to
+  isEscalated       Boolean      @default(false)
+  isOverdue         Boolean      @default(false)
+
   // Timestamps
   requestedAt     DateTime       @default(now())
   completedAt     DateTime?
@@ -466,4 +474,6 @@ model CorrectionRequest {
   @@index([tenantId, status])
   @@index([tenantId, requestedById])
   @@index([tenantId, targetType, targetId])
+  @@index([responseDeadline])
+  @@index([escalationDate, isEscalated])
 }

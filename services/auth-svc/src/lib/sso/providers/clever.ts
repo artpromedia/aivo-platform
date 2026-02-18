@@ -116,8 +116,8 @@ export const CLEVER_ROLE_MAPPING: Record<string, UserRoleEnum> = {
   /** Clever teachers map to TEACHER */
   teacher: 'TEACHER',
 
-  /** Clever school admins map to TEACHER (can be changed to SCHOOL_ADMIN if available) */
-  school_admin: 'TEACHER',
+  /** Clever school admins map to SCHOOL_ADMIN */
+  school_admin: 'SCHOOL_ADMIN',
 
   /** Clever district admins map to DISTRICT_ADMIN */
   district_admin: 'DISTRICT_ADMIN',
@@ -181,6 +181,7 @@ export function createCleverIdpConfig(
     allowedUserTypes: options.allowedUserTypes ?? [
       'LEARNER',
       'TEACHER',
+      'SCHOOL_ADMIN',
       'PARENT',
       'DISTRICT_ADMIN',
     ],

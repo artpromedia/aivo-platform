@@ -11,6 +11,7 @@ import {
   listCorrectionRequests,
   getCorrectionRequest,
   reviewCorrectionRequest,
+  processCorrectionsEscalation,
 } from '../services/correctionService.js';
 
 export async function registerCorrectionRoutes(app: FastifyInstance) {
@@ -59,5 +60,14 @@ export async function registerCorrectionRoutes(app: FastifyInstance) {
 
     const result = await reviewCorrectionRequest(tenantId, id, userId, email, body);
     return reply.send(result);
+  });
+
+  // Manually trigger FERPA escalation check (admin only, also runs on daily scheduler)
+  app.post('/escalation/process', async (request, reply) => {
+    const result = await processCorrectionsEscalation();
+    return reply.send({
+      message: 'FERPA correction escalation check completed',
+      ...result,
+    });
   });
 }

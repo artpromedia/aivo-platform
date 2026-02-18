@@ -102,6 +102,10 @@ export const CreateAuditLogSchema = z.object({
   complianceFlags: z.array(z.string()).default([]),
   retentionPolicy: z.string().optional(),
 
+  // FERPA/COPPA/GDPR: Access purpose tracking
+  purpose: z.string().optional(), // "legitimate_educational_interest", "parent_request", "audit", etc.
+  dataAccessed: z.array(z.string()).default([]), // Which data fields were accessed: ["student.name", "iep.goals"]
+
   // When the event occurred
   occurredAt: z.string().datetime().optional(), // Auto-generated if not provided
 });
