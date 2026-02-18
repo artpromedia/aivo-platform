@@ -13,6 +13,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { geoBlockingMiddleware } from './middleware/geoBlockingMiddleware.js';
 
 // ── Core compliance routes ─────────────────────────────────────────────────
 import { registerDashboardRoutes } from './routes/dashboard.js';
@@ -53,6 +54,9 @@ export function createApp() {
       version: '0.2.0',
     });
   });
+
+  // Register geo-blocking middleware (before auth — blocks early)
+  void app.register(geoBlockingMiddleware as any);
 
   // Register auth middleware
   void app.register(authMiddleware as any);

@@ -1,0 +1,17 @@
+{
+  "name": "@aivo/training-svc",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prisma schema for training-svc (Python service) — used for client generation and migrations",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}

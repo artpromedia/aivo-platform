@@ -36,18 +36,18 @@ module.exports = {
       colors: {
         // Primary Brand Colors (Violet/Lavender - Friendly, Accessible)
         'theme-primary': {
-          DEFAULT: '#8B5CF6', // violet-500
-          50: '#F5F3FF',
-          100: '#EDE9FE',
-          200: '#DDD6FE',
-          300: '#C4B5FD',
-          400: '#A78BFA',
-          500: '#8B5CF6',
-          600: '#7C3AED',
-          700: '#6D28D9',
-          800: '#5B21B6',
-          900: '#4C1D95',
-          950: '#2E1065',
+          DEFAULT: '#6366F1', // indigo-500
+          50: '#EEF2FF',
+          100: '#E0E7FF',
+          200: '#C7D2FE',
+          300: '#A5B4FC',
+          400: '#818CF8',
+          500: '#6366F1',
+          600: '#4F46E5',
+          700: '#4338CA',
+          800: '#3730A3',
+          900: '#312E81',
+          950: '#1E1B4B',
         },
 
         // Secondary Colors (Coral/Salmon - Warm, Inviting)
@@ -120,23 +120,23 @@ module.exports = {
         },
 
         // Semantic Colors
-        success: '#10B981',
-        warning: '#FBBF24',
+        success: '#22C55E',
+        warning: '#EAB308',
         error: '#EF4444',
         info: '#3B82F6',
 
         // Neutral Colors
         'aivo-gray': {
-          50: '#FAFAFA',
-          100: '#F4F4F5',
-          200: '#E4E4E7',
-          300: '#D4D4D8',
-          400: '#A1A1AA',
-          500: '#71717A',
-          600: '#52525B',
-          700: '#3F3F46',
-          800: '#27272A',
-          900: '#18181B',
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B',
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
         },
       },
 
@@ -144,8 +144,8 @@ module.exports = {
       // TYPOGRAPHY
       // ==========================================
       fontFamily: {
-        sans: ['var(--font-inter)', ...fontFamily.sans],
-        display: ['var(--font-space-grotesk)', ...fontFamily.sans],
+        sans: ['var(--font-dm-sans)', ...fontFamily.sans],
+        display: ['var(--font-plus-jakarta-sans)', ...fontFamily.sans],
         mono: ['var(--font-mono)', ...fontFamily.mono],
       },
       fontSize: {
@@ -195,8 +195,8 @@ module.exports = {
         'coral': '0 10px 40px -10px rgba(255, 107, 107, 0.4)',
         'coral-lg': '0 20px 50px -12px rgba(255, 107, 107, 0.5)',
         'salmon': '0 10px 40px -10px rgba(250, 128, 114, 0.4)',
-        'purple': '0 10px 40px -10px rgba(139, 92, 246, 0.4)',
-        'purple-lg': '0 20px 50px -12px rgba(139, 92, 246, 0.5)',
+        'purple': '0 10px 40px -10px rgba(79, 70, 229, 0.4)',
+        'purple-lg': '0 20px 50px -12px rgba(79, 70, 229, 0.5)',
         'mint': '0 10px 40px -10px rgba(16, 185, 129, 0.4)',
         'sky': '0 10px 40px -10px rgba(14, 165, 233, 0.4)',
 
@@ -337,20 +337,20 @@ module.exports = {
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
 
         // Hero Gradients
-        'hero-gradient': 'linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(251, 207, 232, 0.3) 100%)',
-        'hero-mesh': 'radial-gradient(at 40% 20%, rgba(139, 92, 246, 0.1) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(255, 107, 107, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%)',
+        'hero-gradient': 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(251, 207, 232, 0.3) 100%)',
+        'hero-mesh': 'radial-gradient(at 40% 20%, rgba(79, 70, 229, 0.1) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(255, 107, 107, 0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(34, 197, 94, 0.1) 0px, transparent 50%)',
 
         // Button Gradients
-        'gradient-primary': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
-        'gradient-coral': 'linear-gradient(135deg, #FF6B6B 0%, #FA8072 50%, #8B5CF6 100%)',
-        'gradient-cta': 'linear-gradient(135deg, #FF6B6B 0%, #FA5252 50%, #7C3AED 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)',
+        'gradient-coral': 'linear-gradient(135deg, #FF6B6B 0%, #FA8072 50%, #4F46E5 100%)',
+        'gradient-cta': 'linear-gradient(135deg, #FF6B6B 0%, #FA5252 50%, #4F46E5 100%)',
 
         // Card Gradients
         'gradient-card': 'linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
         'gradient-glass': 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%)',
 
         // Section Backgrounds
-        'gradient-section': 'linear-gradient(180deg, #FFFFFF 0%, #F5F3FF 50%, #FFFFFF 100%)',
+        'gradient-section': 'linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 50%, #FFFFFF 100%)',
         'gradient-footer': 'linear-gradient(180deg, #F9FAFB 0%, #FFFFFF 100%)',
       },
 
@@ -374,7 +374,7 @@ module.exports = {
       // Text Gradient Utilities
       addUtilities({
         '.text-gradient-primary': {
-          'background': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+          'background': 'linear-gradient(135deg, #6366F1 0%, #4338CA 100%)',
           '-webkit-background-clip': 'text',
           '-webkit-text-fill-color': 'transparent',
           'background-clip': 'text',

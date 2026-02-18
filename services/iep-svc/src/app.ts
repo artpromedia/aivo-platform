@@ -10,6 +10,7 @@ import Fastify from 'fastify';
 
 import { authenticate } from './middleware/auth.js';
 import { studentRoutes, iepRoutes, complianceRoutes, progressRoutes, documentPipelineRoutes } from './routes/index.js';
+import { registerPerformanceMetrics } from './plugins/performanceMetrics.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -75,6 +76,9 @@ export function createApp() {
       });
     }
   });
+
+  // Performance benchmarking for progress endpoints
+  void app.register(registerPerformanceMetrics);
 
   // Protected routes
   app.register(async (protectedApp) => {

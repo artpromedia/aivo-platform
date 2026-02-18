@@ -364,24 +364,21 @@ jobs:
     needs: [parity-check, security-audit, code-quality]
     strategy:
       matrix:
+        # Phase 1 KEEP and merged services only
         service:
           - auth-svc
-          - profile-svc
-          - content-svc
-          - assessment-svc
-          - analytics-svc
-          - ai-orchestrator
-          - grading-engine
-          - brain-engine
-          - session-svc
-          - billing-svc
-          - messaging-svc
-          - notify-svc
-          - gamification-svc
-          - curriculum-svc
+          - api-gateway
           - tenant-svc
-    steps:
-      - uses: actions/checkout@v4
+          - sis-sync-svc
+          - iep-svc
+          - parent-svc
+          - profile-svc
+          - messaging-svc
+          - audit-svc
+          - notify-svc
+          - reports-svc
+          - realtime-svc
+          - compliance-svc
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

@@ -5,6 +5,7 @@ export { cn } from './lib/utils';
 export { createGradeThemePlugin } from './tailwind/gradeThemePlugin';
 export { GradeThemeProvider as LegacyGradeThemeProvider, useGradeTheme as useLegacyGradeTheme } from './theme/grade-theme';
 export { AccessibilityProvider, useAccessibility } from './theme/accessibility';
+export { AriaLiveProvider, AriaLiveRegion, useAriaLive } from './components/accessibility/AriaLiveRegion';
 export type { GradeBand } from './theme/tokens';
 
 // New Grade Theme System

@@ -9,6 +9,8 @@ import { config } from '../config.js';
 import type { SendMessageInput, EditMessageInput, MessageFilters } from '../types.js';
 import * as participantService from './participantService.js';
 import * as conversationService from './conversationService.js';
+import { scanForPii } from './piiDetectionService.js';
+import { moderateContent } from './contentModerationService.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MESSAGE CRUD
@@ -26,6 +28,45 @@ export async function sendMessage(input: SendMessageInput) {
     throw new Error('User is not a participant in this conversation');
   }
 
+  // Scan for PII (FERPA/COPPA compliance)
+  const piiResult = scanForPii(input.content);
+  let metadata = (input.metadata ?? {}) as Record<string, unknown>;
+
+  if (piiResult.hasPii) {
+    // Attach PII flags to message metadata for compliance review
+    metadata = {
+      ...metadata,
+      piiDetected: true,
+      piiRiskLevel: piiResult.riskLevel,
+      piiTypes: piiResult.matches.map((m) => m.type),
+      piiMatchCount: piiResult.matches.length,
+    };
+
+    // Log PII detection for audit trail
+    console.warn(
+      `[PII] Detected ${piiResult.matches.length} PII item(s) in message ` +
+      `(risk: ${piiResult.riskLevel}, types: ${[...new Set(piiResult.matches.map((m) => m.type))].join(', ')}) ` +
+      `tenant=${input.tenantId} sender=${input.senderId} conversation=${input.conversationId}`
+    );
+  }
+
+  // Content moderation (COPPA/CIPA compliance)
+  const moderationResult = moderateContent(input.content);
+
+  if (moderationResult.blocked) {
+    throw new Error(moderationResult.reason || 'Message blocked by content moderation');
+  }
+
+  if (moderationResult.flagged) {
+    metadata = {
+      ...metadata,
+      contentFlagged: true,
+      moderationAction: moderationResult.action,
+      moderationCategories: moderationResult.matches.map((m) => m.category),
+      moderationReason: moderationResult.reason,
+    };
+  }
+
   // Create the message
   const message = await prisma.message.create({
     data: {
@@ -34,7 +75,7 @@ export async function sendMessage(input: SendMessageInput) {
       senderId: input.senderId,
       type: input.type ?? MessageType.TEXT,
       content: input.content,
-      metadata: input.metadata as Prisma.InputJsonValue,
+      metadata: metadata as Prisma.InputJsonValue,
       replyToId: input.replyToId,
       status: MessageStatus.SENT,
     },
@@ -240,6 +281,14 @@ export async function getReadReceipts(messageId: string) {
 // SEARCH
 // ══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Full-text message search using PostgreSQL ts_vector / ts_query.
+ *
+ * Falls back to ILIKE (contains) when the query is very short or
+ * if the tsvector column doesn't exist yet (pre-migration).
+ *
+ * Search is scoped to conversations the user participates in.
+ */
 export async function searchMessages(
   tenantId: string,
   userId: string,
@@ -253,24 +302,99 @@ export async function searchMessages(
   });
 
   const conversationIds = participants.map((p) => p.conversationId);
+  if (conversationIds.length === 0) return [];
 
-  return prisma.message.findMany({
-    where: {
-      tenantId,
-      conversationId: { in: conversationIds },
-      isDeleted: false,
-      content: { contains: query, mode: 'insensitive' },
-    },
-    include: {
-      conversation: {
-        select: {
-          id: true,
-          name: true,
-          type: true,
+  // For short queries (< 3 chars) or simple terms, use basic ILIKE
+  const trimmed = query.trim();
+  if (trimmed.length < 3) {
+    return prisma.message.findMany({
+      where: {
+        tenantId,
+        conversationId: { in: conversationIds },
+        isDeleted: false,
+        content: { contains: trimmed, mode: 'insensitive' },
+      },
+      include: {
+        conversation: {
+          select: { id: true, name: true, type: true },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: pageSize,
-  });
+      orderBy: { createdAt: 'desc' },
+      take: pageSize,
+    });
+  }
+
+  // Attempt PostgreSQL full-text search using to_tsvector / plainto_tsquery
+  try {
+    const results = await prisma.$queryRawUnsafe<Array<{
+      id: string;
+      tenantId: string;
+      conversationId: string;
+      senderId: string;
+      type: string;
+      content: string;
+      status: string;
+      createdAt: Date;
+      editedAt: Date | null;
+      isDeleted: boolean;
+      rank: number;
+      conversation_id: string;
+      conversation_name: string | null;
+      conversation_type: string;
+    }>>(
+      `SELECT m.id, m."tenantId", m."conversationId", m."senderId",
+              m.type, m.content, m.status, m."createdAt", m."editedAt", m."isDeleted",
+              ts_rank(to_tsvector('english', m.content), plainto_tsquery('english', $1)) AS rank,
+              c.id AS conversation_id, c.name AS conversation_name, c.type AS conversation_type
+       FROM "Message" m
+       JOIN "Conversation" c ON c.id = m."conversationId"
+       WHERE m."tenantId" = $2
+         AND m."conversationId" = ANY($3::text[])
+         AND m."isDeleted" = false
+         AND to_tsvector('english', m.content) @@ plainto_tsquery('english', $1)
+       ORDER BY rank DESC, m."createdAt" DESC
+       LIMIT $4`,
+      trimmed,
+      tenantId,
+      conversationIds,
+      pageSize,
+    );
+
+    // Transform to match Prisma include format
+    return results.map((r) => ({
+      id: r.id,
+      tenantId: r.tenantId,
+      conversationId: r.conversationId,
+      senderId: r.senderId,
+      type: r.type,
+      content: r.content,
+      status: r.status,
+      createdAt: r.createdAt,
+      editedAt: r.editedAt,
+      isDeleted: r.isDeleted,
+      conversation: {
+        id: r.conversation_id,
+        name: r.conversation_name,
+        type: r.conversation_type,
+      },
+    }));
+  } catch {
+    // Fallback to basic search if full-text search fails
+    // (e.g., if to_tsvector isn't available or query syntax issue)
+    return prisma.message.findMany({
+      where: {
+        tenantId,
+        conversationId: { in: conversationIds },
+        isDeleted: false,
+        content: { contains: trimmed, mode: 'insensitive' },
+      },
+      include: {
+        conversation: {
+          select: { id: true, name: true, type: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: pageSize,
+    });
+  }
 }

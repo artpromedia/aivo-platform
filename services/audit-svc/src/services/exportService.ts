@@ -127,7 +127,7 @@ export async function processExport(exportId: string) {
     const fileChecksum = createHash('sha256').update(fileContent).digest('hex');
     const fileSizeBytes = Buffer.byteLength(fileContent, 'utf-8');
 
-    // In production, fileContent would be uploaded to S3/storage
+    // In production, fileContent would be uploaded to Cloudflare R2
     // and fileUrl would point to the download location
     await prisma.auditExport.update({
       where: { id: exportId },

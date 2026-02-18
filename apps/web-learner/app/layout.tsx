@@ -1,8 +1,21 @@
 import type { Metadata } from 'next';
+import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import './globals.css';
 import { Providers } from './providers';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-dm-sans',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-plus-jakarta-sans',
+});
 
 export const metadata: Metadata = {
   title: 'AIVO Learning',
@@ -11,8 +24,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-grade-theme="explorer">
-      <body className="min-h-screen bg-background text-text antialiased">
+    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="explorer">
+      <body className="min-h-screen bg-background font-sans text-text antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

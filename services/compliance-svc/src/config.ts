@@ -98,4 +98,9 @@ export const config = {
     host: process.env.NOTIFY_SVC_HOST || 'localhost',
     port: Number(process.env.NOTIFY_SVC_PORT || 3000),
   },
+
+  // Geolocation blocking
+  geoBlocking: {
+    enforce: process.env.GEO_BLOCKING_ENFORCE !== 'false',
+  },
 } as const;

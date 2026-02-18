@@ -8,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {},
   },
-  plugins: [createGradeThemePlugin('G6_8')],
+  plugins: [createGradeThemePlugin('navigator')],
 };
 
 export default config;

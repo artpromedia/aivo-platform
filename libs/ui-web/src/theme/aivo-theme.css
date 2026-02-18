@@ -12,9 +12,10 @@
  */
 
 /* ============================================================================
-   Google Fonts Import - Nunito (Brand Font)
+   Google Fonts Import - DM Sans (Brand Font) + Plus Jakarta Sans (Display)
    ============================================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
 
 /* ============================================================================
@@ -22,19 +23,20 @@
    ============================================================================ */
 :root {
   /* Brand Colors */
-  --aivo-brand-primary: #7c3aed;
-  --aivo-brand-navy: #1a1a2e;
+  --aivo-brand-primary: #4F46E5;
+  --aivo-brand-navy: #1E293B;
   --aivo-brand-white: #ffffff;
 
   /* Functional Colors */
-  --aivo-color-success: #10b981;
-  --aivo-color-progress: #f59e0b;
+  --aivo-color-success: #22C55E;
+  --aivo-color-progress: #EAB308;
   --aivo-color-focus: #3b82f6;
   --aivo-color-error: #ef4444;
 
   /* Typography */
-  --aivo-font-family: 'Nunito', system-ui, -apple-system, sans-serif;
-  --aivo-font-family-dyslexia: 'Atkinson Hyperlegible', 'Nunito', sans-serif;
+  --aivo-font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --aivo-font-family-display: 'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif;
+  --aivo-font-family-dyslexia: 'Atkinson Hyperlegible', 'DM Sans', sans-serif;
   --aivo-font-weight-regular: 400;
   --aivo-font-weight-medium: 500;
   --aivo-font-weight-semibold: 600;
@@ -54,30 +56,30 @@
   --aivo-space-9: 48px;
   --aivo-space-10: 56px;
 
-  /* Neutral Colors */
-  --aivo-neutral-50: #fafafa;
-  --aivo-neutral-100: #f4f4f5;
-  --aivo-neutral-200: #e4e4e7;
-  --aivo-neutral-300: #d4d4d8;
-  --aivo-neutral-400: #a1a1aa;
-  --aivo-neutral-500: #71717a;
-  --aivo-neutral-600: #52525b;
-  --aivo-neutral-700: #3f3f46;
-  --aivo-neutral-800: #27272a;
-  --aivo-neutral-900: #18181b;
-  --aivo-neutral-950: #09090b;
+  /* Neutral Colors (Slate) */
+  --aivo-neutral-50: #F8FAFC;
+  --aivo-neutral-100: #F1F5F9;
+  --aivo-neutral-200: #E2E8F0;
+  --aivo-neutral-300: #CBD5E1;
+  --aivo-neutral-400: #94A3B8;
+  --aivo-neutral-500: #64748B;
+  --aivo-neutral-600: #475569;
+  --aivo-neutral-700: #334155;
+  --aivo-neutral-800: #1E293B;
+  --aivo-neutral-900: #0F172A;
+  --aivo-neutral-950: #020617;
 
-  /* Purple Scale */
-  --aivo-purple-50: #f5f3ff;
-  --aivo-purple-100: #ede9fe;
-  --aivo-purple-200: #ddd6fe;
-  --aivo-purple-300: #c4b5fd;
-  --aivo-purple-400: #a78bfa;
-  --aivo-purple-500: #8b5cf6;
-  --aivo-purple-600: #7c3aed;
-  --aivo-purple-700: #6d28d9;
-  --aivo-purple-800: #5b21b6;
-  --aivo-purple-900: #4c1d95;
+  /* Indigo Scale */
+  --aivo-indigo-50: #EEF2FF;
+  --aivo-indigo-100: #E0E7FF;
+  --aivo-indigo-200: #C7D2FE;
+  --aivo-indigo-300: #A5B4FC;
+  --aivo-indigo-400: #818CF8;
+  --aivo-indigo-500: #6366F1;
+  --aivo-indigo-600: #4F46E5;
+  --aivo-indigo-700: #4338CA;
+  --aivo-indigo-800: #3730A3;
+  --aivo-indigo-900: #312E81;
 
   /* Teal Scale */
   --aivo-teal-50: #ecfeff;
@@ -91,17 +93,25 @@
   --aivo-teal-800: #155e75;
   --aivo-teal-900: #164e63;
 
-  /* Navy Scale */
-  --aivo-navy-50: #e8e8ed;
-  --aivo-navy-100: #d1d1db;
-  --aivo-navy-200: #a3a3b7;
-  --aivo-navy-300: #757593;
-  --aivo-navy-400: #47476f;
-  --aivo-navy-500: #2d2d47;
-  --aivo-navy-600: #1a1a2e;
-  --aivo-navy-700: #15152a;
-  --aivo-navy-800: #101026;
-  --aivo-navy-900: #0b0b22;
+  /* Orange Scale */
+  --aivo-orange-50: #FFF7ED;
+  --aivo-orange-100: #FFEDD5;
+  --aivo-orange-200: #FED7AA;
+  --aivo-orange-300: #FDBA74;
+  --aivo-orange-400: #FB923C;
+  --aivo-orange-500: #F97316;
+
+  /* Navy Scale (Slate-based) */
+  --aivo-navy-50: #F1F5F9;
+  --aivo-navy-100: #E2E8F0;
+  --aivo-navy-200: #CBD5E1;
+  --aivo-navy-300: #94A3B8;
+  --aivo-navy-400: #64748B;
+  --aivo-navy-500: #475569;
+  --aivo-navy-600: #1E293B;
+  --aivo-navy-700: #0F172A;
+  --aivo-navy-800: #0C1425;
+  --aivo-navy-900: #020617;
 
   /* Motion */
   --aivo-motion-fast: 150ms;
@@ -111,9 +121,9 @@
   --aivo-motion-easing-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
 
   /* Shadows */
-  --aivo-shadow-soft: 0 4px 16px rgba(26, 26, 46, 0.08);
-  --aivo-shadow-raised: 0 8px 24px rgba(26, 26, 46, 0.12);
-  --aivo-shadow-elevated: 0 12px 32px rgba(26, 26, 46, 0.16);
+  --aivo-shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --aivo-shadow-raised: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --aivo-shadow-elevated: 0 12px 32px rgba(15, 23, 42, 0.16);
 }
 
 /* ============================================================================
@@ -123,28 +133,28 @@
 [data-theme='explorer'],
 [data-grade-theme='explorer'] {
   /* Colors */
-  --aivo-color-primary: #7c3aed;
-  --aivo-color-primary-hover: #6d28d9;
-  --aivo-color-secondary: #a78bfa;
-  --aivo-color-accent: #f59e0b;
-  --aivo-color-background: #fafbff;
+  --aivo-color-primary: #6366F1;
+  --aivo-color-primary-hover: #4F46E5;
+  --aivo-color-secondary: #818CF8;
+  --aivo-color-accent: #F97316;
+  --aivo-color-background: #F8FAFC;
   --aivo-color-surface: #ffffff;
-  --aivo-color-surface-muted: #f5f3ff;
+  --aivo-color-surface-muted: #EEF2FF;
   --aivo-color-surface-elevated: #ffffff;
   --aivo-color-info: #3b82f6;
-  --aivo-color-success: #10b981;
-  --aivo-color-warning: #f59e0b;
+  --aivo-color-success: #22C55E;
+  --aivo-color-warning: #EAB308;
   --aivo-color-error: #ef4444;
-  --aivo-color-border: #ddd6fe;
-  --aivo-color-border-muted: #ede9fe;
+  --aivo-color-border: #C7D2FE;
+  --aivo-color-border-muted: #E0E7FF;
   --aivo-color-focus: #3b82f6;
   --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
-  --aivo-color-backdrop: rgba(26, 26, 46, 0.5);
-  --aivo-color-text-primary: #1a1a2e;
-  --aivo-color-text-secondary: #52525b;
-  --aivo-color-text-muted: #71717a;
+  --aivo-color-backdrop: rgba(15, 23, 42, 0.5);
+  --aivo-color-text-primary: #1E293B;
+  --aivo-color-text-secondary: #475569;
+  --aivo-color-text-muted: #64748B;
   --aivo-color-text-on-primary: #ffffff;
-  --aivo-color-text-on-accent: #1a1a2e;
+  --aivo-color-text-on-accent: #1E293B;
 
   /* Border Radius */
   --aivo-radius-button: 20px;
@@ -189,26 +199,26 @@
 [data-theme='navigator'],
 [data-grade-theme='navigator'] {
   /* Colors */
-  --aivo-color-primary: #0891b2;
-  --aivo-color-primary-hover: #0e7490;
+  --aivo-color-primary: #06B6D4;
+  --aivo-color-primary-hover: #0891B2;
   --aivo-color-secondary: #22d3ee;
-  --aivo-color-accent: #10b981;
-  --aivo-color-background: #f8fafb;
+  --aivo-color-accent: #22C55E;
+  --aivo-color-background: #F8FAFC;
   --aivo-color-surface: #ffffff;
   --aivo-color-surface-muted: #ecfeff;
   --aivo-color-surface-elevated: #ffffff;
   --aivo-color-info: #3b82f6;
-  --aivo-color-success: #10b981;
-  --aivo-color-warning: #f59e0b;
+  --aivo-color-success: #22C55E;
+  --aivo-color-warning: #EAB308;
   --aivo-color-error: #ef4444;
   --aivo-color-border: #a5f3fc;
   --aivo-color-border-muted: #cffafe;
   --aivo-color-focus: #3b82f6;
   --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
-  --aivo-color-backdrop: rgba(26, 26, 46, 0.45);
-  --aivo-color-text-primary: #1a1a2e;
-  --aivo-color-text-secondary: #52525b;
-  --aivo-color-text-muted: #71717a;
+  --aivo-color-backdrop: rgba(15, 23, 42, 0.45);
+  --aivo-color-text-primary: #1E293B;
+  --aivo-color-text-secondary: #475569;
+  --aivo-color-text-muted: #64748B;
   --aivo-color-text-on-primary: #ffffff;
   --aivo-color-text-on-accent: #ffffff;
 
@@ -255,26 +265,26 @@
 [data-theme='scholar'],
 [data-grade-theme='scholar'] {
   /* Colors */
-  --aivo-color-primary: #1a1a2e;
-  --aivo-color-primary-hover: #2d2d47;
-  --aivo-color-secondary: #47476f;
-  --aivo-color-accent: #7c3aed;
-  --aivo-color-background: #fafafa;
+  --aivo-color-primary: #1E293B;
+  --aivo-color-primary-hover: #334155;
+  --aivo-color-secondary: #64748B;
+  --aivo-color-accent: #4F46E5;
+  --aivo-color-background: #F8FAFC;
   --aivo-color-surface: #ffffff;
-  --aivo-color-surface-muted: #f4f4f5;
+  --aivo-color-surface-muted: #F1F5F9;
   --aivo-color-surface-elevated: #ffffff;
   --aivo-color-info: #3b82f6;
-  --aivo-color-success: #10b981;
-  --aivo-color-warning: #f59e0b;
+  --aivo-color-success: #22C55E;
+  --aivo-color-warning: #EAB308;
   --aivo-color-error: #ef4444;
-  --aivo-color-border: #e4e4e7;
-  --aivo-color-border-muted: #f4f4f5;
+  --aivo-color-border: #E2E8F0;
+  --aivo-color-border-muted: #F1F5F9;
   --aivo-color-focus: #3b82f6;
   --aivo-color-focus-ring: rgba(59, 130, 246, 0.5);
-  --aivo-color-backdrop: rgba(26, 26, 46, 0.4);
-  --aivo-color-text-primary: #1a1a2e;
-  --aivo-color-text-secondary: #52525b;
-  --aivo-color-text-muted: #71717a;
+  --aivo-color-backdrop: rgba(15, 23, 42, 0.4);
+  --aivo-color-text-primary: #1E293B;
+  --aivo-color-text-secondary: #475569;
+  --aivo-color-text-muted: #64748B;
   --aivo-color-text-on-primary: #ffffff;
   --aivo-color-text-on-accent: #ffffff;
 
@@ -320,27 +330,27 @@
 [data-theme='scholar-dark'],
 [data-grade-theme='scholar-dark'] {
   /* Colors */
-  --aivo-color-primary: #a78bfa;
-  --aivo-color-primary-hover: #c4b5fd;
-  --aivo-color-secondary: #757593;
-  --aivo-color-accent: #7c3aed;
-  --aivo-color-background: #09090b;
-  --aivo-color-surface: #18181b;
-  --aivo-color-surface-muted: #27272a;
-  --aivo-color-surface-elevated: #27272a;
+  --aivo-color-primary: #A5B4FC;
+  --aivo-color-primary-hover: #C7D2FE;
+  --aivo-color-secondary: #94A3B8;
+  --aivo-color-accent: #6366F1;
+  --aivo-color-background: #020617;
+  --aivo-color-surface: #0F172A;
+  --aivo-color-surface-muted: #1E293B;
+  --aivo-color-surface-elevated: #1E293B;
   --aivo-color-info: #60a5fa;
-  --aivo-color-success: #34d399;
-  --aivo-color-warning: #fbbf24;
+  --aivo-color-success: #4ADE80;
+  --aivo-color-warning: #FACC15;
   --aivo-color-error: #f87171;
-  --aivo-color-border: #3f3f46;
-  --aivo-color-border-muted: #27272a;
+  --aivo-color-border: #334155;
+  --aivo-color-border-muted: #1E293B;
   --aivo-color-focus: #60a5fa;
   --aivo-color-focus-ring: rgba(96, 165, 250, 0.5);
   --aivo-color-backdrop: rgba(0, 0, 0, 0.6);
-  --aivo-color-text-primary: #fafafa;
-  --aivo-color-text-secondary: #a1a1aa;
-  --aivo-color-text-muted: #71717a;
-  --aivo-color-text-on-primary: #09090b;
+  --aivo-color-text-primary: #F8FAFC;
+  --aivo-color-text-secondary: #94A3B8;
+  --aivo-color-text-muted: #64748B;
+  --aivo-color-text-on-primary: #020617;
   --aivo-color-text-on-accent: #ffffff;
 
   /* Border Radius (same as scholar) */
@@ -391,12 +401,12 @@
 }
 
 [data-high-contrast='true'][data-theme='explorer'] {
-  --aivo-color-primary: #5b21b6;
+  --aivo-color-primary: #3730A3;
   --aivo-color-background: #ffffff;
   --aivo-color-surface: #ffffff;
-  --aivo-color-text-primary: #09090b;
-  --aivo-color-text-secondary: #27272a;
-  --aivo-color-border: #5b21b6;
+  --aivo-color-text-primary: #020617;
+  --aivo-color-text-secondary: #1E293B;
+  --aivo-color-border: #3730A3;
   --aivo-color-focus: #1d4ed8;
 }
 
@@ -411,21 +421,21 @@
 }
 
 [data-high-contrast='true'][data-theme='scholar'] {
-  --aivo-color-primary: #09090b;
+  --aivo-color-primary: #020617;
   --aivo-color-background: #ffffff;
   --aivo-color-surface: #ffffff;
-  --aivo-color-text-primary: #09090b;
-  --aivo-color-text-secondary: #27272a;
-  --aivo-color-border: #09090b;
+  --aivo-color-text-primary: #020617;
+  --aivo-color-text-secondary: #1E293B;
+  --aivo-color-border: #020617;
   --aivo-color-focus: #1d4ed8;
 }
 
 [data-high-contrast='true'][data-theme='scholar-dark'] {
-  --aivo-color-primary: #e9d5ff;
+  --aivo-color-primary: #E0E7FF;
   --aivo-color-background: #000000;
-  --aivo-color-surface: #09090b;
+  --aivo-color-surface: #020617;
   --aivo-color-text-primary: #ffffff;
-  --aivo-color-text-secondary: #d4d4d8;
+  --aivo-color-text-secondary: #CBD5E1;
   --aivo-color-border: #ffffff;
   --aivo-color-focus: #93c5fd;
 }
@@ -456,7 +466,7 @@
    Dyslexia-Friendly Mode
    ============================================================================ */
 [data-dyslexia='true'] {
-  --aivo-font-family: 'Atkinson Hyperlegible', 'Nunito', sans-serif;
+  --aivo-font-family: 'Atkinson Hyperlegible', 'DM Sans', sans-serif;
   letter-spacing: 0.05em;
   word-spacing: 0.1em;
 }

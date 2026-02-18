@@ -1,0 +1,1560 @@
+
+> @aivo/web-district@0.1.0 build C:\Users\ofema\aivo\apps\web-district
+> next build
+
+   Gû¦ Next.js 15.5.12
+
+   Creating an optimized production build ...
+ G£ô Compiled successfully in 10.7s
+   Skipping validation of types
+   Linting ...
+node.exe : 
+At c:\Users\ofema\aivo\.node\node-v22.22.0-win-x64\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ GÜá The Next.js plugin was not detected in your ESLint configuration. See http
+s://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+
+Failed to compile.
+
+./app/ai-models/model-detail-modal.tsx
+22:39  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+23:40  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+34:18  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+152:32  Warning: Do not use Array index in keys  react/no-array-index-key
+176:32  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/ai-models/page.tsx
+173:26  Warning: Do not use Array index in keys  react/no-array-index-key
+197:26  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/api/auth/login/route.ts
+34:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+35:36  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+35:47  Warning: Unsafe member access .user on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+36:24  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string`.  @typescript-eslint/no-unsafe-argument
+36:29  Warning: Unsafe member access .accessToken on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+36:42  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string`.  @typescript-eslint/no-unsafe-argument
+36:47  Warning: Unsafe member access .refreshToken on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+
+./app/api/auth/sso/initiate/route.ts
+36:9  Warning: Unnecessary conditional, value is always falsy.  
+@typescript-eslint/no-unnecessary-condition
+36:10  Warning: Expected non-Promise value in a boolean conditional.  
+@typescript-eslint/no-misused-promises
+77:58  Error: 'tenantSlug' will use Object's default stringification format 
+('[object Object]') when stringified.  @typescript-eslint/no-base-to-string
+77:58  Warning: Invalid type "Promise<string | null>" of template literal 
+expression.  @typescript-eslint/restrict-template-expressions
+
+./app/api/auth/sso/providers/route.ts
+49:9  Warning: Unnecessary conditional, value is always falsy.  
+@typescript-eslint/no-unnecessary-condition
+49:10  Warning: Expected non-Promise value in a boolean conditional.  
+@typescript-eslint/no-misused-promises
+56:70  Error: 'tenantSlug' will use Object's default stringification format 
+('[object Object]') when stringified.  @typescript-eslint/no-base-to-string
+56:70  Warning: Invalid type "Promise<string | null>" of template literal 
+expression.  @typescript-eslint/restrict-template-expressions
+87:74  Error: 'tenantSlug' will use Object's default stringification format 
+('[object Object]') when stringified.  @typescript-eslint/no-base-to-string
+87:74  Warning: Invalid type "Promise<string | null>" of template literal 
+expression.  @typescript-eslint/restrict-template-expressions
+
+./app/api/devices/policies/route.ts
+35:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+54:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+72:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/devices/pools/route.ts
+28:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+41:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+59:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/devices/pools/[poolId]/devices/route.ts
+32:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+50:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+71:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+89:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+110:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/devices/pools/[poolId]/policy/route.ts
+38:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+39:48  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+39:67  Warning: Unsafe member access .defaults on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+50:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+68:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+77:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+77:22  Warning: Unsafe member access .config on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+89:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+129:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+133:58  Warning: Unsafe member access .id on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+
+./app/api/devices/pools/[poolId]/route.ts
+28:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+46:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+64:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/devices/route.ts
+34:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+65:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/devices/[deviceId]/route.ts
+28:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+46:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+64:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/iep/[...path]/route.ts
+63:38  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+
+./app/api/research/cohorts/route.ts
+24:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+36:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/dataset-definitions/route.ts
+24:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+36:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/dataset-templates/route.ts
+18:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/exports/route.ts
+24:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+36:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/projects/route.ts
+26:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+38:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+49:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/projects/[id]/route.ts
+26:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+40:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+51:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/research/projects/[id]/[action]/route.ts
+42:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/users/route.ts
+56:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+66:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+67:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+82:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+83:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+84:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+85:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+86:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+87:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+96:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/api/users/[userId]/route.ts
+33:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+52:22  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`{ [s: string]: unknown; } | ArrayLike<unknown>`.  
+@typescript-eslint/no-unsafe-argument
+78:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/audit/learner/[learnerId]/learner-audit-timeline.tsx
+4:1  Warning: `next/link` import should occur before import of `react`  
+import/order
+24:31  Error: 'React' is not defined.  no-undef
+149:17  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+150:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<AuditEventSummary[]>`.  @typescript-eslint/no-unsafe-argument
+150:26  Warning: Unsafe member access .events on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+151:25  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<number>`.  @typescript-eslint/no-unsafe-argument
+151:30  Warning: Unsafe member access .total on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+162:7  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+164:6  Warning: React Hook useEffect has a missing dependency: 
+'buildQueryParams'. Either include it or remove the dependency array.  
+react-hooks/exhaustive-deps
+184:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+186:29  Warning: Unsafe return of a value of type `any[]`.  
+@typescript-eslint/no-unsafe-return
+186:39  Warning: Unsafe spread of an `any` value in an array.  
+@typescript-eslint/no-unsafe-assignment
+186:47  Warning: Unsafe member access .events on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+187:23  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<number>`.  @typescript-eslint/no-unsafe-argument
+187:28  Warning: Unsafe member access .total on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+224:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+235:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+339:33  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/billing/components/marketplace-billing-section.tsx
+16:3  Warning: 'MarketplaceBillingModel' is defined but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+17:3  Warning: 'MarketplaceBillingStatus' is defined but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+171:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. 
+Consider using `<Image />` from `next/image` or a custom image loader to 
+automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+
+./app/billing/enrollment/components/enrollment-batch-list.tsx
+211:25  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+
+./app/classrooms/[classroomId]/analytics/page.tsx
+14:1  Warning: `@/app/providers` import should occur before import of 
+`@/components/analytics/FocusTab`  import/order
+20:29  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+51:5  Warning: Promises must be awaited, end with a call to .catch, end with a 
+call to .then with a rejection handler or be explicitly marked as ignored with 
+the `void` operator.  @typescript-eslint/no-floating-promises
+52:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+130:3  Warning: 'id' is defined but never used. Allowed unused args must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+
+./app/classrooms/[classroomId]/learner/[learnerId]/context.tsx
+7:1  Warning: `../../../../../lib/learner-insights` type import should occur 
+before type import of `../../../../../lib/teacher-planning-api`  import/order
+
+./app/classrooms/[classroomId]/learner/[learnerId]/goals-tab.tsx
+504:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+640:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+760:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+
+./app/classrooms/[classroomId]/learner/[learnerId]/layout.tsx
+22:1  Warning: `./context` type import should occur before import of 
+`./profile-client`  import/order
+
+./app/classrooms/[classroomId]/learner/[learnerId]/plans-notes-tab.tsx
+467:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+638:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+
+./app/classrooms/[classroomId]/learner/[learnerId]/profile-client.tsx
+81:30  Warning: Unnecessary conditional, the types have no overlap.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/classrooms/[classroomId]/learner/[learnerId]/session-plans/[planId]/page.
+tsx
+5:1  Warning: `@aivo/ui-web` import should occur before import of 
+`next/navigation`  import/order
+14:1  Warning: `@/lib/session-api` import should occur before import of 
+`@/lib/teacher-planning-api`  import/order
+40:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+51:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+114:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+127:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/classrooms/[classroomId]/learners/[learnerId]/baseline/view-client.tsx
+13:9  Warning: 'tone' is assigned a value but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/classrooms/[classroomId]/summary/page.tsx
+44:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./app/curriculum/curriculum-browser.tsx
+11:1  Warning: `@aivo/ui-web` import should occur before import of 
+`next/navigation`  import/order
+58:24  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+87:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+95:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+106:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+117:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+130:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+142:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+150:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+170:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+194:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+202:24  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+207:40  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+245:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+282:72  Error: 'React' is not defined.  no-undef
+293:3  Warning: 'value' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+302:11  Error: 'React' is not defined.  no-undef
+341:9  Error: 'React' is not defined.  no-undef
+
+./app/curriculum/curriculum-grid.tsx
+14:1  Warning: `../../lib/curriculum-api` import should occur before import of 
+`../providers`  import/order
+42:20  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+74:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+85:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+211:32  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+217:36  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+234:9  Error: 'React' is not defined.  no-undef
+306:61  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/curriculum/curriculum-search.tsx
+32:18  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+65:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+71:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+86:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/curriculum/upload-modal.tsx
+71:40  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+96:17  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+97:27  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+97:37  Warning: Unsafe member access .message on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+
+./app/curriculum/[curriculumId]/curriculum-detail.tsx
+15:8  Warning: 'CurriculumStatus' is defined but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+61:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+75:6  Warning: React Hook useCallback has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+89:6  Warning: React Hook useCallback has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+102:6  Warning: React Hook useCallback has a missing dependency: 
+'accessToken'. Either include it or remove the dependency array.  
+react-hooks/exhaustive-deps
+236:30  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+240:10  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+272:41  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+283:47  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+`&rdquo;`.  react/no-unescaped-entities
+283:65  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, 
+`&rdquo;`.  react/no-unescaped-entities
+334:61  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+346:18  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/curriculum/[curriculumId]/page.tsx
+70:28  Warning: 'title' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/curriculum/[curriculumId]/standards-mapper.tsx
+12:1  Warning: `../../../lib/curriculum-api` import should occur before import 
+of `../../providers`  import/order
+34:10  Warning: 'error' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+63:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+76:5  Warning: React Hook useCallback has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+96:5  Warning: React Hook useCallback has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+116:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+159:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+194:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+284:18  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+285:6  Warning: React Hook useEffect has a missing dependency: 'accessToken'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+308:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+325:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+346:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+392:5  Error: Unnecessary assertion: Array#reduce accepts a type parameter for 
+the default value.  @typescript-eslint/prefer-reduce-type-parameter
+
+./app/curriculum/[curriculumId]/version-control.tsx
+10:1  Warning: `@aivo/ui-web` import should occur before import of `react`  
+import/order
+13:1  Warning: `../../../lib/curriculum-api` import should occur before import 
+of `../../providers`  import/order
+24:10  Warning: 'error' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+88:5  Warning: React Hook useCallback has a missing dependency: 'toast'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+106:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+122:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+139:33  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+160:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+182:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+191:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+295:34  Error: 'React' is not defined.  no-undef
+295:40  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+300:5  Error: Unexpected `await` of a non-Promise (non-"Thenable") value.  
+@typescript-eslint/await-thenable
+300:11  Error: Placing a void expression inside another expression is 
+forbidden. Move it to its own statement instead.  
+@typescript-eslint/no-confusing-void-expression
+327:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+401:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+447:15  Warning: Unsafe call of a type that could not be resolved.  
+@typescript-eslint/no-unsafe-call
+447:15  Error: 'toast' is not defined.  no-undef
+
+./app/dashboard/analytics/page.tsx
+28:10  Warning: 'isRefreshing' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+83:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./app/dashboard/components/compliance-reports.tsx
+23:3  Warning: 'RefreshCw' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+24:3  Warning: 'Filter' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+85:3  Warning: 'districtId' is defined but never used. Allowed unused args 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/components/cross-school-analytics.tsx
+19:3  Warning: 'Filter' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+20:3  Warning: 'Calendar' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+21:3  Warning: 'ChevronDown' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+22:3  Warning: 'ChevronRight' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+42:3  Warning: 'AreaChart' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+43:3  Warning: 'Area' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+95:10  Error: Default value is useless because the property is not optional.  
+@typescript-eslint/no-useless-default-assignment
+99:10  Warning: 'selectedPeriod' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+99:26  Warning: 'setSelectedPeriod' is assigned a value but never used. 
+Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+328:49  Warning: 'index' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+366:49  Warning: 'index' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/components/district-overview.tsx
+20:3  Warning: 'ChevronRight' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+68:14  Error: Default value is useless because the property is not optional.  
+@typescript-eslint/no-useless-default-assignment
+69:3  Warning: 'schools' is assigned a value but never used. Allowed unused 
+args must match /^_/u.  @typescript-eslint/no-unused-vars
+69:13  Error: Default value is useless because the property is not optional.  
+@typescript-eslint/no-useless-default-assignment
+
+./app/dashboard/components/resource-allocation.tsx
+17:3  Warning: 'TrendingUp' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'TrendingDown' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+21:3  Warning: 'ChevronRight' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+24:3  Warning: 'RefreshCw' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+25:3  Warning: 'ArrowRight' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+81:3  Warning: 'districtId' is defined but never used. Allowed unused args 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+94:10  Warning: 'isRefreshing' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+94:24  Warning: 'setIsRefreshing' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+306:38  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/dashboard/components/school-hierarchy.tsx
+14:3  Warning: 'Users' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+27:3  Warning: 'MoreVertical' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+57:13  Error: Default value is useless because the property is not optional.  
+@typescript-eslint/no-useless-default-assignment
+
+./app/dashboard/components/school-performance-grid.tsx
+12:3  Warning: 'Users' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+21:3  Warning: 'Filter' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+22:3  Warning: 'ArrowUpDown' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+53:18  Warning: 'setSortBy' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+54:21  Warning: 'setSortOrder' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+196:39  Warning: 'index' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/page.tsx
+48:71  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+50:34  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+52:50  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+53:49  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+94:78  Warning: 'idx' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+115:53  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+116:54  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+120:73  Warning: 'idx' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+136:13  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+419:26  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+434:62  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/design-system/page.tsx
+Error: Parsing error: 
+C:\Users\ofema\aivo\apps\web-district\app\design-system\page.tsx was not found 
+by the project service. Consider either including it in the tsconfig.json or 
+including it in allowDefaultProject.
+
+./app/devices/page.tsx
+107:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+123:53  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+124:48  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+
+./app/devices/policies/page.tsx
+66:56  Error: Use a ! assertion to more succinctly remove null and undefined 
+from the type.  @typescript-eslint/non-nullable-type-assertion-style
+
+./app/devices/pools/page.tsx
+53:6  Warning: React Hook useEffect has a missing dependency: 'fetchPools'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+58:54  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+62:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+124:52  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+149:71  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+220:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+229:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+241:56  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/devices/pools/[poolId]/page.tsx
+17:16  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+64:6  Warning: React Hook useEffect has a missing dependency: 'fetchPool'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+72:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+89:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+93:9  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<AvailableDevice[]>`.  @typescript-eslint/no-unsafe-argument
+93:9  Warning: Unsafe call of an `any` typed value.  
+@typescript-eslint/no-unsafe-call
+93:14  Warning: Unsafe member access .devices on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+301:58  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/integrations/api-keys/page.tsx
+224:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+
+./app/integrations/sis/SisIntegrationPage.tsx
+4:1  Warning: `@aivo/ui-web` import should occur before import of `react`  
+import/order
+127:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+128:3  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+128:15  Warning: Unsafe member access .providers on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+136:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+154:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+155:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+155:27  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+157:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+158:3  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+158:17  Warning: Unsafe member access .provider on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+176:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+177:3  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+177:17  Warning: Unsafe member access .provider on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+187:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+194:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+205:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+222:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+223:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+223:27  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+225:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+238:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+244:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+245:3  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+245:15  Warning: Unsafe member access .status on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+275:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+299:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+358:5  Warning: React Hook useCallback has a missing dependency: 'confirm'. 
+Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+581:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+
+./app/integrations/webhooks/page.tsx
+4:1  Warning: `@aivo/ui-web` import should occur before import of `react`  
+import/order
+107:16  Warning: 'rotateWebhookSecret' is defined but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+289:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+
+./app/login/LoginForm.tsx
+39:17  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+40:27  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<SsoProvider[]>`.  @typescript-eslint/no-unsafe-argument
+40:32  Warning: Unsafe member access .providers on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+46:5  Warning: Promises must be awaited, end with a call to .catch, end with a 
+call to .then with a rejection handler or be explicitly marked as ignored with 
+the `void` operator.  @typescript-eslint/no-floating-promises
+49:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+60:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+61:18  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<string | null>`.  @typescript-eslint/no-unsafe-argument
+61:23  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+73:53  Warning: 'providerType' is defined but never used. Allowed unused args 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+80:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+81:18  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<string | null>`.  @typescript-eslint/no-unsafe-argument
+81:23  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+85:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+87:7  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+174:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/marketplace/catalog.tsx
+20:3  Warning: 'getSafetyCertLabel' is defined but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+36:22  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+40:14  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+132:11  Warning: Using `<img>` could result in slower LCP and higher 
+bandwidth. Consider using `<Image />` from `next/image` or a custom image 
+loader to automatically optimize images. This may incur additional usage or 
+cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+
+./app/marketplace/installations/list.tsx
+221:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. 
+Consider using `<Image />` from `next/image` or a custom image loader to 
+automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+341:21  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+
+./app/marketplace/items/[slug]/content.tsx
+89:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. 
+Consider using `<Image />` from `next/image` or a custom image loader to 
+automatically optimize images. This may incur additional usage or cost from 
+your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+108:12  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+113:19  Warning: Using `<img>` could result in slower LCP and higher 
+bandwidth. Consider using `<Image />` from `next/image` or a custom image 
+loader to automatically optimize images. This may incur additional usage or 
+cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+114:26  Warning: Do not use Array index in keys  react/no-array-index-key
+129:25  Warning: Do not use Array index in keys  react/no-array-index-key
+221:66  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+270:17  Warning: Using `<img>` could result in slower LCP and higher 
+bandwidth. Consider using `<Image />` from `next/image` or a custom image 
+loader to automatically optimize images. This may incur additional usage or 
+cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+290:12  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/marketplace/items/[slug]/install-modal.tsx
+132:15  Warning: Using `<img>` could result in slower LCP and higher 
+bandwidth. Consider using `<Image />` from `next/image` or a custom image 
+loader to automatically optimize images. This may incur additional usage or 
+cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+
+./app/marketplace/safety-badge.tsx
+10:10  Warning: 'useState' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+33:58  Error: 'React' is not defined.  no-undef
+99:58  Error: 'React' is not defined.  no-undef
+167:74  Error: 'React' is not defined.  no-undef
+
+./app/marketplace/safety-details-modal.tsx
+65:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+66:15  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<SafetyDetailsData | null>`.  
+@typescript-eslint/no-unsafe-argument
+
+./app/onboarding/OnboardingWizard.tsx
+8:1  Warning: `./steps/SchoolConfigStep` import should occur before import of 
+`./steps/SisIntegrationStep`  import/order
+9:1  Warning: `./steps/ConsentFormsStep` import should occur before import of 
+`./steps/DistrictInfoStep`  import/order
+21:10  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+171:50  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/onboarding/steps/ConsentFormsStep.tsx
+39:5  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+52:20  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+206:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+221:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+289:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+322:25  Warning: Do not use Array index in keys  react/no-array-index-key
+325:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+331:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+337:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+344:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+350:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+371:30  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+411:30  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/onboarding/steps/DistrictInfoStep.tsx
+29:36  Warning: 'tenantId' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+46:28  Error: 'React' is not defined.  no-undef
+54:34  Error: 'React' is not defined.  no-undef
+54:40  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+
+./app/onboarding/steps/MasterAgreementStep.tsx
+148:34  Error: 'React' is not defined.  no-undef
+148:40  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+201:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+211:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+235:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+247:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+270:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+284:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+299:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/onboarding/steps/SchoolConfigStep.tsx
+65:20  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+84:20  Error: This assertion is unnecessary since it does not change the type 
+of the expression.  @typescript-eslint/no-unnecessary-type-assertion
+213:24  Warning: Do not use Array index in keys  react/no-array-index-key
+237:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+243:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+269:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+281:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+294:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+306:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+316:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+326:40  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+336:40  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+352:38  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/onboarding/steps/SisIntegrationStep.tsx
+18:18  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+226:23  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+309:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+366:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+379:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+393:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+406:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/onboarding/steps/VerificationStep.tsx
+64:5  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+88:20  Error: Array type using 'Array<T>' is forbidden. Use 'T[]' instead.  
+@typescript-eslint/array-type
+226:22  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/privacy/page.tsx
+34:12  Warning: 'err' is defined but never used.  
+@typescript-eslint/no-unused-vars
+
+./app/research/page.tsx
+76:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+
+./app/research/projects/new/page.tsx
+3:40  Warning: 'Select' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+50:34  Error: 'React' is not defined.  no-undef
+50:40  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+71:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+72:25  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+72:30  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+75:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+76:49  Warning: Unsafe member access .id on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+109:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+121:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+133:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+148:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+156:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+172:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+185:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+195:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+213:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+222:36  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+249:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/research/projects/[id]/exports/new/page.tsx
+93:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+94:20  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<Cohort[]>`.  @typescript-eslint/no-unsafe-argument
+94:25  Warning: Unsafe member access .data on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+97:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+98:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<DatasetDefinition[]>`.  @typescript-eslint/no-unsafe-argument
+98:26  Warning: Unsafe member access .data on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+101:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+102:22  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<DatasetTemplate[]>`.  @typescript-eslint/no-unsafe-argument
+102:27  Warning: Unsafe member access .data on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+104:14  Warning: 'err' is defined but never used.  
+@typescript-eslint/no-unused-vars
+141:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+142:25  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+142:30  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+145:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+146:33  Warning: Unsafe member access .data on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+166:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+192:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+193:25  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+193:30  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+
+./app/research/projects/[id]/page.tsx
+3:33  Warning: 'Badge' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+112:9  Warning: 'router' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+132:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+133:18  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<ResearchProject | null>`.  
+@typescript-eslint/no-unsafe-argument
+140:15  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+141:20  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`SetStateAction<ExportJob[]>`.  @typescript-eslint/no-unsafe-argument
+141:32  Warning: Unsafe member access .data on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+202:62  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+203:75  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+205:65  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+369:14  Warning: Unnecessary conditional, value is always truthy.  
+@typescript-eslint/no-unnecessary-condition
+412:27  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+418:31  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+444:38  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+450:42  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+527:32  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+533:36  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/schools/page.tsx
+34:29  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/sessions/[sessionId]/run/page.tsx
+14:8  Warning: 'SessionMetadata' is defined but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+72:44  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./app/sessions/[sessionId]/summary/page.tsx
+5:1  Warning: `@aivo/ui-web` import should occur before import of 
+`next/navigation`  import/order
+14:1  Warning: `@/lib/session-api` import should occur before import of 
+`@/lib/teacher-planning-api`  import/order
+19:1  Warning: `@/lib/cn` import should occur before import of 
+`@/lib/teacher-planning-api`  import/order
+43:26  Error: This assertion is unnecessary since it does not change the type 
+of the expression.  @typescript-eslint/no-unnecessary-type-assertion
+75:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+128:10  Error: Prefer using an optional chain expression instead, as it's more 
+concise and easier to read.  @typescript-eslint/prefer-optional-chain
+136:22  Error: This assertion is unnecessary since it does not change the type 
+of the expression.  @typescript-eslint/no-unnecessary-type-assertion
+140:22  Error: This assertion is unnecessary since it does not change the type 
+of the expression.  @typescript-eslint/no-unnecessary-type-assertion
+
+./app/settings/sso/SsoConfigPage.tsx
+148:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+
+./app/users/components/csv-import-modal.tsx
+29:10  Warning: 'file' is assigned a value but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+40:7  Warning: Promises must be awaited, end with a call to .catch, end with a 
+call to .then with a rejection handler or be explicitly marked as ignored with 
+the `void` operator.  @typescript-eslint/no-floating-promises
+187:34  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+268:32  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/users/components/user-filters.tsx
+39:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+47:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+60:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+73:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/users/components/user-form-modal.tsx
+9:1  Warning: There should be at least one empty line between import groups  
+import/order
+57:34  Error: `FormEvent` is deprecated. FormEvent doesn't actually exist.
+You probably meant to use {@link ChangeEvent}, {@link InputEvent}, {@link 
+SubmitEvent}, or just {@link SyntheticEvent} instead
+depending on the event type.  @typescript-eslint/no-deprecated
+86:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+107:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+128:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+148:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+165:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/users/components/user-table.tsx
+9:1  Warning: There should be at least one empty line between import groups  
+import/order
+73:29  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+74:31  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+75:43  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+143:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+153:32  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./app/users/import/page.tsx
+18:3  Warning: 'FileText' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+25:3  Warning: 'Building2' is defined but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+84:10  Warning: 'importing' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+560:28  Warning: Do not use Array index in keys  react/no-array-index-key
+701:29  Warning: Do not use Array index in keys  react/no-array-index-key
+720:26  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./app/users/page.tsx
+9:1  Warning: There should be no empty line within import group  import/order
+11:1  Warning: `@aivo/ui-web` import should occur before import of `react`  
+import/order
+37:22  Error: Use the `RegExp#exec()` method instead.  
+@typescript-eslint/prefer-regexp-exec
+43:52  Error: Using the spread operator on an array in an object will result 
+in a list of indices.  @typescript-eslint/no-misused-spread
+46:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+47:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`string | undefined`.  @typescript-eslint/no-unsafe-argument
+47:26  Warning: Unsafe member access .error on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+112:27  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+134:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+
+./components/analytics/FocusTab.tsx
+3:1  Warning: There should be at least one empty line between import groups  
+import/order
+52:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+62:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+145:22  Warning: Do not use Array index in keys  react/no-array-index-key
+309:22  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./components/analytics/HomeworkTab.tsx
+3:1  Warning: There should be at least one empty line between import groups  
+import/order
+6:8  Warning: 'LearnerHomeworkUsage' is defined but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+8:3  Warning: 'getIndependenceLabelColor' is defined but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+85:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+92:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+99:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+106:28  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+204:3  Warning: 'color' is defined but never used. Allowed unused args must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+275:22  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+297:35  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`IndependenceLabel`.  @typescript-eslint/no-unsafe-argument
+297:44  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./components/nav.tsx
+39:26  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+104:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+125:34  Error: Returning a void expression from an arrow function shorthand is 
+forbidden. Please add braces to the arrow function.  
+@typescript-eslint/no-confusing-void-expression
+
+./components/why-this-modal.tsx
+30:10  Warning: 'useCallback' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+195:16  Warning: 'err' is defined but never used.  
+@typescript-eslint/no-unused-vars
+202:5  Warning: Promises must be awaited, end with a call to .catch, end with 
+a call to .then with a rejection handler or be explicitly marked as ignored 
+with the `void` operator.  @typescript-eslint/no-floating-promises
+399:24  Warning: Do not use Array index in keys  react/no-array-index-key
+414:25  Warning: Do not use Array index in keys  react/no-array-index-key
+
+./lib/audit-api.ts
+153:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+153:39  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+160:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+160:39  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+167:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+167:37  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+174:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+174:37  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./lib/auth.ts
+35:19  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`CookieTarget`.  @typescript-eslint/no-unsafe-argument
+35:26  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+39:21  Warning: Unsafe argument of type `any` assigned to a parameter of type 
+`CookieTarget`.  @typescript-eslint/no-unsafe-argument
+39:28  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/classroom-analytics.ts
+105:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+132:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+
+./lib/curriculum-api.ts
+142:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+165:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+200:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+231:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+278:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+304:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+333:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+367:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+401:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+435:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+486:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+516:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+581:10  Warning: Unnecessary conditional, expected left-hand side of `??` 
+operator to be possibly null or undefined.  
+@typescript-eslint/no-unnecessary-condition
+581:32  Warning: Unnecessary optional chain on a non-nullish value.  
+@typescript-eslint/no-unnecessary-condition
+
+./lib/explanation-api.ts
+138:5  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+185:5  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+213:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+214:5  Warning: Unsafe return of a value of type `any`.  
+@typescript-eslint/no-unsafe-return
+214:17  Warning: Unsafe member access .explanation on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+
+./lib/learner-insights.ts
+94:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+96:7  Warning: Unnecessary conditional, value is always falsy.  
+@typescript-eslint/no-unnecessary-condition
+123:9  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+125:7  Warning: Unnecessary conditional, value is always falsy.  
+@typescript-eslint/no-unnecessary-condition
+
+./lib/marketplace-api.ts
+156:11  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+
+./lib/model-cards-api.ts
+7:15  Warning: 'AuthSession' is defined but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+94:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+116:3  Warning: Unsafe return of a value of type `Promise<any>`.  
+@typescript-eslint/no-unsafe-return
+
+./lib/session-api.ts
+83:5  Error: Using the spread operator on an array in an object will result in 
+a list of indices.  @typescript-eslint/no-misused-spread
+182:29  Error: This assertion is unnecessary since it does not change the type 
+of the expression.  @typescript-eslint/no-unnecessary-type-assertion
+
+./lib/tenant.ts
+18:30  Warning: Forbidden non-null assertion.  
+@typescript-eslint/no-non-null-assertion
+
+./lib/use-access-token.ts
+36:13  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+37:7  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+37:26  Warning: Unsafe member access .session on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+38:7  Warning: Unsafe assignment of an `any` value.  
+@typescript-eslint/no-unsafe-assignment
+38:29  Warning: Unsafe member access .session on an `any` value.  
+@typescript-eslint/no-unsafe-member-access
+73:5  Warning: Promises must be awaited, end with a call to .catch, end with a 
+call to .then with a rejection handler or be explicitly marked as ignored with 
+the `void` operator.  @typescript-eslint/no-floating-promises
+
+info  - Need to disable some ESLint rules? Learn more here: 
+https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+C:\Users\ofema\aivo\apps\web-district:
+GÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILGÇë @aivo/web-district@0.1.0 build: `next build`
+Exit status 1
+

@@ -20,6 +20,8 @@ import { z } from 'zod';
 import * as conversationService from '../services/conversationService.js';
 import * as messageService from '../services/messageService.js';
 import * as participantService from '../services/participantService.js';
+import * as attachmentService from '../services/attachmentService.js';
+import * as translationService from '../services/translationService.js';
 import { MessageType, ConversationType } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -418,7 +420,7 @@ export async function registerMobileMessagingRoutes(fastify: FastifyInstance): P
 
   /**
    * POST /messaging/attachments
-   * Upload an attachment
+   * Upload an attachment to Cloudflare R2
    */
   fastify.post(
     '/messaging/attachments',
@@ -426,14 +428,41 @@ export async function registerMobileMessagingRoutes(fastify: FastifyInstance): P
       const ctx = getTenantContext(request);
 
       try {
-        // TODO: Implement file upload handling
-        // For now, return a placeholder response
+        // Parse multipart file upload
+        const data = await (request as any).file();
+
+        if (!data) {
+          return reply.code(400).send({ error: 'No file uploaded' });
+        }
+
+        const filename = data.filename || 'unnamed';
+        const mimeType = data.mimetype || 'application/octet-stream';
+
+        // Read file into buffer
+        const fileBuffer = await data.toBuffer();
+        const size = fileBuffer.length;
+
+        // Validate file type and size
+        const validation = attachmentService.validateAttachment(mimeType, size, filename);
+        if (!validation.valid) {
+          return reply.code(400).send({ error: validation.error });
+        }
+
+        // Upload to Cloudflare R2
+        const result = await attachmentService.uploadAttachment(
+          ctx.tenantId,
+          ctx.userId,
+          fileBuffer,
+          filename,
+          mimeType,
+        );
+
         const attachment: Attachment = {
-          id: 'att-' + Date.now(),
-          name: 'file.jpg',
-          url: 'https://placeholder.com/file.jpg',
-          mimeType: 'image/jpeg',
-          size: 1024,
+          id: result.id,
+          name: result.name,
+          url: result.url,
+          mimeType: result.mimeType,
+          size: result.size,
         };
 
         return reply.code(201).send(attachment);
@@ -441,6 +470,69 @@ export async function registerMobileMessagingRoutes(fastify: FastifyInstance): P
         fastify.log.error({ error }, 'Error uploading attachment');
         return reply.code(500).send({ error: 'Failed to upload attachment' });
       }
+    }
+  );
+
+  /**
+   * POST /messaging/messages/:messageId/translate
+   * Translate a message to the requested locale
+   */
+  fastify.post(
+    '/messaging/messages/:messageId/translate',
+    async (
+      request: FastifyRequest<{
+        Params: { messageId: string };
+        Body: { targetLocale: string; sourceLocale?: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const ctx = getTenantContext(request);
+      const { messageId } = request.params;
+      const { targetLocale, sourceLocale } = request.body || {};
+
+      if (!targetLocale) {
+        return reply.code(400).send({ error: 'targetLocale is required' });
+      }
+
+      if (!translationService.isSupportedLocale(targetLocale)) {
+        return reply.code(400).send({
+          error: `Unsupported locale: ${targetLocale}`,
+          supportedLocales: translationService.getSupportedLocales(),
+        });
+      }
+
+      try {
+        // Get the message to translate
+        const message = await messageService.getMessageById(messageId, ctx.tenantId);
+        if (!message) {
+          return reply.code(404).send({ error: 'Message not found' });
+        }
+
+        const result = await translationService.translateMessage(
+          messageId,
+          message.content,
+          targetLocale,
+          sourceLocale,
+        );
+
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error({ error, messageId }, 'Error translating message');
+        return reply.code(500).send({ error: 'Failed to translate message' });
+      }
+    }
+  );
+
+  /**
+   * GET /messaging/locales
+   * Get list of supported translation locales
+   */
+  fastify.get(
+    '/messaging/locales',
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      return reply.send({
+        locales: translationService.getSupportedLocales(),
+      });
     }
   );
 }

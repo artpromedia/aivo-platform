@@ -4,7 +4,7 @@
  * PRD: FERPA requires 7-year immutable retention of audit logs.
  * This service enforces:
  *   1. DB-level immutability via Prisma middleware (block UPDATE/DELETE on AuditLog)
- *   2. Periodic archival to S3 with Object Lock configuration
+ *   2. Periodic archival to Cloudflare R2 with immutability configuration
  *   3. Retention policy validation
  */
 
@@ -81,18 +81,20 @@ export async function validateRetentionCompliance(tenantId: string): Promise<{
 }
 
 /**
- * Generate S3 Object Lock configuration for audit log archival.
- * This returns the configuration that should be applied when creating
- * S3 buckets or uploading audit archives.
+ * Generate Cloudflare R2 storage configuration for audit log archival.
+ * R2 supports S3-compatible APIs. This returns the configuration for
+ * bucket lifecycle rules and object retention.
  */
-export function getS3ObjectLockConfig(): {
-  objectLockEnabled: boolean;
-  retentionMode: 'GOVERNANCE' | 'COMPLIANCE';
+export function getR2StorageConfig(): {
+  bucketName: string;
+  endpoint: string;
   retentionDays: number;
+  immutable: boolean;
 } {
   return {
-    objectLockEnabled: true,
-    retentionMode: 'COMPLIANCE', // Cannot be overridden even by root account
+    bucketName: process.env.R2_AUDIT_BUCKET || 'aivo-audit-archives',
+    endpoint: process.env.R2_ENDPOINT || '',
     retentionDays: config.retentionDays,
+    immutable: true, // Audit logs must not be modifiable
   };
 }

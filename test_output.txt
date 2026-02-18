@@ -1,0 +1,1731 @@
+﻿
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/ofema/aivo/services/notify-svc[39m
+
+ [32mΓ£ô[39m src/services/push-notification.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32mΓ£ô[39m src/services/notification.service.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32mΓ£ô[39m src/channels/email/email.service.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32mΓ£ô[39m src/services/notification-preferences.service.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [31mΓ¥»[39m src/channels/sms/__tests__/sms.test.ts [2m([22m[2m60 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 28[2mms[22m[39m
+[31m   [31m├ù[31m Content Filtering[2m > [22mSHAFT Content Detection[2m > [22mshould block messages with firearms content[90m 10[2mms[22m[31m[39m
+[31m     ΓåÆ expected false to be true // Object.is equality[39m
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould initialize successfully when health check passes
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould initialize in degraded state when health check fails
+[22m[39m[OonruMail] Provider shut down
+
+node.exe : [90mstderr[2m | 
+src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould 
+initialize in degraded state when health check fails
+At c:\Users\ofema\aivo\.node\node-v20.19.4-win-x64\node_modules\corepack\shims\
+npx.ps1:24 char:5
++     & "node$exe"  "$basedir/../dist/npx.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...lth check fails 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[OonruMail] Failed to initialize: Error: Connection refused
+    at [90mC:\Users\ofema\aivo\services\notify-svc\[39msrc\channels\email\__t
+ests__\oonrumail.test.ts:185:36
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:146:14
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest
++runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1056:17)
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:95:5)[39m
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1262:5)
+[OonruMail] Initialized in degraded state (health check failed)
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould return false when API reports status: down
+[22m[39m[OonruMail] Provider shut down
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould 
+return false when API reports status: down
+[22m[39m[OonruMail] API reports status: down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould return true on subsequent initialization calls
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2minitialization[2m > [22m[2mshould pass config to SDK constructor
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould send a single email successfully
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'st***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-001'[39m,
+  status: [32m'accepted'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould handle multiple recipients
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-002'[39m,
+  status: [32m'accepted'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould include cc, bcc, replyTo, and tags
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'st***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-003'[39m,
+  status: [32m'accepted'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould convert attachments to base64
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'st***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-004'[39m,
+  status: [32m'accepted'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould handle scheduled sending
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'st***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-005'[39m,
+  status: [32m'queued'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould return NOT_INITIALIZED error when not initialized
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msend[2m > [22m[2mshould set priority in metadata
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Email sent: {
+  to: [32m'st***@example.com'[39m,
+  subject: [32m'Welcome to AIVO'[39m,
+  messageId: [32m'om-msg-006'[39m,
+  status: [32m'accepted'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendBatch[2m > [22m[2mshould send a batch of emails
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Batch sent: { totalEmails: [33m2[39m, totalSent: [33m2[39m, totalFailed: [33m0[39m }
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendBatch[2m > [22m[2mshould handle partial batch failures
+[22m[39m[OonruMail] Provider initialized {
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify auth errors correctly
+[22m[39m[OonruMail] Send failed: {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Batch sent: { totalEmails: [33m2[39m, totalSent: [33m1[39m, totalFailed: [33m1[39m }
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendBatch[2m > [22m[2mshould return NOT_INITIALIZED for batch when not initialized
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendBatch[2m > [22m[2mshould handle complete batch SDK error
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Batch sent: { totalEmails: [33m2[39m, totalSent: [33m0[39m, totalFailed: [33m2[39m }
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendTemplate[2m > [22m[2mshould send a template email with passthrough templateId
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'welcome'[39m,
+  originalTemplateId: [32m'welcome'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-tpl-msg-001'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendTemplate[2m > [22m[2mshould include cc, bcc, and attachments in template emails
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'welcome'[39m,
+  originalTemplateId: [32m'welcome'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-tpl-msg-002'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2msendTemplate[2m > [22m[2mshould return NOT_INITIALIZED error on template send when not initialized
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'AUTH_ERROR'[39m,
+  errorMessage: [32m'Authentication failed'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify rate limit errors correctly
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'RATE_LIMITED'[39m,
+  errorMessage: [32m'Rate limited'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify timeout errors correctly
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'TIMEOUT'[39m,
+  errorMessage: [32m'Request timed out'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify 5xx errors as SERVICE_UNAVAILABLE
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'SERVICE_UNAVAILABLE'[39m,
+  errorMessage: [32m'Internal server error'[39m
+}
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mtemplate mapping with useServerTemplates[2m > [22m[2mshould resolve "welcome" to the configured server template ID
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mtrue[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'om-tpl-welcome-001'[39m,
+  originalTemplateId: [32m'welcome'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-mapped-001'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mtemplate mapping with useServerTemplates[2m > [22m[2mshould resolve email_verification with underscore variant
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mtrue[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'om-tpl-verify-002'[39m,
+  originalTemplateId: [32m'email_verification'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-mapped-002'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mtemplate mapping with useServerTemplates[2m > [22m[2mshould resolve password-reset with hyphen variant
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mtrue[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'om-tpl-reset-003'[39m,
+  originalTemplateId: [32m'password-reset'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-mapped-003'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mtemplate mapping with useServerTemplates[2m > [22m[2mshould passthrough unknown template IDs
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mtrue[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Template email sent: {
+  templateId: [32m'custom-template-xyz'[39m,
+  originalTemplateId: [32m'custom-template-xyz'[39m,
+  to: [32m'st***@example.com'[39m,
+  messageId: [32m'om-mapped-004'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify auth errors correctly
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify rate limit errors correctly
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify timeout errors correctly
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify 5xx errors as SERVICE_UNAVAILABLE
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify retryable errors as CONNECTION_ERROR
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould classify non-retryable errors as OONRUMAIL_ERROR
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > [22m[2mshould handle generic JS errors
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould return true when API is healthy
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould return true when API is degraded
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould return false when API is down
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould return false when health check throws
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould return false when not initialized
+[22m[39m[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mcancelScheduled[2m > [22m[2mshould cancel a scheduled email
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Cancelled scheduled message: om-msg-001 [33mtrue[39m
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mcancelScheduled[2m > [22m[2mshould return false when cancellation fails
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Cancelled scheduled message: om-msg-002 [33mfalse[39m
+[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mcancelScheduled[2m > [22m[2mshould return false when not initialized
+[22m[39m[OonruMail] Provider shut down
+
+[90mstdout[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > [22m[2mOonruMailProvider[2m > [22m[2mshutdown[2m > [22m[2mshould reset state on shutdown
+[22m[39m[OonruMail] Provider initialized {
+  baseUrl: [32m'https://api.oonrumail.test/v1'[39m,
+  useServerTemplates: [33mfalse[39m,
+  fromEmail: [32m'noreply@aivo.app'[39m,
+  status: [32m'healthy'[39m
+}
+[OonruMail] Provider shut down
+[OonruMail] Provider shut down
+
+ [32mΓ£ô[39m src/channels/email/__tests__/oonrumail.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify retryable errors as CONNECTION_ERROR
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'CONNECTION_ERROR'[39m,
+  errorMessage: [32m'Connection refused'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould classify non-retryable errors as OONRUMAIL_ERROR
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'OONRUMAIL_ERROR'[39m,
+  errorMessage: [32m'Invalid request body'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2merror classification[2m > 
+[22m[2mshould handle generic JS errors
+[22m[39m[OonruMail] Send failed: {
+  to: [32m'st***@example.com'[39m,
+  errorCode: [32m'OONRUMAIL_ERROR'[39m,
+  errorMessage: [32m'Cannot read properties'[39m
+}
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2mhealthCheck[2m > [22m[2mshould 
+return false when health check throws
+[22m[39m[OonruMail] Health check failed: Error: Connection failed
+    at [90mC:\Users\ofema\aivo\services\notify-svc\[39msrc\channels\email\__t
+ests__\oonrumail.test.ts:767:32
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:146:14
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:39:7)
+    at runTest (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest
++runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1056:17)
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:95:5)[39m
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest[24m/runner/dist/index.js:1262:5)
+
+[90mstderr[2m | src/channels/email/__tests__/oonrumail.test.ts[2m > 
+[22m[2mOonruMailProvider[2m > [22m[2mcancelScheduled[2m > 
+[22m[2mshould return false when not initialized
+[22m[39m[OonruMail] Cannot cancel - not initialized
+
+ [32mΓ£ô[39m src/services/delivery-tracker.service.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [31mΓ¥»[39m src/channels/email/email-validator.test.ts [2m([22m[2m51 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 21[2mms[22m[39m
+[31m   [31m├ù[31m EmailValidator[2m > [22mvalidateFormat[2m > [22mshould reject email exceeding 254 characters[90m 7[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'Local part exceeds maximum length (64ΓÇª' to contain '254'[39m
+ [32mΓ£ô[39m src/__tests__/quiet-hours.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [31mΓ¥»[39m src/__tests__/notification-preferences.service.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/__tests__/parent-notifications.test.ts [2m([22m[2m31 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[90m 31[2mms[22m[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mgetUrgencyLevel[2m > [22mshould return correct numeric level for each urgency[90m 10[2mms[22m[31m[39m
+[31m     ΓåÆ expected 4 to be +0 // Object.is equality[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mformatEmotionalState[2m > [22mshould format emotional states with underscores[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'distress' to be 'Meltdown Risk' // Object.is equality[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mformatEmotionalState[2m > [22mshould capitalize single words[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'calm and focused' to be 'Calm' // Object.is equality[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mDefault Settings[2m > [22mshould have settings for all urgency levels[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ expected { ΓÇª(5) } to have property "CRITICAL"[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mDefault Settings[2m > [22mshould enable all channels for critical urgency[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'push')[39m
+[31m   [31m├ù[31m Parent Notification Types[2m > [22mDefault Settings[2m > [22mshould have settings for all categories[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected { emotional_state: { ΓÇª(4) }, ΓÇª(7) } to have property "EMOTIONAL_STATE"[39m
+[31m   [31m├ù[31m UrgencyClassifier[2m > [22mclassify[2m > [22mSafety Concern[2m > [22mshould default to critical for unknown severity[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'HIGH' to be 'CRITICAL' // Object.is equality[39m
+ [32mΓ£ô[39m tests/notificationService.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [31mΓ¥»[39m tests/preferenceService.test.ts [2m([22m[2m14 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[90m 37[2mms[22m[39m
+[31m   [31m├ù[31m PreferenceService[2m > [22mgetPreferences[2m > [22mshould return existing preferences[90m 11[2mms[22m[31m[39m
+[31m     ΓåÆ expected "spy" to be called with arguments: [ { where: { userId: 'user-1' } } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  Array [[22m
+[2m    Object {[22m
+[2m      "where": Object {[22m
+[31m+       "tenantId_userId": Object {[90m
+[31m+         "tenantId": "tenant-1",[90m
+[2m          "userId": "user-1",[22m
+[31m+       },[90m
+[2m      },[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[31m   [31m├ù[31m PreferenceService[2m > [22mupdatePreferences[2m > [22mshould update existing preferences[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ expected "spy" to be called with arguments: [ ObjectContaining{ΓÇª} ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  Array [[22m
+[32m-   ObjectContaining {[90m
+[32m-     "update": ObjectContaining {[90m
+[31m+   Object {[90m
+[31m+     "create": Object {[90m
+[31m+       "digestEnabled": false,[90m
+[31m+       "digestFrequency": null,[90m
+[31m+       "digestTime": null,[90m
+[31m+       "emailEnabled": true,[90m
+[31m+       "inAppEnabled": true,[90m
+[31m+       "pushEnabled": false,[90m
+[31m+       "quietHoursEnd": null,[90m
+[31m+       "quietHoursStart": null,[90m
+[31m+       "quietHoursTimezone": null,[90m
+[31m+       "smsEnabled": false,[90m
+[31m+       "tenantId": "tenant-1",[90m
+[31m+       "typePreferences": Object {},[90m
+[31m+       "userId": "user-1",[90m
+[31m+     },[90m
+[31m+     "update": Object {[90m
+[2m        "pushEnabled": false,[22m
+[2m      },[22m
+[2m      "where": Object {[22m
+[31m+       "tenantId_userId": Object {[90m
+[31m+         "tenantId": "tenant-1",[90m
+[2m          "userId": "user-1",[22m
+[31m+       },[90m
+[2m      },[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2msendApnsNotification[2m > [22m[2mshould send notification successfully
+[22m[39m[APNs] Provider initialized successfully { production: [33mfalse[39m, bundleId: [32m'com.aivo.learner'[39m }
+[APNs] Message sent successfully: { token: [32m'ios-device-token...'[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2msendApnsNotification[2m > [22m[2mshould handle 
+failed delivery
+[22m[39m[APNs] Send failed: { reason: [32m'BadDeviceToken'[39m, status: 
+[32m'400'[39m, isInvalidToken: [33mtrue[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2msendApnsNotification[2m > [22m[2mshould mark 
+invalid tokens for removal
+[22m[39m[APNs] Send failed: { reason: [32m'Unregistered'[39m, status: 
+[32m'410'[39m, isInvalidToken: [33mtrue[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2msendApnsNotification[2m > [22m[2mshould handle 
+BadDeviceToken error
+[22m[39m[APNs] Send failed: { reason: [32m'BadDeviceToken'[39m, status: 
+[32m'400'[39m, isInvalidToken: [33mtrue[39m }
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2msendApnsBatch[2m > [22m[2mshould send batch notifications
+[22m[39m[APNs] Batch sent: { total: [33m2[39m, success: [33m2[39m, failure: [33m0[39m }
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2msendApnsBatch[2m > [22m[2mshould track mixed results in batch
+[22m[39m[APNs] Batch sent: { total: [33m2[39m, success: [33m1[39m, failure: [33m1[39m }
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2msendApnsBatch[2m > [22m[2mshould collect all invalid tokens
+[22m[39m[APNs] Batch sent: { total: [33m3[39m, success: [33m0[39m, failure: [33m3[39m }
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mSilent Notifications[2m > [22m[2mshould send silent notification for background updates
+[22m[39m[APNs] Message sent successfully: { token: [32m'token-1...'[39m }
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mShutdown[2m > [22m[2mshould gracefully shutdown APNs connection
+[22m[39m[APNs] Provider shut down
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould mark token for removal on BadDeviceToken
+[22m[39m[APNs] Provider initialized successfully { production: [33mfalse[39m, bundleId: [32m'com.aivo.learner'[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould mark token 
+for removal on BadDeviceToken
+[22m[39m[APNs] Send failed: { reason: [32m'BadDeviceToken'[39m, status: 
+[32m'400'[39m, isInvalidToken: [33mtrue[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould mark token 
+for removal on Unregistered
+[22m[39m[APNs] Send failed: { reason: [32m'Unregistered'[39m, status: 
+[32m'400'[39m, isInvalidToken: [33mtrue[39m }
+
+[90mstderr[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs 
+Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould mark token 
+for removal on DeviceTokenNotForTopic
+[22m[39m[APNs] Send failed: {
+  reason: [32m'DeviceTokenNotForTopic'[39m,
+  status: [32m'400'[39m,
+  isInvalidToken: [33mtrue[39m
+}
+
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould not mark token for removal on transient errors
+[22m[39m[APNs] Retry attempt 1/3 after 1000ms
+
+ [31mΓ¥»[39m src/channels/email/__tests__/template-engine.test.ts [2m([22m[2m21 tests[22m[2m | [22m[33m21 skipped[39m[2m)[22m[90m 12[2mms[22m[39m
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould not mark token for removal on transient errors
+[22m[39m[APNs] Retry attempt 2/3 after 2000ms
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmNotification[2m > [22m[2mshould send notification 
+successfully
+[22m[39m[2m2026-02-18T02:41:56.412Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+ [32mΓ£ô[39m src/channels/email/__tests__/email-validator.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 46[2mms[22m[39m
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmNotification[2m > [22m[2mshould handle invalid token error
+[22m[39m[2m2026-02-18T02:41:56.425Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmNotification[2m > [22m[2mshould handle unregistered token 
+error
+[22m[39m[2m2026-02-18T02:41:56.429Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmNotification[2m > [22m[2mshould retry on server error
+[22m[39m[2m2026-02-18T02:41:56.430Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmBatch[2m > [22m[2mshould batch notifications in chunks of 
+500
+[22m[39m[2m2026-02-18T02:41:56.432Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2msendFcmBatch[2m > [22m[2mshould track invalid tokens in batch 
+response
+[22m[39m[2m2026-02-18T02:41:56.433Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstdout[2m | src/__tests__/push-service.test.ts[2m > [22m[2mPush Service[2m > [22m[2minitializePushService[2m > [22m[2mshould initialize FCM and APNs
+[22m[39m[PushService] Initialized: { fcm: [33mtrue[39m, apns: [33mtrue[39m }
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2mTopic Operations[2m > [22m[2mshould subscribe tokens to topic
+[22m[39m[2m2026-02-18T02:41:56.434Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+ [32mΓ£ô[39m src/__tests__/push-service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2mTopic Operations[2m > [22m[2mshould unsubscribe tokens from topic
+[22m[39m[2m2026-02-18T02:41:56.436Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+[90mstderr[2m | src/__tests__/fcm.test.ts[2m > [22m[2mFCM Integration[2m 
+> [22m[2mTopic Operations[2m > [22m[2mshould send to topic
+[22m[39m[2m2026-02-18T02:41:56.437Z[0m [31mERROR[0m 
+[2m[notify-svc:fcm][0m Failed to initialize Firebase Admin SDK [2m{"error":{
+"codeFrame":"vi\u001b[33m.\u001b[39m\u001b[34mmock\u001b[39m(\u001b[35mimport\u
+001b[39m(\u001b[32m\"firebase-admin\"\u001b[39m)\u001b[33m,\u001b[39m 
+\u001b[35masync\u001b[39m (importOriginal) \u001b[33m=>\u001b[39m {\n  
+\u001b[35mconst\u001b[39m actual \u001b[33m=\u001b[39m 
+\u001b[35mawait\u001b[39m \u001b[34mimportOriginal\u001b[39m()\n  
+\u001b[35mreturn\u001b[39m {\n    
+\u001b[33m...\u001b[39mactual\u001b[33m,\u001b[39m\n    \u001b[90m// your 
+mocked methods\u001b[39m\n  }\n})"}}[0m
+
+ [31mΓ¥»[39m src/__tests__/fcm.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[33m 2286[2mms[22m[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmNotification[2m > [22mshould send notification successfully[33m 2268[2mms[22m[31m[39m
+[31m     ΓåÆ expected false to be true // Object.is equality[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmNotification[2m > [22mshould handle invalid token error[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ expected undefined to be true // Object.is equality[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmNotification[2m > [22mshould handle unregistered token error[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected undefined to be true // Object.is equality[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmNotification[2m > [22mshould retry on server error[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected "spy" to be called 2 times, but got 0 times[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmBatch[2m > [22mshould batch notifications in chunks of 500[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected "spy" to be called 2 times, but got 0 times[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22msendFcmBatch[2m > [22mshould track invalid tokens in batch response[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected +0 to be 1 // Object.is equality[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22mTopic Operations[2m > [22mshould subscribe tokens to topic[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ FCM not initialized[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22mTopic Operations[2m > [22mshould unsubscribe tokens from topic[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ FCM not initialized[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22mTopic Operations[2m > [22mshould send to topic[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected false to be true // Object.is equality[39m
+[31m   [31m├ù[31m FCM Integration[2m > [22mTopic Name Builders[2m > [22mshould sanitize special characters in topic names[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'tenant_tenant.with_special@chars' to match /^[a-zA-Z0-9-_.~%]+$/[39m
+[90mstdout[2m | src/__tests__/apns.test.ts[2m > [22m[2mAPNs Integration[2m > [22m[2mAPNs Error Codes[2m > [22m[2mshould not mark token for removal on transient errors
+[22m[39m[APNs] Retry attempt 3/3 after 4000ms
+
+ [31mΓ¥»[39m src/__tests__/device-token.repository.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/channels/email/__tests__/sendgrid.webhook.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mΓ¥»[39m src/__tests__/apns.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 5827[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m APNs Integration[2m > [22msendApnsNotification[2m > [22mshould send notification successfully [33m766[2mms[22m[39m
+[31m   [31m├ù[31m APNs Integration[2m > [22msendApnsNotification[2m > [22mshould handle failed delivery[90m 26[2mms[22m[31m[39m
+[31m     ΓåÆ the given combination of arguments (undefined and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string[39m
+[31m   [31m├ù[31m APNs Integration[2m > [22mAPNs Error Codes[2m > [22mshould not mark token for removal on transient errors[33m 5008[2mms[22m[31m[39m
+[31m     ΓåÆ Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+ [31mΓ¥»[39m src/__tests__/devices.routes.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[33m 731[2mms[22m[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mPOST /devices/register[2m > [22mshould require token in request body[33m 708[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mPOST /devices/register[2m > [22mshould require platform in request body[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mPOST /devices/register[2m > [22mshould validate platform enum[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mPOST /devices/refresh[2m > [22mshould require oldToken and newToken[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mDELETE /devices/:token[2m > [22mshould accept token as path parameter[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mGET /devices[2m > [22mshould return list of devices for user[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mDELETE /devices/all[2m > [22mshould unregister all devices for user[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+[31m   [31m├ù[31m Device Routes[2m > [22mAdmin Routes[2m > [22mshould return device stats for admin[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ Plugin must be a function or a promise. Received: 'undefined'[39m
+ [31mΓ¥»[39m src/channels/email/__tests__/email-provider.factory.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[90m 10[2mms[22m[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22minitialization[2m > [22mshould initialize with providers[90m 6[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22minitialization[2m > [22mshould set active provider to primary[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22msend[2m > [22mshould send using primary provider[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22msend[2m > [22mshould failover to fallback on primary failure[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22msend[2m > [22mshould return error if all providers fail[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22msendBatch[2m > [22mshould send batch emails[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+[31m   [31m├ù[31m EmailProviderManager[2m > [22mhealth monitoring[2m > [22mshould report health status[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ EmailProviderManager is not a constructor[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'shutdown')[39m
+ [32mΓ£ô[39m src/channels/email/__tests__/ses.webhook.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1m[7m Failed Suites 4 
+[27m[22mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/device-token.repository.test.ts[2m [ 
+src/__tests__/device-token.repository.test.ts ][22m
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you 
+are using "vi.mock" factory, make sure there are no top level variables 
+inside, since this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mΓ¥»[22m 
+src/repositories/device-token.repository.ts:[2m1:1[22m[39m
+    [90m  1| [39m[90m/**
+    [90m   | [39m[31m^[39m
+    [90m  2| [39m * Device Token Repository
+    [90m  3| [39m *
+
+[31m[1mCaused by: ReferenceError[22m: Cannot access 'mockPrisma' before 
+initialization[39m
+[36m [2mΓ¥»[22m 
+src/__tests__/device-token.repository.test.ts:[2m3:11[22m[39m
+[90m [2mΓ¥»[22m 
+src/repositories/device-token.repository.ts:[2m1:1[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+1/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/notification-preferences.service.test.ts[2m [ 
+src/__tests__/notification-preferences.service.test.ts ][22m
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you 
+are using "vi.mock" factory, make sure there are no top level variables 
+inside, since this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mΓ¥»[22m 
+src/services/notification-preferences.service.ts:[2m2:31[22m[39m
+    [90m  1| [39m[90m/**
+    [90m  2| [39m * Notification Preferences Service
+    [90m   | [39m                              [31m^[39m
+    [90m  3| [39m *
+    [90m  4| [39m * Manages user notification preferences including:
+
+[31m[1mCaused by: ReferenceError[22m: Cannot access 'mockPrisma' before 
+initialization[39m
+[36m [2mΓ¥»[22m 
+src/__tests__/notification-preferences.service.test.ts:[2m3:11[22m[39m
+[90m [2mΓ¥»[22m 
+src/services/notification-preferences.service.ts:[2m2:31[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+2/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/sendgrid.webhook.test.ts[2m [ 
+src/channels/email/__tests__/sendgrid.webhook.test.ts ][22m
+[31m[1mError[22m: Failed to load url pino (resolved id: pino) in 
+C:/Users/ofema/aivo/services/notify-svc/src/logger.ts. Does the file 
+exist?[39m
+[90m [2mΓ¥»[22m loadAndTransform ../../node_modules/.pnpm/vite@5.4.21_@types
++node@22.19.11_terser@5.46.0/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js
+:[2m51969:17[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+3/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/template-engine.test.ts[2m > 
+[22mEmailTemplateEngine
+[31m[1mTypeError[22m: EmailTemplateEngine is not a constructor[39m
+[36m [2mΓ¥»[22m 
+src/channels/email/__tests__/template-engine.test.ts:[2m15:14[22m[39m
+    [90m 13| [39m
+    [90m 14| [39m  [34mbeforeAll[39m([35masync[39m () [33m=>[39m {
+    [90m 15| [39m    engine [33m=[39m [35mnew[39m 
+[33mEmailTemplateEngine[39m()[33m;[39m
+    [90m   | [39m             [31m^[39m
+    [90m 16| [39m    
+    [90m 17| [39m    [90m// Only initialize if templates directory 
+exists[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+4/49]ΓÄ»[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1m[7m Failed Tests 38 
+[27m[22mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/preferenceService.test.ts[2m > 
+[22mPreferenceService[2m > [22mgetPreferences[2m > [22mshould return 
+existing preferences
+[31m[1mAssertionError[22m: expected "spy" to be called with arguments: [ { 
+where: { userId: 'user-1' } } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  Array [[22m
+[2m    Object {[22m
+[2m      "where": Object {[22m
+[31m+       "tenantId_userId": Object {[90m
+[31m+         "tenantId": "tenant-1",[90m
+[2m          "userId": "user-1",[22m
+[31m+       },[90m
+[2m      },[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/preferenceService.test.ts:[2m60:56[22m[39m
+    [90m 58| [39m
+    [90m 59| [39m      [34mexpect[39m(result[33m.[39mpushEnabled)[33m.[
+39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 60| [39m      [34mexpect[39m(prisma[33m.[39mnotificationPreferen
+ce[33m.[39mfindUnique)[33m.[39m[34mtoHaveBeenCalle[39mΓÇª
+    [90m   | [39m                                                       
+[31m^[39m
+    [90m 61| [39m        where[33m:[39m { userId[33m:[39m 
+[32m'user-1'[39m }[33m,[39m
+    [90m 62| [39m      })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+5/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/preferenceService.test.ts[2m > 
+[22mPreferenceService[2m > [22mupdatePreferences[2m > [22mshould update 
+existing preferences
+[31m[1mAssertionError[22m: expected "spy" to be called with arguments: [ 
+ObjectContaining{ΓÇª} ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  Array [[22m
+[32m-   ObjectContaining {[90m
+[32m-     "update": ObjectContaining {[90m
+[31m+   Object {[90m
+[31m+     "create": Object {[90m
+[31m+       "digestEnabled": false,[90m
+[31m+       "digestFrequency": null,[90m
+[31m+       "digestTime": null,[90m
+[31m+       "emailEnabled": true,[90m
+[31m+       "inAppEnabled": true,[90m
+[31m+       "pushEnabled": false,[90m
+[31m+       "quietHoursEnd": null,[90m
+[31m+       "quietHoursStart": null,[90m
+[31m+       "quietHoursTimezone": null,[90m
+[31m+       "smsEnabled": false,[90m
+[31m+       "tenantId": "tenant-1",[90m
+[31m+       "typePreferences": Object {},[90m
+[31m+       "userId": "user-1",[90m
+[31m+     },[90m
+[31m+     "update": Object {[90m
+[2m        "pushEnabled": false,[22m
+[2m      },[22m
+[2m      "where": Object {[22m
+[31m+       "tenantId_userId": Object {[90m
+[31m+         "tenantId": "tenant-1",[90m
+[2m          "userId": "user-1",[22m
+[31m+       },[90m
+[2m      },[22m
+[2m    },[22m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/preferenceService.test.ts:[2m94:52[22m[39m
+    [90m 92| [39m      })[33m;[39m
+    [90m 93| [39m
+    [90m 94| [39m      [34mexpect[39m(prisma[33m.[39mnotificationPreferen
+ce[33m.[39mupsert)[33m.[39m[34mtoHaveBeenCalledWit[39mΓÇª
+    [90m   | [39m                                                   
+[31m^[39m
+    [90m 95| [39m        expect[33m.[39m[34mobjectContaining[39m({
+    [90m 96| [39m          where[33m:[39m { userId[33m:[39m 
+[32m'user-1'[39m }[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+6/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/apns.test.ts[2m > [22mAPNs 
+Integration[2m > [22msendApnsNotification[2m > [22mshould handle failed 
+delivery
+[31m[1mAssertionError[22m: the given combination of arguments (undefined 
+and string) is invalid for this assertion. You can use an array, a map, an 
+object, a set, a string, or a weakset instead of a string[39m
+[36m [2mΓ¥»[22m src/__tests__/apns.test.ts:[2m93:28[22m[39m
+    [90m 91| [39m
+    [90m 92| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m
+[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 93| [39m      [34mexpect[39m(result[33m.[39merror)[33m.[39m[3
+4mtoContain[39m([32m'BadDeviceToken'[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 94| [39m    })[33m;[39m
+    [90m 95| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+7/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/apns.test.ts[2m > [22mAPNs 
+Integration[2m > [22mAPNs Error Codes[2m > [22mshould not mark token for 
+removal on transient errors
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or 
+configure it globally with "testTimeout".[39m
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+8/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mPOST /devices/register[2m > [22mshould require 
+token in request body
+[31m[1mFastifyError[22m: Plugin must be a function or a promise. Received: 
+'undefined'[39m
+[90m [2mΓ¥»[22m validatePlugin ../../node_modules/.pnpm/avvio@8.4.0/node_mod
+ules/avvio/lib/validate-plugin.js:[2m19:13[22m[39m
+[90m [2mΓ¥»[22m Boot._addPlugin ../../node_modules/.pnpm/avvio@8.4.0/node_mo
+dules/avvio/boot.js:[2m166:3[22m[39m
+[90m [2mΓ¥»[22m Boot.use ../../node_modules/.pnpm/avvio@8.4.0/node_modules/a
+vvio/boot.js:[2m139:25[22m[39m
+[90m [2mΓ¥»[22m Object.server.<computed> [as register] ../../node_modules/.p
+npm/avvio@8.4.0/node_modules/avvio/boot.js:[2m213:14[22m[39m
+[36m [2mΓ¥»[22m src/__tests__/devices.routes.test.ts:[2m53:15[22m[39m
+    [90m 51| [39m    [90m// Register routes[39m
+    [90m 52| [39m    [35mconst[39m { [35mdefault[39m[33m:[39m 
+deviceRoutes } [33m=[39m [35mawait[39m 
+[35mimport[39m([32m'../routes/devices.[39mΓÇª
+    [90m 53| [39m    [35mawait[39m 
+app[33m.[39m[34mregister[39m(deviceRoutes[33m,[39m { prefix[33m:[39m 
+[32m'/devices'[39m })[33m;[39m
+    [90m   | [39m              [31m^[39m
+    [90m 54| [39m    
+    [90m 55| [39m    [35mawait[39m 
+app[33m.[39m[34mready[39m()[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+9/49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mPOST /devices/register[2m > [22mshould require 
+platform in request body
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mPOST /devices/register[2m > [22mshould 
+validate platform enum
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mPOST /devices/refresh[2m > [22mshould require 
+oldToken and newToken
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mDELETE /devices/:token[2m > [22mshould accept 
+token as path parameter
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mGET /devices[2m > [22mshould return list of 
+devices for user
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mDELETE /devices/all[2m > [22mshould unregister 
+all devices for user
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/devices.routes.test.ts[2m > 
+[22mDevice Routes[2m > [22mAdmin Routes[2m > [22mshould return device 
+stats for admin
+[31m[1mFastifyError[22m: Plugin must be a function or a promise. Received: 
+'undefined'[39m
+[90m [2mΓ¥»[22m validatePlugin ../../node_modules/.pnpm/avvio@8.4.0/node_mod
+ules/avvio/lib/validate-plugin.js:[2m19:13[22m[39m
+[90m [2mΓ¥»[22m Boot._addPlugin ../../node_modules/.pnpm/avvio@8.4.0/node_mo
+dules/avvio/boot.js:[2m166:3[22m[39m
+[90m [2mΓ¥»[22m Boot.use ../../node_modules/.pnpm/avvio@8.4.0/node_modules/a
+vvio/boot.js:[2m139:25[22m[39m
+[90m [2mΓ¥»[22m Object.server.<computed> [as register] ../../node_modules/.p
+npm/avvio@8.4.0/node_modules/avvio/boot.js:[2m213:14[22m[39m
+[36m [2mΓ¥»[22m src/__tests__/devices.routes.test.ts:[2m53:15[22m[39m
+    [90m 51| [39m    [90m// Register routes[39m
+    [90m 52| [39m    [35mconst[39m { [35mdefault[39m[33m:[39m 
+deviceRoutes } [33m=[39m [35mawait[39m 
+[35mimport[39m([32m'../routes/devices.[39mΓÇª
+    [90m 53| [39m    [35mawait[39m 
+app[33m.[39m[34mregister[39m(deviceRoutes[33m,[39m { prefix[33m:[39m 
+[32m'/devices'[39m })[33m;[39m
+    [90m   | [39m              [31m^[39m
+    [90m 54| [39m    
+    [90m 55| [39m    [35mawait[39m 
+app[33m.[39m[34mready[39m()[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmNotification[2m > [22mshould send notification 
+successfully
+[31m[1mAssertionError[22m: expected false to be true // Object.is 
+equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m63:30[22m[39m
+    [90m 61| [39m      })[33m;[39m
+    [90m 62| [39m
+    [90m 63| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m
+[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m 64| [39m      [34mexpect[39m(result[33m.[39mproviderMessageId)[
+33m.[39m[34mtoBe[39m([32m'projects/test-project/mes[39mΓÇª
+    [90m 65| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmNotification[2m > [22mshould handle invalid 
+token error
+[31m[1mAssertionError[22m: expected undefined to be true // Object.is 
+equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m83:40[22m[39m
+    [90m 81| [39m
+    [90m 82| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m
+[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 83| [39m      [34mexpect[39m(result[33m.[39mshouldRemoveToken)[
+33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                       [31m^[39m
+    [90m 84| [39m    })[33m;[39m
+    [90m 85| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmNotification[2m > [22mshould handle 
+unregistered token error
+[31m[1mAssertionError[22m: expected undefined to be true // Object.is 
+equality[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m102:40[22m[39m
+    [90m100| [39m
+    [90m101| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m
+[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m102| [39m      [34mexpect[39m(result[33m.[39mshouldRemoveToken)[
+33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                       [31m^[39m
+    [90m103| [39m    })[33m;[39m
+    [90m104| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmNotification[2m > [22mshould retry on server 
+error
+[31m[1mAssertionError[22m: expected "spy" to be called 2 times, but got 0 
+times[39m
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m121:24[22m[39m
+    [90m119| [39m
+    [90m120| [39m      [90m// Should retry and succeed[39m
+    [90m121| [39m      [34mexpect[39m(mockSend)[33m.[39m[34mtoHaveBeenCa
+lledTimes[39m([34m2[39m)[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m122| [39m    })[33m;[39m
+    [90m123| [39m  })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmBatch[2m > [22mshould batch notifications in 
+chunks of 500
+[31m[1mAssertionError[22m: expected "spy" to be called 2 times, but got 0 
+times[39m
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m147:28[22m[39m
+    [90m145| [39m
+    [90m146| [39m      [90m// Should be called twice: 500 + 100[39m
+    [90m147| [39m      [34mexpect[39m(mockSendEach)[33m.[39m[34mtoHaveBe
+enCalledTimes[39m([34m2[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m148| [39m    })[33m;[39m
+    [90m149| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22msendFcmBatch[2m > [22mshould track invalid tokens in 
+batch response
+[31m[1mAssertionError[22m: expected +0 to be 1 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m171:32[22m[39m
+    [90m169| [39m      ])[33m;[39m
+    [90m170| [39m
+    [90m171| [39m      [34mexpect[39m(result[33m.[39mtotalSent)[33m.[39
+m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m172| [39m      [34mexpect[39m(result[33m.[39mtotalFailed)[33m.[
+39m[34mtoBe[39m([34m1[39m)[33m;[39m
+    [90m173| [39m      [34mexpect[39m(result[33m.[39minvalidTokens)[33m.
+[39m[34mtoContain[39m([32m'invalid-token'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22mTopic Operations[2m > [22mshould subscribe tokens to 
+topic
+[31m[1mError[22m: FCM not initialized[39m
+[36m [2mΓ¥»[22m subscribeToTopic 
+src/channels/push/fcm.ts:[2m447:11[22m[39m
+    [90m445| [39m)[33m:[39m [33mPromise[39m[33m<[39m{ 
+successCount[33m:[39m number[33m;[39m failureCount[33m:[39m 
+number[33m;[39m failedTokens[33m:[39mΓÇª
+    [90m446| [39m  [35mif[39m ([33m![39misInitialized) {
+    [90m447| [39m    [35mthrow[39m [35mnew[39m [33mError[39m([32m'FCM 
+not initialized'[39m)[33m;[39m
+    [90m   | [39m          [31m^[39m
+    [90m448| [39m  }
+    [90m449| [39m
+[90m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m187:28[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22mTopic Operations[2m > [22mshould unsubscribe tokens 
+from topic
+[31m[1mError[22m: FCM not initialized[39m
+[36m [2mΓ¥»[22m unsubscribeFromTopic 
+src/channels/push/fcm.ts:[2m483:11[22m[39m
+    [90m481| [39m)[33m:[39m [33mPromise[39m[33m<[39m{ 
+successCount[33m:[39m number[33m;[39m failureCount[33m:[39m 
+number[33m;[39m failedTokens[33m:[39mΓÇª
+    [90m482| [39m  [35mif[39m ([33m![39misInitialized) {
+    [90m483| [39m    [35mthrow[39m [35mnew[39m [33mError[39m([32m'FCM 
+not initialized'[39m)[33m;[39m
+    [90m   | [39m          [31m^[39m
+    [90m484| [39m  }
+    [90m485| [39m
+[90m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m203:28[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22mTopic Operations[2m > [22mshould send to topic
+[31m[1mAssertionError[22m: expected false to be true // Object.is 
+equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m220:30[22m[39m
+    [90m218| [39m      })[33m;[39m
+    [90m219| [39m
+    [90m220| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m
+[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m221| [39m      
+[34mexpect[39m(mockSend)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m222| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/__tests__/fcm.test.ts[2m > [22mFCM 
+Integration[2m > [22mTopic Name Builders[2m > [22mshould sanitize special 
+characters in topic names
+[31m[1mAssertionError[22m: expected 'tenant_tenant.with_special@chars' to 
+match /^[a-zA-Z0-9-_.~%]+$/[39m
+
+[32m- Expected:[39m 
+/^[a-zA-Z0-9-_.~%]+$/
+
+[31m+ Received:[39m 
+"tenant_tenant.with_special@chars"
+
+[36m [2mΓ¥»[22m src/__tests__/fcm.test.ts:[2m248:21[22m[39m
+    [90m246| [39m      
+    [90m247| [39m      [90m// Should only contain allowed characters[39m
+    [90m248| [39m      [34mexpect[39m(topic)[33m.[39m[34mtoMatch[39m([
+36m/^[a-zA-Z0-9-_.~%]+$/[39m)[33m;[39m
+    [90m   | [39m                    [31m^[39m
+    [90m249| [39m    })[33m;[39m
+    [90m250| [39m  })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mgetUrgencyLevel[2m > [22mshould return correct numeric 
+level for each urgency
+[31m[1mAssertionError[22m: expected 4 to be +0 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 4[39m
+
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m23:67[22m[39m
+    [90m 21| [39m  [34mdescribe[39m([32m'getUrgencyLevel'[39m[33m,[39m 
+() [33m=>[39m {
+    [90m 22| [39m    [34mit[39m([32m'should return correct numeric level 
+for each urgency'[39m[33m,[39m () [33m=>[39m {
+    [90m 23| [39m      [34mexpect[39m([34mgetUrgencyLevel[39m([33mParent
+NotificationUrgency[39m[33m.[39m[33mCRITICAL[39m))[33m.[39m[34mtoBe[39
+mΓÇª
+    [90m   | [39m                                                            
+      [31m^[39m
+    [90m 24| [39m      [34mexpect[39m([34mgetUrgencyLevel[39m([33mParent
+NotificationUrgency[39m[33m.[39m[33mHIGH[39m))[33m.[39m[34mtoBe[39m([
+34m1[39m)[33m;[39m
+    [90m 25| [39m      [34mexpect[39m([34mgetUrgencyLevel[39m([33mParent
+NotificationUrgency[39m[33m.[39m[33mMEDIUM[39m))[33m.[39m[34mtoBe[39m(
+[34m2[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mformatEmotionalState[2m > [22mshould format emotional 
+states with underscores
+[31m[1mAssertionError[22m: expected 'distress' to be 'Meltdown Risk' // 
+Object.is equality[39m
+
+Expected: [32m"Meltdown Risk"[39m
+Received: [31m"distress"[39m
+
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m74:53[22m[39m
+    [90m 72| [39m  
+[34mdescribe[39m([32m'formatEmotionalState'[39m[33m,[39m () [33m=>[39m 
+{
+    [90m 73| [39m    [34mit[39m([32m'should format emotional states with 
+underscores'[39m[33m,[39m () [33m=>[39m {
+    [90m 74| [39m      [34mexpect[39m([34mformatEmotionalState[39m([32m'
+meltdown_risk'[39m))[33m.[39m[34mtoBe[39m([32m'Meltdown Ris[39mΓÇª
+    [90m   | [39m                                                    
+[31m^[39m
+    [90m 75| [39m      [34mexpect[39m([34mformatEmotionalState[39m([32m'
+highly_anxious'[39m))[33m.[39m[34mtoBe[39m([32m'Highly Anxi[39mΓÇª
+    [90m 76| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mformatEmotionalState[2m > [22mshould capitalize single words
+[31m[1mAssertionError[22m: expected 'calm and focused' to be 'Calm' // 
+Object.is equality[39m
+
+Expected: [32m"[7mC[27malm"[39m
+Received: [31m"[7mc[27malm[7m and focused[27m"[39m
+
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m79:44[22m[39m
+    [90m 77| [39m
+    [90m 78| [39m    [34mit[39m([32m'should capitalize single 
+words'[39m[33m,[39m () [33m=>[39m {
+    [90m 79| [39m      [34mexpect[39m([34mformatEmotionalState[39m([32m'
+calm'[39m))[33m.[39m[34mtoBe[39m([32m'Calm'[39m)[33m;[39m
+    [90m   | [39m                                           [31m^[39m
+    [90m 80| [39m      [34mexpect[39m([34mformatEmotionalState[39m([32m'
+anxious'[39m))[33m.[39m[34mtoBe[39m([32m'Anxious'[39m)[33m;[39m
+    [90m 81| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mDefault Settings[2m > [22mshould have settings for all 
+urgency levels
+[31m[1mAssertionError[22m: expected { ΓÇª(5) } to have property 
+"CRITICAL"[39m
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m86:40[22m[39m
+    [90m 84| [39m  [34mdescribe[39m([32m'Default 
+Settings'[39m[33m,[39m () [33m=>[39m {
+    [90m 85| [39m    [34mit[39m([32m'should have settings for all urgency 
+levels'[39m[33m,[39m () [33m=>[39m {
+    [90m 86| [39m      [34mexpect[39m([33mDEFAULT_URGENCY_SETTINGS[39m)[
+33m.[39m[34mtoHaveProperty[39m([33mParentNotificati[39mΓÇª
+    [90m   | [39m                                       [31m^[39m
+    [90m 87| [39m      [34mexpect[39m([33mDEFAULT_URGENCY_SETTINGS[39m)[
+33m.[39m[34mtoHaveProperty[39m([33mParentNotificati[39mΓÇª
+    [90m 88| [39m      [34mexpect[39m([33mDEFAULT_URGENCY_SETTINGS[39m)[
+33m.[39m[34mtoHaveProperty[39m([33mParentNotificati[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mDefault Settings[2m > [22mshould enable all channels for 
+critical urgency
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 
+'push')[39m
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m95:23[22m[39m
+    [90m 93| [39m    [34mit[39m([32m'should enable all channels for 
+critical urgency'[39m[33m,[39m () [33m=>[39m {
+    [90m 94| [39m      [35mconst[39m critical [33m=[39m 
+[33mDEFAULT_URGENCY_SETTINGS[39m[[33mParentNotificationUrge[39mΓÇª
+    [90m 95| [39m      [34mexpect[39m(critical[33m.[39mpush)[33m.[39m[
+34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 96| [39m      [34mexpect[39m(critical[33m.[39memail)[33m.[39m
+[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m 97| [39m      [34mexpect[39m(critical[33m.[39msms)[33m.[39m[3
+4mtoBe[39m([35mtrue[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mParent Notification 
+Types[2m > [22mDefault Settings[2m > [22mshould have settings for all 
+categories
+[31m[1mAssertionError[22m: expected { emotional_state: { ΓÇª(4) }, ΓÇª(7) } 
+to have property "EMOTIONAL_STATE"[39m
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m102:41[22m[39m
+    [90m100| [39m
+    [90m101| [39m    [34mit[39m([32m'should have settings for all 
+categories'[39m[33m,[39m () [33m=>[39m {
+    [90m102| [39m      [34mexpect[39m([33mDEFAULT_CATEGORY_SETTINGS[39m)
+[33m.[39m[34mtoHaveProperty[39m([33mParentNotificat[39mΓÇª
+    [90m   | [39m                                        [31m^[39m
+    [90m103| [39m      [34mexpect[39m([33mDEFAULT_CATEGORY_SETTINGS[39m)
+[33m.[39m[34mtoHaveProperty[39m([33mParentNotificat[39mΓÇª
+    [90m104| [39m      [34mexpect[39m([33mDEFAULT_CATEGORY_SETTINGS[39m)
+[33m.[39m[34mtoHaveProperty[39m([33mParentNotificat[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/__tests__/parent-notifications.test.ts[2m > [22mUrgencyClassifier[2m > 
+[22mclassify[2m > [22mSafety Concern[2m > [22mshould default to critical 
+for unknown severity
+[31m[1mAssertionError[22m: expected 'HIGH' to be 'CRITICAL' // Object.is 
+equality[39m
+
+Expected: [32m"CRITICAL"[39m
+Received: [31m"HIGH"[39m
+
+[36m [2mΓ¥»[22m 
+src/__tests__/parent-notifications.test.ts:[2m187:24[22m[39m
+    [90m185| [39m          {}
+    [90m186| [39m        )[33m;[39m
+    [90m187| [39m        [34mexpect[39m(result)[33m.[39m[34mtoBe[39m([
+33mParentNotificationUrgency[39m[33m.[39m[33mCRITICAL[39m)[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m188| [39m      })[33m;[39m
+    [90m189| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/email-validator.test.ts[2m > [22mEmailValidator[2m > 
+[22mvalidateFormat[2m > [22mshould reject email exceeding 254 characters
+[31m[1mAssertionError[22m: expected 'Local part exceeds maximum length 
+(64ΓÇª' to contain '254'[39m
+
+Expected: [32m"254"[39m
+Received: [31m"Local part exceeds maximum length (64 characters)"[39m
+
+[36m [2mΓ¥»[22m 
+src/channels/email/email-validator.test.ts:[2m273:29[22m[39m
+    [90m271| [39m      [35mconst[39m result [33m=[39m validator[33m.[39
+m[34mvalidateFormat[39m([32m`[39m[36m${[39mlongLocal[36m}[39m[32m@exam
+ple.co[39mΓÇª
+    [90m272| [39m      [34mexpect[39m(result[33m.[39mvalid)[33m.[39m[3
+4mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m273| [39m      [34mexpect[39m(result[33m.[39mreason)[33m.[39m[
+34mtoContain[39m([32m'254'[39m)[33m;[39m
+    [90m   | [39m                            [31m^[39m
+    [90m274| [39m    })[33m;[39m
+    [90m275| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[28/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22minitialization[2m > [22mshould 
+initialize with providers
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22minitialization[2m > [22mshould set 
+active provider to primary
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould send using primary 
+provider
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould failover to 
+fallback on primary failure
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould return error if 
+all providers fail
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msendBatch[2m > [22mshould send batch 
+emails
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22mhealth monitoring[2m > [22mshould 
+report health status
+[31m[1mTypeError[22m: EmailProviderManager is not a constructor[39m
+[36m [2mΓ¥»[22m 
+src/channels/email/__tests__/email-provider.factory.test.ts:[2m89:15[22m[39m
+    [90m 87| [39m    primaryProvider [33m=[39m 
+[34mcreateMockProvider[39m([32m'primary'[39m)[33m;[39m
+    [90m 88| [39m    fallbackProvider [33m=[39m 
+[34mcreateMockProvider[39m([32m'fallback'[39m)[33m;[39m
+    [90m 89| [39m    manager [33m=[39m [35mnew[39m 
+[33mEmailProviderManager[39m()[33m;[39m
+    [90m   | [39m              [31m^[39m
+    [90m 90| [39m  })[33m;[39m
+    [90m 91| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[29/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22minitialization[2m > [22mshould 
+initialize with providers
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22minitialization[2m > [22mshould set 
+active provider to primary
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould send using primary 
+provider
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould failover to 
+fallback on primary failure
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msend[2m > [22mshould return error if 
+all providers fail
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22msendBatch[2m > [22mshould send batch 
+emails
+[31m[1m[7m FAIL [27m[22m[39m 
+src/channels/email/__tests__/email-provider.factory.test.ts[2m > 
+[22mEmailProviderManager[2m > [22mhealth monitoring[2m > [22mshould 
+report health status
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 
+'shutdown')[39m
+[36m [2mΓ¥»[22m 
+src/channels/email/__tests__/email-provider.factory.test.ts:[2m93:19[22m[39m
+    [90m 91| [39m
+    [90m 92| [39m  [34mafterEach[39m([35masync[39m () [33m=>[39m {
+    [90m 93| [39m    [35mawait[39m 
+manager[33m.[39m[34mshutdown[39m()[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 94| [39m  })[33m;[39m
+    [90m 95| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[30/
+49]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/channels/sms/__tests__/sms.test.ts[2m 
+> [22mContent Filtering[2m > [22mSHAFT Content Detection[2m > [22mshould 
+block messages with firearms content
+[31m[1mAssertionError[22m: expected false to be true // Object.is 
+equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m src/channels/sms/__tests__/sms.test.ts:[2m426:53[22m[39m
+    [90m424| [39m    
+    [90m425| [39m    [34mit[39m([32m'should block messages with firearms 
+content'[39m[33m,[39m () [33m=>[39m {
+    [90m426| [39m      
+[34mexpect[39m([34mcontainsShaftContent[39m([32m'Buy guns 
+here'[39m))[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                                    
+[31m^[39m
+    [90m427| [39m    })[33m;[39m
+    [90m428| [39m    
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[31/
+49]ΓÄ»[22m[39m
+
+[2m Test Files [22m [1m[31m12 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (23)[39m
+[2m      Tests [22m [1m[31m38 failed[39m[22m[2m | [22m[1m[32m398 passed[39m[22m[2m | [22m[33m21 skipped[39m[90m (457)[39m
+[2m   Start at [22m 20:41:41
+[2m   Duration [22m 20.30s[2m (transform 7.45s, setup 0ms, collect 21.43s, tests 9.24s, environment 9ms, prepare 7.26s)[22m
+

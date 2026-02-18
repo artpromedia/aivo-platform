@@ -12,7 +12,7 @@
 
 body {
   @apply antialiased;
-  font-family: 'Nunito', var(--font-family-default), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-family-default), system-ui, -apple-system, sans-serif;
   background-color: rgb(var(--color-background));
   color: rgb(var(--color-text));
 }

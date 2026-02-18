@@ -9,6 +9,7 @@ import { registerDemoRoutes } from './routes/demo.js';
 import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
 import { registerSsoRoutes } from './routes/sso.js';
+import { registerScopeRoutes } from './graphql/resolvers.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -56,6 +57,8 @@ export function createApp() {
   void app.register(registerSsoRoutes as any, { prefix: '/auth' });
 
   void app.register(registerMfaRoutes as any, { prefix: '/auth' });
+
+  void app.register(registerScopeRoutes as any, { prefix: '/auth' });
 
   void app.register(registerDemoRoutes as any);
 

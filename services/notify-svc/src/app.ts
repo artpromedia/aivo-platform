@@ -13,6 +13,7 @@ import {
   setInvalidTokenCallback,
 } from './channels/push/push-service.js';
 import { startFerpaScheduler, stopFerpaScheduler } from './compliance/annual-ferpa-scheduler.js';
+import { startTeacherReminderScheduler, stopTeacherReminderScheduler } from './schedulers/teacher-progress-reminder.js';
 import { config } from './config.js';
 import { initializeNats, closeNats } from './events/notification-events.js';
 import { onboardingRoutes } from './onboarding/index.js';
@@ -70,6 +71,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Start annual FERPA notification scheduler (34 CFR § 99.7)
   startFerpaScheduler();
 
+  // Start teacher Monday progress reminder scheduler
+  startTeacherReminderScheduler();
+
   // ════════════════════════════════════════════════════════════════════════════
   // SHUTDOWN HOOKS
   // ════════════════════════════════════════════════════════════════════════════
@@ -77,6 +81,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.addHook('onClose', async () => {
     await shutdownPushService();
     stopFerpaScheduler();
+    stopTeacherReminderScheduler();
     await closeNats();
   });
 

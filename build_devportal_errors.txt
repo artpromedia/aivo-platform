@@ -1,0 +1,54 @@
+
+> @aivo/web-dev-portal@0.1.0 build C:\Users\ofema\aivo\apps\web-dev-portal
+> next build
+
+   G˚¶ Next.js 15.5.12
+
+   Creating an optimized production build ...
+node.exe : Failed to compile.
+At c:\Users\ofema\aivo\.node\node-v22.22.0-win-x64\pnpm.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/corepack/dist/pnpm. ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to compile.:String) [], Re 
+   moteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+../../node_modules/.pnpm/swagger-ui-react@5.31.1_@ty_753a368ff93a3a9dee07e83072
+b63fa1/node_modules/swagger-ui-react/swagger-ui-es-bundle-core.js
+Module not found: Can't resolve 'to-buffer'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+../../node_modules/.pnpm/swagger-ui-react@5.31.1_@ty_753a368ff93a3a9dee07e83072
+b63fa1/node_modules/swagger-ui-react/index.mjs
+./app/docs/api-reference/page.tsx
+
+../../node_modules/.pnpm/@swaggerexpert+json-pointer@2.10.2/node_modules/@swagg
+erexpert/json-pointer/es/evaluate/realms/apidom/realm.mjs
+Module not found: Can't resolve '@swagger-api/apidom-core'
+
+https://nextjs.org/docs/messages/module-not-found
+
+Import trace for requested module:
+../../node_modules/.pnpm/@swaggerexpert+json-pointer@2.10.2/node_modules/@swagg
+erexpert/json-pointer/es/evaluate/realms/apidom/index.mjs
+../../node_modules/.pnpm/@swagger-api+apidom-json-pointer@1.5.0/node_modules/@s
+wagger-api/apidom-json-pointer/src/index.mjs
+../../node_modules/.pnpm/swagger-client@3.36.1/node_modules/swagger-client/es/r
+esolver/strategies/openapi-3-1-apidom/resolve.js
+../../node_modules/.pnpm/swagger-client@3.36.1/node_modules/swagger-client/es/r
+esolver/strategies/openapi-3-1-apidom/index.js
+../../node_modules/.pnpm/swagger-ui-react@5.31.1_@ty_753a368ff93a3a9dee07e83072
+b63fa1/node_modules/swagger-ui-react/swagger-ui.js
+../../node_modules/.pnpm/swagger-ui-react@5.31.1_@ty_753a368ff93a3a9dee07e83072
+b63fa1/node_modules/swagger-ui-react/index.cjs
+./app/docs/api-reference/page.tsx
+
+
+> Build failed because of webpack errors
+C:\Users\ofema\aivo\apps\web-dev-portal:
+G«ÎERR_PNPM_RECURSIVE_RUN_FIRST_FAILG«Î @aivo/web-dev-portal@0.1.0 build: `next build`
+Exit status 1
+

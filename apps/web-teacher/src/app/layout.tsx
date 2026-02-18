@@ -3,15 +3,21 @@
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Nunito } from 'next/font/google';
+import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import React from 'react';
 import './globals.css';
 
 import { Providers } from '@/components/shared/providers';
 
-const nunito = Nunito({
+const dmSans = DM_Sans({
   subsets: ['latin'],
-  variable: '--font-nunito',
+  variable: '--font-dm-sans',
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-plus-jakarta-sans',
   display: 'swap',
 });
 
@@ -27,12 +33,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0891B2',
+  themeColor: '#06B6D4',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={nunito.variable} data-grade-theme="navigator">
+    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="navigator">
       <body className="min-h-screen bg-background font-sans antialiased">
         <a
           href="#main-content"

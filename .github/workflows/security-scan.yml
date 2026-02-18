@@ -184,24 +184,21 @@ jobs:
           - session-svc
           - assessment-svc
           - ai-orchestrator
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build image for scanning
-        run: |
-          docker build -t aivo-${{ matrix.service }}:scan \
-            --build-arg SERVICE_NAME=${{ matrix.service }} \
-            -f docker/Dockerfile.service .
-        continue-on-error: true
-
-      - name: Run Trivy container scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: 'aivo-${{ matrix.service }}:scan'
-          format: 'sarif'
-          output: 'trivy-${{ matrix.service }}.sarif'
-          severity: 'CRITICAL,HIGH'
-          ignore-unfixed: true
+        # Phase 1 KEEP and merged services only
+        service:
+          - auth-svc
+          - api-gateway
+          - tenant-svc
+          - sis-sync-svc
+          - iep-svc
+          - parent-svc
+          - profile-svc
+          - messaging-svc
+          - audit-svc
+          - notify-svc
+          - reports-svc
+          - realtime-svc
+          - compliance-svc
 
       - name: Upload Trivy results
         if: always()

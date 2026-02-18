@@ -4,6 +4,7 @@
 
 import Fastify, { FastifyInstance } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
@@ -19,6 +20,15 @@ export async function buildApp(): Promise<FastifyInstance> {
         config.nodeEnv === 'production'
           ? undefined
           : { target: 'pino-pretty', options: { colorize: true } },
+    },
+  });
+
+  // Multipart file upload support (for message attachments)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(multipart as any, {
+    limits: {
+      fileSize: config.limits.maxFileSize, // 10MB default
+      files: 1, // One file per request
     },
   });
 

@@ -152,24 +152,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Phase 1 KEEP and merged services only
         service:
           - auth-svc
-          - session-svc
-          - profile-svc
-          - content-svc
-          - assessment-svc
-          - personalization-svc
-          - life-skills-svc
-          - ai-orchestrator
-          - analytics-svc
-          - notify-svc
-          - messaging-svc
-          - goal-svc
-          - focus-svc
-          - billing-svc
-          - payments-svc
+          - api-gateway
+          - tenant-svc
+          - sis-sync-svc
+          - iep-svc
           - parent-svc
-          - baseline-svc
+          - profile-svc
+          - messaging-svc
+          - audit-svc
+          - notify-svc
+          - reports-svc
+          - realtime-svc
+          - compliance-svc
     steps:
       - uses: actions/checkout@v4
 

@@ -238,24 +238,21 @@ jobs:
           - web-author
           - web-creator
           - web-dev-portal
-    steps:
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      - name: Install crane
-        uses: imjasonh/setup-crane@v0.4
-
-      - name: Authenticate crane with GHCR
-        run: |
-          echo "${{ secrets.GHCR_PAT }}" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Re-tag image
-        run: |
-          SOURCE="${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.validate.outputs.source_tag }}"
+        # Phase 1 KEEP and merged services only
+        service:
+          - auth-svc
+          - api-gateway
+          - tenant-svc
+          - sis-sync-svc
+          - iep-svc
+          - parent-svc
+          - profile-svc
+          - messaging-svc
+          - audit-svc
+          - notify-svc
+          - reports-svc
+          - realtime-svc
+          - compliance-svc
           TARGET="${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.validate.outputs.version }}"
 
           echo "Re-tagging:"

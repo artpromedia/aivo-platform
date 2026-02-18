@@ -20,6 +20,15 @@ export const config = {
     maxFileSize: Number.parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
   },
 
+  // Cloudflare R2 storage (S3-compatible)
+  r2: {
+    endpoint: process.env.R2_ENDPOINT || '',
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || process.env.STORAGE_ACCESS_KEY || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || process.env.STORAGE_SECRET_KEY || '',
+    bucket: process.env.R2_ATTACHMENTS_BUCKET || 'aivo-message-attachments',
+    publicUrl: process.env.R2_PUBLIC_URL || '',
+  },
+
   // Real-time (future: WebSocket config)
   realtime: {
     enabled: process.env.REALTIME_ENABLED === 'true',

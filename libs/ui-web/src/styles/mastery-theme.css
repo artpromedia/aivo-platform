@@ -1,0 +1,233 @@
+/**
+ * AIVO Design System — Mastery Theme
+ * 
+ * CSS custom properties derived from the Mastery design template.
+ * Provides --mastery-* namespace for the new indigo/slate palette,
+ * DM Sans + Plus Jakarta Sans typography, and refined shadows.
+ *
+ * Usage:
+ *   @import './mastery-theme.css';
+ *   color: var(--mastery-primary);
+ *   font-family: var(--mastery-font-sans);
+ */
+
+/* ============================================================================
+   Google Fonts — DM Sans & Plus Jakarta Sans
+   ============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+
+/* ============================================================================
+   Root — Mastery Foundation Tokens
+   ============================================================================ */
+:root {
+  /* ── Brand Colors ── */
+  --mastery-primary: #4F46E5;
+  --mastery-primary-light: #818CF8;
+  --mastery-primary-dark: #4338CA;
+  --mastery-accent: #F97316;
+  --mastery-accent-light: #FB923C;
+  --mastery-navy: #1E293B;
+  --mastery-white: #FFFFFF;
+
+  /* ── Functional Colors ── */
+  --mastery-success: #22C55E;
+  --mastery-warning: #EAB308;
+  --mastery-error: #EF4444;
+  --mastery-info: #3B82F6;
+  --mastery-focus: #3B82F6;
+  --mastery-progress: #EAB308;
+
+  /* ── Slate Palette (Neutral) ── */
+  --mastery-slate-50: #F8FAFC;
+  --mastery-slate-100: #F1F5F9;
+  --mastery-slate-200: #E2E8F0;
+  --mastery-slate-300: #CBD5E1;
+  --mastery-slate-400: #94A3B8;
+  --mastery-slate-500: #64748B;
+  --mastery-slate-600: #475569;
+  --mastery-slate-700: #334155;
+  --mastery-slate-800: #1E293B;
+  --mastery-slate-900: #0F172A;
+  --mastery-slate-950: #020617;
+
+  /* ── Indigo Palette ── */
+  --mastery-indigo-50: #EEF2FF;
+  --mastery-indigo-100: #E0E7FF;
+  --mastery-indigo-200: #C7D2FE;
+  --mastery-indigo-300: #A5B4FC;
+  --mastery-indigo-400: #818CF8;
+  --mastery-indigo-500: #6366F1;
+  --mastery-indigo-600: #4F46E5;
+  --mastery-indigo-700: #4338CA;
+  --mastery-indigo-800: #3730A3;
+  --mastery-indigo-900: #312E81;
+
+  /* ── Orange Palette ── */
+  --mastery-orange-50: #FFF7ED;
+  --mastery-orange-100: #FFEDD5;
+  --mastery-orange-200: #FED7AA;
+  --mastery-orange-300: #FDBA74;
+  --mastery-orange-400: #FB923C;
+  --mastery-orange-500: #F97316;
+  --mastery-orange-600: #EA580C;
+  --mastery-orange-700: #C2410C;
+  --mastery-orange-800: #9A3412;
+  --mastery-orange-900: #7C2D12;
+
+  /* ── Teal Palette ── */
+  --mastery-teal-50: #ECFEFF;
+  --mastery-teal-100: #CFFAFE;
+  --mastery-teal-200: #A5F3FC;
+  --mastery-teal-300: #67E8F9;
+  --mastery-teal-400: #22D3EE;
+  --mastery-teal-500: #06B6D4;
+  --mastery-teal-600: #0891B2;
+  --mastery-teal-700: #0E7490;
+  --mastery-teal-800: #155E75;
+  --mastery-teal-900: #164E63;
+
+  /* ── Typography ── */
+  --mastery-font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --mastery-font-display: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+  --mastery-font-dyslexia: 'Atkinson Hyperlegible', 'DM Sans', sans-serif;
+
+  --mastery-font-weight-regular: 400;
+  --mastery-font-weight-medium: 500;
+  --mastery-font-weight-semibold: 600;
+  --mastery-font-weight-bold: 700;
+
+  /* ── Font Sizes ── */
+  --mastery-text-xs: 0.75rem;    /* 12px */
+  --mastery-text-sm: 0.875rem;   /* 14px */
+  --mastery-text-base: 1rem;     /* 16px */
+  --mastery-text-lg: 1.125rem;   /* 18px */
+  --mastery-text-xl: 1.25rem;    /* 20px */
+  --mastery-text-2xl: 1.5rem;    /* 24px */
+  --mastery-text-3xl: 1.875rem;  /* 30px */
+  --mastery-text-4xl: 2.25rem;   /* 36px */
+  --mastery-text-5xl: 3rem;      /* 48px */
+
+  /* ── Spacing ── */
+  --mastery-space-0: 0;
+  --mastery-space-1: 0.25rem;   /* 4px */
+  --mastery-space-2: 0.5rem;    /* 8px */
+  --mastery-space-3: 0.75rem;   /* 12px */
+  --mastery-space-4: 1rem;      /* 16px */
+  --mastery-space-5: 1.25rem;   /* 20px */
+  --mastery-space-6: 1.5rem;    /* 24px */
+  --mastery-space-8: 2rem;      /* 32px */
+  --mastery-space-10: 2.5rem;   /* 40px */
+  --mastery-space-12: 3rem;     /* 48px */
+  --mastery-space-16: 4rem;     /* 64px */
+  --mastery-space-20: 5rem;     /* 80px */
+
+  /* ── Border Radii ── */
+  --mastery-radius-none: 0;
+  --mastery-radius-sm: 0.25rem;   /* 4px */
+  --mastery-radius-md: 0.5rem;    /* 8px */
+  --mastery-radius-lg: 0.75rem;   /* 12px */
+  --mastery-radius-xl: 1rem;      /* 16px */
+  --mastery-radius-2xl: 1.5rem;   /* 24px */
+  --mastery-radius-full: 9999px;
+  --mastery-radius-button: 0.75rem;
+  --mastery-radius-card: 1rem;
+  --mastery-radius-input: 0.5rem;
+  --mastery-radius-modal: 1.5rem;
+
+  /* ── Shadows ── */
+  --mastery-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --mastery-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --mastery-shadow-md: 0 4px 16px rgba(15, 23, 42, 0.10);
+  --mastery-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --mastery-shadow-xl: 0 16px 48px rgba(15, 23, 42, 0.16);
+  --mastery-shadow-card: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --mastery-shadow-card-hover: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --mastery-shadow-button: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+  /* ── Transitions ── */
+  --mastery-transition-fast: 150ms ease;
+  --mastery-transition-base: 250ms ease;
+  --mastery-transition-slow: 400ms ease;
+  --mastery-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --mastery-easing-emphasized: cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+/* ============================================================================
+   Light Theme (default)
+   ============================================================================ */
+:root,
+[data-mastery-theme='light'] {
+  --mastery-bg: var(--mastery-slate-50);
+  --mastery-bg-surface: var(--mastery-white);
+  --mastery-bg-muted: var(--mastery-slate-100);
+  --mastery-bg-elevated: var(--mastery-white);
+  --mastery-text: var(--mastery-slate-900);
+  --mastery-text-secondary: var(--mastery-slate-600);
+  --mastery-text-muted: var(--mastery-slate-400);
+  --mastery-text-on-primary: var(--mastery-white);
+  --mastery-border: var(--mastery-slate-200);
+  --mastery-border-muted: var(--mastery-slate-100);
+  --mastery-ring: rgba(79, 70, 229, 0.5);
+  --mastery-backdrop: rgba(15, 23, 42, 0.5);
+}
+
+/* ============================================================================
+   Dark Theme
+   ============================================================================ */
+[data-mastery-theme='dark'] {
+  --mastery-bg: var(--mastery-slate-900);
+  --mastery-bg-surface: var(--mastery-slate-800);
+  --mastery-bg-muted: var(--mastery-slate-700);
+  --mastery-bg-elevated: var(--mastery-slate-700);
+  --mastery-text: var(--mastery-slate-50);
+  --mastery-text-secondary: var(--mastery-slate-400);
+  --mastery-text-muted: var(--mastery-slate-500);
+  --mastery-text-on-primary: var(--mastery-slate-900);
+  --mastery-border: var(--mastery-slate-600);
+  --mastery-border-muted: var(--mastery-slate-700);
+  --mastery-ring: rgba(129, 140, 248, 0.5);
+  --mastery-backdrop: rgba(0, 0, 0, 0.6);
+
+  --mastery-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --mastery-shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+/* Mastery card surface */
+.mastery-card {
+  background: var(--mastery-bg-surface);
+  border: 1px solid var(--mastery-border);
+  border-radius: var(--mastery-radius-card);
+  box-shadow: var(--mastery-shadow-card);
+  transition: box-shadow var(--mastery-transition-base),
+              transform var(--mastery-transition-base);
+}
+
+.mastery-card:hover {
+  box-shadow: var(--mastery-shadow-card-hover);
+}
+
+/* Mastery gradient accent */
+.mastery-gradient-primary {
+  background: linear-gradient(135deg, var(--mastery-indigo-500) 0%, var(--mastery-indigo-600) 100%);
+}
+
+.mastery-gradient-accent {
+  background: linear-gradient(135deg, var(--mastery-orange-400) 0%, var(--mastery-orange-500) 100%);
+}
+
+.mastery-gradient-hero {
+  background: linear-gradient(135deg, var(--mastery-indigo-600) 0%, var(--mastery-indigo-700) 50%, var(--mastery-slate-900) 100%);
+}
+
+/* Font utility */
+.mastery-font-sans {
+  font-family: var(--mastery-font-sans);
+}
+
+.mastery-font-display {
+  font-family: var(--mastery-font-display);
+}

@@ -7,11 +7,11 @@ const config: Config = {
       colors: {
         // Developer portal brand colors — Nova palette
         portal: {
-          primary: '#8b5cf6',    // Vibrant purple
-          secondary: '#6366f1',  // Indigo
+          primary: '#4F46E5',    // Indigo
+          secondary: '#6366F1',  // Indigo-500
           accent: '#60a5fa',     // Sky blue
-          success: '#34d399',    // Emerald
-          warning: '#fbbf24',    // Amber
+          success: '#22C55E',    // Green
+          warning: '#EAB308',    // Yellow
           error: '#f87171',      // Red
         },
         background: 'rgb(var(--foreground-rgb) / <alpha-value>)',
@@ -30,7 +30,7 @@ const config: Config = {
             },
             'code::before': { content: '""' },
             'code::after': { content: '""' },
-            a: { color: '#8b5cf6' },
+            a: { color: '#4F46E5' },
             strong: { color: 'rgb(241, 240, 255)' },
             h1: { color: 'rgb(241, 240, 255)' },
             h2: { color: 'rgb(241, 240, 255)' },

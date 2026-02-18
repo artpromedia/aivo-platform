@@ -66,7 +66,7 @@ export const config = {
 
   // Retention Settings
   retentionDays: Number(process.env.AUDIT_RETENTION_DAYS || 2555), // ~7 years
-  exportRetentionDays: Number(process.env.EXPORT_RETENTION_DAYS || 90),
+  exportRetentionDays: Number(process.env.EXPORT_RETENTION_DAYS || 7),
 
   // Service URLs
   authServiceUrl: process.env.AUTH_SVC_URL || 'http://auth-svc:4001',

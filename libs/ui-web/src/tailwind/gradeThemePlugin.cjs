@@ -6,7 +6,9 @@ const colorEntries = [
   { token: 'background', name: 'background' },
   { token: 'surface', name: 'surface' },
   { token: 'surfaceMuted', name: 'surface-muted' },
+  { token: 'surfaceElevated', name: 'surface-elevated' },
   { token: 'primary', name: 'primary' },
+  { token: 'primaryHover', name: 'primary-hover' },
   { token: 'secondary', name: 'secondary' },
   { token: 'accent', name: 'accent' },
   { token: 'info', name: 'info' },
@@ -14,9 +16,12 @@ const colorEntries = [
   { token: 'warning', name: 'warning' },
   { token: 'error', name: 'error' },
   { token: 'border', name: 'border' },
+  { token: 'borderMuted', name: 'border-muted' },
   { token: 'focus', name: 'focus' },
   { token: 'textPrimary', name: 'text' },
   { token: 'textSecondary', name: 'muted' },
+  { token: 'textMuted', name: 'text-muted' },
+  { token: 'textOnPrimary', name: 'on-primary' },
   { token: 'textOnAccent', name: 'on-accent' },
 ];
 
@@ -89,8 +94,12 @@ function buildThemeVariables(grade) {
   const formatFamily = (family) =>
     family.map((name) => (name.includes(' ') ? `"${name}"` : name)).join(', ');
   const defaultFamily = formatFamily(tokens.base.font.family.default);
+  const displayFamily = tokens.base.font.family.display
+    ? formatFamily(tokens.base.font.family.display)
+    : defaultFamily;
   const dyslexiaFamily = formatFamily(tokens.base.font.family.dyslexia_friendly);
   vars['--font-family-default'] = defaultFamily;
+  vars['--font-family-display'] = displayFamily;
   vars['--font-family-dyslexia'] = dyslexiaFamily;
 
   for (const [name, radius] of Object.entries(tokens.base.radius)) {
@@ -157,6 +166,7 @@ function createGradeThemePlugin(defaultGrade = 'navigator') {
           fontSize: buildFontSizes(),
           fontFamily: {
             sans: ['var(--font-family-default)', 'system-ui', '-apple-system', 'sans-serif'],
+            display: ['var(--font-family-display)', 'var(--font-family-default)', 'system-ui', 'sans-serif'],
             dyslexia: ['var(--font-family-dyslexia)', 'system-ui', '-apple-system', 'sans-serif'],
           },
           borderRadius,

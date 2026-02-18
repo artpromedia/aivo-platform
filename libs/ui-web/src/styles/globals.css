@@ -13,45 +13,45 @@
   color-scheme: dark;
 
   /* ── Core Palette ── */
-  --color-primary: 139 92 246;           /* #8B5CF6 — vibrant purple */
-  --color-primary-hover: 167 139 250;    /* #A78BFA — lighter purple */
+  --color-primary: 79 70 229;            /* #4F46E5 — indigo */
+  --color-primary-hover: 99 102 241;     /* #6366F1 — lighter indigo */
   --color-secondary: 99 102 241;         /* #6366F1 — indigo */
   --color-secondary-hover: 129 140 248;  /* #818CF8 — lighter indigo */
   --color-accent: 251 146 60;            /* #FB923C — warm orange */
-  --color-background: 13 11 36;          /* #0D0B24 — deep space */
-  --color-surface: 22 18 56;             /* #161238 — elevated dark */
-  --color-surface-muted: 30 25 70;       /* #1E1946 — subtle lifted */
-  --color-surface-elevated: 40 35 85;    /* #282355 — cards/modals */
-  --color-text: 241 240 255;             /* #F1F0FF — soft white */
-  --color-text-muted: 163 160 200;       /* #A3A0C8 — muted lavender */
+  --color-background: 15 23 42;          /* #0F172A — slate-900 */
+  --color-surface: 30 41 59;             /* #1E293B — slate-800 */
+  --color-surface-muted: 51 65 85;       /* #334155 — slate-700 */
+  --color-surface-elevated: 71 85 105;   /* #475569 — slate-600 */
+  --color-text: 248 250 252;             /* #F8FAFC — slate-50 */
+  --color-text-muted: 148 163 184;       /* #94A3B8 — slate-400 */
   --color-on-primary: 255 255 255;       /* #FFFFFF */
-  --color-on-accent: 13 11 36;           /* #0D0B24 — dark on orange */
-  --color-success: 52 211 153;           /* #34D399 — emerald */
-  --color-warning: 251 191 36;           /* #FBBF24 — amber */
+  --color-on-accent: 15 23 42;           /* #0F172A — dark on orange */
+  --color-success: 34 197 94;            /* #22C55E — green */
+  --color-warning: 234 179 8;            /* #EAB308 — yellow */
   --color-error: 251 113 133;            /* #FB7185 — rose */
   --color-info: 96 165 250;              /* #60A5FA — sky blue */
-  --color-border: 55 48 107;             /* #37306B — subtle purple border */
-  --color-border-muted: 40 35 85;        /* #282355 — faint border */
-  --color-focus: 139 92 246;             /* #8B5CF6 */
-  --color-focus-ring: rgba(139, 92, 246, 0.5);
-  --color-backdrop: rgba(6, 4, 22, 0.7);
+  --color-border: 51 65 85;              /* #334155 — slate-700 */
+  --color-border-muted: 30 41 59;        /* #1E293B — slate-800 */
+  --color-focus: 79 70 229;              /* #4F46E5 */
+  --color-focus-ring: rgba(79, 70, 229, 0.5);
+  --color-backdrop: rgba(2, 6, 23, 0.7);
 
   /* ── Gradient Presets ── */
-  --gradient-primary: linear-gradient(135deg, #8B5CF6 0%, #6366F1 50%, #3B82F6 100%);
+  --gradient-primary: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #3B82F6 100%);
   --gradient-accent: linear-gradient(135deg, #FB923C 0%, #F472B6 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
-  --gradient-glow: radial-gradient(ellipse at 50% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
-  --gradient-hero: linear-gradient(135deg, #0D0B24 0%, #1E1946 40%, #161238 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(79, 70, 229, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%);
+  --gradient-glow: radial-gradient(ellipse at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 70%);
+  --gradient-hero: linear-gradient(135deg, #0F172A 0%, #1E293B 40%, #0F172A 100%);
 
   /* ── Glass / Blur ── */
-  --glass-bg: rgba(22, 18, 56, 0.6);
-  --glass-border: rgba(139, 92, 246, 0.15);
+  --glass-bg: rgba(30, 41, 59, 0.6);
+  --glass-border: rgba(79, 70, 229, 0.15);
   --glass-blur: 16px;
-  --glass-bg-light: rgba(40, 35, 85, 0.5);
+  --glass-bg-light: rgba(51, 65, 85, 0.5);
 
   /* ── Typography ── */
-  --font-family-default: "Inter", "DM Sans", system-ui, -apple-system, sans-serif;
-  --font-family-heading: "Inter", "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-family-default: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-family-heading: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
   --font-family-dyslexia: "Atkinson Hyperlegible", "OpenDyslexic", sans-serif;
   --font-size-display: 40px;
   --font-size-headline: 30px;
@@ -105,9 +105,9 @@
   --press-scale: 0.98;
 
   /* ── Shadows ── */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(139, 92, 246, 0.06);
-  --shadow-card-hover: 0 8px 40px rgba(139, 92, 246, 0.2), 0 0 0 1px rgba(139, 92, 246, 0.12);
-  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(79, 70, 229, 0.06);
+  --shadow-card-hover: 0 8px 40px rgba(79, 70, 229, 0.2), 0 0 0 1px rgba(79, 70, 229, 0.12);
+  --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.3);
   --shadow-glow-accent: 0 0 20px rgba(251, 146, 60, 0.3);
   --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.4);
 
@@ -118,7 +118,7 @@
   --icon-size: 22px;
 }
 
-/* Explorer Theme (K-5) — Playful purple with warm accents */
+/* Explorer Theme (K-5) — Playful with warm accents */
 [data-grade-theme="K5"],
 [data-theme="k5"] {
   --color-primary: 244 114 182;          /* #F472B6 — pink */
@@ -126,16 +126,16 @@
   --color-secondary: 52 211 153;         /* #34D399 — mint */
   --color-secondary-hover: 110 231 183;  /* #6EE7B7 — light mint */
   --color-accent: 251 191 36;            /* #FBBF24 — sunshine */
-  --color-background: 15 10 40;          /* deeper playful dark */
-  --color-surface: 25 18 60;
-  --color-surface-muted: 35 26 75;
-  --color-surface-elevated: 45 36 90;
+  --color-background: 15 23 42;          /* slate-900 */
+  --color-surface: 30 41 59;
+  --color-surface-muted: 51 65 85;
+  --color-surface-elevated: 71 85 105;
   --color-text: 255 241 242;
   --color-text-muted: 200 180 220;
   --color-on-primary: 255 255 255;
-  --color-on-accent: 15 10 40;
-  --color-border: 70 50 120;
-  --color-border-muted: 50 38 90;
+  --color-on-accent: 15 23 42;
+  --color-border: 71 85 105;
+  --color-border-muted: 51 65 85;
   --color-focus: 244 114 182;
   --color-focus-ring: rgba(244, 114, 182, 0.5);
 
@@ -144,8 +144,8 @@
   --gradient-surface: linear-gradient(180deg, rgba(244, 114, 182, 0.08) 0%, rgba(251, 146, 60, 0.04) 100%);
   --glass-border: rgba(244, 114, 182, 0.15);
 
-  --font-family-default: "Nunito", "Comic Neue", system-ui, sans-serif;
-  --font-family-heading: "Fredoka One", "Nunito", cursive, sans-serif;
+  --font-family-default: "DM Sans", "Comic Neue", system-ui, sans-serif;
+  --font-family-heading: "Plus Jakarta Sans", "DM Sans", cursive, sans-serif;
   --font-size-display: 44px;
   --font-size-headline: 34px;
   --font-size-title: 26px;
@@ -190,30 +190,30 @@
 /* Scholar Theme (9-12) — Refined, minimal dark */
 [data-grade-theme="HS"],
 [data-theme="hs"] {
-  --color-primary: 167 139 250;          /* #A78BFA — soft violet */
-  --color-primary-hover: 196 181 253;    /* #C4B5FD */
+  --color-primary: 165 180 252;          /* #A5B4FC — soft indigo */
+  --color-primary-hover: 199 210 254;    /* #C7D2FE */
   --color-secondary: 99 102 241;         /* #6366F1 — indigo */
   --color-secondary-hover: 129 140 248;
   --color-accent: 96 165 250;            /* #60A5FA — sky blue */
-  --color-background: 9 9 18;            /* near-black */
-  --color-surface: 18 18 30;
-  --color-surface-muted: 28 28 42;
-  --color-surface-elevated: 36 36 52;
-  --color-text: 245 245 250;
-  --color-text-muted: 140 140 170;
-  --color-on-primary: 9 9 18;
-  --color-on-accent: 9 9 18;
-  --color-border: 48 48 68;
-  --color-border-muted: 36 36 52;
-  --color-focus: 167 139 250;
-  --color-focus-ring: rgba(167, 139, 250, 0.5);
+  --color-background: 2 6 23;            /* slate-950 */
+  --color-surface: 15 23 42;
+  --color-surface-muted: 30 41 59;
+  --color-surface-elevated: 51 65 85;
+  --color-text: 248 250 252;
+  --color-text-muted: 148 163 184;
+  --color-on-primary: 2 6 23;
+  --color-on-accent: 2 6 23;
+  --color-border: 51 65 85;
+  --color-border-muted: 30 41 59;
+  --color-focus: 165 180 252;
+  --color-focus-ring: rgba(165, 180, 252, 0.5);
 
-  --gradient-primary: linear-gradient(135deg, #A78BFA 0%, #6366F1 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(167, 139, 250, 0.05) 0%, transparent 100%);
-  --glass-border: rgba(167, 139, 250, 0.1);
+  --gradient-primary: linear-gradient(135deg, #A5B4FC 0%, #6366F1 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(165, 180, 252, 0.05) 0%, transparent 100%);
+  --glass-border: rgba(165, 180, 252, 0.1);
 
-  --font-family-default: "Inter", system-ui, -apple-system, sans-serif;
-  --font-family-heading: "Inter", system-ui, -apple-system, sans-serif;
+  --font-family-default: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-family-heading: "Plus Jakarta Sans", "DM Sans", system-ui, -apple-system, sans-serif;
   --font-size-display: 34px;
   --font-size-headline: 26px;
   --font-size-title: 20px;
@@ -244,8 +244,8 @@
   --hover-scale: 1.01;
   --press-scale: 0.99;
 
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(167, 139, 250, 0.04);
-  --shadow-card-hover: 0 4px 20px rgba(167, 139, 250, 0.15), 0 0 0 1px rgba(167, 139, 250, 0.08);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(165, 180, 252, 0.04);
+  --shadow-card-hover: 0 4px 20px rgba(165, 180, 252, 0.15), 0 0 0 1px rgba(165, 180, 252, 0.08);
 
   --touch-target-min: 44px;
   --icon-size: 20px;
@@ -303,6 +303,20 @@
     --hover-scale: 1;
     --press-scale: 1;
   }
+
+  /* Disable Tailwind built-in animations for reduced motion */
+  .animate-pulse,
+  .animate-bounce,
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
+/* Also disable when user toggles via AccessibilityProvider */
+[data-reduced-motion="true"] .animate-pulse,
+[data-reduced-motion="true"] .animate-bounce,
+[data-reduced-motion="true"] .animate-spin {
+  animation: none !important;
 }
 
 /* Large text mode */
