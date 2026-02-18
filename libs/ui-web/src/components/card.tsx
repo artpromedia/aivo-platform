@@ -62,13 +62,15 @@ export function Card({
   return (
     <div
       className={cn(
-        // Theme-aware border radius
-        'rounded-[var(--radius-card,12px)]',
+        // Theme-aware border radius (16px Mastery default)
+        'rounded-[var(--radius-card,16px)]',
+        // Overflow hidden for clean edges
+        'overflow-hidden',
         // Theme-aware transitions
-        'transition-all duration-[var(--animation-duration,150ms)] ease-[var(--animation-easing)]',
+        'transition-all duration-[var(--animation-duration,200ms)] ease-[var(--animation-easing)]',
         // Interactive hover effects
         interactive &&
-          'cursor-pointer hover:scale-[var(--hover-scale,1.02)] active:scale-[var(--press-scale,0.98)]',
+          'cursor-pointer hover:scale-[var(--hover-scale,1.02)] hover:shadow-[var(--shadow-card-hover)] active:scale-[var(--press-scale,0.98)]',
         // Variant styles
         variantClasses[variant],
         className

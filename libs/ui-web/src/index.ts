@@ -293,6 +293,62 @@ export type { ConfirmDialogProps } from './components/ui/confirm-dialog';
 export { EmptyState } from './components/ui/empty-state';
 export type { EmptyStateProps } from './components/ui/empty-state';
 
+// ── Phase 1 — Mastery Shared Component Library ─────────────────────
+
+// Course Components
+export { CourseCard } from './components/course-card';
+export type { CourseCardProps } from './components/course-card';
+export { CourseGrid } from './components/course-grid';
+export type { CourseGridProps } from './components/course-grid';
+
+// Sidebar Navigation
+export { Sidebar, useSidebar } from './components/sidebar';
+export type { SidebarProps, SidebarItem as SidebarNavItem } from './components/sidebar';
+export { SidebarLayout } from './components/sidebar-layout';
+export type { SidebarLayoutProps } from './components/sidebar-layout';
+
+// Dashboard Components
+export { StatsCard } from './components/stats-card';
+export type { StatsCardProps, TrendDirection } from './components/stats-card';
+export { ProgressRing } from './components/progress-ring';
+export type { ProgressRingProps } from './components/progress-ring';
+
+// Filter & Search
+export { CategoryFilter } from './components/category-filter';
+export type { CategoryFilterProps, CategoryItem } from './components/category-filter';
+export { SearchBar } from './components/search-bar';
+export type { SearchBarProps } from './components/search-bar';
+
+// Avatar Group
+export { AvatarGroup } from './components/avatar-group';
+export type { AvatarGroupProps, AvatarGroupItem } from './components/avatar-group';
+
+// Video & Lesson
+export { VideoPlayer } from './components/video-player';
+export type { VideoPlayerProps, VideoChapter } from './components/video-player';
+export { LessonNav } from './components/lesson-nav';
+export type { LessonNavProps, LessonChapter, LessonItem } from './components/lesson-nav';
+
+// Data Display
+export { DataTable } from './components/data-table';
+export type { DataTableProps, DataTableColumn, SortDirection } from './components/data-table';
+export { Pagination } from './components/pagination';
+export type { PaginationProps } from './components/pagination';
+
+// Dropdown & Tooltip
+export { Dropdown } from './components/dropdown';
+export type { DropdownProps, DropdownItem, DropdownSection } from './components/dropdown';
+export { Tooltip } from './components/tooltip';
+export type { TooltipProps } from './components/tooltip';
+
+// Loading & Navigation
+export { Skeleton } from './components/skeleton';
+export type { SkeletonProps, SkeletonVariant } from './components/skeleton';
+export { BreadcrumbNav } from './components/breadcrumb-nav';
+export type { BreadcrumbNavProps, BreadcrumbItem } from './components/breadcrumb-nav';
+export { RatingStars } from './components/rating-stars';
+export type { RatingStarsProps } from './components/rating-stars';
+
 // Consent Management Components (GDPR/CCPA/LGPD)
 export {
   ConsentProvider,

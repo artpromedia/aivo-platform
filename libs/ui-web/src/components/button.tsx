@@ -76,9 +76,9 @@ export function Button({
   };
 
   const sizeClass: Record<ButtonSize, string> = {
-    sm: 'min-h-[var(--touch-target-min,36px)] px-[12px] py-[6px] text-label gap-1.5',
-    md: 'min-h-[var(--touch-target-min,44px)] px-[var(--space-4,16px)] py-[var(--space-2,8px)] text-body gap-2',
-    lg: 'min-h-[var(--touch-target-min,52px)] px-[var(--space-6,24px)] py-[var(--space-3,12px)] text-title gap-2.5',
+    sm: 'min-h-[var(--touch-target-min,36px)] px-[14px] py-[6px] text-label gap-1.5',
+    md: 'min-h-[var(--touch-target-min,44px)] px-[var(--space-5,20px)] py-[var(--space-2,8px)] text-body gap-2',
+    lg: 'min-h-[var(--touch-target-min,52px)] px-[var(--space-8,32px)] py-[var(--space-3,12px)] text-title gap-2.5',
     icon: 'min-h-[var(--touch-target-min,44px)] min-w-[var(--touch-target-min,44px)] p-2 aspect-square',
   };
 
