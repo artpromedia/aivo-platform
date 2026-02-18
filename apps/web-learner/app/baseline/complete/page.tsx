@@ -37,7 +37,7 @@ export default function BaselineCompletePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--aivo-teal-50)] to-[var(--aivo-purple-50)] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Confetti celebration - simplified without library */}
       {showConfetti && windowSize.width > 0 && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
@@ -86,18 +86,18 @@ export default function BaselineCompletePage() {
               height={48}
             />
           </Link>
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
             <span className="text-7xl">🎉</span>
           </div>
-          <h1 className="text-4xl font-bold text-[var(--aivo-brand-navy)] mb-3">Awesome Job!</h1>
-          <p className="text-xl text-[var(--aivo-neutral-600)]">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Awesome Job!</h1>
+          <p className="text-xl text-gray-600">
             You&apos;re all set up and ready to learn! 🚀
           </p>
         </div>
 
         {/* What's next card */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] mb-6">
-          <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] text-center mb-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100 mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
             What&apos;s Next? 🌟
           </h2>
 
@@ -105,14 +105,14 @@ export default function BaselineCompletePage() {
             {learningPath.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-3 p-4 bg-[var(--aivo-purple-50)] rounded-xl"
+                className="flex items-center gap-3 p-4 bg-indigo-50 rounded-xl"
               >
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow flex-shrink-0">
                   <span className="text-2xl">{item.emoji}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">{item.title}</h3>
-                  <p className="text-sm text-[var(--aivo-neutral-600)]">{item.description}</p>
+                  <h3 className="font-bold text-gray-900">{item.title}</h3>
+                  <p className="text-sm text-gray-600">{item.description}</p>
                 </div>
               </div>
             ))}
@@ -122,7 +122,7 @@ export default function BaselineCompletePage() {
           <div className="mt-8">
             <Link
               href="/dashboard"
-              className="block w-full py-5 px-8 bg-gradient-to-r from-[var(--aivo-teal-500)] to-[var(--aivo-brand-primary)] 
+              className="block w-full py-5 px-8 bg-gradient-to-r from-indigo-500 to-indigo-600 
                 hover:opacity-90 text-white text-2xl font-bold rounded-2xl 
                 transition-all shadow-lg text-center transform hover:scale-[1.02]"
             >
@@ -132,16 +132,16 @@ export default function BaselineCompletePage() {
         </div>
 
         {/* Parent/Teacher connection reminder */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-[var(--aivo-neutral-200)]">
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
           <div className="flex gap-4 items-start">
-            <div className="w-10 h-10 bg-[var(--aivo-purple-100)] rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-xl">💡</span>
             </div>
             <div>
-              <h3 className="font-bold text-[var(--aivo-brand-navy)] mb-1">
+              <h3 className="font-bold text-gray-900 mb-1">
                 Your Learning Journey
               </h3>
-              <p className="text-sm text-[var(--aivo-neutral-600)]">
+              <p className="text-sm text-gray-600">
                 AIVO will now create personalized lessons based on how you like to learn. The more
                 you practice, the smarter AIVO gets at helping you!
               </p>

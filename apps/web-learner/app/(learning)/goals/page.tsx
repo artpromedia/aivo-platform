@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Target, Sparkles, CheckCircle, Flame, ChevronRight } from 'lucide-react';
 
 import { EmptyState, ErrorState, PageSkeleton } from '@/components/ui/loading-states';
 import { useGoals } from '@/lib/hooks/use-learner-api';
@@ -37,7 +38,7 @@ function getProgressBarColor(percent: number): string {
 function getObjectiveColor(status: string): string {
   if (status === 'MET') return 'bg-green-500';
   if (status === 'IN_PROGRESS') return 'bg-yellow-500';
-  return 'bg-slate-200';
+  return 'bg-gray-200';
 }
 
 export default function GoalsPage() {
@@ -94,22 +95,22 @@ export default function GoalsPage() {
       </section>
 
       {/* XP Progress */}
-      <section className="rounded-2xl border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 p-6">
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-yellow-500 text-3xl shadow-lg">
-            ⭐
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50">
+            <Sparkles className="h-7 w-7 text-indigo-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-yellow-900">XP Rewards Available</h3>
-            <p className="text-sm text-yellow-700">
-              Complete your goals to earn up to <span className="font-bold">{totalXpPossible} XP</span>
+            <h3 className="text-lg font-semibold text-gray-900">XP Rewards Available</h3>
+            <p className="text-sm text-gray-500">
+              Complete your goals to earn up to <span className="font-bold text-indigo-600">{totalXpPossible} XP</span>
             </p>
           </div>
           <Link
             href="/achievements"
-            className="rounded-xl bg-yellow-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-yellow-600"
+            className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
           >
-            View Rewards
+            View Rewards <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
@@ -117,7 +118,7 @@ export default function GoalsPage() {
       {/* Active Goals */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">Active Goals</h2>
+          <h2 className="text-xl font-bold text-gray-900">Active Goals</h2>
           <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
             {totalActiveGoals} in progress
           </span>
@@ -139,7 +140,7 @@ export default function GoalsPage() {
               <Link
                 key={goal.id}
                 href={`/goals/${goal.id}`}
-                className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-indigo-300 hover:shadow-md"
+                className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow-md"
               >
                 {/* Header */}
                 <div className="mb-4 flex items-start justify-between">
@@ -148,7 +149,7 @@ export default function GoalsPage() {
                       {goal.emoji}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900 group-hover:text-indigo-600">
+                      <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600">
                         {goal.title}
                       </h3>
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${domainColor.bg} ${domainColor.text}`}>
@@ -157,21 +158,21 @@ export default function GoalsPage() {
                     </div>
                   </div>
                   {goal.streakDays > 0 && (
-                    <div className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-1 text-sm font-medium text-orange-700">
-                      🔥 {goal.streakDays}
+                    <div className="flex items-center gap-1 rounded-full bg-orange-50 px-2 py-1 text-sm font-medium text-orange-600">
+                      <Flame className="h-3.5 w-3.5" /> {goal.streakDays}
                     </div>
                   )}
                 </div>
 
-                <p className="mb-4 text-sm text-slate-600">{goal.description}</p>
+                <p className="mb-4 text-sm text-gray-500">{goal.description}</p>
 
                 {/* Progress */}
                 <div className="mb-4">
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Progress</span>
+                    <span className="text-gray-500">Progress</span>
                     <span className="font-medium text-indigo-600">{goal.progressPercent}%</span>
                   </div>
-                  <div className="h-3 rounded-full bg-slate-100">
+                  <div className="h-3 rounded-full bg-gray-100">
                     <div
                       className={`h-full rounded-full transition-all ${getProgressBarColor(goal.progressPercent)}`}
                       style={{ width: `${goal.progressPercent}%` }}
@@ -180,8 +181,8 @@ export default function GoalsPage() {
                 </div>
 
                 {/* Objectives Preview */}
-                <div className="mb-4 rounded-lg bg-slate-50 p-3">
-                  <p className="mb-2 text-xs font-medium text-slate-500">
+                <div className="mb-4 rounded-lg bg-gray-50 p-3">
+                  <p className="mb-2 text-xs font-medium text-gray-500">
                     Objectives: {completedObjectives}/{goal.objectives.length} completed
                   </p>
                   <div className="flex gap-1">
@@ -200,8 +201,8 @@ export default function GoalsPage() {
                   <span className={`${daysUntilDue <= 7 ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
                     {daysUntilDue > 0 ? `${daysUntilDue} days left` : 'Due today!'}
                   </span>
-                  <span className="flex items-center gap-1 text-yellow-600">
-                    ⭐ {goal.xpReward} XP
+                  <span className="flex items-center gap-1 text-indigo-600">
+                    <Sparkles className="h-3.5 w-3.5" /> {goal.xpReward} XP
                   </span>
                 </div>
               </Link>
@@ -214,37 +215,37 @@ export default function GoalsPage() {
       {completedGoals.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-900">Completed Goals</h2>
+            <h2 className="text-xl font-bold text-gray-900">Completed Goals</h2>
             <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
               {completedGoals.length} achieved
             </span>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white">
+          <div className="rounded-2xl border border-gray-100 bg-white">
             {completedGoals.map((goal, idx) => (
               <div
                 key={goal.id}
                 className={`flex items-center justify-between p-4 ${
-                  idx < completedGoals.length - 1 ? 'border-b border-slate-100' : ''
+                  idx < completedGoals.length - 1 ? 'border-b border-gray-50' : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-xl">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-xl">
                     {goal.emoji}
                   </div>
                   <div>
-                    <h3 className="font-medium text-slate-900">{goal.title}</h3>
-                    <p className="text-xs text-slate-500">
+                    <h3 className="font-medium text-gray-900">{goal.title}</h3>
+                    <p className="text-xs text-gray-500">
                       Completed {new Date(goal.completedDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 text-sm font-medium text-yellow-600">
-                    ⭐ +{goal.xpEarned} XP
+                  <span className="flex items-center gap-1 text-sm font-medium text-indigo-600">
+                    <Sparkles className="h-3.5 w-3.5" /> +{goal.xpEarned} XP
                   </span>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-sm text-white">
-                    ✓
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
+                    <CheckCircle className="h-4 w-4" />
                   </span>
                 </div>
               </div>
@@ -254,10 +255,10 @@ export default function GoalsPage() {
       )}
 
       {/* Motivational Footer */}
-      <section className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 p-6 text-center">
-        <h3 className="text-lg font-bold text-green-800">Keep Up the Great Work!</h3>
-        <p className="mt-2 text-green-700">
-          Every step forward brings you closer to achieving your goals. You&apos;ve got this! 💪
+      <section className="rounded-2xl bg-indigo-50 p-6 text-center">
+        <h3 className="text-lg font-semibold text-indigo-900">Keep Up the Great Work!</h3>
+        <p className="mt-2 text-indigo-700">
+          Every step forward brings you closer to achieving your goals. You&apos;ve got this!
         </p>
       </section>
     </div>

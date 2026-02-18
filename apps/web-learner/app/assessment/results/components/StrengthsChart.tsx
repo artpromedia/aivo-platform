@@ -19,10 +19,10 @@ export function StrengthsChart({ strengths }: StrengthsChartProps) {
   if (!strengths || strengths.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-        <h3 className="text-xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">
           Your Strengths
         </h3>
-        <p className="text-[var(--aivo-neutral-500)] text-center py-8">
+        <p className="text-gray-500 text-center py-8">
           Keep practicing to discover your strengths!
         </p>
       </div>
@@ -31,7 +31,7 @@ export function StrengthsChart({ strengths }: StrengthsChartProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-      <h3 className="text-xl font-bold text-[var(--aivo-brand-navy)] mb-6 flex items-center gap-2">
+      <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
         <span className="text-2xl">💪</span>
         Your Strengths
       </h3>
@@ -52,14 +52,14 @@ export function StrengthsChart({ strengths }: StrengthsChartProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{emoji}</span>
-                  <span className="font-medium text-[var(--aivo-brand-navy)] capitalize">
+                  <span className="font-medium text-gray-900 capitalize">
                     {strength.skill}
                   </span>
                 </div>
                 <span className="text-sm font-bold text-green-600">{Math.round(strength.level)}%</span>
               </div>
 
-              <div className="h-3 bg-[var(--aivo-neutral-100)] rounded-full overflow-hidden">
+              <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full"
                   initial={{ width: 0 }}
@@ -68,7 +68,7 @@ export function StrengthsChart({ strengths }: StrengthsChartProps) {
                 />
               </div>
 
-              <p className="text-xs text-[var(--aivo-neutral-500)]">{strength.description}</p>
+              <p className="text-xs text-gray-500">{strength.description}</p>
             </motion.div>
           );
         })}

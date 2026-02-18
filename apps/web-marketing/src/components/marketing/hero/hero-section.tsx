@@ -6,11 +6,12 @@ import {
   TrendingUp,
   Star,
   Users,
-  Clock,
+  BookOpen,
   Brain,
   Sparkles,
   CheckCircle,
   X,
+  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
@@ -53,9 +54,9 @@ const floatVariants = {
 
 // Stats data
 const stats = [
-  { value: '150+', label: 'Students', icon: Users },
-  { value: '3', label: 'Months', icon: Clock },
-  { value: '4.9/5', label: 'Rating', icon: Star },
+  { value: '50K+', label: 'Students', icon: Users },
+  { value: '200+', label: 'Courses', icon: BookOpen },
+  { value: '4.9', label: 'Rating', icon: Star },
   { value: 'AI', label: 'Powered', icon: Brain },
 ];
 
@@ -141,20 +142,20 @@ export function HeroSection() {
               variants={itemVariants}
               className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 mb-6"
             >
-              Welcome to{' '}
+              Master New Skills{' '}
               <span className="relative">
-                <span className="bg-gradient-to-r from-theme-primary-600 via-coral-500 to-theme-primary-500 bg-clip-text text-transparent">
-                  AIVO Learning
+                <span className="bg-gradient-to-r from-theme-primary-600 via-theme-primary-500 to-accent-500 bg-clip-text text-transparent">
+                  With Expert-Led
                 </span>
                 <motion.span
-                  className="absolute -bottom-2 left-0 right-0 h-3 bg-coral-200/50 -z-10 rounded"
+                  className="absolute -bottom-2 left-0 right-0 h-3 bg-theme-primary-200/50 -z-10 rounded"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.8, duration: 0.6 }}
                 />
               </span>
               <br />
-              <span className="text-gray-700">Where Every Mind Thrives</span>
+              <span className="text-gray-700">Courses</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -162,10 +163,9 @@ export function HeroSection() {
               variants={itemVariants}
               className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Revolutionary AI-powered learning platform with personalized{' '}
-              <span className="font-semibold text-gray-900">Virtual Brains</span> designed for
-              neurodiverse K-12 learners. Supporting ADHD, Autism, Dyslexia, and all learning
-              differences.
+              Join thousands of learners. AI-powered personalized learning platform with{' '}
+              <span className="font-semibold text-gray-900">Virtual Brain</span> technology designed
+              for neurodiverse K-12 learners. Start learning with world-class instruction.
             </motion.p>
 
             {/* Pilot Success Callout */}
@@ -188,13 +188,23 @@ export function HeroSection() {
             </motion.div>
 
             {/* CTAs */}
-            <motion.div variants={itemVariants}>
-              <HeroCTASection
-                showVideo
-                onVideoClick={() => {
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-xl shadow-purple hover:shadow-purple-lg transition-all text-lg"
+              >
+                Start Free Trial
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+              <button
+                onClick={() => {
                   setIsVideoModalOpen(true);
                 }}
-              />
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all text-lg"
+              >
+                <Play className="w-5 h-5 text-theme-primary-500" />
+                Watch Demo
+              </button>
             </motion.div>
           </motion.div>
 

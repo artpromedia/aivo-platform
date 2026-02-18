@@ -56,7 +56,7 @@ export function AssessmentTimer({ timeLimit, onTimeout, isPaused = false }: Asse
       className={`flex items-center gap-3 px-4 py-2 rounded-full transition-colors ${
         isWarning
           ? 'bg-red-100 text-red-700'
-          : 'bg-[var(--aivo-purple-50)] text-[var(--aivo-brand-primary)]'
+          : 'bg-indigo-50 text-indigo-600'
       }`}
       animate={isWarning ? { scale: [1, 1.05, 1] } : {}}
       transition={{ repeat: isWarning ? Infinity : 0, duration: 1 }}
@@ -86,7 +86,7 @@ export function AssessmentTimer({ timeLimit, onTimeout, isPaused = false }: Asse
             cx="16"
             cy="16"
             r="12"
-            stroke={isWarning ? '#FEE2E2' : 'var(--aivo-neutral-200)'}
+            stroke={isWarning ? '#FEE2E2' : '#e5e7eb'}
             strokeWidth="3"
             fill="none"
           />
@@ -94,7 +94,7 @@ export function AssessmentTimer({ timeLimit, onTimeout, isPaused = false }: Asse
             cx="16"
             cy="16"
             r="12"
-            stroke={isWarning ? '#EF4444' : 'var(--aivo-brand-primary)'}
+            stroke={isWarning ? '#EF4444' : '#4F46E5'}
             strokeWidth="3"
             fill="none"
             strokeDasharray={75.4}

@@ -10,6 +10,7 @@ import {
   School,
   Sparkles,
   ExternalLink,
+  BookOpen,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,28 +41,41 @@ const navItems: NavItem[] = [
     children: [
       {
         label: 'For Parents',
-        href: '#for-parents',
+        href: '/features/parents',
         description: "Support your child's unique learning journey",
         icon: <Users className="w-5 h-5 text-coral-500" />,
       },
       {
         label: 'For Students',
-        href: '#for-students',
+        href: '/features/students',
         description: 'Learn at your own pace with AI support',
         icon: <GraduationCap className="w-5 h-5 text-theme-primary-500" />,
       },
       {
         label: 'For Teachers',
-        href: '#for-teachers',
+        href: '/features/teachers',
         description: 'Differentiate instruction effortlessly',
         icon: <School className="w-5 h-5 text-mint-500" />,
       },
     ],
   },
   {
-    label: 'AIVO Pad',
-    href: '/aivo-pad',
-    badge: 'New',
+    label: 'Courses',
+    href: '/courses',
+    children: [
+      {
+        label: 'Course Catalog',
+        href: '/courses',
+        description: 'Browse our full library of expert-led courses',
+        icon: <BookOpen className="w-5 h-5 text-theme-primary-500" />,
+      },
+      {
+        label: 'For Schools',
+        href: '/features/schools',
+        description: 'School and district licensing options',
+        icon: <School className="w-5 h-5 text-mint-500" />,
+      },
+    ],
   },
   {
     label: 'How It Works',
@@ -74,10 +88,6 @@ const navItems: NavItem[] = [
   {
     label: 'About',
     href: '/about',
-  },
-  {
-    label: 'Contact',
-    href: '/contact',
   },
 ];
 
@@ -141,11 +151,11 @@ export function Navigation() {
       >
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
-            {/* Logo */}
+            {/* Logo — Left */}
             <AivoLogo size="md" variant="horizontal-purple" href="/" className="shrink-0" />
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
+            {/* Desktop Navigation — Center */}
+            <div className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
               {navItems.map((item) => (
                 <div
                   key={item.label}
@@ -242,9 +252,20 @@ export function Navigation() {
               ))}
             </div>
 
-            {/* Desktop CTAs */}
+            {/* Desktop CTA — Right */}
             <div className="hidden lg:flex items-center gap-3">
-              <NavAuthSection />
+              <Link
+                href="/contact"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Contact
+              </Link>
+              <Link
+                href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
+                className="inline-flex items-center px-5 py-2.5 bg-theme-primary-600 hover:bg-theme-primary-700 text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all"
+              >
+                Get Started Free
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}

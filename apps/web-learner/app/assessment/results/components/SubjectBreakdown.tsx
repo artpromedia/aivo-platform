@@ -28,10 +28,10 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
   if (!subjectList || subjectList.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-        <h3 className="text-xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">
           Subject Breakdown
         </h3>
-        <p className="text-[var(--aivo-neutral-500)] text-center py-8">
+        <p className="text-gray-500 text-center py-8">
           No subject data available yet.
         </p>
       </div>
@@ -40,7 +40,7 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-      <h3 className="text-xl font-bold text-[var(--aivo-brand-navy)] mb-6 flex items-center gap-2">
+      <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
         <span className="text-2xl">📊</span>
         Subject Breakdown
       </h3>
@@ -56,7 +56,7 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="border-2 border-[var(--aivo-neutral-100)] rounded-xl p-4 hover:border-[var(--aivo-purple-200)] transition-colors"
+              className="border-2 border-gray-100 rounded-xl p-4 hover:border-indigo-200 transition-colors"
             >
               <div className="flex items-center gap-3 mb-3">
                 <div
@@ -65,7 +65,7 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
                   <span className="text-xl">{config.emoji}</span>
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-[var(--aivo-brand-navy)] capitalize">
+                  <h4 className="font-semibold text-gray-900 capitalize">
                     {subject.subject}
                   </h4>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${proficiency.color}`}>
@@ -73,14 +73,14 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-[var(--aivo-brand-primary)]">
+                  <div className="text-2xl font-bold text-indigo-600">
                     {Math.round(subject.score)}%
                   </div>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="h-2 bg-[var(--aivo-neutral-100)] rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <motion.div
                   className={`h-full bg-gradient-to-r ${config.color} rounded-full`}
                   initial={{ width: 0 }}
@@ -90,7 +90,7 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
               </div>
 
               {/* Stats */}
-              <div className="flex justify-between mt-3 text-xs text-[var(--aivo-neutral-500)]">
+              <div className="flex justify-between mt-3 text-xs text-gray-500">
                 <span>
                   {subject.correctAnswers}/{subject.questionsAnswered} correct
                 </span>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function AccessPage() {
   return (
-    <div className="min-h-screen bg-[var(--aivo-purple-50)] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-lg w-full text-center">
         {/* Logo */}
         <Link href="/" className="inline-flex items-center justify-center mb-6">
@@ -14,20 +14,20 @@ export default function AccessPage() {
 
         {/* Fun mascot/icon area */}
         <div className="mb-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-purple-400)] to-[var(--aivo-brand-primary)] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <span className="text-5xl">🎒</span>
           </div>
-          <h1 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome, Explorer!
           </h1>
-          <p className="text-[var(--aivo-neutral-600)] text-lg">
+          <p className="text-gray-600 text-lg">
             Ready to start your learning adventure?
           </p>
         </div>
 
         {/* Access options */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-[var(--aivo-purple-100)]">
-          <h2 className="text-xl font-semibold text-[var(--aivo-brand-navy)] mb-4">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-indigo-100">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
             How do you want to get started?
           </h2>
 
@@ -35,17 +35,17 @@ export default function AccessPage() {
             {/* Parent access */}
             <a
               href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
-              className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
+              className="block w-full p-4 border-2 border-indigo-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[var(--aivo-purple-100)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="text-2xl">👨‍👩‍👧</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-navy)]">
+                  <div className="font-semibold text-gray-900">
                     I&apos;m a Parent
                   </div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                  <div className="text-sm text-gray-500">
                     Create an account and add your children
                   </div>
                 </div>
@@ -55,17 +55,17 @@ export default function AccessPage() {
             {/* Teacher access */}
             <a
               href={`${process.env.NEXT_PUBLIC_TEACHER_APP_URL || 'https://teacher.aivolearning.com'}/register`}
-              className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
+              className="block w-full p-4 border-2 border-indigo-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[var(--aivo-teal-100)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="text-2xl">👩‍🏫</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-navy)]">
+                  <div className="font-semibold text-gray-900">
                     I&apos;m a Teacher
                   </div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                  <div className="text-sm text-gray-500">
                     Set up your classroom and invite students
                   </div>
                 </div>
@@ -75,24 +75,24 @@ export default function AccessPage() {
             {/* Student with code */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--aivo-purple-200)]"></div>
+                <div className="w-full border-t border-indigo-200"></div>
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-3 text-sm text-[var(--aivo-neutral-500)]">or</span>
+                <span className="bg-white px-3 text-sm text-gray-500">or</span>
               </div>
             </div>
 
             <Link
               href="/join"
-              className="block w-full p-4 border-2 border-[var(--aivo-purple-200)] rounded-xl hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)] transition-all group"
+              className="block w-full p-4 border-2 border-indigo-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[var(--aivo-teal-100)] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   <span className="text-2xl">🎫</span>
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-[var(--aivo-brand-navy)]">I have a Code</div>
-                  <div className="text-sm text-[var(--aivo-neutral-500)]">
+                  <div className="font-semibold text-gray-900">I have a Code</div>
+                  <div className="text-sm text-gray-500">
                     Class code or PIN from your parent
                   </div>
                 </div>
@@ -102,11 +102,11 @@ export default function AccessPage() {
         </div>
 
         {/* Already have access */}
-        <div className="text-[var(--aivo-neutral-600)]">
+        <div className="text-gray-600">
           <p className="mb-2">Already have access?</p>
           <Link
             href="/join"
-            className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] font-medium"
+            className="text-indigo-600 hover:text-indigo-700 font-medium"
           >
             Enter your code to start learning →
           </Link>

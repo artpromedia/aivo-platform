@@ -43,7 +43,7 @@ export default function BaselineIntroPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--aivo-teal-50)] to-[var(--aivo-purple-50)] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         {/* Welcome header */}
         <div className="text-center mb-8">
@@ -55,20 +55,20 @@ export default function BaselineIntroPage() {
               height={48}
             />
           </Link>
-          <div className="w-28 h-28 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 shadow-lg">
+          <div className="w-28 h-28 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
             <span className="text-6xl">🧠</span>
           </div>
-          <h1 className="text-4xl font-bold text-[var(--aivo-brand-navy)] mb-3">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Welcome to AIVO!
           </h1>
-          <p className="text-xl text-[var(--aivo-neutral-600)]">
+          <p className="text-xl text-gray-600">
             Let&apos;s discover how you learn best! 🚀
           </p>
         </div>
 
         {/* Info card */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] mb-6">
-          <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] text-center mb-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100 mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">
             Before we begin your adventure...
           </h2>
 
@@ -76,14 +76,14 @@ export default function BaselineIntroPage() {
             {features.map((feature) => (
               <div
                 key={feature.id}
-                className="flex gap-4 p-4 bg-[var(--aivo-purple-50)] rounded-xl"
+                className="flex gap-4 p-4 bg-indigo-50 rounded-xl"
               >
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow flex-shrink-0">
                   <span className="text-2xl">{feature.emoji}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--aivo-brand-navy)]">{feature.title}</h3>
-                  <p className="text-sm text-[var(--aivo-neutral-600)]">{feature.description}</p>
+                  <h3 className="font-bold text-gray-900">{feature.title}</h3>
+                  <p className="text-sm text-gray-600">{feature.description}</p>
                 </div>
               </div>
             ))}
@@ -94,7 +94,7 @@ export default function BaselineIntroPage() {
             <button
               onClick={handleStart}
               disabled={isStarting}
-              className="w-full py-5 px-8 bg-gradient-to-r from-[var(--aivo-teal-500)] to-[var(--aivo-brand-primary)] 
+              className="w-full py-5 px-8 bg-gradient-to-r from-indigo-500 to-indigo-600 
                 hover:opacity-90 disabled:opacity-60 text-white text-2xl font-bold rounded-2xl 
                 transition-all shadow-lg transform hover:scale-[1.02] disabled:cursor-not-allowed"
             >
@@ -127,7 +127,7 @@ export default function BaselineIntroPage() {
 
         {/* Encouragement */}
         <div className="text-center">
-          <p className="text-[var(--aivo-neutral-500)] text-sm">
+          <p className="text-gray-500 text-sm">
             💡 Tip: Find a quiet spot and make sure you&apos;re comfortable!
           </p>
         </div>

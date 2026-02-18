@@ -1,5 +1,18 @@
 'use client';
 
+import {
+  Flame,
+  Sparkles,
+  GraduationCap,
+  Target,
+  BookOpen,
+  Clock,
+  ChevronRight,
+  Brain,
+  Calendar,
+  Trophy,
+  ArrowRight,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -8,10 +21,10 @@ import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
 import { useDashboard } from '@/lib/hooks/use-learner-api';
 
 const SUBJECTS = [
-  { code: 'MATH', label: 'Math', emoji: '🔢' },
-  { code: 'ELA', label: 'ELA', emoji: '📖' },
-  { code: 'SCIENCE', label: 'Science', emoji: '🔬' },
-  { code: 'SEL', label: 'Social-Emotional', emoji: '💚' },
+  { code: 'MATH', label: 'Math', icon: '🔢' },
+  { code: 'ELA', label: 'ELA', icon: '📖' },
+  { code: 'SCIENCE', label: 'Science', icon: '🔬' },
+  { code: 'SEL', label: 'Social-Emotional', icon: '💚' },
 ] as const;
 
 export default function DashboardPage() {
@@ -37,13 +50,9 @@ export default function DashboardPage() {
     level,
     xpToNextLevel,
   } = data;
+
   const hour = new Date().getHours();
-  function getGreeting() {
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-  const greeting = getGreeting();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   async function startLearningSession(subject: string) {
     setStartingSubject(subject);
@@ -57,18 +66,16 @@ export default function DashboardPage() {
         body: JSON.stringify({ subject, minutesAvailable: 30 }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
 
       if (!res.ok) {
         if (res.status === 409) {
-          // Active session exists — redirect to courses
           router.push('/courses');
           return;
         }
-        throw new Error(data.error || data.message || 'Failed to start session');
+        throw new Error(json.error || json.message || 'Failed to start session');
       }
 
-      // Session started — navigate to courses (content will be available there)
       router.push('/courses');
     } catch (err) {
       setSessionError(err instanceof Error ? err.message : 'Something went wrong');
@@ -78,259 +85,287 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <section className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white shadow-lg md:p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold md:text-3xl">
-              {greeting}, {firstName}! 👋
-            </h1>
-            <p className="mt-2 text-blue-100">Ready to learn something amazing today?</p>
-          </div>
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowSubjectPicker(!showSubjectPicker);
-              }}
-              disabled={startingSubject !== null}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/20 px-6 py-3 font-medium text-white backdrop-blur-sm transition hover:bg-white/30 disabled:opacity-60"
-            >
-              {startingSubject ? 'Starting...' : 'Start Learning ▶️'}
-            </button>
-            {showSubjectPicker && (
-              <div className="absolute right-0 top-full z-10 mt-2 w-48 overflow-hidden rounded-xl bg-white shadow-xl">
-                {SUBJECTS.map((s) => (
-                  <button
-                    key={s.code}
-                    onClick={() => {
-                      void startLearningSession(s.code);
-                    }}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-slate-700 transition hover:bg-blue-50"
-                  >
-                    <span className="text-lg">{s.emoji}</span>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="space-y-6 max-w-6xl">
+      {/* Greeting */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {greeting}, {firstName}!
+          </h1>
+          <p className="text-gray-500 mt-1">Ready to continue your learning journey?</p>
         </div>
-
-        {/* Daily Goals Progress */}
-        <div className="mt-6 grid grid-cols-3 gap-4">
-          {dailyGoals.map((goal) => (
-            <div key={goal.id} className="rounded-xl bg-white/10 p-3 backdrop-blur-sm">
-              <div className="mb-2 flex items-center gap-2 text-sm">
-                <span>{goal.emoji}</span>
-                <span className="truncate">{goal.title}</span>
-              </div>
-              <div className="h-2 rounded-full bg-white/20">
-                <div
-                  className="h-full rounded-full bg-white transition-all"
-                  style={{ width: `${Math.min(100, (goal.current / goal.target) * 100)}%` }}
-                />
-              </div>
-              <div className="mt-1 text-xs text-blue-100">
-                {goal.current}/{goal.target}
-              </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowSubjectPicker(!showSubjectPicker)}
+            disabled={startingSubject !== null}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition disabled:opacity-60"
+          >
+            {startingSubject ? 'Starting...' : 'Start Learning'}
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          {showSubjectPicker && (
+            <div className="absolute right-0 top-full z-10 mt-2 w-52 overflow-hidden rounded-xl bg-white border border-gray-200 shadow-lg">
+              {SUBJECTS.map((s) => (
+                <button
+                  key={s.code}
+                  onClick={() => void startLearningSession(s.code)}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:bg-indigo-50"
+                >
+                  <span className="text-lg">{s.icon}</span>
+                  {s.label}
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </section>
+      </div>
 
       {sessionError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {sessionError}
-          <button
-            onClick={() => {
-              setSessionError(null);
-            }}
-            className="ml-2 font-medium underline hover:text-red-900"
-          >
+          <button onClick={() => setSessionError(null)} className="ml-2 font-medium underline hover:text-red-900">
             Dismiss
           </button>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Content - Continue Learning */}
-        <div className="lg:col-span-2 space-y-6">
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Continue Learning</h2>
-              <Link href="/courses" className="text-sm text-blue-600 hover:underline">
-                View all →
-              </Link>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+              <Flame className="w-5 h-5 text-orange-500" />
             </div>
+            <span className="text-sm text-gray-500">Streak</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">
+            {streakDays ?? 0} <span className="text-sm font-normal text-gray-400">days</span>
+          </p>
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {continueLearning.map((lesson) => (
-                <Link
-                  key={lesson.id}
-                  href={`/courses/${lesson.courseId}/lessons/${lesson.id}`}
-                  className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
-                >
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-purple-100 text-2xl">
-                      {lesson.thumbnail}
-                    </div>
-                    <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                      {lesson.estimatedTime}
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-indigo-500" />
+            </div>
+            <span className="text-sm text-gray-500">Total XP</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{totalXp?.toLocaleString() ?? 0}</p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-emerald-500" />
+            </div>
+            <span className="text-sm text-gray-500">Level</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{level ?? 1}</p>
+          <div className="mt-2 h-1.5 rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all"
+              style={{
+                width: xpToNextLevel
+                  ? `${Math.max(5, 100 - (xpToNextLevel / (xpToNextLevel + 50)) * 100)}%`
+                  : '5%',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+              <Target className="w-5 h-5 text-purple-500" />
+            </div>
+            <span className="text-sm text-gray-500">Daily Goals</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">
+            {dailyGoals.filter((g) => g.current >= g.target).length}/{dailyGoals.length}
+          </p>
+        </div>
+      </div>
+
+      {/* Daily Goals Progress */}
+      {dailyGoals.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Today&apos;s Goals</h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {dailyGoals.map((goal) => {
+              const pct = Math.min(100, Math.round((goal.current / goal.target) * 100));
+              return (
+                <div key={goal.id} className="flex items-center gap-3">
+                  <div className="relative w-11 h-11 shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                      <circle
+                        cx="18" cy="18" r="15" fill="none" stroke="#6366f1" strokeWidth="3"
+                        strokeDasharray={`${pct * 0.942} 100`} strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
+                      {pct}%
                     </span>
                   </div>
-                  <h3 className="font-semibold text-slate-900 group-hover:text-blue-600">
-                    {lesson.title}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">{lesson.courseName}</p>
-                  <div className="mt-3">
-                    <div className="mb-1 flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Progress</span>
-                      <span className="font-medium text-blue-600">{lesson.progress}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all"
-                        style={{ width: `${lesson.progress}%` }}
-                      />
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{goal.title}</p>
+                    <p className="text-xs text-gray-400">{goal.current}/{goal.target}</p>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </section>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-          {/* AI Tutor Quick Access */}
-          <section className="rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-3xl text-white shadow-lg">
-                🤖
+      {/* Continue Learning */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Continue Learning</h2>
+          <Link href="/courses" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+            View all <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+          {continueLearning.map((lesson) => (
+            <Link
+              key={lesson.id}
+              href={`/courses/${lesson.courseId}/lessons/${lesson.id}`}
+              className="group min-w-[280px] sm:min-w-[300px] bg-white rounded-2xl border border-gray-100 p-4 shadow-sm transition hover:shadow-md hover:border-indigo-200 snap-start shrink-0"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-xl">
+                  {lesson.thumbnail}
+                </div>
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <Clock className="w-3.5 h-3.5" />
+                  {lesson.estimatedTime}
+                </span>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-purple-900">Need Help?</h3>
-                <p className="text-sm text-purple-700">
-                  Ask your AI tutor anything about your lessons
-                </p>
+              <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                {lesson.title}
+              </h3>
+              <p className="text-sm text-gray-500 mt-0.5">{lesson.courseName}</p>
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-gray-400">Progress</span>
+                  <span className="font-semibold text-indigo-600">{lesson.progress}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-gray-100">
+                  <div
+                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    style={{ width: `${lesson.progress}%` }}
+                  />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* AI Tutor */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-5 text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg">AI Tutor</h3>
+                <p className="text-indigo-100 text-sm mt-0.5">Get instant help with any topic</p>
               </div>
               <Link
                 href="/tutor"
-                className="rounded-xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700"
+                className="bg-white text-indigo-700 rounded-xl px-4 py-2 text-sm font-semibold hover:bg-indigo-50 transition shrink-0"
               >
                 Chat Now
               </Link>
             </div>
-          </section>
-        </div>
+          </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Upcoming Due */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="mb-4 font-bold text-slate-900">📅 Upcoming</h2>
+          {/* Upcoming */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5 text-gray-400" />
+              <h2 className="font-bold text-gray-900">Upcoming</h2>
+            </div>
             <div className="space-y-3">
               {upcoming.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                  <span className="text-xl">{item.emoji}</span>
-                  <div className="flex-1">
-                    <div className="font-medium text-slate-900">{item.title}</div>
-                    <div className="text-xs text-slate-500">
+                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition">
+                  <span className="text-xl shrink-0">{item.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm truncate">{item.title}</p>
+                    <p className="text-xs text-gray-400">
                       Due {new Date(item.dueDate).toLocaleDateString()}
-                    </div>
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
+        </div>
 
-          {/* Achievements */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-bold text-slate-900">🏆 Achievements</h2>
-              <Link href="/achievements" className="text-xs text-blue-600 hover:underline">
-                View all
-              </Link>
+        {/* Right column */}
+        <div className="space-y-6">
+          {/* Streak calendar */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Flame className="w-5 h-5 text-orange-500" />
+              <h2 className="font-bold text-gray-900">Streak</h2>
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {achievements.map((achievement) => (
-                <div
-                  key={achievement.id}
-                  className={`flex flex-col items-center gap-1 rounded-xl p-2 ${
-                    achievement.earned ? 'bg-yellow-50' : 'bg-slate-100 opacity-50'
-                  }`}
-                  title={achievement.title}
-                >
-                  <span className="text-2xl">{achievement.emoji}</span>
-                  <span className="text-[10px] text-slate-600">
-                    {achievement.earned ? '✓' : '?'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* XP & Level */}
-          <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-                {level ?? 1}
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-blue-900">Level {level ?? 1}</div>
-                <div className="text-xs text-blue-600">{totalXp?.toLocaleString() ?? 0} XP</div>
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="mb-1 flex justify-between text-xs text-blue-600">
-                <span>Next level</span>
-                <span>{xpToNextLevel ?? 100} XP to go</span>
-              </div>
-              <div className="h-2 rounded-full bg-blue-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all"
-                  style={{
-                    width: xpToNextLevel
-                      ? `${Math.max(5, 100 - (xpToNextLevel / (xpToNextLevel + 50)) * 100)}%`
-                      : '5%',
-                  }}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Learning Streak */}
-          <section className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-yellow-50 p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500 text-2xl text-white">
-                🔥
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-700">
-                  {streakDays ?? 0} Day{(streakDays ?? 0) !== 1 ? 's' : ''}
-                </div>
-                <div className="text-sm text-orange-600">Learning Streak!</div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-between">
+            <div className="flex justify-between">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
                 const streakCount = streakDays ?? 0;
-                function getDayClass() {
-                  if (i < streakCount % 7) return 'bg-orange-500 text-white';
-                  if (i === streakCount % 7)
-                    return 'border-2 border-dashed border-orange-300 text-orange-400';
-                  return 'bg-slate-100 text-slate-400';
-                }
+                const isCompleted = i < streakCount % 7;
+                const isCurrent = i === streakCount % 7;
                 return (
-                  <div key={day + i} className="flex flex-col items-center gap-1">
+                  <div key={day + i} className="flex flex-col items-center gap-1.5">
+                    <span className="text-xs text-gray-400">{day}</span>
                     <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs ${getDayClass()}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition ${
+                        isCompleted
+                          ? 'bg-orange-500 text-white'
+                          : isCurrent
+                            ? 'border-2 border-dashed border-orange-300 text-orange-400'
+                            : 'bg-gray-100 text-gray-300'
+                      }`}
                     >
-                      {i < streakCount % 7 ? '✓' : day}
+                      {isCompleted ? '✓' : i + 1}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </section>
+          </div>
+
+          {/* Achievements */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                <h2 className="font-bold text-gray-900">Achievements</h2>
+              </div>
+              <Link href="/achievements" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                View all
+              </Link>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {achievements.map((a) => (
+                <div
+                  key={a.id}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition ${
+                    a.earned ? 'bg-amber-50' : 'bg-gray-50 opacity-40'
+                  }`}
+                  title={a.title}
+                >
+                  <span className="text-2xl">{a.emoji}</span>
+                  <span className="text-[10px] text-gray-500">{a.earned ? '✓' : '?'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

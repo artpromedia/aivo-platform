@@ -41,7 +41,7 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
     return (
       <div className="text-center py-8">
         <span className="text-4xl mb-4 block">🎉</span>
-        <p className="text-[var(--aivo-neutral-600)]">
+        <p className="text-gray-600">
           Great job! You&apos;re doing well in all areas!
         </p>
       </div>
@@ -50,13 +50,13 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-[var(--aivo-neutral-600)] mb-6">
+      <p className="text-gray-600 mb-6">
         Based on your assessment, here&apos;s your personalized learning journey:
       </p>
 
       <div className="relative">
         {/* Connecting line */}
-        <div className="absolute left-6 top-8 bottom-8 w-1 bg-gradient-to-b from-[var(--aivo-brand-primary)] to-[var(--aivo-teal-400)] rounded-full" />
+        <div className="absolute left-6 top-8 bottom-8 w-1 bg-gradient-to-b from-indigo-600 to-indigo-400 rounded-full" />
 
         <div className="space-y-4">
           {recommendations.map((rec, index) => {
@@ -72,8 +72,8 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
                 className={`relative flex items-start gap-4 p-4 rounded-xl border-2 ${priority.bg} ${priority.border}`}
               >
                 {/* Step number */}
-                <div className="relative z-10 w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0 border-2 border-[var(--aivo-brand-primary)]">
-                  <span className="text-lg font-bold text-[var(--aivo-brand-primary)]">
+                <div className="relative z-10 w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0 border-2 border-indigo-600">
+                  <span className="text-lg font-bold text-indigo-600">
                     {index + 1}
                   </span>
                 </div>
@@ -81,12 +81,12 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xl">{emoji}</span>
-                    <h4 className="font-bold text-[var(--aivo-brand-navy)] capitalize">
+                    <h4 className="font-bold text-gray-900 capitalize">
                       {rec.subject}: {rec.skill}
                     </h4>
                   </div>
 
-                  <p className="text-sm text-[var(--aivo-neutral-600)] mb-2">{rec.reason}</p>
+                  <p className="text-sm text-gray-600 mb-2">{rec.reason}</p>
 
                   <span
                     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${priority.bg} ${priority.text} font-medium border ${priority.border}`}
@@ -99,7 +99,7 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
                 </div>
 
                 {/* Action button */}
-                <button className="px-4 py-2 bg-white rounded-lg shadow-sm text-[var(--aivo-brand-primary)] font-medium hover:bg-[var(--aivo-purple-50)] transition-colors flex-shrink-0">
+                <button className="px-4 py-2 bg-white rounded-lg shadow-sm text-indigo-600 font-medium hover:bg-indigo-50 transition-colors flex-shrink-0">
                   Start
                 </button>
               </motion.div>
@@ -116,7 +116,7 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
       >
         <div className="flex items-center gap-3">
           <span className="text-2xl">🧠</span>
-          <p className="text-sm text-[var(--aivo-neutral-600)]">
+          <p className="text-sm text-gray-600">
             AIVO will adapt your lessons as you learn. The more you practice, the smarter your path becomes!
           </p>
         </div>

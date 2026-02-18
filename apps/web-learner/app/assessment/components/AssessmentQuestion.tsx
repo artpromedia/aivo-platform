@@ -28,12 +28,12 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]"
+      className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100"
     >
       {/* Question header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <span className="px-3 py-1 bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] rounded-full text-sm font-medium capitalize">
+          <span className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-full text-sm font-medium capitalize">
             {question.subject}
           </span>
           <div className="flex gap-1">
@@ -42,14 +42,14 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
                 key={i}
                 className={`w-2 h-2 rounded-full ${
                   i < question.difficulty
-                    ? 'bg-[var(--aivo-brand-primary)]'
-                    : 'bg-[var(--aivo-neutral-200)]'
+                    ? 'bg-indigo-600'
+                    : 'bg-gray-200'
                 }`}
               />
             ))}
           </div>
         </div>
-        <h2 className="text-xl md:text-2xl font-bold text-[var(--aivo-brand-navy)]">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900">
           {question.content.question}
         </h2>
       </div>
@@ -65,15 +65,15 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
               onClick={() => handleOptionSelect(index)}
               className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4 ${
                 selectedAnswer === index
-                  ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
-                  : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                  ? 'border-indigo-600 bg-indigo-50 shadow-md'
+                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
               }`}
             >
               <span
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 ${
                   selectedAnswer === index
-                    ? 'bg-[var(--aivo-brand-primary)] text-white'
-                    : 'bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)]'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-indigo-100 text-indigo-600'
                 }`}
               >
                 {String.fromCharCode(65 + index)}
@@ -81,8 +81,8 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
               <span
                 className={`font-medium ${
                   selectedAnswer === index
-                    ? 'text-[var(--aivo-brand-primary)]'
-                    : 'text-[var(--aivo-brand-navy)]'
+                    ? 'text-indigo-600'
+                    : 'text-gray-900'
                 }`}
               >
                 {option}
@@ -96,14 +96,14 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
       {question.type === 'open-ended' && (
         <div className="space-y-4">
           <textarea
-            className="w-full p-4 border-2 border-[var(--aivo-neutral-200)] rounded-xl
-              focus:border-[var(--aivo-brand-primary)] focus:outline-none focus:ring-2
-              focus:ring-[var(--aivo-purple-100)] min-h-[150px] resize-none"
+            className="w-full p-4 border-2 border-gray-200 rounded-xl
+              focus:border-indigo-600 focus:outline-none focus:ring-2
+              focus:ring-indigo-100 min-h-[150px] resize-none"
             placeholder="Type your answer here..."
           />
           <button
             onClick={() => onSubmit(null)}
-            className="px-8 py-3 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)]
+            className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500
               text-white font-bold rounded-xl hover:opacity-90 transition-all"
           >
             Submit Answer
@@ -117,7 +117,7 @@ export function AssessmentQuestion({ question, onSubmit, showHint }: AssessmentQ
           {!showingHint ? (
             <button
               onClick={() => setShowingHint(true)}
-              className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] font-medium"
+              className="text-indigo-600 hover:text-indigo-700 font-medium"
             >
               Need a hint?
             </button>

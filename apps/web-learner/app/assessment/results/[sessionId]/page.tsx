@@ -17,12 +17,12 @@ import {
 // Loading spinner component
 function LoadingSpinner() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[var(--aivo-purple-50)] to-[var(--aivo-teal-50)] flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-indigo-50 flex items-center justify-center">
       <div className="text-center">
-        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-4 animate-pulse">
+        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mb-4 animate-pulse">
           <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={60} height={20} />
         </div>
-        <p className="text-[var(--aivo-neutral-600)]">Loading your results...</p>
+        <p className="text-gray-600">Loading your results...</p>
       </div>
     </div>
   );
@@ -95,20 +95,20 @@ export default function AssessmentResultsPage() {
 
   if (error || !results) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[var(--aivo-purple-50)] to-[var(--aivo-teal-50)] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <span className="text-6xl mb-4 block">😕</span>
-          <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Results Not Found
           </h2>
-          <p className="text-[var(--aivo-neutral-600)] mb-4">
+          <p className="text-gray-600 mb-4">
             {error || "We couldn't find your assessment results."}
           </p>
           <button
             onClick={() => {
               router.push('/dashboard');
             }}
-            className="px-6 py-3 bg-[var(--aivo-brand-primary)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             Go to Dashboard
           </button>
@@ -130,7 +130,7 @@ export default function AssessmentResultsPage() {
               height={40}
               className="rounded-lg"
             />
-            <span className="font-semibold text-[var(--aivo-brand-navy)]">Assessment Results</span>
+            <span className="font-semibold text-gray-900">Assessment Results</span>
           </div>
           <ShareResults sessionId={sessionId} />
         </div>
@@ -151,10 +151,10 @@ export default function AssessmentResultsPage() {
           >
             🎉
           </motion.div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Amazing Work!
           </h1>
-          <p className="text-xl text-[var(--aivo-neutral-600)]">
+          <p className="text-xl text-gray-600">
             You completed the assessment! Here&apos;s what we learned about you.
           </p>
         </motion.div>
@@ -175,7 +175,7 @@ export default function AssessmentResultsPage() {
                   cy="50"
                   r="45"
                   fill="none"
-                  stroke="var(--aivo-neutral-100)"
+                  stroke="#f3f4f6"
                   strokeWidth="10"
                 />
                 {/* Progress circle */}
@@ -195,8 +195,8 @@ export default function AssessmentResultsPage() {
                 />
                 <defs>
                   <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="var(--aivo-teal-400)" />
-                    <stop offset="100%" stopColor="var(--aivo-brand-primary)" />
+                    <stop offset="0%" stopColor="#818cf8" />
+                    <stop offset="100%" stopColor="#4F46E5" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -207,13 +207,13 @@ export default function AssessmentResultsPage() {
                   transition={{ delay: 1, duration: 0.3 }}
                   className="text-center"
                 >
-                  <span className="text-5xl font-bold text-[var(--aivo-brand-primary)]">
+                  <span className="text-5xl font-bold text-indigo-600">
                     {results.overall_score}%
                   </span>
                 </motion.div>
               </div>
             </div>
-            <p className="text-xl text-[var(--aivo-neutral-600)] mt-4">Overall Performance</p>
+            <p className="text-xl text-gray-600 mt-4">Overall Performance</p>
 
             {/* Quick stats */}
             <div className="flex justify-center gap-8 mt-6">
@@ -221,19 +221,19 @@ export default function AssessmentResultsPage() {
                 <div className="text-2xl font-bold text-green-600">
                   {results.insights?.strengths?.length || 0}
                 </div>
-                <div className="text-sm text-[var(--aivo-neutral-500)]">Strengths</div>
+                <div className="text-sm text-gray-500">Strengths</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[var(--aivo-brand-primary)]">
+                <div className="text-2xl font-bold text-indigo-600">
                   {results.insights?.growth_areas?.length || 0}
                 </div>
-                <div className="text-sm text-[var(--aivo-neutral-500)]">Growth Areas</div>
+                <div className="text-sm text-gray-500">Growth Areas</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[var(--aivo-teal-500)]">
+                <div className="text-2xl font-bold text-indigo-500">
                   {Object.keys(results.subject_scores || {}).length}
                 </div>
-                <div className="text-sm text-[var(--aivo-neutral-500)]">Subjects</div>
+                <div className="text-sm text-gray-500">Subjects</div>
               </div>
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function AssessmentResultsPage() {
           transition={{ delay: 0.6 }}
           className="bg-white rounded-3xl shadow-xl p-8 mb-8"
         >
-          <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <span className="text-3xl">🌱</span>
             Areas to Grow
           </h2>
@@ -276,9 +276,9 @@ export default function AssessmentResultsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="bg-gradient-to-r from-[var(--aivo-purple-100)] to-[var(--aivo-teal-100)] rounded-3xl p-8 mb-8"
+          className="bg-gradient-to-r from-indigo-100 to-indigo-100 rounded-3xl p-8 mb-8"
         >
-          <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-6 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
             <span className="text-3xl">🗺️</span>
             Your Personalized Learning Path
           </h2>
@@ -296,7 +296,7 @@ export default function AssessmentResultsPage() {
             onClick={() => {
               router.push('/dashboard');
             }}
-            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-[var(--aivo-teal-500)] to-[var(--aivo-brand-primary)]
+            className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600
               text-white text-xl font-bold rounded-2xl shadow-lg hover:opacity-90 transition-all
               transform hover:scale-105"
           >
@@ -306,8 +306,8 @@ export default function AssessmentResultsPage() {
             onClick={() => {
               router.push('/baseline/assessment');
             }}
-            className="w-full sm:w-auto px-8 py-4 border-2 border-[var(--aivo-brand-primary)] text-[var(--aivo-brand-primary)]
-              text-lg font-bold rounded-2xl hover:bg-[var(--aivo-purple-50)] transition-all"
+            className="w-full sm:w-auto px-8 py-4 border-2 border-indigo-600 text-indigo-600
+              text-lg font-bold rounded-2xl hover:bg-indigo-50 transition-all"
           >
             Retake Assessment
           </button>

@@ -13,7 +13,7 @@ const SUBJECT_COLORS: Record<string, string> = {
   reading: 'from-purple-400 to-purple-600',
   science: 'from-green-400 to-green-600',
   writing: 'from-orange-400 to-orange-600',
-  default: 'from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)]',
+  default: 'from-indigo-400 to-indigo-600',
 };
 
 const SUBJECT_EMOJIS: Record<string, string> = {
@@ -43,16 +43,16 @@ export function ProgressIndicator({ current, total, subject }: ProgressIndicator
             </span>
           )}
         </div>
-        <div className="text-sm text-[var(--aivo-neutral-500)]">
-          <span className="font-bold text-[var(--aivo-brand-navy)]">{current}</span>
+        <div className="text-sm text-gray-500">
+          <span className="font-bold text-gray-900">{current}</span>
           <span> of </span>
-          <span className="font-bold text-[var(--aivo-brand-navy)]">{total}</span>
+          <span className="font-bold text-gray-900">{total}</span>
           <span> questions</span>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-3 bg-[var(--aivo-neutral-100)] rounded-full overflow-hidden">
+      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
         <motion.div
           className={`h-full bg-gradient-to-r ${colorClass} rounded-full`}
           initial={{ width: 0 }}
@@ -67,7 +67,7 @@ export function ProgressIndicator({ current, total, subject }: ProgressIndicator
           <div
             key={milestone}
             className={`absolute w-1 h-2 rounded-full transition-colors ${
-              progress >= milestone ? 'bg-[var(--aivo-teal-400)]' : 'bg-[var(--aivo-neutral-300)]'
+              progress >= milestone ? 'bg-indigo-400' : 'bg-gray-300'
             }`}
             style={{ left: `${milestone}%`, transform: 'translateX(-50%)' }}
           />

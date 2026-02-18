@@ -1156,16 +1156,16 @@ export default function BaselineAssessmentPage() {
   const renderLearningStylePhase = () => (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-xl w-full">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
           <div className="text-center mb-6">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
               <span className="text-4xl">{currentLsQuestion.emoji}</span>
             </div>
-            <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)]">
+            <h2 className="text-2xl font-bold text-gray-900">
               {currentLsQuestion.question}
             </h2>
             {currentLsQuestion.type === 'multi_select' && (
-              <p className="text-sm text-[var(--aivo-neutral-500)] mt-2">
+              <p className="text-sm text-gray-500 mt-2">
                 Pick as many as you want! 👆
               </p>
             )}
@@ -1193,18 +1193,18 @@ export default function BaselineAssessmentPage() {
                   className={`p-4 rounded-xl border-2 transition-all text-left flex items-center gap-3
                     ${
                       isSelected
-                        ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
-                        : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                        ? 'border-indigo-600 bg-indigo-50 shadow-md'
+                        : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
                     }`}
                 >
                   {option.emoji && <span className="text-2xl flex-shrink-0">{option.emoji}</span>}
                   <span
-                    className={`font-medium ${isSelected ? 'text-[var(--aivo-brand-primary)]' : 'text-[var(--aivo-brand-navy)]'}`}
+                    className={`font-medium ${isSelected ? 'text-indigo-600' : 'text-gray-900'}`}
                   >
                     {option.label}
                   </span>
                   {isSelected && currentLsQuestion.type === 'multi_select' && (
-                    <span className="ml-auto text-[var(--aivo-brand-primary)]">✓</span>
+                    <span className="ml-auto text-indigo-600">✓</span>
                   )}
                 </button>
               );
@@ -1216,7 +1216,7 @@ export default function BaselineAssessmentPage() {
               <button
                 onClick={handleLsMultiSelectContinue}
                 disabled={selectedOptions.length === 0}
-                className="w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+                className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-indigo-500 
                   hover:opacity-90 disabled:opacity-50 text-white text-lg font-bold rounded-xl transition-all disabled:cursor-not-allowed"
               >
                 Continue →
@@ -1229,7 +1229,7 @@ export default function BaselineAssessmentPage() {
           <button
             onClick={handleLsBack}
             disabled={lsIndex === 0}
-            className="text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)] disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+            className="text-indigo-600 hover:text-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
           >
             ← Back
           </button>
@@ -1239,10 +1239,10 @@ export default function BaselineAssessmentPage() {
                 key={idx}
                 className={`w-2 h-2 rounded-full transition-colors ${
                   idx === lsIndex
-                    ? 'bg-[var(--aivo-brand-primary)]'
+                    ? 'bg-indigo-600'
                     : idx < lsIndex
-                      ? 'bg-[var(--aivo-teal-400)]'
-                      : 'bg-[var(--aivo-neutral-200)]'
+                      ? 'bg-indigo-400'
+                      : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -1256,17 +1256,17 @@ export default function BaselineAssessmentPage() {
   const renderTransitionToDomains = () => (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-xl w-full text-center">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-bounce">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mb-6 animate-bounce">
             <span className="text-5xl">🎉</span>
           </div>
           <h2
-            className={`font-bold text-[var(--aivo-brand-navy)] mb-4 ${isAlternate ? 'text-2xl' : 'text-3xl'}`}
+            className={`font-bold text-gray-900 mb-4 ${isAlternate ? 'text-2xl' : 'text-3xl'}`}
           >
             {isSimplified ? 'You did great!' : 'Great job so far!'}
           </h2>
           <p
-            className={`text-[var(--aivo-neutral-600)] mb-6 ${isAlternate ? 'text-xl' : 'text-lg'}`}
+            className={`text-gray-600 mb-6 ${isAlternate ? 'text-xl' : 'text-lg'}`}
           >
             {isAlternate
               ? "Let's play some games!"
@@ -1277,7 +1277,7 @@ export default function BaselineAssessmentPage() {
 
           {/* Caregiver notice for ALTERNATE */}
           {isAlternate && (
-            <div className="bg-[var(--aivo-teal-50)] text-[var(--aivo-teal-600)] px-4 py-2 rounded-lg text-center mb-4">
+            <div className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-center mb-4">
               👋 Helper: Please guide the learner through these activities
             </div>
           )}
@@ -1291,12 +1291,12 @@ export default function BaselineAssessmentPage() {
             {enabledDomains.slice(0, 4).map((domain) => (
               <div key={domain.domain} className="text-center">
                 <div
-                  className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
+                  className={`mx-auto bg-indigo-50 rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
                 >
                   <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
                 </div>
                 <span
-                  className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}
+                  className={`text-gray-500 ${isAlternate ? 'text-sm' : 'text-xs'}`}
                 >
                   {domain.name}
                 </span>
@@ -1310,12 +1310,12 @@ export default function BaselineAssessmentPage() {
               {enabledDomains.slice(4).map((domain) => (
                 <div key={domain.domain} className="text-center">
                   <div
-                    className={`mx-auto bg-[var(--aivo-purple-50)] rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
+                    className={`mx-auto bg-indigo-50 rounded-xl flex items-center justify-center mb-2 ${isAlternate ? 'w-16 h-16' : 'w-14 h-14'}`}
                   >
                     <span className={isAlternate ? 'text-3xl' : 'text-2xl'}>{domain.icon}</span>
                   </div>
                   <span
-                    className={`text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-sm' : 'text-xs'}`}
+                    className={`text-gray-500 ${isAlternate ? 'text-sm' : 'text-xs'}`}
                   >
                     {domain.name}
                   </span>
@@ -1325,7 +1325,7 @@ export default function BaselineAssessmentPage() {
           )}
 
           <p
-            className={`text-[var(--aivo-neutral-500)] mb-6 ${isAlternate ? 'text-base' : 'text-sm'}`}
+            className={`text-gray-500 mb-6 ${isAlternate ? 'text-base' : 'text-sm'}`}
           >
             {isSimplified
               ? 'Just try your best! 💪'
@@ -1334,7 +1334,7 @@ export default function BaselineAssessmentPage() {
 
           <button
             onClick={startDomainAssessment}
-            className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+            className={`w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-indigo-500 
               hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl py-5' : 'text-xl'}`}
           >
             {isSimplified ? "Let's Play! 🎮" : "Let's Go! 🚀"}
@@ -1359,7 +1359,7 @@ export default function BaselineAssessmentPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-xl w-full text-center">
           <div
-            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] ${isAlternate ? 'text-xl' : ''}`}
+            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100 ${isAlternate ? 'text-xl' : ''}`}
           >
             <div
               className={`w-28 h-28 mx-auto bg-gradient-to-br ${domainInfo.color} rounded-full flex items-center justify-center mb-6 shadow-lg`}
@@ -1367,28 +1367,28 @@ export default function BaselineAssessmentPage() {
               <span className="text-6xl">{domainInfo.emoji}</span>
             </div>
             <h2
-              className={`font-bold text-[var(--aivo-brand-navy)] mb-3 ${isAlternate ? 'text-4xl' : 'text-3xl'}`}
+              className={`font-bold text-gray-900 mb-3 ${isAlternate ? 'text-4xl' : 'text-3xl'}`}
             >
               {domainInfo.name}
             </h2>
             <p
-              className={`text-[var(--aivo-neutral-600)] mb-2 ${isAlternate ? 'text-xl' : 'text-lg'}`}
+              className={`text-gray-600 mb-2 ${isAlternate ? 'text-xl' : 'text-lg'}`}
             >
               {domainInfo.description}
             </p>
-            <div className="inline-block bg-[var(--aivo-purple-100)] text-[var(--aivo-brand-primary)] px-4 py-2 rounded-full text-sm font-medium mb-6">
+            <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full text-sm font-medium mb-6">
               {questionsPerDomain} {isSimplified ? 'fun' : 'quick'} questions
             </div>
 
             {isAlternate && (
-              <p className="text-lg text-[var(--aivo-teal-500)] mb-4">
+              <p className="text-lg text-indigo-500 mb-4">
                 👋 Your helper can read these to you!
               </p>
             )}
 
             <button
               onClick={startCurrentDomain}
-              className={`w-full py-4 px-6 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] 
+              className={`w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-indigo-500 
               hover:opacity-90 text-white font-bold rounded-xl transition-all ${isAlternate ? 'text-2xl' : 'text-xl'}`}
             >
               {isSimplified ? "Let's Go! 🎉" : 'Start! ✨'}
@@ -1402,10 +1402,10 @@ export default function BaselineAssessmentPage() {
                 key={domain.domain}
                 className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
                   idx < currentDomainIndex
-                    ? 'bg-[var(--aivo-teal-400)] text-white'
+                    ? 'bg-indigo-400 text-white'
                     : idx === currentDomainIndex
-                      ? 'bg-[var(--aivo-brand-primary)] text-white ring-4 ring-[var(--aivo-purple-200)]'
-                      : 'bg-white text-[var(--aivo-neutral-400)] border-2 border-[var(--aivo-neutral-200)]'
+                      ? 'bg-indigo-600 text-white ring-4 ring-indigo-200'
+                      : 'bg-white text-gray-400 border-2 border-gray-200'
                 }`}
               >
                 {idx < currentDomainIndex ? '✓' : <span className="text-lg">{domain.icon}</span>}
@@ -1422,10 +1422,10 @@ export default function BaselineAssessmentPage() {
       return (
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4 animate-pulse">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
               <span className="text-4xl">{currentDomainConfig?.icon || '📝'}</span>
             </div>
-            <p className={`text-[var(--aivo-neutral-600)] ${isAlternate ? 'text-xl' : 'text-lg'}`}>
+            <p className={`text-gray-600 ${isAlternate ? 'text-xl' : 'text-lg'}`}>
               {isSimplified ? 'Getting ready... 🎮' : 'Getting your questions ready...'}
             </p>
           </div>
@@ -1440,7 +1440,7 @@ export default function BaselineAssessmentPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className={`max-w-xl w-full ${isAlternate ? 'max-w-2xl' : ''}`}>
           <div
-            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)] 
+            className={`bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100 
             ${config.uiConfig.highContrast ? 'border-4' : ''}`}
           >
             {/* Domain badge */}
@@ -1449,7 +1449,7 @@ export default function BaselineAssessmentPage() {
                 {currentDomainConfig?.icon || '📝'}
               </span>
               <span
-                className={`font-medium text-[var(--aivo-neutral-500)] ${isAlternate ? 'text-lg' : 'text-sm'}`}
+                className={`font-medium text-gray-500 ${isAlternate ? 'text-lg' : 'text-sm'}`}
               >
                 {currentDomainConfig?.name || 'Questions'} • Question {currentQuestionInDomain + 1}{' '}
                 of {questionsPerDomain}
@@ -1458,14 +1458,14 @@ export default function BaselineAssessmentPage() {
 
             {/* Caregiver helper notice for ALTERNATE */}
             {isAlternate && (
-              <div className="bg-[var(--aivo-teal-50)] text-[var(--aivo-teal-600)] px-4 py-2 rounded-lg text-center mb-4">
+              <div className="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-lg text-center mb-4">
                 👋 Helper: Please read aloud to the learner
               </div>
             )}
 
             {/* Question */}
             <h2
-              className={`font-bold text-[var(--aivo-brand-navy)] text-center mb-6 
+              className={`font-bold text-gray-900 text-center mb-6 
               ${isAlternate ? 'text-2xl leading-relaxed' : isSimplified ? 'text-xl' : 'text-xl'}`}
               style={{ fontSize: `${1.25 * config.uiConfig.fontSizeMultiplier}rem` }}
             >
@@ -1480,18 +1480,18 @@ export default function BaselineAssessmentPage() {
                   onClick={() => {
                     handleDomainAnswer(idx);
                   }}
-                  className={`p-4 rounded-xl border-2 transition-all text-left font-medium text-[var(--aivo-brand-navy)]
+                  className={`p-4 rounded-xl border-2 transition-all text-left font-medium text-gray-900
                     ${
                       isAlternate
-                        ? 'border-[var(--aivo-neutral-300)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-100)] p-6 text-xl'
-                        : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-brand-primary)] hover:bg-[var(--aivo-purple-50)]'
+                        ? 'border-gray-300 hover:border-indigo-600 hover:bg-indigo-100 p-6 text-xl'
+                        : 'border-gray-200 hover:border-indigo-600 hover:bg-indigo-50'
                     }
                     ${config.uiConfig.highContrast ? 'border-3' : ''}`}
                   style={{ fontSize: `${1 * config.uiConfig.fontSizeMultiplier}rem` }}
                 >
                   <span
-                    className={`inline-flex items-center justify-center bg-[var(--aivo-purple-100)] 
-                    text-[var(--aivo-brand-primary)] rounded-full mr-3 font-bold
+                    className={`inline-flex items-center justify-center bg-indigo-100 
+                    text-indigo-600 rounded-full mr-3 font-bold
                     ${isAlternate ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-sm'}`}
                   >
                     {String.fromCharCode(65 + idx)}
@@ -1507,7 +1507,7 @@ export default function BaselineAssessmentPage() {
                 onClick={() => {
                   handleDomainAnswer(-1);
                 }} // -1 indicates skipped
-                className="w-full mt-4 py-2 text-[var(--aivo-neutral-500)] hover:text-[var(--aivo-brand-primary)] text-sm"
+                className="w-full mt-4 py-2 text-gray-500 hover:text-indigo-600 text-sm"
               >
                 Skip this question →
               </button>
@@ -1521,10 +1521,10 @@ export default function BaselineAssessmentPage() {
                 key={idx}
                 className={`w-3 h-3 rounded-full transition-colors ${
                   idx === currentQuestionInDomain
-                    ? 'bg-[var(--aivo-brand-primary)]'
+                    ? 'bg-indigo-600'
                     : idx < currentQuestionInDomain
-                      ? 'bg-[var(--aivo-teal-400)]'
-                      : 'bg-[var(--aivo-neutral-200)]'
+                      ? 'bg-indigo-400'
+                      : 'bg-gray-200'
                 }`}
               />
             ))}
@@ -1537,14 +1537,14 @@ export default function BaselineAssessmentPage() {
   const renderGameBreak = () => (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="max-w-xl w-full text-center">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
           <div className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
             <span className="text-7xl">{currentBreak.emoji}</span>
           </div>
-          <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             {currentBreak.title}
           </h2>
-          <p className="text-xl text-[var(--aivo-neutral-600)] mb-6">{currentBreak.instruction}</p>
+          <p className="text-xl text-gray-600 mb-6">{currentBreak.instruction}</p>
 
           {/* Countdown circle */}
           <div className="relative w-24 h-24 mx-auto mb-6">
@@ -1553,7 +1553,7 @@ export default function BaselineAssessmentPage() {
                 cx="48"
                 cy="48"
                 r="40"
-                stroke="var(--aivo-neutral-200)"
+                stroke="#e5e7eb"
                 strokeWidth="8"
                 fill="none"
               />
@@ -1561,7 +1561,7 @@ export default function BaselineAssessmentPage() {
                 cx="48"
                 cy="48"
                 r="40"
-                stroke="var(--aivo-brand-primary)"
+                stroke="#4F46E5"
                 strokeWidth="8"
                 fill="none"
                 strokeDasharray={251.2}
@@ -1569,22 +1569,22 @@ export default function BaselineAssessmentPage() {
                 className="transition-all duration-1000"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-[var(--aivo-brand-primary)]">
+            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indigo-600">
               {breakCountdown}
             </span>
           </div>
 
           <button
             onClick={skipBreak}
-            className="text-[var(--aivo-neutral-500)] hover:text-[var(--aivo-brand-primary)] text-sm"
+            className="text-gray-500 hover:text-indigo-600 text-sm"
           >
             Skip break →
           </button>
         </div>
 
         {/* Celebration message */}
-        <div className="mt-6 bg-[var(--aivo-teal-50)] rounded-2xl p-4">
-          <p className={`text-[var(--aivo-teal-700)] font-medium ${isAlternate ? 'text-lg' : ''}`}>
+        <div className="mt-6 bg-indigo-50 rounded-2xl p-4">
+          <p className={`text-indigo-700 font-medium ${isAlternate ? 'text-lg' : ''}`}>
             🎉 {isSimplified ? 'Yay!' : 'You completed'} {currentDomainConfig?.name}!{' '}
             {enabledDomains.length - currentDomainIndex - 1} more to go!
           </p>
@@ -1596,24 +1596,24 @@ export default function BaselineAssessmentPage() {
   const renderCompleting = () => (
     <div className="flex-1 flex items-center justify-center p-4">
       <div className="text-center">
-        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] rounded-full flex items-center justify-center mb-6 animate-pulse shadow-lg">
+        <div className="w-32 h-32 mx-auto bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-lg">
           <span className="text-6xl">🧠</span>
         </div>
-        <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">Amazing work! 🌟</h2>
-        <p className="text-lg text-[var(--aivo-neutral-600)]">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Amazing work! 🌟</h2>
+        <p className="text-lg text-gray-600">
           Preparing your personalized learning brain...
         </p>
         <div className="mt-4 flex justify-center gap-1">
           <div
-            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce"
             style={{ animationDelay: '0ms' }}
           />
           <div
-            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce"
             style={{ animationDelay: '150ms' }}
           />
           <div
-            className="w-3 h-3 bg-[var(--aivo-brand-primary)] rounded-full animate-bounce"
+            className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce"
             style={{ animationDelay: '300ms' }}
           />
         </div>
@@ -1626,13 +1626,13 @@ export default function BaselineAssessmentPage() {
   // ════════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--aivo-teal-50)] to-[var(--aivo-purple-50)] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-50 flex flex-col">
       {/* Header with progress */}
       <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
           <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={100} height={32} />
           <div className="flex-1">
-            <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-1">
+            <div className="flex justify-between text-sm text-gray-500 mb-1">
               <span>
                 {phase === 'loading' && 'Loading...'}
                 {phase === 'preparing' && 'Preparing your questions...'}
@@ -1647,9 +1647,9 @@ export default function BaselineAssessmentPage() {
               </span>
               <span>{Math.round(overallProgress)}% complete</span>
             </div>
-            <div className="h-3 bg-[var(--aivo-purple-100)] rounded-full overflow-hidden">
+            <div className="h-3 bg-indigo-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] transition-all duration-500"
+                className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 transition-all duration-500"
                 style={{ width: `${overallProgress}%` }}
               />
             </div>
@@ -1661,13 +1661,13 @@ export default function BaselineAssessmentPage() {
       {phase === 'loading' && (
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
-            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
               <span className="text-5xl">🌟</span>
             </div>
-            <p className="text-xl text-[var(--aivo-brand-navy)] font-medium mb-2">
+            <p className="text-xl text-gray-900 font-medium mb-2">
               {learnerName ? `Hi ${learnerName}!` : 'Welcome!'}
             </p>
-            <p className="text-[var(--aivo-neutral-600)]">
+            <p className="text-gray-600">
               Setting up your personalized assessment...
             </p>
           </div>
@@ -1678,28 +1678,28 @@ export default function BaselineAssessmentPage() {
       {phase === 'preparing' && (
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="text-center max-w-md mx-auto">
-            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] via-[var(--aivo-purple-100)] to-[var(--aivo-brand-primary-light)] rounded-full flex items-center justify-center mb-8 relative">
+            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-indigo-100 via-indigo-100 to-indigo-200 rounded-full flex items-center justify-center mb-8 relative">
               {/* Animated rings */}
-              <div className="absolute inset-0 rounded-full border-4 border-[var(--aivo-teal-300)] animate-ping opacity-30" />
-              <div className="absolute inset-2 rounded-full border-2 border-[var(--aivo-purple-300)] animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-4 border-indigo-300 animate-ping opacity-30" />
+              <div className="absolute inset-2 rounded-full border-2 border-indigo-300 animate-pulse" />
               <span className="text-6xl animate-bounce">🧠</span>
             </div>
 
-            <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-3">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
               {learnerName ? `Getting ready for you, ${learnerName}!` : 'Preparing Your Assessment'}
             </h2>
 
-            <p className="text-lg text-[var(--aivo-neutral-600)] mb-6">{preparationStatus}</p>
+            <p className="text-lg text-gray-600 mb-6">{preparationStatus}</p>
 
             {/* Progress bar */}
-            <div className="w-full bg-[var(--aivo-neutral-200)] rounded-full h-3 mb-4 overflow-hidden">
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-4 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[var(--aivo-teal-400)] via-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] transition-all duration-700 ease-out rounded-full"
+                className="h-full bg-gradient-to-r from-indigo-400 via-indigo-600 to-indigo-500 transition-all duration-700 ease-out rounded-full"
                 style={{ width: `${preparationProgress}%` }}
               />
             </div>
 
-            <p className="text-sm text-[var(--aivo-neutral-500)]">
+            <p className="text-sm text-gray-500">
               {preparationProgress < 30 && '🔍 Analyzing your learning profile...'}
               {preparationProgress >= 30 &&
                 preparationProgress < 70 &&
@@ -1709,8 +1709,8 @@ export default function BaselineAssessmentPage() {
             </p>
 
             {/* Fun facts while waiting */}
-            <div className="mt-8 p-4 bg-white/50 rounded-xl border border-[var(--aivo-neutral-200)]">
-              <p className="text-sm text-[var(--aivo-neutral-600)] italic">
+            <div className="mt-8 p-4 bg-white/50 rounded-xl border border-gray-200">
+              <p className="text-sm text-gray-600 italic">
                 💡 Did you know? Our AI creates unique questions just for you based on your grade
                 level and learning needs!
               </p>

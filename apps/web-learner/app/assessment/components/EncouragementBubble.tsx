@@ -16,9 +16,9 @@ const BUBBLE_STYLES = {
     icon: '🎉',
   },
   encouragement: {
-    bg: 'bg-[var(--aivo-purple-50)]',
-    border: 'border-[var(--aivo-purple-200)]',
-    text: 'text-[var(--aivo-brand-primary)]',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    text: 'text-indigo-600',
     icon: '💪',
   },
   hint: {

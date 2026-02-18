@@ -1,4 +1,5 @@
 import { HeroSection } from '@/components/marketing/hero';
+import { CoursesSection } from '@/components/sections/courses';
 import { CTA } from '@/components/sections/cta';
 import { Features } from '@/components/sections/features';
 import { HowItWorks } from '@/components/sections/how-it-works';
@@ -18,6 +19,9 @@ export default function HomePage() {
 
         {/* Features - Core value proposition */}
         <Features />
+
+        {/* Courses - Browse catalog */}
+        <CoursesSection />
 
         {/* How It Works - Reduce friction */}
         <HowItWorks />

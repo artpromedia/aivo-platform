@@ -4,12 +4,10 @@ import { motion } from 'framer-motion';
 import {
   Brain,
   Target,
-  Users,
+  BarChart3,
   Shield,
   Zap,
-  Heart,
-  BookOpen,
-  Award,
+  Users,
   CheckCircle,
 } from 'lucide-react';
 import * as React from 'react';
@@ -19,87 +17,49 @@ import { cn } from '@/lib/utils';
 
 const features = [
   {
-    title: 'AI-Powered Virtual Brain',
+    title: 'AI-Powered Tutoring',
     description:
-      'Each learner gets a personalized AI agent that understands their unique learning style and adapts in real-time.',
+      'Each learner gets a personalized AI Virtual Brain that adapts in real-time to their unique learning style, pace, and preferences.',
     icon: Brain,
-    gradient: 'from-purple-500 to-pink-500',
-    shadowColor: 'shadow-purple',
+    color: 'bg-theme-primary-100 text-theme-primary-600',
+    points: ['Real-time adaptation', 'Emotional awareness', 'Multi-sensory support'],
+    image: '/images/features/ai-tutoring.svg',
   },
   {
-    title: 'IEP Goal Alignment',
+    title: 'IEP Goal Management',
     description:
-      'Automatically syncs with IEP goals, tracks progress, and generates comprehensive reports for care teams.',
+      'Automatically syncs with IEP goals, tracks progress, and generates comprehensive reports for care teams and educators.',
     icon: Target,
-    gradient: 'from-blue-500 to-cyan-500',
-    shadowColor: 'shadow-sky',
-  },
-  {
-    title: 'Neurodiversity Support',
-    description:
-      'Purpose-built accommodations for ADHD, Dyslexia, Autism, and all learning differences.',
-    icon: Users,
-    gradient: 'from-coral-500 to-salmon-500',
-    shadowColor: 'shadow-coral',
-  },
-  {
-    title: 'FERPA & COPPA Compliant',
-    description:
-      "Bank-level encryption, no ads, no data selling. Your child's privacy is our top priority.",
-    icon: Shield,
-    gradient: 'from-green-500 to-teal-500',
-    shadowColor: 'shadow-mint',
-  },
-  {
-    title: 'Real-Time Adaptation',
-    description:
-      'Content difficulty and presentation adjust instantly based on performance and engagement.',
-    icon: Zap,
-    gradient: 'from-yellow-500 to-orange-500',
-    shadowColor: 'shadow-sunshine',
-  },
-  {
-    title: 'Emotional Intelligence',
-    description:
-      'Recognizes frustration, anxiety, and fatigue. Provides encouragement and calming interventions.',
-    icon: Heart,
-    gradient: 'from-pink-500 to-rose-500',
-    shadowColor: 'shadow-coral',
-  },
-  {
-    title: 'Full K-12 Curriculum',
-    description:
-      'Comprehensive coverage of Math, Reading, Science, and more aligned to state standards.',
-    icon: BookOpen,
-    gradient: 'from-indigo-500 to-purple-500',
-    shadowColor: 'shadow-purple',
+    color: 'bg-accent-100 text-accent-600',
+    points: ['Automatic goal tracking', 'Progress reports', 'Team collaboration'],
+    image: '/images/features/iep-management.svg',
   },
   {
     title: 'Progress Tracking',
     description:
-      'Beautiful dashboards for parents and teachers to monitor growth and celebrate achievements.',
-    icon: Award,
-    gradient: 'from-blue-500 to-indigo-500',
-    shadowColor: 'shadow-sky',
+      'Beautiful dashboards for parents and teachers to monitor growth, celebrate achievements, and identify areas for improvement.',
+    icon: BarChart3,
+    color: 'bg-mint-100 text-mint-600',
+    points: ['Real-time analytics', 'Subject breakdowns', 'Trend analysis'],
+    image: '/images/features/progress-tracking.svg',
+  },
+  {
+    title: 'Parent Dashboard',
+    description:
+      'Stay connected with your child\'s learning journey. View progress, communicate with teachers, and manage IEP goals all in one place.',
+    icon: Users,
+    color: 'bg-sky-100 text-sky-600',
+    points: ['Activity feed', 'Teacher messaging', 'Goal monitoring'],
+    image: '/images/features/parent-dashboard.svg',
   },
 ];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5 },
+    transition: { duration: 0.6 },
   },
 };
 
@@ -116,55 +76,61 @@ export function Features() {
         description="AIVO combines cutting-edge AI with proven educational strategies to create the most personalized learning experience for neurodiverse students."
       />
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-100px' }}
-        className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
-      >
-        {features.map((feature) => {
+      <div className="space-y-24">
+        {features.map((feature, index) => {
           const Icon = feature.icon;
-          return (
-            <motion.div key={feature.title} variants={itemVariants} className="group relative">
-              <div className="relative bg-white rounded-3xl p-6 h-full border border-gray-100 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-soft-lg overflow-hidden">
-                {/* Gradient Accent */}
-                <div
-                  className={cn(
-                    'absolute top-0 left-0 right-0 h-1 bg-gradient-to-r',
-                    feature.gradient
-                  )}
-                />
+          const isReversed = index % 2 === 1;
 
-                {/* Icon */}
-                <div
-                  className={cn(
-                    'w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br',
-                    feature.gradient,
-                    'group-hover:scale-110 transition-transform duration-300'
-                  )}
-                >
-                  <Icon className="w-7 h-7 text-white" />
+          return (
+            <motion.div
+              key={feature.title}
+              variants={itemVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-100px' }}
+              className={cn(
+                'grid lg:grid-cols-2 gap-12 lg:gap-16 items-center',
+                isReversed && 'lg:flex-row-reverse'
+              )}
+            >
+              {/* Content Side */}
+              <div className={cn(isReversed && 'lg:order-2')}>
+                <div className={cn('inline-flex p-3 rounded-2xl mb-6', feature.color)}>
+                  <Icon className="w-7 h-7" />
                 </div>
 
-                {/* Content */}
-                <h3 className="font-display text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="font-display text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+                <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                  {feature.description}
+                </p>
 
-                {/* Hover Gradient Background */}
-                <div
-                  className={cn(
-                    'absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300 -z-10',
-                    feature.gradient
-                  )}
-                />
+                <ul className="space-y-3">
+                  {feature.points.map((point) => (
+                    <li key={point} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-mint-500 shrink-0" />
+                      <span className="text-gray-700 font-medium">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Visual Side */}
+              <div className={cn(isReversed && 'lg:order-1')}>
+                <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 border border-gray-100 shadow-soft aspect-[4/3] flex items-center justify-center">
+                  <div className={cn('w-24 h-24 rounded-3xl flex items-center justify-center', feature.color)}>
+                    <Icon className="w-12 h-12" />
+                  </div>
+                  {/* Decorative circles */}
+                  <div className="absolute top-6 right-6 w-16 h-16 bg-theme-primary-50 rounded-full opacity-60" />
+                  <div className="absolute bottom-8 left-8 w-12 h-12 bg-accent-50 rounded-full opacity-60" />
+                </div>
               </div>
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
 
       {/* Validation Badge */}
       <motion.div
@@ -172,12 +138,12 @@ export function Features() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: 0.5 }}
-        className="mt-12 text-center"
+        className="mt-16 text-center"
       >
         <div className="inline-flex items-center gap-2 px-6 py-3 bg-mint-50 border border-mint-200 rounded-full">
-          <CheckCircle className="w-5 h-5 text-mint-600" />
+          <Shield className="w-5 h-5 text-mint-600" />
           <span className="text-mint-700 font-medium">
-            All features tested and validated with 150+ students in our pilot program
+            FERPA &amp; COPPA compliant — All features tested with 150+ students in our pilot program
           </span>
         </div>
       </motion.div>

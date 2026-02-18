@@ -245,7 +245,7 @@ export default function BrainClonePage() {
                 y1={neuron.y}
                 x2={target.x}
                 y2={target.y}
-                stroke={isPulsing ? 'var(--aivo-brand-primary)' : 'var(--aivo-purple-200)'}
+                stroke={isPulsing ? '#4F46E5' : '#c7d2fe'}
                 strokeWidth={isPulsing ? 2 : 1}
                 strokeOpacity={isPulsing ? 0.8 : 0.4}
                 className={isPulsing ? 'animate-pulse' : ''}
@@ -263,7 +263,7 @@ export default function BrainClonePage() {
               cx={neuron.x}
               cy={neuron.y}
               r={neuron.size}
-              fill={isPulsing ? 'var(--aivo-brand-primary)' : 'var(--aivo-teal-400)'}
+              fill={isPulsing ? '#4F46E5' : '#818cf8'}
               opacity={isPulsing ? 1 : neuron.opacity}
               className={isPulsing ? 'animate-ping' : ''}
             />
@@ -273,8 +273,8 @@ export default function BrainClonePage() {
         {/* Central brain glow */}
         <defs>
           <radialGradient id="brainGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--aivo-brand-primary)" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="var(--aivo-brand-primary)" stopOpacity="0" />
+            <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#4F46E5" stopOpacity="0" />
           </radialGradient>
         </defs>
         <circle
@@ -300,13 +300,13 @@ export default function BrainClonePage() {
   // Render progress bar
   const renderProgressBar = () => (
     <div className="w-full max-w-md mx-auto mt-8">
-      <div className="flex justify-between text-sm text-[var(--aivo-neutral-500)] mb-2">
+      <div className="flex justify-between text-sm text-gray-500 mb-2">
         <span>{phaseMessages[phase].title}</span>
         <span>{progress}%</span>
       </div>
-      <div className="h-4 bg-[var(--aivo-purple-100)] rounded-full overflow-hidden">
+      <div className="h-4 bg-indigo-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-[var(--aivo-teal-400)] to-[var(--aivo-brand-primary)] transition-all duration-300"
+          className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -315,22 +315,22 @@ export default function BrainClonePage() {
 
   // Render consent form
   const renderConsentForm = () => (
-    <div className="mt-8 bg-white rounded-2xl p-6 border-2 border-[var(--aivo-purple-200)] max-w-lg mx-auto">
-      <h3 className="text-lg font-bold text-[var(--aivo-brand-navy)] mb-4 flex items-center gap-2">
+    <div className="mt-8 bg-white rounded-2xl p-6 border-2 border-indigo-200 max-w-lg mx-auto">
+      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
         <span className="text-2xl">🔐</span>
         Parent Consent Required
       </h3>
 
       <div className="space-y-4">
-        <p className="text-[var(--aivo-neutral-600)] text-sm">
+        <p className="text-gray-600 text-sm">
           AIVO has created a personalized learning profile for your child based on their assessment.
           This &quot;learning brain&quot; will help tailor lessons to their unique needs and
           learning style.
         </p>
 
-        <div className="bg-[var(--aivo-teal-50)] rounded-xl p-4">
-          <h4 className="font-medium text-[var(--aivo-brand-navy)] mb-2">What this means:</h4>
-          <ul className="text-sm text-[var(--aivo-neutral-600)] space-y-1">
+        <div className="bg-indigo-50 rounded-xl p-4">
+          <h4 className="font-medium text-gray-900 mb-2">What this means:</h4>
+          <ul className="text-sm text-gray-600 space-y-1">
             <li>✅ Lessons adapted to your child&apos;s pace</li>
             <li>✅ Content matching their interests</li>
             <li>✅ Support for their learning challenges</li>
@@ -339,18 +339,18 @@ export default function BrainClonePage() {
         </div>
 
         {/* Parent verification */}
-        <label className="flex items-start gap-3 p-4 bg-[var(--aivo-purple-50)] rounded-xl cursor-pointer hover:bg-[var(--aivo-purple-100)] transition-colors">
+        <label className="flex items-start gap-3 p-4 bg-indigo-50 rounded-xl cursor-pointer hover:bg-indigo-100 transition-colors">
           <input
             type="checkbox"
             checked={isParentPresent}
             onChange={(e) => {
               setIsParentPresent(e.target.checked);
             }}
-            className="mt-1 w-5 h-5 rounded border-2 border-[var(--aivo-neutral-300)] text-[var(--aivo-brand-primary)] focus:ring-[var(--aivo-brand-primary)]"
+            className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-600"
           />
           <div>
-            <p className="font-medium text-[var(--aivo-brand-navy)]">I am a parent/guardian</p>
-            <p className="text-sm text-[var(--aivo-neutral-500)]">
+            <p className="font-medium text-gray-900">I am a parent/guardian</p>
+            <p className="text-sm text-gray-500">
               I confirm I am the parent or legal guardian of this learner.
             </p>
           </div>
@@ -360,8 +360,8 @@ export default function BrainClonePage() {
         <label
           className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-colors ${
             isParentPresent
-              ? 'bg-[var(--aivo-purple-50)] hover:bg-[var(--aivo-purple-100)]'
-              : 'bg-[var(--aivo-neutral-100)] opacity-50 cursor-not-allowed'
+              ? 'bg-indigo-50 hover:bg-indigo-100'
+              : 'bg-gray-100 opacity-50 cursor-not-allowed'
           }`}
         >
           <input
@@ -371,13 +371,13 @@ export default function BrainClonePage() {
               if (isParentPresent) setConsentGiven(e.target.checked);
             }}
             disabled={!isParentPresent}
-            className="mt-1 w-5 h-5 rounded border-2 border-[var(--aivo-neutral-300)] text-[var(--aivo-brand-primary)] focus:ring-[var(--aivo-brand-primary)] disabled:opacity-50"
+            className="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:opacity-50"
           />
           <div>
-            <p className="font-medium text-[var(--aivo-brand-navy)]">
+            <p className="font-medium text-gray-900">
               I consent to creating this learning profile
             </p>
-            <p className="text-sm text-[var(--aivo-neutral-500)]">
+            <p className="text-sm text-gray-500">
               I understand AIVO will use assessment data to personalize my child&apos;s learning
               experience.
             </p>
@@ -391,8 +391,8 @@ export default function BrainClonePage() {
           className={`w-full py-4 px-6 text-lg font-bold rounded-xl transition-all flex items-center justify-center gap-2
             ${
               consentGiven
-                ? 'bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)] text-white hover:opacity-90'
-                : 'bg-[var(--aivo-neutral-200)] text-[var(--aivo-neutral-400)] cursor-not-allowed'
+                ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:opacity-90'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
         >
           {isActivating ? (
@@ -427,12 +427,12 @@ export default function BrainClonePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[var(--aivo-teal-50)] to-[var(--aivo-purple-50)] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-50 flex flex-col">
       {/* Header */}
       <div className="bg-white shadow-sm p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-center gap-2">
           <Image src="/images/aivo-logo-horizontal-purple.svg" alt="AIVO" width={100} height={32} />
-          <h1 className="text-xl font-bold text-[var(--aivo-brand-navy)]">
+          <h1 className="text-xl font-bold text-gray-900">
             Creating Your Learning Brain
           </h1>
         </div>
@@ -447,10 +447,10 @@ export default function BrainClonePage() {
           {/* Phase message */}
           <div className="mb-6">
             <span className="text-4xl mb-4 block">{phaseMessages[phase].emoji}</span>
-            <h2 className="text-2xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {phaseMessages[phase].title}
             </h2>
-            <p className="text-lg text-[var(--aivo-neutral-600)]">{phaseMessages[phase].message}</p>
+            <p className="text-lg text-gray-600">{phaseMessages[phase].message}</p>
           </div>
 
           {/* Progress bar (only during building phases) */}

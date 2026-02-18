@@ -93,13 +93,13 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4">
+        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
           <span className="text-4xl">{category.emoji}</span>
         </div>
-        <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
           {category.title}
         </h2>
-        <p className="text-[var(--aivo-neutral-600)]">{category.subtitle}</p>
+        <p className="text-gray-600">{category.subtitle}</p>
       </motion.div>
 
       {/* Progress indicator */}
@@ -109,10 +109,10 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
             key={cat.id}
             className={`w-3 h-3 rounded-full transition-colors ${
               idx === currentCategory
-                ? 'bg-[var(--aivo-brand-primary)]'
+                ? 'bg-indigo-600'
                 : idx < currentCategory
-                  ? 'bg-[var(--aivo-teal-400)]'
-                  : 'bg-[var(--aivo-neutral-200)]'
+                  ? 'bg-indigo-400'
+                  : 'bg-gray-200'
             }`}
           />
         ))}
@@ -122,7 +122,7 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
         key={category.id}
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="bg-white rounded-3xl shadow-xl p-6 border-2 border-[var(--aivo-teal-100)]"
+        className="bg-white rounded-3xl shadow-xl p-6 border-2 border-indigo-100"
       >
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
           {category.options.map((option, index) => (
@@ -134,22 +134,22 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
               onClick={() => toggleSelection(option.id)}
               className={`p-4 rounded-xl border-2 transition-all ${
                 currentSelections.includes(option.id)
-                  ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md scale-105'
-                  : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                  ? 'border-indigo-600 bg-indigo-50 shadow-md scale-105'
+                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
               }`}
             >
               <span className="text-3xl block mb-1">{option.emoji}</span>
               <span
                 className={`text-xs font-medium block ${
                   currentSelections.includes(option.id)
-                    ? 'text-[var(--aivo-brand-primary)]'
-                    : 'text-[var(--aivo-neutral-600)]'
+                    ? 'text-indigo-600'
+                    : 'text-gray-600'
                 }`}
               >
                 {option.label}
               </span>
               {currentSelections.includes(option.id) && (
-                <span className="absolute top-1 right-1 text-[var(--aivo-brand-primary)] text-sm">
+                <span className="absolute top-1 right-1 text-indigo-600 text-sm">
                   ✓
                 </span>
               )}
@@ -161,9 +161,9 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="mt-6 p-4 bg-[var(--aivo-teal-50)] rounded-xl"
+            className="mt-6 p-4 bg-indigo-50 rounded-xl"
           >
-            <p className="text-sm text-[var(--aivo-teal-700)]">
+            <p className="text-sm text-indigo-700">
               <span className="font-semibold">{currentSelections.length}</span> selected
               {currentSelections.length < category.minSelection && (
                 <span className="ml-2">(need at least {category.minSelection})</span>
@@ -177,7 +177,7 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
       <div className="mt-8 flex justify-between items-center">
         <button
           onClick={handleBack}
-          className="px-6 py-3 text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)]
+          className="px-6 py-3 text-indigo-600 hover:text-indigo-700
             font-medium transition-colors"
         >
           Back
@@ -185,7 +185,7 @@ export function InterestsStep({ data, onComplete, onBack }: OnboardingStepProps)
         <button
           onClick={handleContinue}
           disabled={!canContinue}
-          className="px-10 py-4 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)]
+          className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500
             text-white text-lg font-bold rounded-xl shadow-lg hover:opacity-90 transition-all
             disabled:opacity-50 disabled:cursor-not-allowed"
         >

@@ -113,13 +113,13 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4">
+        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
           <span className="text-4xl">🧠</span>
         </div>
-        <h2 className="text-3xl font-bold text-[var(--aivo-brand-navy)] mb-2">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
           Sensory Profile
         </h2>
-        <p className="text-[var(--aivo-neutral-600)]">
+        <p className="text-gray-600">
           Help us create the perfect learning environment for you!
         </p>
       </motion.div>
@@ -131,10 +131,10 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
             key={idx}
             className={`w-3 h-3 rounded-full transition-colors ${
               idx === currentQuestion
-                ? 'bg-[var(--aivo-brand-primary)]'
+                ? 'bg-indigo-600'
                 : idx < currentQuestion || answers[SENSORY_QUESTIONS[idx].id]
-                  ? 'bg-[var(--aivo-teal-400)]'
-                  : 'bg-[var(--aivo-neutral-200)]'
+                  ? 'bg-indigo-400'
+                  : 'bg-gray-200'
             }`}
           />
         ))}
@@ -145,13 +145,13 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -20 }}
-        className="bg-white rounded-3xl shadow-xl p-8 border-2 border-[var(--aivo-teal-100)]"
+        className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100"
       >
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[var(--aivo-teal-100)] to-[var(--aivo-purple-100)] rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
             <span className="text-3xl">{question.emoji}</span>
           </div>
-          <h3 className="text-xl font-bold text-[var(--aivo-brand-navy)]">
+          <h3 className="text-xl font-bold text-gray-900">
             {question.question}
           </h3>
         </div>
@@ -163,22 +163,22 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
               onClick={() => handleSelect(option.value)}
               className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
                 answers[question.id] === option.value
-                  ? 'border-[var(--aivo-brand-primary)] bg-[var(--aivo-purple-50)] shadow-md'
-                  : 'border-[var(--aivo-neutral-200)] hover:border-[var(--aivo-purple-300)] hover:bg-[var(--aivo-purple-50)]'
+                  ? 'border-indigo-600 bg-indigo-50 shadow-md'
+                  : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
               }`}
             >
               <span className="text-3xl">{option.emoji}</span>
               <span
                 className={`font-medium ${
                   answers[question.id] === option.value
-                    ? 'text-[var(--aivo-brand-primary)]'
-                    : 'text-[var(--aivo-brand-navy)]'
+                    ? 'text-indigo-600'
+                    : 'text-gray-900'
                 }`}
               >
                 {option.label}
               </span>
               {answers[question.id] === option.value && (
-                <span className="ml-auto text-[var(--aivo-brand-primary)]">✓</span>
+                <span className="ml-auto text-indigo-600">✓</span>
               )}
             </button>
           ))}
@@ -189,7 +189,7 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
       <div className="mt-8 flex justify-between items-center">
         <button
           onClick={handleBack}
-          className="px-6 py-3 text-[var(--aivo-brand-primary)] hover:text-[var(--aivo-purple-700)]
+          className="px-6 py-3 text-indigo-600 hover:text-indigo-700
             font-medium transition-colors"
         >
           Back
@@ -198,7 +198,7 @@ export function SensoryProfileStep({ data, onComplete, onBack }: OnboardingStepP
           <button
             onClick={handleSubmit}
             disabled={!allAnswered}
-            className="px-10 py-4 bg-gradient-to-r from-[var(--aivo-brand-primary)] to-[var(--aivo-purple-500)]
+            className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500
               text-white text-lg font-bold rounded-xl shadow-lg hover:opacity-90 transition-all
               disabled:opacity-50 disabled:cursor-not-allowed"
           >

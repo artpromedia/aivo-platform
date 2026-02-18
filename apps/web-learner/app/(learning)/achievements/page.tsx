@@ -1,5 +1,6 @@
 'use client';
 
+import { Trophy, Lock, Sparkles, Filter, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 // ============================================================================
@@ -40,20 +41,12 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
   secret: { name: 'Secret', emoji: '🔮' },
 };
 
-const RARITY_COLORS: Record<string, string> = {
-  common: 'from-slate-400 to-slate-500',
-  uncommon: 'from-green-400 to-green-600',
-  rare: 'from-blue-400 to-blue-600',
-  epic: 'from-purple-400 to-purple-600',
-  legendary: 'from-yellow-400 to-orange-500',
-};
-
-const RARITY_BG: Record<string, string> = {
-  common: 'bg-slate-50 border-slate-200',
-  uncommon: 'bg-green-50 border-green-200',
-  rare: 'bg-blue-50 border-blue-200',
-  epic: 'bg-purple-50 border-purple-200',
-  legendary: 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300',
+const RARITY_STYLES: Record<string, { ring: string; bg: string; text: string }> = {
+  common: { ring: 'ring-gray-300', bg: 'bg-gray-50', text: 'text-gray-600' },
+  uncommon: { ring: 'ring-emerald-300', bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  rare: { ring: 'ring-blue-300', bg: 'bg-blue-50', text: 'text-blue-700' },
+  epic: { ring: 'ring-purple-300', bg: 'bg-purple-50', text: 'text-purple-700' },
+  legendary: { ring: 'ring-amber-400', bg: 'bg-amber-50', text: 'text-amber-700' },
 };
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -86,15 +79,10 @@ export default function AchievementsPage() {
     async function fetchBadges() {
       try {
         setLoading(true);
-
-        // Fetch all available badges from gamification-svc
         const badgesRes = await fetch('/api/learner/gamification/badges');
         const badgesData = badgesRes.ok ? await badgesRes.json() : { badges: [] };
-
-        // Fetch earned badges for current learner
         const earnedRes = await fetch('/api/learner/gamification/earned');
         const earnedData = earnedRes.ok ? await earnedRes.json() : { badges: [] };
-
         setAllBadges(badgesData.badges ?? []);
         setEarnedBadges(earnedData.badges ?? []);
       } catch (err) {
@@ -104,13 +92,11 @@ export default function AchievementsPage() {
         setLoading(false);
       }
     }
-
     void fetchBadges();
   }, []);
 
   const earnedIds = new Set(earnedBadges.map((eb) => eb.badge?.id ?? eb.id));
 
-  // Build display items by merging definitions + earned status
   const displayBadges = allBadges.map((badge) => ({
     ...badge,
     earned: earnedIds.has(badge.id),
@@ -118,13 +104,11 @@ export default function AchievementsPage() {
     emoji: CATEGORY_EMOJI[badge.category] ?? '🏆',
   }));
 
-  // Extract unique categories
   const categories = [
-    { id: 'all', name: 'All', emoji: '🏆' },
+    { id: 'all', name: 'All' },
     ...Array.from(new Set(allBadges.map((b) => b.category))).map((cat) => ({
       id: cat,
       name: CATEGORY_META[cat]?.name ?? cat,
-      emoji: CATEGORY_META[cat]?.emoji ?? '🏷️',
     })),
   ];
 
@@ -136,13 +120,14 @@ export default function AchievementsPage() {
 
   const earnedCount = displayBadges.filter((b) => b.earned).length;
   const totalCount = displayBadges.length;
+  const pct = totalCount > 0 ? Math.round((earnedCount / totalCount) * 100) : 0;
 
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center text-slate-500">
-          <div className="mb-2 text-4xl animate-pulse">🏆</div>
-          <p>Loading achievements...</p>
+        <div className="text-center">
+          <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3 animate-pulse" />
+          <p className="text-gray-500 text-sm">Loading achievements...</p>
         </div>
       </div>
     );
@@ -151,14 +136,11 @@ export default function AchievementsPage() {
   if (error) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center text-slate-500">
-          <div className="mb-2 text-4xl">⚠️</div>
-          <p>{error}</p>
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">{error}</p>
           <button
-            onClick={() => {
-              window.location.reload();
-            }}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
           >
             Retry
           </button>
@@ -168,117 +150,115 @@ export default function AchievementsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <section className="rounded-2xl bg-gradient-to-r from-yellow-500 to-orange-500 p-8 text-white shadow-lg">
-        <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">🏆 My Achievements</h1>
-            <p className="mt-2 text-yellow-100">
-              Collect badges by learning, exploring, and challenging yourself!
+    <div className="space-y-6 max-w-5xl">
+      {/* Header + Stats */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Achievements</h1>
+          <p className="text-gray-500 mt-1">Collect badges by learning and exploring</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-2xl font-bold text-gray-900">
+              {earnedCount}<span className="text-base font-normal text-gray-400">/{totalCount}</span>
             </p>
+            <p className="text-xs text-gray-400">Badges earned</p>
           </div>
-          <div className="text-center">
-            <div className="text-5xl font-bold">
-              {earnedCount}/{totalCount}
-            </div>
-            <div className="text-yellow-100">Achievements Earned</div>
-            <div className="mt-2 h-3 w-48 rounded-full bg-white/20">
-              <div
-                className="h-full rounded-full bg-white transition-all"
-                style={{ width: `${totalCount > 0 ? (earnedCount / totalCount) * 100 : 0}%` }}
+          <div className="relative w-14 h-14">
+            <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+              <circle
+                cx="18" cy="18" r="15" fill="none" stroke="#6366f1" strokeWidth="3"
+                strokeDasharray={`${pct * 0.942} 100`} strokeLinecap="round"
               />
-            </div>
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-indigo-600">
+              {pct}%
+            </span>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex gap-2 flex-wrap flex-1">
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => {
-                setSelectedCategory(cat.id);
-              }}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                 selectedCategory === cat.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
-              {cat.emoji} {cat.name}
+              {cat.name}
             </button>
           ))}
         </div>
-        <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+        <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer shrink-0">
           <input
             type="checkbox"
             checked={showEarnedOnly}
-            onChange={(e) => {
-              setShowEarnedOnly(e.target.checked);
-            }}
-            className="rounded border-slate-300"
+            onChange={(e) => setShowEarnedOnly(e.target.checked)}
+            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
-          Show earned only
+          Earned only
         </label>
       </div>
 
-      {/* Achievement Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredBadges.map((badge) => (
-          <div
-            key={badge.id}
-            className={`relative rounded-2xl border-2 p-4 transition ${
-              badge.earned
-                ? (RARITY_BG[badge.rarity] ?? RARITY_BG.common)
-                : 'border-slate-200 bg-white opacity-60 grayscale'
-            } ${badge.earned ? 'hover:scale-105' : ''}`}
-          >
-            {/* Rarity Badge */}
-            <div
-              className={`absolute -right-2 -top-2 rounded-full bg-gradient-to-r px-2 py-0.5 text-xs font-bold text-white ${
-                RARITY_COLORS[badge.rarity] ?? RARITY_COLORS.common
-              }`}
-            >
-              {badge.rarity.charAt(0).toUpperCase() + badge.rarity.slice(1)}
-            </div>
+      {/* Grid */}
+      {filteredBadges.length === 0 ? (
+        <div className="py-16 text-center">
+          <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500">No achievements found with current filters.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredBadges.map((badge) => {
+            const style = RARITY_STYLES[badge.rarity] ?? RARITY_STYLES.common;
+            return (
+              <div
+                key={badge.id}
+                className={`relative bg-white rounded-2xl border border-gray-100 p-5 shadow-sm transition ${
+                  badge.earned
+                    ? 'hover:shadow-md'
+                    : 'opacity-50 grayscale'
+                }`}
+              >
+                {/* Rarity pill */}
+                <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}>
+                  {badge.rarity}
+                </span>
 
-            {/* Icon */}
-            <div
-              className={`mb-3 flex h-16 w-16 items-center justify-center rounded-xl text-4xl ${
-                badge.earned
-                  ? `bg-gradient-to-br ${RARITY_COLORS[badge.rarity] ?? RARITY_COLORS.common} text-white`
-                  : 'bg-slate-200 text-slate-400'
-              }`}
-            >
-              {badge.earned ? badge.emoji : '🔒'}
-            </div>
+                {/* Icon */}
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-3 ring-2 ${
+                    badge.earned ? style.ring : 'ring-gray-200 bg-gray-50'
+                  }`}
+                >
+                  {badge.earned ? badge.emoji : <Lock className="w-6 h-6 text-gray-300" />}
+                </div>
 
-            {/* Info */}
-            <h3 className="font-bold text-slate-900">{badge.name}</h3>
-            <p className="mt-1 text-sm text-slate-600">{badge.description}</p>
+                <h3 className="font-semibold text-gray-900 text-sm">{badge.name}</h3>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">{badge.description}</p>
 
-            {/* Points */}
-            <div className="mt-2 text-xs text-blue-600 font-medium">+{badge.pointsValue} XP</div>
-
-            {/* Earned date */}
-            {badge.earned && badge.earnedAt ? (
-              <div className="mt-2 text-xs text-slate-500">
-                ✓ Earned {new Date(badge.earnedAt).toLocaleDateString()}
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-xs font-medium text-indigo-600">
+                    <Sparkles className="w-3 h-3" />
+                    +{badge.pointsValue} XP
+                  </span>
+                  {badge.earned && badge.earnedAt ? (
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(badge.earnedAt).toLocaleDateString()}
+                    </span>
+                  ) : !badge.earned ? (
+                    <span className="text-[10px] text-gray-400">Locked</span>
+                  ) : null}
+                </div>
               </div>
-            ) : !badge.earned ? (
-              <div className="mt-2 text-xs text-slate-400">Not yet earned</div>
-            ) : null}
-          </div>
-        ))}
-      </div>
-
-      {filteredBadges.length === 0 && (
-        <div className="py-12 text-center text-slate-500">
-          <div className="mb-2 text-4xl">🔍</div>
-          <p>No achievements found with current filters.</p>
+            );
+          })}
         </div>
       )}
     </div>
