@@ -68,6 +68,7 @@ export interface FeatureAccessResult {
 export class EntitlementsService {
   private readonly cache = new Map<string, { entitlements: TenantEntitlements; expiresAt: number }>();
   private readonly CACHE_TTL_MS = 60_000; // 1 minute cache
+  private readonly CACHE_TTL_NEAR_EXPIRY_MS = 10_000; // 10 s when trial ends within 24 h
 
   /**
    * Get entitlements for a tenant
@@ -112,25 +113,72 @@ export class EntitlementsService {
     if (subscription) {
       // Get plan SKU from subscription
       const planSku = subscription.plan.sku as Plan | undefined;
-      const plan = planSku && planSku in PLAN_ENTITLEMENTS ? planSku : 'FREE';
-      const planEntitlements = PLAN_ENTITLEMENTS[plan];
       
-      // Check grace period
-      const isActive = subscription.status === 'ACTIVE' || subscription.status === 'IN_TRIAL';
-      const inGracePeriod = subscription.status === 'PAST_DUE';
-      const gracePeriodEndsAt = inGracePeriod 
-        ? new Date(subscription.currentPeriodEnd.getTime() + stripeConfig.gracePeriodDays * 24 * 60 * 60 * 1000)
-        : null;
+      // ── Defence-in-depth: expired trial detection ──────────────────────
+      // If the local status still says IN_TRIAL but trialEndAt has elapsed,
+      // treat this as an expired trial and fall through to FREE entitlements.
+      // The sweep job will eventually correct the DB, but we must not serve
+      // paid-tier entitlements in the meantime.
+      const now = new Date();
+      const trialExpired =
+        subscription.status === 'IN_TRIAL' &&
+        subscription.trialEndAt != null &&
+        subscription.trialEndAt < now;
 
-      entitlements = {
-        ...planEntitlements,
-        tenantId,
-        isActive,
-        inGracePeriod,
-        gracePeriodEndsAt,
-        currentPeriodEnd: subscription.currentPeriodEnd,
-        seats: { learnersUsed, teachersUsed, adminsUsed },
-      };
+      if (trialExpired) {
+        console.warn(
+          '[EntitlementsService] Trial expired but status still IN_TRIAL — returning FREE entitlements',
+          { tenantId, subscriptionId: subscription.id, trialEndAt: subscription.trialEndAt },
+        );
+        // Return FREE-tier entitlements (defence-in-depth)
+        entitlements = {
+          ...PLAN_ENTITLEMENTS.FREE,
+          tenantId,
+          isActive: true,
+          inGracePeriod: false,
+          gracePeriodEndsAt: null,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          seats: { learnersUsed, teachersUsed, adminsUsed },
+        };
+      } else {
+        const plan = planSku && planSku in PLAN_ENTITLEMENTS ? planSku : 'FREE';
+        const planEntitlements = PLAN_ENTITLEMENTS[plan];
+
+        // Check grace period
+        const isActive = subscription.status === 'ACTIVE' || subscription.status === 'IN_TRIAL';
+        const inGracePeriod = subscription.status === 'PAST_DUE';
+        const gracePeriodEndsAt = inGracePeriod 
+          ? new Date(subscription.currentPeriodEnd.getTime() + stripeConfig.gracePeriodDays * 24 * 60 * 60 * 1000)
+          : null;
+
+        entitlements = {
+          ...planEntitlements,
+          tenantId,
+          isActive,
+          inGracePeriod,
+          gracePeriodEndsAt,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          seats: { learnersUsed, teachersUsed, adminsUsed },
+        };
+      }
+
+      // ── Reduced cache TTL for trials nearing expiry ────────────────────
+      // When a trial is within 24 hours of ending, cache for only 10 s so
+      // the transition to FREE is detected almost immediately.
+      const msToTrialEnd =
+        subscription.status === 'IN_TRIAL' && subscription.trialEndAt
+          ? subscription.trialEndAt.getTime() - Date.now()
+          : Infinity;
+      const cacheTtl =
+        msToTrialEnd <= 24 * 60 * 60 * 1000
+          ? this.CACHE_TTL_NEAR_EXPIRY_MS
+          : this.CACHE_TTL_MS;
+
+      // Cache result with dynamic TTL
+      this.cache.set(tenantId, {
+        entitlements,
+        expiresAt: Date.now() + cacheTtl,
+      });
     } else {
       // No active subscription - use FREE plan
       entitlements = {
@@ -142,13 +190,13 @@ export class EntitlementsService {
         currentPeriodEnd: null,
         seats: { learnersUsed, teachersUsed, adminsUsed },
       };
-    }
 
-    // Cache result
-    this.cache.set(tenantId, {
-      entitlements,
-      expiresAt: Date.now() + this.CACHE_TTL_MS,
-    });
+      // Cache FREE entitlements at normal TTL
+      this.cache.set(tenantId, {
+        entitlements,
+        expiresAt: Date.now() + this.CACHE_TTL_MS,
+      });
+    }
 
     return entitlements;
   }
@@ -322,6 +370,29 @@ export class EntitlementsService {
           )
         : [],
     });
+  }
+
+  /**
+   * Handle a subscription lifecycle event (webhook / event-consumer callback).
+   *
+   * Invalidates the entitlements cache and re-syncs so the next access-check
+   * reflects the latest plan.  Designed to be called from webhook handlers or
+   * NATS event consumers without them needing to know about cache internals.
+   */
+  async handleSubscriptionEvent(
+    tenantId: string,
+    event: { type: string; plan?: string },
+  ): Promise<void> {
+    console.log('[EntitlementsService] Handling subscription event', { tenantId, event });
+
+    // Always invalidate cache first
+    this.invalidateCache(tenantId);
+
+    // Determine the effective plan — for cancellation/expiration events,
+    // the DB will already reflect the final state, so simply re-fetching
+    // entitlements (which reads the DB) is sufficient.
+    const plan = (event.plan as Plan) ?? 'FREE';
+    await this.syncEntitlements(tenantId, plan);
   }
 
   /**

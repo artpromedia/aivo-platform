@@ -14,6 +14,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 import { config } from '../config.js';
 import { prisma } from '../prisma.js';
+import { entitlementsService } from '../services/entitlements.service.js';
 
 // Note: Stripe types are defined inline to avoid requiring the stripe package
 // In production, install stripe and use proper types
@@ -336,6 +337,14 @@ async function handleSubscriptionUpdated(
     'Subscription status synced from Stripe'
   );
 
+  // Invalidate entitlements cache so the next access-check reflects the new status
+  const tenantId = subscription.billingAccount?.tenantId;
+  if (tenantId) {
+    await entitlementsService.handleSubscriptionEvent(tenantId, {
+      type: 'customer.subscription.updated',
+    });
+  }
+
   // Store event for audit
   await storePaymentEvent(
     eventId,
@@ -379,6 +388,15 @@ async function handleSubscriptionDeleted(
   });
 
   logger.info({ subscriptionId: subscription.id }, 'Subscription marked as deleted/canceled');
+
+  // Invalidate entitlements cache → tenant now gets FREE tier
+  const tenantId = subscription.billingAccount?.tenantId;
+  if (tenantId) {
+    await entitlementsService.handleSubscriptionEvent(tenantId, {
+      type: 'customer.subscription.deleted',
+      plan: 'FREE',
+    });
+  }
 
   // Store event for audit
   await storePaymentEvent(

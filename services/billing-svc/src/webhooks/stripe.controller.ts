@@ -23,6 +23,8 @@ import type Stripe from 'stripe';
 
 import { getPlanFromPriceId } from '../config/stripe.config.js';
 import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
+import { entitlementsService } from '../services/entitlements.service.js';
+import { prisma } from '../prisma.js';
 import { stripeService } from '../services/stripe.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -609,18 +611,48 @@ class StripeWebhookController {
   ): Promise<void> {
     const customerId = subscription.customer as string;
     const tenantId = subscription.metadata?.tenantId ?? '';
+    const now = new Date();
 
     logger.info(
       { subscriptionId: subscription.id, customerId, correlationId },
       'Subscription deleted/canceled'
     );
 
+    // ── Update local DB (defence-in-depth — webhook.routes.ts also updates) ──
+    if (subscription.id) {
+      try {
+        await prisma.subscription.updateMany({
+          where: { providerSubscriptionId: subscription.id },
+          data: {
+            status: 'CANCELED',
+            canceledAt: subscription.canceled_at
+              ? new Date(subscription.canceled_at * 1000)
+              : now,
+            endedAt: subscription.ended_at
+              ? new Date(subscription.ended_at * 1000)
+              : now,
+          },
+        });
+      } catch (dbErr) {
+        // Log but don't fail the webhook — event publishing is still valuable
+        logger.error(
+          { subscriptionId: subscription.id, error: dbErr, correlationId },
+          'Failed to update local subscription status on delete'
+        );
+      }
+    }
+
+    // ── Invalidate entitlements cache so next access reflects FREE tier ──
+    if (tenantId) {
+      entitlementsService.invalidateCache(tenantId);
+    }
+
     await billingEventPublisher.publish({
       type: BillingEventType.SUBSCRIPTION_CANCELED,
       tenantId,
       customerId,
       subscriptionId: subscription.id,
-      canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : new Date(),
+      canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : now,
       correlationId,
     });
 
@@ -687,14 +719,51 @@ class StripeWebhookController {
       'Subscription trial will end soon'
     );
 
+    // ── Check whether the subscription has a payment method ──────────────
+    // If yes  → the user will convert automatically; send a charge notice
+    // If no   → the user will be downgraded; send a last-chance reminder
+    const hasPaymentMethod = !!(
+      subscription.default_payment_method ??
+      subscription.default_source
+    );
+
     await billingEventPublisher.publish({
       type: BillingEventType.SUBSCRIPTION_TRIAL_ENDING,
       tenantId,
       customerId: subscription.customer as string,
       subscriptionId: subscription.id,
       trialEnd: trialEndDate ?? new Date(),
+      hasPaymentMethod,
       correlationId,
     });
+
+    if (hasPaymentMethod) {
+      // Proactive charge notice — "We'll charge your card on <date>"
+      await billingEventPublisher.publish({
+        type: BillingEventType.TRIAL_PAYMENT_CHARGE_NOTICE,
+        tenantId,
+        customerId: subscription.customer as string,
+        subscriptionId: subscription.id,
+        trialEnd: trialEndDate ?? new Date(),
+        correlationId,
+      });
+    } else {
+      // Final reminder — "Add a payment method to keep your plan"
+      await billingEventPublisher.publish({
+        type: BillingEventType.REMINDER_TRIAL_ENDING,
+        tenantId,
+        customerId: subscription.customer as string,
+        subscriptionId: subscription.id,
+        trialEnd: trialEndDate ?? new Date(),
+        correlationId,
+      });
+    }
+
+    // Pre-invalidate entitlements cache with short TTL so the transition
+    // is picked up quickly when the trial actually ends
+    if (tenantId) {
+      entitlementsService.invalidateCache(tenantId);
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════════════
