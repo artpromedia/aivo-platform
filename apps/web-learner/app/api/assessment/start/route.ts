@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { type, learnerId, subjects } = body;
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     // Try to create session via assessment service

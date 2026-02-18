@@ -154,7 +154,7 @@ async function fetchParentAssessment(learnerId: string, authToken: string): Prom
  */
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     if (!authToken) {

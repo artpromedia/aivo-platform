@@ -10,7 +10,7 @@ const REFRESH_COOKIE = 'aivo_refresh_token';
  * Clears auth cookies and returns success.
  */
 export async function POST() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete(ACCESS_COOKIE);
   cookieStore.delete(REFRESH_COOKIE);
   return NextResponse.json({ ok: true });

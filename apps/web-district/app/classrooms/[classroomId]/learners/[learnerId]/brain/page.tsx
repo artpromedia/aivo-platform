@@ -13,8 +13,9 @@ import { VirtualBrainClient } from './view-client';
 export default async function VirtualBrainPage({
   params,
 }: {
-  params: { classroomId: string; learnerId: string };
+  params: Promise<{ classroomId: string; learnerId: string }>;
 }) {
+  const { classroomId, learnerId } = await params;
   const session = await getAuthSession();
 
   if (!session || !hasInsightsAccess(session.roles as Role[])) {
@@ -27,12 +28,12 @@ export default async function VirtualBrainPage({
     );
   }
 
-  const brain = await fetchVirtualBrainSummary(params.learnerId, session);
+  const brain = await fetchVirtualBrainSummary(learnerId, session);
 
   return (
     <VirtualBrainClient
-      classroomId={params.classroomId}
-      learnerId={params.learnerId}
+      classroomId={classroomId}
+      learnerId={learnerId}
       brain={brain}
     />
   );

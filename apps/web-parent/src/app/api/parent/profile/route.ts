@@ -17,7 +17,7 @@ const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
  */
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token =
       cookieStore.get('auth-token')?.value ||
       request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token =
       cookieStore.get('auth-token')?.value ||
       request.headers.get('Authorization')?.replace('Bearer ', '');

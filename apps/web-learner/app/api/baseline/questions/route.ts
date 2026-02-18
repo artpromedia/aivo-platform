@@ -1623,7 +1623,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     // Get skill codes for domain

@@ -44,7 +44,7 @@ interface SisProviderResponse {
 export async function GET(request: NextRequest) {
   try {
     // Determine tenant from various sources
-    const tenantSlug = getTenantSlug(request);
+    const tenantSlug = await getTenantSlug(request);
     
     if (!tenantSlug) {
       // No tenant context - return empty list (show email login only)
@@ -135,13 +135,13 @@ export async function GET(request: NextRequest) {
 /**
  * Extract tenant slug from request
  */
-function getTenantSlug(request: NextRequest): string | null {
+async function getTenantSlug(request: NextRequest): Promise<string | null> {
   // 1. Check query param
   const queryTenant = request.nextUrl.searchParams.get('tenant');
   if (queryTenant) return queryTenant;
 
   // 2. Check cookie
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const cookieTenant = cookieStore.get('tenant_slug')?.value;
   if (cookieTenant) return cookieTenant;
 

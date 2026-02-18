@@ -1,12 +1,13 @@
 import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard';
 
-export default function AnalyticsPage({
+export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: { classId?: string };
+  searchParams: Promise<{ classId?: string }>;
 }) {
+  const { classId: classIdParam } = await searchParams;
   // In a real app, fetch the class info from API or context
-  const classId = searchParams.classId || 'default-class';
+  const classId = classIdParam || 'default-class';
   const className = 'Class Analytics'; // Fetch from API based on classId
 
   return (

@@ -40,9 +40,9 @@ async function fetchLearnerName(learnerId: string, accessToken: string): Promise
 }
 
 interface LearnerAuditPageProps {
-  params: {
+  params: Promise<{
     learnerId: string;
-  };
+  }>;
 }
 
 export const metadata: Metadata = {
@@ -57,7 +57,7 @@ export default async function LearnerAuditPage({ params }: LearnerAuditPageProps
     redirect('/login');
   }
 
-  const { learnerId } = params;
+  const { learnerId } = await params;
 
   if (!learnerId) {
     redirect('/learners');

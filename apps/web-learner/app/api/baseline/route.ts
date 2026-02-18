@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as BaselineRequestBody;
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     // Determine format and extract answers

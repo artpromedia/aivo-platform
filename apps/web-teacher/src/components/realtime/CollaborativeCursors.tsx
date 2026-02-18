@@ -43,7 +43,7 @@ export function CollaborativeCursors({
 }: CollaborativeCursorsProps) {
   const { isConnected, on, emit } = useWebSocket({ autoConnect: false });
   const [cursors, setCursors] = useState<Map<string, CursorData>>(new Map());
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const lastEmitRef = useRef<number>(0);
   const THROTTLE_MS = 50;
 

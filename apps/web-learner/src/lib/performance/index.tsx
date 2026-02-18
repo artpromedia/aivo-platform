@@ -460,7 +460,7 @@ export function reportWebVitals(metric: { name: string; value: number; id: strin
 export function useDeferredRender<T>(value: T, delay = 100): { current: T; isPending: boolean } {
   const [deferredValue, setDeferredValue] = useState(value);
   const [isPending, setIsPending] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     setIsPending(true);
@@ -488,7 +488,7 @@ export function useBatchedState<T extends object>(
 ): [T, (updates: Partial<T>) => void] {
   const [state, setState] = useState(initialState);
   const pendingUpdates = useRef<Partial<T>>({});
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | undefined>(undefined);
 
   const batchedSetState = useCallback((updates: Partial<T>) => {
     pendingUpdates.current = { ...pendingUpdates.current, ...updates };

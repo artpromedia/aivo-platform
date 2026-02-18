@@ -10,7 +10,7 @@ const ACCESS_COOKIE = 'aivo_access_token';
  * Used by the API client to inject Bearer auth headers.
  */
 export async function GET() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(ACCESS_COOKIE)?.value;
 
   if (!token) {

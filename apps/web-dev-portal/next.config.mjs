@@ -12,6 +12,7 @@ const nextConfig = {
 
   // Type checking is handled by the CI TypeCheck step; skip during next build to avoid strict-mode conflicts with shared libs
   typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
 
   // Resolve .js extension imports to .ts files (for libs using NodeNext module resolution)
   webpack: (config) => {

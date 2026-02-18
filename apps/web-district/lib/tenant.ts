@@ -12,7 +12,7 @@ const cache = new Map<string, Promise<TenantResolution | null>>();
 
 export async function resolveTenant(host?: string): Promise<TenantResolution | null> {
   const targetHost =
-    host ?? headers().get('x-forwarded-host') ?? headers().get('host') ?? undefined;
+    host ?? (await headers()).get('x-forwarded-host') ?? (await headers()).get('host') ?? undefined;
   if (!targetHost) return null;
   const key = targetHost.toLowerCase();
   if (cache.has(key)) return cache.get(key)!;

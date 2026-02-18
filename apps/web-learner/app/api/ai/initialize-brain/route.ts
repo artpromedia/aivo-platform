@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { learnerId, onboardingData } = body;
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     const isDevMode = process.env.NODE_ENV === 'development';

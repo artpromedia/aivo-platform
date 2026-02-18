@@ -33,7 +33,7 @@ export function getAuthServiceUrl() {
 }
 
 export async function getAuthSession(): Promise<AuthSession | null> {
-  const store = cookies();
+  const store = await cookies();
   const token = store.get(ACCESS_COOKIE)?.value;
   if (!token) return null;
   try {

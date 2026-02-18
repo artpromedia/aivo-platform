@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 interface QuoteDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function formatCurrency(cents: number, currency = 'USD'): string {
@@ -42,7 +42,8 @@ function isExpired(validUntil: string): boolean {
 }
 
 export default async function QuoteDetailPage({ params }: QuoteDetailPageProps) {
-  const quote = await fetchQuote(params.id);
+  const { id } = await params;
+  const quote = await fetchQuote(id);
 
   if (!quote) {
     notFound();

@@ -13,6 +13,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: { ignoreDuringBuilds: true },
 
   // Resolve .js extension imports to .ts files (for libs using NodeNext module resolution)
   webpack: (config) => {

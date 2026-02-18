@@ -13,8 +13,9 @@ import { BaselineInsightsClient } from './view-client';
 export default async function BaselinePage({
   params,
 }: {
-  params: { classroomId: string; learnerId: string };
+  params: Promise<{ classroomId: string; learnerId: string }>;
 }) {
+  const { classroomId, learnerId } = await params;
   const session = await getAuthSession();
 
   if (!session || !hasInsightsAccess(session.roles as Role[])) {
@@ -27,12 +28,12 @@ export default async function BaselinePage({
     );
   }
 
-  const baseline = await fetchBaselineProfile(params.learnerId, session);
+  const baseline = await fetchBaselineProfile(learnerId, session);
 
   return (
     <BaselineInsightsClient
-      classroomId={params.classroomId}
-      learnerId={params.learnerId}
+      classroomId={classroomId}
+      learnerId={learnerId}
       baseline={baseline}
       {...(baseline.grade !== undefined ? { grade: baseline.grade } : {})}
     />

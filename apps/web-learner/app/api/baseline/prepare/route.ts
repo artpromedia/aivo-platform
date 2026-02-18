@@ -397,7 +397,7 @@ export async function POST(_request: NextRequest) {
   
   try {
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     // Fetch learner profile (includes parent assessment data)

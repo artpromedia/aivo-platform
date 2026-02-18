@@ -22,8 +22,8 @@ export interface TokenPayload {
  * Read the JWT from the request cookie and decode the payload.
  * Returns null if no token or malformed.
  */
-export function getTokenPayload(): TokenPayload | null {
-  const cookieStore = cookies();
+export async function getTokenPayload(): Promise<TokenPayload | null> {
+  const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
 
@@ -51,8 +51,8 @@ export function getTokenPayload(): TokenPayload | null {
 /**
  * Get the raw access token string for proxying to backend services.
  */
-export function getRawToken(): string | undefined {
-  const cookieStore = cookies();
+export async function getRawToken(): Promise<string | undefined> {
+  const cookieStore = await cookies();
   return cookieStore.get(COOKIE_NAME)?.value;
 }
 

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { learnerId, currentStep, data } = body;
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     const isDevMode = process.env.NODE_ENV === 'development';
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get auth token from cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const authToken = cookieStore.get('auth-token')?.value;
 
     // Try to get from learner model service

@@ -11,7 +11,7 @@ import { StandardsMapper } from './standards-mapper';
 import { VersionControl } from './version-control';
 
 interface CurriculumDetailPageProps {
-  params: { curriculumId: string };
+  params: Promise<{ curriculumId: string }>;
 }
 
 export const metadata = {
@@ -19,20 +19,21 @@ export const metadata = {
   description: 'View and manage curriculum details',
 };
 
-export default function CurriculumDetailPage({ params }: CurriculumDetailPageProps) {
+export default async function CurriculumDetailPage({ params }: CurriculumDetailPageProps) {
+  const { curriculumId } = await params;
   return (
     <div className="space-y-6">
       <Suspense fallback={<DetailSkeleton />}>
-        <CurriculumDetailView curriculumId={params.curriculumId} />
+        <CurriculumDetailView curriculumId={curriculumId} />
       </Suspense>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Suspense fallback={<SectionSkeleton title="Standards Mapping" />}>
-          <StandardsMapper curriculumId={params.curriculumId} />
+          <StandardsMapper curriculumId={curriculumId} />
         </Suspense>
 
         <Suspense fallback={<SectionSkeleton title="Version History" />}>
-          <VersionControl curriculumId={params.curriculumId} />
+          <VersionControl curriculumId={curriculumId} />
         </Suspense>
       </div>
     </div>

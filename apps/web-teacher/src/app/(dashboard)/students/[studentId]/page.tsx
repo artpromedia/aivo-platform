@@ -8,7 +8,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { useState } from 'react';
 
@@ -16,7 +16,8 @@ import { PageHeader } from '@/components/layout/breadcrumb';
 import { useStudent } from '@/hooks/use-students';
 import { studentsApi } from '@/lib/api';
 
-export default function StudentDetailPage({ params }: { params: { studentId?: string } }) {
+export default function StudentDetailPage() {
+  const params = useParams<{ studentId: string }>();
   const router = useRouter();
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
