@@ -1,3 +1,7 @@
+import { createRequire } from 'module';
+import path from 'path';
+const require = createRequire(import.meta.url);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@aivo/ts-rbac'],
@@ -15,11 +19,23 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
 
   // Resolve .js extension imports to .ts files (for libs using NodeNext module resolution)
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.extensionAlias = {
       '.js': ['.ts', '.tsx', '.js', '.jsx'],
       '.mjs': ['.mts', '.mjs'],
     };
+
+    // swagger-ui-react's pre-bundled files reference transitive deps that
+    // pnpm's strict isolation prevents webpack from resolving.  Wire them
+    // up explicitly so the build can find them.
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'to-buffer': path.dirname(require.resolve('to-buffer')),
+        '@swagger-api/apidom-core': path.dirname(require.resolve('@swagger-api/apidom-core')),
+      };
+    }
+
     return config;
   },
 
