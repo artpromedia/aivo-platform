@@ -98,6 +98,144 @@ export interface OonruMailWebhookEvent {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// TYPED TEMPLATE DATA INTERFACES
+// ══════════════════════════════════════════════════════════════════════════════
+
+/** Common options for typed send* methods */
+export interface OonruMailTypedSendOptions {
+  from?: string;
+  fromName?: string;
+  replyTo?: string;
+  tags?: string[];
+  metadata?: Record<string, string>;
+  scheduledAt?: string;
+  /** Override the default server template ID */
+  templateIdOverride?: string;
+}
+
+export interface OonruMailWelcomeData {
+  user_name: string;
+  tenant_name: string;
+  activation_url: string;
+  brand_color?: string;
+  expiry_hours?: number;
+  help_center_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailVerificationData {
+  user_name: string;
+  verification_url: string;
+  verification_code?: string;
+  code_expiry_minutes?: number;
+  brand_color?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailPasswordResetData {
+  user_email: string;
+  reset_url: string;
+  expiry_minutes?: number;
+  brand_color?: string;
+  support_url?: string;
+  request_ip?: string;
+  request_browser?: string;
+  request_timestamp?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailPaymentReceiptData {
+  user_name: string;
+  amount: string;
+  currency?: string;
+  invoice_number?: string;
+  payment_date?: string;
+  plan_name?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailLessonReminderData {
+  user_name: string;
+  lesson_title: string;
+  course_name?: string;
+  start_time?: string;
+  lesson_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailCourseCompletionData {
+  user_name: string;
+  course_name: string;
+  completion_date?: string;
+  certificate_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailAssignmentSubmittedData {
+  student_name: string;
+  assignment_title: string;
+  course_name?: string;
+  submitted_at?: string;
+  assignment_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailAssignmentGradedData {
+  student_name: string;
+  assignment_title: string;
+  course_name?: string;
+  grade?: string;
+  feedback?: string;
+  assignment_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+export interface OonruMailInstructorEnrollmentData {
+  instructor_name: string;
+  student_name: string;
+  course_name: string;
+  enrollment_date?: string;
+  course_url?: string;
+  app_name?: string;
+  app_url?: string;
+  support_email?: string;
+  current_year?: number;
+  [key: string]: unknown;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // ERRORS
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -166,6 +304,130 @@ export class AivolearningEmail {
    */
   async sendTemplate(message: OonruMailTemplateMessage): Promise<OonruMailSendResult> {
     return this.request<OonruMailSendResult>('POST', '/messages/template', message);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // TYPED TEMPLATE METHODS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Send a welcome email via server-side template.
+   */
+  async sendWelcome(
+    to: string | string[],
+    data: OonruMailWelcomeData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'welcome', data, options);
+  }
+
+  /**
+   * Send an email verification email via server-side template.
+   */
+  async sendVerification(
+    to: string | string[],
+    data: OonruMailVerificationData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'email_verification', data, options);
+  }
+
+  /**
+   * Send a password reset email via server-side template.
+   */
+  async sendPasswordReset(
+    to: string | string[],
+    data: OonruMailPasswordResetData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'password_reset', data, options);
+  }
+
+  /**
+   * Send a payment receipt email via server-side template.
+   */
+  async sendPaymentReceipt(
+    to: string | string[],
+    data: OonruMailPaymentReceiptData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'payment_receipt', data, options);
+  }
+
+  /**
+   * Send a lesson reminder email via server-side template.
+   */
+  async sendLessonReminder(
+    to: string | string[],
+    data: OonruMailLessonReminderData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'lesson_reminder', data, options);
+  }
+
+  /**
+   * Send a course completion email via server-side template.
+   */
+  async sendCourseCompletion(
+    to: string | string[],
+    data: OonruMailCourseCompletionData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'course_completion', data, options);
+  }
+
+  /**
+   * Send an assignment-submitted notification via server-side template.
+   */
+  async sendAssignmentSubmitted(
+    to: string | string[],
+    data: OonruMailAssignmentSubmittedData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'assignment_submitted', data, options);
+  }
+
+  /**
+   * Send an assignment-graded notification via server-side template.
+   */
+  async sendAssignmentGraded(
+    to: string | string[],
+    data: OonruMailAssignmentGradedData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'assignment_graded', data, options);
+  }
+
+  /**
+   * Send an instructor new-enrollment notification via server-side template.
+   */
+  async sendInstructorNewEnrollment(
+    to: string | string[],
+    data: OonruMailInstructorEnrollmentData,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    return this.sendTypedTemplate(to, 'instructor_new_enrollment', data, options);
+  }
+
+  /** Internal helper: build OonruMailTemplateMessage and call sendTemplate */
+  private async sendTypedTemplate(
+    to: string | string[],
+    templateId: string,
+    data: Record<string, unknown>,
+    options?: OonruMailTypedSendOptions,
+  ): Promise<OonruMailSendResult> {
+    const message: OonruMailTemplateMessage = {
+      to,
+      templateId: options?.templateIdOverride ?? templateId,
+      templateData: data,
+      ...(options?.from ? { from: options.from } : {}),
+      ...(options?.fromName ? { fromName: options.fromName } : {}),
+      ...(options?.replyTo ? { replyTo: options.replyTo } : {}),
+      ...(options?.tags ? { tags: options.tags } : {}),
+      ...(options?.metadata ? { metadata: options.metadata } : {}),
+      ...(options?.scheduledAt ? { scheduledAt: options.scheduledAt } : {}),
+    };
+    return this.sendTemplate(message);
   }
 
   /**

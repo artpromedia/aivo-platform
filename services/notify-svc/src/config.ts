@@ -1,5 +1,24 @@
 import 'dotenv/config';
 
+/**
+ * Parse OONRUMAIL_SERVER_TEMPLATE_OVERRIDES env var.
+ * Format: "transactional/welcome=true,transactional/password-reset=false"
+ * Returns a Record<string, boolean> or undefined if not set.
+ */
+function parseServerTemplateOverrides(
+  raw: string | undefined,
+): Record<string, boolean> | undefined {
+  if (!raw) return undefined;
+  const result: Record<string, boolean> = {};
+  for (const pair of raw.split(',')) {
+    const [key, val] = pair.split('=');
+    if (key && val !== undefined) {
+      result[key.trim()] = val.trim() === 'true';
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 export const config = {
   env: process.env.NODE_ENV ?? 'development',
   port: Number.parseInt(process.env.PORT ?? '4040', 10),
@@ -89,6 +108,12 @@ export const config = {
       useServerTemplates: process.env.OONRUMAIL_USE_SERVER_TEMPLATES === 'true',
       timeout: Number.parseInt(process.env.OONRUMAIL_TIMEOUT ?? '30000', 10),
       sandboxMode: process.env.OONRUMAIL_SANDBOX_MODE === 'true',
+      // Per-template server-template overrides for gradual rollout.
+      // Keys are template names (e.g. 'transactional/welcome'), values are boolean.
+      // When set, overrides the global useServerTemplates flag for that template.
+      serverTemplateOverrides: parseServerTemplateOverrides(
+        process.env.OONRUMAIL_SERVER_TEMPLATE_OVERRIDES,
+      ),
       // OonruMail server-side template IDs (optional, can use local Handlebars templates instead)
       templates: {
         welcome: process.env.OONRUMAIL_TEMPLATE_WELCOME ?? '',

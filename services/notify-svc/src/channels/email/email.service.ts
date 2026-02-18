@@ -18,6 +18,11 @@ import { config } from '../../config.js';
 
 import { emailProviderManager } from './email-provider.factory.js';
 import { emailValidator } from './email-validator.js';
+import {
+  hasOonruMailTemplate,
+  getOonruMailMapping,
+  resolveOonruMailTemplateId,
+} from './oonrumail-template-map.js';
 import { emailTemplateEngine, renderEmailTemplate } from './template-engine.js';
 import type {
   BatchEmailResult,
@@ -25,6 +30,7 @@ import type {
   EmailTemplateContext,
   SendEmailOptions,
   SupportedLocale,
+  TemplateEmailOptions,
 } from './types.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -250,6 +256,15 @@ class EmailService {
         }
       }
 
+      // ── OonruMail server-template fast-path ────────────────────────────
+      // When OonruMail is the active provider AND useServerTemplates is on
+      // AND this template has a server-side mapping with a configured ID,
+      // skip local HBS rendering and delegate to the server template.
+      if (this.shouldUseServerTemplate(options.templateName)) {
+        return await this.sendViaServerTemplate(options, primaryRecipient);
+      }
+
+      // ── Local HBS rendering (default path) ─────────────────────────────
       // Render template
       const { html, text } = await renderEmailTemplate(
         options.templateName,
@@ -468,6 +483,127 @@ class EmailService {
   // ════════════════════════════════════════════════════════════════════════════
   // PRIVATE METHODS
   // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Determine whether a given template should use OonruMail server rendering.
+   * Checks: OonruMail enabled → useServerTemplates flag → mapping exists → template ID configured.
+   * Also checks per-template override in config when available.
+   */
+  private shouldUseServerTemplate(templateName: string): boolean {
+    // OonruMail must be enabled and be the active provider
+    if (!config.email.oonrumail.enabled) {
+      return false;
+    }
+
+    // Check per-template override first (opt-in or opt-out)
+    const overrides = (config.email.oonrumail as Record<string, unknown>).serverTemplateOverrides as
+      | Record<string, boolean>
+      | undefined;
+    if (overrides && templateName in overrides) {
+      // Even with override=true, a mapping must exist
+      if (!overrides[templateName]) {
+        return false;
+      }
+      return hasOonruMailTemplate(templateName);
+    }
+
+    // Global toggle
+    if (!config.email.oonrumail.useServerTemplates) {
+      return false;
+    }
+
+    // Check mapping & configured ID
+    return hasOonruMailTemplate(templateName);
+  }
+
+  /**
+   * Send an email using OonruMail server-side template rendering.
+   * Transforms the caller-provided context into OonruMail template variables
+   * and delegates to the provider manager's sendTemplate path.
+   */
+  private async sendViaServerTemplate(
+    options: SendTemplatedEmailOptions,
+    primaryRecipient: string,
+  ): Promise<EmailResult> {
+    const mapping = getOonruMailMapping(options.templateName);
+    const serverTemplateId = resolveOonruMailTemplateId(options.templateName);
+
+    // This should not happen since shouldUseServerTemplate already checks,
+    // but guard defensively.
+    if (!mapping || !serverTemplateId) {
+      console.warn(
+        '[EmailService] Server template mapping not found, falling back to HBS:',
+        options.templateName,
+      );
+      return this.sendViaHbs(options, primaryRecipient);
+    }
+
+    // Transform context to OonruMail template variables
+    const templateData = mapping.transformContext(options.context);
+
+    const templateOptions: TemplateEmailOptions = {
+      to: options.to,
+      templateId: serverTemplateId,
+      dynamicTemplateData: templateData,
+      ...(options.cc ? { cc: options.cc } : {}),
+      ...(options.bcc ? { bcc: options.bcc } : {}),
+      ...(options.replyTo ? { replyTo: options.replyTo } : {}),
+      ...(options.category ? { category: options.category } : {}),
+      ...(options.tags ? { tags: options.tags } : {}),
+      ...(options.attachments
+        ? { attachments: options.attachments }
+        : {}),
+      ...(options.scheduledAt
+        ? { scheduledAt: options.scheduledAt }
+        : {}),
+    };
+
+    console.log('[EmailService] Using OonruMail server template:', {
+      templateName: options.templateName,
+      serverTemplateId,
+      to: this.maskEmail(primaryRecipient),
+    });
+
+    const result = await emailProviderManager.sendTemplate(templateOptions);
+
+    // Log delivery
+    await this.logDelivery(primaryRecipient, `[server-tpl] ${options.templateName}`, result, options.templateName);
+
+    return result;
+  }
+
+  /**
+   * Fallback: render HBS locally and send pre-rendered HTML.
+   * Extracted so sendViaServerTemplate can fall back gracefully.
+   */
+  private async sendViaHbs(
+    options: SendTemplatedEmailOptions,
+    primaryRecipient: string,
+  ): Promise<EmailResult> {
+    const { html, text } = await renderEmailTemplate(
+      options.templateName,
+      options.context,
+      ...(options.locale ? [{ locale: options.locale }] : [{}]),
+    );
+
+    const sendOptions: SendEmailOptions = {
+      to: options.to,
+      subject: (options.context.subject as string) || 'Notification',
+      html,
+      text,
+      ...(options.category ? { category: options.category } : {}),
+      ...(options.tags ? { tags: options.tags } : {}),
+      ...(options.cc ? { cc: options.cc } : {}),
+      ...(options.bcc ? { bcc: options.bcc } : {}),
+      ...(options.replyTo ? { replyTo: options.replyTo } : {}),
+      ...(options.attachments ? { attachments: options.attachments } : {}),
+      ...(options.scheduledAt ? { scheduledAt: options.scheduledAt } : {}),
+    };
+
+    const result = await emailProviderManager.send(sendOptions);
+    await this.logDelivery(primaryRecipient, sendOptions.subject, result, options.templateName);
+    return result;
+  }
 
   private async checkRateLimit(email: string): Promise<void> {
     try {
