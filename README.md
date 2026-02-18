@@ -51,7 +51,7 @@ AIVO provides:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           FRONTEND LAYER                                │
 ├─────────────────────────────────────────────────────────────────────────┤
-│  Web Apps (Next.js 14)          │  Mobile Apps (Flutter)               │
+│  Web Apps (Next.js 15)          │  Mobile Apps (Flutter)               │
 │  ├── web-learner     :3000      │  ├── mobile-learner                  │
 │  ├── web-parent      :3002      │  ├── mobile-parent                   │
 │  ├── web-teacher     :3003      │  └── mobile-teacher                  │
@@ -99,7 +99,7 @@ AIVO provides:
 
 | Layer                  | Technologies                                                 |
 | ---------------------- | ------------------------------------------------------------ |
-| **Frontend Web**       | Next.js 14, React 18, TypeScript, TailwindCSS, Framer Motion |
+| **Frontend Web**       | Next.js 15, React 19, TypeScript, TailwindCSS, Framer Motion |
 | **Frontend Mobile**    | Flutter 3.x, Dart                                            |
 | **Backend TypeScript** | Fastify, NestJS, Prisma ORM, Zod validation                  |
 | **Backend Python**     | FastAPI, uvicorn, Pydantic, SQLAlchemy                       |
@@ -332,7 +332,7 @@ aivo/
 
 ## Frontend Applications
 
-### Web Applications (Next.js 14)
+### Web Applications (Next.js 15)
 
 ```bash
 # Start any web app
@@ -416,7 +416,7 @@ pnpm --filter @aivo/{service} db:studio      # Open Prisma Studio
 
 The workspace includes pre-configured tasks in `.vscode/tasks.json`:
 
-- `Use Node 20 Shell` - Opens PowerShell with Node.js 20 configured
+- `Use Node 20 Shell` - Opens PowerShell with Node.js configured
 - `Flutter Shell` - Opens PowerShell with Flutter configured
 - `pnpm (Node20) ai-orchestrator dev` - Starts AI orchestrator
 - `Flutter pub get (learner)` - Installs Flutter dependencies

@@ -395,14 +395,14 @@ HomeworkHelper/
 ```
 Frontend:
 - Next.js 15
-- React 18
+- React 19
 - TypeScript 5
 - Tailwind CSS
 - Zustand
 - TanStack Query
 
 Backend:
-- Node.js 20
+- Node.js 22
 - Fastify
 - Prisma
 - PostgreSQL 16

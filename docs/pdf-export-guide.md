@@ -149,7 +149,7 @@ export const exportRoutes: FastifyPluginAsync = async (app) => {
 ```dockerfile
 # services/pdf-svc/Dockerfile
 
-FROM node:20-slim
+FROM node:22-slim
 
 # Install dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
