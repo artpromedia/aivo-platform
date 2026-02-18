@@ -23,6 +23,7 @@ import {
   getOonruMailMapping,
   resolveOonruMailTemplateId,
 } from './oonrumail-template-map.js';
+import { suppressionSyncService } from './suppression-sync.service.js';
 import { emailTemplateEngine, renderEmailTemplate } from './template-engine.js';
 import type {
   BatchEmailResult,
@@ -324,9 +325,38 @@ class EmailService {
     let totalSent = 0;
     let totalFailed = 0;
 
+    // Pre-filter OonruMail suppressions for the entire batch (efficient single API call)
+    let oonruMailSuppressed = new Set<string>();
+    if (!serviceOptions.skipSuppressionCheck) {
+      try {
+        const allEmails = options.recipients.map((r) => r.email);
+        const { suppressed } = await suppressionSyncService.filterSuppressed(allEmails);
+        oonruMailSuppressed = new Set(suppressed);
+        if (suppressed.length > 0) {
+          console.log(
+            `[EmailService] Pre-filtered ${suppressed.length} suppressed recipients from batch`,
+          );
+        }
+      } catch (err) {
+        console.error('[EmailService] Batch suppression pre-filter failed, continuing:', err);
+      }
+    }
+
     // Process each recipient
     for (const recipient of options.recipients) {
       try {
+        // Skip recipients already identified as suppressed by OonruMail pre-filter
+        if (oonruMailSuppressed.has(recipient.email)) {
+          results.push({
+            to: recipient.email,
+            success: false,
+            errorCode: 'SUPPRESSED',
+            errorMessage: 'Email is suppressed (provider + local)',
+          });
+          totalFailed++;
+          continue;
+        }
+
         // Rate limiting
         await this.checkRateLimit(recipient.email);
 

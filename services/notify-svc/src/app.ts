@@ -26,7 +26,9 @@ import {
   registerWebhookRoutes,
   registerEmailRoutes,
   registerOonruMailWebhookRoutes,
+  registerEmailAnalyticsRoutes,
 } from './routes/index.js';
+import { suppressionSyncService } from './channels/email/suppression-sync.service.js';
 
 // Type assertion helper for Fastify plugins with type provider mismatches
 const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
@@ -191,8 +193,33 @@ export async function buildApp(): Promise<FastifyInstance> {
     await app.register(registerOonruMailWebhookRoutes, { prefix: '/api/v1' });
   }
 
+  // Email analytics routes (admin-only)
+  await registerEmailAnalyticsRoutes(app);
+
   // Onboarding routes (internal API for cross-app flows)
   await app.register(onboardingRoutes, { prefix: '/onboarding' });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // PERIODIC SUPPRESSION SYNC
+  // ════════════════════════════════════════════════════════════════════════════
+
+  if (config.email.oonrumail.enabled) {
+    suppressionSyncService.initialize();
+
+    // Sync local suppressions to OonruMail every 15 minutes
+    const syncInterval = setInterval(() => {
+      suppressionSyncService
+        .syncLocalToOonruMail()
+        .then((r) =>
+          console.log(`[SuppressionSync] Synced ${r.synced}, errors: ${r.errors}`),
+        )
+        .catch((err) => console.error('[SuppressionSync] Error:', err));
+    }, 15 * 60 * 1000);
+
+    app.addHook('onClose', async () => {
+      clearInterval(syncInterval);
+    });
+  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // ROOT ENDPOINT

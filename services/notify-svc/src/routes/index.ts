@@ -6,3 +6,4 @@ export { registerInAppRoutes } from './in-app.js';
 export { registerWebhookRoutes } from './webhooks.js';
 export { registerEmailRoutes } from './email.js';
 export { registerOonruMailWebhookRoutes } from './oonrumail-webhook.js';
+export { registerEmailAnalyticsRoutes } from './email-analytics.js';

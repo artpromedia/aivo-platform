@@ -666,6 +666,9 @@ model EmailSuppression {
   bounceCount       Int               @default(0) @map("bounce_count")
   spamReported      Boolean           @default(false) @map("spam_reported")
   
+  // Provider sync state
+  syncedToProvider  Boolean           @default(false) @map("synced_to_provider")
+  
   // Timestamps
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime?         @updatedAt @map("updated_at") @db.Timestamptz
