@@ -9,10 +9,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
-// Mock prisma before importing the service
-const mockFindMany = vi.fn();
-const mockCount = vi.fn();
+// Hoist mock functions so they're available inside vi.mock factories
+const { mockFindMany, mockCount, mockFetchGlobal, mockIsLimitedMode } = vi.hoisted(() => ({
+  mockFindMany: vi.fn(),
+  mockCount: vi.fn(),
+  mockFetchGlobal: vi.fn(),
+  mockIsLimitedMode: vi.fn().mockResolvedValue(false),
+}));
 
+// Mock prisma before importing the service
 vi.mock('../../src/prisma.js', () => ({
   prisma: {
     learningObject: { findUnique: vi.fn() },
@@ -30,7 +35,33 @@ vi.mock('../../src/prisma.js', () => ({
   },
 }));
 
+vi.mock('../../src/config.js', () => ({
+  config: {
+    billingServiceUrl: 'http://billing-svc:4060',
+    billingCheckDisabled: false,
+    isDev: true,
+  },
+}));
+
+vi.mock('@aivo/billing-access', () => ({
+  BillingAccessClient: vi.fn().mockImplementation(() => ({
+    isLimitedMode: mockIsLimitedMode,
+  })),
+}));
+
+vi.mock('../../src/auth.js', () => ({
+  getUserFromRequest: vi.fn((req: any) => req.user),
+  requireAuth: vi.fn(),
+}));
+
+vi.stubGlobal('fetch', mockFetchGlobal);
+
 import { browseSharedContent } from '../../src/services/content-sharing.service.js';
+import {
+  DEFAULT_FREE_MODULES,
+  MODULE_MIN_PLAN,
+  entitlementPreHandler,
+} from '../../src/middleware/entitlementGuard.js';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -199,7 +230,6 @@ describe('browseSharedContent — module filtering', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('module access gate logic', () => {
-  const { DEFAULT_FREE_MODULES, MODULE_MIN_PLAN } = require('../../src/middleware/entitlementGuard.js');
 
   it('DEFAULT_FREE_MODULES should contain ELA and MATH', () => {
     expect(DEFAULT_FREE_MODULES).toEqual(['ELA', 'MATH']);
@@ -248,29 +278,6 @@ describe('module access gate logic', () => {
 });
 
 describe('entitlementPreHandler modules population', () => {
-  // Re-use mocks from the entitlementGuard test suite
-  vi.mock('../../src/config.js', () => ({
-    config: {
-      billingServiceUrl: 'http://billing-svc:4060',
-      billingCheckDisabled: false,
-      isDev: true,
-    },
-  }));
-
-  const mockIsLimitedMode = vi.fn().mockResolvedValue(false);
-  vi.mock('@aivo/billing-access', () => ({
-    BillingAccessClient: vi.fn().mockImplementation(() => ({
-      isLimitedMode: mockIsLimitedMode,
-    })),
-  }));
-
-  const mockFetchGlobal = vi.fn();
-  vi.stubGlobal('fetch', mockFetchGlobal);
-
-  vi.mock('../../src/auth.js', () => ({
-    getUserFromRequest: vi.fn((req: any) => req.user),
-    requireAuth: vi.fn(),
-  }));
 
   function makeRequest(overrides: Record<string, unknown> = {}) {
     return {
@@ -301,8 +308,6 @@ describe('entitlementPreHandler modules population', () => {
       }),
     });
 
-    const { entitlementPreHandler } = await import('../../src/middleware/entitlementGuard.js');
-
     const req = makeRequest();
     const reply = makeReply();
     await entitlementPreHandler(req as never, reply as never);
@@ -325,10 +330,6 @@ describe('entitlementPreHandler modules population', () => {
       }),
     });
 
-    const { entitlementPreHandler, DEFAULT_FREE_MODULES } = await import(
-      '../../src/middleware/entitlementGuard.js'
-    );
-
     const req = makeRequest();
     const reply = makeReply();
     await entitlementPreHandler(req as never, reply as never);
@@ -349,10 +350,6 @@ describe('entitlementPreHandler modules population', () => {
         modules: ['ELA', 'MATH', 'SEL'],
       }),
     });
-
-    const { entitlementPreHandler, DEFAULT_FREE_MODULES } = await import(
-      '../../src/middleware/entitlementGuard.js'
-    );
 
     const req = makeRequest();
     const reply = makeReply();
