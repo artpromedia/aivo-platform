@@ -1,0 +1,60 @@
+{{!-- Payment Reminder Email Template --}}
+{{!-- Sent on day 3 of dunning — payment still pending --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #fef3c7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">⏰</span>
+  </div>
+</div>
+
+<h1 style="text-align: center; color: #d97706;">Payment Still Pending</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  Hi {{recipientName}},
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  We still haven't been able to process your payment. Please update your payment method within the next few days to avoid service interruption.
+</p>
+
+<!-- Payment Details -->
+<div style="background-color: #fefce8; border: 1px solid #fde68a; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; color: #92400e;">Amount Due</p>
+        <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700; color: #d97706;">{{amount}}</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="margin: 0; font-size: 14px; color: #92400e;">Plan</p>
+        <p style="margin: 4px 0 0 0; font-weight: 500; color: #d97706;">{{planName}}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Urgency Warning -->
+<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; padding: 16px; margin: 24px 0;">
+  <p style="margin: 0; color: #92400e;">
+    <strong>⚠️ Action Required</strong><br>
+    If payment is not resolved within 4 days, your account will enter limited mode and some features will be restricted.
+  </p>
+</div>
+
+<!-- CTA -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{billingPortalUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    Update Payment Method
+  </a>
+</div>
+
+<hr style="border: none; border-top: 1px solid #e4e4e7; margin: 32px 0;">
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  Need help? Contact us at
+  <a href="mailto:{{supportEmail}}" style="color: {{brandColor}};">{{supportEmail}}</a>
+</p>
+
+{{/layouts/base}}

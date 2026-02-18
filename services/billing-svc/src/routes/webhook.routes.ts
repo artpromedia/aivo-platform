@@ -40,6 +40,9 @@ interface StripeInvoice {
   status: string;
   payment_intent: string | null;
   charge: string | null;
+  hosted_invoice_url?: string;
+  customer_email?: string;
+  customer_name?: string;
   status_transitions?: {
     paid_at: number | null;
   };
@@ -218,6 +221,61 @@ async function handleInvoicePaid(
     undefined,
     ourInvoice?.id
   );
+
+  // Send payment receipt email (non-blocking)
+  const billingEmail =
+    ourInvoice?.billingAccount?.billingEmail ?? invoice.customer_email;
+
+  if (billingEmail) {
+    try {
+      const amountFormatted = `$${(invoice.amount_paid / 100).toFixed(2)}`;
+      const recipientName =
+        invoice.customer_name ??
+        ourInvoice?.billingAccount?.displayName ??
+        billingEmail.split('@')[0];
+
+      const response = await fetch(`${config.services.notify}/api/v1/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Service-Name': 'billing-svc',
+        },
+        body: JSON.stringify({
+          templateName: 'billing/payment-succeeded',
+          to: billingEmail,
+          context: {
+            recipientName,
+            amount: amountFormatted,
+            invoiceNumber: invoice.id,
+            paymentDate: new Date().toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            }),
+            invoiceUrl: invoice.hosted_invoice_url ?? '',
+            billingPortalUrl: `${config.services.auth}/billing/portal`,
+          },
+          category: 'billing',
+          tags: ['payment-receipt', 'invoice-paid'],
+        }),
+      });
+
+      if (!response.ok) {
+        logger.error(
+          { status: response.status, invoiceId: invoice.id },
+          'Failed to send payment receipt email'
+        );
+      } else {
+        logger.info({ invoiceId: invoice.id }, 'Payment receipt email sent');
+      }
+    } catch (error) {
+      // Non-blocking — don't fail the webhook if email fails
+      logger.error(
+        { error: error instanceof Error ? error.message : 'Unknown error', invoiceId: invoice.id },
+        'Error sending payment receipt email'
+      );
+    }
+  }
 }
 
 /**

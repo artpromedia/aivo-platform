@@ -457,32 +457,35 @@ export class DunningService {
       return;
     }
 
+    const billingEmail = subscription.billingAccount.billingEmail;
+    if (!billingEmail) {
+      console.warn(`[Dunning] No billing email for subscription: ${subscriptionId}`);
+      return;
+    }
+
     try {
-      // Call notify-svc to send the notification
-      const response = await fetch(`${config.services.notify}/internal/notifications`, {
+      // Call notify-svc email API to send the dunning email
+      const response = await fetch(`${config.services.notify}/api/v1/email/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Service-Name': 'billing-svc',
         },
         body: JSON.stringify({
-          tenantId,
-          userId: subscription.billingAccount.ownerUserId,
-          type: notification.type,
-          channels: ['EMAIL', 'PUSH'], // Send via both email and push
-          priority: notification.priority,
-          payload: {
+          templateName: `billing/${notification.template}`,
+          to: billingEmail,
+          context: {
+            recipientName: billingEmail.split('@')[0],
             subject: notification.subject,
-            message: notification.message,
-            template: notification.template,
-            subscriptionId,
+            amount: (subscription as Record<string, unknown>).amountDueCents
+              ? `$${(Number((subscription as Record<string, unknown>).amountDueCents) / 100).toFixed(2)}`
+              : '',
+            planName: (subscription as Record<string, unknown>).planId ?? '',
             billingPortalUrl: `${config.services.auth}/billing/portal`,
-          },
-          metadata: {
-            source: 'dunning',
-            stage,
             subscriptionId,
           },
+          category: 'billing',
+          tags: ['dunning', stage],
         }),
       });
 

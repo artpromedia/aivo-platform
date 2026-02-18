@@ -1,0 +1,86 @@
+{{!-- Payment Succeeded Email Template --}}
+{{!-- Sent when a dunning issue is resolved or after successful payment --}}
+
+{{#> layouts/base}}
+
+<div style="text-align: center; margin-bottom: 24px;">
+  <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto;">
+    <span style="font-size: 28px;">✅</span>
+  </div>
+</div>
+
+<h1 style="text-align: center; color: #059669;">Payment Successful</h1>
+
+<p style="text-align: center; font-size: 18px;">
+  Hi {{recipientName}},
+</p>
+
+<p style="text-align: center; color: #52525b;">
+  Great news! Your payment was processed successfully and full access to all features has been restored.
+</p>
+
+<!-- Payment Details -->
+<div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; margin: 24px 0;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td>
+        <p style="margin: 0; font-size: 14px; color: #166534;">Amount Paid</p>
+        <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 700; color: #059669;">{{amount}}</p>
+      </td>
+      <td style="text-align: right;">
+        <p style="margin: 0; font-size: 14px; color: #166534;">Plan</p>
+        <p style="margin: 4px 0 0 0; font-weight: 500; color: #059669;">{{planName}}</p>
+      </td>
+    </tr>
+  </table>
+
+  {{#if invoiceNumber}}
+  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #bbf7d0;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+      <tr>
+        <td>
+          <p style="margin: 0; font-size: 14px; color: #166534;">Invoice</p>
+          <p style="margin: 4px 0 0 0; font-weight: 500; color: #059669;">{{invoiceNumber}}</p>
+        </td>
+        <td style="text-align: right;">
+          <p style="margin: 0; font-size: 14px; color: #166534;">Date</p>
+          <p style="margin: 4px 0 0 0; font-weight: 500; color: #059669;">{{paymentDate}}</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+  {{/if}}
+</div>
+
+<!-- Access Restored -->
+<div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0; color: #166534;">
+    <strong>🎉 Full access restored</strong><br>
+    All features and content are available again. Thank you for resolving the payment!
+  </p>
+</div>
+
+{{#if invoiceUrl}}
+<!-- View Invoice -->
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{invoiceUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block; margin-right: 8px;">
+    View Invoice
+  </a>
+  <a href="{{billingPortalUrl}}" class="btn-secondary" style="background-color: #ffffff; color: {{brandColor}}; text-decoration: none; padding: 14px 32px; border: 2px solid {{brandColor}}; border-radius: 8px; font-weight: 600; display: inline-block;">
+    Manage Billing
+  </a>
+</div>
+{{else}}
+<div style="text-align: center; margin: 32px 0;">
+  <a href="{{billingPortalUrl}}" class="btn-primary" style="background-color: {{brandColor}}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+    Manage Billing
+  </a>
+</div>
+{{/if}}
+
+<p style="text-align: center; color: #71717a; font-size: 14px;">
+  Questions about billing?
+  <a href="mailto:{{supportEmail}}" style="color: {{brandColor}};">{{supportEmail}}</a>
+</p>
+
+{{/layouts/base}}

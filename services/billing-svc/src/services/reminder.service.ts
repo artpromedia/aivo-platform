@@ -9,6 +9,7 @@
  */
 
 import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
+import { config } from '../config.js';
 import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -503,7 +504,7 @@ class ReminderService {
   }
 
   /**
-   * Send trial reminder notification via event bus
+   * Send trial reminder notification via email (notify-svc) and event bus
    */
   private async sendTrialReminderNotification(reminder: {
     id: string;
@@ -521,19 +522,64 @@ class ReminderService {
       (reminder.trialEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
     );
 
-    // Determine notification template based on reminder type
-    const templateMap: Record<ReminderType, string> = {
-      TRIAL_ENDING_14_DAYS: 'trial-ending-14-days',
-      TRIAL_ENDING_7_DAYS: 'trial-ending-7-days',
-      TRIAL_ENDING_48_HOURS: 'trial-ending-48-hours',
-      PAYMENT_CHARGE_NOTICE: 'payment-charge-notice-48-hours',
-      PILOT_ENDING_14_DAYS: 'pilot-ending-14-days',
-      PILOT_ENDING_7_DAYS: 'pilot-ending-7-days',
-      PILOT_ENDING_48_HOURS: 'pilot-ending-48-hours',
-      CONVERSION_OPPORTUNITY: 'conversion-opportunity',
-    };
+    // Determine human-readable label for days remaining
+    const daysRemainingLabel =
+      daysRemaining > 2 ? `in ${daysRemaining} Days` : 'in Less Than 48 Hours';
 
-    // Publish event for notify-svc to pick up
+    // Format charge amount for display
+    const chargeAmount = reminder.chargeAmountCents
+      ? `$${(reminder.chargeAmountCents / 100).toFixed(2)}`
+      : '';
+
+    // Format trial end date for display
+    const trialEndDateFormatted = reminder.trialEndDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    // Send email directly via notify-svc
+    if (reminder.emailAddress) {
+      try {
+        const response = await fetch(`${config.services.notify}/api/v1/email/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'billing-svc',
+          },
+          body: JSON.stringify({
+            templateName: 'billing/trial-ending',
+            to: reminder.emailAddress,
+            context: {
+              recipientName: reminder.emailAddress.split('@')[0],
+              daysRemaining,
+              daysRemainingLabel,
+              trialEndDate: trialEndDateFormatted,
+              hasPaymentMethod: reminder.hasPaymentMethod,
+              chargeAmount,
+              billingPortalUrl: `${config.services.auth}/billing/portal`,
+            },
+            category: 'billing',
+            tags: ['trial-reminder', reminder.type.toLowerCase()],
+          }),
+        });
+
+        if (!response.ok) {
+          console.error(`[Reminder] Email send failed:`, {
+            status: response.status,
+            reminderId: reminder.id,
+          });
+        }
+      } catch (error) {
+        // Non-blocking — don't fail the reminder if email fails
+        console.error(`[Reminder] Failed to send email:`, {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          reminderId: reminder.id,
+        });
+      }
+    }
+
+    // Also publish event for other consumers (analytics, push notifications, etc.)
     await billingEventPublisher.publish(
       BillingEventType.REMINDER_TRIAL_ENDING,
       { tenantId: reminder.tenantId },
@@ -542,7 +588,7 @@ class ReminderService {
         subscriptionId: reminder.subscriptionId,
         userId: reminder.userId,
         type: reminder.type,
-        template: templateMap[reminder.type],
+        template: 'billing/trial-ending',
         emailAddress: reminder.emailAddress,
         hasPaymentMethod: reminder.hasPaymentMethod,
         chargeAmountCents: reminder.chargeAmountCents,

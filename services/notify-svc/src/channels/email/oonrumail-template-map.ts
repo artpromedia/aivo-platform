@@ -217,7 +217,7 @@ export const TEMPLATE_MAP: Readonly<Record<string, TemplateMapping>> = {
   },
 
   // ──────────────────────────────────────────────────────────────────────────
-  // BILLING (stub — templates may not exist on OonruMail yet)
+  // BILLING
   // ──────────────────────────────────────────────────────────────────────────
 
   'billing/payment-receipt': {
@@ -229,6 +229,26 @@ export const TEMPLATE_MAP: Readonly<Record<string, TemplateMapping>> = {
       invoice_number: str(ctx, 'invoiceNumber', ''),
       payment_date: str(ctx, 'paymentDate', new Date().toISOString()),
       plan_name: str(ctx, 'planName', ''),
+      billing_portal_url: str(ctx, 'billingPortalUrl', ''),
+      invoice_url: str(ctx, 'invoiceUrl', ''),
+      app_name: ctx.appName,
+      app_url: ctx.appUrl,
+      support_email: ctx.supportEmail,
+      current_year: ctx.currentYear,
+    }),
+  },
+
+  'billing/payment-succeeded': {
+    oonruMailTemplateConfigKey: 'paymentReceipt',
+    transformContext: (ctx) => ({
+      user_name: str(ctx, 'userName', ctx.recipientName ?? 'Customer'),
+      amount: str(ctx, 'amount', '0.00'),
+      currency: str(ctx, 'currency', 'USD'),
+      invoice_number: str(ctx, 'invoiceNumber', ''),
+      payment_date: str(ctx, 'paymentDate', new Date().toISOString()),
+      plan_name: str(ctx, 'planName', ''),
+      billing_portal_url: str(ctx, 'billingPortalUrl', ''),
+      invoice_url: str(ctx, 'invoiceUrl', ''),
       app_name: ctx.appName,
       app_url: ctx.appUrl,
       support_email: ctx.supportEmail,
