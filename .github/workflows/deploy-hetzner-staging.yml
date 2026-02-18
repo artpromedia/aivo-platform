@@ -44,7 +44,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/artpromedia
   NODE_VERSION: '22.22.0'
-  PNPM_VERSION: '9.12.0'
+  PNPM_VERSION: '10.29.3'
   NAMESPACE: aivo-staging
   # SSH target — Server 2 (K3s control plane)
   DEPLOY_HOST: ${{ secrets.HETZNER_APP1_HOST }}

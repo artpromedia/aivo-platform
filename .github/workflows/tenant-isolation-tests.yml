@@ -80,7 +80,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9.12.0
+          version: 10.29.3
           run_install: false
 
       - name: Setup Node
@@ -445,7 +445,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9.12.0
+          version: 10.29.3
           run_install: false
 
       - name: Setup Node
