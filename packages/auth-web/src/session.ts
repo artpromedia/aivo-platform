@@ -119,9 +119,9 @@ export async function getServerSession(): Promise<AuthSession | null> {
   // (which doesn't have access to `next/headers`).
 
   const { cookies } = await import('next/headers');
-  // In Next.js 14 cookies() is synchronous; Next.js 15+ makes it async.
+  // Next.js 15+ cookies() is async.
 
-  const store = cookies();
+  const store = await cookies();
 
   const token: string | undefined = store.get(ACCESS_COOKIE)?.value;
   if (!token) return null;
