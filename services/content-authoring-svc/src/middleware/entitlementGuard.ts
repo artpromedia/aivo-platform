@@ -29,6 +29,7 @@ export interface EntitlementInfo {
   limitedMode: boolean;
   features: Record<string, boolean>;
   limits: Record<string, number | null>;
+  modules: string[];
 }
 
 /** Shape of billing-svc GET /entitlements response */
@@ -38,6 +39,7 @@ interface EntitlementsResponse {
   inGracePeriod: boolean;
   features: Record<string, boolean>;
   limits: Record<string, number | null>;
+  modules: string[];
 }
 
 /** Shape of billing-svc POST /entitlements/check-limit response */
@@ -79,6 +81,17 @@ const billingClient = new BillingAccessClient({
 /** Minimum plan required for each feature (used in upgrade prompts). */
 const FEATURE_MIN_PLAN: Record<string, string> = {
   collaboration: 'PREMIUM',
+};
+
+/** Default modules for FREE tier (fallback when billing-svc is unreachable). */
+export const DEFAULT_FREE_MODULES = ['ELA', 'MATH'];
+
+/** Minimum plan required to access a given module. */
+export const MODULE_MIN_PLAN: Record<string, string> = {
+  SEL: 'PRO',
+  SCIENCE: 'PREMIUM',
+  SPEECH: 'PREMIUM',
+  EXECUTIVE_FUNCTION: 'PREMIUM',
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -224,6 +237,7 @@ export async function entitlementPreHandler(
       limitedMode: false,
       features: {},
       limits: {},
+      modules: [...DEFAULT_FREE_MODULES],
     };
     return;
   }
@@ -235,6 +249,7 @@ export async function entitlementPreHandler(
     limitedMode: false,
     features: ent?.features ?? {},
     limits: ent?.limits ?? {},
+    modules: ent?.modules ?? [...DEFAULT_FREE_MODULES],
   };
 }
 

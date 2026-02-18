@@ -14,6 +14,8 @@ import {
   entitlementPreHandler,
   requireFeature,
   requireLimit,
+  DEFAULT_FREE_MODULES,
+  MODULE_MIN_PLAN,
 } from '../middleware/entitlementGuard.js';
 import { prisma } from '../prisma.js';
 import * as sharingService from '../services/content-sharing.service.js';
@@ -189,6 +191,34 @@ export async function sharingRoutes(fastify: FastifyInstance) {
       const { id: contentShareId } = paramsResult.data;
       const { title } = bodyResult.data;
 
+      // Module access gate — verify the original content's subject is allowed
+      try {
+        const shareWithSubject = await prisma.contentShare.findUnique({
+          where: { id: contentShareId },
+          include: { learningObject: { select: { subject: true } } },
+        });
+
+        if (shareWithSubject) {
+          const entitledModules = request.entitlements?.modules ?? [...DEFAULT_FREE_MODULES];
+          const subject = shareWithSubject.learningObject.subject;
+          if (!entitledModules.includes(subject)) {
+            const minPlan = MODULE_MIN_PLAN[subject] ?? 'PRO';
+            return reply.status(403).send({
+              error: 'MODULE_NOT_AVAILABLE',
+              message: `Your plan does not include access to ${subject} content.`,
+              code: 'BILLING_MODULE_GATE',
+              upgradePrompt: {
+                requiredPlan: minPlan,
+                message: `Upgrade to ${minPlan} to access ${subject} content.`,
+              },
+            });
+          }
+        }
+      } catch (lookupErr) {
+        // Fail open — if we can't check, let the fork proceed
+        fastify.log.warn(lookupErr, 'Module access lookup failed during fork');
+      }
+
       try {
         const result = await sharingService.forkContent({
           contentShareId,
@@ -228,7 +258,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.get(
     '/content/shared',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const user = getUserFromRequest(request);
       if (!user) {
@@ -247,11 +277,15 @@ export async function sharingRoutes(fastify: FastifyInstance) {
 
       const tags = tagsString ? tagsString.split(',').map((t) => t.trim()) : undefined;
 
+      // Module filter: use entitlements from middleware, fallback to FREE modules
+      const entitledModules = request.entitlements?.modules ?? [...DEFAULT_FREE_MODULES];
+
       try {
         const result = await sharingService.browseSharedContent({
           ...queryParams,
           tags,
           tenantId: user.tenantId ?? null,
+          entitledModules,
         });
 
         return reply.send(result);
@@ -512,7 +546,7 @@ export async function sharingRoutes(fastify: FastifyInstance) {
    */
   fastify.post(
     '/content/:id/download',
-    { preHandler: [requireAuth] },
+    { preHandler: [requireAuth, entitlementPreHandler] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const paramsResult = ContentIdParamsSchema.safeParse(request.params);
       if (!paramsResult.success) {
@@ -523,6 +557,34 @@ export async function sharingRoutes(fastify: FastifyInstance) {
       }
 
       const { id: contentShareId } = paramsResult.data;
+
+      // Module access gate — verify the content's subject is allowed
+      try {
+        const shareWithSubject = await prisma.contentShare.findUnique({
+          where: { id: contentShareId },
+          include: { learningObject: { select: { subject: true } } },
+        });
+
+        if (shareWithSubject) {
+          const entitledModules = request.entitlements?.modules ?? [...DEFAULT_FREE_MODULES];
+          const subject = shareWithSubject.learningObject.subject;
+          if (!entitledModules.includes(subject)) {
+            const minPlan = MODULE_MIN_PLAN[subject] ?? 'PRO';
+            return reply.status(403).send({
+              error: 'MODULE_NOT_AVAILABLE',
+              message: `Your plan does not include access to ${subject} content.`,
+              code: 'BILLING_MODULE_GATE',
+              upgradePrompt: {
+                requiredPlan: minPlan,
+                message: `Upgrade to ${minPlan} to access ${subject} content.`,
+              },
+            });
+          }
+        }
+      } catch (lookupErr) {
+        // Fail open — if we can't check, let the download proceed
+        fastify.log.warn(lookupErr, 'Module access lookup failed during download');
+      }
 
       try {
         await sharingService.incrementDownloadCount(contentShareId);

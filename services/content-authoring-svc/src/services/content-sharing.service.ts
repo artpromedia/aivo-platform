@@ -58,6 +58,8 @@ export interface BrowseSharedContentParams {
   schoolId?: string | null;
   page?: number;
   pageSize?: number;
+  /** Restrict results to these modules/subjects based on plan entitlement */
+  entitledModules?: string[];
 }
 
 /**
@@ -298,9 +300,17 @@ export async function browseSharedContent(params: BrowseSharedContentParams) {
     where.OR = visibilityConditions;
   }
 
+  // Module access filter — only show content the user's plan allows
+  if (params.entitledModules && params.entitledModules.length > 0) {
+    where.learningObject = {
+      ...where.learningObject,
+      subject: { in: params.entitledModules },
+    };
+  }
+
   // Learning object filters
   if (subject || gradeBand || searchQuery) {
-    where.learningObject = {};
+    if (!where.learningObject) where.learningObject = {};
 
     if (subject) {
       where.learningObject.subject = subject as any;
