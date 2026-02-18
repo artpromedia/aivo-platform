@@ -622,7 +622,6 @@ jobs:
           - payments-svc
           - parent-svc
           - baseline-svc
-          - consent-svc
           - profile-svc
           - personalization-svc
           - life-skills-svc
@@ -707,7 +706,7 @@ jobs:
           VERSION="main-${{ github.sha }}"
           SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
                     analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    billing-svc payments-svc parent-svc baseline-svc \
                     profile-svc personalization-svc life-skills-svc)
           
           # Update image tags
@@ -743,7 +742,7 @@ jobs:
           VERSION="${{ github.event.release.tag_name || github.sha }}"
           SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
                     analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc consent-svc \
+                    billing-svc payments-svc parent-svc baseline-svc \
                     profile-svc personalization-svc life-skills-svc)
           
           # Update image tags
