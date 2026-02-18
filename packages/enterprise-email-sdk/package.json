@@ -1,0 +1,23 @@
+{
+  "name": "@enterprise-email/aivolearning-email",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OonruMail SDK stub for local development - will be replaced by the real package when available",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

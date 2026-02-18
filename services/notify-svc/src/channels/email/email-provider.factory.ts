@@ -2,8 +2,7 @@
  * Email Provider Factory
  *
  * Manages email provider lifecycle with automatic failover.
- * Primary provider: SendGrid
- * Fallback provider: AWS SES
+ * Supports: SendGrid, AWS SES, OonruMail
  *
  * Features:
  * - Automatic health monitoring
@@ -14,6 +13,7 @@
 
 import { config } from '../../config.js';
 
+import { oonruMailProvider } from './oonrumail.js';
 import { sendGridProvider } from './sendgrid.js';
 import { sesProvider } from './ses.js';
 import type {
@@ -31,7 +31,7 @@ import type {
 const HEALTH_CHECK_INTERVAL_MS = 30_000; // 30 seconds
 const PROVIDER_RECOVERY_DELAY_MS = 60_000; // 1 minute before retrying failed provider
 
-type ProviderName = 'sendgrid' | 'ses';
+type ProviderName = 'sendgrid' | 'ses' | 'oonrumail';
 
 interface ProviderState {
   provider: EmailProvider;
@@ -63,7 +63,13 @@ class EmailProviderManager {
 
     // Determine primary provider from config
     const configuredProvider = config.email.primaryProvider;
-    this.primaryProvider = (configuredProvider === 'ses' ? 'ses' : 'sendgrid');
+    if (configuredProvider === 'ses') {
+      this.primaryProvider = 'ses';
+    } else if (configuredProvider === 'oonrumail') {
+      this.primaryProvider = 'oonrumail';
+    } else {
+      this.primaryProvider = 'sendgrid';
+    }
 
     // Initialize SendGrid
     try {
@@ -91,6 +97,22 @@ class EmailProviderManager {
       console.log('[EmailProviderManager] SES:', sesInitialized ? 'ready' : 'unavailable');
     } catch (error) {
       console.error('[EmailProviderManager] SES init error:', error);
+    }
+
+    // Initialize OonruMail
+    if (config.email.oonrumail.enabled) {
+      try {
+        const oonruInitialized = await oonruMailProvider.initialize();
+        this.providers.set('oonrumail', {
+          provider: oonruMailProvider,
+          failureCount: 0,
+          lastFailure: null,
+          lastSuccess: null,
+        });
+        console.log('[EmailProviderManager] OonruMail:', oonruInitialized ? 'ready' : 'unavailable');
+      } catch (error) {
+        console.error('[EmailProviderManager] OonruMail init error:', error);
+      }
     }
 
     // Set current provider to primary if healthy, otherwise fallback

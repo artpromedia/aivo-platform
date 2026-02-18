@@ -87,7 +87,7 @@ export interface TemplateEmailOptions {
 // PROVIDER TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type EmailProviderType = 'sendgrid' | 'ses' | 'none';
+export type EmailProviderType = 'sendgrid' | 'ses' | 'oonrumail' | 'none';
 
 export interface EmailProviderConfig {
   type: EmailProviderType;
@@ -110,6 +110,15 @@ export interface SESConfig extends EmailProviderConfig {
   accessKeyId?: string;
   secretAccessKey?: string;
   configurationSetName?: string;
+}
+
+export interface OonruMailConfig extends EmailProviderConfig {
+  type: 'oonrumail';
+  apiKey: string;
+  baseUrl?: string;
+  webhookSecret?: string;
+  useServerTemplates: boolean;
+  timeout?: number;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

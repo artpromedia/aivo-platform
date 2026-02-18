@@ -46,7 +46,7 @@ export const config = {
     replyToEmail: process.env.EMAIL_REPLY_TO ?? 'support@aivo.app',
     
     // Provider selection
-    primaryProvider: process.env.EMAIL_PRIMARY_PROVIDER ?? 'sendgrid', // 'sendgrid' | 'ses'
+    primaryProvider: process.env.EMAIL_PRIMARY_PROVIDER ?? 'sendgrid', // 'sendgrid' | 'ses' | 'oonrumail'
     fallbackProvider: process.env.EMAIL_FALLBACK_PROVIDER ?? 'ses',
     fallbackEnabled: process.env.EMAIL_FALLBACK_ENABLED !== 'false',
     
@@ -77,6 +77,29 @@ export const config = {
         welcome: process.env.SES_TEMPLATE_WELCOME ?? '',
         passwordReset: process.env.SES_TEMPLATE_PASSWORD_RESET ?? '',
         emailVerification: process.env.SES_TEMPLATE_EMAIL_VERIFICATION ?? '',
+      },
+    },
+    
+    // OonruMail configuration
+    oonrumail: {
+      enabled: process.env.OONRUMAIL_ENABLED === 'true',
+      apiKey: process.env.OONRUMAIL_API_KEY ?? '',
+      baseUrl: process.env.OONRUMAIL_BASE_URL ?? 'https://api.oonrumail.com/v1',
+      webhookSecret: process.env.OONRUMAIL_WEBHOOK_SECRET ?? '',
+      useServerTemplates: process.env.OONRUMAIL_USE_SERVER_TEMPLATES === 'true',
+      timeout: Number.parseInt(process.env.OONRUMAIL_TIMEOUT ?? '30000', 10),
+      sandboxMode: process.env.OONRUMAIL_SANDBOX_MODE === 'true',
+      // OonruMail server-side template IDs (optional, can use local Handlebars templates instead)
+      templates: {
+        welcome: process.env.OONRUMAIL_TEMPLATE_WELCOME ?? '',
+        passwordReset: process.env.OONRUMAIL_TEMPLATE_PASSWORD_RESET ?? '',
+        emailVerification: process.env.OONRUMAIL_TEMPLATE_EMAIL_VERIFICATION ?? '',
+        paymentReceipt: process.env.OONRUMAIL_TEMPLATE_PAYMENT_RECEIPT ?? '',
+        lessonReminder: process.env.OONRUMAIL_TEMPLATE_LESSON_REMINDER ?? '',
+        courseCompletion: process.env.OONRUMAIL_TEMPLATE_COURSE_COMPLETION ?? '',
+        assignmentSubmitted: process.env.OONRUMAIL_TEMPLATE_ASSIGNMENT_SUBMITTED ?? '',
+        assignmentGraded: process.env.OONRUMAIL_TEMPLATE_ASSIGNMENT_GRADED ?? '',
+        instructorNewEnrollment: process.env.OONRUMAIL_TEMPLATE_INSTRUCTOR_NEW_ENROLLMENT ?? '',
       },
     },
     

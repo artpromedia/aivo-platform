@@ -2,7 +2,7 @@
  * Email Channel Module
  *
  * Production-ready email sending system with:
- * - SendGrid (primary) and AWS SES (fallback) providers
+ * - SendGrid (primary), AWS SES (fallback), and OonruMail providers
  * - Handlebars template engine with i18n
  * - Email validation (format, MX, disposable detection)
  * - Suppression list management
@@ -23,6 +23,7 @@ export type {
   SuppressionReason,
   EmailTemplateContext,
   SupportedLocale,
+  OonruMailConfig,
 } from './types.js';
 
 // Main email service
@@ -55,6 +56,7 @@ export {
 // Providers
 export { sendGridProvider, createSendGridProvider } from './sendgrid.js';
 export { sesProvider, createSESProvider } from './ses.js';
+export { oonruMailProvider, createOonruMailProvider } from './oonrumail.js';
 
 // Provider factory
 export {
