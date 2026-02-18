@@ -79,6 +79,9 @@ export enum BillingEventType {
   USAGE_LIMIT_WARNING = 'billing.usage.limit_warning',
   USAGE_LIMIT_EXCEEDED = 'billing.usage.limit_exceeded',
   USAGE_RECORDED = 'billing.usage.recorded',
+  USAGE_COUNTER_INCREMENTED = 'billing.usage.counter_incremented',
+  USAGE_COUNTER_DECREMENTED = 'billing.usage.counter_decremented',
+  USAGE_COUNTERS_RECONCILED = 'billing.usage.counters_reconciled',
 
   // Checkout Events
   CHECKOUT_STARTED = 'billing.checkout.started',

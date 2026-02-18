@@ -3593,3 +3593,42 @@ model PaymentTransaction {
   @@index([status])
   @@map("payment_transactions")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// USAGE COUNTERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks real-time usage counters per tenant for entitlement enforcement.
+/// Counters are updated via events from other services and periodically
+/// reconciled to ensure accuracy.
+model UsageCounter {
+  /// Unique identifier
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// Tenant this counter belongs to
+  tenantId      String   @map("tenant_id") @db.Uuid
+
+  /// Counter type: 'learners', 'teachers', 'admins', 'sessionsThisMonth',
+  /// 'contentItems', 'assessments', 'storageBytes', 'apiCallsThisMonth'
+  counterType   String   @map("counter_type") @db.VarChar(50)
+
+  /// Current counter value
+  currentValue  Int      @default(0) @map("current_value")
+
+  /// Period start for time-bounded counters (e.g., monthly sessions)
+  periodStart   DateTime? @map("period_start") @db.Timestamptz
+
+  /// Period end for time-bounded counters
+  periodEnd     DateTime? @map("period_end") @db.Timestamptz
+
+  /// Last reconciliation timestamp
+  reconciledAt  DateTime? @map("reconciled_at") @db.Timestamptz
+
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([tenantId, counterType])
+  @@index([tenantId])
+  @@index([counterType])
+  @@map("usage_counters")
+}

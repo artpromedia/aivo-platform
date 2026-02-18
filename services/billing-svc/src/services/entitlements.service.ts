@@ -11,6 +11,7 @@
 import { PLAN_ENTITLEMENTS, type Plan, type Entitlements, type PlanFeatures, type PlanLimits } from '../config/plans.config.js';
 import { stripeConfig } from '../config/stripe.config.js';
 import { prisma } from '../prisma.js';
+import { usageTrackingService, LIMIT_TO_COUNTER, type CounterType } from './usage-tracking.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -341,26 +342,33 @@ export class EntitlementsService {
   // PRIVATE HELPERS
   // ════════════════════════════════════════════════════════════════════════════
 
-  private async countLearners(_tenantId: string): Promise<number> {
-    // This would query the actual user/learner table
-    // Placeholder implementation
-    return 0;
+  private async countLearners(tenantId: string): Promise<number> {
+    return usageTrackingService.get(tenantId, 'learners');
   }
 
-  private async countTeachers(_tenantId: string): Promise<number> {
-    // This would query the actual user/teacher table
-    return 0;
+  private async countTeachers(tenantId: string): Promise<number> {
+    return usageTrackingService.get(tenantId, 'teachers');
   }
 
-  private async countAdmins(_tenantId: string): Promise<number> {
-    // This would query the actual user/admin table
-    return 0;
+  private async countAdmins(tenantId: string): Promise<number> {
+    return usageTrackingService.get(tenantId, 'admins');
   }
 
-  private async getCurrentUsage(_tenantId: string, _limitType: keyof PlanLimits): Promise<number> {
-    // This would query actual usage metrics based on limitType
-    // Placeholder implementation - returns 0 for all limit types
-    return 0;
+  private async getCurrentUsage(tenantId: string, limitType: keyof PlanLimits): Promise<number> {
+    const counterType = LIMIT_TO_COUNTER[limitType];
+    if (!counterType) {
+      // No counter mapped for this limit type (e.g. dataRetentionDays)
+      return 0;
+    }
+
+    const raw = await usageTrackingService.get(tenantId, counterType);
+
+    // storageGb limit is in GB, but we store bytes — convert for comparison
+    if (limitType === 'storageGb') {
+      return raw / 1_073_741_824; // bytes → GB
+    }
+
+    return raw;
   }
 
   private findPlanWithFeature(feature: keyof PlanFeatures): Plan | null {

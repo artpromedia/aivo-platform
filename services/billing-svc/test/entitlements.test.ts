@@ -26,8 +26,32 @@ vi.mock('../src/prisma.js', () => ({
     moduleSubscription: {
       findMany: vi.fn(),
     },
+    usageCounter: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
+    },
   },
 }));
+
+// Mock usage-tracking service so entitlements tests are isolated
+vi.mock('../src/services/usage-tracking.service.js', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../src/services/usage-tracking.service.js')>();
+  return {
+    ...mod,
+    usageTrackingService: {
+      get: vi.fn().mockResolvedValue(0),
+      increment: vi.fn().mockResolvedValue(0),
+      decrement: vi.fn().mockResolvedValue(0),
+      set: vi.fn().mockResolvedValue(undefined),
+      getAllCounters: vi.fn().mockResolvedValue({ tenantId: '', counters: [] }),
+      resetMonthlyCounters: vi.fn().mockResolvedValue(undefined),
+      resetExpiredPeriods: vi.fn().mockResolvedValue(0),
+      reconcileSeats: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
 
 // ============================================================================
 // Test Fixtures
