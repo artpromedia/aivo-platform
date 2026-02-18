@@ -5,3 +5,4 @@ export { registerLearnerSettingsRoutes } from './learner-settings.js';
 export { registerInAppRoutes } from './in-app.js';
 export { registerWebhookRoutes } from './webhooks.js';
 export { registerEmailRoutes } from './email.js';
+export { registerOonruMailWebhookRoutes } from './oonrumail-webhook.js';

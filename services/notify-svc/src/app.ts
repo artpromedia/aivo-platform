@@ -25,6 +25,7 @@ import {
   registerInAppRoutes,
   registerWebhookRoutes,
   registerEmailRoutes,
+  registerOonruMailWebhookRoutes,
 } from './routes/index.js';
 
 // Type assertion helper for Fastify plugins with type provider mismatches
@@ -184,6 +185,11 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerInAppRoutes(app);
   await registerWebhookRoutes(app);
   await registerEmailRoutes(app);
+
+  // OonruMail webhook (only when provider is enabled)
+  if (config.email.oonrumail.enabled) {
+    await app.register(registerOonruMailWebhookRoutes, { prefix: '/api/v1' });
+  }
 
   // Onboarding routes (internal API for cross-app flows)
   await app.register(onboardingRoutes, { prefix: '/onboarding' });

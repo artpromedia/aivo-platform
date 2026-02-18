@@ -21,12 +21,18 @@ const {
   mockSendBatch,
   mockCancelScheduled,
   mockHealth,
+  mockPrisma,
 } = vi.hoisted(() => ({
   mockSend: vi.fn(),
   mockSendTemplate: vi.fn(),
   mockSendBatch: vi.fn(),
   mockCancelScheduled: vi.fn(),
   mockHealth: vi.fn(),
+  mockPrisma: {
+    emailSuppression: {
+      findUnique: vi.fn().mockResolvedValue(null),
+    },
+  },
 }));
 
 // Error classes shared between mock and tests
@@ -128,6 +134,19 @@ vi.mock('../../../config.js', () => ({
   },
 }));
 
+// Mock prisma
+vi.mock('../../../prisma.js', () => ({
+  prisma: mockPrisma,
+  SuppressionReason: {
+    HARD_BOUNCE: 'HARD_BOUNCE',
+    SOFT_BOUNCE: 'SOFT_BOUNCE',
+    SPAM_COMPLAINT: 'SPAM_COMPLAINT',
+    UNSUBSCRIBED: 'UNSUBSCRIBED',
+    INVALID_EMAIL: 'INVALID_EMAIL',
+    MANUAL: 'MANUAL',
+  },
+}));
+
 import { AivolearningEmail } from '@enterprise-email/aivolearning-email';
 
 import { createOonruMailProvider } from '../oonrumail.js';
@@ -155,6 +174,8 @@ describe('OonruMailProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset suppression check default — findUnique returns null (not suppressed)
+    mockPrisma.emailSuppression.findUnique.mockResolvedValue(null);
     provider = createOonruMailProvider();
   });
 
@@ -380,6 +401,106 @@ describe('OonruMailProvider', () => {
           metadata: expect.objectContaining({ priority: 'high' }),
         }),
       );
+    });
+
+    // ── Suppression pre-check ─────────────────────────────────────────────
+
+    it('should block send for HARD_BOUNCE-suppressed recipient', async () => {
+      mockPrisma.emailSuppression.findUnique.mockResolvedValue({
+        id: 'sup-1',
+        email: 'student@example.com',
+        reason: 'HARD_BOUNCE',
+      });
+
+      const result = await provider.send(baseSendOptions);
+
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe('SUPPRESSED');
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('should block send for SPAM_COMPLAINT-suppressed recipient', async () => {
+      mockPrisma.emailSuppression.findUnique.mockResolvedValue({
+        id: 'sup-2',
+        email: 'student@example.com',
+        reason: 'SPAM_COMPLAINT',
+      });
+
+      const result = await provider.send(baseSendOptions);
+
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe('SUPPRESSED');
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('should allow send for non-suppressed recipient', async () => {
+      mockPrisma.emailSuppression.findUnique.mockResolvedValue(null);
+      mockSend.mockResolvedValue({
+        messageId: 'om-msg-010',
+        status: 'accepted',
+        acceptedAt: new Date().toISOString(),
+      });
+
+      const result = await provider.send(baseSendOptions);
+
+      expect(result.success).toBe(true);
+      expect(mockSend).toHaveBeenCalled();
+    });
+
+    it('should allow send for SOFT_BOUNCE-suppressed recipient', async () => {
+      mockPrisma.emailSuppression.findUnique.mockResolvedValue({
+        id: 'sup-3',
+        email: 'student@example.com',
+        reason: 'SOFT_BOUNCE',
+      });
+      mockSend.mockResolvedValue({
+        messageId: 'om-msg-011',
+        status: 'accepted',
+        acceptedAt: new Date().toISOString(),
+      });
+
+      const result = await provider.send(baseSendOptions);
+
+      // Soft bounces should NOT permanently suppress
+      expect(result.success).toBe(true);
+      expect(mockSend).toHaveBeenCalled();
+    });
+
+    it('should proceed with send if suppression check itself fails', async () => {
+      mockPrisma.emailSuppression.findUnique.mockRejectedValue(
+        new Error('Database connection lost'),
+      );
+      mockSend.mockResolvedValue({
+        messageId: 'om-msg-012',
+        status: 'accepted',
+        acceptedAt: new Date().toISOString(),
+      });
+
+      const result = await provider.send(baseSendOptions);
+
+      // Suppression check failure is non-fatal
+      expect(result.success).toBe(true);
+      expect(mockSend).toHaveBeenCalled();
+    });
+
+    it('should extract primary recipient from array for suppression check', async () => {
+      mockPrisma.emailSuppression.findUnique.mockResolvedValue({
+        id: 'sup-4',
+        email: 'a@example.com',
+        reason: 'HARD_BOUNCE',
+      });
+
+      const result = await provider.send({
+        ...baseSendOptions,
+        to: ['a@example.com', 'b@example.com'],
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.errorCode).toBe('SUPPRESSED');
+      expect(mockPrisma.emailSuppression.findUnique).toHaveBeenCalledWith({
+        where: { email: 'a@example.com' },
+        select: { reason: true },
+      });
     });
   });
 

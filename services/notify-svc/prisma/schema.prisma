@@ -567,6 +567,7 @@ enum EmailStatus {
 enum EmailProvider {
   SENDGRID          // SendGrid
   SES               // AWS SES
+  OONRUMAIL         // OonruMail
 
   @@map("email_provider")
 }
@@ -621,6 +622,7 @@ model EmailLog {
   sentAt            DateTime?      @map("sent_at") @db.Timestamptz
   deliveredAt       DateTime?      @map("delivered_at") @db.Timestamptz
   openedAt          DateTime?      @map("opened_at") @db.Timestamptz
+  openCount         Int            @default(0) @map("open_count")
   clickedAt         DateTime?      @map("clicked_at") @db.Timestamptz
   bouncedAt         DateTime?      @map("bounced_at") @db.Timestamptz
   
@@ -661,6 +663,8 @@ model EmailSuppression {
   bounceType        String?           @map("bounce_type")
   bounceSubType     String?           @map("bounce_sub_type")
   diagnosticCode    String?           @map("diagnostic_code")
+  bounceCount       Int               @default(0) @map("bounce_count")
+  spamReported      Boolean           @default(false) @map("spam_reported")
   
   // Timestamps
   createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz
@@ -671,6 +675,25 @@ model EmailSuppression {
   @@index([source])
   @@index([expiresAt])
   @@map("email_suppressions")
+}
+
+/// Email click tracking
+model EmailClick {
+  id                String         @id @default(uuid()) @db.Uuid
+  
+  // Click details
+  messageId         String         @map("message_id")
+  email             String
+  url               String         @db.Text
+  clickedAt         DateTime       @map("clicked_at") @db.Timestamptz
+  
+  // Timestamps
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([messageId])
+  @@index([email])
+  @@index([clickedAt(sort: Desc)])
+  @@map("email_clicks")
 }
 
 /// Email preferences (per-user email settings)

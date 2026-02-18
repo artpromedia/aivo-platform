@@ -21,6 +21,7 @@ export type {
   NotificationQueue,
   EmailLog,
   EmailSuppression,
+  EmailClick,
   SmsLog,
   SmsConsent,
 } from '../generated/prisma-client/index.js';

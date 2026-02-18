@@ -25,6 +25,7 @@ import {
 } from '@enterprise-email/aivolearning-email';
 
 import { config } from '../../config.js';
+import { prisma, SuppressionReason } from '../../prisma.js';
 
 import type {
   EmailProvider,
@@ -180,6 +181,42 @@ class OonruMailProvider implements EmailProvider {
     }
 
     try {
+      // ── Suppression pre-check ──────────────────────────────────────────
+      // Refuse to send to permanently suppressed addresses (hard bounce,
+      // spam complaint) at the provider level as defense-in-depth.
+      const recipientEmail = Array.isArray(options.to)
+        ? options.to[0]
+        : options.to;
+
+      if (recipientEmail) {
+        try {
+          const suppression = await prisma.emailSuppression.findUnique({
+            where: { email: recipientEmail },
+            select: { reason: true },
+          });
+
+          if (
+            suppression &&
+            (suppression.reason === SuppressionReason.HARD_BOUNCE ||
+              suppression.reason === SuppressionReason.SPAM_COMPLAINT)
+          ) {
+            return {
+              success: false,
+              provider: 'oonrumail',
+              errorCode: 'SUPPRESSED',
+              errorMessage: `Email suppressed: ${suppression.reason}`,
+              timestamp: new Date(),
+            };
+          }
+        } catch (suppressionErr) {
+          // Non-fatal — proceed with send even if suppression check fails
+          console.warn(
+            '[OonruMail] Suppression check failed, proceeding with send:',
+            suppressionErr,
+          );
+        }
+      }
+
       const message = this.buildMessage(options);
       const result = await this.client.send(message);
 
