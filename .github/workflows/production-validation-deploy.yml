@@ -379,7 +379,6 @@ jobs:
           - notify-svc
           - gamification-svc
           - curriculum-svc
-          - consent-svc
           - tenant-svc
     steps:
       - uses: actions/checkout@v4
@@ -519,7 +518,7 @@ jobs:
               "auth-svc" "profile-svc" "content-svc" "assessment-svc"
               "analytics-svc" "ai-orchestrator" "grading-engine" "brain-engine"
               "session-svc" "billing-svc" "messaging-svc" "notify-svc"
-              "gamification-svc" "curriculum-svc" "consent-svc" "tenant-svc"
+              "gamification-svc" "curriculum-svc" "tenant-svc"
             )
             
             VERSION="${{ needs.confirm-deployment.outputs.version }}"

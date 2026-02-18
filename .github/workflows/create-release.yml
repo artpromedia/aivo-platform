@@ -122,7 +122,7 @@ jobs:
 
           # TypeScript backend services
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -192,7 +192,6 @@ jobs:
           # TypeScript backend services
           - auth-svc
           - session-svc
-          - consent-svc
           - profile-svc
           - content-svc
           - assessment-svc

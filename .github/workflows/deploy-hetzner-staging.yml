@@ -155,7 +155,6 @@ jobs:
         service:
           - auth-svc
           - session-svc
-          - consent-svc
           - profile-svc
           - content-svc
           - assessment-svc
@@ -528,7 +527,7 @@ jobs:
 
           # TypeScript services
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -575,7 +574,7 @@ jobs:
           kustomize build . > /tmp/aivo-staging-manifests.yaml
 
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -731,7 +730,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
 
           ALL_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -1044,7 +1043,7 @@ jobs:
           cd infra/k8s/overlays/hetzner
 
           ALL_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc

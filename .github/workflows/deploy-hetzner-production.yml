@@ -101,7 +101,7 @@ jobs:
 
           # TypeScript backend services (18)
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -414,7 +414,7 @@ jobs:
 
           # TypeScript services (18)
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -464,7 +464,7 @@ jobs:
           kustomize build . > /tmp/aivo-prod-manifests.yaml
 
           TS_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc personalization-svc life-skills-svc
             ai-orchestrator analytics-svc notify-svc messaging-svc
             goal-svc focus-svc billing-svc payments-svc
@@ -567,7 +567,7 @@ jobs:
 
           # Core backend services
           BACKEND_SERVICES=(
-            auth-svc session-svc consent-svc profile-svc
+            auth-svc session-svc profile-svc
             content-svc assessment-svc ai-orchestrator
             analytics-svc notify-svc messaging-svc
             billing-svc payments-svc parent-svc
