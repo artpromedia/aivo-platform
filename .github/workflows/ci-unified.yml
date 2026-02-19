@@ -693,10 +693,9 @@ jobs:
           set -e
           NAMESPACE="aivo-staging"
           VERSION="main-${{ github.sha }}"
-          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
-                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc \
-                    profile-svc personalization-svc life-skills-svc)
+          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc \
+                    parent-svc profile-svc messaging-svc audit-svc \
+                    notify-svc reports-svc realtime-svc compliance-svc)
           
           # Update image tags
           cd infra/k8s/overlays/staging
@@ -729,10 +728,9 @@ jobs:
           set -e
           NAMESPACE="aivo-prod"
           VERSION="${{ github.event.release.tag_name || github.sha }}"
-          SERVICES=(auth-svc session-svc content-svc assessment-svc ai-orchestrator \
-                    analytics-svc notify-svc messaging-svc goal-svc focus-svc \
-                    billing-svc payments-svc parent-svc baseline-svc \
-                    profile-svc personalization-svc life-skills-svc)
+          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc \
+                    parent-svc profile-svc messaging-svc audit-svc \
+                    notify-svc reports-svc realtime-svc compliance-svc)
           
           # Update image tags
           cd infra/k8s/overlays/production

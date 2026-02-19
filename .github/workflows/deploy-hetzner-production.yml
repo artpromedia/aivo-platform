@@ -5,10 +5,10 @@
 # Deploys a validated release to K3s production on Hetzner bare-metal.
 #
 # Flow:
-#   1. Validate — version format + verify ALL 47 images in GHCR
+#   1. Validate — version format + verify ALL 42 images in GHCR
 #   2. Approval Gate — environment-based manual approval
 #   3. Canary — deploy 4 critical services + 1 web app as canary pods (5 min)
-#   4. Full Rollout — kustomize-based wave deploy of all 47 services
+#   4. Full Rollout — kustomize-based wave deploy of all 42 services
 #   5. Smoke Tests — backend health + web frontend health
 #   6. DB Migrations — Prisma migrate deploy via K8s Job
 #   7. Record — create GitHub deployment record
@@ -54,7 +54,7 @@ permissions:
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 1: Validate Release & Verify All 47 Images
+  # STAGE 1: Validate Release & Verify All 42 Images
   # ══════════════════════════════════════════════════════════════════════════
   validate:
     name: Validate Release
@@ -99,13 +99,11 @@ jobs:
           MISSING=0
           VERIFIED=0
 
-          # TypeScript backend services (18)
+          # Phase 1 TypeScript backend services (13 — must match staging pipeline)
           TS_SERVICES=(
-            auth-svc session-svc profile-svc
-            content-svc assessment-svc personalization-svc life-skills-svc
-            ai-orchestrator analytics-svc notify-svc messaging-svc
-            goal-svc focus-svc billing-svc payments-svc
-            parent-svc baseline-svc
+            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
+            parent-svc profile-svc messaging-svc audit-svc
+            notify-svc reports-svc realtime-svc compliance-svc
           )
 
           # Python AI/ML services (20)
@@ -196,8 +194,8 @@ jobs:
 
           echo "═══ Canary deploy: $VERSION ═══"
 
-          # Canary for critical backend services + 1 web app
-          CANARY_BACKEND=(auth-svc content-svc session-svc ai-orchestrator)
+          # Canary for critical Phase 1 backend services + 1 web app
+          CANARY_BACKEND=(auth-svc api-gateway parent-svc profile-svc)
           CANARY_WEB=(web-learner)
 
           # Deploy backend canary pods
@@ -412,13 +410,11 @@ jobs:
 
           cd infra/k8s/overlays/hetzner
 
-          # TypeScript services (18)
+          # Phase 1 TypeScript services (13 — must match staging pipeline)
           TS_SERVICES=(
-            auth-svc session-svc profile-svc
-            content-svc assessment-svc personalization-svc life-skills-svc
-            ai-orchestrator analytics-svc notify-svc messaging-svc
-            goal-svc focus-svc billing-svc payments-svc
-            parent-svc baseline-svc
+            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
+            parent-svc profile-svc messaging-svc audit-svc
+            notify-svc reports-svc realtime-svc compliance-svc
           )
 
           # Python AI/ML services (20)
@@ -464,11 +460,9 @@ jobs:
           kustomize build . > /tmp/aivo-prod-manifests.yaml
 
           TS_SERVICES=(
-            auth-svc session-svc profile-svc
-            content-svc assessment-svc personalization-svc life-skills-svc
-            ai-orchestrator analytics-svc notify-svc messaging-svc
-            goal-svc focus-svc billing-svc payments-svc
-            parent-svc baseline-svc
+            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
+            parent-svc profile-svc messaging-svc audit-svc
+            notify-svc reports-svc realtime-svc compliance-svc
           )
 
           PY_SERVICES=(
@@ -565,12 +559,12 @@ jobs:
           FAILED=0
           TOTAL=0
 
-          # Core backend services
+          # Phase 1 backend services for health check
           BACKEND_SERVICES=(
-            auth-svc session-svc profile-svc
-            content-svc assessment-svc ai-orchestrator
-            analytics-svc notify-svc messaging-svc
-            billing-svc payments-svc parent-svc
+            auth-svc api-gateway tenant-svc sis-sync-svc
+            iep-svc parent-svc profile-svc messaging-svc
+            audit-svc notify-svc reports-svc realtime-svc
+            compliance-svc
           )
 
           echo "═══ Backend Health Checks ═══"
@@ -743,7 +737,7 @@ jobs:
           ref: ${{ needs.validate.outputs.version }}
           description: |
             Hetzner production deployment of ${{ needs.validate.outputs.version }}
-            Services: 18 TS + 20 Python + 9 Web = 47 total
+            Services: 13 TS + 20 Python + 9 Web = 42 total
             Deployed by: ${{ github.actor }}
 
       - name: Summary
@@ -756,7 +750,7 @@ jobs:
           echo "| **Version** | \`${VERSION}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | Hetzner Production (K3s) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Namespace** | \`aivo-prod\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Services** | 18 TS + 20 Python + 9 Web = 47 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Services** | 13 TS + 20 Python + 9 Web = 42 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Deployed by** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Time** | $(date -u +'%Y-%m-%dT%H:%M:%SZ') |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

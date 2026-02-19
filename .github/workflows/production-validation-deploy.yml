@@ -512,10 +512,10 @@ jobs:
             cd /opt/aivo
             
             SERVICES=(
-              "auth-svc" "profile-svc" "content-svc" "assessment-svc"
-              "analytics-svc" "ai-orchestrator" "grading-engine" "brain-engine"
-              "session-svc" "billing-svc" "messaging-svc" "notify-svc"
-              "gamification-svc" "curriculum-svc" "tenant-svc"
+              "auth-svc" "api-gateway" "tenant-svc" "sis-sync-svc"
+              "iep-svc" "parent-svc" "profile-svc" "messaging-svc"
+              "audit-svc" "notify-svc" "reports-svc" "realtime-svc"
+              "compliance-svc"
             )
             
             VERSION="${{ needs.confirm-deployment.outputs.version }}"
