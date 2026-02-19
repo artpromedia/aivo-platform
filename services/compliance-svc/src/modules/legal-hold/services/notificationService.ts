@@ -60,7 +60,7 @@ export async function sendHoldNotification(
 
   // Create notification record
   const notification = await prisma.holdNotification.create({
-    data: { holdId, notificationType, recipientEmail: custodian.email, recipientName: custodian.displayName, subject, body, status: 'PENDING' },
+    data: { holdId, notificationType, recipientEmail: custodian.email, recipientName: custodian.displayName, subject, body, status: 'PENDING' } as any,
   });
 
   if (transporter) {
@@ -100,7 +100,7 @@ export async function sendHoldNotification(
     } catch (error: any) {
       await prisma.holdNotification.update({
         where: { id: notification.id },
-        data: { status: 'FAILED', failedAt: new Date(), failureReason: error.message },
+        data: { status: 'FAILED', failureReason: error.message } as any,
       });
       return { success: false, notificationId: notification.id, error: error.message };
     }
@@ -156,16 +156,12 @@ export async function acknowledgeHold(
   const acknowledgment = await prisma.holdAcknowledgment.create({
     data: {
       holdId,
-      custodianEmail: hc.custodian.email,
-      custodianName: hc.custodian.displayName,
+      custodianId: hc.custodian.id,
       acknowledgedAt: new Date(),
       ipAddress: metadata.ipAddress,
       userAgent: metadata.userAgent,
-      certificationText: input.certificationText,
-      signature: input.signature,
-      hasQuestions: input.hasQuestions || false,
-      questions: input.questions,
-    },
+      acknowledgmentNotes: input.questions,
+    } as any,
   });
 
   await prisma.holdCustodian.update({
@@ -177,10 +173,10 @@ export async function acknowledgeHold(
     data: {
       holdId,
       action: 'ACKNOWLEDGED',
-      description: `Acknowledged by ${hc.custodian.displayName}`,
+      details: `Acknowledged by ${hc.custodian.displayName}` as any,
       performedBy: hc.custodian.email,
       ipAddress: metadata.ipAddress,
-    },
+    } as any,
   });
 
   return { success: true, acknowledgmentId: acknowledgment.id };

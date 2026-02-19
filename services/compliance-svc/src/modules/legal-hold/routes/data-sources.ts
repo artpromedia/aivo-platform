@@ -58,7 +58,7 @@ export default async function dataSourceRoutes(fastify: FastifyInstance): Promis
     }
 
     try {
-      const dataSource = await dataSourceService.createDataSource(tenantId, parsed.data);
+      const dataSource = await dataSourceService.createDataSource(tenantId, parsed.data as any);
       return reply.status(201).send(dataSource);
     } catch (error: any) {
       if (error.code === 'P2002') {

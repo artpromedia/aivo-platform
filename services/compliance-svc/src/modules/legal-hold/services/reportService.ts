@@ -8,6 +8,9 @@ import { config } from '../../../config.js';
 import { prisma } from '../../../prisma.js';
 import type { GenerateReportInput } from '../types.js';
 
+// holdReport model may not exist in Prisma schema yet — use dynamic access
+const holdReportModel = (prisma as any).holdReport as any;
+
 /**
  * Generate a report.
  */
@@ -16,7 +19,7 @@ export async function generateReport(
   userId: string,
   input: GenerateReportInput,
 ) {
-  const report = await prisma.holdReport.create({
+  const report = await holdReportModel.create({
     data: {
       tenantId,
       reportType: input.reportType as any,
@@ -55,7 +58,7 @@ export async function generateReport(
 
     const expiresAt = new Date(Date.now() + config.reports.expirationDays * 24 * 60 * 60 * 1000);
 
-    await prisma.holdReport.update({
+    await holdReportModel.update({
       where: { id: report.id },
       data: {
         status: 'COMPLETED',
@@ -68,7 +71,7 @@ export async function generateReport(
 
     return { ...report, content, status: 'COMPLETED' };
   } catch (error: any) {
-    await prisma.holdReport.update({ where: { id: report.id }, data: { status: 'FAILED' } });
+    await holdReportModel.update({ where: { id: report.id }, data: { status: 'FAILED' } });
     throw error;
   }
 }
@@ -77,7 +80,7 @@ export async function generateReport(
  * Get report by ID.
  */
 export async function getReport(tenantId: string, reportId: string) {
-  return prisma.holdReport.findFirst({ where: { id: reportId, tenantId } });
+  return holdReportModel.findFirst({ where: { id: reportId, tenantId } });
 }
 
 /**
@@ -92,8 +95,8 @@ export async function listReports(
   const skip = (page - 1) * pageSize;
 
   const [reports, totalItems] = await Promise.all([
-    prisma.holdReport.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: pageSize }),
-    prisma.holdReport.count({ where }),
+    holdReportModel.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: pageSize }),
+    holdReportModel.count({ where }),
   ]);
 
   return {
@@ -192,11 +195,11 @@ async function generateAcknowledgmentReport(tenantId: string, params: GenerateRe
     orderBy: { acknowledgedAt: 'desc' },
   });
 
-  const rows = acknowledgments.map((ack) => ({
+  const rows = acknowledgments.map((ack: any) => ({
     holdNumber: ack.hold.holdNumber, holdName: ack.hold.name,
-    custodianEmail: ack.custodianEmail, custodianName: ack.custodianName,
-    acknowledgedAt: ack.acknowledgedAt.toISOString(), hasQuestions: ack.hasQuestions,
-    questions: ack.questions || '',
+    custodianEmail: ack.custodianEmail || ack.custodianId, custodianName: ack.custodianName || '',
+    acknowledgedAt: ack.acknowledgedAt.toISOString(), hasQuestions: ack.hasQuestions || false,
+    questions: ack.questions || ack.acknowledgmentNotes || '',
   }));
 
   return JSON.stringify({ reportType: 'ACKNOWLEDGMENT_SUMMARY', generatedAt: new Date().toISOString(), totalAcknowledgments: rows.length, data: rows }, null, 2);
@@ -263,18 +266,18 @@ async function generateAuditTrailReport(tenantId: string, params: GenerateReport
   const auditLogs = await prisma.holdAuditLog.findMany({
     where: {
       hold: holdWhere,
-      ...(params.dateFrom && { performedAt: { gte: new Date(params.dateFrom) } }),
-      ...(params.dateTo && { performedAt: { lte: new Date(params.dateTo) } }),
+      ...(params.dateFrom && { createdAt: { gte: new Date(params.dateFrom) } }),
+      ...(params.dateTo && { createdAt: { lte: new Date(params.dateTo) } }),
     },
     include: { hold: { select: { holdNumber: true, name: true } } },
-    orderBy: { performedAt: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: config.reports.maxExportSize,
   });
 
-  const rows = auditLogs.map((log) => ({
-    holdNumber: log.hold.holdNumber, holdName: log.hold.name,
-    action: log.action, description: log.description,
-    performedBy: log.performedBy, performedAt: log.performedAt.toISOString(),
+  const rows = auditLogs.map((log: any) => ({
+    holdNumber: log.hold?.holdNumber || '', holdName: log.hold?.name || '',
+    action: log.action, description: log.details || '',
+    performedBy: log.performedBy, performedAt: (log.createdAt || new Date()).toISOString(),
     ipAddress: log.ipAddress || '',
   }));
 

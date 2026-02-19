@@ -301,7 +301,7 @@ export async function addMatterNote(
   if (!matter) throw new Error('Matter not found');
 
   return prisma.matterNote.create({
-    data: { matterId, content, isPrivate, createdBy: userId },
+    data: { matterId, content, isPrivate, createdBy: userId } as any,
   });
 }
 
@@ -361,7 +361,7 @@ export async function getMatterActivity(
 
   const skip = (page - 1) * pageSize;
   const [activities, totalItems] = await Promise.all([
-    prisma.matterActivity.findMany({ where: { matterId }, orderBy: { performedAt: 'desc' }, skip, take: pageSize }),
+    prisma.matterActivity.findMany({ where: { matterId }, orderBy: { createdAt: 'desc' }, skip, take: pageSize }),
     prisma.matterActivity.count({ where: { matterId } }),
   ]);
 
@@ -411,9 +411,7 @@ async function logMatterActivity(
     data: {
       matterId,
       activityType,
-      description,
-      details: details as Prisma.InputJsonValue,
       performedBy,
-    },
+    } as any,
   });
 }

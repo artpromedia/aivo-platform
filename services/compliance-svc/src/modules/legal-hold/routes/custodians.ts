@@ -81,7 +81,7 @@ export default async function custodianRoutes(fastify: FastifyInstance): Promise
     }
 
     try {
-      const custodian = await custodianService.createCustodian(tenantId, parsed.data);
+      const custodian = await custodianService.createCustodian(tenantId, parsed.data as any);
       return reply.status(201).send(custodian);
     } catch (error: any) {
       if (error.code === 'P2002') {

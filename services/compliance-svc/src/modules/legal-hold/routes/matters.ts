@@ -57,7 +57,7 @@ export default async function matterRoutes(fastify: FastifyInstance): Promise<vo
     }
 
     try {
-      const matter = await matterService.createMatter(tenantId, userId, parsed.data);
+      const matter = await matterService.createMatter(tenantId, userId, parsed.data as any);
       return reply.status(201).send(matter);
     } catch (error: any) {
       if (error.code === 'P2002') {

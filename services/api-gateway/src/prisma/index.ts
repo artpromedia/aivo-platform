@@ -4,4 +4,4 @@
 
 export { PrismaModule } from './prisma.module';
 export { PrismaService } from './prisma.service';
-export type { PrismaClientStub, Consent } from './prisma.types';
+export type { PrismaClient, Consent } from './prisma.types';

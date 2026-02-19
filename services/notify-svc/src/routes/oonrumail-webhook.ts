@@ -96,10 +96,10 @@ export async function registerOonruMailWebhookRoutes(
           const client = new AivolearningEmail({
             apiKey: config.email.oonrumail.apiKey,
           });
-          // Note: createSuppression is planned but not yet in AivolearningEmail SDK
-          await (client as any).createSuppression({
+          // Sync hard bounce to OonruMail's server-side suppression list
+          await client.sdk.suppressions.create({
             email: event.recipient,
-            reason: 'bounce',
+            reason: 'hard_bounce',
           });
         } catch (err) {
           fastify.log.error(

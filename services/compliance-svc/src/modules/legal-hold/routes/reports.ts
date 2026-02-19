@@ -54,7 +54,7 @@ export default async function reportRoutes(fastify: FastifyInstance): Promise<vo
     }
 
     try {
-      const report = await reportService.generateReport(tenantId, userId, parsed.data);
+      const report = await reportService.generateReport(tenantId, userId, parsed.data as any);
       return reply.status(201).send({
         id: report.id,
         reportType: report.reportType,

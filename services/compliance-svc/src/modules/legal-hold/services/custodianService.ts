@@ -33,7 +33,7 @@ export async function createCustodian(tenantId: string, input: CreateCustodianIn
       alternateEmail: input.alternateEmail?.toLowerCase(),
       status: input.status || 'ACTIVE',
       hireDate: input.hireDate ? new Date(input.hireDate) : undefined,
-      metadata: input.metadata,
+      metadata: input.metadata as any,
     },
   });
 }
@@ -142,7 +142,7 @@ export async function updateCustodian(
       alternateEmail: input.alternateEmail?.toLowerCase(),
       status: input.status,
       terminationDate: input.terminationDate ? new Date(input.terminationDate) : undefined,
-      metadata: input.metadata,
+      metadata: input.metadata as any,
     },
   });
 }

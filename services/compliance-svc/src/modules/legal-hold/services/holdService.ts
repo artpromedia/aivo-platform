@@ -258,13 +258,11 @@ export async function releaseHold(
       releaseType: input.releaseType,
       reason: input.reason,
       notes: input.notes,
-      approvedBy: userId,
-      approvedAt: new Date(),
       executedAt: new Date(),
       executedBy: userId,
       affectedCustodians: input.custodianIds || hold.custodians.map((c) => c.custodianId),
       affectedSources: input.dataSourceIds || hold.dataSources.map((s) => s.dataSourceId),
-    },
+    } as any,
   });
 
   if (input.releaseType === 'FULL') {
@@ -400,7 +398,7 @@ export async function getHoldAuditLog(
 
   const skip = (page - 1) * pageSize;
   const [logs, totalItems] = await Promise.all([
-    prisma.holdAuditLog.findMany({ where: { holdId }, orderBy: { performedAt: 'desc' }, skip, take: pageSize }),
+    prisma.holdAuditLog.findMany({ where: { holdId }, orderBy: { createdAt: 'desc' }, skip, take: pageSize }),
     prisma.holdAuditLog.count({ where: { holdId } }),
   ]);
 
@@ -453,10 +451,8 @@ async function logHoldAudit(
     data: {
       holdId,
       action,
-      description,
-      previousState: details?.previousState,
-      newState: details?.newState || (details?.changes ? { changes: details.changes } : undefined),
+      details: description as any,
       performedBy,
-    },
+    } as any,
   });
 }

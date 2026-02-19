@@ -469,6 +469,60 @@ export class ThreatDetectionService implements OnModuleDestroy {
   }
   
   /**
+   * Record a threat event
+   */
+  async recordThreat(threat: {
+    type: string;
+    severity: string;
+    source: { ip: string; userId?: string; sessionId?: string };
+    indicators: string[];
+    riskScore: number;
+  }): Promise<void> {
+    const ip = threat.source.ip;
+    const key = `${this.THREAT_PREFIX}${ip}`;
+    
+    const existing = await this.redis.get(key);
+    const record: ThreatRecord = existing
+      ? JSON.parse(existing)
+      : { indicators: [], score: 0, lastSeen: 0, blocked: false };
+    
+    record.indicators.push({
+      type: threat.type,
+      severity: threat.severity as ThreatSeverity,
+      score: threat.riskScore,
+      description: threat.indicators.join('; '),
+    });
+    record.score = Math.min(100, record.score + threat.riskScore);
+    record.lastSeen = Date.now();
+    
+    if (record.score >= this.BLOCK_THRESHOLD) {
+      record.blocked = true;
+      await this.blockIP(ip);
+      if (threat.source.userId) {
+        await this.blockUser(threat.source.userId);
+      }
+    }
+    
+    await this.redis.set(key, JSON.stringify(record), 'EX', this.THREAT_TTL);
+    
+    this.logger.warn('Threat recorded', {
+      ip,
+      type: threat.type,
+      severity: threat.severity,
+      score: record.score,
+      blocked: record.blocked,
+    });
+    
+    await this.logSecurityEvent({
+      type: threat.type,
+      ip,
+      userId: threat.source.userId,
+      threats: threat.indicators,
+      score: record.score,
+    });
+  }
+  
+  /**
    * Log security event to audit service
    */
   private async logSecurityEvent(event: SecurityEvent): Promise<void> {

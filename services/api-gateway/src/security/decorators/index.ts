@@ -33,7 +33,15 @@ export const METADATA_KEYS = {
   AGE_RESTRICTION: 'ageRestriction',
   SKIP_AUDIT: 'skipAudit',
   TENANT_AWARE: 'tenantAware',
+  FERPA_PROTECTED: 'ferpaProtected',
+  COPPA_COMPLIANT: 'coppaCompliant',
 } as const;
+
+// Convenience aliases used by interceptors
+export const AUDIT_LOG_KEY = METADATA_KEYS.AUDIT_ACTION;
+export const SKIP_AUDIT_KEY = METADATA_KEYS.SKIP_AUDIT;
+export const FERPA_PROTECTED_KEY = METADATA_KEYS.FERPA_PROTECTED;
+export const COPPA_COMPLIANT_KEY = METADATA_KEYS.COPPA_COMPLIANT;
 
 // ============================================================================
 // AUTHENTICATION DECORATORS

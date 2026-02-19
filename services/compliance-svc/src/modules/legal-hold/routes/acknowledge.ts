@@ -130,7 +130,7 @@ export default async function acknowledgeRoutes(fastify: FastifyInstance): Promi
     const result = await notificationService.acknowledgeHold(
       holdId,
       email,
-      parsed.data,
+      parsed.data as any,
       metadata
     );
 
@@ -158,7 +158,7 @@ export default async function acknowledgeRoutes(fastify: FastifyInstance): Promi
       where: {
         holdId,
         custodianEmail: email.toLowerCase(),
-      },
+      } as any,
       include: {
         hold: {
           select: {
@@ -174,17 +174,18 @@ export default async function acknowledgeRoutes(fastify: FastifyInstance): Promi
       return reply.status(404).send({ error: 'Acknowledgment not found' });
     }
 
+    const ack = acknowledgment as any;
     return reply.send({
       certificate: {
-        holdNumber: acknowledgment.hold.holdNumber,
-        holdName: acknowledgment.hold.name,
-        matterNumber: acknowledgment.hold.matter.matterNumber,
-        matterName: acknowledgment.hold.matter.name,
-        custodianName: acknowledgment.custodianName,
-        custodianEmail: acknowledgment.custodianEmail,
-        acknowledgedAt: acknowledgment.acknowledgedAt,
-        certificationText: acknowledgment.certificationText,
-        signature: acknowledgment.signature,
+        holdNumber: ack.hold?.holdNumber,
+        holdName: ack.hold?.name,
+        matterNumber: ack.hold?.matter?.matterNumber,
+        matterName: ack.hold?.matter?.name,
+        custodianName: ack.custodianName,
+        custodianEmail: ack.custodianEmail,
+        acknowledgedAt: ack.acknowledgedAt,
+        certificationText: ack.certificationText,
+        signature: ack.signature,
       },
     });
   });

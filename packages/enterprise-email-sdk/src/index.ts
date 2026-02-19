@@ -638,6 +638,65 @@ export class AivolearningEmail {
   }
 
   // ════════════════════════════════════════════════════════════════════════════
+  // SUB-API ACCESSORS (analytics & suppressions)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Access the underlying sub-API namespaces for analytics and suppression
+   * management. These proxy through the same authenticated HTTP transport
+   * used by the top-level `send()` / `sendTemplate()` methods.
+   */
+  get sdk() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+    return {
+      analytics: {
+        /** High-level delivery/open/click/bounce overview. */
+        overview(): Promise<Record<string, unknown>> {
+          return self.request<Record<string, unknown>>('GET', '/analytics/overview');
+        },
+        /** Time-series data points for the given date range. */
+        timeSeries(params: {
+          start_date: string;
+          end_date: string;
+          interval: string;
+        }): Promise<Record<string, unknown>[]> {
+          const qs = new URLSearchParams(params).toString();
+          return self.request<Record<string, unknown>[]>('GET', `/analytics/timeseries?${qs}`);
+        },
+        /** Bounce breakdown: hard, soft, total, by_domain. */
+        bounces(): Promise<Record<string, unknown>> {
+          return self.request<Record<string, unknown>>('GET', '/analytics/bounces');
+        },
+        /** Realtime send/queue/delivered stats. */
+        realtime(): Promise<Record<string, unknown>> {
+          return self.request<Record<string, unknown>>('GET', '/analytics/realtime');
+        },
+      },
+      suppressions: {
+        /** Add an email to the suppression list. */
+        create(data: {
+          email: string;
+          reason: string;
+          description?: string;
+        }): Promise<Record<string, unknown>> {
+          return self.request<Record<string, unknown>>('POST', '/suppressions', data);
+        },
+        /** Check suppression status for a batch of emails. */
+        check(data: {
+          emails: string[];
+        }): Promise<{ results: Record<string, { suppressed?: boolean }> }> {
+          return self.request<{ results: Record<string, { suppressed?: boolean }> }>(
+            'POST',
+            '/suppressions/check',
+            data,
+          );
+        },
+      },
+    };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
   // HTTP
   // ════════════════════════════════════════════════════════════════════════════
 

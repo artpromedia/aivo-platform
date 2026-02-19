@@ -40,6 +40,11 @@ export interface TokenPayload {
   exp: number;
   iss: string;
   aud: string[];
+  isMinor?: boolean;
+  ageVerified?: boolean;
+  consentStatus?: string;
+  mfaEnabled?: boolean;
+  mfaVerified?: boolean;
 }
 
 // ============================================================================
@@ -142,11 +147,14 @@ export type AuditEventCategory =
   | 'administration'
   | 'system';
 
-export type AuditSeverity = 'low' | 'medium' | 'high' | 'critical';
+export type AuditSeverity = 'low' | 'medium' | 'high' | 'critical' | 'info' | 'error' | 'warning';
 
 export interface AuditActor {
-  id: string;
+  id?: string;
+  userId?: string;
   type: 'user' | 'service' | 'system' | 'anonymous';
+  tenantId?: string;
+  roles?: string[];
   ip?: string;
   userAgent?: string;
   sessionId?: string;
@@ -167,7 +175,7 @@ export interface AuditEvent {
   severity: AuditSeverity;
   actor: AuditActor;
   resource?: AuditResource;
-  action: {
+  action: string | {
     name: string;
     method?: string;
     path?: string;
@@ -182,6 +190,7 @@ export interface AuditEvent {
     requestId: string;
     environment: string;
     service: string;
+    [key: string]: unknown;
   };
   changes?: {
     before?: Record<string, any>;

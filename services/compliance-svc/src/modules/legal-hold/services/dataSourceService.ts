@@ -21,11 +21,11 @@ export async function createDataSource(tenantId: string, input: CreateDataSource
       name: input.name,
       description: input.description,
       sourceType: input.sourceType,
-      connectionInfo: input.connectionInfo,
+      connectionInfo: input.connectionInfo as any,
       canPreserve: input.canPreserve ?? true,
       canExport: input.canExport ?? true,
       canSearch: input.canSearch ?? true,
-      metadata: input.metadata,
+      metadata: input.metadata as any,
     },
   });
 }
@@ -104,12 +104,12 @@ export async function updateDataSource(
     data: {
       name: input.name,
       description: input.description,
-      connectionInfo: input.connectionInfo,
+      connectionInfo: input.connectionInfo as any,
       canPreserve: input.canPreserve,
       canExport: input.canExport,
       canSearch: input.canSearch,
       isActive: input.isActive,
-      metadata: input.metadata,
+      metadata: input.metadata as any,
     },
   });
 }
@@ -152,7 +152,7 @@ export async function addDataSourceToHold(
   });
 
   await prisma.holdAuditLog.create({
-    data: { holdId, action: 'DATA_SOURCE_ADDED', description: `Added data source: ${dataSource.name}`, performedBy: userId },
+    data: { holdId, action: 'DATA_SOURCE_ADDED', details: `Added data source: ${dataSource.name}`, performedBy: userId } as any,
   });
 
   return hds;
@@ -179,7 +179,7 @@ export async function removeDataSourceFromHold(
   });
 
   await prisma.holdAuditLog.create({
-    data: { holdId, action: 'DATA_SOURCE_RELEASED', description: `Released data source: ${hds.dataSource.name}`, performedBy: userId },
+    data: { holdId, action: 'DATA_SOURCE_RELEASED', details: `Released data source: ${hds.dataSource.name}`, performedBy: userId } as any,
   });
 }
 

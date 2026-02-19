@@ -66,7 +66,7 @@ export class ConsentService implements OnModuleDestroy {
     
     // Get current version for this user/type
     const existingConsent = await this.prisma.consent.findFirst({
-      where: { userId, consentType },
+      where: { userId, consentType: consentType as any },
       orderBy: { version: 'desc' },
     });
     
@@ -76,9 +76,9 @@ export class ConsentService implements OnModuleDestroy {
       data: {
         id: randomUUID(),
         userId,
-        consentType,
-        purposes,
-        status: 'granted' as ConsentStatus,
+        consentType: consentType as any,
+        purposes: purposes as any,
+        status: 'granted' as any,
         grantedBy,
         grantedAt: now,
         expiresAt,
@@ -103,8 +103,8 @@ export class ConsentService implements OnModuleDestroy {
       id: consent.id,
       userId: consent.userId,
       consentType: consent.consentType as ConsentType,
-      purposes: consent.purposes as ConsentPurpose[],
-      status: consent.status as ConsentStatus,
+      purposes: consent.purposes as unknown as ConsentPurpose[],
+      status: consent.status as unknown as ConsentStatus,
       grantedBy: consent.grantedBy,
       grantedAt: consent.grantedAt,
       expiresAt: consent.expiresAt || undefined,
@@ -130,8 +130,8 @@ export class ConsentService implements OnModuleDestroy {
     const consent = await this.prisma.consent.findFirst({
       where: {
         userId,
-        consentType,
-        status: 'granted',
+        consentType: consentType as any,
+        status: 'granted' as any,
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: now } },
@@ -146,8 +146,8 @@ export class ConsentService implements OnModuleDestroy {
     }
     
     // Determine which purposes to revoke
-    const purposesToRevoke = purposes || (consent.purposes as ConsentPurpose[]);
-    const remainingPurposes = (consent.purposes as ConsentPurpose[]).filter(
+    const purposesToRevoke = purposes || (consent.purposes as unknown as ConsentPurpose[]);
+    const remainingPurposes = (consent.purposes as unknown as ConsentPurpose[]).filter(
       p => !purposesToRevoke.includes(p)
     );
     
@@ -156,7 +156,7 @@ export class ConsentService implements OnModuleDestroy {
       await this.prisma.consent.update({
         where: { id: consent.id },
         data: {
-          status: 'revoked',
+          status: 'revoked' as any,
           revokedAt: now,
         },
       });
@@ -173,7 +173,7 @@ export class ConsentService implements OnModuleDestroy {
       await this.prisma.consent.update({
         where: { id: consent.id },
         data: {
-          status: 'revoked',
+          status: 'revoked' as any,
           revokedAt: now,
         },
       });
@@ -205,7 +205,7 @@ export class ConsentService implements OnModuleDestroy {
     const consents = await this.prisma.consent.findMany({
       where: {
         userId,
-        status: { in: ['granted', 'expired'] },
+        status: { in: ['granted', 'expired'] as any },
       },
       orderBy: { version: 'desc' },
     });
@@ -214,7 +214,7 @@ export class ConsentService implements OnModuleDestroy {
     const purposeConsents = new Map<ConsentPurpose, typeof consents[0]>();
     
     for (const consent of consents) {
-      for (const purpose of consent.purposes as ConsentPurpose[]) {
+      for (const purpose of consent.purposes as unknown as ConsentPurpose[]) {
         if (!purposeConsents.has(purpose)) {
           purposeConsents.set(purpose, consent);
         }
@@ -235,11 +235,11 @@ export class ConsentService implements OnModuleDestroy {
       }
       
       const isExpired = consent.expiresAt ? consent.expiresAt < now : false;
-      const isRevoked = consent.status === 'revoked';
+      const isRevoked = (consent.status as string) === 'revoked';
       
       return {
         purpose,
-        granted: consent.status === 'granted' && !isExpired,
+        granted: (consent.status as string) === 'granted' && !isExpired,
         expired: isExpired,
         revoked: isRevoked,
         consentId: consent.id,
@@ -278,8 +278,8 @@ export class ConsentService implements OnModuleDestroy {
     const consent = await this.prisma.consent.findFirst({
       where: {
         userId,
-        consentType,
-        status: 'granted',
+        consentType: consentType as any,
+        status: 'granted' as any,
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: now } },
@@ -297,7 +297,7 @@ export class ConsentService implements OnModuleDestroy {
       }));
     }
     
-    const consentPurposes = consent.purposes as ConsentPurpose[];
+    const consentPurposes = consent.purposes as unknown as ConsentPurpose[];
     
     return purposes.map(purpose => ({
       purpose,
@@ -322,9 +322,9 @@ export class ConsentService implements OnModuleDestroy {
     return consents.map(c => ({
       id: c.id,
       userId: c.userId,
-      consentType: c.consentType as ConsentType,
-      purposes: c.purposes as ConsentPurpose[],
-      status: c.status as ConsentStatus,
+      consentType: c.consentType as unknown as ConsentType,
+      purposes: c.purposes as unknown as ConsentPurpose[],
+      status: c.status as unknown as ConsentStatus,
       grantedBy: c.grantedBy,
       grantedAt: c.grantedAt,
       expiresAt: c.expiresAt || undefined,
@@ -356,7 +356,7 @@ export class ConsentService implements OnModuleDestroy {
 
       const expiringConsents = await this.prisma.consent.findMany({
         where: {
-          status: 'granted',
+          status: 'granted' as any,
           expiresAt: {
             gte: windowStart,
             lt: windowEnd,
@@ -383,7 +383,7 @@ export class ConsentService implements OnModuleDestroy {
         try {
           await this.sendConsentRenewalReminder({
             userId: consent.userId,
-            email: consent.user?.email || '',
+            email: (consent as any).user?.email || '',
             consentType: consent.consentType as ConsentType,
             expiresAt: consent.expiresAt!,
             renewalUrl: this.buildRenewalUrl(consent.userId, consent.consentType),

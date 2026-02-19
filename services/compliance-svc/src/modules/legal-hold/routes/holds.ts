@@ -76,7 +76,7 @@ export default async function holdRoutes(fastify: FastifyInstance): Promise<void
     }
 
     try {
-      const hold = await holdService.createHold(tenantId, userId, parsed.data);
+      const hold = await holdService.createHold(tenantId, userId, parsed.data as any);
       return reply.status(201).send(hold);
     } catch (error: any) {
       if (error.message === 'Matter not found') {
@@ -138,7 +138,7 @@ export default async function holdRoutes(fastify: FastifyInstance): Promise<void
     }
 
     try {
-      const hold = await holdService.issueHold(tenantId, holdId, userId, parsed.data);
+      const hold = await holdService.issueHold(tenantId, holdId, userId, parsed.data as any);
 
       // Send notifications if requested
       if (parsed.data.sendNotifications) {
@@ -173,7 +173,7 @@ export default async function holdRoutes(fastify: FastifyInstance): Promise<void
     }
 
     try {
-      const release = await holdService.releaseHold(tenantId, holdId, userId, parsed.data);
+      const release = await holdService.releaseHold(tenantId, holdId, userId, parsed.data as any);
       return reply.send(release);
     } catch (error: any) {
       if (error.message === 'Hold not found') {

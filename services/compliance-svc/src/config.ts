@@ -84,13 +84,31 @@ export const config = {
     secure: process.env.EMAIL_SECURE === 'true',
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',
+    password: process.env.EMAIL_PASS || '',
     from: process.env.EMAIL_FROM || 'compliance@aivo.com',
+    enabled: process.env.EMAIL_ENABLED !== 'false',
+    replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || 'compliance@aivo.com',
   },
 
   // Legal-hold
   holds: {
     reminderDays: Number(process.env.HOLD_REMINDER_DAYS || 7),
+    defaultReminderDays: Number(process.env.HOLD_REMINDER_DAYS || 7),
+    defaultEscalationDays: Number(process.env.HOLD_ESCALATION_DAYS || 14),
+    acknowledgmentDeadlineDays: Number(process.env.HOLD_ACK_DEADLINE_DAYS || 14),
+    maxReminders: Number(process.env.HOLD_MAX_REMINDERS || 5),
     maxHoldsPerMatter: Number(process.env.MAX_HOLDS_PER_MATTER || 100),
+  },
+
+  // Notifications
+  notifications: {
+    batchSize: Number(process.env.NOTIFICATION_BATCH_SIZE || 50),
+  },
+
+  // Reports
+  reports: {
+    expirationDays: Number(process.env.REPORT_EXPIRATION_DAYS || 30),
+    maxExportSize: Number(process.env.REPORT_MAX_EXPORT_SIZE || 10000),
   },
 
   // Notification service URL (used by DSR notification-service)

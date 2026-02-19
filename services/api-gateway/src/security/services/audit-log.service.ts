@@ -50,7 +50,7 @@ export class AuditLogService implements OnModuleDestroy {
     
     // Check if immediate flush is needed
     if (
-      AUDIT.IMMEDIATE_FLUSH_SEVERITY.includes(fullEvent.severity) ||
+      (AUDIT.IMMEDIATE_FLUSH_SEVERITY as readonly string[]).includes(fullEvent.severity) ||
       this.buffer.length >= AUDIT.BUFFER_SIZE
     ) {
       await this.flush();
