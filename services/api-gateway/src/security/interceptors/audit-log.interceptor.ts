@@ -92,6 +92,9 @@ export class AuditLogInterceptor implements NestInterceptor {
           context: {
             ...requestContext,
             correlationId,
+            requestId: correlationId,
+            environment: process.env.NODE_ENV || 'development',
+            service: 'api-gateway',
             duration,
             statusCode: response.statusCode,
             responseSize: this.getResponseSize(responseBody),
@@ -115,6 +118,9 @@ export class AuditLogInterceptor implements NestInterceptor {
           context: {
             ...requestContext,
             correlationId,
+            requestId: correlationId,
+            environment: process.env.NODE_ENV || 'development',
+            service: 'api-gateway',
             duration,
             errorCode: error.status || 500,
             errorMessage: error.message,
@@ -135,7 +141,7 @@ export class AuditLogInterceptor implements NestInterceptor {
    */
   private buildActor(request: AuthenticatedRequest): {
     userId?: string;
-    type: string;
+    type: 'user' | 'service' | 'system' | 'anonymous';
     tenantId?: string;
     roles?: string[];
     ip?: string;
@@ -148,14 +154,14 @@ export class AuditLogInterceptor implements NestInterceptor {
         tenantId: request.user.tenantId,
         roles: request.user.roles,
         ip: this.getClientIP(request),
-        userAgent: request.headers['user-agent'],
+        userAgent: request.headers['user-agent'] as string,
       };
     }
 
     return {
       type: 'anonymous',
       ip: this.getClientIP(request),
-      userAgent: request.headers['user-agent'],
+      userAgent: request.headers['user-agent'] as string,
     };
   }
 

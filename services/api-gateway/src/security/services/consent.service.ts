@@ -75,7 +75,7 @@ export class ConsentService implements OnModuleDestroy {
     const consent = await this.prisma.consent.create({
       data: {
         id: randomUUID(),
-        userId,
+        userId: userId as any,
         consentType: consentType as any,
         purposes: purposes as any,
         status: 'granted' as any,

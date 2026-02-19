@@ -143,11 +143,11 @@ export function createCsrfMiddleware(config: Partial<CsrfConfig> = {}) {
     // For non-protected methods (GET, HEAD, OPTIONS), set/refresh the token cookie
     if (!fullConfig.protectedMethods.includes(method)) {
       // Get existing token from cookie or generate new one
-      const existingToken = (request.cookies as Record<string, string>)?.[fullConfig.cookieName];
+      const existingToken = ((request as any).cookies as Record<string, string>)?.[fullConfig.cookieName];
       const token = existingToken || generateCsrfToken(fullConfig.tokenLength);
 
       // Set/refresh the cookie
-      reply.setCookie(fullConfig.cookieName, token, {
+      (reply as any).setCookie(fullConfig.cookieName, token, {
         httpOnly: false, // Must be readable by JavaScript
         secure: fullConfig.secure,
         sameSite: fullConfig.sameSite,
@@ -161,7 +161,7 @@ export function createCsrfMiddleware(config: Partial<CsrfConfig> = {}) {
     }
 
     // For protected methods, validate the token
-    const cookieToken = (request.cookies as Record<string, string>)?.[fullConfig.cookieName];
+    const cookieToken = ((request as any).cookies as Record<string, string>)?.[fullConfig.cookieName];
     const headerToken = (request.headers as Record<string, string>)[fullConfig.headerName.toLowerCase()];
 
     // Also check body for form submissions
@@ -260,7 +260,7 @@ export function setCsrfToken(
   const fullConfig = { ...DEFAULT_CONFIG, ...config };
   const token = generateCsrfToken(fullConfig.tokenLength);
 
-  reply.setCookie(fullConfig.cookieName, token, {
+  (reply as any).setCookie(fullConfig.cookieName, token, {
     httpOnly: false,
     secure: fullConfig.secure,
     sameSite: fullConfig.sameSite,

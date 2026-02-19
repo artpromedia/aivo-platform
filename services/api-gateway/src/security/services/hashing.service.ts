@@ -50,7 +50,6 @@ export class HashingService {
   async needsRehash(hash: string): Promise<boolean> {
     try {
       return argon2.needsRehash(hash, {
-        type: argon2.argon2id,
         memoryCost: ENCRYPTION.ARGON2.MEMORY_COST,
         timeCost: ENCRYPTION.ARGON2.TIME_COST,
         parallelism: ENCRYPTION.ARGON2.PARALLELISM,

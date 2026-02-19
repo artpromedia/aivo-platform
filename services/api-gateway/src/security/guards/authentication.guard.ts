@@ -17,7 +17,7 @@ import { TokenService } from '../services/token.service';
 import { SessionService } from '../services/session.service';
 import { ThreatDetectionService } from '../services/threat-detection.service';
 import { METADATA_KEYS } from '../decorators';
-import { AuthenticatedUser } from '../types';
+import { AuthenticatedUser, ConsentStatus } from '../types';
 import { SECURITY_ERROR_CODES } from '../constants';
 
 @Injectable()
@@ -138,7 +138,7 @@ export class AuthenticationGuard implements CanActivate {
         sessionId: payload.sessionId,
         isMinor: payload.isMinor || false,
         ageVerified: payload.ageVerified || false,
-        consentStatus: payload.consentStatus || 'pending',
+        consentStatus: (payload.consentStatus || 'pending') as ConsentStatus,
         mfaEnabled: payload.mfaEnabled || false,
         mfaVerified: payload.mfaVerified || false,
       };

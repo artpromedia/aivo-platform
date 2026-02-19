@@ -40,7 +40,6 @@ export class RateLimitGuard implements CanActivate {
       db: this.configService.get('REDIS_RATE_LIMIT_DB', 1),
       keyPrefix: this.keyPrefix,
       enableReadyCheck: true,
-      retryDelayOnFailover: 100,
     });
   }
   

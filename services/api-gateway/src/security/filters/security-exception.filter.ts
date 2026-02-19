@@ -281,6 +281,9 @@ export class SecurityExceptionFilter implements ExceptionFilter {
       },
       context: {
         correlationId,
+        requestId: correlationId,
+        environment: process.env.NODE_ENV || 'development',
+        service: 'api-gateway',
         method: request.method,
         path: request.path,
         statusCode: status,

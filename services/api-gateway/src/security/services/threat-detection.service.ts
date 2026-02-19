@@ -497,9 +497,9 @@ export class ThreatDetectionService implements OnModuleDestroy {
     
     if (record.score >= this.BLOCK_THRESHOLD) {
       record.blocked = true;
-      await this.blockIP(ip);
+      await this.blockIP(ip, threat.type);
       if (threat.source.userId) {
-        await this.blockUser(threat.source.userId);
+        await this.lockoutUser(threat.source.userId);
       }
     }
     
@@ -517,7 +517,7 @@ export class ThreatDetectionService implements OnModuleDestroy {
       type: threat.type,
       ip,
       userId: threat.source.userId,
-      threats: threat.indicators,
+      threats: record.indicators,
       score: record.score,
     });
   }
@@ -531,6 +531,10 @@ export class ThreatDetectionService implements OnModuleDestroy {
       actor: event.userId ? { userId: event.userId, type: 'user' } : { type: 'system' },
       resource: { type: 'security', id: event.ip },
       context: {
+        correlationId: `threat-${Date.now()}`,
+        requestId: `threat-${Date.now()}`,
+        environment: process.env.NODE_ENV || 'development',
+        service: 'api-gateway',
         ip: event.ip,
         threats: event.threats,
         score: event.score,
