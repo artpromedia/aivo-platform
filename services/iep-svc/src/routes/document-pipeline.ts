@@ -173,7 +173,7 @@ export default async function documentPipelineRoutes(fastify: FastifyInstance): 
         status: body.approved ? 'REVIEWED' : 'REJECTED',
         reviewedBy: userId,
         reviewedAt: new Date(),
-        reviewNotes: body.notes,
+        reviewNotes: body.notes ?? null,
         extractedData: body.corrections
           ? ({ ...(document.extractedData as object ?? {}), ...body.corrections } as any)
           : document.extractedData,
