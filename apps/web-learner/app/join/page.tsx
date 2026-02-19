@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
@@ -66,11 +67,14 @@ export default function JoinPage() {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">AIVO</span>
+          <Link href="/" className="inline-block mb-6">
+            <Image
+              src="/images/aivo-logo-horizontal-purple.svg"
+              alt="AIVO"
+              width={120}
+              height={40}
+              priority
+            />
           </Link>
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-indigo-200">
             <KeyRound className="w-9 h-9 text-white" />

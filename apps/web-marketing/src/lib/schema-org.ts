@@ -37,8 +37,8 @@ export const organizationSchema: WithContext<Organization> = {
   address: {
     '@type': 'PostalAddress',
     addressCountry: 'US',
-    addressLocality: 'San Francisco',
-    addressRegion: 'CA',
+    addressLocality: 'Minneapolis',
+    addressRegion: 'MN',
   },
   sameAs: [
     'https://twitter.com/aivolearning',
@@ -93,13 +93,6 @@ export const platformSchema: WithContext<SoftwareApplication> = {
     priceCurrency: 'USD',
     availability: 'https://schema.org/InStock',
   } as unknown as Offer,
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.9',
-    ratingCount: '1250',
-    bestRating: '5',
-    worstRating: '1',
-  },
   featureList: [
     'AI-powered Virtual Brain tutors',
     'Real-time IEP goal tracking and progress monitoring',
@@ -170,11 +163,6 @@ export const aivoPadSchema: WithContext<Product> = {
       '@type': 'Organization',
       name: 'AIVO Learning',
     },
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '342',
   },
   audience: {
     '@type': 'EducationalAudience',

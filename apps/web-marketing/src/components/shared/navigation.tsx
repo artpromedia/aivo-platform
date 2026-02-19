@@ -60,22 +60,9 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Courses',
-    href: '/courses',
-    children: [
-      {
-        label: 'Course Catalog',
-        href: '/courses',
-        description: 'Browse our full library of expert-led courses',
-        icon: <BookOpen className="w-5 h-5 text-theme-primary-500" />,
-      },
-      {
-        label: 'For Schools',
-        href: '/features/schools',
-        description: 'School and district licensing options',
-        icon: <School className="w-5 h-5 text-mint-500" />,
-      },
-    ],
+    label: 'AIVO Pad',
+    href: '/aivo-pad',
+    badge: 'New',
   },
   {
     label: 'How It Works',
@@ -88,6 +75,10 @@ const navItems: NavItem[] = [
   {
     label: 'About',
     href: '/about',
+  },
+  {
+    label: 'Contact',
+    href: '/contact',
   },
 ];
 
@@ -253,18 +244,21 @@ export function Navigation() {
             </div>
 
             {/* Desktop CTA — Right */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-4">
               <Link
-                href="/contact"
-                className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/login`}
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
               >
-                Contact
+                Sign In
               </Link>
               <Link
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
-                className="inline-flex items-center px-5 py-2.5 bg-theme-primary-600 hover:bg-theme-primary-700 text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all"
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-coral-400 via-rose-500 to-theme-primary-600 hover:from-coral-500 hover:via-rose-600 hover:to-theme-primary-700 text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all"
               >
-                Get Started Free
+                Get Started
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
               </Link>
             </div>
 

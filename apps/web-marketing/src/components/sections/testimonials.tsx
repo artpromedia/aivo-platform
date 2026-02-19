@@ -21,50 +21,40 @@ const testimonials: Testimonial[] = [
   {
     id: 1,
     quote:
-      "For the first time, my daughter actually looks forward to learning. The AI tutor understands her ADHD and keeps her engaged without frustration. We've seen a complete transformation in just 8 weeks.",
-    author: 'Sarah M.',
-    role: 'Parent of a 4th grader',
-    details: 'Using AIVO since 2024',
+      "My daughter actually looks forward to learning now. The AI tutor adapts to her ADHD and keeps her engaged without frustration. We saw real improvement in just 8 weeks of the pilot program.",
+    author: 'Parent',
+    role: 'Parent of a 4th Grader',
+    details: 'Minneapolis, MN',
     rating: 5,
-    avatar: 'SM',
+    avatar: 'P',
   },
   {
     id: 2,
     quote:
-      "As a special education teacher, I've tried many tools. AIVO is the first that truly differentiates for each student's needs. The IEP integration saves me hours of documentation every week.",
-    author: 'James R.',
-    role: 'Special Ed Teacher',
-    details: '12 years experience',
+      "The IEP integration actually works. I can see each student's goals tracked automatically, and the AI recommendations help me adjust instruction in real time. This saves hours of documentation.",
+    author: 'Educator',
+    role: 'Special Education Teacher',
+    details: 'New York, NY',
     rating: 5,
-    avatar: 'JR',
+    avatar: 'E',
   },
   {
     id: 3,
     quote:
-      "My son is on the autism spectrum and struggles with traditional learning. AIVO's predictable routines and sensory-friendly design have made all the difference. His confidence has soared.",
-    author: 'Maria L.',
-    role: 'Parent',
-    details: 'Son with ASD, Age 7',
+      "The predictable routines and sensory-friendly design made all the difference for my son on the autism spectrum. His confidence in learning has really grown during the pilot.",
+    author: 'Parent',
+    role: 'Parent of a 2nd Grader',
+    details: 'Minneapolis, MN',
     rating: 5,
-    avatar: 'ML',
-  },
-  {
-    id: 4,
-    quote:
-      "The progress tracking is incredible. I can see exactly where each of my students stands and the AI recommendations help me adjust instruction in real time. This is the future of education.",
-    author: 'David K.',
-    role: 'District Administrator',
-    details: 'Managing 3 schools',
-    rating: 5,
-    avatar: 'DK',
+    avatar: 'P',
   },
 ];
 
 const stats = [
-  { value: '4.9', label: 'Average Rating', suffix: '/5' },
-  { value: '50K', label: 'Active Students', suffix: '+' },
-  { value: '94', label: 'Would Recommend', suffix: '%' },
-  { value: '200', label: 'Courses Available', suffix: '+' },
+  { value: '150', label: 'Pilot Students', suffix: '+' },
+  { value: '3', label: 'Month Pilot', suffix: 'mo' },
+  { value: '100', label: 'IEP Aligned', suffix: '%' },
+  { value: 'K-12', label: 'Full Curriculum', suffix: '' },
 ];
 
 export function Testimonials() {

@@ -1,200 +1,181 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Code, Palette, Calculator, FlaskConical, Languages } from 'lucide-react';
-import Link from 'next/link';
-import * as React from 'react';
+import {
+  Brain,
+  Target,
+  Users,
+  ShieldCheck,
+  Zap,
+  Heart,
+  BookOpen,
+  BarChart3,
+  CheckCircle2,
+} from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
-import { Section, SectionHeader } from '@/components/ui/section';
+import { Section } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 
-const categories = [
-  { label: 'All', value: 'all' },
-  { label: 'Technology', value: 'technology' },
-  { label: 'Design', value: 'design' },
-  { label: 'Math', value: 'math' },
-  { label: 'Science', value: 'science' },
-  { label: 'Languages', value: 'languages' },
-];
-
-const courses = [
+const features = [
   {
-    title: 'Introduction to Coding',
-    category: 'technology',
-    icon: Code,
-    color: 'bg-theme-primary-100 text-theme-primary-600',
-    level: 'Beginner',
-    lessons: 24,
-    duration: '6 weeks',
-    rating: 4.9,
-    students: 1240,
+    title: 'AI-Powered Virtual Brain',
+    description:
+      "Each learner gets a personalized AI agent that understands their unique learning style and adapts in real-time.",
+    icon: Brain,
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    borderColor: 'from-blue-500 to-blue-400',
   },
   {
-    title: 'Creative Design Basics',
-    category: 'design',
-    icon: Palette,
-    color: 'bg-accent-100 text-accent-600',
-    level: 'Beginner',
-    lessons: 18,
-    duration: '4 weeks',
-    rating: 4.8,
-    students: 890,
+    title: 'IEP Goal Alignment',
+    description:
+      'Automatically syncs with IEP goals, tracks progress, and generates comprehensive reports for care teams.',
+    icon: Target,
+    iconBg: 'bg-teal-100',
+    iconColor: 'text-teal-600',
+    borderColor: 'from-teal-500 to-blue-400',
   },
   {
-    title: 'Algebra Foundations',
-    category: 'math',
-    icon: Calculator,
-    color: 'bg-mint-100 text-mint-600',
-    level: 'Intermediate',
-    lessons: 32,
-    duration: '8 weeks',
-    rating: 4.7,
-    students: 2150,
+    title: 'Neurodiversity Support',
+    description:
+      'Purpose-built accommodations for ADHD, Dyslexia, Autism, and all learning differences.',
+    icon: Users,
+    iconBg: 'bg-coral-100',
+    iconColor: 'text-coral-500',
+    borderColor: 'from-coral-400 to-rose-400',
   },
   {
-    title: 'Exploring Earth Science',
-    category: 'science',
-    icon: FlaskConical,
-    color: 'bg-sky-100 text-sky-600',
-    level: 'Beginner',
-    lessons: 20,
-    duration: '5 weeks',
-    rating: 4.9,
-    students: 1560,
+    title: 'FERPA & COPPA Compliant',
+    description:
+      "Bank-level encryption, no ads, no data selling. Your child's privacy is our top priority.",
+    icon: ShieldCheck,
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    borderColor: 'from-emerald-500 to-teal-400',
   },
   {
-    title: 'Spanish for Beginners',
-    category: 'languages',
-    icon: Languages,
-    color: 'bg-sunshine-100 text-sunshine-600',
-    level: 'Beginner',
-    lessons: 30,
-    duration: '10 weeks',
-    rating: 4.8,
-    students: 980,
+    title: 'Real-Time Adaptation',
+    description:
+      'Content difficulty and presentation adjust instantly based on performance and engagement.',
+    icon: Zap,
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-500',
+    borderColor: 'from-orange-400 to-amber-400',
   },
   {
-    title: 'Advanced Reading Skills',
-    category: 'technology',
+    title: 'Emotional Intelligence',
+    description:
+      'Recognizes frustration, anxiety, and fatigue. Provides encouragement and calming interventions.',
+    icon: Heart,
+    iconBg: 'bg-pink-100',
+    iconColor: 'text-pink-500',
+    borderColor: 'from-pink-400 to-rose-400',
+  },
+  {
+    title: 'Full K-12 Curriculum',
+    description:
+      'Comprehensive coverage of Math, Reading, Science, and more aligned to state standards.',
     icon: BookOpen,
-    color: 'bg-coral-100 text-coral-600',
-    level: 'Advanced',
-    lessons: 16,
-    duration: '4 weeks',
-    rating: 4.6,
-    students: 670,
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    borderColor: 'from-purple-500 to-violet-400',
+  },
+  {
+    title: 'Progress Tracking',
+    description:
+      'Beautiful dashboards for parents and teachers to monitor growth and celebrate achievements.',
+    icon: BarChart3,
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
+    borderColor: 'from-indigo-500 to-blue-400',
   },
 ];
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+const cardVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay: i * 0.08, ease: 'easeOut' },
+  }),
 };
 
 export function CoursesSection() {
-  const [active, setActive] = React.useState('all');
-
-  const filtered = active === 'all' ? courses : courses.filter((c) => c.category === active);
-
   return (
-    <Section id="courses" background="white" padding="lg">
-      <SectionHeader
-        badge="Popular Courses"
-        title={
-          <>
-            Explore Our <span className="text-gradient-primary">Course Catalog</span>
-          </>
-        }
-        description="Hundreds of expert-designed courses across every subject, tailored for K-12 learners with personalized AI support."
-      />
-
-      {/* Category Filter */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
-        {categories.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() => setActive(cat.value)}
-            className={cn(
-              'px-5 py-2 rounded-full text-sm font-medium transition-all',
-              active === cat.value
-                ? 'bg-theme-primary-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            )}
-          >
-            {cat.label}
-          </button>
-        ))}
+    <Section id="features" background="white" padding="lg">
+      {/* Header */}
+      <div className="text-center mb-14 max-w-2xl mx-auto">
+        <span className="inline-block px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-sm font-medium text-emerald-700 mb-6">
+          Platform Features
+        </span>
+        <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+          Everything Your Learner Needs to{' '}
+          <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+            Succeed
+          </span>
+        </h2>
+        <p className="text-gray-600 text-lg leading-relaxed">
+          AIVO combines cutting-edge AI with proven educational strategies to create the most
+          personalized learning experience for neurodiverse students.
+        </p>
       </div>
 
-      {/* Course Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((course, index) => {
-          const Icon = course.icon;
+      {/* Feature Grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        {features.map((feature, index) => {
+          const Icon = feature.icon;
           return (
             <motion.div
-              key={course.title}
-              variants={itemVariants}
+              key={feature.title}
+              custom={index}
+              variants={cardVariants}
               initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.05 }}
-              className="group bg-white rounded-2xl border border-gray-100 shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+              animate="visible"
+              className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
             >
-              {/* Card Header */}
-              <div className="p-6 pb-0">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={cn('p-3 rounded-xl', course.color)}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-medium text-theme-primary-600 bg-theme-primary-50 px-3 py-1 rounded-full">
-                    {course.level}
-                  </span>
+              {/* Gradient Top Border */}
+              <div
+                className={cn(
+                  'h-1 w-full bg-gradient-to-r',
+                  feature.borderColor
+                )}
+              />
+
+              <div className="p-6">
+                {/* Icon */}
+                <div
+                  className={cn(
+                    'w-12 h-12 rounded-xl flex items-center justify-center mb-4',
+                    feature.iconBg
+                  )}
+                >
+                  <Icon className={cn('w-6 h-6', feature.iconColor)} />
                 </div>
 
-                <h3 className="font-display text-lg font-bold text-gray-900 mb-2 group-hover:text-theme-primary-600 transition-colors">
-                  {course.title}
+                {/* Title */}
+                <h3 className="font-display text-lg font-bold text-gray-900 mb-2">
+                  {feature.title}
                 </h3>
 
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span>{course.lessons} lessons</span>
-                  <span>•</span>
-                  <span>{course.duration}</span>
-                </div>
-              </div>
-
-              {/* Card Footer */}
-              <div className="p-6 pt-4 flex items-center justify-between border-t border-gray-50 mt-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sunshine-500">★</span>
-                    <span className="text-sm font-semibold text-gray-900">{course.rating}</span>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {course.students.toLocaleString()} students
-                  </span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-theme-primary-600 group-hover:translate-x-1 transition-all" />
+                {/* Description */}
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {feature.description}
+                </p>
               </div>
             </motion.div>
           );
         })}
       </div>
 
-      {/* View All CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="mt-12 text-center"
-      >
-        <Button variant="outline" size="lg" asChild>
-          <Link href="/courses">
-            View All Courses
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-        </Button>
-      </motion.div>
+      {/* Bottom Badge */}
+      <div className="mt-12 text-center">
+        <span className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-50 border border-emerald-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <span className="text-sm font-medium text-emerald-700">
+            All features tested and validated with 150+ students in our pilot program
+          </span>
+        </span>
+      </div>
     </Section>
   );
 }

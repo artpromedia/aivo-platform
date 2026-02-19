@@ -181,7 +181,7 @@ const educatorFeatures = [
   {
     icon: BookOpen,
     title: 'Full Curriculum Library',
-    description: 'Thousands of activities aligned to standards and IEP goals',
+    description: 'Activities aligned to standards and IEP goals across all K-12 subjects',
   },
   {
     icon: GraduationCap,

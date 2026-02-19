@@ -284,7 +284,7 @@ export function Pricing() {
         viewport={{ once: true }}
         className="max-w-2xl mx-auto mb-16"
       >
-        <div className="bg-gradient-to-br from-theme-primary-50 to-coral-50 rounded-3xl p-8 text-center border border-theme-primary-100">
+        <div className="bg-white rounded-3xl p-8 text-center border border-gray-200 shadow-soft">
           {/* Stars */}
           <div className="flex items-center justify-center gap-1 mb-4">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -294,9 +294,8 @@ export function Pricing() {
 
           {/* Quote */}
           <blockquote className="text-lg text-gray-700 mb-4 italic">
-            &quot;AIVO Pro has been a game-changer for our son with ADHD. The personalized learning
-            paths keep him engaged, and the parent dashboard lets us celebrate his progress
-            together.&quot;
+            &quot;The personalized learning paths keep my child engaged, and the parent dashboard
+            lets us celebrate progress together. A real difference for our family.&quot;
           </blockquote>
 
           {/* Author */}
@@ -305,8 +304,8 @@ export function Pricing() {
               PP
             </div>
             <div className="text-left">
-              <div className="font-semibold text-gray-900">Pilot Parent</div>
-              <div className="text-sm text-gray-500">Pilot Program Parent</div>
+              <div className="font-semibold text-gray-900">Pilot Program Parent</div>
+              <div className="text-sm text-gray-500">AIVO Pilot Program, 2025</div>
             </div>
           </div>
         </div>

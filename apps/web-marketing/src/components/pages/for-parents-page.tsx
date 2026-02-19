@@ -418,7 +418,7 @@ export function ForParentsPage() {
                 Ready to See Your Child Thrive?
               </h2>
               <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-                Join thousands of parents who&apos;ve discovered a better way to support their
+                Join parents who&apos;ve discovered a better way to support their
                 neurodiverse learner.
               </p>
               <Button size="lg" className="bg-white text-coral-600 hover:bg-white/90" asChild>

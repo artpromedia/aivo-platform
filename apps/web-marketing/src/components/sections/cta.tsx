@@ -30,50 +30,19 @@ export function CTA() {
   };
 
   return (
-    <section className="relative py-24 overflow-hidden">
-      {/* Indigo Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-theme-primary-600 via-theme-primary-700 to-theme-primary-900" />
+    <section className="relative py-24 overflow-hidden bg-gray-50">
 
-      {/* Animated Shapes */}
-      <motion.div
-        className="absolute top-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, 50, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute bottom-10 right-10 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, -30, 0],
-          y: [0, 40, 0],
-          scale: [1.2, 1, 1.2],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Pattern Overlay */}
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
-      />
-
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           {/* Headline */}
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6"
           >
             Ready to Start{' '}
-            <span className="underline decoration-accent-400/50 decoration-4 underline-offset-4">
+            <span className="text-theme-primary-600">
               Learning?
             </span>
           </motion.h2>
@@ -84,10 +53,10 @@ export function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-white/90 mb-10 max-w-2xl mx-auto"
+            className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto"
           >
-            Join thousands of learners and educators who trust AIVO for personalized, AI-powered
-            education.
+            Join our growing community of learners and educators using AIVO for personalized,
+            AI-powered education.
           </motion.p>
 
           {/* Email Capture */}
@@ -106,13 +75,13 @@ export function CTA() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
-                className="w-full pl-12 pr-4 py-4 rounded-full text-gray-900 bg-white border-0 focus:ring-2 focus:ring-accent-400 outline-none text-base"
+                className="w-full pl-12 pr-4 py-4 rounded-full text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-theme-primary-400 outline-none text-base"
                 required
               />
             </div>
             <button
               type="submit"
-              className="w-full sm:w-auto px-8 py-4 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-full transition-colors flex items-center justify-center gap-2 shadow-lg"
+              className="w-full sm:w-auto px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-full transition-colors flex items-center justify-center gap-2 shadow-md"
             >
               Get Started Free
               <ArrowRight className="w-5 h-5" />
@@ -128,7 +97,7 @@ export function CTA() {
             className="flex flex-wrap items-center justify-center gap-6"
           >
             {trustPoints.map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-2 text-white/80 text-sm">
+              <div key={text} className="flex items-center gap-2 text-gray-500 text-sm">
                 <Icon className="w-4 h-4" />
                 <span>{text}</span>
               </div>
@@ -141,11 +110,11 @@ export function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="mt-10 inline-flex items-center gap-3 px-5 py-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20"
+            className="mt-10 inline-flex items-center gap-3 px-5 py-3 bg-white rounded-full border border-gray-200 shadow-sm"
           >
-            <Shield className="w-5 h-5 text-white" />
-            <span className="text-white text-sm">
-              <span className="font-semibold">FERPA &amp; COPPA Compliant</span> — Your
+            <Shield className="w-5 h-5 text-mint-600" />
+            <span className="text-gray-600 text-sm">
+              <span className="font-semibold text-gray-900">FERPA &amp; COPPA Compliant</span> — Your
               child&apos;s data is always protected
             </span>
           </motion.div>

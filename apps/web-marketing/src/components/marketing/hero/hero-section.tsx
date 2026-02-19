@@ -54,9 +54,9 @@ const floatVariants = {
 
 // Stats data
 const stats = [
-  { value: '50K+', label: 'Students', icon: Users },
-  { value: '200+', label: 'Courses', icon: BookOpen },
-  { value: '4.9', label: 'Rating', icon: Star },
+  { value: '150+', label: 'Pilot Students', icon: Users },
+  { value: 'K-12', label: 'Full Curriculum', icon: BookOpen },
+  { value: '100%', label: 'IEP Aligned', icon: Star },
   { value: 'AI', label: 'Powered', icon: Brain },
 ];
 
@@ -68,50 +68,9 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Animated Background */}
+      {/* Light Background */}
       <div className="absolute inset-0 -z-10">
-        {/* Gradient Base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-theme-primary-50/50 via-white to-pink-50/50" />
-
-        {/* Animated Blobs */}
-        <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-theme-primary-200/30 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 30, 0],
-            y: [0, -20, 0],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-96 h-96 bg-coral-200/30 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            x: [0, -40, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-mint-100/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        />
-
-        {/* Grid Pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, #8B5CF6 1px, transparent 1px),
-              linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 via-white to-white" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
@@ -127,7 +86,7 @@ export function HeroSection() {
             <motion.div variants={itemVariants} className="mb-6">
               <Link
                 href="#early-access"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-theme-primary-100 to-coral-100 border border-theme-primary-200/50 hover:shadow-md transition-shadow group"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 hover:shadow-md transition-shadow group shadow-sm"
               >
                 <Sparkles className="w-4 h-4 text-theme-primary-600" />
                 <span className="text-sm font-medium text-gray-700">
@@ -142,20 +101,18 @@ export function HeroSection() {
               variants={itemVariants}
               className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 mb-6"
             >
-              Master New Skills{' '}
-              <span className="relative">
-                <span className="bg-gradient-to-r from-theme-primary-600 via-theme-primary-500 to-accent-500 bg-clip-text text-transparent">
-                  With Expert-Led
-                </span>
-                <motion.span
-                  className="absolute -bottom-2 left-0 right-0 h-3 bg-theme-primary-200/50 -z-10 rounded"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.8, duration: 0.6 }}
-                />
+              Welcome to{' '}
+              <span className="bg-gradient-to-r from-theme-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                AIVO
               </span>
               <br />
-              <span className="text-gray-700">Courses</span>
+              <span className="bg-gradient-to-r from-coral-400 via-rose-500 to-pink-500 bg-clip-text text-transparent">
+                Learning
+              </span>
+              <br />
+              <span className="text-gray-900">Where Every Mind</span>
+              <br />
+              <span className="text-gray-900">Thrives</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -163,15 +120,16 @@ export function HeroSection() {
               variants={itemVariants}
               className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Join thousands of learners. AI-powered personalized learning platform with{' '}
-              <span className="font-semibold text-gray-900">Virtual Brain</span> technology designed
-              for neurodiverse K-12 learners. Start learning with world-class instruction.
+              Revolutionary AI-powered learning platform with personalized{' '}
+              <span className="font-semibold text-gray-900">Virtual Brains</span> designed for
+              neurodiverse K-12 learners. Supporting ADHD, Autism, Dyslexia, and all learning
+              differences.
             </motion.p>
 
             {/* Pilot Success Callout */}
             <motion.div
               variants={itemVariants}
-              className="mb-8 p-4 bg-gradient-to-r from-mint-50 to-mint-100/50 border border-mint-200 rounded-2xl max-w-xl mx-auto lg:mx-0"
+              className="mb-8 p-4 bg-white border border-gray-200 rounded-2xl max-w-xl mx-auto lg:mx-0 shadow-sm"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-mint-500 rounded-xl shrink-0">
@@ -191,7 +149,7 @@ export function HeroSection() {
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
               <Link
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-xl shadow-purple hover:shadow-purple-lg transition-all text-lg"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-full shadow-md hover:shadow-lg transition-all text-lg"
               >
                 Start Free Trial
                 <ArrowRight className="w-5 h-5" />
@@ -200,7 +158,7 @@ export function HeroSection() {
                 onClick={() => {
                   setIsVideoModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all text-lg"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-lg"
               >
                 <Play className="w-5 h-5 text-theme-primary-500" />
                 Watch Demo
@@ -295,7 +253,7 @@ export function HeroSection() {
                   </div>
 
                   {/* Achievement */}
-                  <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-theme-primary-50 to-coral-50 rounded-xl border border-theme-primary-100">
+                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
                     <div className="text-2xl">🏆</div>
                     <div>
                       <div className="font-semibold text-gray-900">Achievement Unlocked!</div>
@@ -357,7 +315,7 @@ export function HeroSection() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.5 + index * 0.1 }}
-                className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100"
+                className="text-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm"
               >
                 <Icon className="w-6 h-6 text-theme-primary-500 mx-auto mb-2" />
                 <div className="text-2xl md:text-3xl font-bold text-gray-900">{value}</div>
@@ -397,9 +355,11 @@ export function HeroSection() {
             >
               <X className="w-5 h-5" />
             </button>
-            {/* Replace with actual video embed */}
-            <div className="flex items-center justify-center h-full text-white">
-              <p>Video Player Placeholder</p>
+            <div className="flex flex-col items-center justify-center h-full text-white gap-4">
+              <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
+                <Play className="w-10 h-10 text-white ml-1" />
+              </div>
+              <p className="text-white/60 text-sm">Demo video coming soon</p>
             </div>
           </motion.div>
         </motion.div>

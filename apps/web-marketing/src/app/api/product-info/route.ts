@@ -284,7 +284,7 @@ export async function GET() {
     company: {
       name: 'AIVO Learning, Inc.',
       founded: '2024',
-      headquarters: 'San Francisco, CA',
+      headquarters: 'Minneapolis, MN',
       mission: 'To ensure every neurodiverse learner has access to personalized education that celebrates their unique strengths',
       team: {
         educators: true,

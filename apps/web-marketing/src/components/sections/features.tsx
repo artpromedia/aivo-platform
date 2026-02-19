@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 
+import { featureIllustrations } from '@/components/sections/feature-illustrations';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 
@@ -80,6 +81,7 @@ export function Features() {
         {features.map((feature, index) => {
           const Icon = feature.icon;
           const isReversed = index % 2 === 1;
+          const Illustration = featureIllustrations[feature.title];
 
           return (
             <motion.div
@@ -118,14 +120,13 @@ export function Features() {
 
               {/* Visual Side */}
               <div className={cn(isReversed && 'lg:order-1')}>
-                <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 border border-gray-100 shadow-soft aspect-[4/3] flex items-center justify-center">
-                  <div className={cn('w-24 h-24 rounded-3xl flex items-center justify-center', feature.color)}>
-                    <Icon className="w-12 h-12" />
+                {Illustration ? <Illustration /> : (
+                  <div className="relative bg-white rounded-3xl p-8 border border-gray-100 shadow-soft aspect-[4/3] flex items-center justify-center">
+                    <div className={cn('w-24 h-24 rounded-3xl flex items-center justify-center', feature.color)}>
+                      <Icon className="w-12 h-12" />
+                    </div>
                   </div>
-                  {/* Decorative circles */}
-                  <div className="absolute top-6 right-6 w-16 h-16 bg-theme-primary-50 rounded-full opacity-60" />
-                  <div className="absolute bottom-8 left-8 w-12 h-12 bg-accent-50 rounded-full opacity-60" />
-                </div>
+                )}
               </div>
             </motion.div>
           );

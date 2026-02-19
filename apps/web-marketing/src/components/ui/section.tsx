@@ -19,9 +19,9 @@ const paddingMap = {
 
 const backgroundMap = {
   white: 'bg-white',
-  gray: 'bg-gray-50',
-  gradient: 'bg-gradient-to-b from-white via-theme-primary-50/30 to-white',
-  primary: 'bg-theme-primary-500 text-white',
+  gray: 'bg-gray-50/50',
+  gradient: 'bg-gray-50/30',
+  primary: 'bg-gray-50',
   none: '',
 };
 

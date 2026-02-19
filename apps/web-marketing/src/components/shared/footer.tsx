@@ -192,7 +192,7 @@ const contactInfo = [
   },
   {
     icon: MapPin,
-    label: 'San Francisco, CA',
+    label: 'Minneapolis, MN',
     href: null,
   },
 ];
@@ -263,21 +263,18 @@ export function Footer() {
       <div className="border-b border-gray-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-gradient-to-br from-theme-primary-500 to-theme-primary-600 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
-              {/* Background decoration */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="bg-white rounded-3xl p-8 md:p-12 text-center relative overflow-hidden border border-gray-200 shadow-soft">
 
               <div className="relative z-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full mb-6">
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <span className="text-white text-sm font-medium">Join 10,000+ subscribers</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-theme-primary-50 rounded-full mb-6">
+                  <Sparkles className="w-4 h-4 text-theme-primary-600" />
+                  <span className="text-theme-primary-700 text-sm font-medium">Join 10,000+ subscribers</span>
                 </div>
 
-                <h3 className="font-display text-2xl md:text-3xl font-bold text-white mb-3">
+                <h3 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   Stay Updated with AIVO
                 </h3>
-                <p className="text-white/80 mb-8 max-w-md mx-auto">
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
                   Get the latest updates on new features, learning tips, and special offers
                   delivered to your inbox.
                 </p>
@@ -299,7 +296,7 @@ export function Footer() {
                             'w-full pl-12 pr-4 py-3.5 rounded-xl border-2 focus:outline-none focus:ring-0 transition-colors',
                             emailError
                               ? 'border-red-300 bg-red-50'
-                              : 'border-transparent bg-white focus:border-coral-300'
+                              : 'border-gray-200 bg-gray-50 focus:border-theme-primary-400 focus:bg-white'
                           )}
                         />
                       </div>
@@ -310,7 +307,7 @@ export function Footer() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-coral-500 hover:bg-coral-600 text-white px-6 py-3.5 rounded-xl font-semibold whitespace-nowrap"
+                      className="bg-theme-primary-600 hover:bg-theme-primary-700 text-white px-6 py-3.5 rounded-xl font-semibold whitespace-nowrap"
                     >
                       {isSubmitting ? 'Subscribing...' : 'Subscribe'}
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -322,7 +319,7 @@ export function Footer() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 flex items-center justify-center gap-2 text-white"
+                    className="mt-4 flex items-center justify-center gap-2 text-mint-600"
                   >
                     <CheckCircle className="w-5 h-5" />
                     <span>Thanks for subscribing! Check your inbox.</span>
@@ -330,12 +327,12 @@ export function Footer() {
                 )}
 
                 {submitStatus === 'error' && (
-                  <p className="mt-4 text-red-200">Something went wrong. Please try again.</p>
+                  <p className="mt-4 text-red-500">Something went wrong. Please try again.</p>
                 )}
 
-                <p className="mt-4 text-xs text-white/60">
+                <p className="mt-4 text-xs text-gray-400">
                   We respect your privacy. Unsubscribe at any time.{' '}
-                  <Link href="/privacy" className="underline hover:text-white">
+                  <Link href="/privacy" className="underline hover:text-gray-900">
                     Privacy Policy
                   </Link>
                 </p>
