@@ -62,7 +62,7 @@ RUN mkdir -p /app/services/${SERVICE_NAME}/prisma
 RUN pnpm turbo build --filter="@aivo/${SERVICE_NAME}"
 
 # Use pnpm deploy to create production bundle
-RUN pnpm deploy --filter="@aivo/${SERVICE_NAME}" --prod /deploy
+RUN pnpm deploy --filter="@aivo/${SERVICE_NAME}" --prod --legacy /deploy
 
 # Ensure fastify-plugin is in deploy bundle (peer dep of @aivo/ts-observability, may be missing)
 RUN if [ -d "/deploy/node_modules/@aivo/ts-observability" ] && [ ! -d "/deploy/node_modules/fastify-plugin" ]; then \
