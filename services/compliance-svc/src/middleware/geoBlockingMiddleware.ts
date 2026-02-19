@@ -287,7 +287,7 @@ const geoBlockingPlugin: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export const geoBlockingMiddleware: FastifyPluginAsync = fp(geoBlockingPlugin, {
+export const geoBlockingMiddleware = fp(geoBlockingPlugin, {
   name: 'geo-blocking',
   fastify: '5.x',
 });

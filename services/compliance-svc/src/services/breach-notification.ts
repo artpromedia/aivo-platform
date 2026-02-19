@@ -905,7 +905,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
           },
         },
         auditLog: {
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 20,
         },
       },
@@ -915,7 +915,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: 'Breach not found' });
     }
 
-    reply.send(breach);
+    return reply.send(breach);
   });
 
   // Get breach assessment
@@ -1003,7 +1003,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
         notificationType: type,
         templateId: template.id,
         subject: template.subject.replace(/\{\{breachTitle\}\}/g, breach.title),
-        content: renderedContent,
+        body: renderedContent,
         status: 'PENDING',
         scheduledAt: body.scheduledAt ? new Date(body.scheduledAt as string) : null,
       },
