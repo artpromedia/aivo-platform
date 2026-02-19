@@ -63,4 +63,4 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
   );
 };
 
-export const deviceSyncAuthMiddleware: FastifyPluginAsync = fp(authPlugin);
+export const deviceSyncAuthMiddleware = fp(authPlugin);
