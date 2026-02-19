@@ -65,12 +65,12 @@ export function Tooltip({
   }, [delay, disabled]);
 
   const hide = React.useCallback(() => {
-    clearTimeout(timerRef.current);
+    if (timerRef.current != null) clearTimeout(timerRef.current);
     setVisible(false);
   }, []);
 
   React.useEffect(() => {
-    return () => clearTimeout(timerRef.current);
+    return () => { if (timerRef.current != null) clearTimeout(timerRef.current); };
   }, []);
 
   return (

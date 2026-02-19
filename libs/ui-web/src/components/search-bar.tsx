@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface SearchBarProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'value'> {
+export interface SearchBarProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'value' | 'onSubmit'> {
   /** Current search value */
   value?: string;
   /** Called on every keystroke */
