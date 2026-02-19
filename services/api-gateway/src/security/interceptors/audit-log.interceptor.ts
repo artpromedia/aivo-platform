@@ -87,7 +87,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           actor: this.buildActor(request),
           resource: {
             type: resourceType,
-            id: this.extractResourceId(request),
+            id: this.extractResourceId(request) ?? '',
           },
           eventType: 'data.read' as const,
           eventCategory: 'data_access' as const,
@@ -115,7 +115,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           actor: this.buildActor(request),
           resource: {
             type: resourceType,
-            id: this.extractResourceId(request),
+            id: this.extractResourceId(request) ?? '',
           },
           eventType: 'system.error' as const,
           eventCategory: 'system' as const,
@@ -131,7 +131,11 @@ export class AuditLogInterceptor implements NestInterceptor {
             ferpaProtected: isFerpaProtected || false,
             coppaCompliant: isCoppaCompliant || false,
           },
-          result: { status: 'failure' as const, statusCode: error.status || 500, errorMessage: error.message },
+          result: {
+            status: 'failure' as const,
+            statusCode: error.status || 500,
+            errorMessage: error.message,
+          },
           severity: this.determineSeverity(action, error.status || 500),
         });
 
@@ -158,14 +162,14 @@ export class AuditLogInterceptor implements NestInterceptor {
         tenantId: request.user.tenantId,
         roles: request.user.roles,
         ip: this.getClientIP(request),
-        userAgent: request.headers['user-agent'] as string,
+        userAgent: request.headers['user-agent']!,
       };
     }
 
     return {
       type: 'anonymous',
       ip: this.getClientIP(request),
-      userAgent: request.headers['user-agent'] as string,
+      userAgent: request.headers['user-agent']!,
     };
   }
 
@@ -235,7 +239,7 @@ export class AuditLogInterceptor implements NestInterceptor {
     if (params.resourceId) return params.resourceId as string;
 
     // Try to extract from path
-    const pathMatch = request.path.match(/\/([\da-f-]{36}|\d+)(?:\/|$)/);
+    const pathMatch = /\/([\da-f-]{36}|\d+)(?:\/|$)/.exec(request.path);
     return pathMatch ? pathMatch[1] : undefined;
   }
 

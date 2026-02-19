@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/main.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push"
@@ -16,6 +17,7 @@
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.15",
     "@nestjs/jwt": "^10.2.0",
+    "@nestjs/platform-express": "^10.4.15",
     "@prisma/client": "^5.22.0",
     "argon2": "^0.41.1",
     "dompurify": "^3.2.4",
