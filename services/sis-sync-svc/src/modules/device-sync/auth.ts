@@ -6,7 +6,7 @@
  * Ported from sync-svc during Sprint 3 consolidation.
  */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment */
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import * as jose from 'jose';
 
@@ -19,7 +19,7 @@ declare module 'fastify' {
   }
 }
 
-export const deviceSyncAuthMiddleware = fp(async (fastify: FastifyInstance) => {
+const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.decorateRequest('user', null);
 
   fastify.addHook(
@@ -61,4 +61,6 @@ export const deviceSyncAuthMiddleware = fp(async (fastify: FastifyInstance) => {
       }
     }
   );
-});
+};
+
+export const deviceSyncAuthMiddleware: FastifyPluginAsync = fp(authPlugin);

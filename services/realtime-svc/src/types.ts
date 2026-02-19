@@ -364,6 +364,7 @@ export interface PresenceUpdatePayload {
   cursorPosition?: CursorPosition;
   selectedElement?: string;
   metadata?: Record<string, unknown>;
+  currentRoom?: string;
 }
 
 /**

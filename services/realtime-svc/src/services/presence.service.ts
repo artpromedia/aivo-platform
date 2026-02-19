@@ -239,6 +239,23 @@ export class PresenceService {
   }
 
   /**
+   * Get total online user count across all tenants
+   */
+  async getOnlineUserCount(): Promise<number> {
+    const redis = getRedisClient();
+    let total = 0;
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'tenant:*:online', 'COUNT', 100);
+      cursor = nextCursor;
+      for (const key of keys) {
+        total += await redis.scard(key);
+      }
+    } while (cursor !== '0');
+    return total;
+  }
+
+  /**
    * Get recently active users (for "who's typing" etc.)
    */
   async getRecentlyActiveUsers(tenantId: string, withinMs = 30000): Promise<string[]> {

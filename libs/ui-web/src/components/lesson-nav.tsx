@@ -27,7 +27,7 @@ export interface LessonChapter {
   lessons: LessonItem[];
 }
 
-export interface LessonNavProps extends React.HTMLAttributes<HTMLElement> {
+export interface LessonNavProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onSelect'> {
   /** Chapters with their lessons */
   chapters: LessonChapter[];
   /** Called when a lesson is clicked */

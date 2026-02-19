@@ -120,10 +120,10 @@ export async function sendCompletionNotification(
   pool: Pool,
   dsrRequest: DsrRequest,
 ): Promise<boolean> {
-  const user = await getUserInfo(pool, dsrRequest.parentId, dsrRequest.tenantId);
+  const user = await getUserInfo(pool, dsrRequest.requested_by_user_id, dsrRequest.tenant_id);
   if (!user) return false;
 
-  const learnerName = await getLearnerName(pool, dsrRequest.learnerId, dsrRequest.tenantId);
+  const learnerName = await getLearnerName(pool, dsrRequest.learner_id, dsrRequest.tenant_id);
 
   return sendNotification({
     to: user.email,
@@ -132,7 +132,7 @@ export async function sendCompletionNotification(
     data: {
       parentName: `${user.firstName} ${user.lastName}`,
       learnerName,
-      requestType: dsrRequest.type,
+      requestType: dsrRequest.request_type,
       requestId: dsrRequest.id,
       completedAt: new Date().toISOString(),
       gdprReference: 'GDPR Article 17 – Right to Erasure',
@@ -147,10 +147,10 @@ export async function sendSubmissionConfirmation(
   pool: Pool,
   dsrRequest: DsrRequest,
 ): Promise<boolean> {
-  const user = await getUserInfo(pool, dsrRequest.parentId, dsrRequest.tenantId);
+  const user = await getUserInfo(pool, dsrRequest.requested_by_user_id, dsrRequest.tenant_id);
   if (!user) return false;
 
-  const learnerName = await getLearnerName(pool, dsrRequest.learnerId, dsrRequest.tenantId);
+  const learnerName = await getLearnerName(pool, dsrRequest.learner_id, dsrRequest.tenant_id);
 
   return sendNotification({
     to: user.email,
@@ -159,7 +159,7 @@ export async function sendSubmissionConfirmation(
     data: {
       parentName: `${user.firstName} ${user.lastName}`,
       learnerName,
-      requestType: dsrRequest.type,
+      requestType: dsrRequest.request_type,
       requestId: dsrRequest.id,
       submittedAt: new Date().toISOString(),
       estimatedCompletionDays: 30,
@@ -176,10 +176,10 @@ export async function sendGracePeriodReminder(
   dsrRequest: DsrRequest,
   daysRemaining: number,
 ): Promise<boolean> {
-  const user = await getUserInfo(pool, dsrRequest.parentId, dsrRequest.tenantId);
+  const user = await getUserInfo(pool, dsrRequest.requested_by_user_id, dsrRequest.tenant_id);
   if (!user) return false;
 
-  const learnerName = await getLearnerName(pool, dsrRequest.learnerId, dsrRequest.tenantId);
+  const learnerName = await getLearnerName(pool, dsrRequest.learner_id, dsrRequest.tenant_id);
 
   return sendNotification({
     to: user.email,
@@ -190,7 +190,7 @@ export async function sendGracePeriodReminder(
       learnerName,
       requestId: dsrRequest.id,
       daysRemaining,
-      deletionDate: dsrRequest.scheduledDeletionDate?.toISOString(),
+      deletionDate: dsrRequest.scheduled_deletion_at?.toISOString(),
       cancellationNotice: 'You may cancel this request before the grace period expires.',
     },
   });
@@ -205,10 +205,10 @@ export async function sendExportReadyNotification(
   downloadUrl: string,
   expiresAt: Date,
 ): Promise<boolean> {
-  const user = await getUserInfo(pool, dsrRequest.parentId, dsrRequest.tenantId);
+  const user = await getUserInfo(pool, dsrRequest.requested_by_user_id, dsrRequest.tenant_id);
   if (!user) return false;
 
-  const learnerName = await getLearnerName(pool, dsrRequest.learnerId, dsrRequest.tenantId);
+  const learnerName = await getLearnerName(pool, dsrRequest.learner_id, dsrRequest.tenant_id);
 
   return sendNotification({
     to: user.email,

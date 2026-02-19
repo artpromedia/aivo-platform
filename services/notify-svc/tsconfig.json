@@ -18,6 +18,8 @@
     "src/__tests__/**",
     "src/**/__tests__/**",
     "src/controllers/**",
-    "src/services/push-notification.service.ts"
+    "src/services/push-notification.service.ts",
+    "src/channels/email/analytics.service.ts",
+    "src/channels/email/suppression-sync.service.ts"
   ]
 }

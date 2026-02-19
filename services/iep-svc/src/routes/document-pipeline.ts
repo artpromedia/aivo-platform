@@ -175,7 +175,7 @@ export default async function documentPipelineRoutes(fastify: FastifyInstance): 
         reviewedAt: new Date(),
         reviewNotes: body.notes,
         extractedData: body.corrections
-          ? { ...(document.extractedData as object ?? {}), ...body.corrections }
+          ? ({ ...(document.extractedData as object ?? {}), ...body.corrections } as any)
           : document.extractedData,
       },
     });
@@ -255,7 +255,7 @@ async function triggerOcrPipeline(documentId: string, fileUrl: string, tenantId:
       where: { id: documentId },
       data: {
         status: needsReview ? 'NEEDS_REVIEW' : 'EXTRACTED',
-        extractedData: result.extractedData,
+        extractedData: result.extractedData as any,
         ocrConfidence: result.confidence,
       },
     });

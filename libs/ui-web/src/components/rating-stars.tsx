@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface RatingStarsProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface RatingStarsProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'color'> {
   /** Current rating value (0–5, supports halves) */
   value: number;
   /** Max stars */

@@ -904,7 +904,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
             createdAt: true,
           },
         },
-        auditLogs: {
+        auditLog: {
           orderBy: { timestamp: 'desc' },
           take: 20,
         },
@@ -945,7 +945,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
 
     const assessment = assessBreach(breachForAssessment as any);
 
-    reply.send({
+    return reply.send({
       breachId: breach.id,
       severity: breach.severity,
       status: breach.status,
@@ -984,7 +984,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     // Render template with breach data
-    const renderedContent = template.content
+    const renderedContent = template.body
       .replace(/\{\{breachTitle\}\}/g, breach.title)
       .replace(/\{\{breachDescription\}\}/g, breach.description || '')
       .replace(/\{\{detectedAt\}\}/g, breach.detectedAt?.toISOString() || '')
@@ -1000,7 +1000,6 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
         recipientType,
         recipientEmail,
         recipientName,
-        recipientJurisdiction: jurisdiction,
         notificationType: type,
         templateId: template.id,
         subject: template.subject.replace(/\{\{breachTitle\}\}/g, breach.title),
@@ -1021,7 +1020,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
 
-    reply.status(201).send({
+    return reply.status(201).send({
       id: notification.id,
       breachId: notification.breachId,
       templateId: notification.templateId,
@@ -1044,7 +1043,7 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: 'Jurisdiction not found' });
     }
 
-    reply.send(requirements[0]);
+    return reply.send(requirements[0]);
   });
 
   // List all jurisdiction requirements

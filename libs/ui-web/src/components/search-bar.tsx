@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface SearchBarProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size'> {
+export interface SearchBarProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'value'> {
   /** Current search value */
   value?: string;
   /** Called on every keystroke */
@@ -136,7 +136,7 @@ export function SearchBar({
           'w-full rounded-xl border border-slate-200 bg-white font-medium text-slate-900 placeholder:text-slate-400',
           'outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
           sizeStyles[size],
-          (shortcutHint || trailing || loading) && 'pr-20'
+          !!(shortcutHint || trailing || loading) && 'pr-20'
         )}
         {...inputProps}
       />

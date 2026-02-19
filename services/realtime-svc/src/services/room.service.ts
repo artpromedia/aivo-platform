@@ -803,4 +803,49 @@ export class RoomService {
 
     logger.info({ roomId }, 'Room cleaned up');
   }
+
+  /**
+   * Get count of active rooms (rooms with at least one member)
+   */
+  async getActiveRoomCount(): Promise<number> {
+    const rooms = await this.getAllRooms();
+    return rooms.length;
+  }
+
+  /**
+   * Get all active rooms
+   */
+  async getAllRooms(): Promise<Array<{ roomId: string; memberCount: number }>> {
+    const redis = getRedisClient();
+    const rooms: Array<{ roomId: string; memberCount: number }> = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'room:*:members', 'COUNT', 100);
+      cursor = nextCursor;
+      for (const key of keys) {
+        const memberCount = await redis.scard(key);
+        if (memberCount > 0) {
+          const roomId = key.replace(':members', '').replace('room:', '');
+          rooms.push({ roomId, memberCount });
+        }
+      }
+    } while (cursor !== '0');
+    return rooms;
+  }
+
+  /**
+   * Get rooms filtered by tenant (checks room metadata)
+   */
+  async getRoomsByTenant(tenantId: string): Promise<Array<{ roomId: string; memberCount: number }>> {
+    const allRooms = await this.getAllRooms();
+    const redis = getRedisClient();
+    const filtered: Array<{ roomId: string; memberCount: number }> = [];
+    for (const room of allRooms) {
+      const metadata = await redis.hgetall(RedisKeys.roomMetadata(room.roomId));
+      if (metadata?.tenantId === tenantId) {
+        filtered.push(room);
+      }
+    }
+    return filtered;
+  }
 }

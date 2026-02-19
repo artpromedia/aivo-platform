@@ -554,7 +554,7 @@ export async function checkCompliance(tenantId: string) {
     where: {
       iep: { tenantId, status: 'ACTIVE' },
       targetDate: { lt: now },
-      status: { notIn: ['COMPLETED', 'DISCONTINUED'] },
+      status: { notIn: ['MASTERED', 'DISCONTINUED'] },
     },
     include: {
       iep: {
@@ -564,12 +564,13 @@ export async function checkCompliance(tenantId: string) {
   });
 
   for (const goal of overdueGoals) {
+    const iep = (goal as any).iep;
     alerts.push({
       alertType: 'GOAL_OVERDUE',
       severity: 'High',
-      studentId: goal.iep.studentId,
+      studentId: iep.studentId,
       iepId: goal.iepId,
-      description: `Goal #${goal.goalNumber} overdue for ${goal.iep.student.firstName} ${goal.iep.student.lastName}: ${goal.description?.substring(0, 60)}`,
+      description: `Goal #${goal.goalNumber} overdue for ${iep.student.firstName} ${iep.student.lastName}: ${goal.description?.substring(0, 60)}`,
       dueDate: goal.targetDate,
     });
   }
@@ -678,13 +679,13 @@ export async function getDashboard(tenantId: string) {
       where: { iep: { tenantId, status: 'ACTIVE' } },
     }),
     prisma.iEPGoal.count({
-      where: { iep: { tenantId, status: 'ACTIVE' }, status: 'COMPLETED' },
+      where: { iep: { tenantId, status: 'ACTIVE' }, status: 'MASTERED' },
     }),
     prisma.iEPGoal.count({
       where: {
         iep: { tenantId, status: 'ACTIVE' },
         targetDate: { lt: now },
-        status: { notIn: ['COMPLETED', 'DISCONTINUED'] },
+        status: { notIn: ['MASTERED', 'DISCONTINUED'] },
       },
     }),
   ]);

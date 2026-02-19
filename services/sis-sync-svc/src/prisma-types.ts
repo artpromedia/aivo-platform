@@ -38,7 +38,7 @@ export interface ModelDelegate<T = any> {
 /**
  * Extended PrismaClient interface with SIS-specific models
  */
-export interface ExtendedPrismaClient extends BasePrismaClient {
+export type ExtendedPrismaClient = BasePrismaClient & {
   // SIS Provider models
   sisProvider: ModelDelegate;
   sisSyncRun: ModelDelegate;

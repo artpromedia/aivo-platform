@@ -10,7 +10,7 @@
  * Blocked requests are logged to the audit trail for compliance reporting.
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import { config } from '../config.js';
 
@@ -193,7 +193,7 @@ function logBlockEvent(event: GeoBlockEvent, logger: FastifyRequest['log']): voi
    Fastify Plugin
    ========================================================================== */
 
-async function geoBlockingPlugin(fastify: FastifyInstance): Promise<void> {
+const geoBlockingPlugin: FastifyPluginAsync = async (fastify) => {
   const geoConfig = loadGeoConfig();
 
   fastify.log.info(
@@ -236,11 +236,12 @@ async function geoBlockingPlugin(fastify: FastifyInstance): Promise<void> {
     logBlockEvent(event, request.log);
 
     if (geoConfig.enforce) {
-      return reply.status(403).send({
+      void reply.status(403).send({
         error: 'Forbidden',
         message: 'Access from your region is not permitted.',
         code: 'GEO_BLOCKED',
       });
+      return;
     }
     // Dry-run: log but allow
   });
@@ -284,9 +285,9 @@ async function geoBlockingPlugin(fastify: FastifyInstance): Promise<void> {
       exemptRoutes: [...geoConfig.exemptRoutes],
     });
   });
-}
+};
 
-export const geoBlockingMiddleware = fp(geoBlockingPlugin, {
+export const geoBlockingMiddleware: FastifyPluginAsync = fp(geoBlockingPlugin, {
   name: 'geo-blocking',
   fastify: '5.x',
 });

@@ -209,9 +209,9 @@ export async function startEventConsumer(): Promise<void> {
 
   try {
     publisher = new EventPublisher({
-      natsUrl: config.nats.url,
-      clientId: 'audit-svc',
-      stream: 'AUDIT',
+      servers: config.nats.url,
+      serviceName: 'audit-svc',
+      serviceVersion: '1.0.0',
     });
 
     await publisher.connect();

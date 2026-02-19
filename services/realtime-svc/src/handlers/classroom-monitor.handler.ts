@@ -92,7 +92,9 @@ export class ClassroomMonitorHandler {
     });
 
     // Get updated classroom state
-    const { metrics, students } = await this.monitorService.getClassroomState(classroomId);
+    const classroomState = await this.monitorService.getClassroomState(classroomId);
+    if (!classroomState) return;
+    const { metrics, students } = classroomState;
 
     // Get active alerts
     const alerts = await this.monitorService.getActiveAlerts(classroomId);
@@ -141,7 +143,11 @@ export class ClassroomMonitorHandler {
       const { classroomId } = payload;
 
       // Get current classroom state
-      const { metrics, students } = await this.monitorService.getClassroomState(classroomId);
+      const classroomState = await this.monitorService.getClassroomState(classroomId);
+      if (!classroomState) {
+        return { success: false, error: 'Classroom not found' };
+      }
+      const { metrics, students } = classroomState;
       const alerts = await this.monitorService.getActiveAlerts(classroomId);
 
       logger.info({ teacherId, classroomId }, 'Teacher subscribed to classroom monitoring');

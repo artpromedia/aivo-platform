@@ -125,7 +125,7 @@ export async function createParentDataPackage(
       filters: { type: 'parent_data_package', studentId: input.studentId },
       fromDate: new Date(0), // All time
       toDate: new Date(),
-      format: 'ZIP',
+      format: 'JSON', // Parent data packages are delivered as ZIP but stored as JSON format
       status: 'COMPLETED',
       completedAt: new Date(),
       recordCount: auditLogs.length,

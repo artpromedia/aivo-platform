@@ -8,20 +8,21 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
 import { config } from './config.js';
-import { closePool } from './modules/shared/db.js';
+import { closePool, getPool } from './modules/shared/db.js';
 import { createDsrWorker } from './modules/dsr/worker.js';
 import { startGracePeriodScheduler, stopGracePeriodScheduler } from './modules/dsr/scheduler.js';
 import { prisma } from './prisma.js';
 
 async function main() {
   const app = createApp();
+  const pool = getPool();
 
   // Start DSR background worker
-  const dsrWorker = createDsrWorker();
+  const dsrWorker = createDsrWorker(pool);
   dsrWorker.start();
 
   // Start DSR grace-period scheduler
-  startGracePeriodScheduler();
+  startGracePeriodScheduler(pool);
 
   // Graceful shutdown
   const shutdown = async (signal: string) => {

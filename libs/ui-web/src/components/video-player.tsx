@@ -7,7 +7,7 @@ import { cn } from '../lib/utils';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export interface VideoPlayerProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface VideoPlayerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onEnded'> {
   /** Video source URL */
   src: string;
   /** Poster / thumbnail image URL */

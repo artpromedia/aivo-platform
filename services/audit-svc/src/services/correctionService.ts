@@ -66,7 +66,7 @@ export async function createCorrectionRequest(
       currentValue: input.currentValue,
       requestedValue: input.requestedValue,
       reason: input.reason,
-      supportingDocs: input.supportingDocs ?? undefined,
+      supportingDocs: (input.supportingDocs ?? undefined) as any,
       status: 'PENDING',
       responseDeadline,
       escalationDate,

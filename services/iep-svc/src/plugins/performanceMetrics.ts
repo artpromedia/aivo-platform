@@ -126,8 +126,7 @@ function calculatePercentiles(samples: number[]): PercentileStats {
  * with placeholders, so metrics aggregate properly.
  */
 function normalizeRoute(url: string): string {
-  return url
-    .split('?')[0] // Remove query string
+  return (url.split('?')[0] ?? url) // Remove query string
     .replace(
       /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
       ':id'

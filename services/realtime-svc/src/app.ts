@@ -272,13 +272,16 @@ export async function buildApp(): Promise<{ app: FastifyInstance; services: AppS
     '/internal/presence/update',
     { preHandler: httpAuthMiddleware.requireServiceAuth },
     async (request, reply) => {
-      const body = request.body as { userId: string; status: string; metadata?: unknown };
+      const body = request.body as { userId: string; tenantId?: string; status: string; metadata?: Record<string, unknown> };
 
       if (!body.userId || !body.status) {
         return reply.status(400).send({ error: 'Missing userId or status' });
       }
 
-      await presenceService.updatePresence?.(body.userId, body.status, body.metadata);
+      await presenceService.updatePresence(body.userId, body.tenantId ?? '', {
+        status: body.status as import('./types.js').UserStatus,
+        ...(body.metadata ? { metadata: body.metadata } : {}),
+      });
 
       return { success: true };
     }

@@ -396,7 +396,7 @@ export class SyncJobProcessor {
         data: { lastSyncAt: new Date() },
       });
 
-      logger.info({ jobId, entityCounts: stats.entityCounts }, 'Job completed successfully');
+      logger.info({ jobId, stats }, 'Job completed successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 

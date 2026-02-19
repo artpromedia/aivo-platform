@@ -282,7 +282,6 @@ export class AuthService {
 
     // Create session
     const session = await this.createSession(user.id, user.tenantId, deviceInfo);
-    const roles = user.roles.map((r: UserRole) => r.role);
     const tokens = await this.generateTokens(user, roles, session.id);
 
     return {

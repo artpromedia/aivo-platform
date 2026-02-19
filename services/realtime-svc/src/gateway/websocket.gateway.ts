@@ -211,7 +211,7 @@ export class WebSocketGateway {
         return null;
       }
 
-      const secret = new TextEncoder().encode(config.jwtSecret);
+      const secret = new TextEncoder().encode(config.jwt.secret);
       const { payload } = await jose.jwtVerify(token, secret);
 
       return {
@@ -220,6 +220,7 @@ export class WebSocketGateway {
         role: payload.role as string,
         displayName: (payload.displayName as string) || (payload.name as string) || 'Unknown',
         email: payload.email as string | undefined,
+        permissions: (payload.permissions as string[]) ?? [],
       };
     } catch (error) {
       logger.warn({ err: error }, 'Authentication failed');
@@ -828,6 +829,84 @@ export class WebSocketGateway {
    */
   public getConnectionCount(): number {
     return this.io.sockets.sockets.size;
+  }
+
+  /**
+   * Get connection count grouped by tenant
+   */
+  public getConnectionCountByTenant(): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const socket of this.io.sockets.sockets.values()) {
+      const tenantId = (socket.data as SocketData)?.tenantId;
+      if (tenantId) {
+        counts[tenantId] = (counts[tenantId] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  /**
+   * Get all active connections info
+   */
+  public getAllConnections(): Array<{ socketId: string; userId: string; tenantId: string; role: string; displayName: string }> {
+    const connections: Array<{ socketId: string; userId: string; tenantId: string; role: string; displayName: string }> = [];
+    for (const socket of this.io.sockets.sockets.values()) {
+      const data = socket.data as SocketData;
+      if (data?.userId) {
+        connections.push({
+          socketId: socket.id,
+          userId: data.userId,
+          tenantId: data.tenantId,
+          role: data.role,
+          displayName: data.displayName,
+        });
+      }
+    }
+    return connections;
+  }
+
+  /**
+   * Get connections for a specific tenant
+   */
+  public getConnectionsByTenant(tenantId: string): Array<{ socketId: string; userId: string; tenantId: string; role: string; displayName: string }> {
+    return this.getAllConnections().filter((c) => c.tenantId === tenantId);
+  }
+
+  /**
+   * Get connections for a specific user
+   */
+  public getConnectionsByUser(userId: string): Array<{ socketId: string; userId: string; tenantId: string; role: string; displayName: string }> {
+    return this.getAllConnections().filter((c) => c.userId === userId);
+  }
+
+  /**
+   * Disconnect a user from all sockets
+   */
+  public async disconnectUser(userId: string, reason?: string): Promise<number> {
+    let count = 0;
+    for (const socket of this.io.sockets.sockets.values()) {
+      const data = socket.data as SocketData;
+      if (data?.userId === userId) {
+        socket.emit(WSEventType.ERROR, { code: 'ADMIN_DISCONNECT', message: reason ?? 'Disconnected by admin' });
+        socket.disconnect(true);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Emit an event to a specific user
+   */
+  public async emitToUser(userId: string, event: string, data: unknown): Promise<void> {
+    this.io.to(`user:${userId}`).emit(event, data);
+  }
+
+  /**
+   * Emit an event to a specific room
+   */
+  public async emitToRoom(roomId: string, event: string, data: unknown): Promise<void> {
+    this.io.to(roomId).emit(event, data);
   }
 
   /**

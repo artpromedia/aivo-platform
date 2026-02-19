@@ -18,7 +18,6 @@ export {
   ExternalEnrollmentRole,
   IdentityConflictType,
   IdentityConflictStatus,
-  RelationshipType,
 } from '../generated/prisma-client/index.js';
 
 // Re-export types for models
@@ -26,12 +25,7 @@ export type {
   SisProvider,
   SisSyncRun,
   SisSyncQueue,
-  SisMapping,
-  SisCredential,
-  SisSyncConfig,
   SisFieldMapping,
-  SisSyncHistory,
-  SisWebhookEvent,
   SisRawSchool,
   SisRawClass,
   SisRawUser,
@@ -48,4 +42,16 @@ export type {
   WebhookConfig,
   WebhookLog,
   WebhookDeadLetter,
+  SyncHistory,
 } from '../generated/prisma-client/index.js';
+
+// Type stubs for models planned in schema but not yet in generated client
+// Allows downstream code to compile while Prisma schema migrations are pending
+export type SisMapping = Record<string, unknown>;
+export type SisCredential = Record<string, unknown>;
+export type SisSyncConfig = Record<string, unknown>;
+export type SisWebhookEvent = Record<string, unknown>;
+export type SisSyncHistory = import('../generated/prisma-client/index.js').SyncHistory;
+
+// RelationshipType is stored as string in schema, not generated as an enum
+export type RelationshipType = 'parent' | 'guardian' | 'mother' | 'father' | 'grandparent' | 'other';

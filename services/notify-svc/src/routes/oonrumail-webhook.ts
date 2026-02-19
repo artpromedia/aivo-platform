@@ -96,7 +96,8 @@ export async function registerOonruMailWebhookRoutes(
           const client = new AivolearningEmail({
             apiKey: config.email.oonrumail.apiKey,
           });
-          await client.createSuppression({
+          // Note: createSuppression is planned but not yet in AivolearningEmail SDK
+          await (client as any).createSuppression({
             email: event.recipient,
             reason: 'bounce',
           });

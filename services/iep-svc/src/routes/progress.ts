@@ -64,7 +64,7 @@ export default async function progressRoutes(fastify: FastifyInstance): Promise<
       dataPoints: series,
       summary: {
         totalEntries: series.length,
-        latestLevel: series.length > 0 ? series[series.length - 1].progressLevel : null,
+        latestLevel: series.length > 0 ? series[series.length - 1]!.progressLevel : null,
         trend: calculateTrend(series.map((s) => s.numericValue)),
       },
     });

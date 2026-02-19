@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 
 import { DeviceSyncService, deviceSyncRoutes, deviceSyncAuthMiddleware } from '../modules/device-sync/index.js';
 import type { ExtendedPrismaClient } from '../prisma-types.js';
@@ -62,10 +63,11 @@ export async function createServer() {
 
   // Register device sync module (absorbed from sync-svc, Sprint 3)
   const deviceSyncService = new DeviceSyncService(prisma as any);
-  await app.register(async (deviceSyncApp) => {
+  const deviceSyncPlugin: FastifyPluginAsync = async (deviceSyncApp) => {
     await deviceSyncApp.register(deviceSyncAuthMiddleware);
     await deviceSyncApp.register(deviceSyncRoutes, { syncService: deviceSyncService });
-  }, { prefix: '/api/v1/device-sync' });
+  };
+  await app.register(deviceSyncPlugin, { prefix: '/api/v1/device-sync' });
 
   // Graceful shutdown
   const shutdown = async () => {
