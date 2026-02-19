@@ -10,9 +10,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -26,25 +24,35 @@ class DefaultFirebaseOptions {
     }
   }
 
+  /// Firebase options for Web - Learner App
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDNuwHzk4LcFVgEPJkbIHShzF51rIz7M4A',
+    appId: '1:373030578076:web:3cc9684d0c134bc8608a59',
+    messagingSenderId: '373030578076',
+    projectId: 'aivo-learning-7eee8',
+    authDomain: 'aivo-learning-7eee8.firebaseapp.com',
+    storageBucket: 'aivo-learning-7eee8.firebasestorage.app',
+    measurementId: 'G-4WBR9ZP5Q9',
+  );
+
   /// Firebase options for Android - Learner App
-  /// Using mock credentials for local development
+  /// NOTE: Register an Android app in Firebase Console and update appId
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDevelopmentMockKeyForLocalTestingOnly',
-    appId: '1:123456789012:android:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'aivo-platform-dev',
-    storageBucket: 'aivo-platform-dev.appspot.com',
+    apiKey: 'AIzaSyDNuwHzk4LcFVgEPJkbIHShzF51rIz7M4A',
+    appId: '1:373030578076:android:learner_app_id', // TODO: Replace with actual Android app ID from Firebase Console
+    messagingSenderId: '373030578076',
+    projectId: 'aivo-learning-7eee8',
+    storageBucket: 'aivo-learning-7eee8.firebasestorage.app',
   );
 
   /// Firebase options for iOS - Learner App
-  /// Using mock credentials for local development
+  /// NOTE: Register an iOS app in Firebase Console and update appId/iosClientId
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDevelopmentMockKeyForIOSLocalTestingOnly',
-    appId: '1:123456789012:ios:abcdef1234567890',
-    messagingSenderId: '123456789012',
-    projectId: 'aivo-platform-dev',
-    storageBucket: 'aivo-platform-dev.appspot.com',
-    iosClientId: '123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com',
-    iosBundleId: 'com.aivo.learner.dev',
+    apiKey: 'AIzaSyDNuwHzk4LcFVgEPJkbIHShzF51rIz7M4A',
+    appId: '1:373030578076:ios:learner_app_id', // TODO: Replace with actual iOS app ID from Firebase Console
+    messagingSenderId: '373030578076',
+    projectId: 'aivo-learning-7eee8',
+    storageBucket: 'aivo-learning-7eee8.firebasestorage.app',
+    iosBundleId: 'com.aivo.learner',
   );
 }
