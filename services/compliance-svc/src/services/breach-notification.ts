@@ -1005,7 +1005,6 @@ export async function breachRoutes(fastify: FastifyInstance): Promise<void> {
         subject: template.subject.replace(/\{\{breachTitle\}\}/g, breach.title),
         body: renderedContent,
         status: 'PENDING',
-        scheduledAt: body.scheduledAt ? new Date(body.scheduledAt as string) : null,
       },
     });
 

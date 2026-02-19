@@ -279,6 +279,8 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         type: 'endpoint',
         id: request.path,
       },
+      eventType: 'system.error' as const,
+      eventCategory: 'security' as const,
       context: {
         correlationId,
         requestId: correlationId,
@@ -293,7 +295,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         userAgent: request.headers['user-agent'],
         body: maskedBody,
       },
-      outcome: 'failure',
+      result: { status: 'failure' as const, statusCode: status, errorMessage: exception.message },
       severity,
     });
   }

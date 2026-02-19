@@ -64,8 +64,8 @@ export async function createServer() {
   // Register device sync module (absorbed from sync-svc, Sprint 3)
   const deviceSyncService = new DeviceSyncService(prisma as any);
   const deviceSyncPlugin: FastifyPluginAsync = async (deviceSyncApp) => {
-    await deviceSyncApp.register(deviceSyncAuthMiddleware);
-    await deviceSyncApp.register(deviceSyncRoutes, { syncService: deviceSyncService });
+    await deviceSyncApp.register(deviceSyncAuthMiddleware as any);
+    await deviceSyncApp.register(deviceSyncRoutes as any, { syncService: deviceSyncService });
   };
   await app.register(deviceSyncPlugin, { prefix: '/api/v1/device-sync' });
 

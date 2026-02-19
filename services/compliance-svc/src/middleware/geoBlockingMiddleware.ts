@@ -10,7 +10,7 @@
  * Blocked requests are logged to the audit trail for compliance reporting.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginAsync } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { config } from '../config.js';
 
@@ -193,7 +193,7 @@ function logBlockEvent(event: GeoBlockEvent, logger: FastifyRequest['log']): voi
    Fastify Plugin
    ========================================================================== */
 
-const geoBlockingPlugin: FastifyPluginAsync = async (fastify) => {
+const geoBlockingPlugin = async (fastify: FastifyInstance) => {
   const geoConfig = loadGeoConfig();
 
   fastify.log.info(
@@ -287,7 +287,7 @@ const geoBlockingPlugin: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export const geoBlockingMiddleware = fp(geoBlockingPlugin, {
+export const geoBlockingMiddleware: any = fp(geoBlockingPlugin as any, {
   name: 'geo-blocking',
   fastify: '5.x',
 });

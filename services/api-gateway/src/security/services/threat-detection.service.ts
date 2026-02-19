@@ -527,8 +527,10 @@ export class ThreatDetectionService implements OnModuleDestroy {
    */
   private async logSecurityEvent(event: SecurityEvent): Promise<void> {
     await this.auditLog.log({
+      eventType: 'security.threat_detected' as const,
+      eventCategory: 'security' as const,
       action: event.type,
-      actor: event.userId ? { userId: event.userId, type: 'user' } : { type: 'system' },
+      actor: event.userId ? { userId: event.userId, type: 'user' as const } : { type: 'system' as const },
       resource: { type: 'security', id: event.ip },
       context: {
         correlationId: `threat-${Date.now()}`,
@@ -539,6 +541,7 @@ export class ThreatDetectionService implements OnModuleDestroy {
         threats: event.threats,
         score: event.score,
       },
+      result: { status: 'failure' as const },
       severity: event.score >= this.BLOCK_THRESHOLD ? 'critical' : 'warning',
     });
   }

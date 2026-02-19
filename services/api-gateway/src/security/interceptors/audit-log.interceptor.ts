@@ -89,6 +89,8 @@ export class AuditLogInterceptor implements NestInterceptor {
             type: resourceType,
             id: this.extractResourceId(request),
           },
+          eventType: 'data.read' as const,
+          eventCategory: 'data_access' as const,
           context: {
             ...requestContext,
             correlationId,
@@ -101,7 +103,7 @@ export class AuditLogInterceptor implements NestInterceptor {
             ferpaProtected: isFerpaProtected || false,
             coppaCompliant: isCoppaCompliant || false,
           },
-          outcome: 'success',
+          result: { status: 'success' as const, statusCode: response.statusCode },
           severity: this.determineSeverity(action, response.statusCode),
         });
       }),
@@ -115,6 +117,8 @@ export class AuditLogInterceptor implements NestInterceptor {
             type: resourceType,
             id: this.extractResourceId(request),
           },
+          eventType: 'system.error' as const,
+          eventCategory: 'system' as const,
           context: {
             ...requestContext,
             correlationId,
@@ -127,7 +131,7 @@ export class AuditLogInterceptor implements NestInterceptor {
             ferpaProtected: isFerpaProtected || false,
             coppaCompliant: isCoppaCompliant || false,
           },
-          outcome: 'failure',
+          result: { status: 'failure' as const, statusCode: error.status || 500, errorMessage: error.message },
           severity: this.determineSeverity(action, error.status || 500),
         });
 
@@ -226,9 +230,9 @@ export class AuditLogInterceptor implements NestInterceptor {
   private extractResourceId(request: Request): string | undefined {
     // Try to extract from params first
     const params = request.params;
-    if (params.id) return params.id;
-    if (params.userId) return params.userId;
-    if (params.resourceId) return params.resourceId;
+    if (params.id) return params.id as string;
+    if (params.userId) return params.userId as string;
+    if (params.resourceId) return params.resourceId as string;
 
     // Try to extract from path
     const pathMatch = request.path.match(/\/([\da-f-]{36}|\d+)(?:\/|$)/);
