@@ -6,6 +6,7 @@
  */
 
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+
 import { PrismaClient } from '../../generated/prisma-client/index.js';
 
 @Injectable()
@@ -55,8 +56,15 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Prisma warning: ${e.message}`);
     });
 
-    await this._client.$connect();
-    this.logger.log('Database connected successfully');
+    try {
+      await this._client.$connect();
+      this.logger.log('Database connected successfully');
+    } catch (error) {
+      this.logger.warn(
+        `Database connection failed - service will start without DB: ${error instanceof Error ? error.message : String(error)}`
+      );
+      this._client = null;
+    }
   }
 
   async onModuleDestroy() {
