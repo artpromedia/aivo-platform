@@ -14,6 +14,7 @@ import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { config } from './config.js';
 import { natsPublisher } from './events/index.js';
+import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { registerAccommodationRoutes } from './routes/accommodationRoutes.js';
 import { registerProfileRoutes } from './routes/profileRoutes.js';
 import { registerSensoryProfileRoutes } from './routes/sensory-profile.routes.js';
@@ -68,6 +69,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     app.log.warn({ err: error }, 'NATS initialization failed - events will be skipped');
     // Continue without NATS - events are fire-and-forget
   }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Connect to database (resilient - service starts even if DB is unavailable)
+  // ────────────────────────────────────────────────────────────────────────────
+  await connectDatabase();
 
   // ────────────────────────────────────────────────────────────────────────────
   // Health check endpoints
@@ -187,6 +193,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down gracefully...`);
     await natsPublisher.close();
+    await disconnectDatabase();
     await app.close();
     process.exit(0);
   };

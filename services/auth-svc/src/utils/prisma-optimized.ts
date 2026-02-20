@@ -144,11 +144,10 @@ export function createOptimizedPrismaClient(
   // Connection health check
   prisma.$connect().catch((error) => {
     if (logger) {
-      logger.error({ error }, 'Failed to connect to database');
+      logger.warn({ error }, 'Failed to connect to database - service will start without DB');
     } else {
-      console.error('Failed to connect to database:', error);
+      console.warn('Failed to connect to database - service will start without DB:', error);
     }
-    process.exit(1);
   });
 
   return prisma;
