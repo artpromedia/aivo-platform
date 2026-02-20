@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt \
     && python -m spacy download en_core_web_sm \
     && python -m nltk.downloader punkt averaged_perceptron_tagger wordnet stopwords
 

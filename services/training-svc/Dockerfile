@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 # Install Python dependencies, download spaCy model, and create directories
-RUN pip install --no-cache-dir -r requirements.txt \
+RUN pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt \
     && (python -m spacy download en_core_web_sm || true)
 
 # Copy application code

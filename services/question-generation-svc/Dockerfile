@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt
 
 # Download spaCy model and NLTK data
 RUN python -m spacy download en_core_web_sm \

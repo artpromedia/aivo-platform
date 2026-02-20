@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements first for better caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt
 
 # Download spaCy model (optional but recommended)
 RUN python -m spacy download en_core_web_sm || echo "spaCy model download failed - will work without NLP features"
