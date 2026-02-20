@@ -18,8 +18,14 @@ export const prisma = new PrismaClient({
 });
 
 export async function connectDatabase(): Promise<void> {
-  await prisma.$connect();
-  logger.info('Database connected');
+  try {
+    await prisma.$connect();
+    logger.info('Database connected');
+  } catch (error) {
+    logger.warn(
+      `Database connection failed - service will start without DB: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }
 
 export async function disconnectDatabase(): Promise<void> {
