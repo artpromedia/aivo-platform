@@ -37,10 +37,16 @@ export class TokenService {
       password: this.configService.get('REDIS_PASSWORD'),
       db: this.configService.get('REDIS_TOKEN_DB', 2),
       keyPrefix: 'token:',
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times: number) => (times > 3 ? null : Math.min(times * 200, 2000)),
+    });
+    this.redis.on('error', (err: Error) => {
+      this.logger.warn(`Redis connection error: ${err.message}`);
     });
     
-    this.accessSecret = this.configService.getOrThrow('JWT_ACCESS_SECRET');
-    this.refreshSecret = this.configService.getOrThrow('JWT_REFRESH_SECRET');
+    this.accessSecret = this.configService.get('JWT_ACCESS_SECRET', 'not-configured');
+    this.refreshSecret = this.configService.get('JWT_REFRESH_SECRET', 'not-configured');
     this.issuer = this.configService.get('JWT_ISSUER', 'aivo.edu');
     this.audience = this.configService.get('JWT_AUDIENCE', 'aivo-api').split(',');
   }

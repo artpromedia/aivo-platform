@@ -6,6 +6,8 @@
 import { Module, Global, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
 
 // Middleware
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware';
@@ -40,7 +42,18 @@ import { SessionService } from './services/session.service';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    HttpModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET', 'dev-secret-change-me'),
+        signOptions: { expiresIn: config.get<string>('JWT_EXPIRY', '15m') },
+      }),
+    }),
+  ],
   providers: [
     // Core Services
     EncryptionService,

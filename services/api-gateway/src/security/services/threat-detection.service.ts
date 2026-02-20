@@ -57,7 +57,12 @@ export class ThreatDetectionService implements OnModuleDestroy {
       port: this.configService.get('REDIS_PORT', 6379),
       password: this.configService.get('REDIS_PASSWORD'),
       keyPrefix: 'security:threats:',
+      lazyConnect: true,
       maxRetriesPerRequest: 3,
+      retryStrategy: (times: number) => (times > 3 ? null : Math.min(times * 200, 2000)),
+    });
+    this.redis.on('error', (err: Error) => {
+      this.logger.warn(`Redis connection error: ${err.message}`);
     });
   }
   

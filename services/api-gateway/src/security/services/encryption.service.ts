@@ -37,13 +37,21 @@ export class EncryptionService implements OnModuleInit {
     this.kmsClient = new KMSClient({
       region: this.configService.get('AWS_REGION', 'us-east-1'),
     });
-    this.keyId = this.configService.getOrThrow('KMS_KEY_ID');
+    this.keyId = this.configService.get('KMS_KEY_ID', '');
   }
   
   async onModuleInit(): Promise<void> {
-    // Pre-generate a data key on startup
-    await this.getOrCreateDataKey();
-    this.logger.log('Encryption service initialized');
+    if (!this.keyId) {
+      this.logger.warn('KMS_KEY_ID not configured – encryption service running in degraded mode');
+      return;
+    }
+    try {
+      // Pre-generate a data key on startup
+      await this.getOrCreateDataKey();
+      this.logger.log('Encryption service initialized');
+    } catch (error) {
+      this.logger.warn('Failed to initialize encryption data key – running in degraded mode', error);
+    }
   }
   
   /**

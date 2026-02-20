@@ -40,6 +40,12 @@ export class RateLimitGuard implements CanActivate {
       db: this.configService.get('REDIS_RATE_LIMIT_DB', 1),
       keyPrefix: this.keyPrefix,
       enableReadyCheck: true,
+      lazyConnect: true,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times: number) => (times > 3 ? null : Math.min(times * 200, 2000)),
+    });
+    this.redis.on('error', (err: Error) => {
+      this.logger.warn(`Redis connection error: ${err.message}`);
     });
   }
   

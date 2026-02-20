@@ -23,5 +23,4 @@ import { SecurityModule } from './security/security.module';
   ],
   controllers: [HealthController],
 })
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS modules are decorated empty classes by design
 export class AppModule {}

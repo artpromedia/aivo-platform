@@ -195,7 +195,7 @@ jobs:
           echo "═══ Canary deploy: $VERSION ═══"
 
           # Canary for critical Phase 1 backend services + 1 web app
-          CANARY_BACKEND=(auth-svc api-gateway parent-svc profile-svc)
+          CANARY_BACKEND=(auth-svc tenant-svc parent-svc profile-svc)
           CANARY_WEB=(web-learner)
 
           # Deploy backend canary pods

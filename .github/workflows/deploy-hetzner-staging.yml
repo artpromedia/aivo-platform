@@ -853,7 +853,7 @@ jobs:
 
           echo "═══ Canary deploy: $VERSION ═══"
 
-          CANARY_SERVICES=(auth-svc api-gateway parent-svc profile-svc web-learner)
+          CANARY_SERVICES=(auth-svc tenant-svc parent-svc profile-svc web-learner)
 
           # Delete any existing canary deployments to ensure clean rollout
           echo "Cleaning up previous canary deployments..."
