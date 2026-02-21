@@ -1,0 +1,176 @@
+# 
+# AIVO Compliance Service - Kubernetes Manifests
+# 
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: compliance-svc
+  namespace: aivo
+  labels:
+    app: compliance-svc
+    app.kubernetes.io/name: compliance-svc
+    app.kubernetes.io/component: compliance
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliance-svc
+  namespace: aivo
+  labels:
+    app: compliance-svc
+    app.kubernetes.io/name: compliance-svc
+    app.kubernetes.io/component: compliance
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: compliance-svc
+  template:
+    metadata:
+      labels:
+        app: compliance-svc
+        app.kubernetes.io/name: compliance-svc
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4052"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: compliance-svc
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1000
+      containers:
+        - name: compliance-svc
+          image: aivo/compliance-svc:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 4052
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "4052"
+            - name: NODE_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: compliance-svc-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: compliance-svc-secrets
+                  key: redis-url
+            - name: NATS_URL
+              value: "nats://nats:4222"
+            - name: JWT_PUBLIC_KEY_PATH
+              value: "/etc/secrets/jwt/public.pem"
+            - name: INTERNAL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: internal-api-keys
+                  key: compliance-svc
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /etc/secrets/jwt
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4052
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4052
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: jwt-keys
+          secret:
+            secretName: jwt-keys
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: compliance-svc
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-svc
+  namespace: aivo
+  labels:
+    app: compliance-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 4052
+      targetPort: 4052
+      protocol: TCP
+  selector:
+    app: compliance-svc
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: compliance-svc
+  namespace: aivo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: compliance-svc
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: compliance-svc
+  namespace: aivo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: compliance-svc

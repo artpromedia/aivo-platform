@@ -26,6 +26,12 @@ resources:
   - session-svc.yaml
   - consent-svc.yaml
   - profile-svc.yaml
+  # API Gateway
+  - api-gateway.yaml
+  # Multi-tenancy and integrations
+  - tenant-svc.yaml
+  - sis-sync-svc.yaml
+  - iep-svc.yaml
   # Content and learning services
   - content-svc.yaml
   - assessment-svc.yaml
@@ -37,6 +43,7 @@ resources:
   # Communication services
   - notify-svc.yaml
   - messaging-svc.yaml
+  - realtime-svc.yaml
   # Goal and focus tracking
   - goal-svc.yaml
   - focus-svc.yaml
@@ -46,6 +53,10 @@ resources:
   # Parent portal
   - parent-svc.yaml
   - baseline-svc.yaml
+  # Compliance, audit, and reporting
+  - audit-svc.yaml
+  - reports-svc.yaml
+  - compliance-svc.yaml
 
   #  Web Frontend Applications 
   - web-apps/
