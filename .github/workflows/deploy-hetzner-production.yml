@@ -244,9 +244,13 @@ jobs:
                     envFrom:
                       - secretRef:
                           name: shared-secrets
-                      - secretRef:
-                          name: ${svc}-secrets
-                          optional: true
+                    env:
+                      - name: DATABASE_URL
+                        valueFrom:
+                          secretKeyRef:
+                            name: ${svc}-secrets
+                            key: database-url
+                            optional: true
                     resources:
                       requests:
                         cpu: 100m
