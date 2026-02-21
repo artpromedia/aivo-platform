@@ -113,7 +113,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: shared-secrets
-                  key: database-url
+                  key: DATABASE_URL
 
             # Shared infrastructure secrets
             - name: REDIS_URL
