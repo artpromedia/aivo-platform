@@ -41,4 +41,7 @@ async function main() {
   complianceCron.initialize();
 }
 
-void main();
+main().catch((err: unknown) => {
+  console.error('iep-svc fatal:', err);
+  process.exit(1);
+});

@@ -17,11 +17,19 @@ async function main() {
   const app = createApp();
   const pool = getPool();
 
-  // Start DSR background worker
+  // Connect to database BEFORE starting background workers
+  try {
+    await prisma.$connect();
+    console.log('Connected to database');
+  } catch (error) {
+    console.error('Failed to connect to database (will retry on first request):', error);
+  }
+
+  // Start DSR background worker (after DB connection attempt)
   const dsrWorker = createDsrWorker(pool);
   dsrWorker.start();
 
-  // Start DSR grace-period scheduler
+  // Start DSR grace-period scheduler (after DB connection attempt)
   startGracePeriodScheduler(pool);
 
   // Graceful shutdown
@@ -44,14 +52,6 @@ async function main() {
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
-
-  // Connect to database
-  try {
-    await prisma.$connect();
-    console.log('Connected to database');
-  } catch (error) {
-    console.error('Failed to connect to database (will retry on first request):', error);
-  }
 
   // Start server
   try {

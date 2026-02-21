@@ -17,4 +17,7 @@ async function main() {
   }
 }
 
-void main();
+main().catch((err) => {
+  console.error('reports-svc fatal:', err);
+  process.exit(1);
+});

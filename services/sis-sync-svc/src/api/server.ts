@@ -92,16 +92,16 @@ export async function createServer() {
 // Start server if run directly (ES module compatible check)
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMainModule) {
-  void createServer().then(async ({ app }) => {
-    const port = Number.parseInt(process.env.PORT || '4016', 10);
-    const host = process.env.HOST || '0.0.0.0';
-    
-    try {
+  createServer()
+    .then(async ({ app }) => {
+      const port = Number.parseInt(process.env.PORT || '4016', 10);
+      const host = process.env.HOST || '0.0.0.0';
+
       await app.listen({ port, host });
       app.log.info(`SIS Sync Service running on http://${host}:${port}`);
-    } catch (err) {
-      app.log.error(err);
+    })
+    .catch((err: unknown) => {
+      console.error('sis-sync-svc fatal:', err);
       process.exit(1);
-    }
-  });
+    });
 }

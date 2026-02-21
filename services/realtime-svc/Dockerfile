@@ -50,15 +50,14 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/realtime-svc/generated .
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
-ENV NODE_ENV=production \
-    PORT=8080
+ENV NODE_ENV=production
 
-# Expose port
-EXPOSE 8080
+# Expose port (K8s configmap sets PORT; default to 3000)
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/health || exit 1
 
 # Switch to non-root user
 USER nodejs
