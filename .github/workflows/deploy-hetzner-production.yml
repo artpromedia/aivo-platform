@@ -244,6 +244,9 @@ jobs:
                     envFrom:
                       - secretRef:
                           name: shared-secrets
+                      - secretRef:
+                          name: ${svc}-secrets
+                          optional: true
                     resources:
                       requests:
                         cpu: 100m
