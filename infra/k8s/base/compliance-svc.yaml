@@ -85,6 +85,10 @@ spec:
             - name: jwt-keys
               mountPath: /etc/secrets/jwt
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /home/node/.cache
           livenessProbe:
             httpGet:
               path: /health
@@ -119,6 +123,10 @@ spec:
           secret:
             secretName: jwt-keys
             optional: true
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
