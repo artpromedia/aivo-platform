@@ -99,11 +99,11 @@ jobs:
           MISSING=0
           VERIFIED=0
 
-          # Phase 1 TypeScript backend services (13 — must match staging pipeline)
+          # Phase 1 TypeScript backend services (6 — production-ready only)
           TS_SERVICES=(
-            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
-            parent-svc profile-svc messaging-svc audit-svc
-            notify-svc reports-svc realtime-svc compliance-svc
+            auth-svc api-gateway
+            parent-svc profile-svc messaging-svc
+            notify-svc
           )
 
           # Python AI/ML services (20)
@@ -417,11 +417,11 @@ jobs:
 
           cd infra/k8s/overlays/hetzner
 
-          # Phase 1 TypeScript services (13 — must match staging pipeline)
+          # Phase 1 TypeScript services (6 — production-ready only)
           TS_SERVICES=(
-            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
-            parent-svc profile-svc messaging-svc audit-svc
-            notify-svc reports-svc realtime-svc compliance-svc
+            auth-svc api-gateway
+            parent-svc profile-svc messaging-svc
+            notify-svc
           )
 
           # Python AI/ML services (20)
@@ -467,9 +467,9 @@ jobs:
           kustomize build . > /tmp/aivo-prod-manifests.yaml
 
           TS_SERVICES=(
-            auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
-            parent-svc profile-svc messaging-svc audit-svc
-            notify-svc reports-svc realtime-svc compliance-svc
+            auth-svc api-gateway
+            parent-svc profile-svc messaging-svc
+            notify-svc
           )
 
           PY_SERVICES=(
@@ -568,10 +568,9 @@ jobs:
 
           # Phase 1 backend services for health check
           BACKEND_SERVICES=(
-            auth-svc api-gateway tenant-svc sis-sync-svc
-            iep-svc parent-svc profile-svc messaging-svc
-            audit-svc notify-svc reports-svc realtime-svc
-            compliance-svc
+            auth-svc api-gateway
+            parent-svc profile-svc messaging-svc
+            notify-svc
           )
 
           echo "═══ Backend Health Checks ═══"
