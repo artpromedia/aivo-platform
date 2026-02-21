@@ -97,6 +97,30 @@ images:
   - name: aivo/baseline-svc
     newName: ghcr.io/artpromedia/aivo-baseline-svc
     newTag: latest
+  # Multi-tenancy & Integrations
+  - name: aivo/tenant-svc
+    newName: ghcr.io/artpromedia/aivo-tenant-svc
+    newTag: latest
+  - name: aivo/sis-sync-svc
+    newName: ghcr.io/artpromedia/aivo-sis-sync-svc
+    newTag: latest
+  - name: aivo/iep-svc
+    newName: ghcr.io/artpromedia/aivo-iep-svc
+    newTag: latest
+  # Communication (additional)
+  - name: aivo/realtime-svc
+    newName: ghcr.io/artpromedia/aivo-realtime-svc
+    newTag: latest
+  # Compliance, Audit & Reporting
+  - name: aivo/audit-svc
+    newName: ghcr.io/artpromedia/aivo-audit-svc
+    newTag: latest
+  - name: aivo/reports-svc
+    newName: ghcr.io/artpromedia/aivo-reports-svc
+    newTag: latest
+  - name: aivo/compliance-svc
+    newName: ghcr.io/artpromedia/aivo-compliance-svc
+    newTag: latest
 
   #  Python AI/ML Services 
   #  Heavy (large model loading)

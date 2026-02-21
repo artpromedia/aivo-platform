@@ -515,6 +515,39 @@ jobs:
             fi
           done
 
+      - name: Ensure backend service secrets
+        run: |
+          NAMESPACE="aivo-staging"
+
+          # Backend TS services that need a per-service secret with database-url
+          BACKEND_SERVICES=(
+            auth-svc tenant-svc sis-sync-svc iep-svc parent-svc profile-svc
+            messaging-svc audit-svc notify-svc reports-svc realtime-svc
+            compliance-svc session-svc consent-svc content-svc assessment-svc
+            personalization-svc life-skills-svc analytics-svc goal-svc focus-svc
+            billing-svc payments-svc baseline-svc
+          )
+
+          # Read shared PostgreSQL connection details
+          PG_HOST=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-host}' | base64 -d 2>/dev/null || echo "postgres.aivo-infra.svc.cluster.local")
+          PG_PORT=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-port}' | base64 -d 2>/dev/null || echo "5432")
+          PG_USER=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
+          PG_PASS=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
+
+          for svc in "${BACKEND_SERVICES[@]}"; do
+            SECRET_NAME="${svc}-secrets"
+            if ! kubectl -n "$NAMESPACE" get secret "$SECRET_NAME" &>/dev/null; then
+              # Construct database name from service name: auth-svc -> aivo_auth
+              DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
+              DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
+              kubectl -n "$NAMESPACE" create secret generic "$SECRET_NAME" \
+                --from-literal="database-url=${DATABASE_URL}"
+              echo "✅ Created ${SECRET_NAME} (db: ${DB_NAME})"
+            else
+              echo "⏭  ${SECRET_NAME} exists"
+            fi
+          done
+
       - name: Update image tags
         run: |
           set -euo pipefail
@@ -1019,6 +1052,36 @@ jobs:
               kubectl -n "$NS" create secret generic "$SECRET_NAME" \
                 --from-literal="nextauth-secret=${NEXTAUTH_SECRET}"
               echo "✅ Created ${SECRET_NAME}"
+            else
+              echo "⏭  ${SECRET_NAME} exists"
+            fi
+          done
+
+      - name: Ensure backend service secrets
+        run: |
+          NS="aivo-prod"
+
+          BACKEND_SERVICES=(
+            auth-svc tenant-svc sis-sync-svc iep-svc parent-svc profile-svc
+            messaging-svc audit-svc notify-svc reports-svc realtime-svc
+            compliance-svc session-svc consent-svc content-svc assessment-svc
+            personalization-svc life-skills-svc analytics-svc goal-svc focus-svc
+            billing-svc payments-svc baseline-svc
+          )
+
+          PG_HOST=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-host}' | base64 -d 2>/dev/null || echo "postgres.aivo-infra.svc.cluster.local")
+          PG_PORT=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-port}' | base64 -d 2>/dev/null || echo "5432")
+          PG_USER=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
+          PG_PASS=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
+
+          for svc in "${BACKEND_SERVICES[@]}"; do
+            SECRET_NAME="${svc}-secrets"
+            if ! kubectl -n "$NS" get secret "$SECRET_NAME" &>/dev/null; then
+              DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
+              DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
+              kubectl -n "$NS" create secret generic "$SECRET_NAME" \
+                --from-literal="database-url=${DATABASE_URL}"
+              echo "✅ Created ${SECRET_NAME} (db: ${DB_NAME})"
             else
               echo "⏭  ${SECRET_NAME} exists"
             fi

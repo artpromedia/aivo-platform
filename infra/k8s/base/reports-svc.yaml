@@ -112,8 +112,8 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: shared-secrets
-                  key: DATABASE_URL
+                  name: reports-svc-secrets
+                  key: database-url
 
             # Shared infrastructure secrets
             - name: REDIS_URL
