@@ -20,6 +20,10 @@ export function getPool(): Pool {
       connectionString: config.databaseUrl,
       ssl: config.pgSsl ? { rejectUnauthorized: false } : false,
     });
+    // Prevent unhandled 'error' events from crashing the process
+    _pool.on('error', (err) => {
+      console.error('Unexpected pg pool error:', err);
+    });
   }
   return _pool;
 }

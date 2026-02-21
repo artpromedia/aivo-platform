@@ -548,6 +548,41 @@ jobs:
             fi
           done
 
+      - name: Ensure PostgreSQL databases exist
+        run: |
+          set -euo pipefail
+          NAMESPACE="aivo-staging"
+
+          PG_HOST=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-host}' | base64 -d 2>/dev/null || echo "postgres.aivo-infra.svc.cluster.local")
+          PG_PORT=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-port}' | base64 -d 2>/dev/null || echo "5432")
+          PG_USER=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
+          PG_PASS=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
+
+          DATABASES=(
+            aivo_auth aivo_api_gateway aivo_tenant aivo_sis_sync aivo_iep
+            aivo_parent aivo_profile aivo_messaging aivo_audit
+            aivo_notify aivo_reports aivo_realtime aivo_compliance
+            aivo_session aivo_consent aivo_content aivo_assessment
+            aivo_personalization aivo_life_skills aivo_analytics aivo_goal aivo_focus
+            aivo_billing aivo_payments aivo_baseline
+          )
+
+          echo "═══ Ensuring PostgreSQL databases exist ═══"
+
+          CREATE_SCRIPT='#!/bin/sh\nset +e\n'
+          for DB in "${DATABASES[@]}"; do
+            CREATE_SCRIPT="${CREATE_SCRIPT}createdb -h \"\$PGHOST\" -p \"\$PGPORT\" -U \"\$PGUSER\" \"${DB}\" 2>/dev/null && echo \"✅ Created ${DB}\" || echo \"⏭  ${DB} already exists\"\n"
+          done
+
+          echo -e "$CREATE_SCRIPT" | kubectl -n "$NAMESPACE" run db-provision-$(date +%s) \\
+            --rm -i --restart=Never \\
+            --image=postgres:16-alpine \\
+            --env="PGPASSWORD=${PG_PASS}" \\
+            --env="PGHOST=${PG_HOST}" \\
+            --env="PGPORT=${PG_PORT}" \\
+            --env="PGUSER=${PG_USER}" \\
+            -- sh
+
       - name: Update image tags
         run: |
           set -euo pipefail
@@ -1086,6 +1121,41 @@ jobs:
               echo "⏭  ${SECRET_NAME} exists"
             fi
           done
+
+      - name: Ensure PostgreSQL databases exist
+        run: |
+          set -euo pipefail
+          NS="aivo-prod"
+
+          PG_HOST=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-host}' | base64 -d 2>/dev/null || echo "postgres.aivo-infra.svc.cluster.local")
+          PG_PORT=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-port}' | base64 -d 2>/dev/null || echo "5432")
+          PG_USER=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
+          PG_PASS=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
+
+          DATABASES=(
+            aivo_auth aivo_api_gateway aivo_tenant aivo_sis_sync aivo_iep
+            aivo_parent aivo_profile aivo_messaging aivo_audit
+            aivo_notify aivo_reports aivo_realtime aivo_compliance
+            aivo_session aivo_consent aivo_content aivo_assessment
+            aivo_personalization aivo_life_skills aivo_analytics aivo_goal aivo_focus
+            aivo_billing aivo_payments aivo_baseline
+          )
+
+          echo "═══ Ensuring PostgreSQL databases exist ═══"
+
+          CREATE_SCRIPT='#!/bin/sh\nset +e\n'
+          for DB in "${DATABASES[@]}"; do
+            CREATE_SCRIPT="${CREATE_SCRIPT}createdb -h \"\$PGHOST\" -p \"\$PGPORT\" -U \"\$PGUSER\" \"${DB}\" 2>/dev/null && echo \"✅ Created ${DB}\" || echo \"⏭  ${DB} already exists\"\n"
+          done
+
+          echo -e "$CREATE_SCRIPT" | kubectl -n "$NS" run db-provision-$(date +%s) \\
+            --rm -i --restart=Never \\
+            --image=postgres:16-alpine \\
+            --env="PGPASSWORD=${PG_PASS}" \\
+            --env="PGHOST=${PG_HOST}" \\
+            --env="PGPORT=${PG_PORT}" \\
+            --env="PGUSER=${PG_USER}" \\
+            -- sh
 
       - name: Update image tags and deploy
         run: |

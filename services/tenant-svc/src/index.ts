@@ -31,4 +31,7 @@ async function main() {
   }
 }
 
-void main();
+main().catch((err) => {
+  console.error('tenant-svc fatal:', err);
+  process.exit(1);
+});

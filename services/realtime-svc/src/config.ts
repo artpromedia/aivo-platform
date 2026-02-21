@@ -7,6 +7,24 @@
 import { z } from 'zod';
 import 'dotenv/config';
 
+/**
+ * Parse a redis:// or rediss:// URL into host, port, password.
+ * Returns undefined for fields that are not present.
+ */
+function parseRedisUrl(url: string | undefined): { host?: string; port?: number; password?: string } | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname || undefined,
+      port: parsed.port ? Number(parsed.port) : undefined,
+      password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 const configSchema = z.object({
   // Server
   port: z.coerce.number().default(3003),
@@ -72,11 +90,14 @@ function loadConfig(): Config {
     port: process.env.PORT,
     nodeEnv: process.env.NODE_ENV,
     databaseUrl: process.env.DATABASE_URL,
-    redis: {
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-      password: process.env.REDIS_PASSWORD,
-    },
+    redis: (() => {
+      const parsed = parseRedisUrl(process.env.REDIS_URL);
+      return {
+        host: process.env.REDIS_HOST || parsed?.host,
+        port: process.env.REDIS_PORT || parsed?.port,
+        password: process.env.REDIS_PASSWORD || parsed?.password,
+      };
+    })(),
     jwt: {
       secret: process.env.JWT_SECRET,
       publicKey: process.env.JWT_PUBLIC_KEY,
