@@ -25,6 +25,9 @@ COPY services/reports-svc/ ./services/reports-svc/
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
+# Generate Prisma client
+RUN cd services/reports-svc && pnpm exec prisma generate
+
 # Build the service
 RUN pnpm turbo build --filter="@aivo/reports-svc..."
 
@@ -39,12 +42,14 @@ RUN addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and OpenSSL for Prisma
+RUN apk add --no-cache dumb-init openssl
 
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/reports-svc/dist ./dist
+COPY --from=builder --chown=nodejs:nodejs /app/services/reports-svc/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/services/reports-svc/generated ./generated
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
@@ -64,4 +69,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/index.js"]

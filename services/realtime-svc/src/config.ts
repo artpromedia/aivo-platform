@@ -24,7 +24,7 @@ const configSchema = z.object({
 
   // JWT
   jwt: z.object({
-    secret: z.string().min(32),
+    secret: z.string().min(32).default('aivo-realtime-default-jwt-secret-change-me-in-production-00'),
     publicKey: z.string().optional(),
     issuer: z.string().default('aivo-auth'),
     audience: z.string().default('aivo-services'),

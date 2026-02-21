@@ -50,8 +50,7 @@ async function main() {
     await prisma.$connect();
     console.log('Connected to database');
   } catch (error) {
-    console.error('Failed to connect to database:', error);
-    process.exit(1);
+    console.error('Failed to connect to database (will retry on first request):', error);
   }
 
   // Start server

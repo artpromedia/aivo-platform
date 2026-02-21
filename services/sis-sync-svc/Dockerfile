@@ -46,6 +46,7 @@ RUN apk add --no-cache dumb-init openssl
 COPY --from=builder --chown=nodejs:nodejs /deploy/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/services/sis-sync-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/sis-sync-svc/prisma ./prisma
+COPY --from=builder --chown=nodejs:nodejs /app/services/sis-sync-svc/generated ./generated
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
 # Set environment variables
@@ -65,4 +66,4 @@ USER nodejs
 # Use dumb-init as entrypoint
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/api/server.js"]

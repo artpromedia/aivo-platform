@@ -24,7 +24,13 @@ async function main() {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
 
-  await prisma.$connect();
+  try {
+    await prisma.$connect();
+    console.log('Connected to database');
+  } catch (error) {
+    console.error('Failed to connect to database (will retry on first request):', error);
+  }
+
   await app.listen({ port: config.port, host: config.host });
   console.log(`IEP Service listening on ${config.host}:${config.port}`);
 

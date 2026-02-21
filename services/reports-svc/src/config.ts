@@ -16,15 +16,15 @@ export const config = {
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
 
-  // Service URLs
+  // Service URLs (use K8s internal DNS defaults)
   services: {
-    baseline: requireEnvInProduction('BASELINE_SVC_URL', 'http://localhost:4010'),
-    learnerModel: requireEnvInProduction('LEARNER_MODEL_SVC_URL', 'http://localhost:4020'),
-    analytics: requireEnvInProduction('ANALYTICS_SVC_URL', 'http://localhost:4030'),
-    goal: requireEnvInProduction('GOAL_SVC_URL', 'http://localhost:4040'),
-    tenant: requireEnvInProduction('TENANT_SVC_URL', 'http://localhost:4000'),
-    session: requireEnvInProduction('SESSION_SVC_URL', 'http://localhost:3020'),
-    parent: requireEnvInProduction('PARENT_SVC_URL', 'http://localhost:3010'),
+    baseline: process.env.BASELINE_SVC_URL || 'http://baseline-svc:3000',
+    learnerModel: process.env.LEARNER_MODEL_SVC_URL || 'http://personalization-svc:3000',
+    analytics: process.env.ANALYTICS_SVC_URL || 'http://analytics-svc:3000',
+    goal: process.env.GOAL_SVC_URL || 'http://goal-svc:3000',
+    tenant: process.env.TENANT_SVC_URL || 'http://tenant-svc:3000',
+    session: process.env.SESSION_SVC_URL || 'http://session-svc:3000',
+    parent: process.env.PARENT_SVC_URL || 'http://parent-svc:3000',
   },
 
   // JWT validation

@@ -46,6 +46,29 @@ export function createApp() {
     skipPaths: ['/health', '/healthz', '/metrics', '/tenant/resolve'],
   });
 
+  // Health check routes (before auth middleware so they're always accessible)
+  app.get('/health', async () => {
+    return {
+      status: 'healthy',
+      service: 'tenant-svc',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    };
+  });
+
+  app.get('/ready', async (_request, reply) => {
+    try {
+      await prisma.$queryRaw`SELECT 1 as ready_check`;
+      return reply.send({ status: 'ready', service: 'tenant-svc' });
+    } catch (error) {
+      return reply.status(503).send({
+        status: 'not ready',
+        service: 'tenant-svc',
+        error: error instanceof Error ? error.message : 'Database unavailable',
+      });
+    }
+  });
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   app.register(authMiddleware as any);
   app.register(registerResolveRoutes);
