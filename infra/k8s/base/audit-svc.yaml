@@ -48,28 +48,30 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: audit-svc-secrets
+                  name: shared-secrets
                   key: database-url
             - name: JWT_PUBLIC_KEY
               valueFrom:
                 secretKeyRef:
                   name: jwt-keys
                   key: public-key
+                  optional: true
             - name: INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: internal-api-keys
                   key: audit-svc
+                  optional: true
             - name: REDIS_URL
               valueFrom:
-                configMapKeyRef:
-                  name: redis-config
-                  key: url
+                secretKeyRef:
+                  name: shared-secrets
+                  key: redis-url
             - name: NATS_URL
               valueFrom:
-                configMapKeyRef:
-                  name: nats-config
-                  key: url
+                secretKeyRef:
+                  name: shared-secrets
+                  key: nats-url
             - name: NATS_ENABLED
               value: "true"
           livenessProbe:

@@ -61,15 +61,18 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: compliance-svc-secrets
+                  name: shared-secrets
                   key: database-url
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
-                  name: compliance-svc-secrets
+                  name: shared-secrets
                   key: redis-url
             - name: NATS_URL
-              value: "nats://nats:4222"
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: nats-url
             - name: JWT_PUBLIC_KEY_PATH
               value: "/etc/secrets/jwt/public.pem"
             - name: INTERNAL_API_KEY
@@ -77,6 +80,7 @@ spec:
                 secretKeyRef:
                   name: internal-api-keys
                   key: compliance-svc
+                  optional: true
           volumeMounts:
             - name: jwt-keys
               mountPath: /etc/secrets/jwt
@@ -114,6 +118,7 @@ spec:
         - name: jwt-keys
           secret:
             secretName: jwt-keys
+            optional: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

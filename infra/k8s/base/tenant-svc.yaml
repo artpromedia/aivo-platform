@@ -108,13 +108,12 @@ spec:
                 name: tenant-svc-config
 
           env:
-            # Database (if applicable)
+            # Database
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: tenant-svc-secrets
+                  name: shared-secrets
                   key: database-url
-                  optional: true
 
             # Shared infrastructure secrets
             - name: REDIS_URL
