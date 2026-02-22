@@ -816,7 +816,7 @@ jobs:
                   - name: migrate
                     image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
                     workingDir: /app
-                    command: ["sh", "-c", "export DATABASE_URL=$(echo $DATABASE_URL | sed 's/:6432/:5432/'); npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
+                    command: ["sh", "-c", "DATABASE_URL=\${DATABASE_URL/:6432/:5432} npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
                     envFrom:
                       - secretRef:
                           name: shared-secrets
