@@ -90,6 +90,8 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
+        - protocol: TCP
+          port: 6432  # PgBouncer
 
 ---
 # Allow access to Redis

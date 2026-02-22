@@ -655,7 +655,7 @@ jobs:
           for svc in "${BACKEND_SERVICES[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
-              curl -sf http://localhost:3000/health --max-time 10 2>/dev/null; then
+              wget -qO- http://localhost:3000/health --timeout=10 2>/dev/null; then
               echo "✅ ${svc}"
             else
               echo "❌ ${svc}"
@@ -687,12 +687,12 @@ jobs:
           for app in "${WEB_APPS[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${app}" -- \
-              curl -sf http://localhost:3000/api/health --max-time 10 2>/dev/null; then
+              wget -qO- http://localhost:3000/api/health --timeout=10 2>/dev/null; then
               echo "✅ ${app}"
             else
               # Fallback: try root path for apps without /api/health
               if kubectl exec -n "$NS" "deploy/${app}" -- \
-                curl -sf http://localhost:3000/ --max-time 10 -o /dev/null 2>/dev/null; then
+                wget -qO- http://localhost:3000/ --timeout=10 -o /dev/null 2>/dev/null; then
                 echo "✅ ${app} (via /)"
               else
                 echo "⚠️  ${app}"
@@ -768,6 +768,10 @@ jobs:
             backoffLimit: 2
             activeDeadlineSeconds: 600
             template:
+              metadata:
+                labels:
+                  app: db-migrate
+                  app.kubernetes.io/part-of: aivo
               spec:
                 restartPolicy: Never
                 containers:
