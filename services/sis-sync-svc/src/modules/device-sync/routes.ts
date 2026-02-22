@@ -34,11 +34,6 @@ export async function deviceSyncRoutes(
   // ===========================================================================
 
   fastify.post('/push', {
-    schema: {
-      description: 'Push local changes to server',
-      tags: ['device-sync'],
-      body: PushChangesRequestSchema,
-    },
     handler: async (request, reply) => {
       const ctx = request.user as AuthContext;
       const body = request.body as z.infer<typeof PushChangesRequestSchema>;
@@ -77,11 +72,6 @@ export async function deviceSyncRoutes(
   // ===========================================================================
 
   fastify.post('/pull', {
-    schema: {
-      description: 'Pull server changes to client',
-      tags: ['device-sync'],
-      body: PullChangesRequestSchema,
-    },
     handler: async (request, reply) => {
       const ctx = request.user as AuthContext;
       const body = request.body as z.infer<typeof PullChangesRequestSchema>;
@@ -110,11 +100,6 @@ export async function deviceSyncRoutes(
   // ===========================================================================
 
   fastify.post('/delta', {
-    schema: {
-      description: 'Get delta changes for a specific entity',
-      tags: ['device-sync'],
-      body: DeltaRequestSchema,
-    },
     handler: async (request, reply) => {
       const ctx = request.user as AuthContext;
       const body = request.body as z.infer<typeof DeltaRequestSchema>;
@@ -174,14 +159,6 @@ export async function deviceSyncRoutes(
   });
 
   fastify.post('/conflicts/:conflictId/resolve', {
-    schema: {
-      description: 'Resolve a sync conflict',
-      tags: ['device-sync'],
-      params: z.object({
-        conflictId: z.string().uuid(),
-      }),
-      body: ConflictResolutionRequestSchema,
-    },
     handler: async (request, reply) => {
       const ctx = request.user as AuthContext;
       const { conflictId } = request.params as { conflictId: string };
@@ -258,27 +235,6 @@ export async function deviceSyncRoutes(
   // ===========================================================================
 
   fastify.post('/batch', {
-    schema: {
-      description: 'Perform a full bidirectional sync',
-      tags: ['device-sync'],
-      body: z.object({
-        deviceId: z.string(),
-        lastSyncTimestamp: z.string().datetime().optional(),
-        pushOperations: z.array(
-          z.object({
-            id: z.string().uuid(),
-            entityType: z.nativeEnum(EntityType),
-            entityId: z.string(),
-            operation: z.enum(['CREATE', 'UPDATE', 'DELETE']),
-            data: z.record(z.unknown()).optional(),
-            timestamp: z.string().datetime(),
-            clientVersion: z.number(),
-          })
-        ),
-        pullEntityTypes: z.array(z.nativeEnum(EntityType)).optional(),
-        pullLimit: z.number().max(500).default(100),
-      }),
-    },
     handler: async (request, reply) => {
       const ctx = request.user as AuthContext;
       const body = request.body as {
