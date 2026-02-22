@@ -5861,6 +5861,9 @@ importers:
       '@prisma/client':
         specifier: 5.22.0
         version: 5.22.0(prisma@5.22.0)
+      axios:
+        specifier: ^1.7.7
+        version: 1.13.5
       bullmq:
         specifier: ^5.12.0
         version: 5.69.3
@@ -5885,6 +5888,9 @@ importers:
       node-cron:
         specifier: ^3.0.3
         version: 3.0.3
+      pg:
+        specifier: ^8.13.0
+        version: 8.18.0
       pino:
         specifier: ^10.3.0
         version: 10.3.1
