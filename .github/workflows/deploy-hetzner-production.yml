@@ -692,7 +692,7 @@ jobs:
             else
               # Fallback: try root path for apps without /api/health
               if kubectl exec -n "$NS" "deploy/${app}" -- \
-                wget -qO- http://localhost:3000/ --timeout=10 -o /dev/null 2>/dev/null; then
+                wget -qO /dev/null http://localhost:3000/ --timeout=10 2>/dev/null; then
                 echo "✅ ${app} (via /)"
               else
                 echo "⚠️  ${app}"
@@ -752,6 +752,35 @@ jobs:
           echo "  Version: $VERSION"
           echo "  Job name: db-migrate-${RUN_ID}"
 
+          # Create a NetworkPolicy to allow the migration job pod egress to DB + DNS
+          cat <<EOF | kubectl apply -f -
+          apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: db-migrate-egress
+            namespace: ${NS}
+          spec:
+            podSelector:
+              matchLabels:
+                app: db-migrate
+            policyTypes:
+              - Egress
+            egress:
+              - to:
+                  - ipBlock:
+                      cidr: 10.0.0.0/24
+                ports:
+                  - protocol: TCP
+                    port: 5432
+                  - protocol: TCP
+                    port: 6432
+              - ports:
+                  - protocol: UDP
+                    port: 53
+                  - protocol: TCP
+                    port: 53
+          EOF
+
           # Run migration as a Kubernetes Job using the auth-svc image
           # (it contains Prisma CLI and all migration files)
           cat <<EOF | kubectl apply -f -
@@ -771,7 +800,6 @@ jobs:
               metadata:
                 labels:
                   app: db-migrate
-                  app.kubernetes.io/part-of: aivo
               spec:
                 restartPolicy: Never
                 containers:
@@ -811,6 +839,9 @@ jobs:
             kubectl logs "job/db-migrate-${RUN_ID}" -n "$NS"
             exit 1
           fi
+
+          # Clean up migration NetworkPolicy
+          kubectl delete networkpolicy db-migrate-egress -n "$NS" --ignore-not-found
 
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 7: Create Deployment Record
