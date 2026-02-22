@@ -13,10 +13,10 @@ import { DeviceSyncService, deviceSyncRoutes, deviceSyncAuthMiddleware } from '.
 import type { ExtendedPrismaClient } from '../prisma-types.js';
 import { PrismaClient as BasePrismaClient } from '../prisma.js';
 import { registerSyncRoutes } from '../routes/sync-routes.js';
-import { SyncScheduler } from '../scheduler';
+import { SyncScheduler } from '../scheduler/index.js';
 
-import { registerOAuthRoutes } from './oauth';
-import { registerRoutes } from './routes';
+import { registerOAuthRoutes } from './oauth.js';
+import { registerRoutes } from './routes.js';
 
 export async function createServer() {
   const prisma = new BasePrismaClient() as unknown as ExtendedPrismaClient;

@@ -18,8 +18,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import type { ExtendedPrismaClient as PrismaAny } from '../prisma-types.js';
-import { GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from '../providers/google-workspace';
-import { MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from '../providers/microsoft-entra';
+import { GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from '../providers/google-workspace.js';
+import { MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from '../providers/microsoft-entra.js';
 import { IntegrationStatus } from '../providers/types.js';
 
 // ============================================================================

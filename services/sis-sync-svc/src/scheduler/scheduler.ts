@@ -9,11 +9,11 @@ import * as cron from 'node-cron';
 
 import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import type { SisProvider, SyncStatus } from '../providers/types';
-import { SyncStatus as SyncStatusValues } from '../providers/types';
-import { SyncEngine } from '../sync/engine';
-import type { TransformConfig } from '../sync/transformer';
-import { EntityTransformer } from '../sync/transformer';
+import type { SisProvider, SyncStatus } from '../providers/types.js';
+import { SyncStatus as SyncStatusValues } from '../providers/types.js';
+import { SyncEngine } from '../sync/engine.js';
+import type { TransformConfig } from '../sync/transformer.js';
+import { EntityTransformer } from '../sync/transformer.js';
 
 export interface SchedulerConfig {
   /** Whether to start scheduled jobs on initialization */

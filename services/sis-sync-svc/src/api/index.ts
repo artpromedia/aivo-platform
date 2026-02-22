@@ -2,6 +2,6 @@
  * API Module Exports
  */
 
-export { createServer } from './server';
-export { registerRoutes } from './routes';
-export { registerOAuthRoutes } from './oauth';
+export { createServer } from './server.js';
+export { registerRoutes } from './routes.js';
+export { registerOAuthRoutes } from './oauth.js';

@@ -14,11 +14,11 @@ import type {
   SisClass,
   SisUser,
   SisEnrollment,
-  SyncEntityResult} from './types';
+  SyncEntityResult} from './types.js';
 import {
   SisUserRole,
   EnrollmentRole,
-} from './types';
+} from './types.js';
 
 const CLEVER_API_BASE = 'https://api.clever.com/v3.0';
 const PAGE_SIZE = 100;

@@ -7,4 +7,4 @@ export {
   type SchedulerConfig,
   getSchedulePreset,
   isValidCronExpression,
-} from './scheduler';
+} from './scheduler.js';

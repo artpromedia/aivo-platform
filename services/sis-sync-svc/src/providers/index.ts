@@ -4,18 +4,18 @@
  * Creates and initializes SIS providers based on type and configuration
  */
 
-import { ClassLinkProvider } from './classlink';
-import { CleverProvider } from './clever';
-import { GoogleWorkspaceProvider } from './google-workspace';
-import { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider';
-import { MicrosoftEntraProvider } from './microsoft-entra';
-import { OneRosterApiProvider } from './oneroster-api';
-import { OneRosterCsvProvider } from './oneroster-csv';
-import { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider';
+import { ClassLinkProvider } from './classlink.js';
+import { CleverProvider } from './clever.js';
+import { GoogleWorkspaceProvider } from './google-workspace.js';
+import { InfiniteCampusClient, InfiniteCampusSyncService } from './infinite-campus/infinite-campus-provider.js';
+import { MicrosoftEntraProvider } from './microsoft-entra.js';
+import { OneRosterApiProvider } from './oneroster-api.js';
+import { OneRosterCsvProvider } from './oneroster-csv.js';
+import { PowerSchoolClient, PowerSchoolSyncService } from './powerschool/powerschool-provider.js';
 import type {
   ISisProvider,
   ProviderConfig,
- SisProviderType } from './types';
+ SisProviderType } from './types.js';
 
 
 export function createProvider(providerType: SisProviderType): ISisProvider {
@@ -114,13 +114,13 @@ export function validateProviderConfig(
 }
 
 // Re-export types
-export * from './types';
-export { CleverProvider } from './clever';
-export { ClassLinkProvider } from './classlink';
-export { OneRosterApiProvider } from './oneroster-api';
-export { OneRosterCsvProvider } from './oneroster-csv';
-export { GoogleWorkspaceProvider, GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from './google-workspace';
-export { MicrosoftEntraProvider, MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from './microsoft-entra';
+export * from './types.js';
+export { CleverProvider } from './clever.js';
+export { ClassLinkProvider } from './classlink.js';
+export { OneRosterApiProvider } from './oneroster-api.js';
+export { OneRosterCsvProvider } from './oneroster-csv.js';
+export { GoogleWorkspaceProvider, GoogleOAuthHelpers, GOOGLE_ROSTERING_SCOPES, GOOGLE_SSO_SCOPES } from './google-workspace.js';
+export { MicrosoftEntraProvider, MicrosoftOAuthHelpers, MICROSOFT_ROSTERING_SCOPES, MICROSOFT_SSO_SCOPES } from './microsoft-entra.js';
 export {
   PowerSchoolClient,
   PowerSchoolSyncService,
@@ -135,7 +135,7 @@ export {
   type PowerSchoolAddress,
   type SyncResult as PowerSchoolSyncResult,
   type FullSyncResult as PowerSchoolFullSyncResult,
-} from './powerschool/powerschool-provider';
+} from './powerschool/powerschool-provider.js';
 export {
   InfiniteCampusClient,
   InfiniteCampusSyncService,
@@ -152,4 +152,4 @@ export {
   type InfiniteCampusTerm,
   type SyncResult as InfiniteCampusSyncResult,
   type FullSyncResult as InfiniteCampusFullSyncResult,
-} from './infinite-campus/infinite-campus-provider';
+} from './infinite-campus/infinite-campus-provider.js';

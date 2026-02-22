@@ -3,7 +3,7 @@
  */
 
 // Re-export all modules
-export * from './providers';
-export * from './sync';
-export * from './scheduler';
-export * from './api';
+export * from './providers/index.js';
+export * from './sync/index.js';
+export * from './scheduler/index.js';
+export * from './api/index.js';

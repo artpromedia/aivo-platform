@@ -24,9 +24,9 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 import { logger } from '../logger.js';
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import type { ProviderFactory } from '../providers/factory';
-import type { FieldMapping, ISisProvider } from '../providers/types';
-import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine';
+import type { ProviderFactory } from '../providers/factory.js';
+import type { FieldMapping, ISisProvider } from '../providers/types.js';
+import type { SyncEntityType, DeltaSyncEngine, DeltaRecord } from '../sync/delta-sync-engine.js';
 
 /**
  * Supported webhook provider types

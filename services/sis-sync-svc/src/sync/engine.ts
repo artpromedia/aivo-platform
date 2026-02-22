@@ -7,7 +7,7 @@
  */
 
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import { createAndInitializeProvider } from '../providers';
+import { createAndInitializeProvider } from '../providers/index.js';
 import type { SisProviderType, SyncStatus, SisEntityType ,
   ISisProvider,
   SisSchool,
@@ -15,10 +15,10 @@ import type { SisProviderType, SyncStatus, SisEntityType ,
   SisUser,
   SisEnrollment,
   SyncStats,
-  SyncEntityResult} from '../providers/types';
+  SyncEntityResult} from '../providers/types.js';
 import { SyncStatus as SyncStatusValues, SisEntityType as SisEntityTypeValues ,
   createEmptySyncStats,
-} from '../providers/types';
+} from '../providers/types.js';
 
 
 /**

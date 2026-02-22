@@ -17,7 +17,7 @@ import type {
   SyncEntityResult,
   SisUserRole,
   EnrollmentRole,
-} from './types';
+} from './types.js';
 
 const CLASSLINK_ROSTER_BASE = 'https://roster.classlink.com';
 const PAGE_SIZE = 100;

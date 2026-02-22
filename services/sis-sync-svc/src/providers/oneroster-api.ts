@@ -16,7 +16,7 @@ import type {
   SyncEntityResult,
   SisUserRole,
   EnrollmentRole,
-} from './types';
+} from './types.js';
 
 const PAGE_SIZE = 100;
 

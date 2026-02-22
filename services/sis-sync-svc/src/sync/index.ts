@@ -2,7 +2,7 @@
  * Sync Module Exports
  */
 
-export { SyncEngine, type SyncEngineConfig, type SyncRunContext } from './engine';
+export { SyncEngine, type SyncEngineConfig, type SyncRunContext } from './engine.js';
 export {
   EntityTransformer,
   type TransformConfig,
@@ -10,4 +10,4 @@ export {
   mapSisRoleToAivoRole,
   type TenantServiceClient,
   type AuthServiceClient,
-} from './transformer';
+} from './transformer.js';

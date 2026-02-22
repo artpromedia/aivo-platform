@@ -8,10 +8,10 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
 import type { ExtendedPrismaClient as PrismaClient } from '../prisma-types.js';
-import { validateProviderConfig } from '../providers';
+import { validateProviderConfig } from '../providers/index.js';
 import type { SisProviderType } from '../providers/types.js';
-import type { SyncScheduler} from '../scheduler';
-import { getSchedulePreset, isValidCronExpression } from '../scheduler';
+import type { SyncScheduler} from '../scheduler/index.js';
+import { getSchedulePreset, isValidCronExpression } from '../scheduler/index.js';
 
 // Request/Response Schemas
 const CreateProviderSchema = z.object({

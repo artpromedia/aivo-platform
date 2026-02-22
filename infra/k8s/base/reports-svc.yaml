@@ -127,7 +127,12 @@ spec:
                   name: shared-secrets
                   key: nats-url
 
-            # Add service-specific secrets here
+            # JWT authentication
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: shared-secrets
+                  key: JWT_SECRET
 
           resources:
             requests:

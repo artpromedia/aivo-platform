@@ -22,7 +22,7 @@ import type {
   SyncEntityResult,
   SisUserRole,
   EnrollmentRole,
-} from './types';
+} from './types.js';
 
 // OneRoster 1.1 CSV Column Names
 interface OrgsRow {

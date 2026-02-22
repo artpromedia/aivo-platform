@@ -21,7 +21,7 @@ import type {
   SyncEntityResult,
   SisUserRole,
   EnrollmentRole,
-} from './types';
+} from './types.js';
 
 // ============================================================================
 // Google API Constants
