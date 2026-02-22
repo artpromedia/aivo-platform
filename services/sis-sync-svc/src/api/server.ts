@@ -2,6 +2,7 @@
  * SIS Sync Service - Main Entry Point
  */
 
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
@@ -90,7 +91,7 @@ export async function createServer() {
 }
 
 // Start server if run directly (ES module compatible check)
-const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+const isMainModule = resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMainModule) {
   createServer()
     .then(async ({ app }) => {
