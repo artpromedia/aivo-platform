@@ -305,7 +305,7 @@ spec:
           port: 6379
         - protocol: TCP
           port: 4222
-        - to:
+    - to:
         - namespaceSelector: {}
           podSelector:
             matchLabels:
