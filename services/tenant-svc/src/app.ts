@@ -43,7 +43,7 @@ export function createApp() {
     baseDomain: config.baseDomain ?? 'aivo.ai',
     cacheTtlSeconds: config.cacheTtlSeconds ?? 300,
     defaultTenantId: config.defaultTenantId,
-    skipPaths: ['/health', '/healthz', '/metrics', '/tenant/resolve'],
+    skipPaths: ['/health', '/healthz', '/ready', '/readyz', '/metrics', '/tenant/resolve'],
   });
 
   // Health check routes (before auth middleware so they're always accessible)
