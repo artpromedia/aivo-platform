@@ -3,6 +3,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { Message, MessageRole } from '../core/types';
 
 export interface MessageHistoryConfig {
@@ -85,14 +86,14 @@ export class MessageHistory {
    * Get messages by role
    */
   getByRole(role: MessageRole): Message[] {
-    return this.messages.filter(m => m.role === role);
+    return this.messages.filter((m) => m.role === role);
   }
 
   /**
    * Get a message by ID
    */
   getById(id: string): Message | undefined {
-    return this.messages.find(m => m.id === id);
+    return this.messages.find((m) => m.id === id);
   }
 
   /**
@@ -115,7 +116,7 @@ export class MessageHistory {
   getLastByRole(role: MessageRole): Message | undefined {
     for (let i = this.messages.length - 1; i >= 0; i--) {
       const message = this.messages[i];
-      if (message && message.role === role) {
+      if (message?.role === role) {
         return message;
       }
     }
@@ -127,16 +128,14 @@ export class MessageHistory {
    */
   search(query: string): Message[] {
     const queryLower = query.toLowerCase();
-    return this.messages.filter(m =>
-      m.content.toLowerCase().includes(queryLower)
-    );
+    return this.messages.filter((m) => m.content.toLowerCase().includes(queryLower));
   }
 
   /**
    * Get messages in a time range
    */
   getInTimeRange(start: Date, end: Date): Message[] {
-    return this.messages.filter(m => {
+    return this.messages.filter((m) => {
       const timestamp = new Date(m.timestamp);
       return timestamp >= start && timestamp <= end;
     });
@@ -146,7 +145,7 @@ export class MessageHistory {
    * Remove a message by ID
    */
   remove(id: string): boolean {
-    const index = this.messages.findIndex(m => m.id === id);
+    const index = this.messages.findIndex((m) => m.id === id);
     if (index !== -1) {
       this.messages.splice(index, 1);
       return true;
@@ -158,7 +157,7 @@ export class MessageHistory {
    * Update a message
    */
   update(id: string, updates: Partial<Message>): Message | undefined {
-    const message = this.messages.find(m => m.id === id);
+    const message = this.messages.find((m) => m.id === id);
     if (message) {
       Object.assign(message, updates);
       return message;
@@ -187,7 +186,7 @@ export class MessageHistory {
    */
   pruneOlderThan(date: Date): number {
     const originalLength = this.messages.length;
-    this.messages = this.messages.filter(m => new Date(m.timestamp) >= date);
+    this.messages = this.messages.filter((m) => new Date(m.timestamp) >= date);
     return originalLength - this.messages.length;
   }
 
@@ -195,9 +194,7 @@ export class MessageHistory {
    * Get conversation as a single string
    */
   toString(): string {
-    return this.messages
-      .map(m => `[${m.role}]: ${m.content}`)
-      .join('\n');
+    return this.messages.map((m) => `[${m.role}]: ${m.content}`).join('\n');
   }
 
   /**
@@ -211,7 +208,7 @@ export class MessageHistory {
    * Import messages
    */
   import(messages: Message[]): void {
-    this.messages = messages.map(m => ({
+    this.messages = messages.map((m) => ({
       ...m,
       timestamp: new Date(m.timestamp),
     }));

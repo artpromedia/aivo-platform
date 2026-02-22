@@ -2,7 +2,14 @@
  * Tool type definitions for the agent framework
  */
 
-import type { JSONSchema, Tool, ToolContext, ToolResult, ValidationResult, ToolDefinition } from '../core/types';
+import type {
+  JSONSchema,
+  Tool,
+  ToolContext,
+  ToolResult,
+  ValidationResult,
+  ToolDefinition,
+} from '../core/types';
 
 export type { Tool, ToolContext, ToolResult, ValidationResult, ToolDefinition, JSONSchema };
 
@@ -104,7 +111,7 @@ export function defineTool(options: {
 /**
  * Helper to create a simple tool result
  */
-export function toolSuccess(data: unknown, executionTimeMs: number = 0): ToolResult {
+export function toolSuccess(data: unknown, executionTimeMs = 0): ToolResult {
   return {
     success: true,
     data,
@@ -115,7 +122,7 @@ export function toolSuccess(data: unknown, executionTimeMs: number = 0): ToolRes
 /**
  * Helper to create an error tool result
  */
-export function toolError(error: string, executionTimeMs: number = 0): ToolResult {
+export function toolError(error: string, executionTimeMs = 0): ToolResult {
   return {
     success: false,
     error,
@@ -126,10 +133,7 @@ export function toolError(error: string, executionTimeMs: number = 0): ToolResul
 /**
  * Helper to validate parameters
  */
-export function validateParams(
-  params: unknown,
-  schema: JSONSchema
-): ValidationResult {
+export function validateParams(params: unknown, schema: JSONSchema): ValidationResult {
   const errors: string[] = [];
 
   if (typeof params !== 'object' || params === null) {

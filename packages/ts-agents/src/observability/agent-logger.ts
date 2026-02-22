@@ -69,7 +69,11 @@ export class JsonTransport implements LogTransport {
   private output: (json: string) => void;
 
   constructor(output?: (json: string) => void) {
-    this.output = output || ((json) => console.log(json));
+    this.output =
+      output ||
+      ((json) => {
+        console.log(json);
+      });
   }
 
   log(entry: LogEntry): void {
@@ -101,7 +105,7 @@ export class BufferTransport implements LogTransport {
   private buffer: LogEntry[] = [];
   private maxSize: number;
 
-  constructor(maxSize: number = 1000) {
+  constructor(maxSize = 1000) {
     this.maxSize = maxSize;
   }
 
@@ -117,7 +121,7 @@ export class BufferTransport implements LogTransport {
   }
 
   getEntriesByLevel(level: LogLevel): LogEntry[] {
-    return this.buffer.filter(e => e.level === level);
+    return this.buffer.filter((e) => e.level === level);
   }
 
   clear(): void {
@@ -224,12 +228,7 @@ export class AgentLogger {
   /**
    * Log agent completion
    */
-  logAgentComplete(
-    agentId: string,
-    sessionId: string,
-    output: unknown,
-    durationMs: number
-  ): void {
+  logAgentComplete(agentId: string, sessionId: string, output: unknown, durationMs: number): void {
     this.info('Agent completed', {
       agentId,
       sessionId,
@@ -241,23 +240,14 @@ export class AgentLogger {
   /**
    * Log agent error
    */
-  logAgentError(
-    agentId: string,
-    sessionId: string,
-    error: Error
-  ): void {
+  logAgentError(agentId: string, sessionId: string, error: Error): void {
     this.error('Agent error', error, { agentId, sessionId });
   }
 
   /**
    * Log tool execution
    */
-  logToolExecution(
-    toolName: string,
-    params: unknown,
-    result: unknown,
-    durationMs: number
-  ): void {
+  logToolExecution(toolName: string, params: unknown, result: unknown, durationMs: number): void {
     this.debug('Tool executed', {
       toolName,
       params,
@@ -283,12 +273,7 @@ export class AgentLogger {
   /**
    * Log state change
    */
-  logStateChange(
-    sessionId: string,
-    fromState: string,
-    toState: string,
-    event: string
-  ): void {
+  logStateChange(sessionId: string, fromState: string, toState: string, event: string): void {
     this.debug('State changed', {
       sessionId,
       fromState,

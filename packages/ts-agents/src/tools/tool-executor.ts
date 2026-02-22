@@ -3,6 +3,7 @@
  */
 
 import type { Tool, ToolContext, ToolResult } from '../core/types';
+
 import type { ToolRegistry } from './tool-registry';
 import type { ExecutorOptions, ToolCall, BatchToolResult } from './tool-types';
 import { validateParams } from './tool-types';
@@ -17,9 +18,15 @@ export class ToolExecutor {
       timeout: 30000, // 30 seconds
       retryAttempts: 0,
       retryDelayMs: 1000,
-      onBeforeExecute: () => {},
-      onAfterExecute: () => {},
-      onError: () => {},
+      onBeforeExecute: () => {
+        /* no-op */
+      },
+      onAfterExecute: () => {
+        /* no-op */
+      },
+      onError: () => {
+        /* no-op */
+      },
       ...options,
     };
   }
@@ -27,11 +34,7 @@ export class ToolExecutor {
   /**
    * Execute a tool by name
    */
-  async execute(
-    toolName: string,
-    params: unknown,
-    context: ToolContext
-  ): Promise<ToolResult> {
+  async execute(toolName: string, params: unknown, context: ToolContext): Promise<ToolResult> {
     const tool = this.registry.get(toolName);
     if (!tool) {
       return {
@@ -47,11 +50,7 @@ export class ToolExecutor {
   /**
    * Execute a tool instance
    */
-  async executeTool(
-    tool: Tool,
-    params: unknown,
-    context: ToolContext
-  ): Promise<ToolResult> {
+  async executeTool(tool: Tool, params: unknown, context: ToolContext): Promise<ToolResult> {
     const startTime = Date.now();
 
     try {
@@ -135,13 +134,8 @@ export class ToolExecutor {
   /**
    * Execute multiple tools in parallel
    */
-  async executeParallel(
-    calls: ToolCall[],
-    context: ToolContext
-  ): Promise<ToolResult[]> {
-    const promises = calls.map(call =>
-      this.execute(call.name, call.arguments, context)
-    );
+  async executeParallel(calls: ToolCall[], context: ToolContext): Promise<ToolResult[]> {
+    const promises = calls.map((call) => this.execute(call.name, call.arguments, context));
 
     return Promise.all(promises);
   }
@@ -149,10 +143,7 @@ export class ToolExecutor {
   /**
    * Execute multiple tools in sequence
    */
-  async executeSequential(
-    calls: ToolCall[],
-    context: ToolContext
-  ): Promise<BatchToolResult[]> {
+  async executeSequential(calls: ToolCall[], context: ToolContext): Promise<BatchToolResult[]> {
     const results: BatchToolResult[] = [];
 
     for (const call of calls) {
@@ -176,18 +167,18 @@ export class ToolExecutor {
    * Each tool can access results from previous tools
    */
   async executeWithDependencies(
-    calls: Array<{
+    calls: {
       call: ToolCall;
       dependsOn?: string[];
       transform?: (
         params: Record<string, unknown>,
         previousResults: Map<string, ToolResult>
       ) => Record<string, unknown>;
-    }>,
+    }[],
     context: ToolContext
   ): Promise<Map<string, ToolResult>> {
     const results = new Map<string, ToolResult>();
-    const pending = new Map(calls.map(c => [c.call.id, c]));
+    const pending = new Map(calls.map((c) => [c.call.id, c]));
     const completed = new Set<string>();
 
     while (pending.size > 0) {
@@ -196,7 +187,7 @@ export class ToolExecutor {
       // Find calls with all dependencies satisfied
       for (const [_id, callInfo] of pending) {
         const deps = callInfo.dependsOn || [];
-        if (deps.every(dep => completed.has(dep))) {
+        if (deps.every((dep) => completed.has(dep))) {
           readyToExecute.push(callInfo);
         }
       }
@@ -207,7 +198,7 @@ export class ToolExecutor {
       }
 
       // Execute ready calls in parallel
-      const executionPromises = readyToExecute.map(async callInfo => {
+      const executionPromises = readyToExecute.map(async (callInfo) => {
         let params = callInfo.call.arguments;
 
         // Transform params using previous results if needed
@@ -215,11 +206,7 @@ export class ToolExecutor {
           params = callInfo.transform(params, results);
         }
 
-        const result = await this.execute(
-          callInfo.call.name,
-          params,
-          context
-        );
+        const result = await this.execute(callInfo.call.name, params, context);
 
         return { id: callInfo.call.id, result };
       });
@@ -276,23 +263,20 @@ export class ToolExecutor {
   /**
    * Execute with timeout
    */
-  private executeWithTimeout<T>(
-    promise: Promise<T>,
-    timeout: number
-  ): Promise<T> {
+  private executeWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error(`Tool execution timed out after ${timeout}ms`));
       }, timeout);
 
       promise
-        .then(result => {
+        .then((result) => {
           clearTimeout(timer);
           resolve(result);
         })
-        .catch(error => {
+        .catch((error: unknown) => {
           clearTimeout(timer);
-          reject(error);
+          reject(error instanceof Error ? error : new Error(String(error)));
         });
     });
   }
@@ -301,6 +285,6 @@ export class ToolExecutor {
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

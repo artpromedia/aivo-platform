@@ -72,7 +72,7 @@ describe('LTI Platform Registration Service', () => {
         authorizationUrl: '{issuer}/api/lti/authorize_redirect',
         tokenUrl: '{issuer}/login/oauth2/token',
         jwksUrl: '{issuer}/api/lti/security/jwks',
-        issuerPattern: /canvas\.instructure\.com$/,
+        issuerPattern: /\.instructure\.com$/,
         features: ['ags', 'names_and_roles', 'deep_linking'],
       },
       schoology: {

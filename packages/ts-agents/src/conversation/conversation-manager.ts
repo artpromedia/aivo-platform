@@ -3,14 +3,11 @@
  */
 
 import { v4 as uuid } from 'uuid';
-import type {
-  Message,
-  ConversationConfig,
-  ConversationBranch,
-  MessageRole,
-} from '../core/types';
-import { MessageHistory } from './message-history';
+
+import type { Message, ConversationConfig, ConversationBranch, MessageRole } from '../core/types';
+
 import { ContextWindowManager, SimpleTokenizer } from './context-window';
+import { MessageHistory } from './message-history';
 
 export class ConversationManager {
   private config: ConversationConfig;
@@ -58,10 +55,7 @@ export class ConversationManager {
   /**
    * Add a user message
    */
-  async addUserMessage(
-    content: string,
-    metadata?: Record<string, unknown>
-  ): Promise<Message> {
+  async addUserMessage(content: string, metadata?: Record<string, unknown>): Promise<Message> {
     const message: Message = {
       id: uuid(),
       role: 'user',
@@ -98,11 +92,7 @@ export class ConversationManager {
   /**
    * Add a tool result message
    */
-  async addToolMessage(
-    content: string,
-    toolCallId: string,
-    name: string
-  ): Promise<Message> {
+  async addToolMessage(content: string, toolCallId: string, name: string): Promise<Message> {
     const message: Message = {
       id: uuid(),
       role: 'tool',
@@ -118,10 +108,7 @@ export class ConversationManager {
   /**
    * Add a system message
    */
-  async addSystemMessage(
-    content: string,
-    metadata?: Record<string, unknown>
-  ): Promise<Message> {
+  async addSystemMessage(content: string, metadata?: Record<string, unknown>): Promise<Message> {
     const message: Message = {
       id: uuid(),
       role: 'system',
@@ -195,7 +182,7 @@ export class ConversationManager {
     );
 
     // Extract key user questions
-    const userMessages = messages.filter(m => m.role === 'user');
+    const userMessages = messages.filter((m) => m.role === 'user');
     const firstUserMessage = userMessages[0];
     if (firstUserMessage) {
       const firstQuestion = firstUserMessage.content.slice(0, 100);
@@ -210,8 +197,8 @@ export class ConversationManager {
 
     // Note tool usage
     if (roleCounts.tool > 0) {
-      const toolMessages = messages.filter(m => m.role === 'tool');
-      const toolNames = [...new Set(toolMessages.map(m => m.name).filter(Boolean))];
+      const toolMessages = messages.filter((m) => m.role === 'tool');
+      const toolNames = [...new Set(toolMessages.map((m) => m.name).filter(Boolean))];
       summaryParts.push(`Tools used: ${toolNames.join(', ')}`);
     }
 
@@ -363,11 +350,7 @@ export class ConversationManager {
   /**
    * Import conversation
    */
-  import(data: {
-    messages: Message[];
-    branches?: ConversationBranch[];
-    summary?: string;
-  }): void {
+  import(data: { messages: Message[]; branches?: ConversationBranch[]; summary?: string }): void {
     this.history.import(data.messages);
 
     if (data.branches) {

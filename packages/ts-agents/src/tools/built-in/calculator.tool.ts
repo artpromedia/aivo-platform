@@ -63,8 +63,7 @@ export function createCalculatorTool(): Tool {
         },
         expression: {
           type: 'string',
-          description:
-            'Mathematical expression to evaluate (for "evaluate" operation)',
+          description: 'Mathematical expression to evaluate (for "evaluate" operation)',
         },
       },
       required: ['operation'],
@@ -142,10 +141,7 @@ function validateCalculatorParams(params: unknown): { valid: boolean; errors?: s
 /**
  * Calculator execution function
  */
-async function calculatorExecute(
-  params: unknown,
-  _context: ToolContext
-): Promise<ToolResult> {
+async function calculatorExecute(params: unknown, _context: ToolContext): Promise<ToolResult> {
   const startTime = Date.now();
 
   try {
@@ -204,11 +200,12 @@ async function calculatorExecute(
         steps = [`LCM(${a}, ${b}) = ${result}`];
         break;
 
-      case 'evaluate':
+      case 'evaluate': {
         const evalResult = evaluateExpression(expression!);
         result = evalResult.result;
         steps = evalResult.steps;
         break;
+      }
 
       default:
         return toolError(`Unknown operation: ${operation}`, Date.now() - startTime);
@@ -267,7 +264,7 @@ function lcm(a: number, b: number): number {
  */
 function evaluateExpression(expression: string): { result: number; steps: string[] } {
   const steps: string[] = [];
-  let expr = expression.trim();
+  const expr = expression.trim();
   steps.push(`Original: ${expr}`);
 
   // Tokenize
@@ -291,10 +288,7 @@ function tokenize(expr: string): string[] {
   const tokens: string[] = [];
   let current = '';
 
-  for (let i = 0; i < expr.length; i++) {
-    const char = expr[i];
-    if (!char) continue;
-
+  for (const char of expr) {
     if (/\d|\./.test(char)) {
       current += char;
     } else if (/[+\-*/^()]/.test(char)) {

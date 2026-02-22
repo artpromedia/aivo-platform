@@ -3,6 +3,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { Episode } from '../core/types';
 
 export interface EpisodicMemoryConfig {
@@ -13,7 +14,7 @@ export class EpisodicMemory {
   private episodes: Episode[] = [];
   private maxEpisodes: number;
 
-  constructor(maxEpisodes: number = 100) {
+  constructor(maxEpisodes = 100) {
     this.maxEpisodes = maxEpisodes;
   }
 
@@ -39,9 +40,9 @@ export class EpisodicMemory {
   /**
    * Recall episodes matching a query
    */
-  async recall(query: string, limit: number = 10): Promise<Episode[]> {
+  async recall(query: string, limit = 10): Promise<Episode[]> {
     const queryLower = query.toLowerCase();
-    const scored = this.episodes.map(episode => ({
+    const scored = this.episodes.map((episode) => ({
       episode,
       score: this.calculateRelevance(episode, queryLower),
     }));
@@ -51,16 +52,16 @@ export class EpisodicMemory {
 
     // Return top matches
     return scored
-      .filter(s => s.score > 0)
+      .filter((s) => s.score > 0)
       .slice(0, limit)
-      .map(s => s.episode);
+      .map((s) => s.episode);
   }
 
   /**
    * Recall episodes within a time range
    */
   async recallByTimeRange(start: Date, end: Date): Promise<Episode[]> {
-    return this.episodes.filter(episode => {
+    return this.episodes.filter((episode) => {
       const timestamp = new Date(episode.timestamp);
       return timestamp >= start && timestamp <= end;
     });
@@ -69,28 +70,23 @@ export class EpisodicMemory {
   /**
    * Recall episodes by type
    */
-  async recallByType(type: string, limit: number = 10): Promise<Episode[]> {
-    return this.episodes
-      .filter(episode => episode.type === type)
-      .slice(-limit);
+  async recallByType(type: string, limit = 10): Promise<Episode[]> {
+    return this.episodes.filter((episode) => episode.type === type).slice(-limit);
   }
 
   /**
    * Recall episodes involving specific participants
    */
-  async recallByParticipant(
-    participant: string,
-    limit: number = 10
-  ): Promise<Episode[]> {
+  async recallByParticipant(participant: string, limit = 10): Promise<Episode[]> {
     return this.episodes
-      .filter(episode => episode.participants.includes(participant))
+      .filter((episode) => episode.participants.includes(participant))
       .slice(-limit);
   }
 
   /**
    * Get the most recent episodes
    */
-  async getRecent(limit: number = 10): Promise<Episode[]> {
+  async getRecent(limit = 10): Promise<Episode[]> {
     return this.episodes.slice(-limit);
   }
 
@@ -115,8 +111,8 @@ export class EpisodicMemory {
     for (const [type, typeEpisodes] of byType) {
       const count = typeEpisodes.length;
       const outcomes = typeEpisodes
-        .filter(e => e.outcome)
-        .map(e => e.outcome)
+        .filter((e) => e.outcome)
+        .map((e) => e.outcome)
         .slice(0, 3);
 
       let summary = `${count} ${type} episode${count > 1 ? 's' : ''}`;
@@ -147,14 +143,14 @@ export class EpisodicMemory {
    * Get an episode by ID
    */
   async getById(id: string): Promise<Episode | undefined> {
-    return this.episodes.find(e => e.id === id);
+    return this.episodes.find((e) => e.id === id);
   }
 
   /**
    * Delete an episode by ID
    */
   async delete(id: string): Promise<boolean> {
-    const index = this.episodes.findIndex(e => e.id === id);
+    const index = this.episodes.findIndex((e) => e.id === id);
     if (index !== -1) {
       this.episodes.splice(index, 1);
       return true;
@@ -198,7 +194,7 @@ export class EpisodicMemory {
    */
   private calculateRelevance(episode: Episode, query: string): number {
     let score = 0;
-    const queryTerms = query.split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = query.split(/\s+/).filter((t) => t.length > 2);
 
     // Check content
     const contentStr = JSON.stringify(episode.content).toLowerCase();

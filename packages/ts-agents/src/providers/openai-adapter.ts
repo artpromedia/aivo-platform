@@ -158,7 +158,7 @@ export class OpenAIAdapter extends ModelAdapter {
 
     // Cast needed: TS can't narrow the overload since params.stream is `boolean`, not literal `false`.
     // We set stream=false above, so the SDK returns OpenAIChatCompletion.
-    const response = await this.client.chat.completions.create(params) as OpenAIChatCompletion;
+    const response = (await this.client.chat.completions.create(params)) as OpenAIChatCompletion;
 
     return this.parseResponse(response);
   }
@@ -195,10 +195,10 @@ export class OpenAIAdapter extends ModelAdapter {
 
     // TypeScript doesn't narrow the return type even with `stream: true as const`
     // so we need to explicitly cast. The SDK returns AsyncIterable when stream=true.
-    const stream = (await this.client.chat.completions.create({ 
-      ...params, 
-      stream: true 
-    })) as AsyncIterable<OpenAIStreamChunk>;
+    const stream = await this.client.chat.completions.create({
+      ...params,
+      stream: true,
+    });
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta;

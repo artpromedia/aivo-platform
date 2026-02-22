@@ -15,7 +15,7 @@ export interface ITokenizer {
 export class SimpleTokenizer implements ITokenizer {
   private charsPerToken: number;
 
-  constructor(charsPerToken: number = 4) {
+  constructor(charsPerToken = 4) {
     this.charsPerToken = charsPerToken;
   }
 
@@ -74,19 +74,13 @@ export class ContextWindowManager {
     let totalTokens = 0;
 
     // 1. System prompt (required)
-    const truncatedSystemPrompt = this.tokenizer.truncate(
-      systemPrompt,
-      this.reserves.systemPrompt
-    );
+    const truncatedSystemPrompt = this.tokenizer.truncate(systemPrompt, this.reserves.systemPrompt);
     const systemPromptTokens = this.tokenizer.countTokens(truncatedSystemPrompt);
     totalTokens += systemPromptTokens;
 
     // 2. Tool definitions
     const toolsJson = JSON.stringify(tools);
-    const truncatedToolsJson = this.tokenizer.truncate(
-      toolsJson,
-      this.reserves.toolDefinitions
-    );
+    const truncatedToolsJson = this.tokenizer.truncate(toolsJson, this.reserves.toolDefinitions);
     const toolsTokens = this.tokenizer.countTokens(truncatedToolsJson);
     totalTokens += toolsTokens;
 
@@ -131,8 +125,8 @@ export class ContextWindowManager {
    */
   async truncateToFit(messages: Message[], maxTokens: number): Promise<Message[]> {
     // Always keep system messages
-    const systemMessages = messages.filter(m => m.role === 'system');
-    const nonSystemMessages = messages.filter(m => m.role !== 'system');
+    const systemMessages = messages.filter((m) => m.role === 'system');
+    const nonSystemMessages = messages.filter((m) => m.role !== 'system');
 
     let systemTokens = 0;
     for (const msg of systemMessages) {
@@ -214,9 +208,8 @@ export class ContextWindowManager {
    */
   private formatMemory(memory: Memory): string {
     const timestamp = new Date(memory.timestamp).toISOString();
-    const content = typeof memory.content === 'string'
-      ? memory.content
-      : JSON.stringify(memory.content);
+    const content =
+      typeof memory.content === 'string' ? memory.content : JSON.stringify(memory.content);
     return `[${memory.type.toUpperCase()} - ${timestamp}] ${content}`;
   }
 

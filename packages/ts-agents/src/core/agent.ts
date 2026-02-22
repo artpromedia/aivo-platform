@@ -3,6 +3,14 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
+import type { ConversationManager } from '../conversation/conversation-manager';
+import type { MemoryManager } from '../memory/memory-manager';
+import type { ModelAdapter } from '../providers/model-adapter';
+import type { StateManager } from '../state/state-manager';
+import type { ToolExecutor } from '../tools/tool-executor';
+import type { ToolRegistry } from '../tools/tool-registry';
+
 import type {
   AgentConfig,
   AgentContext,
@@ -18,12 +26,6 @@ import type {
   ToolCall,
 } from './types';
 import { AgentInputSchema, AgentContextSchema } from './types';
-import type { StateManager } from '../state/state-manager';
-import type { MemoryManager } from '../memory/memory-manager';
-import type { ToolRegistry } from '../tools/tool-registry';
-import type { ToolExecutor } from '../tools/tool-executor';
-import type { ModelAdapter } from '../providers/model-adapter';
-import type { ConversationManager } from '../conversation/conversation-manager';
 
 export interface AgentDependencies {
   stateManager: StateManager;
@@ -73,10 +75,7 @@ export abstract class Agent {
     // Initialize or restore state
     let state = await this.stateManager.get(validatedContext.sessionId);
     if (!state) {
-      state = await this.stateManager.initialize(
-        validatedContext.sessionId,
-        this.config.id
-      );
+      state = await this.stateManager.initialize(validatedContext.sessionId, this.config.id);
     }
 
     await this.emitEvent('agent:start', { input: validatedInput, state });
@@ -145,10 +144,7 @@ export abstract class Agent {
           });
 
           // Execute tools
-          const toolResults = await this.executeToolCalls(
-            response.toolCalls!,
-            validatedContext
-          );
+          const toolResults = await this.executeToolCalls(response.toolCalls!, validatedContext);
 
           // Add assistant message with tool calls
           const assistantMessage: Message = {
@@ -401,10 +397,7 @@ export abstract class Agent {
   /**
    * Emit an event
    */
-  protected async emitEvent(
-    type: AgentEventType,
-    data: Record<string, unknown>
-  ): Promise<void> {
+  protected async emitEvent(type: AgentEventType, data: Record<string, unknown>): Promise<void> {
     const event: AgentEvent = {
       type,
       timestamp: new Date(),

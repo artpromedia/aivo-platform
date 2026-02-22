@@ -62,9 +62,9 @@ export class StateSerializer {
       status: state.status,
       currentStep: state.currentStep,
       variables: state.variables,
-      conversationHistory: state.conversationHistory.map(this.serializeMessage),
-      toolCallHistory: state.toolCallHistory.map(this.serializeToolCall),
-      checkpoints: state.checkpoints.map(cp => ({
+      conversationHistory: state.conversationHistory.map((msg) => this.serializeMessage(msg)),
+      toolCallHistory: state.toolCallHistory.map((tc) => this.serializeToolCall(tc)),
+      checkpoints: state.checkpoints.map((cp) => ({
         id: cp.id,
         sessionId: cp.sessionId,
         label: cp.label,
@@ -81,7 +81,7 @@ export class StateSerializer {
    * Convert serializable object back to state
    */
   private fromSerializable(data: Record<string, unknown>): AgentState {
-    const checkpoints = (data.checkpoints as Array<Record<string, unknown>>).map(
+    const checkpoints = (data.checkpoints as Record<string, unknown>[]).map(
       (cp): Checkpoint => ({
         id: cp.id as string,
         sessionId: cp.sessionId as string,
@@ -97,11 +97,11 @@ export class StateSerializer {
       status: data.status as AgentState['status'],
       currentStep: data.currentStep as number,
       variables: data.variables as Record<string, unknown>,
-      conversationHistory: (data.conversationHistory as Array<Record<string, unknown>>).map(
-        this.deserializeMessage
+      conversationHistory: (data.conversationHistory as Record<string, unknown>[]).map((msg) =>
+        this.deserializeMessage(msg)
       ),
-      toolCallHistory: (data.toolCallHistory as Array<Record<string, unknown>>).map(
-        this.deserializeToolCall
+      toolCallHistory: (data.toolCallHistory as Record<string, unknown>[]).map((tc) =>
+        this.deserializeToolCall(tc)
       ),
       checkpoints,
       createdAt: new Date(data.createdAt as string),
@@ -120,7 +120,7 @@ export class StateSerializer {
       content: message.content,
       name: message.name,
       toolCallId: message.toolCallId,
-      toolCalls: message.toolCalls?.map(tc => ({
+      toolCalls: message.toolCalls?.map((tc) => ({
         id: tc.id,
         name: tc.name,
         arguments: tc.arguments,
@@ -142,7 +142,7 @@ export class StateSerializer {
       name: data.name as string | undefined,
       toolCallId: data.toolCallId as string | undefined,
       toolCalls: data.toolCalls
-        ? (data.toolCalls as Array<Record<string, unknown>>).map(tc => ({
+        ? (data.toolCalls as Record<string, unknown>[]).map((tc) => ({
             id: tc.id as string,
             name: tc.name as string,
             arguments: tc.arguments as Record<string, unknown>,

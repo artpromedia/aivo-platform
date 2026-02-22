@@ -3,6 +3,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type {
   AgentState,
   AgentStatus,
@@ -11,6 +12,7 @@ import type {
   Message,
   ToolCall,
 } from '../core/types';
+
 import { StateSerializer, type SerializerOptions } from './state-serializer';
 
 /**
@@ -156,7 +158,7 @@ export class StateManager {
     let checkpoint: Checkpoint | undefined;
 
     if (checkpointId) {
-      checkpoint = state.checkpoints.find(cp => cp.id === checkpointId);
+      checkpoint = state.checkpoints.find((cp) => cp.id === checkpointId);
       if (!checkpoint) {
         throw new Error(`Checkpoint not found: ${checkpointId}`);
       }
@@ -190,11 +192,7 @@ export class StateManager {
   /**
    * Set a variable in the state
    */
-  async setVariable(
-    sessionId: string,
-    key: string,
-    value: unknown
-  ): Promise<void> {
+  async setVariable(sessionId: string, key: string, value: unknown): Promise<void> {
     const state = await this.get(sessionId);
     if (!state) {
       throw new Error(`State not found for session: ${sessionId}`);

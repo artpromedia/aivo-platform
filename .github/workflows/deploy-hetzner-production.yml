@@ -655,7 +655,7 @@ jobs:
           for svc in "${BACKEND_SERVICES[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
-              wget -qO- http://localhost:3000/health --timeout=10 2>/dev/null; then
+              wget -qO- -T 10 http://localhost:3000/health 2>/dev/null; then
               echo "✅ ${svc}"
             else
               echo "❌ ${svc}"
@@ -687,12 +687,12 @@ jobs:
           for app in "${WEB_APPS[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${app}" -- \
-              wget -qO- http://localhost:3000/api/health --timeout=10 2>/dev/null; then
+              wget -qO- -T 10 http://localhost:3000/api/health 2>/dev/null; then
               echo "✅ ${app}"
             else
               # Fallback: try root path for apps without /api/health
               if kubectl exec -n "$NS" "deploy/${app}" -- \
-                wget -qO /dev/null http://localhost:3000/ --timeout=10 2>/dev/null; then
+                wget -qO /dev/null -T 10 http://localhost:3000/ 2>/dev/null; then
                 echo "✅ ${app} (via /)"
               else
                 echo "⚠️  ${app}"
@@ -774,6 +774,16 @@ jobs:
                     port: 5432
                   - protocol: TCP
                     port: 6432
+              - to:
+                  - ipBlock:
+                      cidr: 0.0.0.0/0
+                      except:
+                        - 10.0.0.0/8
+                        - 172.16.0.0/12
+                        - 192.168.0.0/16
+                ports:
+                  - protocol: TCP
+                    port: 443
               - ports:
                   - protocol: UDP
                     port: 53

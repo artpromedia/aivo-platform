@@ -3,8 +3,8 @@
  */
 
 import { Agent, type AgentDependencies } from '../core/agent';
-import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 import { AgentBuilder } from '../core/agent-builder';
+import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 
 export interface FeedbackConfig extends AgentConfig {
   feedbackStyle: 'encouraging' | 'balanced' | 'critical' | 'adaptive';
@@ -136,14 +136,14 @@ export class FeedbackAgent extends Agent {
     const goal = this.goals.get(goalId);
     if (!goal) return false;
 
-    const milestone = goal.milestones.find(m => m.id === milestoneId);
+    const milestone = goal.milestones.find((m) => m.id === milestoneId);
     if (!milestone) return false;
 
     milestone.completed = true;
     milestone.completedAt = new Date();
 
     // Update goal progress based on milestones
-    const completedMilestones = goal.milestones.filter(m => m.completed).length;
+    const completedMilestones = goal.milestones.filter((m) => m.completed).length;
     goal.progress = (completedMilestones / goal.milestones.length) * 100;
     goal.updatedAt = new Date();
 
@@ -185,15 +185,15 @@ export class FeedbackAgent extends Agent {
     let entries = [...this.progressHistory];
 
     if (options?.subject) {
-      entries = entries.filter(e => e.subject === options.subject);
+      entries = entries.filter((e) => e.subject === options.subject);
     }
 
     if (options?.startDate) {
-      entries = entries.filter(e => e.date >= options.startDate!);
+      entries = entries.filter((e) => e.date >= options.startDate!);
     }
 
     if (options?.endDate) {
-      entries = entries.filter(e => e.date <= options.endDate!);
+      entries = entries.filter((e) => e.date <= options.endDate!);
     }
 
     return entries;
@@ -206,9 +206,8 @@ export class FeedbackAgent extends Agent {
     const entries = this.getProgressHistory({ startDate, endDate });
 
     // Calculate overall progress
-    const overallProgress = entries.length > 0
-      ? entries.reduce((sum, e) => sum + e.performance, 0) / entries.length
-      : 0;
+    const overallProgress =
+      entries.length > 0 ? entries.reduce((sum, e) => sum + e.performance, 0) / entries.length : 0;
 
     // Determine trend
     let progressTrend: FeedbackReport['progressTrend'] = 'stable';
@@ -244,8 +243,8 @@ export class FeedbackAgent extends Agent {
 
     // Get completed goals as achievements
     const achievements = this.getGoals()
-      .filter(g => g.status === 'completed' && g.updatedAt >= startDate)
-      .map(g => `Completed goal: ${g.title}`);
+      .filter((g) => g.status === 'completed' && g.updatedAt >= startDate)
+      .map((g) => `Completed goal: ${g.title}`);
 
     // Generate recommendations
     const recommendations = this.generateRecommendations(focusAreas, progressTrend);
@@ -317,7 +316,7 @@ export class FeedbackAgent extends Agent {
     achievementCount: number
   ): string {
     if (progress >= 80 && trend === 'improving') {
-      return "Outstanding work! Your dedication is paying off. Keep pushing forward!";
+      return 'Outstanding work! Your dedication is paying off. Keep pushing forward!';
     } else if (progress >= 70) {
       return "Great progress! You're building a strong foundation. Stay focused!";
     } else if (trend === 'improving') {
@@ -325,7 +324,7 @@ export class FeedbackAgent extends Agent {
     } else if (achievementCount > 0) {
       return `Congratulations on completing ${achievementCount} goal${achievementCount > 1 ? 's' : ''}! Every step forward counts.`;
     } else {
-      return "Remember, every expert was once a beginner. Keep learning and growing!";
+      return 'Remember, every expert was once a beginner. Keep learning and growing!';
     }
   }
 

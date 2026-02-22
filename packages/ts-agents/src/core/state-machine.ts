@@ -3,6 +3,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { AgentStatus } from './types';
 
 export interface StateTransition {
@@ -119,10 +120,7 @@ export class StateMachine {
     const events: string[] = [];
 
     for (const transition of this.config.transitions) {
-      if (
-        transition.from === '*' ||
-        transition.from === this.context.currentState
-      ) {
+      if (transition.from === '*' || transition.from === this.context.currentState) {
         if (!transition.guard || transition.guard(this.context)) {
           events.push(transition.event);
         }
@@ -270,7 +268,7 @@ export class StateMachine {
   private findTransition(event: string): StateTransition | undefined {
     // First look for specific state transitions
     const specificTransition = this.config.transitions.find(
-      t => t.event === event && t.from === this.context.currentState
+      (t) => t.event === event && t.from === this.context.currentState
     );
 
     if (specificTransition) {
@@ -278,9 +276,7 @@ export class StateMachine {
     }
 
     // Then look for wildcard transitions
-    return this.config.transitions.find(
-      t => t.event === event && t.from === '*'
-    );
+    return this.config.transitions.find((t) => t.event === event && t.from === '*');
   }
 
   /**

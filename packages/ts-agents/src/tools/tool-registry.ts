@@ -3,6 +3,7 @@
  */
 
 import type { Tool, ToolDefinition } from '../core/types';
+
 import type { ExtendedTool, ToolMetadata, ToolCategory, ToolFactory } from './tool-types';
 
 export interface RegistryOptions {
@@ -69,10 +70,7 @@ export class ToolRegistry {
   /**
    * Create a tool from a factory
    */
-  createFromFactory(
-    name: string,
-    config?: Record<string, unknown>
-  ): Tool | undefined {
+  createFromFactory(name: string, config?: Record<string, unknown>): Tool | undefined {
     const factory = this.factories.get(name);
     if (!factory) {
       return undefined;
@@ -93,7 +91,7 @@ export class ToolRegistry {
     }
 
     // Remove from category index
-    const category = (tool as ExtendedTool).metadata?.category as ToolCategory;
+    const category = tool.metadata?.category as ToolCategory;
     if (category) {
       const categoryTools = this.categories.get(category);
       if (categoryTools) {
@@ -149,7 +147,7 @@ export class ToolRegistry {
     }
 
     return Array.from(toolNames)
-      .map(name => this.tools.get(name))
+      .map((name) => this.tools.get(name))
       .filter((tool): tool is ExtendedTool => tool !== undefined);
   }
 
@@ -157,16 +155,14 @@ export class ToolRegistry {
    * Get tools by tag
    */
   getByTag(tag: string): Tool[] {
-    return Array.from(this.tools.values()).filter(tool =>
-      tool.metadata?.tags?.includes(tag)
-    );
+    return Array.from(this.tools.values()).filter((tool) => tool.metadata?.tags?.includes(tag));
   }
 
   /**
    * Get tool definitions for LLM function calling
    */
   getToolDefinitions(): ToolDefinition[] {
-    return Array.from(this.tools.values()).map(tool => ({
+    return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
       description: tool.description,
       parameters: tool.parameters,
@@ -195,7 +191,7 @@ export class ToolRegistry {
   search(query: string): Tool[] {
     const queryLower = query.toLowerCase();
     return Array.from(this.tools.values()).filter(
-      tool =>
+      (tool) =>
         tool.name.toLowerCase().includes(queryLower) ||
         tool.description.toLowerCase().includes(queryLower)
     );
@@ -292,13 +288,13 @@ export class ToolRegistry {
   /**
    * Export registry as JSON
    */
-  export(): Array<{
+  export(): {
     name: string;
     description: string;
     parameters: unknown;
     metadata?: ToolMetadata;
-  }> {
-    return Array.from(this.tools.values()).map(tool => ({
+  }[] {
+    return Array.from(this.tools.values()).map((tool) => ({
       name: tool.name,
       description: tool.description,
       parameters: tool.parameters,

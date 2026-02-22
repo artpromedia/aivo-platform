@@ -3,11 +3,13 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { Memory, MemoryType, MemoryConfig, RecallOptions } from '../core/types';
-import { EpisodicMemory } from './episodic-memory';
-import { WorkingMemory } from './working-memory';
-import { LongTermMemory } from './long-term-memory';
+
+import type { EpisodicMemory } from './episodic-memory';
+import type { LongTermMemory } from './long-term-memory';
 import { MemoryRetrieval, type RetrievalResult } from './memory-retrieval';
+import type { WorkingMemory } from './working-memory';
 
 export class MemoryManager {
   private episodic: EpisodicMemory;
@@ -95,16 +97,13 @@ export class MemoryManager {
    */
   async recall(query: string, options?: RecallOptions): Promise<Memory[]> {
     const results = await this.retrieval.retrieve(query, options);
-    return results.map(r => r.memory);
+    return results.map((r) => r.memory);
   }
 
   /**
    * Recall with full retrieval results including scores
    */
-  async recallWithScores(
-    query: string,
-    options?: RecallOptions
-  ): Promise<RetrievalResult[]> {
+  async recallWithScores(query: string, options?: RecallOptions): Promise<RetrievalResult[]> {
     return this.retrieval.retrieve(query, options);
   }
 
@@ -168,7 +167,7 @@ export class MemoryManager {
    */
   async getWorkingMemory(): Promise<Memory[]> {
     const items = await this.working.getAll();
-    return items.map(item => ({
+    return items.map((item) => ({
       id: item.id,
       type: 'working' as MemoryType,
       content: item.content,
@@ -183,9 +182,9 @@ export class MemoryManager {
   /**
    * Get recent episodic memories
    */
-  async getRecentEpisodes(limit: number = 10): Promise<Memory[]> {
+  async getRecentEpisodes(limit = 10): Promise<Memory[]> {
     const episodes = await this.episodic.getRecent(limit);
-    return episodes.map(episode => ({
+    return episodes.map((episode) => ({
       id: episode.id,
       type: 'episodic' as MemoryType,
       content: episode.content,

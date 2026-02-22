@@ -3,8 +3,8 @@
  */
 
 import { Agent, type AgentDependencies } from '../core/agent';
-import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 import { AgentBuilder } from '../core/agent-builder';
+import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 
 export interface AssessmentConfig extends AgentConfig {
   subject: string;
@@ -44,12 +44,12 @@ export interface AssessmentResult {
   skillScores: Record<string, number>;
   misconceptions: string[];
   recommendations: string[];
-  questionResults: Array<{
+  questionResults: {
     questionId: string;
     correct: boolean;
     score: number;
     feedback: string;
-  }>;
+  }[];
 }
 
 const ASSESSMENT_SYSTEM_PROMPT = `You are an expert educational assessment agent. Your role is to:
@@ -115,7 +115,7 @@ export class AssessmentAgent extends Agent {
    */
   getNextQuestion(): Question | undefined {
     const unusedQuestions = this.questionBank.filter(
-      q => !this.responses.some(r => r.questionId === q.id)
+      (q) => !this.responses.some((r) => r.questionId === q.id)
     );
 
     if (unusedQuestions.length === 0) {
@@ -142,7 +142,7 @@ export class AssessmentAgent extends Agent {
     let maxScore = 0;
 
     for (const response of this.responses) {
-      const question = this.questionBank.find(q => q.id === response.questionId);
+      const question = this.questionBank.find((q) => q.id === response.questionId);
       if (!question) continue;
 
       const isCorrect = this.evaluateResponse(question, response.answer);
@@ -249,7 +249,7 @@ export class AssessmentAgent extends Agent {
   }
 
   private updateDifficulty(response: Response): void {
-    const question = this.questionBank.find(q => q.id === response.questionId);
+    const question = this.questionBank.find((q) => q.id === response.questionId);
     if (!question) return;
 
     const isCorrect = this.evaluateResponse(question, response.answer);
@@ -281,7 +281,7 @@ export class AssessmentAgent extends Agent {
 
     if (Array.isArray(question.correctAnswer)) {
       return question.correctAnswer.some(
-        correct => correct.toLowerCase().trim() === normalizedAnswer
+        (correct) => correct.toLowerCase().trim() === normalizedAnswer
       );
     }
 
@@ -294,11 +294,7 @@ export class AssessmentAgent extends Agent {
     return `Possible misconception in ${question.topic}: Review foundational concepts`;
   }
 
-  private generateFeedback(
-    question: Question,
-    _answer: string,
-    isCorrect: boolean
-  ): string {
+  private generateFeedback(question: Question, _answer: string, isCorrect: boolean): string {
     if (isCorrect) {
       return 'Correct! Well done.';
     }

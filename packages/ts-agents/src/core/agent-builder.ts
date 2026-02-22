@@ -3,28 +3,24 @@
  */
 
 import { v4 as uuid } from 'uuid';
-import type {
-  AgentConfig,
-  ModelConfig,
-  StateConfig,
-  MemoryConfig,
-  Tool,
-} from './types';
-import { DefaultAgent, type Agent, type AgentDependencies } from './agent';
-import { StateManager } from '../state/state-manager';
+
+import { ConversationManager } from '../conversation/conversation-manager';
+import { EpisodicMemory } from '../memory/episodic-memory';
+import { LongTermMemory } from '../memory/long-term-memory';
+import { MemoryManager } from '../memory/memory-manager';
+import { WorkingMemory } from '../memory/working-memory';
+import { AnthropicAdapter } from '../providers/anthropic-adapter';
+import type { ModelAdapter } from '../providers/model-adapter';
+import { OpenAIAdapter } from '../providers/openai-adapter';
 import { MemoryStateStore } from '../state/memory-state-store';
 import { RedisStateStore } from '../state/redis-state-store';
-import { MemoryManager } from '../memory/memory-manager';
-import { EpisodicMemory } from '../memory/episodic-memory';
-import { WorkingMemory } from '../memory/working-memory';
-import { LongTermMemory } from '../memory/long-term-memory';
-import { ToolRegistry } from '../tools/tool-registry';
-import { ToolExecutor } from '../tools/tool-executor';
-import type { ModelAdapter } from '../providers/model-adapter';
-import { AnthropicAdapter } from '../providers/anthropic-adapter';
-import { OpenAIAdapter } from '../providers/openai-adapter';
-import { ConversationManager } from '../conversation/conversation-manager';
+import { StateManager } from '../state/state-manager';
 import type { IStateStore } from '../state/state-manager';
+import { ToolExecutor } from '../tools/tool-executor';
+import { ToolRegistry } from '../tools/tool-registry';
+
+import { DefaultAgent, type Agent, type AgentDependencies } from './agent';
+import type { AgentConfig, ModelConfig, StateConfig, MemoryConfig, Tool } from './types';
 
 export interface AgentBuilderOptions {
   id?: string;
@@ -256,12 +252,8 @@ export class AgentBuilder {
     const stateManager = new StateManager(stateStore, this.stateConfig);
 
     // Create memory components
-    const episodicMemory = new EpisodicMemory(
-      this.memoryConfig.episodic?.maxEpisodes || 100
-    );
-    const workingMemory = new WorkingMemory(
-      this.memoryConfig.working?.capacity || 7
-    );
+    const episodicMemory = new EpisodicMemory(this.memoryConfig.episodic?.maxEpisodes || 100);
+    const workingMemory = new WorkingMemory(this.memoryConfig.working?.capacity || 7);
     const longTermMemory = new LongTermMemory({
       enabled: this.memoryConfig.longTerm?.enabled || false,
     });

@@ -4,6 +4,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { MemoryItem } from '../core/types';
 
 export interface WorkingMemoryConfig {
@@ -15,7 +16,7 @@ export class WorkingMemory {
   private capacity: number;
   private focusIndex = -1;
 
-  constructor(capacity: number = 7) {
+  constructor(capacity = 7) {
     this.capacity = capacity;
   }
 
@@ -68,7 +69,7 @@ export class WorkingMemory {
    * Get an item by ID
    */
   async getById(id: string): Promise<MemoryItem | undefined> {
-    return this.items.find(item => item.id === id);
+    return this.items.find((item) => item.id === id);
   }
 
   /**
@@ -150,7 +151,7 @@ export class WorkingMemory {
    * Remove an item by ID
    */
   async remove(id: string): Promise<boolean> {
-    const index = this.items.findIndex(item => item.id === id);
+    const index = this.items.findIndex((item) => item.id === id);
     if (index !== -1) {
       this.items.splice(index, 1);
       if (this.focusIndex >= this.items.length) {
@@ -168,7 +169,7 @@ export class WorkingMemory {
     id: string,
     updates: Partial<Omit<MemoryItem, 'id'>>
   ): Promise<MemoryItem | undefined> {
-    const item = this.items.find(i => i.id === id);
+    const item = this.items.find((i) => i.id === id);
     if (item) {
       Object.assign(item, updates);
       return item;
@@ -181,7 +182,7 @@ export class WorkingMemory {
    */
   async search(query: string): Promise<MemoryItem[]> {
     const queryLower = query.toLowerCase();
-    return this.items.filter(item => {
+    return this.items.filter((item) => {
       const contentStr = JSON.stringify(item.content).toLowerCase();
       return contentStr.includes(queryLower);
     });

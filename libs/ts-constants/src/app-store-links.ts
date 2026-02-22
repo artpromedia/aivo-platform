@@ -52,7 +52,7 @@ export function getAppStoreLink(
 /**
  * Generate deep link for app-to-app navigation.
  */
-export function getDeepLink(appType: AppType, path: string = ''): string {
+export function getDeepLink(appType: AppType, path = ''): string {
   const schemes: Record<AppType, string> = {
     learner: 'aivo-learner',
     parent: 'aivo-parent',
@@ -65,7 +65,7 @@ export function getDeepLink(appType: AppType, path: string = ''): string {
 /**
  * Generate universal link for web-to-app navigation.
  */
-export function getUniversalLink(appType: AppType, path: string = ''): string {
+export function getUniversalLink(appType: AppType, path = ''): string {
   const hosts: Record<AppType, string> = {
     learner: 'learn.aivolearning.com',
     parent: 'parent.aivolearning.com',

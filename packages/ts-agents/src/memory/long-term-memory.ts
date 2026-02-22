@@ -3,6 +3,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
 import type { Memory, MemoryType, ForgetCriteria } from '../core/types';
 
 export interface LongTermMemoryConfig {
@@ -54,13 +55,13 @@ export class LongTermMemory {
   /**
    * Retrieve memories by text query
    */
-  async retrieve(query: string, limit: number = 10): Promise<Memory[]> {
+  async retrieve(query: string, limit = 10): Promise<Memory[]> {
     if (!this.config.enabled) {
       return [];
     }
 
     const queryLower = query.toLowerCase();
-    const scored: Array<{ memory: MemoryEntry; score: number }> = [];
+    const scored: { memory: MemoryEntry; score: number }[] = [];
 
     for (const memory of this.memories.values()) {
       const score = this.calculateTextSimilarity(memory.textContent, queryLower);
@@ -73,7 +74,7 @@ export class LongTermMemory {
     scored.sort((a, b) => b.score - a.score);
 
     // Get top results and update access stats
-    const results = scored.slice(0, limit).map(s => s.memory);
+    const results = scored.slice(0, limit).map((s) => s.memory);
     for (const memory of results) {
       memory.accessCount++;
       memory.lastAccessed = new Date();
@@ -85,15 +86,12 @@ export class LongTermMemory {
   /**
    * Retrieve memories by embedding similarity
    */
-  async retrieveBySimilarity(
-    embedding: number[],
-    limit: number = 10
-  ): Promise<Memory[]> {
+  async retrieveBySimilarity(embedding: number[], limit = 10): Promise<Memory[]> {
     if (!this.config.enabled) {
       return [];
     }
 
-    const scored: Array<{ memory: MemoryEntry; similarity: number }> = [];
+    const scored: { memory: MemoryEntry; similarity: number }[] = [];
 
     for (const memory of this.memories.values()) {
       if (memory.embedding) {
@@ -106,7 +104,7 @@ export class LongTermMemory {
     scored.sort((a, b) => b.similarity - a.similarity);
 
     // Get top results and update access stats
-    const results = scored.slice(0, limit).map(s => s.memory);
+    const results = scored.slice(0, limit).map((s) => s.memory);
     for (const memory of results) {
       memory.accessCount++;
       memory.lastAccessed = new Date();
@@ -118,7 +116,7 @@ export class LongTermMemory {
   /**
    * Retrieve memories by type
    */
-  async retrieveByType(type: MemoryType, limit: number = 10): Promise<Memory[]> {
+  async retrieveByType(type: MemoryType, limit = 10): Promise<Memory[]> {
     if (!this.config.enabled) {
       return [];
     }
@@ -191,10 +189,7 @@ export class LongTermMemory {
         if (!memoryJ || processed.has(memoryJ.id)) continue;
 
         // Check if memories are similar
-        const similarity = this.calculateTextSimilarity(
-          memoryI.textContent,
-          memoryJ.textContent
-        );
+        const similarity = this.calculateTextSimilarity(memoryI.textContent, memoryJ.textContent);
 
         if (similarity > 0.8) {
           similar.push(memoryJ);
@@ -333,8 +328,8 @@ export class LongTermMemory {
    * Calculate text similarity score
    */
   private calculateTextSimilarity(text1: string, text2: string): number {
-    const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 2));
-    const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 2));
+    const words1 = new Set(text1.split(/\s+/).filter((w) => w.length > 2));
+    const words2 = new Set(text2.split(/\s+/).filter((w) => w.length > 2));
 
     if (words1.size === 0 || words2.size === 0) {
       return 0;
@@ -393,11 +388,11 @@ export class LongTermMemory {
     }
 
     // Combine content
-    const combinedContent = memories.map(m => m.content);
+    const combinedContent = memories.map((m) => m.content);
 
     // Average embeddings if available
     let combinedEmbedding: number[] | undefined;
-    const embeddings = memories.filter(m => m.embedding).map(m => m.embedding!);
+    const embeddings = memories.filter((m) => m.embedding).map((m) => m.embedding!);
     if (embeddings.length > 0) {
       combinedEmbedding = this.averageEmbeddings(embeddings);
     }
@@ -408,12 +403,12 @@ export class LongTermMemory {
       content: combinedContent,
       embedding: combinedEmbedding,
       timestamp: base.timestamp,
-      importance: Math.max(...memories.map(m => m.importance)),
+      importance: Math.max(...memories.map((m) => m.importance)),
       accessCount: memories.reduce((sum, m) => sum + m.accessCount, 0),
       lastAccessed: new Date(),
       metadata: {
         ...base.metadata,
-        mergedFrom: memories.map(m => m.id),
+        mergedFrom: memories.map((m) => m.id),
         mergedCount: memories.length,
       },
     };

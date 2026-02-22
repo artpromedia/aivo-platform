@@ -2,13 +2,7 @@
  * ModelAdapter - Abstract interface for LLM providers
  */
 
-import type {
-  ModelConfig,
-  Message,
-  ToolDefinition,
-  ToolCall,
-  TokenUsage,
-} from '../core/types';
+import type { ModelConfig, Message, ToolDefinition, ToolCall, TokenUsage } from '../core/types';
 
 export interface GenerateRequest {
   systemPrompt: string;
@@ -96,10 +90,6 @@ export abstract class ModelAdapter {
 export class MockModelAdapter extends ModelAdapter {
   private responses: GenerateResponse[] = [];
   private currentIndex = 0;
-
-  constructor() {
-    super();
-  }
 
   /**
    * Set mock responses to return

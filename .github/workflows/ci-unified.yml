@@ -256,7 +256,7 @@ jobs:
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Run TypeScript check
-        run: pnpm -r --if-present run typecheck
+        run: pnpm run typecheck
         continue-on-error: true
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -584,7 +584,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-fs-results.sarif'

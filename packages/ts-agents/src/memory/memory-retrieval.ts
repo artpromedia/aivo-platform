@@ -3,9 +3,10 @@
  */
 
 import type { Memory, MemoryType, RecallOptions } from '../core/types';
+
 import type { EpisodicMemory } from './episodic-memory';
-import type { WorkingMemory } from './working-memory';
 import type { LongTermMemory } from './long-term-memory';
+import type { WorkingMemory } from './working-memory';
 
 export interface RetrievalConfig {
   maxResults: number;
@@ -49,10 +50,7 @@ export class MemoryRetrieval {
   /**
    * Retrieve memories using multiple strategies
    */
-  async retrieve(
-    query: string,
-    options?: RecallOptions
-  ): Promise<RetrievalResult[]> {
+  async retrieve(query: string, options?: RecallOptions): Promise<RetrievalResult[]> {
     const results: RetrievalResult[] = [];
 
     // Get memories from all sources in parallel
@@ -67,7 +65,7 @@ export class MemoryRetrieval {
     results.push(...longTermResults);
 
     // Filter by minimum score
-    const filtered = results.filter(r => r.score >= this.config.minRelevanceScore);
+    const filtered = results.filter((r) => r.score >= this.config.minRelevanceScore);
 
     // Sort by score descending
     filtered.sort((a, b) => b.score - a.score);
@@ -89,7 +87,7 @@ export class MemoryRetrieval {
       options?.limit || this.config.maxResults
     );
 
-    return results.map(memory => ({
+    return results.map((memory) => ({
       memory,
       score: this.calculateScore(memory),
       source: 'long-term' as const,
@@ -99,7 +97,7 @@ export class MemoryRetrieval {
   /**
    * Retrieve most recent memories
    */
-  async retrieveRecent(limit: number = 10): Promise<RetrievalResult[]> {
+  async retrieveRecent(limit = 10): Promise<RetrievalResult[]> {
     const results: RetrievalResult[] = [];
 
     // Get recent from episodic
@@ -148,10 +146,7 @@ export class MemoryRetrieval {
   /**
    * Retrieve by memory type
    */
-  async retrieveByType(
-    type: MemoryType,
-    limit: number = 10
-  ): Promise<RetrievalResult[]> {
+  async retrieveByType(type: MemoryType, limit = 10): Promise<RetrievalResult[]> {
     const results: RetrievalResult[] = [];
 
     if (type === 'episodic') {
@@ -207,11 +202,7 @@ export class MemoryRetrieval {
   /**
    * Build context string from memories
    */
-  async buildContext(
-    query: string,
-    maxTokens: number,
-    options?: RecallOptions
-  ): Promise<string> {
+  async buildContext(query: string, maxTokens: number, options?: RecallOptions): Promise<string> {
     const results = await this.retrieve(query, options);
     const contextParts: string[] = [];
     let estimatedTokens = 0;
@@ -249,7 +240,7 @@ export class MemoryRetrieval {
       episodes = await this.episodic.recall(query, options?.limit);
     }
 
-    return episodes.map(episode => ({
+    return episodes.map((episode) => ({
       memory: {
         id: episode.id,
         type: 'episodic' as MemoryType,
@@ -271,7 +262,7 @@ export class MemoryRetrieval {
   private async retrieveFromWorking(query: string): Promise<RetrievalResult[]> {
     const items = await this.working.search(query);
 
-    return items.map(item => ({
+    return items.map((item) => ({
       memory: {
         id: item.id,
         type: 'working' as MemoryType,
@@ -297,8 +288,8 @@ export class MemoryRetrieval {
     const memories = await this.longTerm.retrieve(query, options?.limit);
 
     return memories
-      .filter(m => !options?.minImportance || m.importance >= options.minImportance)
-      .map(memory => ({
+      .filter((m) => !options?.minImportance || m.importance >= options.minImportance)
+      .map((memory) => ({
         memory,
         score: this.calculateScore(memory),
         source: 'long-term' as const,
@@ -337,7 +328,7 @@ export class MemoryRetrieval {
   private calculateRelevanceScore(content: unknown, query: string): number {
     const contentStr = JSON.stringify(content).toLowerCase();
     const queryLower = query.toLowerCase();
-    const queryTerms = queryLower.split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = queryLower.split(/\s+/).filter((t) => t.length > 2);
 
     if (queryTerms.length === 0) {
       return 0;

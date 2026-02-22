@@ -3,6 +3,8 @@
  */
 
 import { v4 as uuid } from 'uuid';
+
+import type { Agent } from './agent';
 import type {
   AgentContext,
   AgentInput,
@@ -11,7 +13,6 @@ import type {
   AgentEventHandler,
   AgentEventType,
 } from './types';
-import type { Agent } from './agent';
 
 export interface AgentRunnerConfig {
   maxConcurrentRuns: number;
@@ -138,10 +139,7 @@ export class AgentRunner {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const result = await this.executeWithTimeout(
-          agent.run(input, context),
-          timeout
-        );
+        const result = await this.executeWithTimeout(agent.run(input, context), timeout);
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -160,7 +158,7 @@ export class AgentRunner {
    */
   cancel(runId: string): boolean {
     // Check queue
-    const queueIndex = this.runQueue.findIndex(r => r.id === runId);
+    const queueIndex = this.runQueue.findIndex((r) => r.id === runId);
     if (queueIndex !== -1) {
       const run = this.runQueue[queueIndex];
       if (run) {
@@ -185,7 +183,7 @@ export class AgentRunner {
    * Get the status of a run
    */
   getRunStatus(runId: string): AgentRun | undefined {
-    const queued = this.runQueue.find(r => r.id === runId);
+    const queued = this.runQueue.find((r) => r.id === runId);
     if (queued) return queued;
 
     return this.activeRuns.get(runId);
@@ -384,17 +382,14 @@ export class AgentRunner {
   /**
    * Execute with timeout
    */
-  private executeWithTimeout<T>(
-    promise: Promise<T>,
-    timeout: number
-  ): Promise<T> {
+  private executeWithTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('Execution timed out'));
       }, timeout);
 
       promise
-        .then(result => {
+        .then((result) => {
           clearTimeout(timer);
           resolve(result);
         })
@@ -409,7 +404,7 @@ export class AgentRunner {
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

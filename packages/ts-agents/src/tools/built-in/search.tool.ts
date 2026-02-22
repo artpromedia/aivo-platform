@@ -105,10 +105,7 @@ export function createSearchTool(): Tool {
 /**
  * Search execution function
  */
-async function searchExecute(
-  params: unknown,
-  _context: ToolContext
-): Promise<ToolResult> {
+async function searchExecute(params: unknown, _context: ToolContext): Promise<ToolResult> {
   const startTime = Date.now();
 
   try {
@@ -146,7 +143,7 @@ async function searchExecute(
  */
 function performSearch(query: string, data: SearchResult[]): SearchResult[] {
   const queryTerms = query.toLowerCase().split(/\s+/);
-  const scored: Array<{ result: SearchResult; score: number }> = [];
+  const scored: { result: SearchResult; score: number }[] = [];
 
   for (const item of data) {
     let score = 0;
@@ -170,35 +167,23 @@ function performSearch(query: string, data: SearchResult[]): SearchResult[] {
   // Sort by score descending
   scored.sort((a, b) => b.score - a.score);
 
-  return scored.map(s => s.result);
+  return scored.map((s) => s.result);
 }
 
 /**
  * Apply filters to results
  */
-function applyFilters(
-  results: SearchResult[],
-  filters: SearchParams['filters']
-): SearchResult[] {
+function applyFilters(results: SearchResult[], filters: SearchParams['filters']): SearchResult[] {
   if (!filters) return results;
 
-  return results.filter(result => {
-    if (
-      filters.subject &&
-      result.metadata.subject !== filters.subject
-    ) {
+  return results.filter((result) => {
+    if (filters.subject && result.metadata.subject !== filters.subject) {
       return false;
     }
-    if (
-      filters.gradeLevel &&
-      result.metadata.gradeLevel !== filters.gradeLevel
-    ) {
+    if (filters.gradeLevel && result.metadata.gradeLevel !== filters.gradeLevel) {
       return false;
     }
-    if (
-      filters.contentType &&
-      result.metadata.contentType !== filters.contentType
-    ) {
+    if (filters.contentType && result.metadata.contentType !== filters.contentType) {
       return false;
     }
     return true;

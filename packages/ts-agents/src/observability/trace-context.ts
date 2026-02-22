@@ -44,10 +44,10 @@ export class ConsoleTraceExporter implements TraceExporter {
     for (const span of spans) {
       console.log(
         `[TRACE] ${span.operationName} ` +
-        `trace=${span.traceId.slice(0, 8)} ` +
-        `span=${span.spanId.slice(0, 8)} ` +
-        `duration=${span.durationMs}ms ` +
-        `status=${span.status}`
+          `trace=${span.traceId.slice(0, 8)} ` +
+          `span=${span.spanId.slice(0, 8)} ` +
+          `duration=${span.durationMs}ms ` +
+          `status=${span.status}`
       );
     }
   }
@@ -254,10 +254,7 @@ export class TraceContext {
   /**
    * Create a scoped span that auto-ends
    */
-  async withSpan<T>(
-    operationName: string,
-    fn: (span: Span) => Promise<T>
-  ): Promise<T> {
+  async withSpan<T>(operationName: string, fn: (span: Span) => Promise<T>): Promise<T> {
     const span = this.startSpan(operationName);
     try {
       const result = await fn(span);
@@ -297,7 +294,7 @@ export class TraceContext {
     spanId?: string;
   } {
     // W3C Trace Context format
-    const traceparent = headers['traceparent'];
+    const traceparent = headers.traceparent;
     if (traceparent) {
       const parts = traceparent.split('-');
       if (parts.length >= 3) {

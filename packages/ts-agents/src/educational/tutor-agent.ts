@@ -3,8 +3,8 @@
  */
 
 import { Agent, type AgentDependencies } from '../core/agent';
-import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 import { AgentBuilder } from '../core/agent-builder';
+import type { AgentConfig, AgentContext, AgentOutput, AgentInput } from '../core/types';
 
 export interface TutorAgentConfig extends AgentConfig {
   subject?: string;
@@ -47,12 +47,12 @@ Remember: Your goal is not just to provide answers, but to help students develop
 export class TutorAgent extends Agent {
   private tutorConfig: TutorAgentConfig;
   private studentProfile?: StudentProfile;
-  private lessonHistory: Array<{
+  private lessonHistory: {
     topic: string;
     date: Date;
     comprehensionLevel: number;
     notes: string;
-  }> = [];
+  }[] = [];
 
   constructor(config: TutorAgentConfig, dependencies: AgentDependencies) {
     super(config, dependencies);
@@ -76,11 +76,7 @@ export class TutorAgent extends Agent {
   /**
    * Add a lesson to history
    */
-  addLessonRecord(record: {
-    topic: string;
-    comprehensionLevel: number;
-    notes: string;
-  }): void {
+  addLessonRecord(record: { topic: string; comprehensionLevel: number; notes: string }): void {
     this.lessonHistory.push({
       ...record,
       date: new Date(),
@@ -125,10 +121,10 @@ export class TutorAgent extends Agent {
     const memories = await this.recall(`student:${context.userId}`, 'long-term');
     if (memories.length > 0) {
       // Restore student profile from memory
-      const profileMemory = memories.find(m =>
-        (m.metadata as Record<string, string>)?.type === 'student_profile'
+      const profileMemory = memories.find(
+        (m) => (m.metadata as Record<string, string>)?.type === 'student_profile'
       );
-      if (profileMemory && profileMemory.content) {
+      if (profileMemory?.content) {
         this.studentProfile = profileMemory.content as StudentProfile;
       }
     }
@@ -140,11 +136,7 @@ export class TutorAgent extends Agent {
   protected override async onComplete(_output: AgentOutput): Promise<void> {
     // Save student profile if updated
     if (this.studentProfile) {
-      await this.remember(
-        `student:${this.config.id}`,
-        this.studentProfile,
-        'long-term'
-      );
+      await this.remember(`student:${this.config.id}`, this.studentProfile, 'long-term');
     }
   }
 

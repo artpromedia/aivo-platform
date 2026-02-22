@@ -3,6 +3,7 @@
  */
 
 import type { AgentState, Checkpoint, Message, ToolCall } from '../core/types';
+
 import type { IStateStore } from './state-manager';
 
 export interface RedisStoreOptions {
@@ -18,10 +19,7 @@ export interface RedisClient {
   exists(key: string | string[]): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
   keys(pattern: string): Promise<string[]>;
-  scan(
-    cursor: number | string,
-    ...args: unknown[]
-  ): Promise<[string, string[]]>;
+  scan(cursor: number | string, ...args: unknown[]): Promise<[string, string[]]>;
   multi(): RedisPipeline;
 }
 
@@ -30,7 +28,7 @@ export interface RedisPipeline {
   set(key: string, value: string, ...args: unknown[]): this;
   del(key: string): this;
   expire(key: string, seconds: number): this;
-  exec(): Promise<Array<[Error | null, unknown]>>;
+  exec(): Promise<[Error | null, unknown][]>;
 }
 
 export class RedisStateStore implements IStateStore {
@@ -118,13 +116,7 @@ export class RedisStateStore implements IStateStore {
     let cursor = '0';
 
     do {
-      const [nextCursor, keys] = await this.redis.scan(
-        cursor,
-        'MATCH',
-        pattern,
-        'COUNT',
-        100
-      );
+      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = nextCursor;
 
       for (const key of keys) {
@@ -141,7 +133,7 @@ export class RedisStateStore implements IStateStore {
   /**
    * Batch save multiple states
    */
-  async batchSave(states: Array<{ key: string; state: AgentState }>): Promise<void> {
+  async batchSave(states: { key: string; state: AgentState }[]): Promise<void> {
     const pipeline = this.redis.multi();
 
     for (const { key, state } of states) {
@@ -220,19 +212,19 @@ export class RedisStateStore implements IStateStore {
   private toSerializable(state: AgentState): Record<string, unknown> {
     return {
       ...state,
-      conversationHistory: state.conversationHistory.map(m => ({
+      conversationHistory: state.conversationHistory.map((m) => ({
         ...m,
         timestamp: m.timestamp.toISOString(),
-        toolCalls: m.toolCalls?.map(tc => ({
+        toolCalls: m.toolCalls?.map((tc) => ({
           ...tc,
           timestamp: tc.timestamp.toISOString(),
         })),
       })),
-      toolCallHistory: state.toolCallHistory.map(tc => ({
+      toolCallHistory: state.toolCallHistory.map((tc) => ({
         ...tc,
         timestamp: tc.timestamp.toISOString(),
       })),
-      checkpoints: state.checkpoints.map(cp => ({
+      checkpoints: state.checkpoints.map((cp) => ({
         ...cp,
         state: this.toSerializable(cp.state),
         createdAt: cp.createdAt.toISOString(),
@@ -247,7 +239,7 @@ export class RedisStateStore implements IStateStore {
    * Convert serializable format back to state
    */
   private fromSerializable(data: Record<string, unknown>): AgentState {
-    const conversationHistory = (data.conversationHistory as Array<Record<string, unknown>>).map(
+    const conversationHistory = (data.conversationHistory as Record<string, unknown>[]).map(
       (m): Message => ({
         id: m.id as string,
         role: m.role as Message['role'],
@@ -255,7 +247,7 @@ export class RedisStateStore implements IStateStore {
         name: m.name as string | undefined,
         toolCallId: m.toolCallId as string | undefined,
         toolCalls: m.toolCalls
-          ? (m.toolCalls as Array<Record<string, unknown>>).map(
+          ? (m.toolCalls as Record<string, unknown>[]).map(
               (tc): ToolCall => ({
                 id: tc.id as string,
                 name: tc.name as string,
@@ -269,7 +261,7 @@ export class RedisStateStore implements IStateStore {
       })
     );
 
-    const toolCallHistory = (data.toolCallHistory as Array<Record<string, unknown>>).map(
+    const toolCallHistory = (data.toolCallHistory as Record<string, unknown>[]).map(
       (tc): ToolCall => ({
         id: tc.id as string,
         name: tc.name as string,
@@ -278,7 +270,7 @@ export class RedisStateStore implements IStateStore {
       })
     );
 
-    const checkpoints = (data.checkpoints as Array<Record<string, unknown>>).map(
+    const checkpoints = (data.checkpoints as Record<string, unknown>[]).map(
       (cp): Checkpoint => ({
         id: cp.id as string,
         sessionId: cp.sessionId as string,
