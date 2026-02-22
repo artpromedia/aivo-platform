@@ -2,9 +2,6 @@
  * SIS Sync Service - Main Entry Point
  */
 
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
@@ -90,19 +87,16 @@ export async function createServer() {
   return { app, prisma, scheduler };
 }
 
-// Start server if run directly (ES module compatible check)
-const isMainModule = resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMainModule) {
-  createServer()
-    .then(async ({ app }) => {
-      const port = Number.parseInt(process.env.PORT || '4016', 10);
-      const host = process.env.HOST || '0.0.0.0';
+// Start server
+createServer()
+  .then(async ({ app }) => {
+    const port = Number.parseInt(process.env.PORT || '4016', 10);
+    const host = process.env.HOST || '0.0.0.0';
 
-      await app.listen({ port, host });
-      app.log.info(`SIS Sync Service running on http://${host}:${port}`);
-    })
-    .catch((err: unknown) => {
-      console.error('sis-sync-svc fatal:', err);
-      process.exit(1);
-    });
-}
+    await app.listen({ port, host });
+    app.log.info(`SIS Sync Service running on http://${host}:${port}`);
+  })
+  .catch((err: unknown) => {
+    console.error('sis-sync-svc fatal:', err);
+    process.exit(1);
+  });
