@@ -629,7 +629,10 @@ jobs:
     name: Smoke Tests
     runs-on: [self-hosted, hetzner, production]
     needs: [validate, deploy]
-    if: success()
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.deploy.result == 'success'
     steps:
       - name: Backend health checks
         run: |
@@ -731,7 +734,10 @@ jobs:
     name: Database Migrations
     runs-on: [self-hosted, hetzner, production]
     needs: [validate, deploy]
-    if: success()
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.deploy.result == 'success'
     steps:
       - uses: actions/checkout@v4
 
@@ -809,7 +815,12 @@ jobs:
     name: Deployment Record
     runs-on: ubuntu-latest
     needs: [validate, deploy, smoke-tests, migrations]
-    if: success()
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.deploy.result == 'success' &&
+      (needs.smoke-tests.result == 'success' || needs.smoke-tests.result == 'skipped') &&
+      (needs.migrations.result == 'success' || needs.migrations.result == 'skipped')
     steps:
       - name: Create GitHub deployment
         uses: chrnorm/deployment-action@v2

@@ -310,4 +310,4 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           target_commitish: ${{ github.sha }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_PAT }}
