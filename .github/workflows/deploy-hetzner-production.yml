@@ -655,7 +655,7 @@ jobs:
           for svc in "${BACKEND_SERVICES[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
-              wget -qO- -T 10 http://localhost:3000/health 2>/dev/null; then
+              wget -qO- -T 10 http://127.0.0.1:3000/health 2>/dev/null; then
               echo "✅ ${svc}"
             else
               echo "❌ ${svc}"
@@ -687,12 +687,12 @@ jobs:
           for app in "${WEB_APPS[@]}"; do
             TOTAL=$((TOTAL + 1))
             if kubectl exec -n "$NS" "deploy/${app}" -- \
-              wget -qO- -T 10 http://localhost:3000/api/health 2>/dev/null; then
+              wget -qO- -T 10 http://127.0.0.1:3000/api/health 2>/dev/null; then
               echo "✅ ${app}"
             else
               # Fallback: try root path for apps without /api/health
               if kubectl exec -n "$NS" "deploy/${app}" -- \
-                wget -qO /dev/null -T 10 http://localhost:3000/ 2>/dev/null; then
+                wget -qO /dev/null -T 10 http://127.0.0.1:3000/ 2>/dev/null; then
                 echo "✅ ${app} (via /)"
               else
                 echo "⚠️  ${app}"
@@ -816,7 +816,7 @@ jobs:
                   - name: migrate
                     image: ${{ env.IMAGE_PREFIX }}/aivo-auth-svc:${VERSION}
                     workingDir: /app
-                    command: ["sh", "-c", "npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
+                    command: ["sh", "-c", "export DATABASE_URL=$(echo $DATABASE_URL | sed 's/:6432/:5432/'); npx --yes prisma@5.22.0 migrate deploy --schema ./prisma/schema.prisma"]
                     envFrom:
                       - secretRef:
                           name: shared-secrets
