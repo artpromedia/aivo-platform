@@ -13,6 +13,7 @@ export 'gamification_provider.dart';
 export 'grades_provider.dart';
 export 'grading_provider.dart';
 export 'iep_provider.dart';
+export 'lms_provider.dart';
 export 'messages_provider.dart';
 export 'monitoring_provider.dart';
 export 'sessions_provider.dart';

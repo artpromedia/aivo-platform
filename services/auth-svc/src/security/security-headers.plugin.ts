@@ -18,9 +18,8 @@
 
 import crypto from 'node:crypto';
 
-import fp from 'fastify-plugin';
-
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import fp from 'fastify-plugin';
 
 export const securityHeadersPlugin = fp(
   async (fastify: FastifyInstance) => {

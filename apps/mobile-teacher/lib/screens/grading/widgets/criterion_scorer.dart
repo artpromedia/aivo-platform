@@ -31,6 +31,7 @@ class CriterionScorer extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasScore = score != null;
+    // ignore: unused_local_variable
     final selectedLevel = score?.levelId != null
         ? criterion.levels.firstWhere(
             (l) => l.id == score!.levelId,
@@ -313,6 +314,7 @@ class _CustomScoreInputState extends State<_CustomScoreInput> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final theme = Theme.of(context);
 
     return Row(

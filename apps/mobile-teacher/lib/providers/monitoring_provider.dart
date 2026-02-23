@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/monitoring.dart';
 import '../repositories/monitoring_repository.dart';
 import '../repositories/repositories.dart';
+import 'core_providers.dart';
 
 /// Provider for monitoring repository.
 final monitoringRepositoryProvider = Provider<MonitoringRepository>((ref) {

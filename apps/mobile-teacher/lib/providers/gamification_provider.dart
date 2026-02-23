@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/gamification.dart';
 import '../repositories/gamification_repository.dart';
 import '../repositories/repositories.dart';
+import 'core_providers.dart';
 
 /// Provider for gamification repository.
 final gamificationRepositoryProvider = Provider<GamificationRepository>((ref) {

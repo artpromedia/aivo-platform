@@ -209,7 +209,9 @@ export default [
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-base-to-string": "off",
       "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-confusing-void-expression": "off"
+      "@typescript-eslint/no-confusing-void-expression": "off",
+      "@typescript-eslint/prefer-optional-chain": "off",
+      "@typescript-eslint/no-useless-default-assignment": "off"
     }
   },
   {

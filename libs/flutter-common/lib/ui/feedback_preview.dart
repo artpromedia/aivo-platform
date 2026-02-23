@@ -120,20 +120,19 @@ class _DialogDemo extends StatelessWidget {
 
   void _showBasicDialog(BuildContext context) {
     AivoDialog.show(
-      context,
+      context: context,
       gradeBand: gradeBand,
-      title: 'Basic Dialog',
-      description: 'This is a basic dialog with header, content, and footer.',
-      child: const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          'Dialog content goes here. This can be any widget including forms, '
-          'lists, or custom content.',
+      dialog: AivoDialog(
+        title: 'Basic Dialog',
+        description: 'This is a basic dialog with header, content, and footer.',
+        content: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Text(
+            'Dialog content goes here. This can be any widget including forms, '
+            'lists, or custom content.',
+          ),
         ),
-      ),
-      footer: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
+        actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
@@ -144,21 +143,23 @@ class _DialogDemo extends StatelessWidget {
             child: const Text('Confirm'),
           ),
         ],
+        gradeBand: gradeBand,
       ),
     );
   }
 
   void _showConfirmDialog(BuildContext context) {
     AivoConfirmDialog.show(
-      context,
+      context: context,
       gradeBand: gradeBand,
       title: 'Confirm Action',
-      message: 'Are you sure you want to proceed with this action?',
+      description: 'Are you sure you want to proceed with this action?',
       confirmLabel: 'Proceed',
-      onConfirm: () {
+    ).then((confirmed) {
+      if (confirmed == true) {
         AivoSnackbar.showSuccess(context, 'Action confirmed!');
-      },
-    );
+      }
+    });
   }
 
   void _showAlertDialog(BuildContext context) {
@@ -180,11 +181,11 @@ class _DialogDemo extends StatelessWidget {
                 onPressed: () {
                   Navigator.pop(context);
                   AivoAlertDialog.show(
-                    context,
+                    context: context,
                     gradeBand: gradeBand,
                     variant: variant,
                     title: '${variant.name.toUpperCase()} Alert',
-                    message: 'This is a ${variant.name} alert dialog.',
+                    description: 'This is a ${variant.name} alert dialog.',
                   );
                 },
                 child: Text(variant.name),
@@ -199,9 +200,9 @@ class _DialogDemo extends StatelessWidget {
 
   void _showBottomSheet(BuildContext context) {
     AivoBottomSheet.show(
-      context,
+      context: context,
       gradeBand: gradeBand,
-      child: Padding(
+      builder: (_) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

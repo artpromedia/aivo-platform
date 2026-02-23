@@ -20,7 +20,7 @@ import Redis from 'ioredis';
 export interface PythonSafetyScore {
   safe: boolean;
   score: number;
-  flags: Array<{ type: string; severity: string; detail: string }>;
+  flags: { type: string; severity: string; detail: string }[];
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -37,7 +37,7 @@ function getRedis(): Redis | null {
     const url = process.env.REDIS_URL || 'redis://localhost:6379';
     try {
       _redis = new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 1 });
-      _redis.on('error', () => {});
+      _redis.on('error', () => { /* intentionally swallowed */ });
     } catch {
       return null;
     }
@@ -97,7 +97,7 @@ export async function scoreToxicityViaPython(
     if (redis) {
       redis
         .set(`${CACHE_PREFIX}${hash}`, JSON.stringify(result), 'EX', CACHE_TTL_SECONDS)
-        .catch(() => {});
+        .catch(() => { /* fire-and-forget */ });
     }
 
     return result;

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/lms_integration.dart';
 import '../../providers/lms_provider.dart';
+import '../../providers/core_providers.dart';
 import '../../repositories/lms_repository.dart';
 import '../database/local_database.dart';
 import 'connectivity_monitor.dart';

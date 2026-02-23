@@ -585,7 +585,7 @@ class _PassbackSettingsSheet extends ConsumerWidget {
                     subtitle: Text(settings.retryPolicy.description),
                   ),
 
-                  ...PassbackRetryPolicy.values.map((policy) => RadioListTile(
+                  ...PassbackRetryPolicy.values.map((policy) => RadioListTile<PassbackRetryPolicy>(
                         title: Text(policy.label),
                         value: policy,
                         groupValue: settings.retryPolicy,

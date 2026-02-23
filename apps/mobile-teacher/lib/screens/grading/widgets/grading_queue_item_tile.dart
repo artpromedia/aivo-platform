@@ -25,7 +25,9 @@ class GradingQueueItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // ignore: unused_local_variable
     final statusColor = _getStatusColor(item.status);
+    // ignore: unused_local_variable
     final priorityColor = _getPriorityColor(item.priority);
 
     return Card(
@@ -370,6 +372,7 @@ class GradingQueueStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final theme = Theme.of(context);
 
     return Card(

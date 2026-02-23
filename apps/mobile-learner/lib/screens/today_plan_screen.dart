@@ -190,7 +190,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
               onPressed: () {
                 // Navigate to the first activity in the plan
                 final firstActivity = plan.activities.first;
-                context.go('/activity/${firstActivity.id}');
+                context.go('/activity/${firstActivity.activityId}');
               },
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start Learning'),

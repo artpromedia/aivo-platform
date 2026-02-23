@@ -82,6 +82,7 @@ class EngagementDistributionChart extends StatelessWidget {
   }
 
   Widget _buildLegend(BuildContext context) {
+    // ignore: unused_local_variable
     final theme = Theme.of(context);
 
     return Wrap(

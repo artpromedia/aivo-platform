@@ -568,12 +568,19 @@ final analyticsDashboardProvider =
       classAnalytics: classEngagement != null
           ? ClassAnalytics(
               classId: classId,
-              averageGrade: classEngagement.averageEngagementScore * 100,
-              overallPerformance: classEngagement.averageEngagementScore * 100,
-              totalStudents: classEngagement.totalStudents,
-              activeStudents: classEngagement.activeStudents,
-              participationRate: classEngagement.participationRate,
-              completionMetrics: const CompletionMetrics(
+              className: classEngagement.className,
+              period: period,
+              averageGrade: classEngagement.averageMetrics.overallScore,
+              overallPerformance: classEngagement.averageMetrics.overallScore,
+              totalStudents: classEngagement.students.length,
+              activeStudents: classEngagement.students
+                  .where((s) => s.metrics.completionRate > 0)
+                  .length,
+              trendDirection: classEngagement.trend?.direction ?? TrendDirection.stable,
+              completionMetrics: CompletionMetrics(
+                assignmentCompletionRate: classEngagement.averageMetrics.completionRate,
+                assessmentCompletionRate: classEngagement.averageMetrics.completionRate,
+                averageGrade: classEngagement.averageMetrics.overallScore,
                 totalAssignments: 0,
                 completedAssignments: 0,
                 totalAssessments: 0,
@@ -581,8 +588,10 @@ final analyticsDashboardProvider =
                 onTimeSubmissionRate: 0.0,
                 overdueCount: 0,
               ),
+              subjectBreakdown: const [],
               performanceTrend: const [],
-              trendDirection: classEngagement.trend,
+              topStudents: const [],
+              strugglingStudents: const [],
             )
           : null,
       subjectPerformance: const [],
@@ -599,6 +608,7 @@ final analyticsDashboardProvider =
 class AnalyticsExportNotifier extends StateNotifier<AnalyticsExportState> {
   AnalyticsExportNotifier(this._repository) : super(const AnalyticsExportState());
 
+  // ignore: unused_field — reserved for real export implementation
   final AnalyticsRepository _repository;
 
   /// Export analytics as PDF.

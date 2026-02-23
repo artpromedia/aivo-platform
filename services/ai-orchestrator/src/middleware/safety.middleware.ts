@@ -133,7 +133,7 @@ export const safetyMiddleware: FastifyPluginAsync = async (app: FastifyInstance)
           flags: result.flags,
           score: result.score,
           timestamp: new Date().toISOString(),
-        }).catch(() => {});
+        }).catch(() => { /* fire-and-forget */ });
 
         request.log.warn(
           {

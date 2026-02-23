@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/rubric.dart';
 import '../repositories/grading_repository.dart';
 import '../repositories/repositories.dart';
+import 'core_providers.dart';
 
 /// Provider for grading repository.
 final gradingRepositoryProvider = Provider<GradingRepository>((ref) {

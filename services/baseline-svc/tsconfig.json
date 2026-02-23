@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "strictNullChecks": true,
     "moduleResolution": "bundler",
     "module": "ESNext",

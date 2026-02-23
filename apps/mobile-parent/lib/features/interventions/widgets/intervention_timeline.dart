@@ -168,6 +168,7 @@ class InterventionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // ignore: unused_local_variable
     final statusColor = _getStatusColor(intervention.status);
     final categoryColor = _getCategoryColor(intervention.category);
 

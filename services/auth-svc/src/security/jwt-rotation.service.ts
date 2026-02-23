@@ -22,12 +22,12 @@
  * `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH`.
  */
 
+import type { KeyObject } from 'node:crypto';
 import { createPrivateKey, createPublicKey, generateKeyPairSync } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { KeyObject } from 'node:crypto';
 
-import { importPKCS8, importSPKI, jwtVerify, type JWTPayload } from 'jose';
+import { importSPKI, jwtVerify, type JWTPayload } from 'jose';
 
 // ── Lazy Redis connection ──────────────────────────────────────────────────
 

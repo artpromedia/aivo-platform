@@ -19,9 +19,8 @@
 
 import crypto from 'node:crypto';
 
-import fp from 'fastify-plugin';
-
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 
 export const csrfPlugin = fp(
   async (fastify: FastifyInstance) => {
@@ -64,6 +63,7 @@ export const csrfPlugin = fp(
         ];
         if (skipPaths.some((p) => request.url.startsWith(p))) return;
 
+        // eslint-disable-next-line @typescript-eslint/dot-notation
         const cookieToken = request.cookies?.['__csrf'];
         const headerToken = request.headers['x-csrf-token'] as string | undefined;
 

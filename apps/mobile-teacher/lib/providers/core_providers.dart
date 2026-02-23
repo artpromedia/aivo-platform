@@ -3,6 +3,7 @@
 /// Foundation providers for services and repositories.
 library;
 
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_common/flutter_common.dart';
 
@@ -18,6 +19,11 @@ import '../repositories/repositories.dart';
 /// API client provider.
 final apiClientProvider = Provider<AivoApiClient>((ref) {
   return AivoApiClient.instance;
+});
+
+/// Dio HTTP client provider.
+final dioProvider = Provider<Dio>((ref) {
+  return ref.watch(apiClientProvider).dio;
 });
 
 /// Offline database provider.

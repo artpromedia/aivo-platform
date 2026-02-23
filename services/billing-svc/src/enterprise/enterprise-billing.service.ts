@@ -12,16 +12,17 @@
  * DistrictBillingProfile, PurchaseOrder, PilotProgram.
  */
 
-import crypto from 'node:crypto';
+import _crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Writable } from 'node:stream';
 
 import PDFDocument from 'pdfkit';
 
-import { prisma } from '../prisma.js';
 import { config } from '../config.js';
 import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
+import { prisma } from '../prisma.js';
+
 import type { CreateContractInput, RecordPaymentInput, ActivatePilotInput } from './enterprise.schemas.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -170,8 +171,8 @@ export class EnterpriseBillingService {
     const contractNumber = await nextContractNumber();
 
     // Determine next invoice date
-    const dueDays = paymentTermsToDays(params.paymentTerms);
-    const nextInvDate = addMonths(startDate, params.contractType === 'monthly' ? 1 : 12);
+    const _dueDays = paymentTermsToDays(params.paymentTerms);
+    const _nextInvDate = addMonths(startDate, params.contractType === 'monthly' ? 1 : 12);
 
     const contract = await prisma.contract.create({
       data: {
@@ -229,7 +230,7 @@ export class EnterpriseBillingService {
       endDate: endDate.toISOString().split('T')[0],
     });
 
-    const meta = contract.metadataJson as Record<string, unknown> | null;
+    const _meta = contract.metadataJson as Record<string, unknown> | null;
 
     return {
       id: contract.id,
@@ -273,7 +274,7 @@ export class EnterpriseBillingService {
     const studentCount = (meta?.studentCount as number) ?? 0;
     const pricePerStudent = (meta?.pricePerStudent as number) ?? DEFAULT_PRICE;
     const paymentTerms = (meta?.paymentTerms as string) ?? 'NET_30';
-    const contactEmail = (meta?.contactEmail as string) ?? contract.billingProfile.billingContactEmail;
+    const _contactEmail = (meta?.contactEmail as string) ?? contract.billingProfile.billingContactEmail;
 
     const subtotalCents = Math.round(studentCount * pricePerStudent * 100);
     // Tax calculation — check billing profile for tax exemption
@@ -377,12 +378,7 @@ export class EnterpriseBillingService {
     });
 
     const meta = invoice.metadataJson as Record<string, unknown> | null;
-    const lineItems = (meta?.lineItems as Array<{
-      description: string;
-      quantity: number;
-      unitPrice: number;
-      total: number;
-    }>) ?? [];
+    const lineItems = (meta?.lineItems as { description: string; quantity: number; unitPrice: number; total: number }[]) ?? [];
     const subtotalCents = (meta?.subtotalCents as number) ?? Number(invoice.amountDueCents);
     const taxAmountCents = (meta?.taxAmountCents as number) ?? 0;
     const totalCents = (meta?.totalCents as number) ?? Number(invoice.amountDueCents);
@@ -446,13 +442,13 @@ export class EnterpriseBillingService {
         .font('Helvetica-Bold')
         .text('Date:', 350, billToY + 15)
         .font('Helvetica')
-        .text(invoice.issueDate.toISOString().split('T')[0]!, 440, billToY + 15);
+        .text(invoice.issueDate.toISOString().split('T')[0] ?? '', 440, billToY + 15);
 
       doc
         .font('Helvetica-Bold')
         .text('Due Date:', 350, billToY + 30)
         .font('Helvetica')
-        .text(invoice.dueDate.toISOString().split('T')[0]!, 440, billToY + 30);
+        .text(invoice.dueDate.toISOString().split('T')[0] ?? '', 440, billToY + 30);
 
       if (invoice.poNumber) {
         doc
@@ -899,12 +895,12 @@ export class EnterpriseBillingService {
     paymentReference?: string | null;
   }) {
     const meta = inv.metadataJson as Record<string, unknown> | null;
-    const lineItems = (meta?.lineItems as Array<{
+    const lineItems = (meta?.lineItems as {
       description: string;
       quantity: number;
       unitPrice: number;
       total: number;
-    }>) ?? [];
+    }[]) ?? [];
     const subtotalCents = (meta?.subtotalCents as number) ?? Number(inv.amountDueCents);
     const taxAmountCents = (meta?.taxAmountCents as number) ?? 0;
     const totalCents = (meta?.totalCents as number) ?? Number(inv.amountDueCents);
