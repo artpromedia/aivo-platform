@@ -15,7 +15,7 @@ metadata:
 data:
   NODE_ENV: "production"
   LOG_LEVEL: "info"
-  PORT: "4070"
+  PORT: "3000"
   HOST: "0.0.0.0"
   # IEP-specific configuration
   IEP_DOCUMENT_RETENTION_YEARS: "7"
@@ -66,7 +66,7 @@ spec:
 
           ports:
             - name: http
-              containerPort: 4070
+              containerPort: 3000
               protocol: TCP
             - name: metrics
               containerPort: 9090
@@ -178,7 +178,7 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 4070
+      port: 3000
       targetPort: http
       protocol: TCP
     - name: metrics
@@ -273,12 +273,12 @@ spec:
               name: aivo-gateway
       ports:
         - protocol: TCP
-          port: 4070
+          port: 3000
     - from:
         - podSelector: {}
       ports:
         - protocol: TCP
-          port: 4070
+          port: 3000
     - from:
         - namespaceSelector:
             matchLabels:

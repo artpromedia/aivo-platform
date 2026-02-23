@@ -57,6 +57,8 @@ resources:
   - audit-svc.yaml
   - reports-svc.yaml
   - compliance-svc.yaml
+  # Gamification
+  - gamification-svc.yaml
 
   #  Web Frontend Applications 
   - web-apps/

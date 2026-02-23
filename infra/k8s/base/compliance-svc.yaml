@@ -35,7 +35,7 @@ spec:
         app.kubernetes.io/name: compliance-svc
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "4052"
+        prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: compliance-svc
@@ -49,11 +49,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 4052
+              containerPort: 3000
               protocol: TCP
           env:
             - name: PORT
-              value: "4052"
+              value: "3000"
             - name: NODE_ENV
               value: "production"
             - name: LOG_LEVEL
@@ -92,7 +92,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 4052
+              port: http
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 5
@@ -100,7 +100,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 4052
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
@@ -149,8 +149,8 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 4052
-      targetPort: 4052
+      port: 3000
+      targetPort: http
       protocol: TCP
   selector:
     app: compliance-svc

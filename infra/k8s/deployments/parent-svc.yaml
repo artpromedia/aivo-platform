@@ -130,6 +130,13 @@ spec:
 
             # Add service-specific secrets here
 
+            # JWT Secret (required in production)
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: parent-svc-secrets
+                  key: jwt-secret
+
           resources:
             requests:
               cpu: "100m"

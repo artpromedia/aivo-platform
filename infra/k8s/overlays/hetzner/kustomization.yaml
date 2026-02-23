@@ -121,6 +121,10 @@ images:
   - name: aivo/compliance-svc
     newName: ghcr.io/artpromedia/aivo-compliance-svc
     newTag: latest
+  # Gamification
+  - name: aivo/gamification-svc
+    newName: ghcr.io/artpromedia/aivo-gamification-svc
+    newTag: latest
 
   #  Python AI/ML Services 
   #  Heavy (large model loading)

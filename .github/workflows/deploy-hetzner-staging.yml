@@ -535,17 +535,33 @@ jobs:
           PG_USER=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
           PG_PASS=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
 
+          # Read or generate a shared JWT secret for token verification
+          JWT_SECRET=$(kubectl -n "$NAMESPACE" get secret shared-secrets -o jsonpath='{.data.jwt-secret}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+          if [ -z "$JWT_SECRET" ]; then
+            JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+            echo "⚠  Generated new JWT_SECRET (consider storing in shared-secrets)"
+          fi
+
           for svc in "${BACKEND_SERVICES[@]}"; do
             SECRET_NAME="${svc}-secrets"
+            DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
+            DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
+
             if ! kubectl -n "$NAMESPACE" get secret "$SECRET_NAME" &>/dev/null; then
-              # Construct database name from service name: auth-svc -> aivo_auth
-              DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
-              DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
               kubectl -n "$NAMESPACE" create secret generic "$SECRET_NAME" \
-                --from-literal="database-url=${DATABASE_URL}"
+                --from-literal="database-url=${DATABASE_URL}" \
+                --from-literal="jwt-secret=${JWT_SECRET}"
               echo "✅ Created ${SECRET_NAME} (db: ${DB_NAME})"
             else
-              echo "⏭  ${SECRET_NAME} exists"
+              # Ensure jwt-secret key exists in existing secret
+              EXISTING_JWT=$(kubectl -n "$NAMESPACE" get secret "$SECRET_NAME" -o jsonpath='{.data.jwt-secret}' 2>/dev/null || echo "")
+              if [ -z "$EXISTING_JWT" ]; then
+                kubectl -n "$NAMESPACE" patch secret "$SECRET_NAME" --type merge \
+                  -p "{\"data\":{\"jwt-secret\":\"$(echo -n "$JWT_SECRET" | base64 -w0)\"}}"
+                echo "🔑 Patched ${SECRET_NAME} with jwt-secret"
+              else
+                echo "⏭  ${SECRET_NAME} exists (has jwt-secret)"
+              fi
             fi
           done
 
@@ -1118,16 +1134,32 @@ jobs:
           PG_USER=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-user}' | base64 -d 2>/dev/null || echo "aivo")
           PG_PASS=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-password}' | base64 -d 2>/dev/null || echo "")
 
+          # Read or generate a shared JWT secret for token verification
+          JWT_SECRET=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.jwt-secret}' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+          if [ -z "$JWT_SECRET" ]; then
+            JWT_SECRET=$(openssl rand -base64 48 | tr -d '\n')
+            echo "⚠  Generated new JWT_SECRET (consider storing in shared-secrets)"
+          fi
+
           for svc in "${BACKEND_SERVICES[@]}"; do
             SECRET_NAME="${svc}-secrets"
+            DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
+            DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
+
             if ! kubectl -n "$NS" get secret "$SECRET_NAME" &>/dev/null; then
-              DB_NAME="aivo_$(echo "$svc" | sed 's/-svc$//' | tr '-' '_')"
-              DATABASE_URL="postgresql://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${DB_NAME}"
               kubectl -n "$NS" create secret generic "$SECRET_NAME" \
-                --from-literal="database-url=${DATABASE_URL}"
+                --from-literal="database-url=${DATABASE_URL}" \
+                --from-literal="jwt-secret=${JWT_SECRET}"
               echo "✅ Created ${SECRET_NAME} (db: ${DB_NAME})"
             else
-              echo "⏭  ${SECRET_NAME} exists"
+              EXISTING_JWT=$(kubectl -n "$NS" get secret "$SECRET_NAME" -o jsonpath='{.data.jwt-secret}' 2>/dev/null || echo "")
+              if [ -z "$EXISTING_JWT" ]; then
+                kubectl -n "$NS" patch secret "$SECRET_NAME" --type merge \
+                  -p "{\"data\":{\"jwt-secret\":\"$(echo -n "$JWT_SECRET" | base64 -w0)\"}}"
+                echo "🔑 Patched ${SECRET_NAME} with jwt-secret"
+              else
+                echo "⏭  ${SECRET_NAME} exists (has jwt-secret)"
+              fi
             fi
           done
 
