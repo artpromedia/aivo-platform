@@ -97,10 +97,10 @@ export const ipAllowlistMiddleware = fp(
   async (fastify, opts: IpAllowlistMiddlewareOpts) => {
     const { service } = opts;
 
-    // @ts-expect-error — Fastify hook type-provider mismatch with explicitly-typed handler params
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     fastify.addHook(
       'preHandler',
+      // @ts-expect-error — Fastify hook type-provider mismatch with explicitly-typed handler params
       async (request: FastifyRequest, reply: FastifyReply) => {
         // Skip for non-restrictable paths
         if (SKIP_PREFIXES.some((p) => request.url.startsWith(p))) return;
