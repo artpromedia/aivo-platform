@@ -679,8 +679,8 @@ class AchievementService {
   async checkStreakAchievements(studentId: string, streakDays?: number): Promise<void> {
     let days = streakDays;
     if (days === undefined) {
-      const streak = await prisma.streak.findFirst({ where: { studentId }, orderBy: { updatedAt: 'desc' }, select: { currentStreak: true } });
-      days = streak?.currentStreak ?? 0;
+      const profile = await prisma.playerProfile.findUnique({ where: { studentId }, select: { streakDays: true } });
+      days = profile?.streakDays ?? 0;
     }
     const streakAchievements = ACHIEVEMENT_DEFINITIONS.filter(
       (a) => a.requirement?.type === 'streak_days'

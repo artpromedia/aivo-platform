@@ -157,7 +157,8 @@ export default async function buildApp(): Promise<FastifyInstance> {
   });
 
   // Error handler
-  app.setErrorHandler((err, _request, reply) => {
+  app.setErrorHandler((error, _request, reply) => {
+    const err = error as Error;
     console.error('Error:', err);
 
     // Zod validation errors
