@@ -471,3 +471,56 @@ model StateCurriculumStandards {
   @@unique([stateCode])
   @@map("state_curriculum_standards")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enterprise Tenant Admin Controls (Sprint A5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// IP allow-list entries per tenant (CIDR notation)
+model TenantIpAllowlist {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  cidr      String   @db.VarChar(45)   // supports IPv4 /32 and IPv6 /128
+  label     String?  @db.VarChar(120)
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("tenant_ip_allowlist")
+}
+
+enum DomainStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  FAILED
+}
+
+/// Custom domains mapped to tenants with DNS verification
+model TenantCustomDomain {
+  id                String       @id @default(uuid()) @db.Uuid
+  tenantId          String       @map("tenant_id") @db.Uuid
+  domain            String       @unique @db.VarChar(253)
+  status            DomainStatus @default(PENDING_VERIFICATION)
+  verificationToken String       @map("verification_token") @db.VarChar(64)
+  verifiedAt        DateTime?    @map("verified_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([domain])
+  @@index([status])
+  @@map("tenant_custom_domain")
+}
+
+/// Feature flags that district admins can toggle per tenant
+model TenantFeatureFlag {
+  id       String   @id @default(uuid()) @db.Uuid
+  tenantId String   @map("tenant_id") @db.Uuid
+  flag     String   @db.VarChar(80)
+  enabled  Boolean  @default(false)
+  setBy    String?  @map("set_by") @db.Uuid
+  setAt    DateTime @default(now()) @map("set_at")
+
+  @@unique([tenantId, flag])
+  @@index([tenantId])
+  @@map("tenant_feature_flag")
+}

@@ -21,4 +21,8 @@ export const config = {
   baseDomain: process.env.BASE_DOMAIN || 'aivo.ai',
   cacheTtlSeconds: Number(process.env.CACHE_TTL_SECONDS || 300),
   defaultTenantId: process.env.DEFAULT_TENANT_ID,
+
+  // Enterprise admin controls (Sprint A5)
+  auditSvcUrl: process.env.AUDIT_SVC_URL || '',
+  internalApiKey: process.env.INTERNAL_API_KEY || '',
 };

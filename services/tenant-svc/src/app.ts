@@ -16,6 +16,15 @@ import { tenantResolverPlugin } from './plugins/tenant-resolver.plugin.js';
 import { prisma } from './prisma.js';
 import { config } from './config.js';
 
+// Enterprise admin controls (Sprint A5)
+import { IpAllowlistService } from './ip-allowlist/ip-allowlist.service.js';
+import { ipAllowlistMiddleware } from './ip-allowlist/ip-allowlist.middleware.js';
+import { ipAllowlistRoutes } from './ip-allowlist/ip-allowlist.routes.js';
+import { CustomDomainService } from './custom-domains/custom-domain.service.js';
+import { customDomainRoutes } from './custom-domains/custom-domain.routes.js';
+import { TenantFeatureFlagsService } from './feature-flags/tenant-feature-flags.service.js';
+import { featureFlagsRoutes } from './feature-flags/feature-flags.routes.js';
+
 // Optional Redis import - gracefully degrade if not available
 let redis: RedisType | undefined;
 try {
@@ -71,6 +80,11 @@ export function createApp() {
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   app.register(authMiddleware as any);
+
+  // IP allowlist middleware — runs after auth (needs tenantId) but before routes
+  const ipService = new IpAllowlistService(redis);
+  app.register(ipAllowlistMiddleware, { service: ipService });
+
   app.register(registerResolveRoutes);
   app.register(registerTenantRoutes);
   app.register(registerSchoolRoutes);
@@ -87,6 +101,15 @@ export function createApp() {
 
   // Admin routes for domain management
   app.register(tenantDomainsRoutes, { prefix: '/admin' });
+
+  // Enterprise admin control routes (Sprint A5)
+  app.register(ipAllowlistRoutes, { prefix: '/admin/ip-allowlist', service: ipService });
+
+  const domainService = new CustomDomainService(redis);
+  app.register(customDomainRoutes, { prefix: '/admin/custom-domains', service: domainService });
+
+  const flagsService = new TenantFeatureFlagsService(redis);
+  app.register(featureFlagsRoutes, { prefix: '/admin/feature-flags', service: flagsService });
 
   return app;
 }
