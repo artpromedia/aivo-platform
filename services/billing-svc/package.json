@@ -28,10 +28,12 @@
     "fastify-plugin": "^5.0.1",
     "jose": "^5.10.0",
     "nats": "^2.29.1",
+    "pdfkit": "^0.15.0",
     "stripe": "^17.7.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/pdfkit": "^0.13.0",
     "@types/node": "^22.19.1",
     "pino-pretty": "^11.3.0",
     "prisma": "5.22.0",

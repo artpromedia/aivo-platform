@@ -11,11 +11,13 @@ import { config } from './config.js';
 import { billingEventPublisher } from './events/billing.publisher.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
+import { enterpriseRoutes } from './routes/enterprise.routes.js';
 import { entitlementsRoutes } from './routes/entitlements.routes.js';
 import { finopsRoutes } from './routes/finops.routes.js';
 import { internalBillingRoutes } from './routes/internal-billing.routes.js';
 import { parentBillingRoutes } from './routes/parent-billing.routes.js';
 import { webhookRoutes } from './routes/webhook.routes.js';
+import { startInvoiceSchedulers, stopInvoiceSchedulers } from './enterprise/invoice-scheduler.js';
 
 // Type assertion helper for Fastify plugins with type provider mismatches
 const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;
@@ -51,10 +53,12 @@ async function main() {
   await app.register(finopsRoutes, { prefix: '/api/v1/finops' });
   await app.register(parentBillingRoutes, { prefix: '/api/v1' });
   await app.register(asPlugin(internalBillingRoutes), { prefix: '/api/v1/internal' });
+  await app.register(enterpriseRoutes, { prefix: '/api/v1/enterprise' });
 
   // Graceful shutdown
   const shutdown = async () => {
     app.log.info('Shutting down...');
+    stopInvoiceSchedulers();
     await app.close();
     await billingEventPublisher.close();
     await disconnectDatabase();
@@ -68,6 +72,7 @@ async function main() {
     await connectDatabase();
     await billingEventPublisher.initialize();
     await app.listen({ port: config.port, host: config.host });
+    startInvoiceSchedulers();
     console.log(`💳 Billing service listening on port ${config.port}`);
   } catch (err) {
     app.log.error(err);
