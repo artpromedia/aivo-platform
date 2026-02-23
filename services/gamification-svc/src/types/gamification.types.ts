@@ -143,6 +143,7 @@ export type AchievementCategory =
   | 'time'
   | 'social'
   | 'challenges'
+  | 'engagement'
   | 'secret';
 
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';

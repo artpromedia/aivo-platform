@@ -217,7 +217,7 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
 
       try {
         const achievements = await achievementService.getPlayerAchievements(learnerId);
-        const badges = achievements.map(transformEarnedBadge);
+        const badges = achievements.earned.map(transformEarnedBadge);
 
         return { badges };
       } catch (error) {
@@ -278,10 +278,9 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
       const leaderboard = await leaderboardService.getLeaderboard({
         scope,
         limit,
-        studentId: currentLearnerId,
       });
 
-      const entries: MobileLeaderboardEntry[] = leaderboard.map((entry: any, index: number) => ({
+      const entries: MobileLeaderboardEntry[] = leaderboard.entries.map((entry: any, index: number) => ({
         rank: index + 1,
         learnerId: entry.studentId,
         learnerName: entry.studentName || 'Student',
@@ -313,7 +312,7 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
           id: item.id,
           name: item.name,
           description: item.description,
-          iconUrl: item.iconUrl || `/rewards/${item.id}.png`,
+          iconUrl: (item as any).imageUrl || (item as any).iconUrl || `/rewards/${item.id}.png`,
           pointsCost: item.price,
           type: item.category,
           isAvailable: true,
@@ -383,7 +382,7 @@ async function mobileGamificationRoutes(app: FastifyInstance) {
           return { error: 'Badge not found' };
         }
 
-        const isEarned = earned.some((a: any) => a.achievementType === badgeId || a.id === badgeId);
+        const isEarned = earned.earned.some((a: any) => a.achievementType === badgeId || a.id === badgeId);
         const target = definition.requirement?.count ?? 1;
 
         const progress = {

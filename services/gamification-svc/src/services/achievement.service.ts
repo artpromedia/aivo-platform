@@ -656,13 +656,18 @@ class AchievementService {
   /**
    * Check XP achievements
    */
-  async checkXPAchievements(studentId: string, totalXp: number): Promise<void> {
+  async checkXPAchievements(studentId: string, totalXp?: number): Promise<void> {
+    let xp = totalXp;
+    if (xp === undefined) {
+      const profile = await prisma.playerProfile.findUnique({ where: { studentId }, select: { totalXP: true } });
+      xp = profile?.totalXP ?? 0;
+    }
     const xpAchievements = ACHIEVEMENT_DEFINITIONS.filter(
       (a) => a.requirement?.type === 'total_xp'
     );
 
     for (const achievement of xpAchievements) {
-      if (totalXp >= achievement.requirement!.count) {
+      if (xp >= achievement.requirement!.count) {
         await this.checkAndAward(studentId, achievement.id);
       }
     }
@@ -671,13 +676,18 @@ class AchievementService {
   /**
    * Check streak achievements
    */
-  async checkStreakAchievements(studentId: string, streakDays: number): Promise<void> {
+  async checkStreakAchievements(studentId: string, streakDays?: number): Promise<void> {
+    let days = streakDays;
+    if (days === undefined) {
+      const streak = await prisma.streak.findFirst({ where: { studentId }, orderBy: { updatedAt: 'desc' }, select: { currentStreak: true } });
+      days = streak?.currentStreak ?? 0;
+    }
     const streakAchievements = ACHIEVEMENT_DEFINITIONS.filter(
       (a) => a.requirement?.type === 'streak_days'
     );
 
     for (const achievement of streakAchievements) {
-      if (streakDays >= achievement.requirement!.count) {
+      if (days >= achievement.requirement!.count) {
         await this.checkAndAward(studentId, achievement.id);
       }
     }
