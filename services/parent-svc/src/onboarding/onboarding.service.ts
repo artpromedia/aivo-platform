@@ -57,6 +57,7 @@ export class OnboardingService {
   private readonly learnerModelSvcUrl: string;
   private readonly brainEngineUrl: string;
   private readonly curriculumSvcUrl: string;
+  private readonly gamificationSvcUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
@@ -65,6 +66,7 @@ export class OnboardingService {
       process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
     this.brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://brain-engine:8001';
     this.curriculumSvcUrl = process.env.CURRICULUM_SVC_URL || 'http://localhost:4012';
+    this.gamificationSvcUrl = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
   }
 
   /**
@@ -300,6 +302,9 @@ export class OnboardingService {
     // Align learner's brain with curriculum based on location
     // This initializes the brain-engine with curriculum-specific knowledge
     await this.alignBrainWithCurriculum(learner.id, input.location, district);
+
+    // Fire-and-forget: initialize gamification profile (XP, achievements, streaks)
+    this.initializeGamificationProfile(learner.id);
 
     // Fire-and-forget: trigger AI-generated curriculum for this homeschool learner
     this.triggerHomeschoolCurriculum({
@@ -572,6 +577,51 @@ export class OnboardingService {
         'Error calling brain-engine to align curriculum'
       );
     }
+  }
+
+  /**
+   * Trigger AI-generated curriculum content for a homeschool/consumer learner.
+   *
+  /**
+   * Initialize the learner's gamification profile in gamification-svc.
+   *
+   * Calling GET /api/gamification/profile with the learner's student ID
+   * triggers auto-creation of their PlayerProfile (XP=0, Level 1) and
+   * awards the "welcome" achievement so everything is ready when the
+   * learner first opens the app.
+   *
+   * Fire-and-forget — failures are logged but never block registration.
+   */
+  private initializeGamificationProfile(learnerId: string): void {
+    void (async () => {
+      try {
+        const res = await fetch(`${this.gamificationSvcUrl}/api/gamification/profile`, {
+          method: 'GET',
+          headers: {
+            'x-student-id': learnerId,
+            'X-Service-Name': 'parent-svc',
+          },
+        });
+
+        if (res.ok) {
+          logger.info(
+            { learnerId },
+            '[Gamification] Player profile initialized for new learner',
+          );
+        } else {
+          const text = await res.text().catch(() => 'unknown');
+          logger.warn(
+            { learnerId, status: res.status, body: text.slice(0, 200) },
+            '[Gamification] Failed to initialize player profile',
+          );
+        }
+      } catch (err) {
+        logger.warn(
+          { learnerId, err },
+          '[Gamification] Could not reach gamification-svc — profile will be created on first activity',
+        );
+      }
+    })();
   }
 
   /**
