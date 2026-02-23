@@ -16,6 +16,7 @@ from prometheus_client import Counter, Histogram, generate_latest
 
 from app.api.routes import init_components, router
 from app.core.config import Settings, get_settings
+from app.safety_middleware import ContentSafetyMiddleware
 
 # Configure structured logging
 settings = get_settings()
@@ -118,6 +119,12 @@ AI-powered writing analysis for educational assessment.
     """,
     version=settings.VERSION,
     lifespan=lifespan,
+)
+
+# Content safety middleware – intercepts AI responses before they reach students
+app.add_middleware(
+    ContentSafetyMiddleware,
+    enabled=getattr(settings, 'SAFETY_ENABLED', True),
 )
 
 # Configure CORS

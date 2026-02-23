@@ -29,9 +29,12 @@ import { registerInternalRoutes } from './routes/internal.js';
 import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
 import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
+import { registerSafetyAdminRoutes } from './routes/safety-admin.routes.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
 import { UsageTracker } from './usage/index.js';
+import { safetyMiddleware } from './middleware/safety.middleware.js';
+import { closeSafetyEventPublisher } from './safety/safety-event.publisher.js';
 
 export interface AppOptions {
   registry?: AgentConfigRegistry;
@@ -108,6 +111,9 @@ export function createApp(options: AppOptions = {}) {
     reply.header('x-correlation-id', correlationId);
   });
 
+  // AI Content Safety Guardrails — intercept all AI responses
+  app.register(safetyMiddleware);
+
   // Health check routes (must be registered early, before dependencies are initialized)
   app.register(healthRoutes);
 
@@ -140,6 +146,9 @@ export function createApp(options: AppOptions = {}) {
 
     // Federated Prompt Learning API routes
     app.register(registerFederatedLearningRoutes, { pool: policyPool, redis });
+
+    // Safety Admin routes (stats, violations, config)
+    app.register(registerSafetyAdminRoutes);
   }
 
   // Create LLM Orchestrator for AI services (configured via environment variables)
@@ -184,6 +193,8 @@ export function createApp(options: AppOptions = {}) {
     }
     // Clean up Redis connection
     await redis.quit();
+    // Clean up NATS safety event publisher
+    await closeSafetyEventPublisher();
   });
 
   return app;

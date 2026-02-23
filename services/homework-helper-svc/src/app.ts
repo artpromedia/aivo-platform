@@ -5,6 +5,7 @@ import helmet from '@fastify/helmet';
 
 import { config } from './config.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { safetyMiddleware } from './middleware/safetyMiddleware.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerHomeworkRoutes } from './routes/homework.js';
 import { registerParentRoutes } from './routes/parent.js';
@@ -70,6 +71,10 @@ export async function buildApp() {
   // Auth middleware for protected routes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await app.register(authMiddleware as any);
+
+  // Content safety middleware – intercepts all AI-generated responses
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await app.register(safetyMiddleware as any);
 
   // Homework routes
   await app.register(registerHomeworkRoutes, { prefix: '/homework' });

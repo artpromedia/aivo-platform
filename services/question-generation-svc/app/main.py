@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
+from app.safety_middleware import ContentSafetyMiddleware
 from app.services.generation_pipeline import GenerationPipeline, PipelineConfig
 
 # Configure structured logging
@@ -122,6 +123,12 @@ AI-powered automatic question and assessment item generation.
     redoc_url="/redoc",
     openapi_url="/api/v1/openapi.json",
     lifespan=lifespan,
+)
+
+# Content safety middleware – intercepts AI responses before they reach students
+app.add_middleware(
+    ContentSafetyMiddleware,
+    enabled=getattr(settings, 'SAFETY_ENABLED', True),
 )
 
 # Add CORS middleware

@@ -30,3 +30,20 @@ export type { PreFilterResult, PostFilterResult } from '../types/aiRequest.js';
 
 // Export new safety filter v2
 export { SafetyFilter, createSafetyFilter, type SafetyCheckResult } from './safety-filter-v2.js';
+
+// Export content safety service (4-layer pipeline)
+export { ContentSafetyService, contentSafetyService } from './content-safety.service.js';
+export { getSafetyConfig, setSafetyConfig, resetSafetyConfig } from './safety-config.js';
+export { publishSafetyViolation, closeSafetyEventPublisher } from './safety-event.publisher.js';
+export { scoreToxicityViaPython } from './python_safety_client.js';
+export type {
+  SafetyConfig,
+  SafetyContext,
+  SafetyFlag,
+  SafetyFlagSeverity,
+  SafetyFlagLayer,
+  SafetyValidationParams,
+  SafetyViolationEvent,
+  SafetyStatsResponse,
+  SafetyViolationRecord,
+} from './safety.types.js';

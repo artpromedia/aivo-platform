@@ -21,6 +21,7 @@ from app.services.policy_evaluator import PolicyEvaluator
 from app.services.session_manager import SessionManager
 from app.services.safety_monitor import SafetyMonitor
 from app.services.content_recommender import ContentRecommender, ContentItem
+from app.safety_middleware import ContentSafetyMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -111,6 +112,12 @@ Reinforcement learning for adaptive tutoring decisions.
     """,
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Content safety middleware – intercepts AI responses before they reach students
+app.add_middleware(
+    ContentSafetyMiddleware,
+    enabled=True,
 )
 
 app.add_middleware(
