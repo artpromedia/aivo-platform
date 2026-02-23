@@ -5,10 +5,10 @@
  * Access should be restricted to admin users only.
  */
 
-import type { PrismaClient } from '../prisma.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
+import type { PrismaClient } from '../prisma.js';
 import { SubscriptionAnalyticsService } from '../services/analytics.service.js';
 
 interface AnalyticsRoutesOptions {

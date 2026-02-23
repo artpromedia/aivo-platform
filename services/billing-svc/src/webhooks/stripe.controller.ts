@@ -23,8 +23,8 @@ import type Stripe from 'stripe';
 
 import { getPlanFromPriceId } from '../config/stripe.config.js';
 import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
-import { entitlementsService } from '../services/entitlements.service.js';
 import { prisma } from '../prisma.js';
+import { entitlementsService } from '../services/entitlements.service.js';
 import { stripeService } from '../services/stripe.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════

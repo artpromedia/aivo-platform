@@ -1,4 +1,4 @@
-/* eslint-disable no-redeclare */
+ 
 /**
  * Seat Usage Analytics Types
  *

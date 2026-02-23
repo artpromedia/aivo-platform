@@ -120,6 +120,8 @@ export default [
         }
       ],
       "no-unused-vars": "off",
+      "no-undef": "off",
+      "no-redeclare": "off",
       "react/jsx-uses-react": "off",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",

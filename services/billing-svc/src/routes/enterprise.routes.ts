@@ -109,7 +109,7 @@ export async function enterpriseRoutes(app: FastifyInstance): Promise<void> {
       if (!pdfUrl) {
         return reply.status(404).send({ error: 'PDF not available for this invoice' });
       }
-      return reply.redirect(302, pdfUrl);
+      return reply.redirect(pdfUrl, 302);
     },
   );
 

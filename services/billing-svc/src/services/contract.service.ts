@@ -5,7 +5,8 @@
  * Handles contract lifecycle, seat allocation, and entitlement generation.
  */
 
-import { z } from 'zod';
+import type { z } from 'zod';
+
 import { prisma } from '../prisma.js';
 import type { Prisma } from '../prisma.js';
 import {
@@ -324,7 +325,7 @@ export class ContractService {
     }
 
     // Calculate discounted price
-    const listPrice = Number(entry.unitPrice);
+    const listPrice = entry.unitPrice;
     const discount = discountPercent ?? 0;
     const unitPrice = listPrice * (1 - discount / 100);
 

@@ -10,8 +10,8 @@
  * Functions are also exported individually for use from tests or NATS handlers.
  */
 
-import { prisma } from '../prisma.js';
 import { enterpriseBillingService } from '../enterprise/enterprise-billing.service.js';
+import { prisma } from '../prisma.js';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS_MS = 24 * ONE_HOUR_MS;

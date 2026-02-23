@@ -15,6 +15,7 @@ import type {
   EnterpriseDealType,
   VaultLicenseType,
 } from '../prisma.js';
+
 import { getLicenseVaultService } from './license-vault.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -439,7 +440,7 @@ class EnterpriseProvisioningService {
     if (!existingDeal) return null;
 
     // Recalculate values if seats or price changed
-    let updateData: Record<string, unknown> = { ...params };
+    const updateData: Record<string, unknown> = { ...params };
 
     if (params.seats !== undefined || params.pricePerSeatCents !== undefined) {
       const seats = params.seats ?? existingDeal.seats;

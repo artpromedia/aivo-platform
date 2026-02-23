@@ -66,11 +66,15 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            VERSION="${{ github.event.release.tag_name }}"
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            VERSION="$RELEASE_TAG"
           else
-            VERSION="${{ inputs.version }}"
+            VERSION="$INPUT_VERSION"
           fi
 
           # Normalize

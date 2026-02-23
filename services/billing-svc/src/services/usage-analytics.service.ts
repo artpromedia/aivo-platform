@@ -74,8 +74,8 @@ export class UsageAnalyticsService {
       overageAllowed: entry.overageAllowed,
       overageLimit: entry.overageLimit,
       overageUsed: entry.overageUsed,
-      utilizationPercent: Number(entry.utilizationPercent),
-      status: getUsageStatus(Number(entry.utilizationPercent)),
+      utilizationPercent: entry.utilizationPercent,
+      status: getUsageStatus(entry.utilizationPercent),
     }));
 
     // Transform alerts to summary format
@@ -237,7 +237,7 @@ export class UsageAnalyticsService {
 
     for (const entry of entries) {
       try {
-        const utilization = Number(entry.utilizationPercent);
+        const utilization = entry.utilizationPercent;
 
         for (const threshold of thresholds) {
           const thresholdPercent = threshold * 100;
@@ -286,7 +286,7 @@ export class UsageAnalyticsService {
     const context: SeatUsageAlertContext = {
       committed: entry.committedSeats,
       allocated: entry.allocatedSeats,
-      utilization: Number(entry.utilizationPercent),
+      utilization: entry.utilizationPercent,
       overage: entry.overageUsed,
       overageAllowed: entry.overageAllowed,
       overageLimit: entry.overageLimit,
@@ -310,11 +310,11 @@ export class UsageAnalyticsService {
     });
 
     // Create notification for the alert
-    const severity = getUtilizationSeverity(Number(entry.utilizationPercent));
+    const severity = getUtilizationSeverity(entry.utilizationPercent);
     const message = generateAlertMessage(
       entry.sku,
       entry.gradeBand,
-      Number(entry.utilizationPercent),
+      entry.utilizationPercent,
       threshold
     );
 

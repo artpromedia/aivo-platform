@@ -22,6 +22,9 @@ import crypto from 'node:crypto';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
+// Import @fastify/cookie to augment FastifyRequest/FastifyReply with cookies/setCookie
+import '@fastify/cookie';
+
 export const csrfPlugin = fp(
   async (fastify: FastifyInstance) => {
     // ── Token generation endpoint ──────────────────────────────────────────
@@ -42,7 +45,8 @@ export const csrfPlugin = fp(
     // ── Validation hook — runs on every state-mutating request ─────────────
     fastify.addHook(
       'preHandler',
-      async (request: FastifyRequest, reply: FastifyReply) => {
+      // eslint-disable-next-line @typescript-eslint/require-await
+      async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
         // Only validate state-mutating methods
         const method = request.method.toUpperCase();
         if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return;
@@ -68,11 +72,12 @@ export const csrfPlugin = fp(
         const headerToken = request.headers['x-csrf-token'] as string | undefined;
 
         if (!cookieToken || !headerToken) {
-          return reply.status(403).send({
+          void reply.status(403).send({
             error: 'Forbidden',
             message: 'CSRF token missing',
             code: 'CSRF_TOKEN_MISSING',
           });
+          return;
         }
 
         // Constant-time comparison to prevent timing side-channel attacks
@@ -84,18 +89,20 @@ export const csrfPlugin = fp(
             cookieBuf.length !== headerBuf.length ||
             !crypto.timingSafeEqual(cookieBuf, headerBuf)
           ) {
-            return reply.status(403).send({
+            void reply.status(403).send({
               error: 'Forbidden',
               message: 'CSRF token invalid',
               code: 'CSRF_TOKEN_INVALID',
             });
+            return;
           }
         } catch {
-          return reply.status(403).send({
+          void reply.status(403).send({
             error: 'Forbidden',
             message: 'CSRF token invalid',
             code: 'CSRF_TOKEN_INVALID',
           });
+          return;
         }
       },
     );

@@ -21,7 +21,8 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 
-import { prisma, Prisma } from '../prisma.js';
+import type { Prisma } from '../prisma.js';
+import { prisma } from '../prisma.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES

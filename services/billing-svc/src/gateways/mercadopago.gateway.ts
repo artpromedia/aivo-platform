@@ -115,12 +115,12 @@ interface MPPayment {
   };
   metadata?: Record<string, unknown>;
   additional_info?: {
-    items?: Array<{
+    items?: {
       id?: string;
       title?: string;
       quantity?: number;
       unit_price?: number;
-    }>;
+    }[];
   };
   transaction_amount: number;
   transaction_amount_refunded?: number;
@@ -131,11 +131,11 @@ interface MPPayment {
     overpaid_amount?: number;
     installment_amount?: number;
   };
-  fee_details?: Array<{
+  fee_details?: {
     type?: string;
     amount?: number;
     fee_payer?: string;
-  }>;
+  }[];
   captured?: boolean;
   binary_mode?: boolean;
   external_reference?: string;
@@ -158,14 +158,14 @@ interface MPPreference {
   date_created: string;
   collector_id: number;
   external_reference?: string;
-  items: Array<{
+  items: {
     id?: string;
     title: string;
     description?: string;
     quantity: number;
     currency_id: string;
     unit_price: number;
-  }>;
+  }[];
   payer?: {
     name?: string;
     email?: string;
@@ -314,7 +314,7 @@ export class MercadoPagoGateway implements PaymentGateway {
     const data = await response.json();
 
     if (!response.ok) {
-      const error = data as { message?: string; cause?: Array<{ description?: string }> };
+      const error = data as { message?: string; cause?: { description?: string }[] };
       const message =
         error.message ?? error.cause?.[0]?.description ?? `MP API error: ${response.status}`;
       throw new Error(message);
@@ -848,7 +848,7 @@ export class MercadoPagoGateway implements PaymentGateway {
       status: this.mapSubscriptionStatus(subscription.status),
       amountCents: Math.round(subscription.auto_recurring.transaction_amount * 100),
       currency: subscription.auto_recurring.currency_id,
-      interval: `${subscription.auto_recurring.frequency_type}`,
+      interval: subscription.auto_recurring.frequency_type,
       quantity: 1,
       trialStart: subscription.auto_recurring.free_trial
         ? new Date(subscription.date_created)

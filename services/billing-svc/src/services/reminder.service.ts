@@ -8,8 +8,8 @@
  * - Conversion opportunities
  */
 
-import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 import { config } from '../config.js';
+import { billingEventPublisher, BillingEventType } from '../events/billing.publisher.js';
 import { prisma } from '../prisma.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════

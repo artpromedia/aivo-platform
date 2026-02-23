@@ -269,12 +269,12 @@ export interface WebhookVerificationResult {
 export interface CreateCheckoutInput {
   customerId?: string;
   customerEmail?: string;
-  items: Array<{
+  items: {
     name: string;
     description?: string;
     amountCents: number;
     quantity: number;
-  }>;
+  }[];
   currency: string;
   successUrl: string;
   cancelUrl: string;

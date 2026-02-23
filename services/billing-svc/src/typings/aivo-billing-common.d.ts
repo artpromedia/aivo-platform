@@ -4,7 +4,7 @@
  */
 
 declare module '@aivo/billing-common' {
-  import { z } from 'zod';
+  import type { z } from 'zod';
 
   // ============================================================================
   // SKU Types

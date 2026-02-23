@@ -8,6 +8,7 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyPluginAsync } from 'fastify';
 
 import { config } from './config.js';
+import { startInvoiceSchedulers, stopInvoiceSchedulers } from './enterprise/invoice-scheduler.js';
 import { billingEventPublisher } from './events/billing.publisher.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { coverageRoutes } from './routes/coverage.routes.js';
@@ -17,7 +18,6 @@ import { finopsRoutes } from './routes/finops.routes.js';
 import { internalBillingRoutes } from './routes/internal-billing.routes.js';
 import { parentBillingRoutes } from './routes/parent-billing.routes.js';
 import { webhookRoutes } from './routes/webhook.routes.js';
-import { startInvoiceSchedulers, stopInvoiceSchedulers } from './enterprise/invoice-scheduler.js';
 
 // Type assertion helper for Fastify plugins with type provider mismatches
 const asPlugin = (plugin: unknown): FastifyPluginAsync => plugin as FastifyPluginAsync;

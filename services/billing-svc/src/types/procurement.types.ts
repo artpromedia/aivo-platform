@@ -1,4 +1,4 @@
-/* eslint-disable no-redeclare */
+ 
 /**
  * District Procurement Types
  *

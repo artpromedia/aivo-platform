@@ -40,7 +40,7 @@ import { getSafetyConfig, setSafetyConfig, resetSafetyConfig } from '../src/safe
 function makeParams(content: string, overrides: Partial<SafetyValidationParams> = {}): SafetyValidationParams {
   return {
     content,
-    context: 'homework_help',
+    context: 'homework',
     tenantId: 'test-tenant',
     userId: 'test-user',
     studentAge: 10,
@@ -71,7 +71,7 @@ describe('ContentSafetyService', () => {
     expect(result.safe).toBe(false);
     expect(result.flags.length).toBeGreaterThanOrEqual(1);
 
-    const ssnFlag = result.flags.find((f) => f.description.toLowerCase().includes('ssn'));
+    const ssnFlag = result.flags.find((f) => f.detail.toLowerCase().includes('ssn'));
     expect(ssnFlag).toBeDefined();
     expect(ssnFlag!.severity).toBe('critical');
   });
@@ -85,7 +85,7 @@ describe('ContentSafetyService', () => {
     expect(result.safe).toBe(false);
 
     const crisisFlag = result.flags.find(
-      (f) => f.layer === 'pattern_matching' && f.description.toLowerCase().includes('crisis'),
+      (f) => f.layer === 'pattern' && f.detail.toLowerCase().includes('crisis'),
     );
     expect(crisisFlag).toBeDefined();
     expect(crisisFlag!.severity).toBe('critical');
@@ -120,7 +120,7 @@ describe('ContentSafetyService', () => {
     );
 
     // Should flag reading level but not necessarily block
-    const ageFlag = result.flags.find((f) => f.layer === 'age_appropriateness');
+    const ageFlag = result.flags.find((f) => f.layer === 'age');
     if (ageFlag) {
       expect(['low', 'medium']).toContain(ageFlag.severity);
     }
@@ -136,7 +136,7 @@ describe('ContentSafetyService', () => {
 
     // Email is PII but not critical (not SSN/CC)
     const piiFlag = result.flags.find(
-      (f) => f.layer === 'pattern_matching' && f.description.toLowerCase().includes('email'),
+      (f) => f.layer === 'pattern' && f.detail.toLowerCase().includes('email'),
     );
     expect(piiFlag).toBeDefined();
 
@@ -174,7 +174,7 @@ describe('ContentSafetyService', () => {
     );
 
     const profanityFlag = result.flags.find(
-      (f) => f.layer === 'pattern_matching' && f.description.toLowerCase().includes('profanity'),
+      (f) => f.layer === 'pattern' && f.detail.toLowerCase().includes('profanity'),
     );
     expect(profanityFlag).toBeDefined();
 

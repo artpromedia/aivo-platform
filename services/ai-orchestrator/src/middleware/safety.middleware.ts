@@ -103,11 +103,11 @@ export const safetyMiddleware: FastifyPluginAsync = async (app: FastifyInstance)
 
       // Extract user context from the request
       const tenantId =
-        (request as Record<string, unknown>).tenantId as string || 'unknown';
+        (request as unknown as Record<string, unknown>).tenantId as string || 'unknown';
       const userId =
-        (request as Record<string, unknown>).userId as string || 'unknown';
+        (request as unknown as Record<string, unknown>).userId as string || 'unknown';
       const studentAge =
-        (request as Record<string, unknown>).studentAge as number | undefined;
+        (request as unknown as Record<string, unknown>).studentAge as number | undefined;
       const context = inferContext(request.url);
 
       // Run safety pipeline

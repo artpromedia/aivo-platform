@@ -17,13 +17,13 @@
  *     invalidates the entitlements cache, and publishes domain events
  */
 
-import { prisma } from '../prisma.js';
-import { stripeService } from '../services/stripe.service.js';
-import { entitlementsService } from '../services/entitlements.service.js';
 import {
   billingEventPublisher,
   BillingEventType,
 } from '../events/billing.publisher.js';
+import { prisma } from '../prisma.js';
+import { entitlementsService } from '../services/entitlements.service.js';
+import { stripeService } from '../services/stripe.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
