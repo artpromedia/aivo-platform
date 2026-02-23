@@ -19,16 +19,15 @@
 
 import crypto from 'node:crypto';
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 
 // Import @fastify/cookie to augment FastifyRequest/FastifyReply with cookies/setCookie
 import '@fastify/cookie';
 
 export const csrfPlugin = fp(
-  async (fastify: FastifyInstance) => {
+  async (fastify) => {
     // ── Token generation endpoint ──────────────────────────────────────────
-    fastify.get('/auth/csrf-token', async (_request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get('/auth/csrf-token', async (_request, reply) => {
       const token = crypto.randomBytes(32).toString('hex');
 
       void reply.setCookie('__csrf', token, {
@@ -46,7 +45,7 @@ export const csrfPlugin = fp(
     fastify.addHook(
       'preHandler',
       // eslint-disable-next-line @typescript-eslint/require-await
-      async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+      async (request, reply): Promise<void> => {
         // Only validate state-mutating methods
         const method = request.method.toUpperCase();
         if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return;

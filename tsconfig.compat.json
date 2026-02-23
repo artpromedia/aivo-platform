@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
@@ -11,6 +11,7 @@
     "exactOptionalPropertyTypes": false,
     "verbatimModuleSyntax": false,
     "noUncheckedIndexedAccess": false,
+    "noImplicitReturns": false,
     "useUnknownInCatchVariables": false,
     "skipLibCheck": true,
     "noEmitOnError": false,

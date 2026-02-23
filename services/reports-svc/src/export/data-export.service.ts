@@ -63,7 +63,7 @@ export async function createExportJob(input: CreateExportJobInput) {
       requestedBy: input.requestedBy,
       exportType: input.exportType as never,
       format: input.format as never,
-      filters: input.filters ?? {},
+      filters: (input.filters ?? {}) as Record<string, never>,
       dateRangeStart: input.dateRangeStart,
       dateRangeEnd: input.dateRangeEnd,
       deliveryMethod: (input.deliveryMethod ?? 'download') as never,

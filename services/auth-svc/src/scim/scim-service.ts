@@ -41,6 +41,7 @@ async function publishEvent(subject: string, payload: Record<string, unknown>): 
     const natsUrl = process.env.NATS_URL;
     if (!natsUrl) return;
     // Dynamic import to keep NATS optional
+    // @ts-expect-error — nats is an optional peer dependency
     const { connect, StringCodec } = await import('nats');
     const nc = await connect({ servers: natsUrl });
     const sc = StringCodec();

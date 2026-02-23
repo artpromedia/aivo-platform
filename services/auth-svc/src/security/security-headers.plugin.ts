@@ -18,11 +18,11 @@
 
 import crypto from 'node:crypto';
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 export const securityHeadersPlugin = fp(
-  async (fastify: FastifyInstance) => {
+  async (fastify) => {
     fastify.addHook(
       'onSend',
       async (_request: FastifyRequest, reply: FastifyReply, _payload: unknown) => {

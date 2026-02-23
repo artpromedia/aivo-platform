@@ -14,10 +14,8 @@ import crypto from 'node:crypto';
 import cookie from '@fastify/cookie';
 import fp from 'fastify-plugin';
 
-import type { FastifyInstance } from 'fastify';
-
 export const cookiePlugin = fp(
-  async (fastify: FastifyInstance) => {
+  async (fastify) => {
     const secret =
       process.env.COOKIE_SECRET || crypto.randomBytes(32).toString('hex');
 

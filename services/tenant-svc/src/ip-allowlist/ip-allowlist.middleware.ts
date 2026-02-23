@@ -9,7 +9,7 @@
  */
 
 import fp from 'fastify-plugin';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { IpAllowlistService } from './ip-allowlist.service.js';
 import { config } from '../config.js';
@@ -91,7 +91,7 @@ export interface IpAllowlistMiddlewareOpts {
 }
 
 export const ipAllowlistMiddleware = fp(
-  async (fastify: FastifyInstance, opts: IpAllowlistMiddlewareOpts) => {
+  async (fastify, opts: IpAllowlistMiddlewareOpts) => {
     const { service } = opts;
 
     fastify.addHook(
