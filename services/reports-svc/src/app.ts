@@ -19,6 +19,9 @@ import { classroomReportRoutes } from './routes/classroomReport.js';
 import { parentReportRoutes } from './routes/parentReport.js';
 import { mobileProgressReportRoutes } from './routes/mobileProgressReport.js';
 import reportRoutes from './routes/reports.routes.js';
+import { exportRoutes } from './export/export.routes.js';
+import { scheduledExportRoutes } from './export/scheduled-export.routes.js';
+import { runDueScheduledExports } from './export/scheduled-export.service.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const isDevelopment = config.nodeEnv !== 'production';
@@ -53,6 +56,22 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Register enterprise report generation, scheduling, and history routes
   await app.register(asPlugin(reportRoutes), { prefix: '/reports' });
+
+  // ── Data Portability (Sprint A7) ──────────────────────────────────────────
+  // Bulk data export routes: POST/GET/DELETE /exports, GET /exports/:id/download
+  await app.register(asPlugin(exportRoutes), { prefix: '' });
+
+  // Scheduled export routes: CRUD /scheduled-exports, POST /scheduled-exports/:id/run
+  await app.register(asPlugin(scheduledExportRoutes), { prefix: '' });
+
+  // Start scheduled-export runner (check every 15 minutes)
+  const SCHEDULE_INTERVAL_MS = 15 * 60 * 1000;
+  const systemToken = process.env.SYSTEM_TOKEN || '';
+  setInterval(() => {
+    runDueScheduledExports(systemToken).catch((err) =>
+      console.error('[ScheduledExports] Interval runner error:', err)
+    );
+  }, SCHEDULE_INTERVAL_MS);
 
   return app;
 }

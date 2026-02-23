@@ -9,12 +9,15 @@ import helmet from '@fastify/helmet';
 import { PrismaClient } from '../generated/prisma-client/index.js';
 
 import { registerLtiRoutes } from './routes.js';
+import { registerXapiRoutes } from './xapi/xapi.routes.js';
+import { startXapiEventBridge } from './xapi/xapi-event-bridge.js';
 
 export interface ServerConfig {
   port?: number;
   host?: string;
   baseUrl: string;
   getPrivateKey: (keyRef: string) => Promise<string>;
+  natsUrl?: string;
 }
 
 export async function createServer(config: ServerConfig) {
@@ -73,9 +76,22 @@ export async function createServer(config: ServerConfig) {
     getPrivateKey: config.getPrivateKey,
   });
 
+  // ── xAPI / LRS endpoints (Sprint A7 — Data Portability) ──────────────────
+  registerXapiRoutes(app, prisma);
+
+  // Start NATS → xAPI event bridge (non-blocking)
+  const natsUrl = config.natsUrl || process.env.NATS_URL || 'nats://localhost:4222';
+  let eventBridgeStop: (() => Promise<void>) | undefined;
+  startXapiEventBridge(prisma, natsUrl)
+    .then((bridge) => {
+      eventBridgeStop = bridge.stop;
+    })
+    .catch((err) => app.log.warn({ err }, 'xAPI event bridge failed to start'));
+
   // Graceful shutdown
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down...`);
+    if (eventBridgeStop) await eventBridgeStop();
     await app.close();
     await prisma.$disconnect();
     process.exit(0);

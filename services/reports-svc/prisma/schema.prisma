@@ -136,3 +136,72 @@ model ScheduledReport {
   @@index([status, nextRunAt])
   @@map("scheduled_reports")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA EXPORT (Sprint A7 — Data Portability)
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum ExportType {
+  student_roster
+  assessment_results
+  session_activity
+  skill_mastery
+  engagement_metrics
+  gradebook
+  iep_progress
+}
+
+enum ExportStatus {
+  queued
+  processing
+  completed
+  failed
+  expired
+}
+
+enum DeliveryMethod {
+  download
+  email
+  sftp
+}
+
+/// Tracks bulk data export jobs (CSV / XLSX / JSON) for district data warehouses.
+/// FERPA-compliant — scoped to tenantId, auditable, auto-expires.
+model ExportJob {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  requestedBy     String         @db.Uuid
+
+  exportType      ExportType
+  format          ReportFormat                           // csv | excel | json
+  status          ExportStatus   @default(queued)
+
+  // Filters
+  filters         Json           @default("{}")          // { classroomIds, learnerIds, dateRange, ... }
+  dateRangeStart  DateTime?      @db.Timestamptz
+  dateRangeEnd    DateTime?      @db.Timestamptz
+
+  // Delivery
+  deliveryMethod  DeliveryMethod @default(download)
+  deliveryTarget  String?                                // email address or sftp://host/path
+
+  // Output
+  rowCount        Int?
+  fileSizeBytes   Int?
+  s3Key           String?
+  downloadUrl     String?
+  expiresAt       DateTime?      @db.Timestamptz
+
+  errorMessage    String?
+
+  // Timestamps
+  startedAt       DateTime?      @db.Timestamptz
+  completedAt     DateTime?      @db.Timestamptz
+  createdAt       DateTime       @default(now()) @db.Timestamptz
+
+  @@index([tenantId, requestedBy])
+  @@index([tenantId, exportType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("export_jobs")
+}

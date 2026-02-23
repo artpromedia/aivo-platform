@@ -459,3 +459,29 @@ model Lti11Session {
   @@map("lti11_sessions")
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// xAPI / LRS (Sprint A7 — Data Portability)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// xAPI 1.0.3 Statement — stored by the built-in LRS.
+/// External LRSes and analytics systems query these via /xapi/statements.
+model XapiStatement {
+  id          String   @id @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+
+  actor       Json     @db.JsonB          // xAPI Agent/Group
+  verb        Json     @db.JsonB          // { id, display }
+  object      Json     @db.JsonB          // xAPI Activity
+  result      Json?    @db.JsonB          // score, success, completion, duration
+  context     Json?    @db.JsonB          // registration, contextActivities, extensions
+  timestamp   DateTime @db.Timestamptz    // when the experience occurred
+  stored      DateTime @default(now()) @db.Timestamptz  // when the LRS stored it
+  authority   Json?    @db.JsonB          // who asserted the statement
+  version     String   @default("1.0.3")  // xAPI spec version
+
+  @@index([tenantId])
+  @@index([tenantId, stored])
+  @@index([stored])
+  @@map("xapi_statements")
+}
+

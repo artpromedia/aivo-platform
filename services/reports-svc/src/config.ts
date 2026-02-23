@@ -12,7 +12,7 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: Number.parseInt(process.env.PORT || '4050', 10),
+  port: Number.parseInt(process.env.PORT || '4055', 10),
   host: process.env.HOST || '0.0.0.0',
   nodeEnv: process.env.NODE_ENV || 'development',
 
@@ -25,7 +25,20 @@ export const config = {
     tenant: process.env.TENANT_SVC_URL || 'http://tenant-svc:3000',
     session: process.env.SESSION_SVC_URL || 'http://session-svc:3000',
     parent: process.env.PARENT_SVC_URL || 'http://parent-svc:3000',
+    profile: process.env.PROFILE_SVC_URL || 'http://profile-svc:3000',
+    assessment: process.env.ASSESSMENT_SVC_URL || 'http://assessment-svc:3000',
+    notify: process.env.NOTIFY_SVC_URL || 'http://notify-svc:3000',
   },
+
+  // NATS for job queue / event bus
+  natsUrl: process.env.NATS_URL || 'nats://localhost:4222',
+
+  // Redis for caching / rate-limit state
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+
+  // S3 storage
+  s3Bucket: requireEnvInProduction('S3_BUCKET', 'aivo-exports-dev'),
+  s3Region: process.env.S3_REGION || 'us-east-1',
 
   // JWT validation
   jwtIssuer: process.env.JWT_ISSUER || 'https://auth.aivo.app',
