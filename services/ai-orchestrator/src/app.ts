@@ -30,10 +30,12 @@ import { registerPromptDebuggingRoutes } from './routes/prompt-debugging.js';
 import { socialStoryRoutes } from './routes/socialStories.js';
 import { registerTeacherTransparencyRoutes } from './routes/teacherTransparency.js';
 import { registerSafetyAdminRoutes } from './routes/safety-admin.routes.js';
+import { registerGovernanceRoutes } from './routes/governance.routes.js';
 import { createTelemetryStore } from './telemetry/index.js';
 import type { TelemetryStore } from './telemetry/index.js';
 import { UsageTracker } from './usage/index.js';
 import { safetyMiddleware } from './middleware/safety.middleware.js';
+import { aiRateLimitMiddleware } from './middleware/rate-limit.middleware.js';
 import { closeSafetyEventPublisher } from './safety/safety-event.publisher.js';
 
 export interface AppOptions {
@@ -114,6 +116,9 @@ export function createApp(options: AppOptions = {}) {
   // AI Content Safety Guardrails — intercept all AI responses
   app.register(safetyMiddleware);
 
+  // AI Governance — per-student / per-tenant rate limiting
+  registerPlugin(app, aiRateLimitMiddleware, { redis });
+
   // Health check routes (must be registered early, before dependencies are initialized)
   app.register(healthRoutes);
 
@@ -149,6 +154,9 @@ export function createApp(options: AppOptions = {}) {
 
     // Safety Admin routes (stats, violations, config)
     app.register(registerSafetyAdminRoutes);
+
+    // AI Governance routes (usage stats, rate-limit config, audit history, explainability)
+    registerPlugin(app, registerGovernanceRoutes, { redis });
   }
 
   // Create LLM Orchestrator for AI services (configured via environment variables)

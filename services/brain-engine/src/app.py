@@ -13,6 +13,7 @@ import structlog
 
 from src.config.settings import get_settings
 from src.routes.brain_routes import router as brain_router
+from src.routes.explain import router as explain_router
 from src.lib.supabase_client import check_connection
 
 logger = structlog.get_logger()
@@ -111,6 +112,7 @@ def create_app() -> FastAPI:
 
     # Register routes
     app.include_router(brain_router, prefix="/api/v1")
+    app.include_router(explain_router, prefix="/api/v1")
 
     return app
 
