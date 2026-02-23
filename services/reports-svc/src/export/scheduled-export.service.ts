@@ -9,6 +9,7 @@
  */
 
 import { prisma } from '../prisma.js';
+
 import { createExportJob, processExportJob } from './data-export.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -71,7 +72,7 @@ export async function createScheduledExport(input: CreateScheduledExportInput) {
         isExport: true,
         exportType: input.exportType,
         filters: input.filters ?? {},
-      } as Record<string, never>,
+      } as Record<string, unknown>,
     },
   });
 }

@@ -83,7 +83,8 @@ export function createApp() {
 
   // IP allowlist middleware — runs after auth (needs tenantId) but before routes
   const ipService = new IpAllowlistService(redis);
-  app.register(ipAllowlistMiddleware, { service: ipService });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  app.register(ipAllowlistMiddleware as any, { service: ipService });
 
   app.register(registerResolveRoutes);
   app.register(registerTenantRoutes);

@@ -18,14 +18,13 @@
 
 import crypto from 'node:crypto';
 
-import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 export const securityHeadersPlugin = fp(
   async (fastify) => {
     fastify.addHook(
       'onSend',
-      async (_request: FastifyRequest, reply: FastifyReply, _payload: unknown) => {
+      async (_request, reply, _payload) => {
         // Generate a unique nonce for CSP per request
         const nonce = crypto.randomBytes(16).toString('base64');
 

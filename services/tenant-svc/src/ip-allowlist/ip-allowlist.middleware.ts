@@ -9,7 +9,7 @@
  * @module ip-allowlist/ip-allowlist.middleware
  */
 
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
@@ -97,6 +97,7 @@ export const ipAllowlistMiddleware = fp(
   async (fastify, opts: IpAllowlistMiddlewareOpts) => {
     const { service } = opts;
 
+    // @ts-expect-error — Fastify hook type-provider mismatch with explicitly-typed handler params
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     fastify.addHook(
       'preHandler',
