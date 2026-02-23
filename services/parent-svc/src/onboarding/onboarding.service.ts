@@ -36,15 +36,18 @@ const DEFAULT_CURRICULUM: CurriculumInfo = {
  * Map a learner's grade level (e.g. "K", "1", "6", "10") to the
  * curriculum-template grade bands so we only generate content the
  * learner actually needs.
+ *
+ * Matches the Prisma GradeBand enum: PRE_K, K_2, G3_5, G6_8, G9_12
  */
 function gradeToGradeBands(gradeLevel?: string | null): string[] | undefined {
   if (!gradeLevel) return undefined; // no filter — trigger all bands
 
   const g = gradeLevel.trim().toUpperCase();
-  if (['PK', 'PRE-K', 'K', '1', '2'].includes(g)) return ['K_2', 'K_5'];
-  if (['3', '4', '5'].includes(g)) return ['THREE_FIVE', 'K_5'];
-  if (['6', '7', '8'].includes(g)) return ['SIX_EIGHT'];
-  if (['9', '10', '11', '12'].includes(g)) return ['NINE_TWELVE'];
+  if (['PK', 'PRE-K'].includes(g)) return ['PRE_K', 'K_2'];
+  if (['K', '1', '2'].includes(g)) return ['K_2'];
+  if (['3', '4', '5'].includes(g)) return ['G3_5'];
+  if (['6', '7', '8'].includes(g)) return ['G6_8'];
+  if (['9', '10', '11', '12'].includes(g)) return ['G9_12'];
   return undefined; // unknown grade — generate everything
 }
 
