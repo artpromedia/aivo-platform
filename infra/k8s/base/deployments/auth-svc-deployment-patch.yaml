@@ -1,0 +1,37 @@
+##
+## Auth Service Deployment Patch — Kustomize JSON Patch
+##
+## Adds:
+##   1. JWT key volume (from jwt-keys Secret)
+##   2. Volume mount at /secrets/jwt (read-only)
+##   3. Environment variables from auth-svc-secrets Secret
+##
+## Apply via kustomization.yaml:
+##   patchesJson6902:
+##     - target:
+##         group: apps
+##         version: v1
+##         kind: Deployment
+##         name: auth-svc
+##       path: deployments/auth-svc-deployment-patch.yaml
+##
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: jwt-keys
+    secret:
+      secretName: jwt-keys
+      defaultMode: 0400
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: jwt-keys
+    mountPath: /secrets/jwt
+    readOnly: true
+
+- op: add
+  path: /spec/template/spec/containers/0/envFrom/-
+  value:
+    secretRef:
+      name: auth-svc-secrets

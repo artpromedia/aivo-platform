@@ -4,6 +4,8 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
+import { cookiePlugin } from './plugins/cookie.plugin.js';
+import { csrfPlugin } from './plugins/csrf.plugin.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerDemoRoutes } from './routes/demo.js';
 import { healthRoutes } from './routes/health.js';
@@ -12,6 +14,8 @@ import { registerScimAdminRoutes } from './routes/scim-admin.routes.js';
 import { registerSsoRoutes } from './routes/sso.js';
 import { registerScopeRoutes } from './graphql/resolvers.js';
 import { registerScimRoutes } from './scim/routes.js';
+import { securityHeadersPlugin } from './security/security-headers.plugin.js';
+import { initKeyRotationSchedule } from './security/jwt-rotation.service.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -28,7 +32,7 @@ export function createApp() {
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-CSRF-Token'],
   });
 
   // Rate limiting - strict limits for auth endpoints to prevent brute force
@@ -48,6 +52,11 @@ export function createApp() {
       }
     }
   );
+
+  // Security plugins (must be registered before routes)
+  void app.register(cookiePlugin as any);
+  void app.register(csrfPlugin as any);
+  void app.register(securityHeadersPlugin as any);
 
   // Health check routes (must be registered early, before auth middleware)
   void app.register(healthRoutes as any);
@@ -69,6 +78,9 @@ export function createApp() {
 
   // SCIM admin token management (JWT-authenticated, requires DISTRICT_ADMIN+)
   void app.register(registerScimAdminRoutes as any);
+
+  // Initialize JWT key rotation schedule (90-day cycle)
+  initKeyRotationSchedule();
 
   return app;
 }
