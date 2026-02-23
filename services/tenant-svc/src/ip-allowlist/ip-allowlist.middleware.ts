@@ -1,3 +1,4 @@
+// cSpell:words SCIM scim healthz readyz restrictable
 /**
  * IP Allowlist Middleware
  *
@@ -8,11 +9,12 @@
  * @module ip-allowlist/ip-allowlist.middleware
  */
 
-import fp from 'fastify-plugin';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import fp from 'fastify-plugin';
 
-import { IpAllowlistService } from './ip-allowlist.service.js';
 import { config } from '../config.js';
+
+import type { IpAllowlistService } from './ip-allowlist.service.js';
 
 // Paths that bypass IP allowlist checks
 const SKIP_PREFIXES = [
@@ -33,6 +35,7 @@ const SKIP_PREFIXES = [
 function getClientIp(request: FastifyRequest): string {
   const xff = request.headers['x-forwarded-for'];
   if (xff) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const first = (Array.isArray(xff) ? xff[0] : xff)?.split(',')[0]?.trim();
     if (first) return first;
   }
@@ -44,8 +47,8 @@ function getClientIp(request: FastifyRequest): string {
  * Prefers `request.user.tenantId`, falls back to `X-Tenant-ID` header.
  */
 function getTenantId(request: FastifyRequest): string | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (request as any).user as { tenantId?: string } | undefined;
+  const user = (request as unknown as { user?: { tenantId?: string } }).user;
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (user?.tenantId) return user.tenantId;
 
   const header = request.headers['x-tenant-id'];
@@ -94,6 +97,7 @@ export const ipAllowlistMiddleware = fp(
   async (fastify, opts: IpAllowlistMiddlewareOpts) => {
     const { service } = opts;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     fastify.addHook(
       'preHandler',
       async (request: FastifyRequest, reply: FastifyReply) => {

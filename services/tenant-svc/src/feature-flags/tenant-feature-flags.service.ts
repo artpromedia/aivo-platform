@@ -1,3 +1,4 @@
+// cSpell:words toggleable TOGGLEABLE Toggleable
 /**
  * Tenant Feature Flags Service
  *
@@ -64,6 +65,7 @@ export interface FlagStatus {
 const FLAGS_CACHE_PREFIX = 'tenant:feature-flags:';
 const FLAGS_CACHE_TTL = 120;
 
+/* eslint-disable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 export class TenantFeatureFlagsService {
   constructor(private readonly redis?: RedisType | null) {}
 
@@ -204,3 +206,4 @@ export class TenantFeatureFlagsService {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */

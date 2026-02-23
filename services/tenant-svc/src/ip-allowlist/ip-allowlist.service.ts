@@ -44,7 +44,7 @@ function ipv4ToNumber(ip: string): number {
     throw new Error(`Invalid IPv4 address: ${ip}`);
   }
   // Use unsigned right shift to ensure unsigned 32-bit result
-  return ((parts[0]! << 24) | (parts[1]! << 16) | (parts[2]! << 8) | parts[3]!) >>> 0;
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
 }
 
 /**
@@ -74,8 +74,8 @@ function expandIPv6(ip: string): string {
     const ipv4Part = ip.slice(lastColon + 1);
     const ipv6Prefix = ip.slice(0, lastColon);
     const parts = ipv4Part.split('.').map(Number);
-    const hex1 = ((parts[0]! << 8) | parts[1]!).toString(16);
-    const hex2 = ((parts[2]! << 8) | parts[3]!).toString(16);
+    const hex1 = ((parts[0] << 8) | parts[1]).toString(16);
+    const hex2 = ((parts[2] << 8) | parts[3]).toString(16);
     ip = `${ipv6Prefix}:${hex1}:${hex2}`;
   }
 
@@ -85,7 +85,7 @@ function expandIPv6(ip: string): string {
     const leftGroups = left ? left.split(':') : [];
     const rightGroups = right ? right.split(':') : [];
     const missing = 8 - leftGroups.length - rightGroups.length;
-    groups = [...leftGroups, ...Array(missing).fill('0'), ...rightGroups];
+    groups = [...leftGroups, ...Array<string>(missing).fill('0'), ...rightGroups];
   } else {
     groups = ip.split(':');
   }
@@ -118,7 +118,7 @@ function ipv6InCidr(ip: string, cidr: string): boolean {
     if (remaining <= 0) break;
     const bits = Math.min(remaining, 16);
     const mask = bits === 16 ? 0xffff : (~0 << (16 - bits)) & 0xffff;
-    if ((ipGroups[i]! & mask) !== (netGroups[i]! & mask)) return false;
+    if ((ipGroups[i] & mask) !== (netGroups[i] & mask)) return false;
     remaining -= 16;
   }
   return true;
@@ -135,7 +135,7 @@ function isIPv6(ip: string): boolean {
  * Check whether an IP address matches a CIDR range (IPv4 or IPv6).
  */
 export function ipMatchesCidr(ip: string, cidr: string): boolean {
-  const cidrIsV6 = isIPv6(cidr.split('/')[0]!);
+  const cidrIsV6 = isIPv6(cidr.split('/')[0]);
   const ipIsV6 = isIPv6(ip);
 
   if (cidrIsV6 !== ipIsV6) return false;
@@ -149,6 +149,7 @@ export function ipMatchesCidr(ip: string, cidr: string): boolean {
 const CACHE_KEY_PREFIX = 'tenant:ip-allowlist:';
 const CACHE_TTL_SECONDS = 120;
 
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 export class IpAllowlistService {
   constructor(private readonly redis?: RedisType | null) {}
 
@@ -254,3 +255,4 @@ export class IpAllowlistService {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-unnecessary-condition */

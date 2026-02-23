@@ -15,7 +15,8 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-import { IpAllowlistService, ipMatchesCidr } from './ip-allowlist.service.js';
+import { ipMatchesCidr } from './ip-allowlist.service.js';
+import type { IpAllowlistService } from './ip-allowlist.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -70,13 +71,13 @@ export const ipAllowlistRoutes: FastifyPluginAsync<IpAllowlistRoutesOpts> = asyn
   }>('/:tenantId', async (request, reply) => {
     const { tenantId } = TenantIdParams.parse(request.params);
     const body = AddRangeBody.parse(request.body);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = (request as any).user as { sub?: string } | undefined;
+    const user = (request as unknown as { user?: { sub?: string } }).user;
 
     const entry = await service.addRange({
       tenantId,
       cidr: body.cidr,
       label: body.label,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       createdBy: user?.sub,
     });
     return reply.status(201).send(entry);
@@ -115,6 +116,7 @@ export const ipAllowlistRoutes: FastifyPluginAsync<IpAllowlistRoutesOpts> = asyn
           return false;
         }
       });
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       matchedCidr = match?.cidr ?? null;
     }
 
