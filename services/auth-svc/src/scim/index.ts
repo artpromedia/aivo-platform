@@ -4,6 +4,23 @@
  * Provides automated user provisioning via SCIM protocol.
  */
 
-export * from './types';
-export { ScimService, type UserRepository, type AivoUser, type ScimConfig } from './scim-service';
-export { registerScimRoutes } from './routes';
+export * from './scim.types.js';
+export {
+  getUser,
+  listUsers,
+  createUser,
+  replaceUser,
+  patchUser,
+  deactivateUser,
+  getGroup,
+  listGroups,
+  patchGroup,
+  getServiceProviderConfig,
+} from './scim-service.js';
+export {
+  generateToken,
+  validateToken,
+  revokeToken,
+  listTokens,
+} from './scim-token.service.js';
+export { registerScimRoutes } from './routes.js';

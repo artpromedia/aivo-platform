@@ -8,8 +8,10 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerDemoRoutes } from './routes/demo.js';
 import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
+import { registerScimAdminRoutes } from './routes/scim-admin.routes.js';
 import { registerSsoRoutes } from './routes/sso.js';
 import { registerScopeRoutes } from './graphql/resolvers.js';
+import { registerScimRoutes } from './scim/routes.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -61,6 +63,12 @@ export function createApp() {
   void app.register(registerScopeRoutes as any, { prefix: '/auth' });
 
   void app.register(registerDemoRoutes as any);
+
+  // SCIM 2.0 directory sync (bearer-token authenticated, separate from JWT auth)
+  void app.register(registerScimRoutes as any);
+
+  // SCIM admin token management (JWT-authenticated, requires DISTRICT_ADMIN+)
+  void app.register(registerScimAdminRoutes as any);
 
   return app;
 }
