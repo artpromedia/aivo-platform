@@ -7,22 +7,12 @@ export 'analytics_repository.dart';
 export 'assessment_repository.dart';
 export 'assignment_repository.dart';
 export 'class_repository.dart';
+export 'gamification_repository.dart';
 export 'grade_repository.dart';
+export 'grading_repository.dart';
 export 'iep_repository.dart';
 export 'integration_repository.dart';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-export 'analytics_repository.dart';
-export 'grading_repository.dart';
-export 'gamification_repository.dart';
+export 'message_repository.dart';
 export 'monitoring_repository.dart';
-=======
-export 'message_repository.dart';
 export 'session_repository.dart';
 export 'student_repository.dart';
->>>>>>> Stashed changes
-=======
-export 'message_repository.dart';
-export 'session_repository.dart';
-export 'student_repository.dart';
->>>>>>> Stashed changes
