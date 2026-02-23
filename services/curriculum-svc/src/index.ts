@@ -12,6 +12,7 @@ import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 
 import { connectDatabase, disconnectDatabase } from './db.js';
 import { curriculaRoutes } from './routes/curricula.js';
+import { generationRoutes } from './routes/generation.js';
 import { lessonsRoutes } from './routes/lessons.js';
 import { pacingRoutes } from './routes/pacing.js';
 import { progressRoutes } from './routes/progress.js';
@@ -57,6 +58,7 @@ async function main() {
   await app.register(standardsRoutes, { prefix: '/standards' });
   await app.register(pacingRoutes, { prefix: '/pacing' });
   await app.register(progressRoutes, { prefix: '/progress' });
+  await app.register(generationRoutes, { prefix: '/generation' });
 
   // Graceful shutdown
   const signals = ['SIGINT', 'SIGTERM'];

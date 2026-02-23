@@ -18,6 +18,8 @@ export const prisma = new PrismaClient({
 export type {
   Curriculum,
   CurriculumUnit,
+  CurriculumTemplate,
+  CurriculumGenerationJob,
   Lesson,
   StandardAlignment,
   UnitResource,
@@ -29,6 +31,7 @@ export type {
 // Re-export enums
 export {
   CurriculumStandard,
+  GenerationStatus,
   GradeBand,
   SubjectArea,
   UnitStatus,

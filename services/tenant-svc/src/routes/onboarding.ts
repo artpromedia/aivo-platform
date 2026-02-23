@@ -14,6 +14,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+import { DistrictLookupService } from '../services/district-lookup.service.js';
+import { triggerCurriculumGeneration } from '../services/curriculum-trigger.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -313,6 +315,33 @@ export async function registerOnboardingRoutes(fastify: FastifyInstance) {
         metadata: { goLiveAt: new Date().toISOString() },
       },
     });
+
+    // ── Trigger AI curriculum generation (fire-and-forget) ──────────────
+    const tenantStateCode = (tenant as Record<string, unknown>).stateCode as string | undefined;
+    const tenantZipCode = (tenant as Record<string, unknown>).zipCode as string | undefined;
+
+    if (tenantStateCode && tenantZipCode) {
+      const districtLookup = new DistrictLookupService(prisma);
+      districtLookup
+        .autoDetectFromLocation({ zipCode: tenantZipCode, stateCode: tenantStateCode })
+        .then((detection) => {
+          return triggerCurriculumGeneration(
+            {
+              tenantId: id,
+              stateCode: detection.tenantConfigUpdates.stateCode || tenantStateCode,
+              curriculumStandards: detection.curriculum.curriculumStandards,
+              triggeredBy: 'onboarding:go-live',
+            },
+            fastify.log,
+          );
+        })
+        .catch((err) => {
+          fastify.log.error(
+            { err, tenantId: id },
+            '[GoLive] Failed to trigger curriculum generation',
+          );
+        });
+    }
 
     return reply.send({
       success: true,

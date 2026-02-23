@@ -349,3 +349,137 @@ model TeacherCurriculumProgress {
   @@index([tenantId, teacherId])
   @@map("teacher_curriculum_progress")
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AI-GENERATED CURRICULUM — TEMPLATE & GENERATION MODELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Generation job status
+enum GenerationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIALLY_COMPLETED
+
+  @@map("generation_status")
+}
+
+/// Curriculum template — a structural blueprint used by AI to generate
+/// district-specific, standards-aligned curriculum content on demand.
+/// Templates define WHAT to teach (topics, unit outlines) without the full
+/// lesson content; the AI fills in the details aligned to a district's
+/// adopted standards framework.
+model CurriculumTemplate {
+  id              String      @id @default(uuid()) @db.Uuid
+
+  /// Human-readable template name (e.g., "K-2 ELA Phonics & Fluency")
+  name            String
+
+  /// Description of what this template covers
+  description     String?     @db.Text
+
+  /// Subject area
+  subject         SubjectArea
+
+  /// Grade band this template targets
+  gradeBand       GradeBand   @map("grade_band")
+
+  /// Ordered list of unit blueprints (JSON)
+  /// Each entry: { title, description, essentialQuestions, bigIdeas, durationDays,
+  ///   lessonTopics: [{ title, objectives, durationMin, lessonType, materials }] }
+  unitBlueprints  Json        @map("unit_blueprints")
+
+  /// Default standard framework(s) this template was designed around
+  /// (AI adapts to other frameworks at generation time)
+  baseStandards   String[]    @map("base_standards")
+
+  /// Suggested academic year format
+  academicYear    String      @default("2025-2026") @map("academic_year")
+
+  /// Template version — increment when blueprint structure changes
+  version         Int         @default(1)
+
+  /// Is this template active and available for generation?
+  isActive        Boolean     @default(true) @map("is_active")
+
+  /// Tags for discoverability (e.g., ["phonics", "early-reading"])
+  tags            String[]    @default([])
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  generationJobs  CurriculumGenerationJob[]
+
+  @@unique([name, subject, gradeBand])
+  @@index([subject, gradeBand])
+  @@index([isActive])
+  @@map("curriculum_templates")
+}
+
+/// Tracks the status of AI-generated curriculum for a specific
+/// tenant + template + standards combination.  This allows:
+///   - Idempotent generation (skip if already completed)
+///   - Progress tracking (X of Y lessons generated)
+///   - Retry on partial failure
+///   - Audit trail of what was generated, when, and at what cost
+model CurriculumGenerationJob {
+  id              String            @id @default(uuid()) @db.Uuid
+
+  /// Tenant (district) this curriculum is being generated for
+  tenantId        String            @map("tenant_id") @db.Uuid
+
+  /// Template used as the blueprint
+  templateId      String            @map("template_id") @db.Uuid
+
+  /// The standards framework(s) the content is aligned to
+  /// (e.g., ["TEKS"] for Texas, ["COMMON_CORE", "NGSS"] for most states)
+  targetStandards String[]          @map("target_standards")
+
+  /// State code for state-specific standard codes (e.g., "TX", "CA")
+  stateCode       String?           @map("state_code")
+
+  /// Academic year the generated curriculum targets
+  academicYear    String            @map("academic_year")
+
+  /// Current status
+  status          GenerationStatus  @default(PENDING)
+
+  /// ID of the generated Curriculum record (set on completion)
+  generatedCurriculumId String?     @map("generated_curriculum_id") @db.Uuid
+
+  /// Progress: number of lessons generated so far
+  lessonsGenerated Int              @default(0) @map("lessons_generated")
+
+  /// Progress: total lessons expected
+  lessonsTotal    Int               @default(0) @map("lessons_total")
+
+  /// Total tokens consumed during generation
+  tokensUsed      Int               @default(0) @map("tokens_used")
+
+  /// Estimated cost in USD
+  estimatedCost   Float             @default(0) @map("estimated_cost")
+
+  /// Error message if failed
+  errorMessage    String?           @map("error_message") @db.Text
+
+  /// Which LLM provider + model was used
+  llmProvider     String?           @map("llm_provider")
+  llmModel        String?           @map("llm_model")
+
+  /// Who or what triggered generation
+  triggeredBy     String?           @map("triggered_by")
+
+  startedAt       DateTime?         @map("started_at")
+  completedAt     DateTime?         @map("completed_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  template        CurriculumTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, templateId, academicYear])
+  @@index([tenantId])
+  @@index([status])
+  @@index([templateId])
+  @@map("curriculum_generation_jobs")
+}
