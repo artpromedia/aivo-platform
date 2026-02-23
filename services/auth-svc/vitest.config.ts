@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       '@aivo/ts-data-access': path.resolve(workspaceRoot, 'libs/ts-data-access/src'),
       '@aivo/ts-rbac': path.resolve(workspaceRoot, 'libs/ts-rbac/src'),
+      '@aivo/ts-api-utils': path.resolve(workspaceRoot, 'packages/ts-api-utils/src'),
     },
   },
   test: {

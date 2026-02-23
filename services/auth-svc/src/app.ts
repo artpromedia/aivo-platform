@@ -10,6 +10,8 @@ import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
 import { registerSsoRoutes } from './routes/sso.js';
 import { registerScopeRoutes } from './graphql/resolvers.js';
+import { registerScimRoutes } from './scim/scim.routes.js';
+import { registerScimAdminRoutes } from './routes/scim-admin.routes.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -61,6 +63,10 @@ export function createApp() {
   void app.register(registerScopeRoutes as any, { prefix: '/auth' });
 
   void app.register(registerDemoRoutes as any);
+
+  void app.register(registerScimRoutes as any, { prefix: '/scim/v2' });
+
+  void app.register(registerScimAdminRoutes as any, { prefix: '/admin/scim' });
 
   return app;
 }
