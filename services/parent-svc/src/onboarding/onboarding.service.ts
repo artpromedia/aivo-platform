@@ -32,11 +32,28 @@ const DEFAULT_CURRICULUM: CurriculumInfo = {
   curriculumStandards: ['COMMON_CORE', 'NGSS', 'C3'],
 };
 
+/**
+ * Map a learner's grade level (e.g. "K", "1", "6", "10") to the
+ * curriculum-template grade bands so we only generate content the
+ * learner actually needs.
+ */
+function gradeToGradeBands(gradeLevel?: string | null): string[] | undefined {
+  if (!gradeLevel) return undefined; // no filter — trigger all bands
+
+  const g = gradeLevel.trim().toUpperCase();
+  if (['PK', 'PRE-K', 'K', '1', '2'].includes(g)) return ['K_2', 'K_5'];
+  if (['3', '4', '5'].includes(g)) return ['THREE_FIVE', 'K_5'];
+  if (['6', '7', '8'].includes(g)) return ['SIX_EIGHT'];
+  if (['9', '10', '11', '12'].includes(g)) return ['NINE_TWELVE'];
+  return undefined; // unknown grade — generate everything
+}
+
 export class OnboardingService {
   private readonly tenantServiceUrl: string;
   private readonly notifySvcUrl: string;
   private readonly learnerModelSvcUrl: string;
   private readonly brainEngineUrl: string;
+  private readonly curriculumSvcUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
     this.tenantServiceUrl = process.env.TENANT_SERVICE_URL || 'http://tenant-svc:3000';
@@ -44,6 +61,7 @@ export class OnboardingService {
     this.learnerModelSvcUrl =
       process.env.LEARNER_MODEL_SERVICE_URL || 'http://learner-model-svc:4008';
     this.brainEngineUrl = process.env.BRAIN_ENGINE_URL || 'http://brain-engine:8001';
+    this.curriculumSvcUrl = process.env.CURRICULUM_SVC_URL || 'http://localhost:4012';
   }
 
   /**
@@ -280,6 +298,15 @@ export class OnboardingService {
     // This initializes the brain-engine with curriculum-specific knowledge
     await this.alignBrainWithCurriculum(learner.id, input.location, district);
 
+    // Fire-and-forget: trigger AI-generated curriculum for this homeschool learner
+    this.triggerHomeschoolCurriculum({
+      tenantId,
+      stateCode: input.location.stateCode || locationResult.curriculum.stateCode || 'US',
+      curriculumStandards: locationResult.curriculum.curriculumStandards,
+      gradeLevel: input.gradeLevel,
+      triggeredBy: `homeschool:register-learner:${learner.id}`,
+    });
+
     return {
       learnerId: learner.id,
       learnerPin,
@@ -416,6 +443,15 @@ export class OnboardingService {
     // Call brain-engine to align the learner's brain with curriculum
     await this.alignBrainWithCurriculum(learnerId, location, locationResult.district);
 
+    // Fire-and-forget: re-trigger AI-generated curriculum for new location
+    this.triggerHomeschoolCurriculum({
+      tenantId,
+      stateCode: location.stateCode || locationResult.curriculum.stateCode || 'US',
+      curriculumStandards: locationResult.curriculum.curriculumStandards,
+      gradeLevel: undefined, // grade unknown on location-only update
+      triggeredBy: `homeschool:update-location:${learnerId}`,
+    });
+
     return {
       curriculumStandards: locationResult.curriculum.curriculumStandards,
       district: locationResult.district,
@@ -533,5 +569,125 @@ export class OnboardingService {
         'Error calling brain-engine to align curriculum'
       );
     }
+  }
+
+  /**
+   * Trigger AI-generated curriculum content for a homeschool/consumer learner.
+   *
+   * Fetches available curriculum templates from curriculum-svc, optionally
+   * filtered by the learner's grade band, then POSTs a generation trigger
+   * for each matching template.
+   *
+   * This is fire-and-forget — failures are logged but never block the
+   * registration or location-update flows.
+   */
+  private triggerHomeschoolCurriculum(opts: {
+    tenantId: string;
+    stateCode: string;
+    curriculumStandards: string[];
+    gradeLevel?: string | null;
+    triggeredBy: string;
+  }): void {
+    const { tenantId, stateCode, curriculumStandards, gradeLevel, triggeredBy } = opts;
+
+    // Run entirely in the background so the parent doesn't wait
+    void (async () => {
+      try {
+        logger.info(
+          { tenantId, stateCode, curriculumStandards, gradeLevel },
+          '[HomeschoolCurriculum] Starting curriculum generation for homeschool learner',
+        );
+
+        // 1. Fetch available templates
+        const res = await fetch(`${this.curriculumSvcUrl}/generation/templates`);
+        if (!res.ok) {
+          logger.error(
+            { status: res.status },
+            '[HomeschoolCurriculum] Failed to fetch templates from curriculum-svc',
+          );
+          return;
+        }
+
+        const body = (await res.json()) as {
+          templates: { id: string; name: string; subject: string; gradeBand: string }[];
+        };
+        let templates = body.templates ?? [];
+
+        if (templates.length === 0) {
+          logger.warn('[HomeschoolCurriculum] No curriculum templates found — skipping');
+          return;
+        }
+
+        // 2. Filter by grade band if we can map the learner's grade
+        const bands = gradeToGradeBands(gradeLevel);
+        if (bands) {
+          templates = templates.filter((t) => bands.includes(t.gradeBand));
+          logger.info(
+            { bands, matched: templates.length },
+            '[HomeschoolCurriculum] Filtered templates by grade band',
+          );
+        }
+
+        if (templates.length === 0) {
+          logger.warn(
+            { gradeLevel, bands },
+            '[HomeschoolCurriculum] No templates matched grade band — skipping',
+          );
+          return;
+        }
+
+        // 3. Trigger generation for each template
+        let triggered = 0;
+        let skipped = 0;
+        let failed = 0;
+
+        for (const tpl of templates) {
+          try {
+            const trigRes = await fetch(`${this.curriculumSvcUrl}/generation/trigger`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-tenant-id': tenantId,
+              },
+              body: JSON.stringify({
+                templateId: tpl.id,
+                targetStandards: curriculumStandards,
+                stateCode,
+                triggeredBy,
+              }),
+            });
+
+            if (trigRes.status === 201) {
+              triggered++;
+            } else if (trigRes.status === 409) {
+              skipped++; // already generated — idempotency guard
+            } else {
+              failed++;
+              const text = await trigRes.text().catch(() => 'unknown');
+              logger.warn(
+                { templateId: tpl.id, status: trigRes.status, body: text.slice(0, 200) },
+                '[HomeschoolCurriculum] Template trigger failed',
+              );
+            }
+          } catch (err) {
+            failed++;
+            logger.warn(
+              { templateId: tpl.id, err },
+              '[HomeschoolCurriculum] Template trigger error',
+            );
+          }
+        }
+
+        logger.info(
+          { tenantId, triggered, skipped, failed, total: templates.length },
+          '[HomeschoolCurriculum] Generation trigger complete',
+        );
+      } catch (err) {
+        logger.error(
+          { err },
+          '[HomeschoolCurriculum] Unexpected error during curriculum generation trigger',
+        );
+      }
+    })();
   }
 }
