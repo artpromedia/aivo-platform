@@ -624,6 +624,7 @@ jobs:
           - reports-svc
           - realtime-svc
           - compliance-svc
+          - gamification-svc
     steps:
       - uses: actions/checkout@v4
 
@@ -697,7 +698,8 @@ jobs:
           VERSION="main-${{ github.sha }}"
           SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc \
                     parent-svc profile-svc messaging-svc audit-svc \
-                    notify-svc reports-svc realtime-svc compliance-svc)
+                    notify-svc reports-svc realtime-svc compliance-svc \
+                    gamification-svc)
           
           # Update image tags
           cd infra/k8s/overlays/staging
@@ -732,7 +734,8 @@ jobs:
           VERSION="${{ github.event.release.tag_name || github.sha }}"
           SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc \
                     parent-svc profile-svc messaging-svc audit-svc \
-                    notify-svc reports-svc realtime-svc compliance-svc)
+                    notify-svc reports-svc realtime-svc compliance-svc \
+                    gamification-svc)
           
           # Update image tags
           cd infra/k8s/overlays/production

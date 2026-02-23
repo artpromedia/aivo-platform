@@ -104,6 +104,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
 
           # Python AI/ML services (20)
@@ -420,7 +421,7 @@ jobs:
             messaging-svc audit-svc notify-svc reports-svc realtime-svc
             compliance-svc session-svc consent-svc content-svc assessment-svc
             personalization-svc life-skills-svc analytics-svc goal-svc focus-svc
-            billing-svc payments-svc baseline-svc
+            billing-svc payments-svc baseline-svc gamification-svc
           )
 
           # Read shared PostgreSQL connection details
@@ -460,7 +461,7 @@ jobs:
             aivo_notify aivo_reports aivo_realtime aivo_compliance
             aivo_session aivo_consent aivo_content aivo_assessment
             aivo_personalization aivo_life_skills aivo_analytics aivo_goal aivo_focus
-            aivo_billing aivo_payments aivo_baseline
+            aivo_billing aivo_payments aivo_baseline aivo_gamification
           )
 
           echo "═══ Ensuring PostgreSQL databases exist ═══"
@@ -491,11 +492,12 @@ jobs:
 
           cd infra/k8s/overlays/hetzner
 
-          # Phase 1 TypeScript services (13 — must match staging pipeline)
+          # Phase 1 TypeScript services (14 — must match staging pipeline)
           TS_SERVICES=(
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
 
           # Python AI/ML services (20)
@@ -544,6 +546,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
 
           PY_SERVICES=(
@@ -648,7 +651,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc
             iep-svc parent-svc profile-svc messaging-svc
             audit-svc notify-svc reports-svc realtime-svc
-            compliance-svc
+            compliance-svc gamification-svc
           )
 
           echo "═══ Backend Health Checks ═══"
@@ -875,7 +878,7 @@ jobs:
           ref: ${{ needs.validate.outputs.version }}
           description: |
             Hetzner production deployment of ${{ needs.validate.outputs.version }}
-            Services: 13 TS + 20 Python + 9 Web = 42 total
+            Services: 14 TS + 20 Python + 9 Web = 43 total
             Deployed by: ${{ github.actor }}
 
       - name: Summary
@@ -888,7 +891,7 @@ jobs:
           echo "| **Version** | \`${VERSION}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | Hetzner Production (K3s) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Namespace** | \`aivo-prod\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Services** | 13 TS + 20 Python + 9 Web = 42 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Services** | 14 TS + 20 Python + 9 Web = 43 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Deployed by** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Time** | $(date -u +'%Y-%m-%dT%H:%M:%SZ') |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

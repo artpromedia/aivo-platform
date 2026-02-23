@@ -167,6 +167,7 @@ jobs:
           - reports-svc
           - realtime-svc
           - compliance-svc
+          - gamification-svc
     steps:
       - uses: actions/checkout@v4
 
@@ -525,7 +526,7 @@ jobs:
             messaging-svc audit-svc notify-svc reports-svc realtime-svc
             compliance-svc session-svc consent-svc content-svc assessment-svc
             personalization-svc life-skills-svc analytics-svc goal-svc focus-svc
-            billing-svc payments-svc baseline-svc
+            billing-svc payments-svc baseline-svc gamification-svc
           )
 
           # Read shared PostgreSQL connection details
@@ -564,7 +565,7 @@ jobs:
             aivo_notify aivo_reports aivo_realtime aivo_compliance
             aivo_session aivo_consent aivo_content aivo_assessment
             aivo_personalization aivo_life_skills aivo_analytics aivo_goal aivo_focus
-            aivo_billing aivo_payments aivo_baseline
+            aivo_billing aivo_payments aivo_baseline aivo_gamification
           )
 
           echo "═══ Ensuring PostgreSQL databases exist ═══"
@@ -599,6 +600,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
 
           # Python AI/ML services
@@ -644,6 +646,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
           PY_SERVICES=(
             ai-inference-svc training-svc ml-recommendation-svc
@@ -709,7 +712,7 @@ jobs:
 
           # Backend services (use wget + pod IP since services may not bind to 127.0.0.1)
           # Phase 1 backend services
-          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc)
+          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc)
 
           for svc in "${SERVICES[@]}"; do
             if kubectl exec -n "$NAMESPACE" "deploy/${svc}" -- \
@@ -800,6 +803,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
             # Python AI/ML services
             ai-inference-svc training-svc ml-recommendation-svc
             brain-engine python-api-gateway vision-analysis-svc
@@ -864,8 +868,8 @@ jobs:
             echo "$CHANGES"
             echo ""
             echo "## Docker Images"
-            echo "All **42** images tagged as \`${VERSION}\` in \`ghcr.io/artpromedia\`"
-            echo "- 13 TypeScript backend services (Phase 1)"
+            echo "All **43** images tagged as \`${VERSION}\` in \`ghcr.io/artpromedia\`"
+            echo "- 14 TypeScript backend services (Phase 1)"
             echo "- 20 Python AI/ML services"
             echo "- 9 Next.js web applications"
             echo ""
@@ -1105,7 +1109,7 @@ jobs:
             messaging-svc audit-svc notify-svc reports-svc realtime-svc
             compliance-svc session-svc consent-svc content-svc assessment-svc
             personalization-svc life-skills-svc analytics-svc goal-svc focus-svc
-            billing-svc payments-svc baseline-svc
+            billing-svc payments-svc baseline-svc gamification-svc
           )
 
           PG_HOST=$(kubectl -n "$NS" get secret shared-secrets -o jsonpath='{.data.postgres-host}' | base64 -d 2>/dev/null || echo "postgres.aivo-infra.svc.cluster.local")
@@ -1142,7 +1146,7 @@ jobs:
             aivo_notify aivo_reports aivo_realtime aivo_compliance
             aivo_session aivo_consent aivo_content aivo_assessment
             aivo_personalization aivo_life_skills aivo_analytics aivo_goal aivo_focus
-            aivo_billing aivo_payments aivo_baseline
+            aivo_billing aivo_payments aivo_baseline aivo_gamification
           )
 
           echo "═══ Ensuring PostgreSQL databases exist ═══"
@@ -1181,6 +1185,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
             ai-inference-svc training-svc ml-recommendation-svc
             brain-engine python-api-gateway vision-analysis-svc
             speech-analysis-svc accessibility-ai-svc question-generation-svc
@@ -1261,7 +1266,7 @@ jobs:
 
           echo "═══ Backend Health ═══"
           # Use pod IP (hostname -i) since services may not bind to 127.0.0.1
-          for svc in auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc; do
+          for svc in auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc; do
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
               sh -c 'wget -q -O /dev/null --timeout=10 http://$(hostname -i):3000/health' 2>/dev/null; then
               echo "✅ ${svc}"
@@ -1419,7 +1424,7 @@ jobs:
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Version** | \`${VERSION}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Services** | 13 TS + 20 Python + 9 Web = 42 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Services** | 14 TS + 20 Python + 9 Web = 43 |" >> $GITHUB_STEP_SUMMARY
           echo "| **Deployed by** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
