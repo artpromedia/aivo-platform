@@ -18,6 +18,17 @@ data:
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
   NEXT_TELEMETRY_DISABLED: "1"
+  # ── Server-side service URLs (required — code throws in production if missing) ──
+  AUTH_SVC_URL: "http://auth-svc:3000"
+  IEP_SVC_URL: "http://iep-svc:3000"
+  # Server-side BFF URLs checked by getServiceUrl() at module eval
+  NEXT_PUBLIC_MARKETPLACE_API_URL: "http://api-gateway:3000/api/v1"
+  NEXT_PUBLIC_ANALYTICS_URL: "http://analytics-svc:3000"
+  NEXT_PUBLIC_GRADEBOOK_SVC_URL: "http://api-gateway:3000/api/v1"
+  NEXT_PUBLIC_COMMUNITY_SVC_URL: "http://api-gateway:3000/api/v1"
+  NEXT_PUBLIC_CONTENT_SVC_URL: "http://content-svc:3000"
+  NEXT_PUBLIC_REALTIME_URL: "http://realtime-svc:3000"
+  NEXT_PUBLIC_MESSAGING_SVC_URL: "http://messaging-svc:3000"
 
 ---
 apiVersion: apps/v1

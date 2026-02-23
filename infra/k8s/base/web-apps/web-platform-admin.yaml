@@ -18,6 +18,17 @@ data:
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
   NEXT_TELEMETRY_DISABLED: "1"
+  # ── Server-side service URLs (required — code throws in production if missing) ──
+  AUTH_SVC_URL: "http://auth-svc:3000"
+  TENANT_SVC_URL: "http://tenant-svc:3000"
+  AI_ORCHESTRATOR_URL: "http://ai-orchestrator:3000"
+  BILLING_SVC_URL: "http://billing-svc:3000"
+  ANALYTICS_SVC_URL: "http://analytics-svc:3000"
+  MODEL_REGISTRY_URL: "http://ai-orchestrator:3000"
+  HEALTH_AGGREGATOR_URL: "http://api-gateway:3000"
+  ALERT_SVC_URL: "http://api-gateway:3000"
+  DSR_SVC_URL: "http://compliance-svc:3000"
+  API_GATEWAY_URL: "http://api-gateway:3000"
 
 ---
 apiVersion: apps/v1

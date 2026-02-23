@@ -18,6 +18,11 @@ data:
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
   NEXT_TELEMETRY_DISABLED: "1"
+  # ── Server-side service URLs (required for login & API rewrites) ──
+  AUTH_SVC_URL: "http://auth-svc:3000"
+  PARENT_SVC_URL: "http://parent-svc:3000"
+  GAMIFICATION_SVC_URL: "http://gamification-svc:3000"
+  NEXT_PUBLIC_API_URL: "http://api-gateway:3000"
 
 ---
 apiVersion: apps/v1

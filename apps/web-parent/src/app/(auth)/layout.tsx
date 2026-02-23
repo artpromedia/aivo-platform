@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           />
         </Link>
         <Link
-          href="http://localhost:3001"
+          href="https://aivolearning.com"
           className="text-sm text-gray-600 hover:text-violet-600"
         >
           Back to website
