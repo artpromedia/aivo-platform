@@ -103,7 +103,7 @@ jobs:
           MISSING=0
           VERIFIED=0
 
-          # Phase 1 TypeScript backend services (13 — must match staging pipeline)
+          # Phase 1 TypeScript backend services (14 — must match staging pipeline)
           TS_SERVICES=(
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc

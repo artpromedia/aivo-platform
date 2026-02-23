@@ -125,6 +125,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
+            gamification-svc
           )
 
           # Python AI/ML services
@@ -201,6 +202,7 @@ jobs:
           - reports-svc
           - realtime-svc
           - compliance-svc
+          - gamification-svc
           # Python AI/ML services
           - ai-inference-svc
           - training-svc
