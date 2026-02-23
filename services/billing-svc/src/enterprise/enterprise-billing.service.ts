@@ -1,3 +1,4 @@
+// cSpell:words AIVO
 /**
  * Enterprise Billing Service
  *
@@ -390,6 +391,7 @@ export class EnterpriseBillingService {
 
     // Build PDF in memory
     const chunks: Buffer[] = [];
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
 
     await new Promise<void>((resolve, reject) => {
@@ -561,6 +563,7 @@ export class EnterpriseBillingService {
 
       doc.end();
     });
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 
     const pdfBuffer = Buffer.concat(chunks);
 

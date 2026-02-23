@@ -1,3 +1,4 @@
+// cSpell:words AIVO Aivo xapi Xapi
 /**
  * xAPI Event Bridge — Maps AIVO NATS events to xAPI statements.
  *
@@ -13,6 +14,7 @@
  */
 
 import type { PrismaClient } from '../../generated/prisma-client/index.js';
+
 import { XapiService } from './xapi.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -76,7 +78,11 @@ export async function startXapiEventBridge(
         'Statements can still be stored via REST.',
       (err as Error).message
     );
-    return { stop: async () => {} };
+    return {
+      stop: async () => {
+        /* noop — NATS was not connected */
+      },
+    };
   }
 
   // Subscribe to each subject

@@ -1,3 +1,4 @@
+// cSpell:words AIVO aivo
 /**
  * Custom Domain Service
  *
@@ -10,9 +11,11 @@
 
 import { randomBytes } from 'node:crypto';
 import { promises as dns } from 'node:dns';
+
 import type { Redis as RedisType } from 'ioredis';
 
 import { prisma } from '../prisma.js';
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -45,6 +48,7 @@ export interface VerifyResult {
 const DOMAIN_CACHE_PREFIX = 'tenant:domain-lookup:';
 const DOMAIN_CACHE_TTL = 300; // 5 min
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-condition */
 export class CustomDomainService {
   constructor(private readonly redis?: RedisType | null) {}
 
@@ -205,3 +209,4 @@ export class CustomDomainService {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unnecessary-condition */

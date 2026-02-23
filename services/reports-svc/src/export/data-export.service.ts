@@ -1,3 +1,4 @@
+// cSpell:words FERPA exceljs PRESIGN serialise serialises Serialise SERIALISERS gradebook openxmlformats officedocument spreadsheetml
 /**
  * Data Export Service — Bulk CSV / XLSX / JSON exports for district data warehouses.
  *
@@ -36,9 +37,7 @@ export interface CreateExportJobInput {
   deliveryTarget?: string;
 }
 
-export interface ExportRow {
-  [key: string]: string | number | boolean | null;
-}
+export type ExportRow = Record<string, string | number | boolean | null>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // S3 CLIENT
