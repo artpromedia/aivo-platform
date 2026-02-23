@@ -8,6 +8,7 @@
  * and stores export-specific params in the `parameters` JSON column.
  */
 
+import type { Prisma } from '../../generated/prisma-client/index.js';
 import { prisma } from '../prisma.js';
 
 import { createExportJob, processExportJob } from './data-export.service.js';
@@ -72,7 +73,7 @@ export async function createScheduledExport(input: CreateScheduledExportInput) {
         isExport: true,
         exportType: input.exportType,
         filters: input.filters ?? {},
-      } as Record<string, unknown>,
+      } as unknown as Prisma.InputJsonValue,
     },
   });
 }
