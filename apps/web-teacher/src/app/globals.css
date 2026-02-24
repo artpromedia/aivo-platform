@@ -3,7 +3,48 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+
+  /* ── Light Theme ── */
+  --color-primary: 79 70 229;            /* #4F46E5 — indigo */
+  --color-primary-hover: 99 102 241;
+  --color-secondary: 99 102 241;
+  --color-secondary-hover: 129 140 248;
+  --color-accent: 251 146 60;
+  --color-background: 248 250 252;       /* #F8FAFC — slate-50 */
+  --color-surface: 255 255 255;          /* #FFFFFF */
+  --color-surface-muted: 241 245 249;    /* #F1F5F9 — slate-100 */
+  --color-surface-elevated: 255 255 255;
+  --color-text: 15 23 42;               /* #0F172A — slate-900 */
+  --color-text-muted: 100 116 139;       /* #64748B — slate-500 */
+  --color-on-primary: 255 255 255;
+  --color-on-accent: 15 23 42;
+  --color-success: 22 163 74;
+  --color-warning: 202 138 4;
+  --color-error: 220 38 38;
+  --color-info: 37 99 235;
+  --color-border: 226 232 240;           /* #E2E8F0 — slate-200 */
+  --color-border-muted: 241 245 249;
+  --color-focus: 79 70 229;
+  --color-focus-ring: rgba(79, 70, 229, 0.5);
+  --color-backdrop: rgba(15, 23, 42, 0.4);
+
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(79, 70, 229, 0.1);
+  --glass-blur: 16px;
+  --glass-bg-light: rgba(248, 250, 252, 0.9);
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 16px rgba(79, 70, 229, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 0 16px rgba(79, 70, 229, 0.15);
+  --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+  /* Typography */
+  --font-family-default: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-family-heading: "Plus Jakarta Sans", "DM Sans", system-ui, sans-serif;
+  --radius-button: 12px;
+  --radius-card: 20px;
+  --radius-input: 12px;
 }
 
 *,
@@ -31,7 +72,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(var(--color-surface));
+  background: rgb(var(--color-background));
 }
 
 ::-webkit-scrollbar-thumb {
@@ -43,37 +84,37 @@ body {
   background: rgb(var(--color-primary));
 }
 
-/* Grade colors — dark-friendly */
+/* Grade colors */
 .grade-a {
-  color: #34d399;
+  color: #16a34a;
 }
 .grade-b {
-  color: #60a5fa;
+  color: #2563eb;
 }
 .grade-c {
-  color: #fbbf24;
+  color: #ca8a04;
 }
 .grade-d {
-  color: #fb923c;
+  color: #ea580c;
 }
 .grade-f {
-  color: #f87171;
+  color: #dc2626;
 }
 
 .bg-grade-a {
-  background-color: rgba(52, 211, 153, 0.15);
+  background-color: rgba(22, 163, 74, 0.1);
 }
 .bg-grade-b {
-  background-color: rgba(96, 165, 250, 0.15);
+  background-color: rgba(37, 99, 235, 0.1);
 }
 .bg-grade-c {
-  background-color: rgba(251, 191, 36, 0.15);
+  background-color: rgba(202, 138, 4, 0.1);
 }
 .bg-grade-d {
-  background-color: rgba(251, 146, 60, 0.15);
+  background-color: rgba(234, 88, 12, 0.1);
 }
 .bg-grade-f {
-  background-color: rgba(248, 113, 113, 0.15);
+  background-color: rgba(220, 38, 38, 0.1);
 }
 
 /* Gradebook cell styles */
@@ -87,8 +128,8 @@ body {
 }
 
 .gradebook-cell.missing {
-  background-color: rgba(248, 113, 113, 0.1);
-  color: #f87171;
+  background-color: rgba(220, 38, 38, 0.06);
+  color: #dc2626;
 }
 
 .gradebook-cell.excused {
@@ -117,135 +158,4 @@ body {
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   Dark-theme overrides for legacy hardcoded Tailwind classes
-   ═══════════════════════════════════════════════════════ */
-@layer base {
-  /* Background overrides */
-  .bg-white {
-    background-color: rgb(var(--color-surface)) !important;
-  }
-  .bg-white\/50 {
-    background-color: rgb(var(--color-surface) / 0.5) !important;
-  }
-  .bg-white\/60 {
-    background-color: rgb(var(--color-surface) / 0.6) !important;
-  }
-  .bg-white\/70 {
-    background-color: rgb(var(--color-surface) / 0.7) !important;
-  }
-  .bg-white\/80 {
-    background-color: rgb(var(--color-surface) / 0.8) !important;
-  }
-  .bg-white\/90 {
-    background-color: rgb(var(--color-surface) / 0.9) !important;
-  }
-  .bg-gray-50,
-  .bg-slate-50 {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .bg-gray-100,
-  .bg-slate-100 {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .bg-gray-200,
-  .bg-slate-200 {
-    background-color: rgb(var(--color-border)) !important;
-  }
-  .bg-gray-300 {
-    background-color: rgb(var(--color-border) / 0.8) !important;
-  }
 
-  /* Text overrides */
-  .text-gray-900,
-  .text-slate-900,
-  .text-gray-950 {
-    color: rgb(var(--color-text)) !important;
-  }
-  .text-gray-800,
-  .text-slate-800 {
-    color: rgb(var(--color-text)) !important;
-  }
-  .text-gray-700,
-  .text-slate-700 {
-    color: rgb(var(--color-text) / 0.85) !important;
-  }
-  .text-gray-600,
-  .text-slate-600 {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .text-gray-500,
-  .text-slate-500 {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .text-gray-400,
-  .text-slate-400 {
-    color: rgb(var(--color-text-muted) / 0.7) !important;
-  }
-
-  /* Border overrides */
-  .border-gray-100,
-  .border-slate-100 {
-    border-color: rgb(var(--color-border) / 0.5) !important;
-  }
-  .border-gray-200,
-  .border-gray-300,
-  .border-slate-200,
-  .border-slate-300 {
-    border-color: rgb(var(--color-border)) !important;
-  }
-
-  /* Ring overrides */
-  .ring-offset-white {
-    --tw-ring-offset-color: rgb(var(--color-surface)) !important;
-  }
-  .ring-gray-950 {
-    --tw-ring-color: rgb(var(--color-primary)) !important;
-  }
-
-  /* Hover state overrides */
-  .hover\:bg-white:hover {
-    background-color: rgb(var(--color-surface)) !important;
-  }
-  .hover\:bg-gray-50:hover,
-  .hover\:bg-gray-100:hover,
-  .hover\:bg-slate-50:hover,
-  .hover\:bg-slate-100:hover {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .hover\:bg-gray-200:hover,
-  .hover\:bg-slate-200:hover {
-    background-color: rgb(var(--color-border)) !important;
-  }
-  .hover\:border-gray-300:hover,
-  .hover\:border-slate-300:hover {
-    border-color: rgb(var(--color-border)) !important;
-  }
-  .hover\:text-gray-700:hover,
-  .hover\:text-slate-700:hover {
-    color: rgb(var(--color-text) / 0.85) !important;
-  }
-  .hover\:text-gray-600:hover,
-  .hover\:text-slate-600:hover {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .hover\:text-gray-900:hover,
-  .hover\:text-slate-900:hover {
-    color: rgb(var(--color-text)) !important;
-  }
-
-  /* Divide overrides */
-  .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
-  .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: rgb(var(--color-border)) !important;
-  }
-
-  /* Focus overrides */
-  .focus\:ring-gray-500:focus,
-  .focus\:ring-slate-500:focus {
-    --tw-ring-color: rgb(var(--color-primary) / 0.5) !important;
-  }
-  .focus\:ring-gray-400:focus {
-    --tw-ring-color: rgb(var(--color-primary) / 0.4) !important;
-  }
-}

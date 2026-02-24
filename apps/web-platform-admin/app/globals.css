@@ -3,7 +3,44 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+
+  /* ── Light Theme Overrides ── */
+  --color-primary: 79 70 229;            /* #4F46E5 — indigo */
+  --color-primary-hover: 99 102 241;     /* #6366F1 */
+  --color-secondary: 99 102 241;         /* #6366F1 */
+  --color-secondary-hover: 129 140 248;
+  --color-accent: 251 146 60;            /* #FB923C — orange */
+  --color-background: 248 250 252;       /* #F8FAFC — slate-50 */
+  --color-surface: 255 255 255;          /* #FFFFFF */
+  --color-surface-muted: 241 245 249;    /* #F1F5F9 — slate-100 */
+  --color-surface-elevated: 255 255 255; /* #FFFFFF */
+  --color-text: 15 23 42;               /* #0F172A — slate-900 */
+  --color-text-muted: 100 116 139;       /* #64748B — slate-500 */
+  --color-on-primary: 255 255 255;
+  --color-on-accent: 15 23 42;
+  --color-success: 22 163 74;            /* #16A34A — green-600 */
+  --color-warning: 202 138 4;            /* #CA8A04 — yellow-600 */
+  --color-error: 220 38 38;              /* #DC2626 — red-600 */
+  --color-info: 37 99 235;              /* #2563EB — blue-600 */
+  --color-border: 226 232 240;           /* #E2E8F0 — slate-200 */
+  --color-border-muted: 241 245 249;     /* #F1F5F9 — slate-100 */
+  --color-focus: 79 70 229;
+  --color-focus-ring: rgba(79, 70, 229, 0.5);
+  --color-backdrop: rgba(15, 23, 42, 0.4);
+
+  /* ── Glass / Blur (light) ── */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(79, 70, 229, 0.1);
+  --glass-blur: 16px;
+  --glass-bg-light: rgba(248, 250, 252, 0.9);
+
+  /* ── Shadows (light) ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 16px rgba(79, 70, 229, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-glow: 0 0 16px rgba(79, 70, 229, 0.15);
+  --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.08);
+
   background-color: rgb(var(--color-background));
   color: rgb(var(--color-text));
   font-family:
@@ -28,138 +65,4 @@ a {
 
 * {
   box-sizing: border-box;
-}
-
-/* ═══════════════════════════════════════════════════════
-   Dark-theme overrides for legacy hardcoded Tailwind classes
-   Maps light-mode slate/white/gray utilities to dark equivalents
-   ═══════════════════════════════════════════════════════ */
-@layer base {
-  /* Background overrides */
-  .bg-white {
-    background-color: rgb(var(--color-surface)) !important;
-  }
-  .bg-white\/50 {
-    background-color: rgb(var(--color-surface) / 0.5) !important;
-  }
-  .bg-white\/60 {
-    background-color: rgb(var(--color-surface) / 0.6) !important;
-  }
-  .bg-white\/70 {
-    background-color: rgb(var(--color-surface) / 0.7) !important;
-  }
-  .bg-white\/80 {
-    background-color: rgb(var(--color-surface) / 0.8) !important;
-  }
-  .bg-white\/90 {
-    background-color: rgb(var(--color-surface) / 0.9) !important;
-  }
-  .bg-slate-50,
-  .bg-gray-50 {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .bg-slate-100,
-  .bg-gray-100 {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .bg-slate-200,
-  .bg-gray-200 {
-    background-color: rgb(var(--color-border)) !important;
-  }
-  .bg-gray-300 {
-    background-color: rgb(var(--color-border) / 0.8) !important;
-  }
-
-  /* Text overrides */
-  .text-slate-900,
-  .text-gray-900,
-  .text-gray-950 {
-    color: rgb(var(--color-text)) !important;
-  }
-  .text-slate-800,
-  .text-gray-800 {
-    color: rgb(var(--color-text)) !important;
-  }
-  .text-slate-700,
-  .text-gray-700 {
-    color: rgb(var(--color-text) / 0.85) !important;
-  }
-  .text-slate-600,
-  .text-gray-600 {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .text-slate-500,
-  .text-gray-500 {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .text-slate-400,
-  .text-gray-400 {
-    color: rgb(var(--color-text-muted) / 0.7) !important;
-  }
-
-  /* Border overrides */
-  .border-gray-100,
-  .border-slate-100 {
-    border-color: rgb(var(--color-border) / 0.5) !important;
-  }
-  .border-slate-200,
-  .border-gray-200,
-  .border-slate-300,
-  .border-gray-300 {
-    border-color: rgb(var(--color-border)) !important;
-  }
-
-  /* Ring overrides */
-  .ring-offset-white {
-    --tw-ring-offset-color: rgb(var(--color-surface)) !important;
-  }
-  .ring-gray-950 {
-    --tw-ring-color: rgb(var(--color-primary)) !important;
-  }
-
-  /* Hover state overrides */
-  .hover\:bg-white:hover {
-    background-color: rgb(var(--color-surface)) !important;
-  }
-  .hover\:bg-slate-50:hover,
-  .hover\:bg-gray-50:hover,
-  .hover\:bg-slate-100:hover,
-  .hover\:bg-gray-100:hover {
-    background-color: rgb(var(--color-surface-muted)) !important;
-  }
-  .hover\:bg-slate-200:hover,
-  .hover\:bg-gray-200:hover {
-    background-color: rgb(var(--color-border)) !important;
-  }
-  .hover\:border-slate-300:hover,
-  .hover\:border-gray-300:hover {
-    border-color: rgb(var(--color-border)) !important;
-  }
-  .hover\:text-slate-700:hover,
-  .hover\:text-gray-700:hover {
-    color: rgb(var(--color-text) / 0.85) !important;
-  }
-  .hover\:text-slate-600:hover,
-  .hover\:text-gray-600:hover {
-    color: rgb(var(--color-text-muted)) !important;
-  }
-  .hover\:text-gray-900:hover,
-  .hover\:text-slate-900:hover {
-    color: rgb(var(--color-text)) !important;
-  }
-
-  /* Divide overrides */
-  .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
-  .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: rgb(var(--color-border)) !important;
-  }
-
-  /* Focus overrides */
-  .focus\:ring-gray-500:focus,
-  .focus\:ring-slate-500:focus {
-    --tw-ring-color: rgb(var(--color-primary) / 0.5) !important;
-  }
-  .focus\:ring-gray-400:focus {
-    --tw-ring-color: rgb(var(--color-primary) / 0.4) !important;
-  }
 }
