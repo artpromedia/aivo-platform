@@ -9,7 +9,6 @@
  * @module ip-allowlist/ip-allowlist.middleware
  */
 
-import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
@@ -32,7 +31,8 @@ const SKIP_PREFIXES = [
  * Extract the real client IP from the request.
  * Respects X-Forwarded-For (first entry) if present.
  */
-function getClientIp(request: FastifyRequest<any>): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getClientIp(request: any): string {
   const xff = request.headers['x-forwarded-for'];
   if (xff) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -46,8 +46,9 @@ function getClientIp(request: FastifyRequest<any>): string {
  * Resolve the tenant ID from the request.
  * Prefers `request.user.tenantId`, falls back to `X-Tenant-ID` header.
  */
-function getTenantId(request: FastifyRequest<any>): string | undefined {
-  const user = (request as unknown as { user?: { tenantId?: string } }).user;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getTenantId(request: any): string | undefined {
+  const user = (request as { user?: { tenantId?: string } }).user;
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (user?.tenantId) return user.tenantId;
 
