@@ -5,7 +5,7 @@
 # Deploys a validated release to K3s production on Hetzner bare-metal.
 #
 # Flow:
-#   1. Validate — version format + verify ALL 42 images in GHCR
+#   1. Validate — version format + verify ALL 43 images in GHCR
 #   2. Approval Gate — environment-based manual approval
 #   3. Canary — deploy 4 critical services + 1 web app as canary pods (5 min)
 #   4. Full Rollout — kustomize-based wave deploy of all 42 services
@@ -54,7 +54,7 @@ permissions:
 
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
-  # STAGE 1: Validate Release & Verify All 42 Images
+  # STAGE 1: Validate Release & Verify All 43 Images
   # ══════════════════════════════════════════════════════════════════════════
   validate:
     name: Validate Release

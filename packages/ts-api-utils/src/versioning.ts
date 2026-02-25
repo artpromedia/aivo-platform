@@ -120,7 +120,7 @@ export async function apiVersioning(
       const match = url.match(versionRegex);
       if (!match) return; // Not a versioned endpoint — skip
 
-      const requestedVersion = match[1];
+      const requestedVersion = match[1]!;
       const versionConfig = versionMap.get(requestedVersion);
 
       // ── Unknown version ──────────────────────────────────────────────────

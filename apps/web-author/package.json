@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aivo/i18n": "workspace:*",
+    "@aivo/theme-provider": "workspace:*",
     "@aivo/ts-rbac": "workspace:*",
     "@aivo/ui-web": "workspace:*",
     "react-intl": "^7.1.0",

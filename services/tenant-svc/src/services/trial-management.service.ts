@@ -210,7 +210,8 @@ export class TrialManagementService {
     if (this.stripeSecretKey) {
       try {
         const { default: Stripe } = await import('stripe');
-        const stripe = new Stripe(this.stripeSecretKey, { apiVersion: '2024-06-20' as Stripe.LatestApiVersion });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        const stripe = new Stripe(this.stripeSecretKey, { apiVersion: '2024-06-20' as any });
 
         // Ensure Stripe customer exists
         let customerId = tenant.stripeCustomerId;
@@ -300,7 +301,8 @@ export class TrialManagementService {
 
     try {
       const { default: Stripe } = await import('stripe');
-      const stripe = new Stripe(this.stripeSecretKey, { apiVersion: '2024-06-20' as Stripe.LatestApiVersion });
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      const stripe = new Stripe(this.stripeSecretKey, { apiVersion: '2024-06-20' as any });
 
       const session = await stripe.checkout.sessions.retrieve(stripeSessionId);
 

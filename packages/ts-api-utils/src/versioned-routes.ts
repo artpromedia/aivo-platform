@@ -84,11 +84,12 @@ export function registerVersionedRoutes(
     for (const [version, handler] of Object.entries(route.versions)) {
       const fullPath = `${basePath}/${version}${route.path}`;
 
+      const resolvedSchema = route.versionSchemas?.[version] ?? route.schema;
       const routeOptions: RouteOptions = {
         method: route.method,
         url: fullPath,
         handler,
-        schema: route.versionSchemas?.[version] ?? route.schema,
+        ...(resolvedSchema != null && { schema: resolvedSchema }),
       };
 
       // Attach preHandler if provided

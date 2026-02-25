@@ -10,7 +10,7 @@
  *   export default withLocaleDetection(existingMiddleware);
  */
 
-import { NextResponse, type NextRequest, type NextMiddleware } from 'next/server';
+import { NextResponse, NextRequest, type NextMiddleware } from 'next/server';
 
 const UI_LOCALES = ['en', 'es', 'fr', 'de', 'pt', 'ar', 'zh', 'ja', 'ko', 'hi'] as const;
 type UILocale = (typeof UI_LOCALES)[number];

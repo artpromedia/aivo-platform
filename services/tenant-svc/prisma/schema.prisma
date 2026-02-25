@@ -63,6 +63,7 @@ model Tenant {
   schools         School[]
   domainVerifications TenantDomainVerification[]
   config          TenantConfig?
+  branding        TenantBranding?
   usageRecords    TenantUsage[]
   auditEvents     TenantAuditEvent[]
   
@@ -334,6 +335,14 @@ enum TenantAuditEventType {
   QUOTA_EXCEEDED
   QUOTA_RESET
   ADMIN_ACCESS
+  PROVISIONING_STARTED
+  PROVISIONING_COMPLETED
+  PROVISIONING_FAILED
+  PROVISIONING_ROLLED_BACK
+  TRIAL_STARTED
+  TRIAL_EXPIRING
+  TRIAL_EXPIRED
+  TRIAL_CONVERTED
 }
 
 /// Audit log for tenant lifecycle events
@@ -509,6 +518,100 @@ model TenantCustomDomain {
   @@index([domain])
   @@index([status])
   @@map("tenant_custom_domain")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tenant Branding (white-label customization)
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Per-tenant branding configuration for white-label support
+model TenantBranding {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @unique @map("tenant_id") @db.Uuid
+
+  // Display
+  displayName       String?  @map("display_name")
+  logoUrl           String?  @map("logo_url")
+  logoSmallUrl      String?  @map("logo_small_url")
+  faviconUrl        String?  @map("favicon_url")
+
+  // Colors
+  primaryColor      String   @default("#6366F1") @map("primary_color")
+  primaryColorLight String   @default("#818CF8") @map("primary_color_light")
+  primaryColorDark  String   @default("#4F46E5") @map("primary_color_dark")
+  secondaryColor    String   @default("#EC4899") @map("secondary_color")
+  accentColor       String   @default("#F59E0B") @map("accent_color")
+  backgroundColor   String   @default("#FFFFFF") @map("background_color")
+  surfaceColor      String   @default("#F8FAFC") @map("surface_color")
+  textColor         String   @default("#0F172A") @map("text_color")
+  textMutedColor    String   @default("#64748B") @map("text_muted_color")
+
+  // Typography & Layout
+  fontFamily        String   @default("Inter") @map("font_family")
+  borderRadius      String   @default("0.5rem") @map("border_radius")
+
+  // Login customization
+  loginBackground   String?  @map("login_background")
+  loginMessage      String?  @map("login_message")
+
+  // Support & legal links
+  supportEmail      String?  @map("support_email")
+  supportUrl        String?  @map("support_url")
+  privacyPolicyUrl  String?  @map("privacy_policy_url")
+  termsOfServiceUrl String?  @map("terms_of_service_url")
+
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_branding")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Tenant Provisioning Jobs
+// ══════════════════════════════════════════════════════════════════════════════
+
+/// Provisioning job status for tenant creation pipeline
+model TenantProvisioningJob {
+  id                String   @id @default(uuid()) @db.Uuid
+  idempotencyKey    String   @unique @map("idempotency_key")
+
+  // Input data
+  organizationName  String   @map("organization_name")
+  adminEmail        String   @map("admin_email")
+  adminName         String?  @map("admin_name")
+  organizationType  String   @default("DISTRICT") @map("organization_type")
+  planId            String?  @map("plan_id")
+  districtSize      String?  @map("district_size")
+  stateCode         String?  @map("state_code") @db.VarChar(2)
+  zipCode           String?  @map("zip_code") @db.VarChar(10)
+  metadata          Json     @default("{}")
+
+  // Pipeline state
+  status            String   @default("PENDING")
+  currentStep       Int      @default(0) @map("current_step")
+  totalSteps        Int      @default(10) @map("total_steps")
+  stepLog           Json     @default("[]") @map("step_log")
+  tenantId          String?  @map("tenant_id") @db.Uuid
+
+  // Failure / retry tracking
+  failedStep        String?  @map("failed_step")
+  failedReason      String?  @map("failed_reason")
+  retryCount        Int      @default(0) @map("retry_count")
+  maxRetries        Int      @default(3) @map("max_retries")
+  lastRetriedAt     DateTime? @map("last_retried_at")
+
+  // Lifecycle
+  completedAt       DateTime? @map("completed_at")
+  rolledBackAt      DateTime? @map("rolled_back_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([adminEmail])
+  @@index([status])
+  @@index([tenantId])
+  @@map("tenant_provisioning_jobs")
 }
 
 /// Feature flags that district admins can toggle per tenant

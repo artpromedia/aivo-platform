@@ -11,7 +11,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { ProvisioningService } from '../services/provisioning.service.js';
+import { ProvisioningService, type ProvisioningInput } from '../services/provisioning.service.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Schemas
@@ -54,7 +54,7 @@ export async function registerProvisioningRoutes(
 
     try {
       // Create the job record
-      const job = await service.startProvisioningJob(parsed.data);
+      const job = await service.startProvisioningJob(parsed.data as ProvisioningInput);
 
       // Execute the pipeline asynchronously (fire-and-forget for long-running)
       // The client can poll GET /provisioning/:id for status

@@ -32,6 +32,20 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     return this.client.consent;
   }
 
+  /**
+   * Tenant model accessor
+   */
+  get tenant() {
+    return this.client.tenant;
+  }
+
+  /**
+   * TenantCustomDomain model accessor
+   */
+  get tenantCustomDomain() {
+    return this.client.tenantCustomDomain;
+  }
+
   async onModuleInit() {
     this._client = new PrismaClient({
       log: [

@@ -34,10 +34,22 @@ export * from './rtl';
 export * from './styles';
 
 // i18n configuration (UI locales, display metadata, helpers)
-export * from './config';
+// Note: getLocaleDirection is excluded to avoid conflict with ./core
+export {
+  UI_LOCALES,
+  type UILocale,
+  LOCALE_DISPLAY,
+  UI_DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  LOCALE_HEADER,
+  isUILocale,
+  resolveUILocale,
+  loadLocaleMessages,
+} from './config';
 
 // React components (LanguageSwitcher)
-export * from './components';
+// Note: useLocale is excluded to avoid conflict with ./react
+export { LanguageSwitcher, type LanguageSwitcherProps, LocaleProvider } from './components';
 
 // ─── Compatibility Aliases ───
 // These aliases bridge naming differences between packages/i18n and libs/i18n

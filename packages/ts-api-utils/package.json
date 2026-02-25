@@ -30,6 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aivo/rate-limiter": "workspace:*",
     "dataloader": "^2.2.3",
     "pino": "^9.6.0",
     "zod": "^3.25.67"
