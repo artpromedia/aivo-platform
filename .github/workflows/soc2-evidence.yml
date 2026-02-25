@@ -1,0 +1,181 @@
+name: SOC 2 Evidence Collection
+
+on:
+  schedule:
+    # Run every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      collectors:
+        description: 'Comma-separated collector IDs to run (empty = all)'
+        required: false
+        default: ''
+      period_days:
+        description: 'Collection period in days (default: 7)'
+        required: false
+        default: '7'
+
+env:
+  COMPLIANCE_EVIDENCE_SVC_URL: ${{ secrets.COMPLIANCE_EVIDENCE_SVC_URL }}
+
+jobs:
+  collect-evidence:
+    name: Collect SOC 2 Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Calculate collection period
+        id: period
+        run: |
+          DAYS="${{ github.event.inputs.period_days || '7' }}"
+          END_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          START_DATE=$(date -u -d "-${DAYS} days" +"%Y-%m-%dT%H:%M:%SZ")
+          echo "start=$START_DATE" >> "$GITHUB_OUTPUT"
+          echo "end=$END_DATE" >> "$GITHUB_OUTPUT"
+          echo "Collection period: $START_DATE to $END_DATE"
+
+      - name: Trigger evidence collection
+        id: collect
+        run: |
+          COLLECTORS="${{ github.event.inputs.collectors }}"
+
+          if [ -z "$COLLECTORS" ]; then
+            echo "Triggering all collectors..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" \
+              -X POST "${COMPLIANCE_EVIDENCE_SVC_URL}/api/collectors/trigger-all" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SOC2_SERVICE_TOKEN }}" \
+              -d "{\"periodStart\": \"${{ steps.period.outputs.start }}\", \"periodEnd\": \"${{ steps.period.outputs.end }}\"}")
+          else
+            echo "Triggering collectors: $COLLECTORS"
+            IFS=',' read -ra IDS <<< "$COLLECTORS"
+            RESPONSE=""
+            for id in "${IDS[@]}"; do
+              id=$(echo "$id" | xargs)
+              echo "  -> Triggering: $id"
+              R=$(curl -s -w "\n%{http_code}" \
+                -X POST "${COMPLIANCE_EVIDENCE_SVC_URL}/api/collectors/${id}/trigger" \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer ${{ secrets.SOC2_SERVICE_TOKEN }}" \
+                -d "{\"periodStart\": \"${{ steps.period.outputs.start }}\", \"periodEnd\": \"${{ steps.period.outputs.end }}\"}")
+              STATUS=$(echo "$R" | tail -1)
+              BODY=$(echo "$R" | head -n -1)
+              echo "  Status: $STATUS"
+              if [ "$STATUS" -ge 400 ]; then
+                echo "::warning::Collector $id returned HTTP $STATUS: $BODY"
+              fi
+              RESPONSE="$RESPONSE\n$id: $STATUS"
+            done
+          fi
+
+          STATUS=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Status: $STATUS"
+          echo "response_body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for collection to complete
+        run: |
+          echo "Waiting 60s for collectors to finish..."
+          sleep 60
+
+      - name: Check collection results
+        id: results
+        run: |
+          echo "Fetching control summary..."
+          SUMMARY=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.SOC2_SERVICE_TOKEN }}" \
+            "${COMPLIANCE_EVIDENCE_SVC_URL}/api/controls/summary")
+
+          echo "$SUMMARY" | jq '.'
+
+          TOTAL=$(echo "$SUMMARY" | jq '.totalControls // 0')
+          HEALTHY=$(echo "$SUMMARY" | jq '.healthyControls // 0')
+          STALE=$(echo "$SUMMARY" | jq '.staleControls // 0')
+          MISSING=$(echo "$SUMMARY" | jq '.missingControls // 0')
+          HEALTH_PCT=$(echo "$SUMMARY" | jq '.overallHealthPct // 0')
+
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+          echo "healthy=$HEALTHY" >> "$GITHUB_OUTPUT"
+          echo "stale=$STALE" >> "$GITHUB_OUTPUT"
+          echo "missing=$MISSING" >> "$GITHUB_OUTPUT"
+          echo "health_pct=$HEALTH_PCT" >> "$GITHUB_OUTPUT"
+
+          echo "## SOC 2 Evidence Collection Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Total Controls | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Healthy | $HEALTHY |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Stale | $STALE |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Missing | $MISSING |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Health % | $HEALTH_PCT% |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Collection period: ${{ steps.period.outputs.start }} to ${{ steps.period.outputs.end }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Alert on low health
+        if: steps.results.outputs.health_pct < 80
+        run: |
+          echo "::warning::SOC 2 evidence health is below 80% (${{ steps.results.outputs.health_pct }}%)"
+          echo "Stale controls: ${{ steps.results.outputs.stale }}"
+          echo "Missing controls: ${{ steps.results.outputs.missing }}"
+
+  monthly-package:
+    name: Generate Monthly Evidence Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: collect-evidence
+    # Only run on first Monday of the month
+    if: github.event.schedule && (github.run_number % 4 == 0 || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+
+    steps:
+      - name: Calculate previous month period
+        id: period
+        run: |
+          YEAR=$(date -u -d "last month" +"%Y")
+          MONTH=$(date -u -d "last month" +"%m")
+          START="${YEAR}-${MONTH}-01T00:00:00Z"
+          LAST_DAY=$(date -u -d "${YEAR}-${MONTH}-01 +1 month -1 day" +"%d")
+          END="${YEAR}-${MONTH}-${LAST_DAY}T23:59:59Z"
+          echo "start=$START" >> "$GITHUB_OUTPUT"
+          echo "end=$END" >> "$GITHUB_OUTPUT"
+          echo "name=SOC2-Monthly-${YEAR}-${MONTH}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate audit package
+        run: |
+          echo "Generating monthly audit package: ${{ steps.period.outputs.name }}"
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "${COMPLIANCE_EVIDENCE_SVC_URL}/api/packages" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SOC2_SERVICE_TOKEN }}" \
+            -d "{
+              \"name\": \"${{ steps.period.outputs.name }}\",
+              \"periodStart\": \"${{ steps.period.outputs.start }}\",
+              \"periodEnd\": \"${{ steps.period.outputs.end }}\",
+              \"categories\": []
+            }")
+
+          STATUS=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "HTTP Status: $STATUS"
+          echo "$BODY" | jq '.'
+
+          if [ "$STATUS" -ge 400 ]; then
+            echo "::error::Failed to generate monthly package: $BODY"
+            exit 1
+          fi
+
+          PACKAGE_ID=$(echo "$BODY" | jq -r '.id')
+          echo "Package created: $PACKAGE_ID"
+          echo "## Monthly Audit Package" >> "$GITHUB_STEP_SUMMARY"
+          echo "Package **${{ steps.period.outputs.name }}** created successfully (ID: $PACKAGE_ID)" >> "$GITHUB_STEP_SUMMARY"

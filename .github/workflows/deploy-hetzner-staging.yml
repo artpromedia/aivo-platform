@@ -470,12 +470,53 @@ jobs:
           category: 'container-${{ matrix.app }}'
 
   # ══════════════════════════════════════════════════════════════════════════
+  # STAGE 2d: Build & Push Backup Agent Image to GHCR
+  # ══════════════════════════════════════════════════════════════════════════
+  docker-backup:
+    name: Docker — backup-agent
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_PREFIX }}/aivo-platform/backup-agent
+          tags: |
+            type=raw,value=${{ needs.ci.outputs.version }}
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.backup
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backup-agent
+          cache-to: type=gha,scope=backup-agent,mode=max
+
+  # ══════════════════════════════════════════════════════════════════════════
   # STAGE 3: Deploy to K3s (self-hosted runner on Hetzner)
   # ══════════════════════════════════════════════════════════════════════════
   deploy:
     name: Deploy to Hetzner Staging
     runs-on: [self-hosted, hetzner, staging]
-    needs: [ci, docker, docker-python, docker-web]
+    needs: [ci, docker, docker-python, docker-web, docker-backup]
     # Deploy runs if CI passes and at least docker-web succeeds.
     # Backend/Python images already exist on staging from prior deploys.
     if: |
@@ -720,6 +761,34 @@ jobs:
           echo "═══════════════════════════════════════════════════"
           echo ""
           kubectl get pods -n "$NAMESPACE" --sort-by=.metadata.name -o wide
+
+      - name: Verify External Secrets
+        run: |
+          NAMESPACE="aivo-staging"
+          echo "═══ Checking External Secrets Operator ═══"
+
+          # Check ESO is running
+          if kubectl get pods -n external-secrets --no-headers 2>/dev/null | grep -q Running; then
+            echo "✅ ESO pods running"
+          else
+            echo "⚠️  ESO not found or not running — skipping ExternalSecret checks"
+            echo "   (ESO is optional until Vault migration is complete)"
+            exit 0
+          fi
+
+          # Check all ExternalSecrets are synced
+          FAILED=$(kubectl get externalsecrets -n "$NAMESPACE" -o jsonpath='{range .items[?(@.status.conditions[0].status!="True")]}{.metadata.name}{"\n"}{end}' 2>/dev/null || echo "")
+          if [ -n "$FAILED" ]; then
+            echo "⚠️  ExternalSecrets not synced:"
+            echo "$FAILED" | while read -r name; do
+              echo "   ❌ $name"
+            done
+            echo ""
+            echo "Continuing deployment — secrets may still be using legacy K8s secrets"
+          else
+            SYNCED_COUNT=$(kubectl get externalsecrets -n "$NAMESPACE" --no-headers 2>/dev/null | wc -l)
+            echo "✅ All ${SYNCED_COUNT} ExternalSecrets synced"
+          fi
 
       - name: Smoke tests
         run: |
