@@ -44,7 +44,7 @@ export const csrfPlugin = fp(
     // ── Validation hook — runs on every state-mutating request ─────────────
     fastify.addHook(
       'preHandler',
-      // eslint-disable-next-line @typescript-eslint/require-await
+
       async (request, reply): Promise<void> => {
         // Only validate state-mutating methods
         const method = request.method.toUpperCase();
@@ -61,11 +61,11 @@ export const csrfPlugin = fp(
           '/health',
           '/ready',
           '/live',
-          '/auth/sso/',      // SSO callbacks come from IdP, not browser forms
-          '/auth/saml/',     // SAML POST binding from IdP
-          '/auth/register',  // Called server-to-server from Next.js BFF
-          '/auth/login',     // Called server-to-server from Next.js BFF
-          '/auth/refresh',   // Called server-to-server from Next.js BFF
+          '/auth/sso/', // SSO callbacks come from IdP, not browser forms
+          '/auth/saml/', // SAML POST binding from IdP
+          '/auth/register', // Called server-to-server from Next.js BFF
+          '/auth/login', // Called server-to-server from Next.js BFF
+          '/auth/refresh', // Called server-to-server from Next.js BFF
         ];
         if (skipPaths.some((p) => request.url.startsWith(p))) return;
 
@@ -106,12 +106,12 @@ export const csrfPlugin = fp(
           });
           return;
         }
-      },
+      }
     );
   },
   {
     name: 'csrf-plugin',
     fastify: '4.x',
     dependencies: ['cookie-plugin'], // Requires @fastify/cookie to be registered first
-  },
+  }
 );
