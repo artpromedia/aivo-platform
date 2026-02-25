@@ -14,4 +14,5 @@ export {
   ACCESS_COOKIE,
   REFRESH_COOKIE,
   type AuthSession,
+  type ImpersonationSessionInfo,
 } from './session';

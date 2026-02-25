@@ -1,0 +1,58 @@
+import type { OnboardingFlow } from '../types.js';
+
+export const teacherFlow: OnboardingFlow = {
+  id: 'teacher',
+  title: 'Teacher Getting Started',
+  description: 'Set up your classroom and start creating engaging lessons with Aivo.',
+  role: 'teacher',
+  completionRoute: '/dashboard',
+  completionMessage: "You're all set! Start creating amazing learning experiences for your students.",
+  steps: [
+    {
+      id: 'teacher_welcome',
+      title: 'Welcome Tour',
+      description: 'Get a quick overview of your teacher dashboard and key features.',
+      icon: 'sparkles',
+      completionKey: 'teacher_welcome_viewed',
+      estimatedTime: '2 min',
+    },
+    {
+      id: 'teacher_profile',
+      title: 'Complete Your Profile',
+      description: 'Add your name, photo, and teaching subjects so students can find and recognize you.',
+      icon: 'user',
+      targetRoute: '/profile',
+      completionKey: 'teacher_profile_completed',
+      estimatedTime: '2 min',
+    },
+    {
+      id: 'teacher_class',
+      title: 'Create Your First Class',
+      description: 'Set up a class and add your students. You can import from your SIS or add them manually.',
+      icon: 'users',
+      targetRoute: '/classes/new',
+      completionKey: 'teacher_class_created',
+      estimatedTime: '3 min',
+    },
+    {
+      id: 'teacher_lesson',
+      title: 'Create a Lesson',
+      description: 'Build your first lesson using the lesson builder. Choose from templates or start from scratch.',
+      icon: 'book-open',
+      targetRoute: '/lessons/new',
+      completionKey: 'teacher_lesson_created',
+      estimatedTime: '5 min',
+      helpText: 'Tip: Try the AI-assisted lesson generator for quick starts.',
+    },
+    {
+      id: 'teacher_assign',
+      title: 'Assign to Students',
+      description: 'Assign your lesson to a class and set a due date. Track progress from your dashboard.',
+      icon: 'send',
+      targetRoute: '/assignments/new',
+      completionKey: 'teacher_assignment_created',
+      estimatedTime: '2 min',
+      skippable: true,
+    },
+  ],
+};

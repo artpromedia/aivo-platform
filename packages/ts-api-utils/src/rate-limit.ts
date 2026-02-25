@@ -2,13 +2,17 @@
  * Rate Limiting Utilities
  *
  * Provides standardized rate limiting for public API endpoints across all services.
- * Uses sliding window algorithm with in-memory storage and automatic cleanup.
+ * Supports Redis-backed distributed rate limiting via @aivo/rate-limiter,
+ * with automatic in-memory fallback.
  *
  * CRITICAL: This addresses HIGH-008 - Rate limiting on public endpoints
  *
  * Usage:
  * ```typescript
- * import { createRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils/rate-limit';
+ * import { configureRateLimitStore, createRateLimiter, RateLimitPresets } from '@aivo/ts-api-utils/rate-limit';
+ *
+ * // Configure Redis store once at startup
+ * configureRateLimitStore({ redisUrl: process.env.REDIS_URL });
  *
  * // Use a preset
  * const loginLimiter = createRateLimiter(RateLimitPresets.LOGIN);
@@ -23,7 +27,15 @@
  * // In Fastify route
  * fastify.post('/login', { preHandler: loginLimiter }, handler);
  * ```
+ *
+ * Updated: Sprint 3 – Redis-backed store via @aivo/rate-limiter with fail-open
  */
+
+import {
+  createRedisStore,
+  MemoryStore,
+  type RateLimitStore as AivoRateLimitStore,
+} from '@aivo/rate-limiter';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -63,11 +75,70 @@ export interface RateLimitResult {
   info: RateLimitInfo;
 }
 
+export interface RateLimitStoreConfig {
+  /** Redis connection URL */
+  redisUrl?: string;
+  /** Pre-configured @aivo/rate-limiter store instance */
+  store?: AivoRateLimitStore;
+  /** Key prefix for all rate limit keys (default: service name or 'rl') */
+  keyPrefix?: string;
+  /** Whether to allow requests when Redis is down (default: true) */
+  failOpen?: boolean;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-// IN-MEMORY STORE
+// DISTRIBUTED STORE (Redis-backed via @aivo/rate-limiter)
 // ══════════════════════════════════════════════════════════════════════════════
 
-const store = new Map<string, RateLimitEntry>();
+let distributedStore: AivoRateLimitStore | null = null;
+
+/**
+ * Configure Redis-backed distributed rate limiting for all middlewares in this module.
+ * Call once at service startup. If not called, falls back to in-memory store.
+ *
+ * @example
+ * ```ts
+ * configureRateLimitStore({ redisUrl: process.env.REDIS_URL });
+ * ```
+ */
+export function configureRateLimitStore(config: RateLimitStoreConfig): void {
+  if (config.store) {
+    distributedStore = config.store;
+    return;
+  }
+  if (config.redisUrl) {
+    distributedStore = createRedisStore(config.redisUrl, {
+      keyPrefix: config.keyPrefix ?? 'rl',
+      failOpen: config.failOpen ?? true,
+    });
+    return;
+  }
+  // Explicit call with no Redis config → MemoryStore
+  distributedStore = new MemoryStore();
+}
+
+/**
+ * Get the configured store (Redis or in-memory fallback).
+ */
+function getStore(): AivoRateLimitStore {
+  if (!distributedStore) {
+    // Lazy-init: first use without configureRateLimitStore → MemoryStore
+    distributedStore = new MemoryStore();
+    if (process.env.NODE_ENV === 'production') {
+      console.warn(
+        '[RateLimit] WARNING: No Redis store configured – using in-memory fallback. ' +
+          'Call configureRateLimitStore({ redisUrl }) at startup for distributed rate limiting.'
+      );
+    }
+  }
+  return distributedStore;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LEGACY IN-MEMORY STORE (kept for sync checkRateLimit / recordRequest compat)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const legacyStore = new Map<string, RateLimitEntry>();
 
 // Cleanup expired entries every 60 seconds
 const CLEANUP_INTERVAL = 60_000;
@@ -80,9 +151,9 @@ function startCleanup(): void {
 
   cleanupTimer = setInterval(() => {
     const now = Date.now();
-    for (const [key, entry] of store.entries()) {
+    for (const [key, entry] of legacyStore.entries()) {
       if (now - entry.windowStart > MAX_ENTRY_AGE) {
-        store.delete(key);
+        legacyStore.delete(key);
       }
     }
   }, CLEANUP_INTERVAL);
@@ -105,7 +176,7 @@ export function stopRateLimitCleanup(): void {
  * Clear all rate limit entries (useful for tests)
  */
 export function clearRateLimitStore(): void {
-  store.clear();
+  legacyStore.clear();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -113,11 +184,12 @@ export function clearRateLimitStore(): void {
 // ══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Check rate limit for a key without modifying state
+ * Check rate limit for a key without modifying state (legacy in-memory only).
+ * For distributed checks, use the middleware factories which use the Redis store.
  */
 export function checkRateLimit(key: string, max: number, windowMs: number): RateLimitResult {
   const now = Date.now();
-  const entry = store.get(key);
+  const entry = legacyStore.get(key);
 
   const count = entry && now - entry.windowStart <= windowMs ? entry.count : 0;
   const windowStart = entry?.windowStart ?? now;
@@ -137,14 +209,16 @@ export function checkRateLimit(key: string, max: number, windowMs: number): Rate
 }
 
 /**
- * Record a request for rate limiting
+ * Record a request for rate limiting (legacy in-memory only).
+ * The middleware factories use store.increment() directly.
  */
 export function recordRequest(key: string, windowMs: number): void {
+  startCleanup();
   const now = Date.now();
-  const entry = store.get(key);
+  const entry = legacyStore.get(key);
 
   if (!entry || now - entry.windowStart > windowMs) {
-    store.set(key, { count: 1, windowStart: now });
+    legacyStore.set(key, { count: 1, windowStart: now });
   } else {
     entry.count++;
   }
@@ -209,7 +283,8 @@ interface FastifyReply {
 }
 
 /**
- * Create a rate limiting middleware for Fastify
+ * Create a rate limiting middleware for Fastify.
+ * Uses Redis-backed distributed store when configured via configureRateLimitStore().
  */
 export function createRateLimiter(options: RateLimitOptions) {
   const {
@@ -220,9 +295,6 @@ export function createRateLimiter(options: RateLimitOptions) {
     message = 'Too many requests, please try again later.',
     skip,
   } = options;
-
-  // Start cleanup on first use
-  startCleanup();
 
   return async function rateLimitMiddleware(
     request: FastifyRequest,
@@ -235,24 +307,27 @@ export function createRateLimiter(options: RateLimitOptions) {
 
     const identifier = keyExtractor(request);
     const key = `${keyPrefix}:${identifier}`;
+    const ttlSeconds = Math.ceil(windowMs / 1000);
 
-    // Check current state
-    const result = checkRateLimit(key, max, windowMs);
+    // Use distributed store (Redis or MemoryStore fallback)
+    const store = getStore();
+    const count = await store.increment(key, 1, ttlSeconds);
+
+    const remaining = Math.max(0, max - count);
+    const resetAt = Date.now() + windowMs;
 
     // Set rate limit headers
     reply.header('X-RateLimit-Limit', max);
-    reply.header('X-RateLimit-Remaining', result.info.remaining);
-    reply.header('X-RateLimit-Reset', Math.ceil(result.info.resetAt / 1000));
+    reply.header('X-RateLimit-Remaining', remaining);
+    reply.header('X-RateLimit-Reset', Math.ceil(resetAt / 1000));
 
-    // Record this request
-    recordRequest(key, windowMs);
-
-    if (!result.allowed) {
-      reply.header('Retry-After', result.info.retryAfter);
+    if (count > max) {
+      const retryAfter = Math.ceil(windowMs / 1000);
+      reply.header('Retry-After', retryAfter);
       reply.status(429).send({
         error: 'Too Many Requests',
         message,
-        retryAfter: result.info.retryAfter,
+        retryAfter,
       });
       throw new Error('Rate limit exceeded');
     }
@@ -272,7 +347,8 @@ interface HonoContext {
 }
 
 /**
- * Create a rate limiting middleware for Hono
+ * Create a rate limiting middleware for Hono.
+ * Uses Redis-backed distributed store when configured via configureRateLimitStore().
  */
 export function createHonoRateLimiter(options: RateLimitOptions) {
   const {
@@ -282,9 +358,6 @@ export function createHonoRateLimiter(options: RateLimitOptions) {
     message = 'Too many requests, please try again later.',
     skip,
   } = options;
-
-  // Start cleanup on first use
-  startCleanup();
 
   return async function honoRateLimitMiddleware(
     c: HonoContext,
@@ -302,25 +375,28 @@ export function createHonoRateLimiter(options: RateLimitOptions) {
       c.req.header('x-real-ip') ||
       'unknown';
     const key = `${keyPrefix}:${identifier}`;
+    const ttlSeconds = Math.ceil(windowMs / 1000);
 
-    // Check current state
-    const result = checkRateLimit(key, max, windowMs);
+    // Use distributed store (Redis or MemoryStore fallback)
+    const store = getStore();
+    const count = await store.increment(key, 1, ttlSeconds);
+
+    const remaining = Math.max(0, max - count);
+    const resetAt = Date.now() + windowMs;
 
     // Set rate limit headers
     c.header('X-RateLimit-Limit', String(max));
-    c.header('X-RateLimit-Remaining', String(result.info.remaining));
-    c.header('X-RateLimit-Reset', String(Math.ceil(result.info.resetAt / 1000)));
+    c.header('X-RateLimit-Remaining', String(remaining));
+    c.header('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
 
-    // Record this request
-    recordRequest(key, windowMs);
-
-    if (!result.allowed) {
-      c.header('Retry-After', String(result.info.retryAfter));
+    if (count > max) {
+      const retryAfter = Math.ceil(windowMs / 1000);
+      c.header('Retry-After', String(retryAfter));
       return c.json(
         {
           error: 'Too Many Requests',
           message,
-          retryAfter: result.info.retryAfter,
+          retryAfter,
         },
         429
       );
@@ -475,6 +551,7 @@ export function getRateLimitInfo(key: string, max: number, windowMs: number): Ra
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const RateLimit = {
+  configure: configureRateLimitStore,
   create: createRateLimiter,
   createHono: createHonoRateLimiter,
   createComposite: createCompositeRateLimiter,
@@ -523,6 +600,8 @@ export interface FastifyRateLimitConfig {
     context: { after: string; max: number; ttl: number }
   ) => Record<string, unknown>;
   allowList: (request: unknown) => boolean;
+  /** Redis instance for @fastify/rate-limit distributed store (optional) */
+  redis?: unknown;
 }
 
 /**
@@ -680,6 +759,8 @@ export interface FastifyRateLimitOptions {
   keyGenerator?: (request: unknown) => string;
   /** Whether to apply globally (default: true) */
   global?: boolean;
+  /** Redis URL for distributed rate limiting via @fastify/rate-limit Redis store */
+  redisUrl?: string;
 }
 
 /**
@@ -717,11 +798,12 @@ export function getFastifyRateLimitConfig(
     additionalSkipPaths = [],
     keyGenerator,
     global = true,
+    redisUrl = process.env.REDIS_URL,
   } = options;
 
   const preset = SERVICE_RATE_LIMIT_CONFIGS[serviceType];
 
-  return {
+  const config: FastifyRateLimitConfig = {
     global,
     max: max ?? preset.max,
     timeWindow: timeWindow ?? preset.timeWindow,
@@ -729,6 +811,27 @@ export function getFastifyRateLimitConfig(
     errorResponseBuilder: createStandardErrorBuilder(message ?? preset.message),
     allowList: createStandardAllowList(additionalSkipPaths),
   };
+
+  // If a Redis URL is provided, create an ioredis client for @fastify/rate-limit
+  if (redisUrl) {
+    try {
+      // Dynamic import to avoid hard dependency — ioredis is already a transitive dep of @aivo/rate-limiter
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Redis = require('ioredis');
+      config.redis = new Redis(redisUrl, {
+        maxRetriesPerRequest: 1,
+        enableReadyCheck: false,
+        lazyConnect: true,
+        keyPrefix: `${serviceName}:frl:`,
+      });
+    } catch {
+      console.warn(
+        `[RateLimit] Could not create Redis client for @fastify/rate-limit – falling back to in-memory`
+      );
+    }
+  }
+
+  return config;
 }
 
 /**

@@ -1,0 +1,23 @@
+name: aivo_theme
+version: 0.1.0
+publish_to: "none"
+description: >
+  White-label theming for AIVO Flutter apps.
+  Fetches tenant branding from the AIVO branding API and converts it
+  to a Material 3 ThemeData with AivoColors extension.
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  flutter_common:
+    path: ../../libs/flutter-common
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4

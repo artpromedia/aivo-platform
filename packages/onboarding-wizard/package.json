@@ -1,0 +1,34 @@
+{
+  "name": "@aivo/onboarding-wizard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./client": {
+      "import": "./src/client.tsx",
+      "types": "./src/client.tsx"
+    },
+    "./flows": {
+      "import": "./src/flows/index.ts",
+      "types": "./src/flows/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "next": ">=14",
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4",
+    "@types/react": "^18.2.0"
+  }
+}

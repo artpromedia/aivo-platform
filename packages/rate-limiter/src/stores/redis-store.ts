@@ -3,26 +3,162 @@
  *
  * Provides distributed rate limiting using Redis with atomic Lua scripts
  * for consistency across multiple application instances.
+ *
+ * Supports fail-open mode for resilience: when Redis is unavailable,
+ * operations return safe defaults instead of throwing errors.
  */
 
-import type { Redis, Cluster } from 'ioredis';
+import Redis from 'ioredis';
+import type { Cluster } from 'ioredis';
 
-import { logger } from '../logger';
+import type { Logger } from '../logger';
+import { logger as globalLogger, noopLogger } from '../logger';
 
 import type { RateLimitStore } from './types';
 
+// ══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ══════════════════════════════════════════════════════════════════════════════
+
+export interface RedisStoreOptions {
+  /** Redis client instance (mutually exclusive with redisUrl) */
+  client?: Redis | Cluster;
+  /** Redis connection URL (mutually exclusive with client) */
+  redisUrl?: string;
+  /** Key prefix for namespacing (default: 'ratelimit') */
+  keyPrefix?: string;
+  /** When true, return safe defaults on Redis errors instead of throwing (default: true) */
+  failOpen?: boolean;
+  /** Logger instance (default: global logger) */
+  logger?: Logger;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FACTORY
+// ══════════════════════════════════════════════════════════════════════════════
+
 /**
- * Redis-based rate limit store with Lua scripts for atomic operations
+ * Convenience factory to create a RedisStore from a connection URL.
+ *
+ * @example
+ * ```typescript
+ * const store = createRedisStore('redis://localhost:6379', { failOpen: true });
+ * ```
+ */
+export function createRedisStore(
+  redisUrl: string,
+  options: Omit<RedisStoreOptions, 'client' | 'redisUrl'> = {}
+): RedisStore {
+  const client = new Redis(redisUrl, {
+    maxRetriesPerRequest: 3,
+    retryStrategy(times) {
+      if (times > 10) return null; // stop retrying
+      return Math.min(times * 200, 2000);
+    },
+    enableReadyCheck: true,
+    lazyConnect: false,
+  });
+  return new RedisStore({ client, ...options });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REDIS STORE
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Redis-based rate limit store with Lua scripts for atomic operations.
+ *
+ * Supports two constructor signatures for backward compatibility:
+ * - Legacy: `new RedisStore(redis, prefix?)`
+ * - Options: `new RedisStore({ client, keyPrefix, failOpen, logger })`
  */
 export class RedisStore implements RateLimitStore {
   private scriptsRegistered = false;
+  private redis: Redis | Cluster;
+  private prefix: string;
+  private failOpen: boolean;
+  private log: Logger;
+  private ownsClient = false;
 
+  constructor(options: RedisStoreOptions);
+  constructor(redis: Redis | Cluster, prefix?: string);
   constructor(
-    private redis: Redis | Cluster,
-    private prefix = 'ratelimit'
+    optionsOrRedis: RedisStoreOptions | Redis | Cluster,
+    legacyPrefix?: string
   ) {
+    // Detect legacy vs options constructor
+    if (this.isRedisClient(optionsOrRedis)) {
+      // Legacy: new RedisStore(redis, prefix?)
+      this.redis = optionsOrRedis;
+      this.prefix = legacyPrefix ?? 'ratelimit';
+      this.failOpen = false;
+      this.log = globalLogger;
+    } else {
+      // Options: new RedisStore({ client, keyPrefix, ... })
+      const opts = optionsOrRedis as RedisStoreOptions;
+      if (!opts.client && !opts.redisUrl) {
+        throw new Error('RedisStore requires either a client or redisUrl option');
+      }
+      if (opts.redisUrl && !opts.client) {
+        this.redis = new Redis(opts.redisUrl, {
+          maxRetriesPerRequest: 3,
+          retryStrategy(times) {
+            if (times > 10) return null;
+            return Math.min(times * 200, 2000);
+          },
+          enableReadyCheck: true,
+          lazyConnect: false,
+        });
+        this.ownsClient = true;
+      } else {
+        this.redis = opts.client!;
+      }
+      this.prefix = opts.keyPrefix ?? 'ratelimit';
+      this.failOpen = opts.failOpen ?? true;
+      this.log = opts.logger ?? globalLogger;
+    }
+
     this.registerScripts();
   }
+
+  private isRedisClient(obj: unknown): obj is Redis | Cluster {
+    return (
+      obj !== null &&
+      typeof obj === 'object' &&
+      typeof (obj as Redis).ping === 'function' &&
+      typeof (obj as Redis).get === 'function'
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FAIL-OPEN HELPER
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Wrap an async operation with fail-open behavior.
+   * When failOpen is true, Redis errors return the provided fallback value.
+   */
+  private async withFailOpen<T>(
+    operation: string,
+    fallback: T,
+    fn: () => Promise<T>,
+    meta?: Record<string, unknown>
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (error) {
+      this.log.error(`Redis ${operation} error`, { ...meta, error });
+      if (this.failOpen) {
+        this.log.warn(`Fail-open: returning default for ${operation}`, meta);
+        return fallback;
+      }
+      throw error;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LUA SCRIPTS
+  // ══════════════════════════════════════════════════════════════════════════
 
   /**
    * Register Lua scripts for atomic operations
@@ -31,6 +167,21 @@ export class RedisStore implements RateLimitStore {
     if (this.scriptsRegistered) return;
 
     try {
+      // Atomic increment with PEXPIRE in a single round-trip
+      (this.redis as Redis).defineCommand('atomicIncrement', {
+        numberOfKeys: 1,
+        lua: `
+          local key   = KEYS[1]
+          local amt   = tonumber(ARGV[1])
+          local ttlMs = tonumber(ARGV[2])
+          local v = redis.call('INCRBY', key, amt)
+          if v == amt then
+            redis.call('PEXPIRE', key, ttlMs)
+          end
+          return v
+        `,
+      });
+
       // Token bucket consume script
       (this.redis as Redis).defineCommand('tokenBucketConsume', {
         numberOfKeys: 1,
@@ -137,131 +288,126 @@ export class RedisStore implements RateLimitStore {
       });
 
       this.scriptsRegistered = true;
-      logger.debug('Redis Lua scripts registered');
+      this.log.debug('Redis Lua scripts registered');
     } catch (error) {
-      logger.error('Failed to register Redis scripts', { error });
+      this.log.error('Failed to register Redis scripts', { error });
     }
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // KEY HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
 
   private getKey(key: string): string {
     return `${this.prefix}:${key}`;
   }
 
+  /** Expose the underlying Redis client (for advanced use / testing) */
+  getClient(): Redis | Cluster {
+    return this.redis;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // BASIC OPERATIONS (fail-open wrapped)
+  // ══════════════════════════════════════════════════════════════════════════
+
   async get(key: string): Promise<string | null> {
-    try {
-      return await this.redis.get(this.getKey(key));
-    } catch (error) {
-      logger.error('Redis GET error', { key, error });
-      throw error;
-    }
+    return this.withFailOpen('GET', null, () => this.redis.get(this.getKey(key)), { key });
   }
 
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
-    try {
+    return this.withFailOpen('SET', undefined, async () => {
       const fullKey = this.getKey(key);
       if (ttlSeconds) {
         await this.redis.set(fullKey, value, 'EX', ttlSeconds);
       } else {
         await this.redis.set(fullKey, value);
       }
-    } catch (error) {
-      logger.error('Redis SET error', { key, error });
-      throw error;
-    }
+    }, { key });
   }
 
   async increment(key: string, amount = 1, ttlSeconds?: number): Promise<number> {
-    try {
+    return this.withFailOpen('INCREMENT', 0, async () => {
       const fullKey = this.getKey(key);
 
       if (ttlSeconds) {
-        // Use MULTI for atomic increment + expire
-        const multi = this.redis.multi();
-        multi.incrby(fullKey, amount);
-        // NX = only set expiry if key is new
-        multi.expire(fullKey, ttlSeconds, 'NX');
-
-        const results = await multi.exec();
-        if (!results) throw new Error('Transaction failed');
-        return results[0][1] as number;
+        // Use Lua atomic increment (single round-trip) when possible
+        try {
+          const result = await (this.redis as any).atomicIncrement(
+            fullKey,
+            amount,
+            ttlSeconds * 1000
+          );
+          return result as number;
+        } catch {
+          // Fallback to MULTI for cluster / script-disabled scenarios
+          const multi = this.redis.multi();
+          multi.incrby(fullKey, amount);
+          multi.expire(fullKey, ttlSeconds, 'NX');
+          const results = await multi.exec();
+          if (!results) throw new Error('Transaction failed');
+          return results[0][1] as number;
+        }
       }
 
       return await this.redis.incrby(fullKey, amount);
-    } catch (error) {
-      logger.error('Redis INCREMENT error', { key, error });
-      throw error;
-    }
+    }, { key });
   }
 
   async decrement(key: string, amount = 1): Promise<number> {
-    try {
-      return await this.redis.decrby(this.getKey(key), amount);
-    } catch (error) {
-      logger.error('Redis DECREMENT error', { key, error });
-      throw error;
-    }
+    return this.withFailOpen('DECREMENT', 0, () =>
+      this.redis.decrby(this.getKey(key), amount), { key });
   }
 
   async delete(key: string): Promise<void> {
-    try {
+    return this.withFailOpen('DELETE', undefined, async () => {
       await this.redis.del(this.getKey(key));
-    } catch (error) {
-      logger.error('Redis DELETE error', { key, error });
-      throw error;
-    }
+    }, { key });
   }
 
   async exists(key: string): Promise<boolean> {
-    try {
+    return this.withFailOpen('EXISTS', false, async () => {
       const result = await this.redis.exists(this.getKey(key));
       return result === 1;
-    } catch (error) {
-      logger.error('Redis EXISTS error', { key, error });
-      throw error;
-    }
+    }, { key });
   }
 
   async expire(key: string, ttlSeconds: number): Promise<void> {
-    try {
+    return this.withFailOpen('EXPIRE', undefined, async () => {
       await this.redis.expire(this.getKey(key), ttlSeconds);
-    } catch (error) {
-      logger.error('Redis EXPIRE error', { key, error });
-      throw error;
-    }
+    }, { key });
   }
 
   async ttl(key: string): Promise<number> {
-    try {
-      return await this.redis.ttl(this.getKey(key));
-    } catch (error) {
-      logger.error('Redis TTL error', { key, error });
-      throw error;
-    }
+    return this.withFailOpen('TTL', -1, () =>
+      this.redis.ttl(this.getKey(key)), { key });
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // SLIDING WINDOW
+  // ══════════════════════════════════════════════════════════════════════════
+
   async slidingWindowCount(key: string, minScore: number, maxScore: number): Promise<number> {
-    try {
-      return await this.redis.zcount(this.getKey(key), minScore, maxScore);
-    } catch (error) {
-      logger.error('Redis ZCOUNT error', { key, error });
-      throw error;
-    }
+    return this.withFailOpen('ZCOUNT', 0, () =>
+      this.redis.zcount(this.getKey(key), minScore, maxScore), { key });
   }
 
   async slidingWindowAdd(key: string, score: number, windowMs: number): Promise<number> {
-    try {
-      // Use the registered Lua script
-      const result = await (this.redis as any).slidingWindowAdd(
-        this.getKey(key),
-        score,
-        windowMs
-      );
-      return result as number;
-    } catch (error) {
-      // Fallback to manual implementation
-      logger.warn('Lua script failed, using fallback', { error });
-      return this.slidingWindowAddFallback(key, score, windowMs);
-    }
+    return this.withFailOpen('slidingWindowAdd', 0, async () => {
+      try {
+        // Use the registered Lua script
+        const result = await (this.redis as any).slidingWindowAdd(
+          this.getKey(key),
+          score,
+          windowMs
+        );
+        return result as number;
+      } catch (error) {
+        // Fallback to manual implementation
+        this.log.warn('Lua script failed, using fallback', { error });
+        return this.slidingWindowAddFallback(key, score, windowMs);
+      }
+    }, { key });
   }
 
   private async slidingWindowAddFallback(key: string, score: number, windowMs: number): Promise<number> {
@@ -280,6 +426,10 @@ export class RedisStore implements RateLimitStore {
     return results[3][1] as number;
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // TOKEN BUCKET
+  // ══════════════════════════════════════════════════════════════════════════
+
   async tokenBucketConsume(
     key: string,
     capacity: number,
@@ -287,19 +437,26 @@ export class RedisStore implements RateLimitStore {
     cost: number,
     now: number
   ): Promise<{ success: boolean; tokens: number }> {
-    try {
-      const result = await (this.redis as any).tokenBucketConsume(
-        this.getKey(`${key}:bucket`),
-        capacity,
-        refillRate,
-        cost,
-        now
-      );
-      return JSON.parse(result);
-    } catch (error) {
-      logger.warn('Token bucket Lua script failed, using fallback', { error });
-      return this.tokenBucketConsumeFallback(key, capacity, refillRate, cost, now);
-    }
+    return this.withFailOpen(
+      'tokenBucketConsume',
+      { success: true, tokens: capacity }, // fail-open: allow the request
+      async () => {
+        try {
+          const result = await (this.redis as any).tokenBucketConsume(
+            this.getKey(`${key}:bucket`),
+            capacity,
+            refillRate,
+            cost,
+            now
+          );
+          return JSON.parse(result);
+        } catch (error) {
+          this.log.warn('Token bucket Lua script failed, using fallback', { error });
+          return this.tokenBucketConsumeFallback(key, capacity, refillRate, cost, now);
+        }
+      },
+      { key }
+    );
   }
 
   private async tokenBucketConsumeFallback(
@@ -339,6 +496,10 @@ export class RedisStore implements RateLimitStore {
     return { success, tokens };
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // LEAKY BUCKET
+  // ══════════════════════════════════════════════════════════════════════════
+
   async leakyBucketConsume(
     key: string,
     capacity: number,
@@ -346,19 +507,26 @@ export class RedisStore implements RateLimitStore {
     cost: number,
     now: number
   ): Promise<{ success: boolean; water: number }> {
-    try {
-      const result = await (this.redis as any).leakyBucketConsume(
-        this.getKey(`${key}:leaky`),
-        capacity,
-        leakRate,
-        cost,
-        now
-      );
-      return JSON.parse(result);
-    } catch (error) {
-      logger.warn('Leaky bucket Lua script failed, using fallback', { error });
-      return this.leakyBucketConsumeFallback(key, capacity, leakRate, cost, now);
-    }
+    return this.withFailOpen(
+      'leakyBucketConsume',
+      { success: true, water: 0 }, // fail-open: allow the request
+      async () => {
+        try {
+          const result = await (this.redis as any).leakyBucketConsume(
+            this.getKey(`${key}:leaky`),
+            capacity,
+            leakRate,
+            cost,
+            now
+          );
+          return JSON.parse(result);
+        } catch (error) {
+          this.log.warn('Leaky bucket Lua script failed, using fallback', { error });
+          return this.leakyBucketConsumeFallback(key, capacity, leakRate, cost, now);
+        }
+      },
+      { key }
+    );
   }
 
   private async leakyBucketConsumeFallback(
@@ -398,29 +566,29 @@ export class RedisStore implements RateLimitStore {
     return { success, water };
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // UTILITY
+  // ══════════════════════════════════════════════════════════════════════════
+
   async keys(pattern: string): Promise<string[]> {
-    try {
-      return await this.redis.keys(this.getKey(pattern));
-    } catch (error) {
-      logger.error('Redis KEYS error', { pattern, error });
-      throw error;
-    }
+    return this.withFailOpen('KEYS', [], () =>
+      this.redis.keys(this.getKey(pattern)), { pattern });
   }
 
   async flushAll(): Promise<void> {
-    try {
-      const keys = await this.keys('*');
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
+    return this.withFailOpen('FLUSHALL', undefined, async () => {
+      const allKeys = await this.redis.keys(this.getKey('*'));
+      if (allKeys.length > 0) {
+        await this.redis.del(...allKeys);
       }
-    } catch (error) {
-      logger.error('Redis FLUSHALL error', { error });
-      throw error;
-    }
+    });
   }
 
   async close(): Promise<void> {
-    // Redis client is managed externally
+    if (this.ownsClient) {
+      await this.redis.quit();
+    }
+    // Otherwise Redis client is managed externally
   }
 
   async isHealthy(): Promise<boolean> {

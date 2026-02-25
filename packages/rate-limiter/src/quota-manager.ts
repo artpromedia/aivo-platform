@@ -27,6 +27,7 @@
 import type { RateLimiterLogger} from './logger';
 import { noopLogger } from './logger';
 import { MemoryStore } from './stores/memory-store';
+import { createRedisStore } from './stores/redis-store';
 import type { RateLimitStore } from './stores/types';
 import type { QuotaUsage } from './types';
 
@@ -46,8 +47,10 @@ export interface QuotaDefinition {
 }
 
 export interface QuotaManagerOptions {
-  /** Storage backend */
+  /** Storage backend (takes precedence over redisUrl) */
   store?: RateLimitStore;
+  /** Redis URL — creates a RedisStore automatically when provided and no `store` is given */
+  redisUrl?: string;
   /** Quota definitions by name */
   quotas?: Record<string, QuotaDefinition>;
   /** Logger instance */
@@ -79,7 +82,10 @@ export class QuotaManager {
   private readonly timezone: string;
 
   constructor(options: QuotaManagerOptions = {}) {
-    this.store = options.store ?? new MemoryStore();
+    this.store = options.store
+      ?? (options.redisUrl
+        ? createRedisStore(options.redisUrl, { keyPrefix: 'quota', failOpen: true, logger: options.logger })
+        : new MemoryStore());
     this.quotas = options.quotas ?? {};
     this.logger = options.logger ?? noopLogger;
     this.timezone = options.timezone ?? 'UTC';

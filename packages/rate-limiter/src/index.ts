@@ -77,7 +77,8 @@ export { QuotaManager } from './quota-manager';
 export type { QuotaManagerOptions, QuotaDefinition, QuotaCheckResult } from './quota-manager';
 
 // Stores
-export { RedisStore } from './stores/redis-store';
+export { RedisStore, createRedisStore } from './stores/redis-store';
+export type { RedisStoreOptions } from './stores/redis-store';
 export { MemoryStore } from './stores/memory-store';
 export type { RateLimitStore } from './stores/types';
 
@@ -102,3 +103,7 @@ export {
   GATEWAY_OPTIONS,
   type GatewayRateLimitOptions,
 } from './gateway';
+
+// Fastify Plugin (also available via '@aivo/rate-limiter/fastify')
+export { rateLimitPlugin } from './fastify';
+export type { FastifyRateLimitOptions } from './fastify';

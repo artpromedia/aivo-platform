@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ChangelogCategory {
+  feature
+  improvement
+  fix
+  security
+  deprecation
+}
+
+model ChangelogEntry {
+  id            String            @id @default(uuid()) @db.Uuid
+  version       String            @db.VarChar(20)
+  title         String            @db.VarChar(200)
+  summary       String            @db.Text
+  bodyMarkdown  String?           @map("body_markdown") @db.Text
+  category      ChangelogCategory
+  audience      String[]          @db.VarChar(50)
+  tags          String[]          @db.VarChar(50)
+  imageUrl      String?           @map("image_url") @db.VarChar(500)
+  isHighlight   Boolean           @default(false) @map("is_highlight")
+  publishedAt   DateTime?         @map("published_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  reads ChangelogRead[]
+
+  @@map("changelog_entries")
+  @@index([publishedAt])
+  @@index([category])
+}
+
+model ChangelogRead {
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @map("user_id") @db.VarChar(100)
+  tenantId String   @map("tenant_id") @db.VarChar(100)
+  entryId  String   @map("entry_id") @db.Uuid
+  readAt   DateTime @default(now()) @map("read_at")
+
+  entry ChangelogEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entryId])
+  @@map("changelog_reads")
+  @@index([userId])
+  @@index([entryId])
+}

@@ -1,0 +1,92 @@
+// ────────────────────────────────────────────────────────────────
+// compliance-evidence-svc Prisma Schema
+// ────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Evidence Records ──────────────────────────────────────────
+
+model EvidenceRecord {
+  id            String   @id @default(uuid()) @db.Uuid
+  collectorId   String   @map("collector_id")
+  controlId     String   @map("control_id")
+  category      String   // CC, A, PI, C, P
+  s3Key         String   @map("s3_key")
+  s3Bucket      String   @map("s3_bucket")
+  format        String   // json, markdown, csv, pdf, sarif
+  sizeBytes     Int      @map("size_bytes")
+  sha256        String
+  collectedAt   DateTime @default(now()) @map("collected_at")
+  periodStart   DateTime @map("period_start")
+  periodEnd     DateTime @map("period_end")
+  metadata      Json     @default("{}")
+  runId         String?  @map("run_id") @db.Uuid
+
+  run           CollectionRun? @relation(fields: [runId], references: [id])
+
+  @@index([controlId, collectedAt])
+  @@index([collectorId, collectedAt])
+  @@index([category])
+  @@index([s3Key], map: "idx_evidence_s3_key")
+  @@map("evidence_records")
+}
+
+// ── Collection Runs ──────────────────────────────────────────
+
+model CollectionRun {
+  id            String    @id @default(uuid()) @db.Uuid
+  collectorId   String    @map("collector_id")
+  status        String    // running, completed, failed
+  startedAt     DateTime  @default(now()) @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  evidenceCount Int       @default(0) @map("evidence_count")
+  errorMessage  String?   @map("error_message")
+  durationMs    Int?      @map("duration_ms")
+  triggeredBy   String    @default("scheduled") @map("triggered_by") // scheduled, manual, ci
+
+  evidenceRecords EvidenceRecord[]
+
+  @@index([collectorId, startedAt])
+  @@index([status])
+  @@map("collection_runs")
+}
+
+// ── Audit Packages ──────────────────────────────────────────
+
+model AuditPackage {
+  id             String   @id @default(uuid()) @db.Uuid
+  periodStart    DateTime @map("period_start")
+  periodEnd      DateTime @map("period_end")
+  controlCount   Int      @map("control_count")
+  evidenceCount  Int      @map("evidence_count")
+  s3Key          String   @map("s3_key")
+  sizeBytes      Int      @map("size_bytes")
+  generatedAt    DateTime @default(now()) @map("generated_at")
+  generatedBy    String   @map("generated_by")
+  categories     String[] @default([])
+
+  @@index([generatedAt])
+  @@map("audit_packages")
+}
+
+// ── Collector Schedules ──────────────────────────────────────
+
+model CollectorSchedule {
+  id          String   @id @default(uuid()) @db.Uuid
+  collectorId String   @unique @map("collector_id")
+  cronExpr    String   @map("cron_expr")
+  enabled     Boolean  @default(true)
+  lastRunAt   DateTime? @map("last_run_at")
+  nextRunAt   DateTime? @map("next_run_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("collector_schedules")
+}

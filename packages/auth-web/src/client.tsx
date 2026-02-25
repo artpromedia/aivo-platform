@@ -27,6 +27,13 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface ClientImpersonationInfo {
+  sessionId: string;
+  adminUserId: string;
+  readOnly: boolean;
+  expiresAt: string;
+}
+
 export interface ClientSession {
   userId: string;
   tenantId: string;
@@ -34,6 +41,8 @@ export interface ClientSession {
   name: string | null;
   email: string | null;
   learnerId: string | null;
+  isImpersonated?: boolean;
+  impersonation?: ClientImpersonationInfo;
 }
 
 export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -119,3 +128,6 @@ export function SessionProvider({ initialSession, children }: SessionProviderPro
 export function useSession(): SessionContextValue {
   return useContext(SessionContext);
 }
+
+// ─── Re-export shared components ──────────────────────────────────────────────
+export { ImpersonationBanner } from './ImpersonationBanner';

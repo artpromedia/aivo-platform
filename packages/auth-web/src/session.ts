@@ -16,6 +16,18 @@ export const ACCESS_COOKIE = 'aivo_access_token';
 export const REFRESH_COOKIE = 'aivo_refresh_token';
 
 // ─── Session type ─────────────────────────────────────────────────────────────
+
+export interface ImpersonationSessionInfo {
+  /** Impersonation session ID */
+  sessionId: string;
+  /** User ID of the admin performing the impersonation */
+  adminUserId: string;
+  /** Whether the session is read-only */
+  readOnly: boolean;
+  /** ISO timestamp for session expiry */
+  expiresAt: string;
+}
+
 export interface AuthSession {
   /** auth-svc user id (JWT `sub`) */
   userId: string;
@@ -31,6 +43,10 @@ export interface AuthSession {
   learnerId: string | null;
   /** Raw access token for forwarding to backend services */
   accessToken: string;
+  /** Whether this session is under impersonation */
+  isImpersonated?: boolean;
+  /** Impersonation details (present when isImpersonated is true) */
+  impersonation?: ImpersonationSessionInfo;
 }
 
 // ─── Public key singleton ─────────────────────────────────────────────────────
@@ -89,6 +105,15 @@ function payloadToSession(payload: JWTPayload, token: string): AuthSession | nul
     ? (payload.roles as string[]).filter((r) => typeof r === 'string')
     : [];
 
+  // Detect impersonation claims
+  const imp = (payload as Record<string, unknown>).impersonation as
+    | Record<string, unknown>
+    | undefined;
+  const isImpersonated =
+    imp != null &&
+    typeof imp === 'object' &&
+    typeof imp.sessionId === 'string';
+
   return {
     userId: sub,
     tenantId,
@@ -100,6 +125,17 @@ function payloadToSession(payload: JWTPayload, token: string): AuthSession | nul
         ? ((payload as Record<string, unknown>).learnerId as string)
         : null,
     accessToken: token,
+    ...(isImpersonated
+      ? {
+          isImpersonated: true,
+          impersonation: {
+            sessionId: imp!.sessionId as string,
+            adminUserId: imp!.adminUserId as string,
+            readOnly: imp!.readOnly === true,
+            expiresAt: imp!.expiresAt as string,
+          },
+        }
+      : {}),
   };
 }
 

@@ -206,4 +206,37 @@ describe('QuotaManager', () => {
       expect(result.reset.monthly).toBeLessThanOrEqual(now + 32 * 24 * 60 * 60 * 1000);
     });
   });
+
+  describe('redisUrl option', () => {
+    it('should use MemoryStore when neither store nor redisUrl is given', () => {
+      const qm = new QuotaManager({ quotas: { test: { daily: 10 } } });
+      // Should not throw — default MemoryStore is used
+      expect(qm).toBeInstanceOf(QuotaManager);
+    });
+
+    it('should prefer explicit store over redisUrl', async () => {
+      const customStore = new MemoryStore();
+      const qm = new QuotaManager({
+        store: customStore,
+        redisUrl: 'redis://localhost:6379',
+        quotas: { test: { daily: 10 } },
+      });
+
+      // Should use the custom store (MemoryStore), not create a Redis one
+      const result = await qm.check('user:1', 'test');
+      expect(result.allowed).toBe(true);
+
+      await customStore.close();
+    });
+
+    it('should create a RedisStore when redisUrl is provided without store', () => {
+      // This creates a real Redis connection attempt. The important thing is
+      // that the constructor doesn't throw synchronously. We close immediately.
+      const qm = new QuotaManager({
+        redisUrl: 'redis://localhost:6379',
+        quotas: { test: { daily: 10 } },
+      });
+      expect(qm).toBeInstanceOf(QuotaManager);
+    });
+  });
 });

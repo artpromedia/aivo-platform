@@ -10,6 +10,18 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./versioning": {
+      "import": "./dist/versioning.js",
+      "types": "./dist/versioning.d.ts"
+    },
+    "./versioned-routes": {
+      "import": "./dist/versioned-routes.js",
+      "types": "./dist/versioned-routes.d.ts"
+    },
+    "./internal-versioning": {
+      "import": "./dist/internal-versioning.js",
+      "types": "./dist/internal-versioning.d.ts"
     }
   },
   "scripts": {

@@ -38,6 +38,18 @@ export {
   EnvValidation,
 } from './env-validation.js';
 
+// API versioning (also available as deep imports)
+export { apiVersioning, type ApiVersion, type VersioningOptions } from './versioning.js';
+export { registerVersionedRoutes, versionedRoute, type VersionedRoute } from './versioned-routes.js';
+export {
+  internalVersioning,
+  INTERNAL_API_VERSION_HEADER,
+  INTERNAL_VERSION_LATEST,
+  isVersionAtLeast,
+  withInternalVersion,
+  type InternalVersioningOptions,
+} from './internal-versioning.js';
+
 export * from './soft-delete.js';
 
 // Fastify plugin type helpers

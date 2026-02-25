@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model OnboardingProgress {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.VarChar(255)
+  tenantId       String   @map("tenant_id") @db.VarChar(255)
+  flowId         String   @map("flow_id") @db.VarChar(100)
+  completedSteps String[] @map("completed_steps")
+  skippedSteps   String[] @map("skipped_steps")
+  currentStepId  String?  @map("current_step_id") @db.VarChar(100)
+  startedAt      DateTime @default(now()) @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  dismissed      Boolean  @default(false)
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, flowId], name: "user_flow")
+  @@index([tenantId])
+  @@map("onboarding_progress")
+}
+
+model FeatureSeen {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.VarChar(255)
+  tenantId   String   @map("tenant_id") @db.VarChar(255)
+  featureKey String   @map("feature_key") @db.VarChar(200)
+  seenAt     DateTime @default(now()) @map("seen_at")
+
+  @@unique([userId, featureKey], name: "user_feature")
+  @@index([tenantId])
+  @@map("feature_seen")
+}
