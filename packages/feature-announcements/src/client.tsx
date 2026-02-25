@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import type { FeatureAnnouncement } from './types.js';
 
 // ─── useFeatureSeen Hook ──────────────────────────────────────────────
@@ -230,8 +231,8 @@ export function FeatureHighlight({
   useEffect(() => {
     if (seen === false) {
       // Small delay so the element is rendered first
-      const t = setTimeout(() => setOpen(true), 500);
-      return () => clearTimeout(t);
+      const t = setTimeout(() => { setOpen(true); }, 500);
+      return () => { clearTimeout(t); };
     }
   }, [seen]);
 
@@ -244,7 +245,7 @@ export function FeatureHighlight({
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   });
 
   const handleDismiss = useCallback(() => {
@@ -253,7 +254,7 @@ export function FeatureHighlight({
   }, [markSeen]);
 
   // Don't render anything extra while loading or if already seen
-  if (seen === null || seen === true) {
+  if (seen === null || seen) {
     return <>{children}</>;
   }
 

@@ -1,8 +1,8 @@
-import { OverallStatus } from '@/components/OverallStatus';
-import { ComponentGroup } from '@/components/ComponentGroup';
 import { ActiveIncidents } from '@/components/ActiveIncidents';
-import { UptimeOverview } from '@/components/UptimeOverview';
+import { ComponentGroup } from '@/components/ComponentGroup';
+import { OverallStatus } from '@/components/OverallStatus';
 import { UpcomingMaintenance } from '@/components/UpcomingMaintenance';
+import { UptimeOverview } from '@/components/UptimeOverview';
 import { getStatus, getUptimeHistory } from '@/lib/api';
 import type { StatusResponse, UptimeHistory } from '@/lib/types';
 

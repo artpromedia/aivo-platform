@@ -5,19 +5,19 @@
 // Designed to survive full platform outages — no dependency on the
 // platform PostgreSQL cluster, Redis, or NATS.
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import Fastify from 'fastify';
 
 import { config } from './config.js';
 import { initDb, closeDb } from './db/database.js';
-import { statusRoutes } from './routes/status.js';
+import { feedRoutes } from './routes/feed.js';
 import { incidentRoutes } from './routes/incidents.js';
 import { maintenanceRoutes } from './routes/maintenance.js';
+import { statusRoutes } from './routes/status.js';
 import { subscriberRoutes } from './routes/subscribers.js';
 import { webhookRoutes } from './routes/webhooks.js';
-import { feedRoutes } from './routes/feed.js';
 import { startAutoDetection, stopAutoDetection } from './services/auto-incident.js';
 
 async function main(): Promise<void> {
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
   console.log(`[status-page-svc] listening on ${config.host}:${config.port}`);
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('[status-page-svc] fatal:', err);
   process.exit(1);
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+
 import type { ChangelogCategory, ChangelogEntry, PaginatedChangelog } from './types.js';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from './types.js';
 
@@ -238,7 +239,7 @@ export function ChangelogPage({
         <button
           type="button"
           style={pageStyles.filterButton(activeCategory === null)}
-          onClick={() => setActiveCategory(null)}
+          onClick={() => { setActiveCategory(null); }}
         >
           All
         </button>
@@ -247,7 +248,7 @@ export function ChangelogPage({
             key={cat}
             type="button"
             style={pageStyles.filterButton(activeCategory === cat)}
-            onClick={() => setActiveCategory(cat === activeCategory ? null : cat)}
+            onClick={() => { setActiveCategory(cat === activeCategory ? null : cat); }}
           >
             {CATEGORY_LABELS[cat]}
           </button>
@@ -289,7 +290,7 @@ export function ChangelogPage({
 
             <h2
               style={{ ...pageStyles.entryTitle, cursor: entry.bodyMarkdown ? 'pointer' : 'default' }}
-              onClick={() => entry.bodyMarkdown && toggleExpand(entry.id)}
+              onClick={() => { if (entry.bodyMarkdown) toggleExpand(entry.id); }}
             >
               {entry.title}
             </h2>
@@ -311,7 +312,7 @@ export function ChangelogPage({
             {entry.bodyMarkdown && (
               <button
                 type="button"
-                onClick={() => toggleExpand(entry.id)}
+                onClick={() => { toggleExpand(entry.id); }}
                 style={{
                   background: 'none',
                   border: 'none',

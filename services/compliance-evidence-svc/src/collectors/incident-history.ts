@@ -47,7 +47,7 @@ registerCollector('incident-history', async (periodStart, periodEnd): Promise<Co
     });
     const resp = await fetch(`${config.auditSvcUrl}/api/audit/events?${params}`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.incidents = (data.events ?? []).map((e: any) => ({
         id: e.id,
         title: e.metadata?.title ?? e.action ?? 'Unknown',
@@ -75,7 +75,7 @@ registerCollector('incident-history', async (periodStart, periodEnd): Promise<Co
   if (resolved.length > 0) {
     const totalMinutes = resolved.reduce((sum, i) => {
       const detected = new Date(i.detectedAt).getTime();
-      const resolvedAt = new Date(i.resolvedAt!).getTime();
+      const resolvedAt = new Date(i.resolvedAt).getTime();
       return sum + (resolvedAt - detected) / 60000;
     }, 0);
     evidence.avgMttrMinutes = Math.round(totalMinutes / resolved.length);

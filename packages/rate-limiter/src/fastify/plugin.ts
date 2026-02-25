@@ -19,6 +19,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type Redis from 'ioredis';
 import fp from 'fastify-plugin';
 
 import type { Logger } from '../logger';
@@ -49,7 +50,7 @@ export interface FastifyRateLimitOptions {
    * fail-open RedisStore with no connection (always allows).
    */
   redisUrl?: string;
-  redisClient?: InstanceType<typeof import('ioredis').default>;
+  redisClient?: Redis;
   store?: RateLimitStore;
 
   /** When true, Redis errors allow requests through (default: true) */
@@ -213,20 +214,20 @@ async function rateLimitPluginImpl(
 function createPassThroughStore(): RateLimitStore {
   return {
     get: async () => null,
-    set: async () => {},
+    set: async () => { /* noop */ },
     increment: async () => 0,
     decrement: async () => 0,
-    delete: async () => {},
+    delete: async () => { /* noop */ },
     exists: async () => false,
-    expire: async () => {},
+    expire: async () => { /* noop */ },
     ttl: async () => -1,
     slidingWindowCount: async () => 0,
     slidingWindowAdd: async () => 0,
     tokenBucketConsume: async (_k, cap) => ({ success: true, tokens: cap }),
     leakyBucketConsume: async () => ({ success: true, water: 0 }),
     keys: async () => [],
-    flushAll: async () => {},
-    close: async () => {},
+    flushAll: async () => { /* noop */ },
+    close: async () => { /* noop */ },
     isHealthy: async () => true,
   };
 }

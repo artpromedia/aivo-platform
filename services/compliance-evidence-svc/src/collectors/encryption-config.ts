@@ -41,7 +41,7 @@ registerCollector('encryption-config', async (periodStart, periodEnd): Promise<C
   try {
     const resp = await fetch(`${config.authSvcUrl}/auth/admin/key-rotation-status`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.keyManagement.lastRotation = data.lastRotation ?? null;
     }
   } catch {

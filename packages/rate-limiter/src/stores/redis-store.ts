@@ -95,7 +95,7 @@ export class RedisStore implements RateLimitStore {
       this.log = globalLogger;
     } else {
       // Options: new RedisStore({ client, keyPrefix, ... })
-      const opts = optionsOrRedis as RedisStoreOptions;
+      const opts = optionsOrRedis;
       if (!opts.client && !opts.redisUrl) {
         throw new Error('RedisStore requires either a client or redisUrl option');
       }

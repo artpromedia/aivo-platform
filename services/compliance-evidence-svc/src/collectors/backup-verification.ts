@@ -21,7 +21,7 @@ registerCollector('backup-verification', async (periodStart, periodEnd): Promise
     const tsResp = await fetch(
       `${promUrl}/api/v1/query?query=pg_backup_last_success_timestamp_seconds`,
     );
-    const tsData = (await tsResp.json()) as any;
+    const tsData = (await tsResp.json());
     if (tsData.data?.result?.[0]?.value?.[1]) {
       lastSuccessfulBackup = new Date(
         Number(tsData.data.result[0].value[1]) * 1000,
@@ -32,14 +32,14 @@ registerCollector('backup-verification', async (periodStart, periodEnd): Promise
     const sizeResp = await fetch(
       `${promUrl}/api/v1/query?query=pg_backup_size_bytes`,
     );
-    const sizeData = (await sizeResp.json()) as any;
+    const sizeData = (await sizeResp.json());
     backupSizeBytes = Number(sizeData.data?.result?.[0]?.value?.[1] ?? 0);
 
     // Backup duration
     const durResp = await fetch(
       `${promUrl}/api/v1/query?query=pg_backup_duration_seconds`,
     );
-    const durData = (await durResp.json()) as any;
+    const durData = (await durResp.json());
     backupDurationSeconds = Number(durData.data?.result?.[0]?.value?.[1] ?? 0);
   } catch {
     // Prometheus may not have backup metrics

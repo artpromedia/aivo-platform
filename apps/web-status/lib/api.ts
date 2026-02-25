@@ -12,7 +12,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...(options?.headers as Record<string, string>),
     },
   });
 
@@ -39,7 +39,7 @@ export async function getStatusSummary(): Promise<{
 
 /** Get uptime history */
 export async function getUptimeHistory(
-  days: number = 90,
+  days = 90,
   component?: string,
 ): Promise<UptimeHistory> {
   const params = new URLSearchParams({ days: days.toString() });
@@ -49,8 +49,8 @@ export async function getUptimeHistory(
 
 /** List incidents */
 export async function getIncidents(
-  page: number = 1,
-  limit: number = 20,
+  page = 1,
+  limit = 20,
   status?: string,
 ): Promise<{
   incidents: Incident[];
@@ -68,8 +68,8 @@ export async function getIncident(id: string): Promise<Incident> {
 
 /** List maintenance windows */
 export async function getMaintenanceWindows(
-  page: number = 1,
-  limit: number = 20,
+  page = 1,
+  limit = 20,
 ): Promise<{
   maintenance: MaintenanceWindow[];
   pagination: { page: number; limit: number; total: number; pages: number };

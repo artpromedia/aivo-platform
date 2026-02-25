@@ -2,8 +2,8 @@
 // AIVO Status Page Service — Subscriber Notification Service
 // ==============================================================================
 
-import { getDb } from '../db/database.js';
 import { config } from '../config.js';
+import { getDb } from '../db/database.js';
 import type { Incident, IncidentUpdate, MaintenanceWindow } from '../types.js';
 
 interface NotificationPayload {
@@ -29,7 +29,7 @@ export async function notifySubscribers(payload: NotificationPayload): Promise<v
   const relevantSubscribers = subscribers.filter((sub) => {
     if (!sub.components) return true; // subscribed to all
     const subscribedComponents: string[] = JSON.parse(sub.components);
-    return (affectedComponents as string[]).some((c) => subscribedComponents.includes(c));
+    return (affectedComponents).some((c) => subscribedComponents.includes(c));
   });
 
   const promises = relevantSubscribers.map(async (sub) => {

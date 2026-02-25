@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { subscribe } from '@/lib/api';
 import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+
+import { subscribe } from '@/lib/api';
 
 export default function SubscribePage() {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ export default function SubscribePage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
@@ -63,7 +64,7 @@ export default function SubscribePage() {
             type="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); }}
             placeholder="you@example.com"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-aivo-500 focus:ring-1 focus:ring-aivo-500 outline-none transition"
           />
@@ -78,7 +79,7 @@ export default function SubscribePage() {
             id="webhook"
             type="url"
             value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
+            onChange={(e) => { setWebhookUrl(e.target.value); }}
             placeholder="https://hooks.slack.com/services/..."
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-aivo-500 focus:ring-1 focus:ring-aivo-500 outline-none transition"
           />

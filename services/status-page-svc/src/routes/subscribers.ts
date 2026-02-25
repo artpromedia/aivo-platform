@@ -5,11 +5,13 @@
 // GET    /api/subscribers/verify       — verify email
 // DELETE /api/subscribers/unsubscribe  — unsubscribe
 
-import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
+
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { getDb } from '../db/database.js';
+
 import { config } from '../config.js';
+import { getDb } from '../db/database.js';
 
 const SubscribeBody = z.object({
   email: z.string().email(),

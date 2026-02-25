@@ -19,7 +19,7 @@ async function main() {
   app.log.info(`onboarding-svc running on port ${config.port}`);
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error('onboarding-svc fatal:', err);
   process.exit(1);
 });

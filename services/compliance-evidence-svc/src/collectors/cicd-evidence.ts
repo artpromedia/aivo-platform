@@ -5,6 +5,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import { Octokit } from '@octokit/rest';
+
 import { config } from '../config.js';
 import { registerCollector } from '../services/collector-runner.js';
 import type { CollectorResult } from '../types.js';

@@ -5,8 +5,9 @@
 // GET /api/feed.rss  — RSS 2.0 redirect (points to Atom)
 
 import type { FastifyPluginAsync } from 'fastify';
-import { getDb } from '../db/database.js';
+
 import { config } from '../config.js';
+import { getDb } from '../db/database.js';
 
 export const feedRoutes: FastifyPluginAsync = async (app) => {
   // ── GET /api/feed.atom ──────────────────────────────────────────────
@@ -67,7 +68,7 @@ export const feedRoutes: FastifyPluginAsync = async (app) => {
 
   // ── GET /api/feed.rss — redirect to Atom ────────────────────────────
   app.get('/api/feed.rss', async (_req, reply) => {
-    return reply.redirect(301, '/api/feed.atom');
+    return reply.redirect('/api/feed.atom');
   });
 };
 

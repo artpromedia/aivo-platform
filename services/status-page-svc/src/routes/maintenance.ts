@@ -6,9 +6,11 @@
 // POST   /api/maintenance         — schedule maintenance (admin)
 // PATCH  /api/maintenance/:id     — update maintenance (admin)
 
-import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
+
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import { getDb } from '../db/database.js';
 import { notifySubscribers } from '../services/notification.js';
 

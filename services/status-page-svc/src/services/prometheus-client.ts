@@ -4,9 +4,9 @@
 // Queries the AIVO platform's Prometheus instance to get component health,
 // error rates, and latency metrics.
 
+import { COMPONENTS } from '../components.js';
 import { config } from '../config.js';
 import type { PrometheusQueryResult, MetricSnapshot } from '../types.js';
-import { COMPONENTS } from '../components.js';
 
 /**
  * Execute an instant query against Prometheus.
@@ -125,7 +125,7 @@ export async function collectMetricSnapshots(): Promise<MetricSnapshot[]> {
  */
 export async function getUptimeHistory(
   componentId: string,
-  days: number = 90,
+  days = 90,
 ): Promise<{ date: string; uptime: number }[]> {
   const component = COMPONENTS.find((c) => c.id === componentId);
   if (!component) return [];

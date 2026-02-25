@@ -150,7 +150,7 @@ export function themeToCssVars(theme: AivoTheme): Record<string, string> {
     const value = theme[themeKey];
     if (value == null) continue;
 
-    const str = String(value);
+    const str = typeof value === 'string' ? value : String(value);
 
     // Convert hex colours to "R G B" format
     if (cssVar.startsWith('--aivo-color-') && str.startsWith('#')) {

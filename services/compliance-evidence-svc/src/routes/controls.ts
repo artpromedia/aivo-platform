@@ -3,6 +3,7 @@
 // ════════════════════════════════════════════════════════════════
 
 import type { FastifyInstance } from 'fastify';
+
 import { CONTROLS, COLLECTORS, staleDaysForSchedule, getControl } from '../control-registry.js';
 import type { ControlStatus, EvidenceHealth, TrustServiceCategory } from '../types.js';
 
@@ -38,7 +39,7 @@ export async function controlsRoutes(app: FastifyInstance): Promise<void> {
 
       return {
         controlId: ctrl.id,
-        category: ctrl.category as TrustServiceCategory,
+        category: ctrl.category,
         section: ctrl.section,
         description: ctrl.description,
         health,

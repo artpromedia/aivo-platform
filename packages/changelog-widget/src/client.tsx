@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import type { ChangelogEntry, PaginatedChangelog } from './types.js';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from './types.js';
 
@@ -290,7 +291,7 @@ export function ChangelogButton({
     fetchUnreadCount();
     if (pollInterval > 0) {
       const timer = setInterval(fetchUnreadCount, pollInterval);
-      return () => clearInterval(timer);
+      return () => { clearInterval(timer); };
     }
   }, [fetchUnreadCount, pollInterval]);
 
@@ -309,9 +310,9 @@ export function ChangelogButton({
           ...styles.changelogButton,
           backgroundColor: hovered ? '#f3f4f6' : 'transparent',
         }}
-        onClick={() => setIsOpen(true)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onClick={() => { setIsOpen(true); }}
+        onMouseEnter={() => { setHovered(true); }}
+        onMouseLeave={() => { setHovered(false); }}
         aria-label={ariaLabel}
         title={ariaLabel}
       >
@@ -358,7 +359,7 @@ export function ChangelogDrawer({
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => { document.removeEventListener('keydown', handler); };
   }, [onClose]);
 
   // Lock body scroll while drawer is open
@@ -403,7 +404,7 @@ export function ChangelogDrawer({
               fetch(`${apiBase}/${entryId}/mark-read`, {
                 method: 'POST',
                 credentials: 'include',
-              }).catch(() => {});
+              }).catch(() => { /* noop */ });
             }
           }
         }

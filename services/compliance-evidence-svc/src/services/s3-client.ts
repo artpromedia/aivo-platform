@@ -2,6 +2,8 @@
 // S3 Evidence Storage Client
 // ════════════════════════════════════════════════════════════════
 
+import { createHash } from 'node:crypto';
+
 import {
   S3Client,
   PutObjectCommand,
@@ -11,7 +13,7 @@ import {
   type PutObjectCommandInput,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { createHash } from 'node:crypto';
+
 import { config } from '../config.js';
 import type { EvidenceFormat } from '../types.js';
 
@@ -139,8 +141,8 @@ export async function listEvidence(
   );
 
   return (result.Contents ?? []).map(obj => ({
-    key: obj.Key!,
-    lastModified: obj.LastModified!,
+    key: obj.Key,
+    lastModified: obj.LastModified,
     sizeBytes: obj.Size ?? 0,
   }));
 }

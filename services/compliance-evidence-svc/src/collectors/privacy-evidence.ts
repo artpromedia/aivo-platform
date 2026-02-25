@@ -30,7 +30,7 @@ registerCollector('privacy-evidence', async (periodStart, periodEnd): Promise<Co
     };
     dataRetention: {
       policyDefined: boolean;
-      retentionPeriods: Array<{ dataType: string; period: string }>;
+      retentionPeriods: { dataType: string; period: string }[];
       automatedDeletion: boolean;
     };
     privacyNotice: {
@@ -81,7 +81,7 @@ registerCollector('privacy-evidence', async (periodStart, periodEnd): Promise<Co
     });
     const resp = await fetch(`${config.complianceSvcUrl}/api/compliance/dsr-stats?${params}`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.dataSubjectRequests.total = data.total ?? 0;
       evidence.dataSubjectRequests.byType = data.byType ?? {};
       evidence.dataSubjectRequests.avgResponseDays = data.avgResponseDays ?? null;
@@ -100,7 +100,7 @@ registerCollector('privacy-evidence', async (periodStart, periodEnd): Promise<Co
     });
     const resp = await fetch(`${config.complianceSvcUrl}/api/compliance/consent-stats?${params}`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.consentManagement.totalConsents = data.totalConsents ?? 0;
       evidence.consentManagement.withdrawals = data.withdrawals ?? 0;
     }
@@ -112,7 +112,7 @@ registerCollector('privacy-evidence', async (periodStart, periodEnd): Promise<Co
   try {
     const resp = await fetch(`${config.complianceSvcUrl}/api/compliance/pia-stats`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.privacyImpactAssessments.total = data.total ?? 0;
       evidence.privacyImpactAssessments.completed = data.completed ?? 0;
     }

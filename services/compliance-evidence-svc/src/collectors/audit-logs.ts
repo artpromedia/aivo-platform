@@ -36,7 +36,7 @@ registerCollector('audit-logs', async (periodStart, periodEnd): Promise<Collecto
     );
 
     if (summaryResp.ok) {
-      const data = (await summaryResp.json()) as any;
+      const data = (await summaryResp.json());
       totalEvents = data.totalEvents ?? 0;
       eventsByType = data.eventsByType ?? {};
     }
@@ -48,7 +48,7 @@ registerCollector('audit-logs', async (periodStart, periodEnd): Promise<Collecto
     );
 
     if (typesResp.ok) {
-      const typesData = (await typesResp.json()) as any;
+      const typesData = (await typesResp.json());
       const recordedTypes = new Set(typesData.types ?? []);
       coveredOperations = CRITICAL_OPERATIONS.filter(op => recordedTypes.has(op));
       missingOperations = CRITICAL_OPERATIONS.filter(op => !recordedTypes.has(op));
@@ -60,7 +60,7 @@ registerCollector('audit-logs', async (periodStart, periodEnd): Promise<Collecto
       { headers: { 'Content-Type': 'application/json' } },
     );
     if (integrityResp.ok) {
-      const intData = (await integrityResp.json()) as any;
+      const intData = (await integrityResp.json());
       integrityCheckPassed = intData.valid ?? false;
     }
   } catch {
@@ -122,7 +122,7 @@ registerCollector('audit-logs', async (periodStart, periodEnd): Promise<Collecto
           '| Event Type | Count |',
           '|-----------|-------|',
           ...Object.entries(eventsByType)
-            .sort(([, a], [, b]) => (b as number) - (a as number))
+            .sort(([, a], [, b]) => (b) - (a))
             .slice(0, 20)
             .map(([type, count]) => `| ${type} | ${count} |`),
           '',

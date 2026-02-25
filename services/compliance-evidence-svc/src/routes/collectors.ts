@@ -4,6 +4,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+
 import { COLLECTORS } from '../control-registry.js';
 import { runCollector, runAllCollectors, getCollectorFn } from '../services/collector-runner.js';
 

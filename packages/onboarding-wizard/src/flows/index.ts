@@ -3,9 +3,10 @@ export { teacherFlow } from './teacher.js';
 export { parentFlow } from './parent.js';
 
 import type { OnboardingFlow, OnboardingRole } from '../types.js';
+
 import { districtAdminFlow } from './district-admin.js';
-import { teacherFlow } from './teacher.js';
 import { parentFlow } from './parent.js';
+import { teacherFlow } from './teacher.js';
 
 const flowsByRole: Record<OnboardingRole, OnboardingFlow> = {
   district_admin: districtAdminFlow,

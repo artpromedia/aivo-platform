@@ -92,10 +92,10 @@ function applySoftDeleteFilter(
 ): void {
   if (where) {
     if (where.deletedAt === undefined) {
-      where['deletedAt'] = null;
+      where.deletedAt = null;
     }
   } else {
-    args['where'] = { deletedAt: null };
+    args.where = { deletedAt: null };
   }
 }
 
@@ -122,14 +122,14 @@ function handleDeleteOperation(
 ): void {
   if (params.action === 'delete') {
     params.action = 'update';
-    args['data'] = { deletedAt: new Date() };
+    args.data = { deletedAt: new Date() };
   } else if (params.action === 'deleteMany') {
     params.action = 'updateMany';
     const existingData = args.data;
     if (existingData && typeof existingData === 'object') {
-      (existingData as Record<string, unknown>)['deletedAt'] = new Date();
+      (existingData as Record<string, unknown>).deletedAt = new Date();
     } else {
-      args['data'] = { deletedAt: new Date() };
+      args.data = { deletedAt: new Date() };
     }
   }
 }
@@ -198,7 +198,7 @@ export function createSoftDeleteMiddleware(): PrismaMiddleware {
  * @returns Promise resolving to updated record
  */
 export async function softDelete<T>(
-  prisma: { [key: string]: { update: (args: { where: object; data: object }) => Promise<T> } },
+  prisma: Record<string, { update: (args: { where: object; data: object }) => Promise<T> }>,
   model: string,
   where: object
 ): Promise<T> {
@@ -222,7 +222,7 @@ export async function softDelete<T>(
  * @returns Promise resolving to restored record
  */
 export async function restoreSoftDelete<T>(
-  prisma: { [key: string]: { update: (args: { where: object; data: object }) => Promise<T> } },
+  prisma: Record<string, { update: (args: { where: object; data: object }) => Promise<T> }>,
   model: string,
   where: object
 ): Promise<T> {
@@ -249,9 +249,9 @@ export async function restoreSoftDelete<T>(
  * @returns Promise resolving to count of purged records
  */
 export async function purgeSoftDeleted(
-  prisma: { [key: string]: { deleteMany: (args: { where: object }) => Promise<{ count: number }> } },
+  prisma: Record<string, { deleteMany: (args: { where: object }) => Promise<{ count: number }> }>,
   model: string,
-  retentionDays: number = 90
+  retentionDays = 90
 ): Promise<number> {
   const modelClient = prisma[model.charAt(0).toLowerCase() + model.slice(1)];
   if (!modelClient) {
@@ -278,9 +278,9 @@ export async function purgeSoftDeleted(
  * Get count of soft-deleted records pending permanent deletion
  */
 export async function countPendingPurge(
-  prisma: { [key: string]: { count: (args: { where: object }) => Promise<number> } },
+  prisma: Record<string, { count: (args: { where: object }) => Promise<number> }>,
   model: string,
-  retentionDays: number = 90
+  retentionDays = 90
 ): Promise<number> {
   const modelClient = prisma[model.charAt(0).toLowerCase() + model.slice(1)];
   if (!modelClient) {

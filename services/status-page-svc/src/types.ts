@@ -140,11 +140,11 @@ export interface PrometheusQueryResult {
   status: 'success' | 'error';
   data: {
     resultType: 'vector' | 'matrix' | 'scalar' | 'string';
-    result: Array<{
+    result: {
       metric: Record<string, string>;
       value?: [number, string];
       values?: [number, string][];
-    }>;
+    }[];
   };
 }
 

@@ -225,7 +225,7 @@ export function createDataLoader<K, V>(
     maxBatchSize = 1000,
     cacheMap = new MapCache<K, V>(),
     cacheKeyFn,
-    batchScheduleFn = (cb) => process.nextTick(cb),
+    batchScheduleFn = (cb) => { process.nextTick(cb); },
     name = 'DataLoader',
   } = options;
 
@@ -273,7 +273,7 @@ export function createDataLoader<K, V>(
         const error = new Error(
           `${name}: Batch function returned ${values.length} results for ${keys.length} keys`
         );
-        currentBatch.forEach((item) => item.reject(error));
+        currentBatch.forEach((item) => { item.reject(error); });
         return;
       }
 
@@ -290,7 +290,7 @@ export function createDataLoader<K, V>(
     } catch (error) {
       // Reject all items on batch failure
       const err = error instanceof Error ? error : new Error(String(error));
-      currentBatch.forEach((item) => item.reject(err));
+      currentBatch.forEach((item) => { item.reject(err); });
     }
   }
 
@@ -418,8 +418,8 @@ export function createIdLoader<K extends string, T>(
       const recordMap = new Map<K, T>();
       for (const record of records) {
         // Try common key fields: id, userId, etc.
-        const id = ((record as Record<string, unknown>)['id'] ??
-          (record as Record<string, unknown>)['userId']) as K | undefined;
+        const id = ((record as Record<string, unknown>).id ??
+          (record as Record<string, unknown>).userId) as K | undefined;
         if (id !== undefined) {
           recordMap.set(id, record);
         }
@@ -464,7 +464,7 @@ export function createRelationLoader<T>(
  * Create a DataLoader that groups results by a compound key
  */
 export function createCompoundKeyLoader<T>(
-  fetchByKeys: (keys: Array<{ tenantId: string; id: string }>) => Promise<T[]>,
+  fetchByKeys: (keys: { tenantId: string; id: string }[]) => Promise<T[]>,
   keyAccessor: (item: T) => { tenantId: string; id: string },
   options?: Omit<DataLoaderOptions<{ tenantId: string; id: string }, T>, 'cacheKeyFn'>
 ): DataLoader<{ tenantId: string; id: string }, T> {

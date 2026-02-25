@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+
 import type { OnboardingFlow, OnboardingProgress, StepWithStatus } from './types.js';
 import { getCompletionPercentage, getNextIncompleteStep, getStepsWithStatus, isFlowComplete } from './types.js';
 
@@ -28,10 +29,10 @@ const OnboardingContext = createContext<OnboardingContextValue>({
   isComplete: false,
   isDismissed: false,
   loading: true,
-  completeStep: async () => {},
-  skipStep: async () => {},
-  dismiss: async () => {},
-  reset: async () => {},
+  completeStep: async () => { /* noop */ },
+  skipStep: async () => { /* noop */ },
+  dismiss: async () => { /* noop */ },
+  reset: async () => { /* noop */ },
 });
 
 export function useOnboarding() {
@@ -534,7 +535,7 @@ export function OnboardingWizard({
       {/* Footer */}
       <div style={wizardStyles.footer}>
         <button type="button" style={wizardStyles.dismissButton} onClick={dismiss}>
-          I'll finish later
+          I&apos;ll finish later
         </button>
       </div>
     </div>

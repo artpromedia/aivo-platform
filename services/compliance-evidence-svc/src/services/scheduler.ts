@@ -2,12 +2,14 @@
 // Cron Scheduler — schedules evidence collectors
 // ════════════════════════════════════════════════════════════════
 
-import cron from 'node-cron';
 import type { PrismaClient } from '@prisma/client';
 import type { FastifyInstance } from 'fastify';
+import cron from 'node-cron';
+
 import { COLLECTORS } from '../control-registry.js';
-import { runCollector, getCollectorFn } from './collector-runner.js';
 import type { CollectionFrequency } from '../types.js';
+
+import { runCollector, getCollectorFn } from './collector-runner.js';
 
 /** Map schedule frequency → cron expression */
 const SCHEDULE_CRONS: Record<CollectionFrequency, string> = {

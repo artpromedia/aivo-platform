@@ -2,12 +2,16 @@
 // Audit Package Builder — generates ZIP bundles for auditors
 // ════════════════════════════════════════════════════════════════
 
-import archiver from 'archiver';
 import { Writable } from 'node:stream';
+
 import type { PrismaClient } from '@prisma/client';
-import { downloadEvidence, uploadEvidence, buildEvidenceKey } from './s3-client.js';
+import archiver from 'archiver';
+
+
 import { CONTROLS, COLLECTORS, getControlsByCategory } from '../control-registry.js';
 import type { AuditPackageRequest, TrustServiceCategory } from '../types.js';
+
+import { downloadEvidence, uploadEvidence, buildEvidenceKey } from './s3-client.js';
 
 export async function generateAuditPackage(
   prisma: PrismaClient,
@@ -22,7 +26,7 @@ export async function generateAuditPackage(
     controlFilter = controlFilter.filter(c => controlIds.includes(c.id));
   }
   if (categories?.length) {
-    controlFilter = controlFilter.filter(c => categories.includes(c.category as TrustServiceCategory));
+    controlFilter = controlFilter.filter(c => categories.includes(c.category));
   }
 
   // Fetch matching evidence records
@@ -111,7 +115,7 @@ export async function generateAuditPackage(
 
 function generateTableOfContents(
   controls: typeof CONTROLS,
-  evidence: Array<{ controlId: string; collectorId: string; collectedAt: Date; format: string }>,
+  evidence: { controlId: string; collectorId: string; collectedAt: Date; format: string }[],
   periodStart: Date,
   periodEnd: Date,
 ): string {

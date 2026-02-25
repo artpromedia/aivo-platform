@@ -56,7 +56,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   theme: DEFAULT_THEME,
   loading: false,
   error: null,
-  refresh: () => {},
+  refresh: () => { /* noop */ },
 });
 
 export const useAivoTheme = () => useContext(ThemeContext);
@@ -109,7 +109,7 @@ export function ThemeProvider({
   const [error, setError] = useState<string | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
 
-  const refresh = useCallback(() => setFetchKey((k) => k + 1), []);
+  const refresh = useCallback(() => { setFetchKey((k) => k + 1); }, []);
 
   // Resolve the domain to use
   const resolvedDomain = useMemo(() => {

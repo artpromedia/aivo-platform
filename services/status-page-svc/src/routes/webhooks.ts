@@ -4,11 +4,13 @@
 // POST /api/webhooks/alertmanager — receives alerts from Prometheus Alertmanager
 // and auto-creates/updates incidents.
 
-import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import { getDb } from '../db/database.js';
-import { config } from '../config.js';
+
+import type { FastifyPluginAsync } from 'fastify';
+
 import { COMPONENTS } from '../components.js';
+import { config } from '../config.js';
+import { getDb } from '../db/database.js';
 import { notifySubscribers } from '../services/notification.js';
 import type { AlertmanagerPayload } from '../types.js';
 

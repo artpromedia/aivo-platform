@@ -6,8 +6,9 @@
 // GET /api/status/summary  — lightweight overall status (for badges / monitors)
 
 import type { FastifyPluginAsync } from 'fastify';
-import { getDb } from '../db/database.js';
+
 import { COMPONENTS, COMPONENT_GROUPS, deriveOverallStatus } from '../components.js';
+import { getDb } from '../db/database.js';
 import type { StatusLevel, StatusResponse } from '../types.js';
 
 export const statusRoutes: FastifyPluginAsync = async (app) => {
@@ -17,7 +18,7 @@ export const statusRoutes: FastifyPluginAsync = async (app) => {
     const now = new Date().toISOString();
 
     // Merge static component definitions with live DB status
-    const componentStatuses: Map<string, StatusLevel> = new Map();
+    const componentStatuses = new Map<string, StatusLevel>();
     const rows: any[] = db.prepare('SELECT component_id, status FROM component_status').all();
     for (const r of rows) {
       componentStatuses.set(r.component_id, r.status as StatusLevel);

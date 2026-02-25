@@ -21,13 +21,13 @@ registerCollector('uptime', async (periodStart, periodEnd): Promise<CollectorRes
   const durationDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / 86_400_000);
   const range = `${durationDays}d`;
 
-  const serviceUptimes: Array<{
+  const serviceUptimes: {
     service: string;
     uptime: number;
     totalRequests: number;
     errorRequests: number;
     sloMet: boolean;
-  }> = [];
+  }[] = [];
 
   for (const svc of SERVICES) {
     try {
@@ -36,18 +36,18 @@ registerCollector('uptime', async (periodStart, periodEnd): Promise<CollectorRes
         `(1 - (sum(rate(http_requests_total{service="${svc}",status_code=~"5.."}[${range}])) / sum(rate(http_requests_total{service="${svc}"}[${range}])))) * 100`
       );
       const resp = await fetch(`${promUrl}/api/v1/query?query=${query}`);
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       const uptime = Number(data.data?.result?.[0]?.value?.[1] ?? 0);
 
       // Total requests
       const totalQuery = encodeURIComponent(`sum(increase(http_requests_total{service="${svc}"}[${range}]))`);
       const totalResp = await fetch(`${promUrl}/api/v1/query?query=${totalQuery}`);
-      const totalData = (await totalResp.json()) as any;
+      const totalData = (await totalResp.json());
       const totalRequests = Math.round(Number(totalData.data?.result?.[0]?.value?.[1] ?? 0));
 
       const errorQuery = encodeURIComponent(`sum(increase(http_requests_total{service="${svc}",status_code=~"5.."}[${range}]))`);
       const errorResp = await fetch(`${promUrl}/api/v1/query?query=${errorQuery}`);
-      const errorData = (await errorResp.json()) as any;
+      const errorData = (await errorResp.json());
       const errorRequests = Math.round(Number(errorData.data?.result?.[0]?.value?.[1] ?? 0));
 
       serviceUptimes.push({

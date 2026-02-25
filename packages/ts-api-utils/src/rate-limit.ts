@@ -34,7 +34,7 @@
 import {
   createRedisStore,
   MemoryStore,
-  type RateLimitStore as AivoRateLimitStore,
+  type RateLimitStore,
 } from '@aivo/rate-limiter';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -79,7 +79,7 @@ export interface RateLimitStoreConfig {
   /** Redis connection URL */
   redisUrl?: string;
   /** Pre-configured @aivo/rate-limiter store instance */
-  store?: AivoRateLimitStore;
+  store?: RateLimitStore;
   /** Key prefix for all rate limit keys (default: service name or 'rl') */
   keyPrefix?: string;
   /** Whether to allow requests when Redis is down (default: true) */
@@ -90,7 +90,8 @@ export interface RateLimitStoreConfig {
 // DISTRIBUTED STORE (Redis-backed via @aivo/rate-limiter)
 // ══════════════════════════════════════════════════════════════════════════════
 
-let distributedStore: AivoRateLimitStore | null = null;
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+let distributedStore: RateLimitStore | null = null;
 
 /**
  * Configure Redis-backed distributed rate limiting for all middlewares in this module.
@@ -120,7 +121,7 @@ export function configureRateLimitStore(config: RateLimitStoreConfig): void {
 /**
  * Get the configured store (Redis or in-memory fallback).
  */
-function getStore(): AivoRateLimitStore {
+function getStore(): RateLimitStore {
   if (!distributedStore) {
     // Lazy-init: first use without configureRateLimitStore → MemoryStore
     distributedStore = new MemoryStore();

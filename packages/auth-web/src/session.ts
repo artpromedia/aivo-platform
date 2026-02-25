@@ -129,10 +129,10 @@ function payloadToSession(payload: JWTPayload, token: string): AuthSession | nul
       ? {
           isImpersonated: true,
           impersonation: {
-            sessionId: imp!.sessionId as string,
-            adminUserId: imp!.adminUserId as string,
-            readOnly: imp!.readOnly === true,
-            expiresAt: imp!.expiresAt as string,
+            sessionId: imp.sessionId as string,
+            adminUserId: imp.adminUserId as string,
+            readOnly: imp.readOnly === true,
+            expiresAt: imp.expiresAt as string,
           },
         }
       : {}),

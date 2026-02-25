@@ -1,5 +1,6 @@
-import type { MaintenanceWindow } from '@/lib/types';
 import { Wrench } from 'lucide-react';
+
+import type { MaintenanceWindow } from '@/lib/types';
 
 interface Props {
   windows: MaintenanceWindow[];

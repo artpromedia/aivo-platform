@@ -66,7 +66,7 @@ registerCollector('infra-config', async (periodStart, periodEnd): Promise<Collec
       `${config.prometheusUrl}/api/v1/query?query=sum(kube_node_status_capacity{resource="cpu"})`,
     );
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       const value = data.data?.result?.[0]?.value?.[1];
       if (value) {
         nodeCapacity = { totalCpu: parseFloat(value) };

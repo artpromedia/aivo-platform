@@ -1,6 +1,7 @@
-import type { ComponentGroupInfo, ComponentInfo } from '@/lib/types';
 import { StatusBadge } from './StatusBadge';
 import { UptimeBar } from './UptimeBar';
+
+import type { ComponentGroupInfo, ComponentInfo } from '@/lib/types';
 
 interface Props {
   group: ComponentGroupInfo;

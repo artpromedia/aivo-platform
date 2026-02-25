@@ -18,7 +18,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 registerCollector('access-review', async (periodStart, periodEnd): Promise<CollectorResult> => {
   // Fetch user roster, roles, MFA status
-  let users: Array<{ id: string; email: string; role: string; mfaEnabled: boolean; lastLoginAt: string | null; createdAt: string }> = [];
+  let users: { id: string; email: string; role: string; mfaEnabled: boolean; lastLoginAt: string | null; createdAt: string }[] = [];
   try {
     const data = await fetchJson<{ users: typeof users }>(`${config.authSvcUrl}/auth/admin/users`);
     users = data.users ?? [];

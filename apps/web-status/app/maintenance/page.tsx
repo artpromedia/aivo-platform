@@ -1,6 +1,7 @@
+import { Wrench, Calendar } from 'lucide-react';
+
 import { getMaintenanceWindows } from '@/lib/api';
 import type { MaintenanceWindow } from '@/lib/types';
-import { Wrench, Calendar } from 'lucide-react';
 
 export const revalidate = 60;
 

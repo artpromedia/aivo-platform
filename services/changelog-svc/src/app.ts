@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+
 import { registerPublicRoutes, registerAdminRoutes } from './routes.js';
 
 export function createApp() {

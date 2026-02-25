@@ -3,7 +3,7 @@
 // ==============================================================================
 // 16 components across 4 groups — matches the AIVO platform architecture.
 
-import type { Component, ComponentGroup, ComponentGroupInfo } from './types.js';
+import type { Component, ComponentGroup, ComponentGroupInfo, StatusLevel } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Component Groups
@@ -215,7 +215,7 @@ export function getComponentsByGroup(group: ComponentGroup): Component[] {
 }
 
 /** Derive overall status from all component statuses */
-export function deriveOverallStatus(components: Pick<Component, 'status'>[]): import('./types.js').StatusLevel {
+export function deriveOverallStatus(components: Pick<Component, 'status'>[]): StatusLevel {
   const statuses = components.map((c) => c.status);
 
   if (statuses.includes('major_outage')) return 'major_outage';

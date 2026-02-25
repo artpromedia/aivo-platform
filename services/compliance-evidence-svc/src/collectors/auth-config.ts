@@ -77,7 +77,7 @@ registerCollector('auth-config', async (periodStart, periodEnd): Promise<Collect
   try {
     const resp = await fetch(`${config.authSvcUrl}/auth/admin/security-config`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       if (data.passwordPolicy) {
         Object.assign(evidence.passwordPolicy, data.passwordPolicy);
       }

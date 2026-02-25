@@ -45,7 +45,7 @@ registerCollector('monitoring-config', async (periodStart, periodEnd): Promise<C
   try {
     const resp = await fetch(`${config.prometheusUrl}/api/v1/rules`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       const groups = data.data?.groups ?? [];
       for (const group of groups) {
         for (const rule of group.rules ?? []) {
@@ -75,7 +75,7 @@ registerCollector('monitoring-config', async (periodStart, periodEnd): Promise<C
   try {
     const resp = await fetch(`${config.prometheusUrl}/api/v1/alerts`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       evidence.firingAlerts = (data.data?.alerts ?? []).filter(
         (a: any) => a.state === 'firing',
       );

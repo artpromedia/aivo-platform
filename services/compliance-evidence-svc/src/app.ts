@@ -2,15 +2,16 @@
 // compliance-evidence-svc — Fastify application factory
 // ════════════════════════════════════════════════════════════════
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { PrismaClient } from '@prisma/client';
+import Fastify from 'fastify';
 import { collectDefaultMetrics, Registry, Counter, Histogram } from 'prom-client';
+
 import { config } from './config.js';
+import { collectorsRoutes } from './routes/collectors.js';
 import { controlsRoutes } from './routes/controls.js';
 import { evidenceRoutes } from './routes/evidence.js';
 import { packagesRoutes } from './routes/packages.js';
-import { collectorsRoutes } from './routes/collectors.js';
 
 // ── Prisma plugin ────────────────────────────────────────────
 

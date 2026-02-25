@@ -50,7 +50,7 @@ export function ImpersonationBanner({
     const timer = setInterval(() => {
       setTimeLeft(formatTimeRemaining(expiresAt));
     }, 30_000);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); };
   }, [expiresAt]);
 
   const isExpired = timeLeft === 'Expired';

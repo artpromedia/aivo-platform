@@ -176,7 +176,7 @@ export function shuffle<T>(array: T[]): T[] {
  * @param items - Array of items with weights
  * @returns The selected item
  */
-export function weightedChoice<T>(items: Array<{ item: T; weight: number }>): T {
+export function weightedChoice<T>(items: { item: T; weight: number }[]): T {
   if (items.length === 0) {
     throw new Error('Cannot select from empty array');
   }

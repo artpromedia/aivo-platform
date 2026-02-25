@@ -10,18 +10,21 @@
 //   • P95 latency > 2× baseline > 10 min → auto-incident
 //   • Healthy for > 5 min             → auto-resolve
 
-import cron from 'node-cron';
-import { config } from '../config.js';
-import { COMPONENTS, deriveOverallStatus } from '../components.js';
-import { collectMetricSnapshots } from './prometheus-client.js';
-import { getDb } from '../db/database.js';
 import { randomUUID } from 'node:crypto';
+
+import cron from 'node-cron';
+
+import { COMPONENTS, deriveOverallStatus } from '../components.js';
+import { config } from '../config.js';
+import { getDb } from '../db/database.js';
 import type { StatusLevel, MetricSnapshot } from '../types.js';
+
+import { collectMetricSnapshots } from './prometheus-client.js';
 
 let task: cron.ScheduledTask | null = null;
 
 // In-memory baseline latencies (populated on first healthy sample)
-const latencyBaselines: Map<string, number> = new Map();
+const latencyBaselines = new Map<string, number>();
 
 /**
  * Start the auto-detection poll loop.

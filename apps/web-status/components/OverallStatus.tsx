@@ -1,6 +1,7 @@
+import { CheckCircle2, AlertTriangle, XCircle, Wrench, AlertOctagon } from 'lucide-react';
+
 import type { StatusLevel } from '@/lib/types';
 import { STATUS_LABELS, STATUS_COLORS } from '@/lib/types';
-import { CheckCircle2, AlertTriangle, XCircle, Wrench, AlertOctagon } from 'lucide-react';
 
 const STATUS_ICONS: Record<StatusLevel, React.ReactNode> = {
   operational: <CheckCircle2 className="w-8 h-8 text-status-operational" />,

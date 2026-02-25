@@ -4,9 +4,11 @@
 // Uses better-sqlite3 for an independent, file-based database that survives
 // full platform outages (no dependency on the platform PostgreSQL cluster).
 
-import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+
+import Database from 'better-sqlite3';
+
 import { config } from '../config.js';
 
 let db: Database.Database;

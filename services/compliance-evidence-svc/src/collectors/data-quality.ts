@@ -11,11 +11,11 @@ import type { CollectorResult } from '../types.js';
 registerCollector('data-quality', async (periodStart, periodEnd): Promise<CollectorResult> => {
   const evidence: {
     collectedAt: string;
-    integrityChecks: Array<{
+    integrityChecks: {
       check: string;
       status: 'pass' | 'fail' | 'unknown';
       details: string;
-    }>;
+    }[];
     dataReconciliation: {
       checksRun: number;
       passed: number;
@@ -54,7 +54,7 @@ registerCollector('data-quality', async (periodStart, periodEnd): Promise<Collec
   try {
     const resp = await fetch(`${config.auditSvcUrl}/api/audit/integrity-check`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       const auditCheck = evidence.integrityChecks.find(c => c.check.includes('Audit log'));
       if (auditCheck) {
         auditCheck.status = data.valid ? 'pass' : 'fail';
@@ -71,7 +71,7 @@ registerCollector('data-quality', async (periodStart, periodEnd): Promise<Collec
   try {
     const resp = await fetch(`${config.authSvcUrl}/auth/admin/data-integrity`);
     if (resp.ok) {
-      const data = (await resp.json()) as any;
+      const data = (await resp.json());
       const userCheck = evidence.integrityChecks.find(c => c.check.includes('User record'));
       if (userCheck) {
         userCheck.status = data.consistent ? 'pass' : 'fail';

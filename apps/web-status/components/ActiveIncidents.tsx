@@ -1,5 +1,6 @@
-import type { Incident } from '@/lib/types';
 import { AlertTriangle, AlertOctagon, XCircle } from 'lucide-react';
+
+import type { Incident } from '@/lib/types';
 
 interface Props {
   incidents: Incident[];

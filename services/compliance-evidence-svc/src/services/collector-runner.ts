@@ -2,18 +2,20 @@
 // Collector Runner — executes evidence collectors, stores results
 // ════════════════════════════════════════════════════════════════
 
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+
 import { getCollector, getControl } from '../control-registry.js';
-import {
-  buildEvidenceKey,
-  uploadEvidence,
-  type UploadResult,
-} from './s3-client.js';
 import type {
   CollectorResult,
   EvidenceArtifact,
   EvidenceFormat,
 } from '../types.js';
+
+import {
+  buildEvidenceKey,
+  uploadEvidence,
+  type UploadResult,
+} from './s3-client.js';
 
 // ── Collector Function Registry ──────────────────────────────
 
@@ -139,7 +141,7 @@ export async function runCollector(
         where: { collectorId: opts.collectorId },
         data: { lastRunAt: new Date() },
       })
-      .catch(() => {});
+      .catch(() => { /* noop */ });
 
     return { runId: run.id, evidenceCount: uploads.length };
   } catch (err) {
@@ -162,8 +164,8 @@ export async function runCollector(
 export async function runAllCollectors(
   prisma: PrismaClient,
   triggeredBy: 'scheduled' | 'manual' | 'ci' = 'scheduled',
-): Promise<{ results: Array<{ collectorId: string; success: boolean; evidenceCount: number; error?: string }> }> {
-  const results: Array<{ collectorId: string; success: boolean; evidenceCount: number; error?: string }> = [];
+): Promise<{ results: { collectorId: string; success: boolean; evidenceCount: number; error?: string }[] }> {
+  const results: { collectorId: string; success: boolean; evidenceCount: number; error?: string }[] = [];
 
   for (const [collectorId] of collectorFunctions) {
     try {

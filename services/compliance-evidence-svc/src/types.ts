@@ -133,11 +133,11 @@ export interface PrometheusQueryResult {
   status: string;
   data: {
     resultType: string;
-    result: Array<{
+    result: {
       metric: Record<string, string>;
       value?: [number, string];
-      values?: Array<[number, string]>;
-    }>;
+      values?: [number, string][];
+    }[];
   };
 }
 
@@ -198,12 +198,12 @@ export interface UptimeEvidence {
   overallUptime: number;
   sloTarget: number;
   sloMet: boolean;
-  serviceUptimes: Array<{
+  serviceUptimes: {
     service: string;
     uptime: number;
     downtime: string;
     incidents: number;
-  }>;
+  }[];
 }
 
 // ── Backup evidence ──────────────────────────────────────────────────────────

@@ -7,9 +7,11 @@
 // PATCH  /api/incidents/:id       — update incident (admin)
 // POST   /api/incidents/:id/updates — add timeline entry (admin)
 
-import type { FastifyPluginAsync } from 'fastify';
 import { randomUUID } from 'node:crypto';
+
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+
 import { getDb } from '../db/database.js';
 import { notifySubscribers } from '../services/notification.js';
 

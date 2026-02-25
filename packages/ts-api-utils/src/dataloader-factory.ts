@@ -55,11 +55,9 @@ import {
 /**
  * Generic Prisma-like client interface
  */
-export interface PrismaLike {
-  [model: string]: {
+export type PrismaLike = Record<string, {
     findMany: (args: { where: { id: { in: string[] } } }) => Promise<{ id: string }[]>;
-  };
-}
+  }>;
 
 /**
  * Common entity shapes
@@ -85,9 +83,7 @@ export interface StudentEntity extends TenantEntity {
 /**
  * DataLoader collection for a service
  */
-export interface ServiceDataLoaders<TModels extends Record<string, BaseEntity>> {
-  [K: string]: DataLoader<string, TModels[keyof TModels] | null>;
-}
+export type ServiceDataLoaders<TModels extends Record<string, BaseEntity>> = Record<string, DataLoader<string, TModels[keyof TModels] | null>>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LOADER FACTORIES
