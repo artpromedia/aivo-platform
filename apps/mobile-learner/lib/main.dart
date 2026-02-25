@@ -5,9 +5,11 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/i18n/aivo_i18n.dart' as aivo_i18n;
 import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'baseline/baseline_controller.dart';
@@ -517,8 +519,12 @@ class _LearnerAppState extends ConsumerState<LearnerApp> {
       title: 'Aivo Learner',
       theme: theme,
       routerConfig: router,
-      locale: const Locale('en'),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: aivo_i18n.SupportedLocale.values.map((l) => l.locale),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         return Column(

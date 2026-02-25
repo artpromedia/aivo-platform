@@ -2,14 +2,18 @@
  * Next.js Edge Middleware — web-district
  *
  * Protects routes by checking the aivo_access_token cookie.
+ * Detects user locale from cookie/Accept-Language header.
  */
 
 import { createAuthMiddleware } from '@aivo/auth-web/middleware';
+import { withLocaleDetection } from '@aivo/i18n/middleware';
 
-export const middleware = createAuthMiddleware({
+const authMiddleware = createAuthMiddleware({
   publicRoutes: ['/login', '/api/auth', '/api/health', '/_next', '/favicon.ico'],
   loginPath: '/login',
 });
+
+export const middleware = withLocaleDetection(authMiddleware);
 
 export const config = {
   matcher: [

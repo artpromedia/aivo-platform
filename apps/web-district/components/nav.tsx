@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import { useAuth } from '../app/providers';
 
 import { AccessibilityControls } from './accessibility-controls';
@@ -86,7 +87,10 @@ export function Nav() {
           )}
         </nav>
         <div className="hidden flex-col items-end gap-2 md:flex">
-          <AccessibilityControls />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <AccessibilityControls />
+          </div>
           <div className="text-xs text-muted">
             {isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Guest'}
           </div>

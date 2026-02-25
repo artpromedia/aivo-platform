@@ -1,4 +1,5 @@
 import type { Role } from '@aivo/ts-rbac';
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const auth = await getAuthSession();
+  const [auth, locale] = await Promise.all([getAuthSession(), getLocale()]);
   const initialAuth = {
     isAuthenticated: !!auth,
     userName: auth?.userId ?? null,
@@ -37,7 +38,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   };
 
   return (
-    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`}>
+    <html lang={locale} dir={getDirection(locale)} className={`${dmSans.variable} ${plusJakartaSans.variable}`}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <AuthProvider initialAuth={initialAuth}>
           <Nav />

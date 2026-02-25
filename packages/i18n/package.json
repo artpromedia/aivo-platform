@@ -35,11 +35,41 @@
       "import": "./dist/styles/index.mjs",
       "require": "./dist/styles/index.js",
       "types": "./dist/styles/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config.mjs",
+      "require": "./dist/config.js",
+      "types": "./dist/config.d.ts"
+    },
+    "./components": {
+      "import": "./dist/components/index.mjs",
+      "require": "./dist/components/index.js",
+      "types": "./dist/components/index.d.ts"
+    },
+    "./locales": {
+      "import": "./dist/locales/index.mjs",
+      "require": "./dist/locales/index.js",
+      "types": "./dist/locales/index.d.ts"
+    },
+    "./locales/*": {
+      "import": "./src/locales/*.json"
+    },
+    "./middleware": {
+      "import": "./dist/middleware.mjs",
+      "require": "./dist/middleware.js",
+      "types": "./dist/middleware.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server.mjs",
+      "require": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    },
+    "./rtl.css": "./src/rtl.css"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts --format cjs,esm --dts --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/",

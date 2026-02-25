@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
+import 'package:flutter_common/i18n/aivo_i18n.dart' as aivo_i18n;
 import 'package:flutter_notifications/flutter_notifications.dart';
 
 import 'l10n/app_localizations.dart';
@@ -534,7 +535,7 @@ class TeacherApp extends ConsumerWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: AppLocalizations.supportedLocales,
+        supportedLocales: aivo_i18n.SupportedLocale.values.map((l) => l.locale),
       ),
     );
   }

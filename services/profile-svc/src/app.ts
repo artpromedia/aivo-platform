@@ -16,6 +16,7 @@ import { config } from './config.js';
 import { natsPublisher } from './events/index.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 import { registerAccommodationRoutes } from './routes/accommodationRoutes.js';
+import { registerLanguagePreferencesRoutes } from './routes/languagePreferencesRoutes.js';
 import { registerProfileRoutes } from './routes/profileRoutes.js';
 import { registerSensoryProfileRoutes } from './routes/sensory-profile.routes.js';
 
@@ -138,6 +139,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerProfileRoutes(app);
   await registerAccommodationRoutes(app);
   await registerSensoryProfileRoutes(app);
+  await registerLanguagePreferencesRoutes(app);
 
   // ────────────────────────────────────────────────────────────────────────────
   // Global error handler

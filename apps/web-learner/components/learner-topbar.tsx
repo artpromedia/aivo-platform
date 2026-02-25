@@ -1,5 +1,6 @@
 'use client';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import { Search, Bell, Flame, Sparkles, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -68,6 +69,9 @@ export function LearnerTopbar({ userName, streakDays = 0, totalXp = 0, avatarUrl
             <Sparkles className="w-4 h-4 text-indigo-500" />
             <span className="text-sm font-semibold text-indigo-700">{totalXp.toLocaleString()} XP</span>
           </div>
+
+          {/* Language Switcher */}
+          <LanguageSwitcher variant="compact" />
 
           {/* Notifications */}
           <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg">

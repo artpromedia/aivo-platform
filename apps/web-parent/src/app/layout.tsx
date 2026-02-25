@@ -1,3 +1,5 @@
+import { getLocale, getDirection } from '@aivo/i18n/server';
+import { FloatingLanguageSwitcher } from './floating-language-switcher';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
@@ -11,18 +13,22 @@ export const metadata: Metadata = {
   description: 'Monitor your child\'s learning progress and communicate with teachers',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={getDirection(locale)} suppressHydrationWarning>
       <body className={`${dmSans.variable} ${plusJakartaSans.variable} font-sans`}>
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <Providers>{children}</Providers>
+        <Providers>
+          <FloatingLanguageSwitcher />
+          {children}
+        </Providers>
       </body>
     </html>
   );

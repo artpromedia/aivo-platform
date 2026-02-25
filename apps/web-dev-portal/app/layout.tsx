@@ -1,3 +1,4 @@
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
@@ -10,13 +11,14 @@ export const metadata: Metadata = {
   description: 'Documentation, APIs, and tools for integrating with the Aivo learning platform',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   return (
-    <html lang="en">
+    <html lang={locale} dir={getDirection(locale)}>
       <body className={`${dmSans.variable} ${plusJakartaSans.variable} font-sans`}>
         {children}
       </body>

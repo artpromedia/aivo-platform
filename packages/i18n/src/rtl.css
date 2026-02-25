@@ -1,0 +1,145 @@
+/**
+ * RTL Global Stylesheet
+ *
+ * Provides baseline RTL layout support via CSS logical properties.
+ * Import this file in your app's global CSS to enable automatic
+ * RTL flipping for margin, padding, border-radius, and text alignment.
+ *
+ * Usage:
+ *   @import '@aivo/i18n/rtl.css';
+ *
+ * Works with the `dir="rtl"` attribute set on <html> by getDirection().
+ */
+
+/* ── Base direction reset ────────────────────────────────────────── */
+[dir='rtl'] {
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+/* ── Scrollbar position (Webkit) ─────────────────────────────────── */
+[dir='rtl']::-webkit-scrollbar {
+  direction: rtl;
+}
+
+/* ── Form elements ───────────────────────────────────────────────── */
+[dir='rtl'] input,
+[dir='rtl'] textarea,
+[dir='rtl'] select {
+  text-align: inherit;
+}
+
+[dir='rtl'] input[type='tel'],
+[dir='rtl'] input[type='email'],
+[dir='rtl'] input[type='url'],
+[dir='rtl'] input[type='number'] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* ── Icons that need mirroring in RTL ────────────────────────────── */
+[dir='rtl'] .rtl-mirror {
+  transform: scaleX(-1);
+}
+
+/* ── Navigation arrows: auto-flip ────────────────────────────────── */
+[dir='rtl'] .arrow-start,
+[dir='rtl'] .arrow-back,
+[dir='rtl'] .chevron-left {
+  transform: scaleX(-1);
+}
+
+[dir='rtl'] .arrow-end,
+[dir='rtl'] .arrow-forward,
+[dir='rtl'] .chevron-right {
+  transform: scaleX(-1);
+}
+
+/* ── Logical property helpers ────────────────────────────────────── */
+
+/* margin-inline: replaces ml-* / mr-* */
+.mis-0 { margin-inline-start: 0; }
+.mis-1 { margin-inline-start: 0.25rem; }
+.mis-2 { margin-inline-start: 0.5rem; }
+.mis-3 { margin-inline-start: 0.75rem; }
+.mis-4 { margin-inline-start: 1rem; }
+.mis-6 { margin-inline-start: 1.5rem; }
+.mis-8 { margin-inline-start: 2rem; }
+.mis-auto { margin-inline-start: auto; }
+
+.mie-0 { margin-inline-end: 0; }
+.mie-1 { margin-inline-end: 0.25rem; }
+.mie-2 { margin-inline-end: 0.5rem; }
+.mie-3 { margin-inline-end: 0.75rem; }
+.mie-4 { margin-inline-end: 1rem; }
+.mie-6 { margin-inline-end: 1.5rem; }
+.mie-8 { margin-inline-end: 2rem; }
+.mie-auto { margin-inline-end: auto; }
+
+/* padding-inline: replaces pl-* / pr-* */
+.pis-0 { padding-inline-start: 0; }
+.pis-1 { padding-inline-start: 0.25rem; }
+.pis-2 { padding-inline-start: 0.5rem; }
+.pis-3 { padding-inline-start: 0.75rem; }
+.pis-4 { padding-inline-start: 1rem; }
+.pis-6 { padding-inline-start: 1.5rem; }
+.pis-8 { padding-inline-start: 2rem; }
+
+.pie-0 { padding-inline-end: 0; }
+.pie-1 { padding-inline-end: 0.25rem; }
+.pie-2 { padding-inline-end: 0.5rem; }
+.pie-3 { padding-inline-end: 0.75rem; }
+.pie-4 { padding-inline-end: 1rem; }
+.pie-6 { padding-inline-end: 1.5rem; }
+.pie-8 { padding-inline-end: 2rem; }
+
+/* inset-inline: replaces left-* / right-* */
+.inset-inline-start-0 { inset-inline-start: 0; }
+.inset-inline-end-0 { inset-inline-end: 0; }
+.inset-inline-start-auto { inset-inline-start: auto; }
+.inset-inline-end-auto { inset-inline-end: auto; }
+
+/* border-radius logical: replaces rounded-tl / rounded-tr etc. */
+.rounded-ss-lg { border-start-start-radius: 0.5rem; }
+.rounded-se-lg { border-start-end-radius: 0.5rem; }
+.rounded-es-lg { border-end-start-radius: 0.5rem; }
+.rounded-ee-lg { border-end-end-radius: 0.5rem; }
+
+/* border-inline: replaces border-l / border-r */
+.border-is { border-inline-start-width: 1px; }
+.border-ie { border-inline-end-width: 1px; }
+.border-is-2 { border-inline-start-width: 2px; }
+.border-ie-2 { border-inline-end-width: 2px; }
+
+/* text-align logical */
+.text-start { text-align: start; }
+.text-end { text-align: end; }
+
+/* float logical */
+.float-start { float: inline-start; }
+.float-end { float: inline-end; }
+
+/* ── Flex / Grid gap direction ───────────────────────────────────── */
+[dir='rtl'] .flex-row-reverse-rtl {
+  flex-direction: row-reverse;
+}
+
+/* ── Transition / Animation override ─────────────────────────────── */
+[dir='rtl'] .slide-in-from-left {
+  --tw-enter-translate-x: 100%;
+}
+
+[dir='rtl'] .slide-in-from-right {
+  --tw-enter-translate-x: -100%;
+}
+
+/* ── Dialog / Sheet positioning ──────────────────────────────────── */
+[dir='rtl'] .sidebar-left {
+  left: auto;
+  right: 0;
+}
+
+[dir='rtl'] .sidebar-right {
+  right: auto;
+  left: 0;
+}

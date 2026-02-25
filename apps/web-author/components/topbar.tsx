@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@aivo/ui-web';
+import { LanguageSwitcher } from '@aivo/i18n';
 import Link from 'next/link';
 
 import { useAuth } from '../app/providers';
@@ -22,6 +23,7 @@ export function TopBar() {
 
       {isAuthenticated && (
         <div className="flex items-center gap-4">
+          <LanguageSwitcher variant="compact" />
           {primaryRole && <Badge tone={getRoleTone(primaryRole)}>{ROLE_LABELS[primaryRole]}</Badge>}
           <div className="flex items-center gap-3">
             <div className="text-right">

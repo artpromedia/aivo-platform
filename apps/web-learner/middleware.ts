@@ -2,12 +2,14 @@
  * Next.js Edge Middleware — web-learner
  *
  * Protects routes by checking the aivo_access_token cookie.
+ * Detects user locale from cookie/Accept-Language header.
  * Learner app uses PIN/code login, so we add those to public routes.
  */
 
 import { createAuthMiddleware } from '@aivo/auth-web/middleware';
+import { withLocaleDetection } from '@aivo/i18n/middleware';
 
-export const middleware = createAuthMiddleware({
+const authMiddleware = createAuthMiddleware({
   publicRoutes: [
     '/login',
     '/join',
@@ -19,6 +21,8 @@ export const middleware = createAuthMiddleware({
   ],
   loginPath: '/login',
 });
+
+export const middleware = withLocaleDetection(authMiddleware);
 
 export const config = {
   matcher: [

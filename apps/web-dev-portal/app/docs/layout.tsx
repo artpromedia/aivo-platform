@@ -1,5 +1,6 @@
 'use client';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -111,6 +112,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
               >
                 Dashboard
               </Link>
+              <LanguageSwitcher variant="compact" />
             </nav>
             <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

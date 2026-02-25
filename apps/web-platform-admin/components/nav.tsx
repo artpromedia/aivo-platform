@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import { useAuth } from '../app/providers';
 
 const links = [
@@ -74,8 +75,9 @@ export function Nav() {
             </button>
           )}
         </nav>
-        <div className="hidden text-xs text-muted-foreground md:block">
-          {isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Internal admin access'}
+        <div className="hidden items-center gap-3 text-xs text-muted-foreground md:flex">
+          <LanguageSwitcher variant="compact" />
+          <span>{isAuthenticated ? `Signed in as ${userName ?? 'user'}` : 'Internal admin access'}</span>
         </div>
       </div>
 

@@ -12,6 +12,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import { useAuth } from '../shared/providers';
 
 import { cn } from '@/lib/utils';

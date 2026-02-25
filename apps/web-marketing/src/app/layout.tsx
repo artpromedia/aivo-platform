@@ -1,3 +1,4 @@
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { Metadata, Viewport } from 'next';
@@ -119,10 +120,12 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const locale = await getLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={getDirection(locale)}
       className={`${dmSans.variable} ${plusJakartaSans.variable}`}
       suppressHydrationWarning
     >

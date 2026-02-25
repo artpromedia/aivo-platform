@@ -10,6 +10,7 @@ library aivo_i18n;
 export 'src/i18n.dart';
 export 'src/i18n_provider.dart';
 export 'src/locale_manager.dart';
+export 'src/language_switcher.dart';
 export 'src/formatters/date_formatter.dart';
 export 'src/formatters/number_formatter.dart';
 export 'src/formatters/relative_time_formatter.dart';

@@ -1,5 +1,6 @@
 import type { Role } from '@aivo/ts-rbac';
 import { AccessibilityProvider, GradeThemeProvider } from '@aivo/ui-web';
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const auth = await getAuthSession();
+  const [auth, locale] = await Promise.all([getAuthSession(), getLocale()]);
   const initialAuth = {
     isAuthenticated: !!auth,
     userName: auth?.userId ?? null,
@@ -40,7 +41,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   };
 
   return (
-    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="navigator">
+    <html lang={locale} dir={getDirection(locale)} className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="navigator">
       <body className="min-h-screen bg-background font-sans text-text antialiased">
         <a
           href="#main-content"

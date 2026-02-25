@@ -2,6 +2,7 @@
  * Root Layout - Web Teacher Application
  */
 
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import React from 'react';
@@ -36,9 +37,10 @@ export const viewport: Viewport = {
   themeColor: '#06B6D4',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="navigator">
+    <html lang={locale} dir={getDirection(locale)} className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="navigator">
       <body className="min-h-screen bg-background font-sans antialiased">
         <a
           href="#main-content"

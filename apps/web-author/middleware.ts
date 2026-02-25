@@ -1,13 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { withLocaleDetection } from '@aivo/i18n/middleware';
 
 const ACCESS_COOKIE = 'aivo_access_token';
 const PUBLIC_PATHS = ['/login', '/api/auth', '/api/health', '/_next', '/favicon.ico'];
 
 /**
  * Middleware for web-author: protects authenticated routes.
+ * Detects user locale from cookie/Accept-Language header.
  * Redirects to /login if no valid auth cookie is present.
  */
-export function middleware(request: NextRequest) {
+function authMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths and static assets
@@ -27,6 +29,8 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const middleware = withLocaleDetection(authMiddleware);
 
 export const config = {
   matcher: [

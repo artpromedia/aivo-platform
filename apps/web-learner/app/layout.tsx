@@ -1,3 +1,4 @@
+import { getLocale, getDirection } from '@aivo/i18n/server';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
@@ -22,9 +23,10 @@ export const metadata: Metadata = {
   description: 'Personalized learning experience for every student',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="explorer">
+    <html lang={locale} dir={getDirection(locale)} className={`${dmSans.variable} ${plusJakartaSans.variable}`} data-grade-theme="explorer">
       <body className="min-h-screen bg-background font-sans text-text antialiased">
         <Providers>{children}</Providers>
       </body>

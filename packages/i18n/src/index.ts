@@ -33,6 +33,12 @@ export * from './rtl';
 // RTL and style utilities
 export * from './styles';
 
+// i18n configuration (UI locales, display metadata, helpers)
+export * from './config';
+
+// React components (LanguageSwitcher)
+export * from './components';
+
 // ─── Compatibility Aliases ───
 // These aliases bridge naming differences between packages/i18n and libs/i18n
 // so that libs/ui-web (which was written against libs/i18n) compiles correctly.

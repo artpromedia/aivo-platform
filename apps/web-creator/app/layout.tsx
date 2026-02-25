@@ -1,3 +1,5 @@
+import { getLocale, getDirection } from '@aivo/i18n/server';
+import { FloatingLanguageSwitcher } from './floating-language-switcher';
 import type { Metadata } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
@@ -22,11 +24,15 @@ export const metadata: Metadata = {
   description: 'Create and manage marketplace content for Aivo',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
   return (
-    <html lang="en" className={`${dmSans.variable} ${plusJakartaSans.variable}`}>
+    <html lang={locale} dir={getDirection(locale)} className={`${dmSans.variable} ${plusJakartaSans.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <FloatingLanguageSwitcher />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

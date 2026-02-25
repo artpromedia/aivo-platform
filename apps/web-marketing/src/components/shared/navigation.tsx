@@ -1,5 +1,6 @@
 'use client';
 
+import { LanguageSwitcher } from '@aivo/i18n';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu,
@@ -245,6 +246,7 @@ export function Navigation() {
 
             {/* Desktop CTA — Right */}
             <div className="hidden lg:flex items-center gap-4">
+              <LanguageSwitcher variant="compact" />
               <Link
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/login`}
                 className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"

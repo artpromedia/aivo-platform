@@ -1,0 +1,107 @@
+# NATS Cross-Region Data Residency Subject Mapping
+#
+# This configuration controls which NATS subjects are allowed to cross
+# region boundaries. PII-bearing subjects MUST stay within the tenant's
+# data region to satisfy GDPR, FERPA, and PDPA requirements.
+#
+# Applied via NATS gateway account export/import declarations.
+# See: infra/k8s/base/nats/gateway.yaml
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-data-residency-subjects
+  namespace: aivo-system
+  labels:
+    app.kubernetes.io/name: nats
+    app.kubernetes.io/component: data-residency
+data:
+  # ----------------------------------------------------------------
+  # ALLOWED cross-region subjects (non-PII)
+  # These streams are replicated across all regions for global access.
+  # ----------------------------------------------------------------
+  allowed-exports.conf: |
+    exports = [
+      # Platform-wide announcements (feature launches, maintenance windows)
+      { stream: "platform.announcements.>" }
+
+      # Content catalog metadata (course titles, descriptions — no PII)
+      { stream: "content.catalog.>" }
+
+      # System configuration changes (feature flags, rate limits)
+      { stream: "system.config.>" }
+
+      # Aggregated, anonymized analytics (no individual student data)
+      { stream: "analytics.aggregated.>" }
+
+      # Service health and status events
+      { stream: "system.health.>" }
+
+      # Tenant configuration (non-PII org settings)
+      { stream: "tenant.config.>" }
+
+      # License and entitlement events
+      { stream: "billing.entitlements.>" }
+    ]
+
+  # ----------------------------------------------------------------
+  # DENIED cross-region subjects (PII / sensitive data)
+  # These subjects NEVER leave the tenant's primary data region.
+  # ----------------------------------------------------------------
+  denied-exports.conf: |
+    deny_exports = [
+      # Learner PII: names, emails, grades, IEP data, accommodations
+      { stream: "learner.>" }
+
+      # Authentication events: tokens, sessions, credentials
+      { stream: "auth.>" }
+
+      # User profiles: personal information, contact details
+      { stream: "profile.>" }
+
+      # Assessment results: individual scores, responses, grades
+      { stream: "assessment.results.>" }
+
+      # Messaging: student-teacher communications
+      { stream: "messaging.>" }
+
+      # Parent data: family information, consent records
+      { stream: "parent.>" }
+
+      # IEP and accommodation data
+      { stream: "iep.>" }
+
+      # Behavioral and attendance records
+      { stream: "behavior.>" }
+
+      # Audit logs containing PII (access logs with user identifiers)
+      { stream: "audit.pii.>" }
+    ]
+
+  # ----------------------------------------------------------------
+  # Gateway routing rules
+  # ----------------------------------------------------------------
+  gateway-routes.conf: |
+    gateways = [
+      {
+        name: us-east
+        url: nats://nats-us-east.aivolearning.internal:7222
+      }
+      {
+        name: us-west
+        url: nats://nats-us-west.aivolearning.internal:7222
+      }
+      {
+        name: eu-west
+        url: nats://nats-eu-west.aivolearning.internal:7222
+      }
+      {
+        name: eu-central
+        url: nats://nats-eu-central.aivolearning.internal:7222
+      }
+      {
+        name: ap-southeast
+        url: nats://nats-ap-southeast.aivolearning.internal:7222
+      }
+    ]
