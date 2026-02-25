@@ -4,7 +4,6 @@
  * Validates JWT tokens and extracts user context.
  */
 
-import type { FastifyPluginAsync } from 'fastify';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import * as jose from 'jose';
@@ -99,6 +98,6 @@ async function authMiddlewarePlugin(fastify: FastifyInstance) {
   });
 }
 
-export const authMiddleware: FastifyPluginAsync = fp(authMiddlewarePlugin as any, {
+export const authMiddleware = fp(authMiddlewarePlugin as any, {
   name: 'auth-middleware',
 });

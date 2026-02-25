@@ -1,5 +1,4 @@
 import { authMiddleware as sharedAuthMiddleware, requireRole, Role } from '@aivo/ts-rbac';
-import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { getPublicKeyPem } from '../lib/jwt.js';
@@ -17,7 +16,7 @@ const SKIP_AUTH_PREFIXES = [
   '/metrics',
 ];
 
-export const authMiddleware: FastifyPluginAsync = fp(async (fastify) => {
+export const authMiddleware = fp(async (fastify) => {
   fastify.addHook('preHandler', async (request, reply) => {
     // Skip auth for public & internal routes
     if (SKIP_AUTH_PREFIXES.some((prefix) => request.url.startsWith(prefix))) {

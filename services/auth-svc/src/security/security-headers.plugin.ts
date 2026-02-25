@@ -18,10 +18,9 @@
 
 import crypto from 'node:crypto';
 
-import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
-export const securityHeadersPlugin: FastifyPluginAsync = fp(
+export const securityHeadersPlugin = fp(
   async (fastify) => {
     fastify.addHook(
       'onSend',

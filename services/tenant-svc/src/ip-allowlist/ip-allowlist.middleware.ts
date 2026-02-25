@@ -9,7 +9,7 @@
  * @module ip-allowlist/ip-allowlist.middleware
  */
 
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
@@ -93,7 +93,7 @@ export interface IpAllowlistMiddlewareOpts {
   service: IpAllowlistService;
 }
 
-export const ipAllowlistMiddleware: FastifyPluginAsync<IpAllowlistMiddlewareOpts> = fp(
+export const ipAllowlistMiddleware = fp(
   async (fastify, opts: IpAllowlistMiddlewareOpts) => {
     const { service } = opts;
 

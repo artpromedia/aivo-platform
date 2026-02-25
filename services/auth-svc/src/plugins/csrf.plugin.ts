@@ -19,13 +19,12 @@
 
 import crypto from 'node:crypto';
 
-import type { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 // Import @fastify/cookie to augment FastifyRequest/FastifyReply with cookies/setCookie
 import '@fastify/cookie';
 
-export const csrfPlugin: FastifyPluginAsync = fp(
+export const csrfPlugin = fp(
   async (fastify) => {
     // ── Token generation endpoint ──────────────────────────────────────────
     fastify.get('/auth/csrf-token', async (_request, reply) => {
