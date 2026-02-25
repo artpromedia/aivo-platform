@@ -236,7 +236,7 @@ function createPassThroughStore(): RateLimitStore {
 // EXPORT
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const rateLimitPlugin = fp(rateLimitPluginImpl, {
+export const rateLimitPlugin = fp(rateLimitPluginImpl as any, {
   fastify: '>=4.0.0',
   name: '@aivo/rate-limiter-fastify',
 }) as any;
