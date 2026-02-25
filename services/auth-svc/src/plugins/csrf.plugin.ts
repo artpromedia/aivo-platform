@@ -61,8 +61,11 @@ export const csrfPlugin = fp(
           '/health',
           '/ready',
           '/live',
-          '/auth/sso/',    // SSO callbacks come from IdP, not browser forms
-          '/auth/saml/',   // SAML POST binding from IdP
+          '/auth/sso/',      // SSO callbacks come from IdP, not browser forms
+          '/auth/saml/',     // SAML POST binding from IdP
+          '/auth/register',  // Called server-to-server from Next.js BFF
+          '/auth/login',     // Called server-to-server from Next.js BFF
+          '/auth/refresh',   // Called server-to-server from Next.js BFF
         ];
         if (skipPaths.some((p) => request.url.startsWith(p))) return;
 
