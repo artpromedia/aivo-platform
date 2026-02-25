@@ -125,14 +125,14 @@ export class DataResidencyService {
   private readonly currentRegion: DataRegion;
 
   constructor(private readonly db: { tenant: { findUnique: (args: { where: { id: string } }) => Promise<TenantResidencyRecord | null> } }) {
-    this.currentRegion = (process.env['DEPLOYMENT_REGION'] as DataRegion) || 'us-east-1';
+    this.currentRegion = (process.env.DEPLOYMENT_REGION as DataRegion) ?? 'us-east-1';
   }
 
   /* ---------- helpers -------------------------------------------- */
 
   private async getTenant(tenantId: string): Promise<TenantResidencyRecord> {
-    const tenant = await this.db.tenant.findUnique({ where: { id: tenantId } });
-    if (!tenant) {
+    const tenant: TenantResidencyRecord | null = await this.db.tenant.findUnique({ where: { id: tenantId } });
+    if (tenant === null) {
       throw new Error(`Tenant not found: ${tenantId}`);
     }
     return tenant;
@@ -170,7 +170,7 @@ export class DataResidencyService {
 
     if (!residency.isLocal && tenant.dataResidencyEnforced) {
       const redirectUrl = `${residency.apiEndpoint}${request.url}`;
-      reply.redirect(307, redirectUrl);
+      reply.redirect(redirectUrl, 307);
     }
   }
 
@@ -186,7 +186,7 @@ export class DataResidencyService {
    */
   static suggestRegion(countryCode: string): DataRegion {
     const upper = countryCode.toUpperCase();
-    const match = REGION_INFO.find((r) => r.defaultFor.includes(upper));
-    return match?.id ?? 'us-east-1';
+    const match: RegionInfo | undefined = REGION_INFO.find((r) => r.defaultFor.includes(upper));
+    return match !== undefined ? match.id : 'us-east-1';
   }
 }

@@ -196,7 +196,8 @@ export class StorageService {
       Metadata: metadata,
     });
 
-    const uploadUrl = await getSignedUrl(this.client, command, { expiresIn });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AWS SDK v3 S3Client type incompatibility with exactOptionalPropertyTypes
+    const uploadUrl = await getSignedUrl(this.client as any, command, { expiresIn });
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
     return {
@@ -227,7 +228,8 @@ export class StorageService {
       ResponseContentDisposition: options?.responseContentDisposition,
     });
 
-    const downloadUrl = await getSignedUrl(this.client, command, { expiresIn });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- AWS SDK v3 S3Client type incompatibility with exactOptionalPropertyTypes
+    const downloadUrl = await getSignedUrl(this.client as any, command, { expiresIn });
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
     return {
