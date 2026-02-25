@@ -32,7 +32,7 @@ const SKIP_PREFIXES = [
  * Extract the real client IP from the request.
  * Respects X-Forwarded-For (first entry) if present.
  */
-function getClientIp(request: FastifyRequest): string {
+function getClientIp(request: FastifyRequest<any>): string {
   const xff = request.headers['x-forwarded-for'];
   if (xff) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -46,7 +46,7 @@ function getClientIp(request: FastifyRequest): string {
  * Resolve the tenant ID from the request.
  * Prefers `request.user.tenantId`, falls back to `X-Tenant-ID` header.
  */
-function getTenantId(request: FastifyRequest): string | undefined {
+function getTenantId(request: FastifyRequest<any>): string | undefined {
   const user = (request as unknown as { user?: { tenantId?: string } }).user;
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (user?.tenantId) return user.tenantId;
@@ -100,7 +100,7 @@ export const ipAllowlistMiddleware = fp(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     fastify.addHook(
       'preHandler',
-      async (request: FastifyRequest, reply: FastifyReply) => {
+      async (request, reply) => {
         // Skip for non-restrictable paths
         if (SKIP_PREFIXES.some((p) => request.url.startsWith(p))) return;
 

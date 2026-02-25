@@ -146,7 +146,7 @@ const tenantResolverPluginImpl: FastifyPluginAsync<TenantResolverPluginOptions> 
   fastify.decorateRequest('tenantResolver', null);
 
   // Add onRequest hook to resolve tenant
-  fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.addHook('onRequest', async (request, reply) => {
     // Attach resolver to request
     (request as unknown as { tenantResolver: TenantResolverService }).tenantResolver = resolverService;
 
