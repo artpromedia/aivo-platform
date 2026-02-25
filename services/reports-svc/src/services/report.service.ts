@@ -1425,7 +1425,7 @@ export class ReportService {
       Key: key,
     });
 
-    return getSignedUrl(this.s3, command, {
+    return getSignedUrl(this.s3 as any, command, {
       expiresIn: this.config.reportTtlDays * 24 * 60 * 60,
     });
   }

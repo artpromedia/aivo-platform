@@ -3,7 +3,7 @@
  * Validates JWT tokens and extracts user context.
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { jwtVerify } from 'jose';
 
@@ -27,7 +27,7 @@ declare module 'fastify' {
  * JWT authentication plugin for Fastify
  * Requires JWT_SECRET environment variable in production
  */
-const authMiddleware = fp(
+const authMiddleware: FastifyPluginAsync = fp(
   async function authMiddleware(app: FastifyInstance) {
     app.decorateRequest('user', undefined);
 

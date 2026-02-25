@@ -717,6 +717,31 @@ model ScimToken {
   @@index([tokenHash])
 }
 
+// ============================================================================
+// IMPERSONATION
+// ============================================================================
+
+/// Admin impersonation sessions for debugging user issues
+model ImpersonationSession {
+  id              String    @id @default(uuid()) @db.Uuid
+  adminUserId     String    @db.Uuid
+  targetUserId    String    @db.Uuid
+  targetTenantId  String    @db.Uuid
+  reason          String
+  readOnly        Boolean   @default(true)
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  revokeReason    String?
+  adminIpAddress  String?
+  adminUserAgent  String?
+  createdAt       DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([targetUserId])
+  @@index([targetTenantId])
+  @@index([expiresAt])
+}
+
 /// Audit log for SCIM sync operations (debugging & compliance)
 model ScimSyncLog {
   id           String   @id @default(uuid()) @db.Uuid

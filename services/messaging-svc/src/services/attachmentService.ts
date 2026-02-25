@@ -122,7 +122,7 @@ async function createR2Client(): Promise<StorageClient> {
         return `${r2.publicUrl}/${key}`;
       }
       return getSignedUrl(
-        s3,
+        s3 as any,
         new GetObjectCommand({ Bucket: r2.bucket, Key: key }),
         { expiresIn: expiresInSeconds }
       );

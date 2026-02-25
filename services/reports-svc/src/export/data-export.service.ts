@@ -118,7 +118,7 @@ export async function processExportJob(jobId: string, token: string): Promise<vo
 
     // 4. Presigned URL
     const downloadUrl = await getSignedUrl(
-      s3,
+      s3 as any,
       new GetObjectCommand({ Bucket: config.s3Bucket, Key: s3Key }),
       { expiresIn: PRESIGN_TTL }
     );
@@ -203,7 +203,7 @@ export async function refreshDownloadUrl(tenantId: string, jobId: string) {
   if (!job || !job.s3Key) return null;
 
   const downloadUrl = await getSignedUrl(
-    s3,
+    s3 as any,
     new GetObjectCommand({ Bucket: config.s3Bucket, Key: job.s3Key }),
     { expiresIn: PRESIGN_TTL }
   );

@@ -48,6 +48,34 @@ export async function signRefreshToken(payload: TokenPayload) {
     .sign(privateKey);
 }
 
+export interface ImpersonationTokenPayload {
+  sub: string;
+  tenant_id: string;
+  roles: Role[];
+  name?: string;
+  email: string;
+  impersonation: {
+    sessionId: string;
+    adminUserId: string;
+    readOnly: boolean;
+    expiresAt: string;
+  };
+}
+
+export async function signImpersonationToken(
+  payload: ImpersonationTokenPayload,
+  durationMinutes: number,
+) {
+  const { privateKey } = await getKeys();
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: 'RS256' })
+    .setSubject(payload.sub)
+    .setIssuedAt()
+    .setExpirationTime(`${durationMinutes}m`)
+    .setJti(randomUUID())
+    .sign(privateKey);
+}
+
 export async function verifyToken(token: string): Promise<TokenPayload> {
   const { publicKey } = await getKeys();
   const { payload } = await jwtVerify(token, publicKey);

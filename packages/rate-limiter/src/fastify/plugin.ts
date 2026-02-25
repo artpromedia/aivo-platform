@@ -18,7 +18,7 @@
  * ```
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import type Redis from 'ioredis';
 import fp from 'fastify-plugin';
 
@@ -236,7 +236,7 @@ function createPassThroughStore(): RateLimitStore {
 // EXPORT
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const rateLimitPlugin = fp(rateLimitPluginImpl, {
+export const rateLimitPlugin: FastifyPluginAsync<FastifyRateLimitOptions> = fp(rateLimitPluginImpl, {
   fastify: '>=4.0.0',
   name: '@aivo/rate-limiter-fastify',
 });

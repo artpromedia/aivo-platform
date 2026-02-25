@@ -1,5 +1,5 @@
 import { authMiddleware as sharedAuthMiddleware } from '@aivo/ts-rbac';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config } from '../config.js';
@@ -38,7 +38,7 @@ declare module 'fastify' {
   }
 }
 
-export const authMiddleware = fp(async (fastify) => {
+export const authMiddleware: FastifyPluginAsync = fp(async (fastify) => {
   // Decorate fastify with authenticate and authorize functions
   fastify.decorate('authenticate', authenticate);
   fastify.decorate('authorize', authorize);
