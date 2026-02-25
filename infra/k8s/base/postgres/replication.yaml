@@ -1,0 +1,770 @@
+# =============================================================================
+# AIVO PostgreSQL Streaming Replication — Active-Passive
+# =============================================================================
+# Primary:  US-East (Ashburn) — read/write
+# Standby:  US-West (Hillsboro) — read-only hot standby
+#
+# Components:
+#   - PostgreSQL 15 StatefulSet (primary + standby)
+#   - PgBouncer connection pooler per region
+#   - Replication monitoring via Prometheus
+#   - Automated failover scripts
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aivo-postgres
+  labels:
+    app.kubernetes.io/part-of: aivo
+    app.kubernetes.io/component: database
+---
+# ==========================================================================
+# ConfigMap — PostgreSQL primary configuration
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-primary-config
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: primary
+    aivo/region: us-east
+data:
+  postgresql.conf: |
+    # =================================================================
+    # AIVO PostgreSQL Primary — US-East (Ashburn)
+    # =================================================================
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+
+    # --- Memory ---
+    shared_buffers = '8GB'
+    effective_cache_size = '24GB'
+    work_mem = '64MB'
+    maintenance_work_mem = '2GB'
+    huge_pages = try
+
+    # --- WAL / Replication ---
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    wal_keep_size = '4GB'
+    synchronous_standby_names = ''
+    # Async replication for cross-region (latency ~60ms ash↔hil)
+    # Set to 'aivo_standby' for sync if RPO=0 needed (increases write latency)
+    synchronous_commit = on
+    archive_mode = on
+    archive_command = 'test ! -f /var/lib/postgresql/wal_archive/%f && cp %p /var/lib/postgresql/wal_archive/%f'
+    restore_command = 'cp /var/lib/postgresql/wal_archive/%f %p'
+
+    # --- Checkpoints ---
+    checkpoint_completion_target = 0.9
+    min_wal_size = '1GB'
+    max_wal_size = '4GB'
+
+    # --- Logging ---
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d.log'
+    log_statement = 'ddl'
+    log_min_duration_statement = 500
+    log_replication_commands = on
+
+    # --- Monitoring ---
+    shared_preload_libraries = 'pg_stat_statements'
+    pg_stat_statements.track = all
+    track_io_timing = on
+    track_functions = all
+
+    # --- SSL ---
+    ssl = on
+    ssl_cert_file = '/etc/ssl/certs/server.crt'
+    ssl_key_file = '/etc/ssl/private/server.key'
+
+  pg_hba.conf: |
+    # TYPE   DATABASE   USER          ADDRESS          METHOD
+    # Local connections
+    local    all        all                            peer
+    # IPv4 local connections (cluster subnet)
+    host     all        all           10.10.0.0/24     scram-sha-256
+    # Replication from standby (US-West)
+    host     replication repl_user    0.0.0.0/0        scram-sha-256
+    # PgBouncer
+    host     all        all           127.0.0.1/32     scram-sha-256
+    # Application connections via private network
+    host     all        all           10.10.0.0/16     scram-sha-256
+
+  init-replication.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    echo "=== Initializing replication user ==="
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+      DO \$\$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'repl_user') THEN
+          CREATE ROLE repl_user WITH REPLICATION LOGIN PASSWORD '${REPLICATION_PASSWORD}';
+          RAISE NOTICE 'Created replication user';
+        END IF;
+      END
+      \$\$;
+
+      -- Create replication slot for standby
+      SELECT CASE
+        WHEN NOT EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = 'aivo_standby')
+        THEN pg_create_physical_replication_slot('aivo_standby')
+        ELSE NULL
+      END;
+
+      -- Enable pg_stat_statements
+      CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+      -- Create monitoring role
+      DO \$\$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'monitoring') THEN
+          CREATE ROLE monitoring WITH LOGIN PASSWORD 'monitoring_pass';
+          GRANT pg_monitor TO monitoring;
+          RAISE NOTICE 'Created monitoring user';
+        END IF;
+      END
+      \$\$;
+    EOSQL
+
+    echo "=== Replication initialization complete ==="
+---
+# ==========================================================================
+# ConfigMap — PostgreSQL standby configuration
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-standby-config
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: standby
+    aivo/region: us-west
+data:
+  postgresql.conf: |
+    # =================================================================
+    # AIVO PostgreSQL Standby — US-West (Hillsboro)
+    # =================================================================
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+
+    # --- Memory ---
+    shared_buffers = '8GB'
+    effective_cache_size = '24GB'
+    work_mem = '64MB'
+    maintenance_work_mem = '2GB'
+    huge_pages = try
+
+    # --- Hot Standby ---
+    hot_standby = on
+    hot_standby_feedback = on
+    max_standby_streaming_delay = 30s
+    max_standby_archive_delay = 60s
+
+    # --- WAL receiver ---
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    wal_keep_size = '4GB'
+
+    # --- Checkpoints ---
+    checkpoint_completion_target = 0.9
+    min_wal_size = '1GB'
+    max_wal_size = '4GB'
+
+    # --- Logging ---
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d.log'
+    log_statement = 'ddl'
+    log_min_duration_statement = 500
+
+    # --- Monitoring ---
+    shared_preload_libraries = 'pg_stat_statements'
+    pg_stat_statements.track = all
+    track_io_timing = on
+
+    # --- SSL ---
+    ssl = on
+    ssl_cert_file = '/etc/ssl/certs/server.crt'
+    ssl_key_file = '/etc/ssl/private/server.key'
+
+  pg_hba.conf: |
+    # TYPE   DATABASE   USER          ADDRESS          METHOD
+    local    all        all                            peer
+    host     all        all           10.20.0.0/24     scram-sha-256
+    host     replication repl_user    0.0.0.0/0        scram-sha-256
+    host     all        all           127.0.0.1/32     scram-sha-256
+    host     all        all           10.20.0.0/16     scram-sha-256
+
+  setup-standby.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    PRIMARY_HOST="${PRIMARY_DB_HOST}"
+    PGDATA="/var/lib/postgresql/data"
+
+    echo "=== Setting up PostgreSQL standby ==="
+
+    # If data directory is empty, do base backup from primary
+    if [ ! -f "${PGDATA}/PG_VERSION" ]; then
+      echo "Performing base backup from primary (${PRIMARY_HOST})..."
+      PGPASSWORD="${REPLICATION_PASSWORD}" pg_basebackup \
+        -h "${PRIMARY_HOST}" \
+        -p 5432 \
+        -U repl_user \
+        -D "${PGDATA}" \
+        -Fp -Xs -P -R \
+        --slot=aivo_standby \
+        --checkpoint=fast
+
+      echo "Base backup complete. Standby signal file created."
+    else
+      echo "Data directory exists, ensuring standby.signal is present..."
+      touch "${PGDATA}/standby.signal"
+    fi
+
+    # Write primary_conninfo
+    cat > "${PGDATA}/postgresql.auto.conf" <<EOF
+    primary_conninfo = 'host=${PRIMARY_HOST} port=5432 user=repl_user password=${REPLICATION_PASSWORD} application_name=aivo_standby sslmode=require'
+    primary_slot_name = 'aivo_standby'
+    recovery_target_timeline = 'latest'
+    EOF
+
+    echo "=== Standby setup complete ==="
+---
+# ==========================================================================
+# ConfigMap — PgBouncer configuration
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: pgbouncer
+data:
+  pgbouncer.ini: |
+    [databases]
+    ; Connect to local PostgreSQL
+    aivo_auth = host=127.0.0.1 port=5432 dbname=aivo_auth pool_size=30
+    aivo_core = host=127.0.0.1 port=5432 dbname=aivo_core pool_size=40
+    aivo_content = host=127.0.0.1 port=5432 dbname=aivo_content pool_size=30
+    aivo_analytics = host=127.0.0.1 port=5432 dbname=aivo_analytics pool_size=20
+    aivo_billing = host=127.0.0.1 port=5432 dbname=aivo_billing pool_size=15
+    aivo_notifications = host=127.0.0.1 port=5432 dbname=aivo_notifications pool_size=15
+    aivo_ml = host=127.0.0.1 port=5432 dbname=aivo_ml pool_size=20
+    * = host=127.0.0.1 port=5432 pool_size=20
+
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 6432
+    auth_type = scram-sha-256
+    auth_file = /etc/pgbouncer/userlist.txt
+    pool_mode = transaction
+    max_client_conn = 1000
+    default_pool_size = 25
+    min_pool_size = 5
+    reserve_pool_size = 5
+    reserve_pool_timeout = 3
+    server_lifetime = 3600
+    server_idle_timeout = 600
+    server_connect_timeout = 15
+    server_login_retry = 1
+    query_timeout = 30
+    query_wait_timeout = 120
+    client_idle_timeout = 0
+    log_connections = 1
+    log_disconnections = 1
+    log_pooler_errors = 1
+    stats_period = 60
+    admin_users = postgres
+    stats_users = monitoring
+---
+# ==========================================================================
+# Secret — PostgreSQL credentials (sealed in production)
+# ==========================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-credentials
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+type: Opaque
+stringData:
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "REPLACE_IN_PRODUCTION"
+  REPLICATION_PASSWORD: "REPLACE_IN_PRODUCTION"
+  MONITORING_PASSWORD: "REPLACE_IN_PRODUCTION"
+  PRIMARY_DB_HOST: "aivo-db-us-east"    # Hetzner private IP resolved via DNS
+  SECONDARY_DB_HOST: "aivo-db-us-west"
+---
+# ==========================================================================
+# Service — PostgreSQL primary (ClusterIP, US-East)
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-primary
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: primary
+    aivo/region: us-east
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+    - name: pgbouncer
+      port: 6432
+      targetPort: 6432
+    - name: metrics
+      port: 9187
+      targetPort: 9187
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: primary
+---
+# ==========================================================================
+# Service — PostgreSQL standby read-only (ClusterIP, US-West)
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-standby
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: standby
+    aivo/region: us-west
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9187"
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: 5432
+    - name: pgbouncer
+      port: 6432
+      targetPort: 6432
+    - name: metrics
+      port: 9187
+      targetPort: 9187
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/component: standby
+---
+# ==========================================================================
+# Service — PgBouncer (connection pooler, both regions)
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: pgbouncer
+spec:
+  type: ClusterIP
+  ports:
+    - name: pgbouncer
+      port: 6432
+      targetPort: 6432
+  selector:
+    app.kubernetes.io/name: pgbouncer
+---
+# ==========================================================================
+# Deployment — postgres-exporter (Prometheus metrics)
+# ==========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+    spec:
+      containers:
+        - name: exporter
+          image: prometheuscommunity/postgres-exporter:v0.15.0
+          ports:
+            - containerPort: 9187
+              name: metrics
+          env:
+            - name: DATA_SOURCE_URI
+              value: "postgres-primary:5432/postgres?sslmode=require"
+            - name: DATA_SOURCE_USER
+              value: "monitoring"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: MONITORING_PASSWORD
+            - name: PG_EXPORTER_EXTEND_QUERY_PATH
+              value: /etc/postgres-exporter/queries.yaml
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: queries
+              mountPath: /etc/postgres-exporter
+      volumes:
+        - name: queries
+          configMap:
+            name: postgres-exporter-queries
+---
+# ==========================================================================
+# ConfigMap — Custom Prometheus queries for replication monitoring
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-exporter-queries
+  namespace: aivo-postgres
+data:
+  queries.yaml: |
+    pg_replication:
+      query: |
+        SELECT
+          CASE WHEN pg_is_in_recovery() THEN 1 ELSE 0 END AS is_standby,
+          CASE WHEN pg_is_in_recovery()
+            THEN EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())
+            ELSE 0
+          END AS lag_seconds,
+          CASE WHEN NOT pg_is_in_recovery()
+            THEN (SELECT count(*) FROM pg_stat_replication)
+            ELSE 0
+          END AS connected_standbys
+      master: true
+      metrics:
+        - is_standby:
+            usage: "GAUGE"
+            description: "1 if this server is a standby"
+        - lag_seconds:
+            usage: "GAUGE"
+            description: "Replication lag in seconds"
+        - connected_standbys:
+            usage: "GAUGE"
+            description: "Number of connected standby servers"
+
+    pg_replication_slots:
+      query: |
+        SELECT
+          slot_name,
+          active::int AS active,
+          COALESCE(pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn), 0) AS lag_bytes
+        FROM pg_replication_slots
+      master: true
+      metrics:
+        - slot_name:
+            usage: "LABEL"
+            description: "Replication slot name"
+        - active:
+            usage: "GAUGE"
+            description: "Whether the slot is active"
+        - lag_bytes:
+            usage: "GAUGE"
+            description: "Replication lag in bytes"
+
+    pg_stat_activity_count:
+      query: |
+        SELECT
+          datname,
+          state,
+          count(*) AS count
+        FROM pg_stat_activity
+        WHERE datname IS NOT NULL
+        GROUP BY datname, state
+      metrics:
+        - datname:
+            usage: "LABEL"
+            description: "Database name"
+        - state:
+            usage: "LABEL"
+            description: "Connection state"
+        - count:
+            usage: "GAUGE"
+            description: "Number of connections"
+---
+# ==========================================================================
+# PrometheusRule — Replication alerts
+# ==========================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgres-replication-alerts
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: postgres.replication
+      interval: 15s
+      rules:
+        # Replication lag > 5 seconds
+        - alert: PostgresReplicationLagHigh
+          expr: pg_replication_lag_seconds > 5
+          for: 2m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "PostgreSQL replication lag is {{ $value }}s"
+            description: "Standby replication lag has exceeded 5 seconds for 2 minutes. This may indicate network issues between US-East and US-West."
+            runbook_url: "https://github.com/OWNER/aivo/blob/main/docs/runbooks/region-failover.md#replication-lag"
+
+        # Replication lag > 30 seconds (critical — may need failover)
+        - alert: PostgresReplicationLagCritical
+          expr: pg_replication_lag_seconds > 30
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "CRITICAL: PostgreSQL replication lag is {{ $value }}s"
+            description: "Standby replication lag exceeds 30 seconds. Investigate immediately — data loss risk during failover."
+            runbook_url: "https://github.com/OWNER/aivo/blob/main/docs/runbooks/region-failover.md#critical-lag"
+
+        # No standby connected
+        - alert: PostgresStandbyDisconnected
+          expr: pg_replication_connected_standbys == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "No PostgreSQL standby connected to primary"
+            description: "The US-West standby is not connected to the US-East primary. Cross-region replication is broken."
+            runbook_url: "https://github.com/OWNER/aivo/blob/main/docs/runbooks/region-failover.md#standby-disconnected"
+
+        # Replication slot inactive
+        - alert: PostgresReplicationSlotInactive
+          expr: pg_replication_slots_active == 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "PostgreSQL replication slot '{{ $labels.slot_name }}' is inactive"
+            description: "The replication slot has been inactive for 5 minutes. WAL files may accumulate on the primary."
+
+        # High connection count
+        - alert: PostgresConnectionsHigh
+          expr: sum by (datname) (pg_stat_activity_count_count{state="active"}) > 150
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High active connections on database {{ $labels.datname }}"
+            description: "Database {{ $labels.datname }} has {{ $value }} active connections (threshold: 150)."
+---
+# ==========================================================================
+# Script — Promote standby to primary (failover)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: failover-scripts
+  namespace: aivo-postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+data:
+  promote-standby.sh: |
+    #!/bin/bash
+    # =================================================================
+    # Promote PostgreSQL standby to primary
+    # Usage: kubectl exec -n aivo-postgres <standby-pod> -- /scripts/promote-standby.sh
+    # =================================================================
+    set -euo pipefail
+
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║  AIVO PostgreSQL Standby Promotion                   ║"
+    echo "║  Region: US-West (Hillsboro)                         ║"
+    echo "╚══════════════════════════════════════════════════════╝"
+
+    # Pre-flight checks
+    echo ""
+    echo "=== Pre-flight checks ==="
+
+    # Check if we are actually a standby
+    IS_RECOVERY=$(psql -tAc "SELECT pg_is_in_recovery()")
+    if [ "$IS_RECOVERY" != "t" ]; then
+      echo "ERROR: This server is NOT a standby. Aborting."
+      exit 1
+    fi
+
+    # Check replication lag
+    LAG=$(psql -tAc "SELECT EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())")
+    echo "Current replication lag: ${LAG}s"
+    if (( $(echo "$LAG > 60" | bc -l) )); then
+      echo "WARNING: Replication lag is ${LAG}s — potential data loss!"
+      echo "Proceed with promotion? (Set FORCE_PROMOTE=1 to override)"
+      if [ "${FORCE_PROMOTE:-0}" != "1" ]; then
+        exit 1
+      fi
+    fi
+
+    # Promote
+    echo ""
+    echo "=== Promoting standby to primary ==="
+    pg_ctl promote -D /var/lib/postgresql/data
+    echo "Promotion signal sent."
+
+    # Wait for promotion
+    echo "Waiting for promotion to complete..."
+    for i in $(seq 1 30); do
+      IS_RECOVERY=$(psql -tAc "SELECT pg_is_in_recovery()")
+      if [ "$IS_RECOVERY" = "f" ]; then
+        echo "✅ Promotion complete — server is now PRIMARY"
+        break
+      fi
+      sleep 1
+    done
+
+    # Verify
+    echo ""
+    echo "=== Post-promotion verification ==="
+    psql -c "SELECT pg_is_in_recovery() AS is_standby, current_timestamp AS promoted_at"
+    echo ""
+    echo "IMPORTANT: Update DNS/services to point to the new primary."
+    echo "See: docs/runbooks/region-failover.md"
+
+  check-replication.sh: |
+    #!/bin/bash
+    # =================================================================
+    # Check replication status between primary and standby
+    # =================================================================
+    set -euo pipefail
+
+    echo "=== PostgreSQL Replication Status ==="
+    echo ""
+
+    IS_RECOVERY=$(psql -tAc "SELECT pg_is_in_recovery()")
+    if [ "$IS_RECOVERY" = "f" ]; then
+      echo "Role: PRIMARY"
+      echo ""
+      echo "--- Connected standbys ---"
+      psql -c "
+        SELECT
+          application_name,
+          client_addr,
+          state,
+          sync_state,
+          sent_lsn,
+          write_lsn,
+          flush_lsn,
+          replay_lsn,
+          pg_wal_lsn_diff(sent_lsn, replay_lsn) AS replay_lag_bytes,
+          write_lag,
+          flush_lag,
+          replay_lag
+        FROM pg_stat_replication
+        ORDER BY application_name;
+      "
+      echo ""
+      echo "--- Replication slots ---"
+      psql -c "
+        SELECT
+          slot_name,
+          active,
+          restart_lsn,
+          confirmed_flush_lsn,
+          pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn) AS lag_bytes
+        FROM pg_replication_slots;
+      "
+    else
+      echo "Role: STANDBY"
+      echo ""
+      LAG=$(psql -tAc "SELECT EXTRACT(EPOCH FROM now() - pg_last_xact_replay_timestamp())")
+      echo "Replication lag: ${LAG}s"
+      psql -c "SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn(), pg_last_xact_replay_timestamp()"
+    fi
+
+  rebuild-standby.sh: |
+    #!/bin/bash
+    # =================================================================
+    # Rebuild standby after failback or data divergence
+    # Usage: Run on the NEW standby server
+    # =================================================================
+    set -euo pipefail
+
+    PRIMARY_HOST="${PRIMARY_DB_HOST:?PRIMARY_DB_HOST must be set}"
+    PGDATA="/var/lib/postgresql/data"
+
+    echo "╔══════════════════════════════════════════════════════╗"
+    echo "║  Rebuilding PostgreSQL Standby                       ║"
+    echo "║  Primary: ${PRIMARY_HOST}                            ║"
+    echo "╚══════════════════════════════════════════════════════╝"
+
+    echo ""
+    echo "WARNING: This will DESTROY all local data and rebuild from primary."
+    echo "Proceed? (Set CONFIRM_REBUILD=1 to continue)"
+
+    if [ "${CONFIRM_REBUILD:-0}" != "1" ]; then
+      echo "Aborted. Set CONFIRM_REBUILD=1 to proceed."
+      exit 1
+    fi
+
+    # Stop PostgreSQL
+    echo "Stopping PostgreSQL..."
+    pg_ctl stop -D "${PGDATA}" -m fast 2>/dev/null || true
+
+    # Clear data directory
+    echo "Clearing data directory..."
+    rm -rf "${PGDATA}"/*
+
+    # Perform base backup
+    echo "Performing base backup from primary..."
+    PGPASSWORD="${REPLICATION_PASSWORD}" pg_basebackup \
+      -h "${PRIMARY_HOST}" \
+      -p 5432 \
+      -U repl_user \
+      -D "${PGDATA}" \
+      -Fp -Xs -P -R \
+      --slot=aivo_standby \
+      --checkpoint=fast
+
+    # Configure standby
+    cat >> "${PGDATA}/postgresql.auto.conf" <<EOF
+    primary_conninfo = 'host=${PRIMARY_HOST} port=5432 user=repl_user password=${REPLICATION_PASSWORD} application_name=aivo_standby sslmode=require'
+    primary_slot_name = 'aivo_standby'
+    recovery_target_timeline = 'latest'
+    EOF
+    touch "${PGDATA}/standby.signal"
+
+    echo "✅ Standby rebuilt. Start PostgreSQL to begin replication."

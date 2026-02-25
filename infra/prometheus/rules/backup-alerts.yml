@@ -1,0 +1,86 @@
+# =============================================================================
+# AIVO Platform — Backup Alerting Rules (Prometheus)
+# =============================================================================
+# Fires when backup jobs fail, are overdue, or storage is growing too large.
+# RPO target: 6 hours  |  Alert after: 8 hours without a successful backup
+# =============================================================================
+groups:
+  - name: backup-alerts
+    interval: 1m
+    rules:
+      # ── Backup job failed ─────────────────────────────────────────────────
+      - alert: BackupJobFailed
+        expr: kube_job_status_failed{job_name=~"aivo-backup-\\d+.*"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: devops
+          component: backup
+        annotations:
+          summary: "AIVO backup job failed"
+          description: >-
+            Backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }}
+            has failed. RPO is at risk — investigate immediately.
+          runbook_url: "https://docs.aivolearning.com/runbooks/disaster-recovery#backup-failure"
+
+      # ── No successful backup in 8 hours (RPO breach imminent) ────────────
+      - alert: BackupJobMissing
+        expr: >
+          (time() - max(kube_job_status_completion_time{job_name=~"aivo-backup-\\d+.*"})) > 28800
+        for: 10m
+        labels:
+          severity: critical
+          team: devops
+          component: backup
+        annotations:
+          summary: "No successful backup in 8+ hours"
+          description: >-
+            Last successful backup was {{ $value | humanizeDuration }} ago.
+            RPO target is 6 hours. Check CronJob `aivo-backup` in namespace aivo-prod.
+          runbook_url: "https://docs.aivolearning.com/runbooks/disaster-recovery#backup-missing"
+
+      # ── Backup verification failed ───────────────────────────────────────
+      - alert: BackupVerifyFailed
+        expr: kube_job_status_failed{job_name=~"aivo-backup-verify-\\d+.*"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: backup
+        annotations:
+          summary: "Weekly backup verification failed"
+          description: >-
+            The automated restore-verification job failed. Backups may not be
+            restorable — run a manual verification immediately.
+          runbook_url: "https://docs.aivolearning.com/runbooks/disaster-recovery#verify-failure"
+
+      # ── Backup storage growing too large ─────────────────────────────────
+      - alert: BackupStorageQuotaHigh
+        expr: aws_s3_bucket_size_bytes{bucket="aivo-backups"} > 107374182400
+        for: 1h
+        labels:
+          severity: warning
+          team: devops
+          component: backup
+        annotations:
+          summary: "Backup storage exceeding 100 GB"
+          description: >-
+            S3 bucket {{ $labels.bucket }} is using {{ $value | humanize1024 }}B.
+            Review retention policy or increase storage budget.
+
+      # ── Backup duration too long ─────────────────────────────────────────
+      - alert: BackupDurationHigh
+        expr: >
+          kube_job_status_active{job_name=~"aivo-backup-\\d+.*"} == 1
+          and (time() - kube_job_status_start_time{job_name=~"aivo-backup-\\d+.*"}) > 2700
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+          component: backup
+        annotations:
+          summary: "Backup job running longer than 45 minutes"
+          description: >-
+            Backup job {{ $labels.job_name }} has been active for
+            {{ $value | humanizeDuration }}. Normal duration is 10-20 minutes.
+            Database growth may require increasing the activeDeadlineSeconds.

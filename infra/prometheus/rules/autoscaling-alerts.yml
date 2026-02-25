@@ -1,0 +1,28 @@
+groups:
+  - name: autoscaling-alerts
+    rules:
+      - alert: HPAMaxedOut
+        expr: kube_horizontalpodautoscaler_status_current_replicas == kube_horizontalpodautoscaler_spec_max_replicas
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} at max replicas"
+          description: "{{ $labels.horizontalpodautoscaler }} has been at max replicas for 15m. Consider increasing max or adding nodes."
+
+      - alert: HPAScaleUpFailed
+        expr: kube_horizontalpodautoscaler_status_condition{condition="ScalingLimited",status="true"} == 1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} cannot scale up"
+          description: "Scaling is limited. Check node resources and cluster capacity."
+
+      - alert: HighPodCPUUsage
+        expr: avg by (pod) (rate(container_cpu_usage_seconds_total{namespace=~"aivo-.*"}[5m])) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} CPU usage above 90%"

@@ -1,0 +1,81 @@
+# PodDisruptionBudgets — ensure minimum availability during node drains
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-svc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: auth-svc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tenant-svc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tenant-svc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-learner-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: web-learner
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: billing-svc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: billing-svc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: realtime-svc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: realtime-svc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-inference-svc-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-inference-svc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: brain-engine-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: brain-engine

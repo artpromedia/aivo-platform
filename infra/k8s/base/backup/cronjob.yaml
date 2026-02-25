@@ -1,0 +1,101 @@
+# =============================================================================
+# AIVO Platform — Backup CronJob
+# =============================================================================
+# Runs every 6 hours to meet RPO < 6 h target.
+# Encrypts and uploads PostgreSQL, Redis, and Vault snapshots to offsite S3.
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aivo-backup
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/name: aivo-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: aivo-platform
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aivo-backup
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/name: aivo-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: aivo-platform
+spec:
+  # Every 6 hours — 00:00, 06:00, 12:00, 18:00 UTC
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aivo-backup
+        app.kubernetes.io/component: backup
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600   # 1 hour hard timeout
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: aivo-backup
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: aivo-backup
+          containers:
+            - name: backup
+              image: ghcr.io/artpromedia/aivo-platform/backup-agent:latest
+              command: ["/usr/local/bin/backup"]
+              envFrom:
+                - secretRef:
+                    name: backup-secrets
+              env:
+                - name: PG_HOST
+                  value: postgres
+                - name: PG_PORT
+                  value: "5432"
+                - name: PG_USER
+                  value: aivo
+                - name: REDIS_URL
+                  value: redis://redis:6379
+                - name: RETENTION_DAYS
+                  value: "30"
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 5Gi
+---
+# Secret stub — values must be provided at deploy time via ESO / sealed-secrets.
+# Listed here for documentation; do NOT commit real credentials.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backup-secrets
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/name: aivo-backup
+    app.kubernetes.io/component: backup
+type: Opaque
+stringData:
+  BACKUP_BUCKET: "<set-via-external-secrets>"
+  BACKUP_PREFIX: "aivo-backups"
+  BACKUP_ENCRYPTION_KEY: "<set-via-external-secrets>"
+  PGPASSWORD: "<set-via-external-secrets>"
+  AWS_ACCESS_KEY_ID: "<set-via-external-secrets>"
+  AWS_SECRET_ACCESS_KEY: "<set-via-external-secrets>"
+  AWS_DEFAULT_REGION: "<set-via-external-secrets>"
+  # S3-compatible endpoint for Hetzner Object Storage (leave blank for AWS)
+  AWS_ENDPOINT_URL: "<set-via-external-secrets>"

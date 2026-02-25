@@ -1,0 +1,28 @@
+# =============================================================================
+# AIVO Platform — Backup Agent
+# =============================================================================
+# Lightweight image containing all tools needed to back up and restore
+# PostgreSQL, Redis, and Vault to/from S3-compatible object storage.
+#
+# Used by:
+#   - CronJob  aivo-backup        (runs backup.sh every 6 h)
+#   - CronJob  aivo-backup-verify (runs restore verification weekly)
+# =============================================================================
+FROM postgres:15-alpine
+
+RUN apk add --no-cache \
+  bash \
+  aws-cli \
+  openssl \
+  redis \
+  jq \
+  curl \
+  coreutils
+
+# Copy backup / restore scripts
+COPY scripts/backup/backup.sh  /usr/local/bin/backup
+COPY scripts/backup/restore.sh /usr/local/bin/restore
+
+RUN chmod +x /usr/local/bin/backup /usr/local/bin/restore
+
+ENTRYPOINT ["/usr/local/bin/backup"]

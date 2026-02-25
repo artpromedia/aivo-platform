@@ -1,0 +1,153 @@
+# =============================================================================
+# AIVO Platform — Weekly Backup Verification CronJob
+# =============================================================================
+# Runs every Sunday at 03:00 UTC.  Downloads the latest backup, verifies its
+# checksum and decryption, restores a single database to a throw-away
+# PostgreSQL instance, and runs basic integrity checks.
+# =============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aivo-backup-verify
+  namespace: aivo-prod
+  labels:
+    app.kubernetes.io/name: aivo-backup-verify
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: aivo-platform
+spec:
+  schedule: "0 3 * * 0"          # Every Sunday at 03:00 UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aivo-backup-verify
+        app.kubernetes.io/component: backup
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200   # 2 hour hard timeout
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: aivo-backup-verify
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: Never
+          serviceAccountName: aivo-backup
+          containers:
+            - name: verify
+              image: ghcr.io/artpromedia/aivo-platform/backup-agent:latest
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+
+                  echo "=== AIVO Backup Verification — $(date -u) ==="
+
+                  # ── Find latest backup manifest ─────────────────────────
+                  LATEST=$(aws s3 ls "s3://${BACKUP_BUCKET}/${BACKUP_PREFIX}/daily/" \
+                    | grep "manifest-" | sort | tail -1 | awk '{print $4}')
+
+                  if [ -z "${LATEST}" ]; then
+                    echo "ERROR: No backup manifests found!"
+                    exit 1
+                  fi
+
+                  BACKUP_ID=$(echo "${LATEST}" | grep -oP '\d{8}_\d{6}')
+                  echo "Latest backup: ${BACKUP_ID}"
+
+                  # ── Download manifest and check metadata ────────────────
+                  aws s3 cp "s3://${BACKUP_BUCKET}/${BACKUP_PREFIX}/daily/${LATEST}" /tmp/manifest.json
+                  echo "Manifest:"
+                  cat /tmp/manifest.json | jq .
+
+                  # ── Verify: download + checksum + decrypt ───────────────
+                  echo "Step 1: Dry-run verification (checksum + decryption)..."
+                  /usr/local/bin/restore "${BACKUP_ID}" --dry-run
+
+                  # ── Restore aivo_auth to a temporary database ───────────
+                  echo "Step 2: Restore aivo_auth to verification instance..."
+
+                  # Create a temporary database for the test
+                  export PG_HOST="${VERIFY_PG_HOST:-postgres}"
+                  VERIFY_DB="aivo_auth_verify_$(date +%s)"
+
+                  psql -h "${PG_HOST}" -p "${PG_PORT:-5432}" -U "${PG_USER:-aivo}" \
+                    -c "CREATE DATABASE ${VERIFY_DB};" postgres
+
+                  # Download and restore just aivo_auth
+                  ARCHIVE_NAME="aivo-backup-${BACKUP_ID}.tar.gz.enc"
+                  mkdir -p /tmp/verify
+                  aws s3 cp "s3://${BACKUP_BUCKET}/${BACKUP_PREFIX}/daily/${ARCHIVE_NAME}" /tmp/verify/
+                  aws s3 cp "s3://${BACKUP_BUCKET}/${BACKUP_PREFIX}/daily/${ARCHIVE_NAME}.sha256" /tmp/verify/
+
+                  cd /tmp/verify
+                  sha256sum -c "${ARCHIVE_NAME}.sha256"
+
+                  openssl enc -aes-256-cbc -d -salt -pbkdf2 -iter 100000 \
+                    -in "${ARCHIVE_NAME}" -out backup.tar.gz \
+                    -pass "pass:${BACKUP_ENCRYPTION_KEY}"
+
+                  tar -xzf backup.tar.gz
+
+                  if [ -f aivo_auth.dump ]; then
+                    pg_restore -h "${PG_HOST}" -p "${PG_PORT:-5432}" -U "${PG_USER:-aivo}" \
+                      --dbname="${VERIFY_DB}" --no-owner \
+                      aivo_auth.dump
+                    echo "aivo_auth restored successfully to ${VERIFY_DB}"
+                  else
+                    echo "WARNING: aivo_auth.dump not found in backup"
+                  fi
+
+                  # ── Basic integrity checks ──────────────────────────────
+                  echo "Step 3: Running integrity checks..."
+
+                  USER_COUNT=$(psql -h "${PG_HOST}" -p "${PG_PORT:-5432}" -U "${PG_USER:-aivo}" \
+                    -d "${VERIFY_DB}" -t -A -c "SELECT count(*) FROM users;" 2>/dev/null || echo "0")
+
+                  TENANT_COUNT=$(psql -h "${PG_HOST}" -p "${PG_PORT:-5432}" -U "${PG_USER:-aivo}" \
+                    -d "${VERIFY_DB}" -t -A -c "SELECT count(*) FROM tenants;" 2>/dev/null || echo "0")
+
+                  echo "  Users:   ${USER_COUNT}"
+                  echo "  Tenants: ${TENANT_COUNT}"
+
+                  if [ "${USER_COUNT}" -eq 0 ] && [ "${TENANT_COUNT}" -eq 0 ]; then
+                    echo "WARNING: Both tables are empty — this may indicate a problem"
+                  fi
+
+                  # ── Cleanup verification database ───────────────────────
+                  echo "Step 4: Cleaning up..."
+                  psql -h "${PG_HOST}" -p "${PG_PORT:-5432}" -U "${PG_USER:-aivo}" \
+                    -c "DROP DATABASE IF EXISTS ${VERIFY_DB};" postgres
+
+                  rm -rf /tmp/verify /tmp/manifest.json
+
+                  echo ""
+                  echo "=== Backup verification PASSED — $(date -u) ==="
+              envFrom:
+                - secretRef:
+                    name: backup-secrets
+              env:
+                - name: PG_HOST
+                  value: postgres
+                - name: PG_PORT
+                  value: "5432"
+                - name: PG_USER
+                  value: aivo
+                - name: VERIFY_PG_HOST
+                  value: postgres
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: 5Gi

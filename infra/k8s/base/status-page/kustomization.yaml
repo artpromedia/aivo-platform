@@ -1,0 +1,7 @@
+apiVersion: kustomize.io/v1beta1
+kind: Kustomization
+
+namespace: aivo-status
+
+resources:
+  - deployment.yaml

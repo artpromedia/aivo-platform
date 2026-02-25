@@ -1,0 +1,724 @@
+# =============================================================================
+# AIVO NATS Super-Cluster — Cross-Region Gateway
+# =============================================================================
+# US-East (Ashburn)  ←→  US-West (Hillsboro)
+#
+# Architecture:
+#   - 3-node NATS cluster per region (embedded JetStream)
+#   - Gateway connections for cross-region event propagation
+#   - Accounts: AIVO_SYSTEM (internal), AIVO_APP (application events)
+#   - JetStream with R3 replication within each region
+#   - Cross-region mirroring for critical streams
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aivo-nats
+  labels:
+    app.kubernetes.io/part-of: aivo
+    app.kubernetes.io/component: messaging
+---
+# ==========================================================================
+# ConfigMap — NATS server configuration (US-East primary)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-config-us-east
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+    aivo/region: us-east
+data:
+  nats.conf: |
+    # =================================================================
+    # AIVO NATS — US-East (Ashburn) — Primary Region
+    # =================================================================
+
+    server_name: $SERVER_NAME
+    listen: 0.0.0.0:4222
+
+    # --- Cluster (intra-region) ---
+    cluster {
+      name: aivo-us-east
+      listen: 0.0.0.0:6222
+
+      routes: [
+        nats-route://nats-0.nats-headless.aivo-nats.svc.cluster.local:6222,
+        nats-route://nats-1.nats-headless.aivo-nats.svc.cluster.local:6222,
+        nats-route://nats-2.nats-headless.aivo-nats.svc.cluster.local:6222,
+      ]
+
+      # TLS for intra-cluster (optional, recommended for production)
+      # tls {
+      #   cert_file: /etc/nats/certs/server.crt
+      #   key_file:  /etc/nats/certs/server.key
+      #   ca_file:   /etc/nats/certs/ca.crt
+      # }
+    }
+
+    # --- Gateway (cross-region) ---
+    gateway {
+      name: aivo-us-east
+      listen: 0.0.0.0:7222
+
+      gateways: [
+        {
+          name: aivo-us-west
+          urls: [
+            "nats://WEST_GATEWAY_HOST_0:7222",
+            "nats://WEST_GATEWAY_HOST_1:7222",
+            "nats://WEST_GATEWAY_HOST_2:7222",
+          ]
+        }
+      ]
+
+      # TLS for cross-region gateway
+      # tls {
+      #   cert_file: /etc/nats/certs/gateway.crt
+      #   key_file:  /etc/nats/certs/gateway.key
+      #   ca_file:   /etc/nats/certs/ca.crt
+      # }
+    }
+
+    # --- JetStream ---
+    jetstream {
+      store_dir: /data/jetstream
+      max_mem: 1G
+      max_file: 10G
+      domain: us-east
+    }
+
+    # --- Accounts ---
+    accounts {
+      AIVO_SYSTEM {
+        jetstream: enabled
+        users: [
+          { user: system, password: $SYSTEM_PASSWORD }
+        ]
+      }
+      AIVO_APP {
+        jetstream: enabled
+        users: [
+          { user: aivo_app, password: $APP_PASSWORD }
+        ]
+        exports: [
+          # Export subjects for cross-region consumption
+          { stream: "events.>" }
+          { stream: "notifications.>" }
+          { stream: "analytics.>" }
+        ]
+        imports: [
+          # Import from remote region via gateway
+          { stream: { account: AIVO_APP, subject: "events.>" } }
+        ]
+      }
+    }
+
+    system_account: AIVO_SYSTEM
+
+    # --- Logging ---
+    logtime: true
+    debug: false
+    trace: false
+    logfile_size_limit: 100MB
+
+    # --- Monitoring ---
+    http_port: 8222
+
+    # --- Limits ---
+    max_connections: 10000
+    max_payload: 1MB
+    max_pending: 64MB
+    write_deadline: 10s
+
+    # --- Authorization (connect-level) ---
+    authorization {
+      timeout: 5
+    }
+---
+# ==========================================================================
+# ConfigMap — NATS server configuration (US-West secondary)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-config-us-west
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+    aivo/region: us-west
+data:
+  nats.conf: |
+    # =================================================================
+    # AIVO NATS — US-West (Hillsboro) — Secondary Region
+    # =================================================================
+
+    server_name: $SERVER_NAME
+    listen: 0.0.0.0:4222
+
+    # --- Cluster (intra-region) ---
+    cluster {
+      name: aivo-us-west
+      listen: 0.0.0.0:6222
+
+      routes: [
+        nats-route://nats-0.nats-headless.aivo-nats.svc.cluster.local:6222,
+        nats-route://nats-1.nats-headless.aivo-nats.svc.cluster.local:6222,
+        nats-route://nats-2.nats-headless.aivo-nats.svc.cluster.local:6222,
+      ]
+    }
+
+    # --- Gateway (cross-region) ---
+    gateway {
+      name: aivo-us-west
+      listen: 0.0.0.0:7222
+
+      gateways: [
+        {
+          name: aivo-us-east
+          urls: [
+            "nats://EAST_GATEWAY_HOST_0:7222",
+            "nats://EAST_GATEWAY_HOST_1:7222",
+            "nats://EAST_GATEWAY_HOST_2:7222",
+          ]
+        }
+      ]
+    }
+
+    # --- JetStream ---
+    jetstream {
+      store_dir: /data/jetstream
+      max_mem: 1G
+      max_file: 10G
+      domain: us-west
+    }
+
+    # --- Accounts ---
+    accounts {
+      AIVO_SYSTEM {
+        jetstream: enabled
+        users: [
+          { user: system, password: $SYSTEM_PASSWORD }
+        ]
+      }
+      AIVO_APP {
+        jetstream: enabled
+        users: [
+          { user: aivo_app, password: $APP_PASSWORD }
+        ]
+        exports: [
+          { stream: "events.>" }
+          { stream: "notifications.>" }
+          { stream: "analytics.>" }
+        ]
+        imports: [
+          { stream: { account: AIVO_APP, subject: "events.>" } }
+        ]
+      }
+    }
+
+    system_account: AIVO_SYSTEM
+
+    # --- Logging ---
+    logtime: true
+    debug: false
+    trace: false
+    logfile_size_limit: 100MB
+
+    # --- Monitoring ---
+    http_port: 8222
+
+    # --- Limits ---
+    max_connections: 10000
+    max_payload: 1MB
+    max_pending: 64MB
+    write_deadline: 10s
+
+    authorization {
+      timeout: 5
+    }
+---
+# ==========================================================================
+# Secret — NATS credentials
+# ==========================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nats-credentials
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+type: Opaque
+stringData:
+  SYSTEM_PASSWORD: "REPLACE_IN_PRODUCTION"
+  APP_PASSWORD: "REPLACE_IN_PRODUCTION"
+---
+# ==========================================================================
+# StatefulSet — NATS cluster (template — applied per region)
+# ==========================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nats
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+    app.kubernetes.io/component: messaging
+spec:
+  serviceName: nats-headless
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/component: messaging
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7777"
+    spec:
+      terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: nats
+              topologyKey: kubernetes.io/hostname
+      containers:
+        # --- NATS server ---
+        - name: nats
+          image: nats:2.10-alpine
+          ports:
+            - containerPort: 4222
+              name: client
+            - containerPort: 6222
+              name: cluster
+            - containerPort: 7222
+              name: gateway
+            - containerPort: 8222
+              name: monitor
+          env:
+            - name: SERVER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SYSTEM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nats-credentials
+                  key: SYSTEM_PASSWORD
+            - name: APP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nats-credentials
+                  key: APP_PASSWORD
+          args:
+            - "--config"
+            - "/etc/nats/nats.conf"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nats
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /healthz?js-enabled-only=true
+              port: 8222
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8222
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - "nats-server --signal ldm"  # Lame duck mode for graceful drain
+
+        # --- NATS Prometheus exporter ---
+        - name: exporter
+          image: natsio/prometheus-nats-exporter:0.14.0
+          args:
+            - "-varz"
+            - "-jsz=all"
+            - "-connz"
+            - "-routez"
+            - "-gatewayz"
+            - "-subz"
+            - "http://localhost:8222"
+          ports:
+            - containerPort: 7777
+              name: metrics
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: nats-config-us-east  # Override per region
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 20Gi
+---
+# ==========================================================================
+# Headless Service — NATS cluster discovery
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats-headless
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+spec:
+  clusterIP: None
+  ports:
+    - name: client
+      port: 4222
+    - name: cluster
+      port: 6222
+    - name: gateway
+      port: 7222
+    - name: monitor
+      port: 8222
+  selector:
+    app.kubernetes.io/name: nats
+---
+# ==========================================================================
+# Service — NATS client connections
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+spec:
+  type: ClusterIP
+  ports:
+    - name: client
+      port: 4222
+      targetPort: 4222
+    - name: monitor
+      port: 8222
+      targetPort: 8222
+  selector:
+    app.kubernetes.io/name: nats
+---
+# ==========================================================================
+# Service — NATS Gateway (exposed for cross-region, NodePort)
+# ==========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats-gateway
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+    app.kubernetes.io/component: gateway
+spec:
+  type: NodePort
+  ports:
+    - name: gateway
+      port: 7222
+      targetPort: 7222
+      nodePort: 30722
+  selector:
+    app.kubernetes.io/name: nats
+---
+# ==========================================================================
+# PodDisruptionBudget — Ensure NATS quorum
+# ==========================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nats
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+---
+# ==========================================================================
+# ConfigMap — JetStream stream definitions (applied post-deploy)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-streams
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+data:
+  create-streams.sh: |
+    #!/bin/sh
+    # =================================================================
+    # Create AIVO JetStream streams
+    # Run as: kubectl exec -n aivo-nats nats-0 -- /scripts/create-streams.sh
+    # =================================================================
+    set -e
+
+    NATS_URL="nats://localhost:4222"
+    NATS_USER="aivo_app"
+    # NATS_PASS loaded from env
+
+    echo "=== Creating AIVO JetStream Streams ==="
+
+    # Events stream — all platform events
+    nats stream add EVENTS \
+      --subjects "events.>" \
+      --storage file \
+      --replicas 3 \
+      --retention limits \
+      --max-age 72h \
+      --max-bytes 5G \
+      --max-msg-size 1MB \
+      --discard old \
+      --dupe-window 2m \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || \
+    nats stream update EVENTS \
+      --subjects "events.>" \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --force 2>/dev/null || true
+
+    echo "✅ EVENTS stream created/updated"
+
+    # Notifications stream
+    nats stream add NOTIFICATIONS \
+      --subjects "notifications.>" \
+      --storage file \
+      --replicas 3 \
+      --retention limits \
+      --max-age 168h \
+      --max-bytes 2G \
+      --max-msg-size 512KB \
+      --discard old \
+      --dupe-window 2m \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || true
+
+    echo "✅ NOTIFICATIONS stream created/updated"
+
+    # Analytics stream — high volume
+    nats stream add ANALYTICS \
+      --subjects "analytics.>" \
+      --storage file \
+      --replicas 3 \
+      --retention limits \
+      --max-age 24h \
+      --max-bytes 10G \
+      --max-msg-size 1MB \
+      --discard old \
+      --dupe-window 30s \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || true
+
+    echo "✅ ANALYTICS stream created/updated"
+
+    # AI/ML pipeline stream
+    nats stream add AI_PIPELINE \
+      --subjects "ai.>" \
+      --storage file \
+      --replicas 3 \
+      --retention work_queue \
+      --max-age 48h \
+      --max-bytes 5G \
+      --max-msg-size 4MB \
+      --discard old \
+      --dupe-window 5m \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || true
+
+    echo "✅ AI_PIPELINE stream created/updated"
+
+    echo ""
+    echo "=== Stream Summary ==="
+    nats stream ls --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS"
+
+  setup-mirrors.sh: |
+    #!/bin/sh
+    # =================================================================
+    # Set up cross-region JetStream mirrors
+    # Run in the SECONDARY region to mirror primary streams
+    # =================================================================
+    set -e
+
+    NATS_URL="nats://localhost:4222"
+    NATS_USER="aivo_app"
+    PRIMARY_DOMAIN="us-east"
+
+    echo "=== Setting up cross-region stream mirrors ==="
+    echo "Mirroring from domain: ${PRIMARY_DOMAIN}"
+
+    # Mirror EVENTS stream from primary
+    nats stream add EVENTS_MIRROR \
+      --mirror EVENTS \
+      --mirror-domain "${PRIMARY_DOMAIN}" \
+      --storage file \
+      --replicas 3 \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || true
+
+    echo "✅ EVENTS_MIRROR created"
+
+    # Mirror NOTIFICATIONS from primary
+    nats stream add NOTIFICATIONS_MIRROR \
+      --mirror NOTIFICATIONS \
+      --mirror-domain "${PRIMARY_DOMAIN}" \
+      --storage file \
+      --replicas 3 \
+      --server "$NATS_URL" \
+      --user "$NATS_USER" \
+      --password "$NATS_PASS" \
+      --defaults 2>/dev/null || true
+
+    echo "✅ NOTIFICATIONS_MIRROR created"
+
+    echo ""
+    echo "=== Mirror Status ==="
+    nats stream ls --server "$NATS_URL" --user "$NATS_USER" --password "$NATS_PASS"
+---
+# ==========================================================================
+# PrometheusRule — NATS gateway alerts
+# ==========================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nats-gateway-alerts
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: nats.gateway
+      interval: 15s
+      rules:
+        # Gateway connection lost
+        - alert: NATSGatewayDisconnected
+          expr: nats_gatewayz_outbound_connections == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "NATS gateway connection lost to peer region"
+            description: "No outbound gateway connections detected. Cross-region event propagation is broken."
+            runbook_url: "https://github.com/OWNER/aivo/blob/main/docs/runbooks/region-failover.md#nats-gateway"
+
+        # High gateway RTT
+        - alert: NATSGatewayHighLatency
+          expr: nats_gatewayz_outbound_rtt_ms > 200
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "NATS gateway RTT is {{ $value }}ms"
+            description: "Cross-region gateway latency exceeds 200ms. Normal ash↔hil latency is ~60ms."
+
+        # JetStream consumer lag
+        - alert: NATSJetStreamConsumerLag
+          expr: nats_consumer_num_pending > 10000
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "JetStream consumer {{ $labels.consumer }} has {{ $value }} pending messages"
+            description: "Consumer is falling behind. May indicate slow processing or resource constraints."
+
+        # NATS server not ready
+        - alert: NATSServerDown
+          expr: up{job="nats"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "NATS server {{ $labels.instance }} is down"
+            description: "NATS server is unreachable. Check pod status and logs."
+
+        # High memory usage
+        - alert: NATSHighMemory
+          expr: nats_varz_mem > 1.5e9
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "NATS server memory usage is {{ $value | humanize1024 }}"
+            description: "Memory usage is high. Consider scaling or adjusting limits."
+---
+# ==========================================================================
+# ServiceMonitor — NATS metrics for Prometheus
+# ==========================================================================
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nats
+  namespace: aivo-nats
+  labels:
+    app.kubernetes.io/name: nats
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics

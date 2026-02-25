@@ -1,0 +1,33 @@
+# =============================================================================
+# Metrics Server — Required for HPA autoscaling
+# =============================================================================
+# K3s ships with metrics-server enabled by default.
+# This kustomization serves as:
+#   1. Documentation that metrics-server is a platform dependency
+#   2. A hook to apply custom args if needed (e.g., --kubelet-insecure-tls)
+#
+# To verify metrics-server is running:
+#   kubectl get deployment metrics-server -n kube-system
+#   kubectl top nodes
+#   kubectl top pods -n aivo-prod
+#
+# If metrics-server is NOT present (non-K3s clusters), deploy it:
+#   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# =============================================================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# No resources — K3s manages metrics-server in kube-system.
+# This file exists for documentation and as a future extension point.
+
+# Uncomment below to patch metrics-server args (e.g., for self-signed kubelet certs):
+# patches:
+#   - target:
+#       kind: Deployment
+#       name: metrics-server
+#       namespace: kube-system
+#     patch: |-
+#       - op: add
+#         path: /spec/template/spec/containers/0/args/-
+#         value: "--kubelet-insecure-tls"

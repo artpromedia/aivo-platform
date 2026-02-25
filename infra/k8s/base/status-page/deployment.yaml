@@ -1,0 +1,459 @@
+# ============================================================================
+# Status Page — Kubernetes Deployment
+# ============================================================================
+# INDEPENDENT status-page infrastructure that survives main platform outages.
+# Includes:
+#   - status-page-svc  (Fastify backend, SQLite, PORT 3090)
+#   - web-status        (Next.js frontend, PORT 3091)
+#
+# Deployed on separate nodes / node-pool from main platform services
+# to ensure availability during outages.
+# ============================================================================
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aivo-status
+  labels:
+    app.kubernetes.io/part-of: aivo
+    purpose: status-page
+
+# ─── status-page-svc ConfigMap ──────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: status-page-svc-config
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page-svc
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3090"
+  HOST: "0.0.0.0"
+  DATABASE_PATH: "/data/status.db"
+  PROMETHEUS_URL: "http://prometheus.monitoring.svc.cluster.local:9090"
+  PUBLIC_URL: "https://status.aivolearning.com"
+  CORS_ORIGIN: "https://status.aivolearning.com"
+
+# ─── status-page-svc PersistentVolumeClaim ──────────────────────────────────
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: status-page-data
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page-svc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+# ─── status-page-svc Deployment ────────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: status-page-svc
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page-svc
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 1  # SQLite = single-writer
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: status-page-svc
+  strategy:
+    type: Recreate   # Recreate for SQLite (single-writer constraint)
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: status-page-svc
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3090"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Prefer running on infrastructure / dedicated nodes
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values:
+                      - infra
+                      - status
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "status"
+          effect: "NoSchedule"
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: status-page-svc
+          image: aivo/status-page-svc:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 3090
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: status-page-svc-config
+
+          env:
+            - name: ALERTMANAGER_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: status-page-secrets
+                  key: alertmanager-webhook-secret
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: status-page-secrets
+                  key: smtp-host
+                  optional: true
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: status-page-secrets
+                  key: smtp-port
+                  optional: true
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: status-page-secrets
+                  key: smtp-user
+                  optional: true
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: status-page-secrets
+                  key: smtp-pass
+                  optional: true
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: status-page-data
+
+# ─── status-page-svc Service ───────────────────────────────────────────────
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: status-page-svc
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page-svc
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3090
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: status-page-svc
+
+# ─── web-status ConfigMap ───────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-status-config
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: web-status
+    app.kubernetes.io/component: frontend
+data:
+  NODE_ENV: "production"
+  PORT: "3091"
+  HOSTNAME: "0.0.0.0"
+  NEXT_TELEMETRY_DISABLED: "1"
+  STATUS_API_URL: "http://status-page-svc:3090"
+
+# ─── web-status Deployment ─────────────────────────────────────────────────
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-status
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: web-status
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: aivo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web-status
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web-status
+        app.kubernetes.io/component: frontend
+    spec:
+      # Co-locate with status-page-svc on infra nodes
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role
+                    operator: In
+                    values:
+                      - infra
+                      - status
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "status"
+          effect: "NoSchedule"
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: web-status
+          image: aivo/web-status:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 3091
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: web-status-config
+
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: nextjs-cache
+              mountPath: /app/apps/web-status/.next/cache
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: nextjs-cache
+          emptyDir: {}
+
+# ─── web-status Service ────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-status
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: web-status
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 3091
+      targetPort: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: web-status
+
+# ─── Ingress (status.aivolearning.com) ──────────────────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: status-page-ingress
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page
+    app.kubernetes.io/part-of: aivo
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.middlewares: "default-headers@kubernetescrd"
+spec:
+  tls:
+    - hosts:
+        - status.aivolearning.com
+      secretName: status-page-tls
+  rules:
+    - host: status.aivolearning.com
+      http:
+        paths:
+          # API & webhook routes → backend
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: status-page-svc
+                port:
+                  number: 3090
+          # Everything else → frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-status
+                port:
+                  number: 3091
+
+# ─── ServiceAccount ─────────────────────────────────────────────────────────
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: status-page-svc
+  namespace: aivo-status
+  labels:
+    app.kubernetes.io/name: status-page-svc
+
+# ─── NetworkPolicy — allow only ingress + prometheus ────────────────────────
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: status-page-network
+  namespace: aivo-status
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 3090
+        - port: 3091
+    # Allow internal namespace traffic
+    - from:
+        - podSelector: {}
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    # Allow Prometheus in monitoring namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 9090
+    # Allow SMTP
+    - to: []
+      ports:
+        - port: 587
+        - port: 465
+    # Allow internal namespace traffic
+    - to:
+        - podSelector: {}

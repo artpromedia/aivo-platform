@@ -1,0 +1,44 @@
+# =============================================================================
+# Multi-Region Production tfvars — EXAMPLE
+# =============================================================================
+# Copy to production.tfvars and fill in actual values.
+# NEVER commit production.tfvars to version control.
+# =============================================================================
+
+hetzner_api_token  = "REPLACE_ME"
+cloudflare_api_token = "REPLACE_ME"
+cloudflare_zone_id   = "REPLACE_ME"
+ssh_public_key       = "ssh-ed25519 AAAA... deploy@aivo"
+
+management_ips = [
+  "YOUR_OFFICE_IP/32",
+  "YOUR_VPN_IP/32",
+]
+
+# --- Server types ---
+cp_server_type     = "cx31"   # 2 vCPU, 8GB RAM
+worker_server_type = "cx41"   # 4 vCPU, 16GB RAM
+db_server_type     = "cx41"   # 4 vCPU, 16GB RAM
+
+# --- Cluster sizing ---
+control_plane_count    = 3
+worker_count_primary   = 4    # US-East (active)
+worker_count_secondary = 3    # US-West (passive, scaled up during failover)
+
+# --- K3s ---
+k3s_version = "v1.30.2+k3s1"
+k3s_token   = "REPLACE_ME"
+
+# --- PostgreSQL ---
+pg_version             = "15"
+pg_max_connections     = 200
+pg_shared_buffers      = "8GB"
+pg_effective_cache_size = "24GB"
+pg_replication_password = "REPLACE_ME"
+
+# --- Redis ---
+redis_version = "7"
+
+# --- Backups ---
+backup_s3_bucket      = "aivo-backups"
+backup_encryption_key = "REPLACE_ME"
