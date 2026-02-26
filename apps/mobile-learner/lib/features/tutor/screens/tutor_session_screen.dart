@@ -18,6 +18,14 @@ import '../widgets/animated_tutor_avatar.dart';
 import '../widgets/tutor_chat_bubble.dart';
 import '../widgets/tutor_input_bar.dart';
 
+/// RTL locale codes used for text direction.
+const _rtlLocales = {'ar', 'ar-SA', 'he'};
+
+/// Check if a locale requires RTL text direction.
+bool _isRTLLocale(String locale) {
+  return _rtlLocales.contains(locale) || _rtlLocales.contains(locale.split('-')[0]);
+}
+
 /// Screen displaying an active tutoring session with chat interface.
 class TutorSessionScreen extends ConsumerStatefulWidget {
   final TutorPersona persona;
@@ -35,6 +43,8 @@ class TutorSessionScreen extends ConsumerStatefulWidget {
 class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _realtimeConnected = false;
+  String _sessionLocale = 'en';
+  bool _voiceAvailableForLocale = true;
 
   @override
   void dispose() {
@@ -125,6 +135,27 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     }
   }
 
+  void _showLanguagePicker() {
+    showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => _LanguagePickerSheet(
+        currentLocale: _sessionLocale,
+        onSelect: (locale) {
+          Navigator.of(context).pop(locale);
+          _handleLocaleChange(locale);
+        },
+      ),
+    );
+  }
+
+  Future<void> _handleLocaleChange(String newLocale) async {
+    setState(() => _sessionLocale = newLocale);
+    // The PATCH endpoint (Task 6) will handle the server-side update
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -172,6 +203,12 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                 size: 16,
                 color: rtState.isConnected ? Colors.green : Colors.grey,
               ),
+            ),
+            // Language chip
+            _TutorLanguageChip(
+              locale: _sessionLocale,
+              voiceAvailable: _voiceAvailableForLocale,
+              onTap: _showLanguagePicker,
             ),
             IconButton(
               icon: Icon(
@@ -324,16 +361,22 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
             ),
           ),
 
-        // Chat messages
+        // Chat messages (RTL-aware)
         Expanded(
-          child: _buildMessageList(theme, messages, rtState.streamingText, isTyping),
+          child: Directionality(
+            textDirection: _isRTLLocale(_sessionLocale) ? TextDirection.rtl : TextDirection.ltr,
+            child: _buildMessageList(theme, messages, rtState.streamingText, isTyping),
+          ),
         ),
 
-        // Input bar
-        TutorInputBar(
-          onSubmit: _handleSendMessage,
-          isLoading: isTyping,
-          enabled: !isTyping,
+        // Input bar (RTL-aware)
+        Directionality(
+          textDirection: _isRTLLocale(_sessionLocale) ? TextDirection.rtl : TextDirection.ltr,
+          child: TutorInputBar(
+            onSubmit: _handleSendMessage,
+            isLoading: isTyping,
+            enabled: !isTyping,
+          ),
         ),
       ],
     );
@@ -700,6 +743,188 @@ class _AnalyticChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// TUTOR LANGUAGE CHIP
+// ============================================================================
+
+/// Compact chip showing current tutor language in the AppBar.
+class _TutorLanguageChip extends StatelessWidget {
+  final String locale;
+  final bool voiceAvailable;
+  final VoidCallback onTap;
+
+  const _TutorLanguageChip({
+    required this.locale,
+    required this.voiceAvailable,
+    required this.onTap,
+  });
+
+  static const _localeDisplay = <String, ({String flag, String name})>{
+    'en': (flag: '\u{1F1FA}\u{1F1F8}', name: 'English'),
+    'es': (flag: '\u{1F1EA}\u{1F1F8}', name: 'Español'),
+    'fr': (flag: '\u{1F1EB}\u{1F1F7}', name: 'Français'),
+    'de': (flag: '\u{1F1E9}\u{1F1EA}', name: 'Deutsch'),
+    'pt': (flag: '\u{1F1E7}\u{1F1F7}', name: 'Português'),
+    'ar': (flag: '\u{1F1F8}\u{1F1E6}', name: 'العربية'),
+    'zh': (flag: '\u{1F1E8}\u{1F1F3}', name: '中文'),
+    'ja': (flag: '\u{1F1EF}\u{1F1F5}', name: '日本語'),
+    'ko': (flag: '\u{1F1F0}\u{1F1F7}', name: '한국어'),
+    'hi': (flag: '\u{1F1EE}\u{1F1F3}', name: 'हिन्दी'),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final display = _localeDisplay[locale] ??
+        (flag: '\u{1F310}', name: locale.toUpperCase());
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(display.flag, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.translate_rounded,
+              size: 14,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+            if (!voiceAvailable) ...[
+              const SizedBox(width: 2),
+              Icon(
+                Icons.volume_off_rounded,
+                size: 12,
+                color: Theme.of(context).colorScheme.error.withOpacity(0.7),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// LANGUAGE PICKER SHEET
+// ============================================================================
+
+/// Bottom sheet for choosing the tutor's response language.
+class _LanguagePickerSheet extends StatelessWidget {
+  final String currentLocale;
+  final ValueChanged<String> onSelect;
+
+  const _LanguagePickerSheet({
+    required this.currentLocale,
+    required this.onSelect,
+  });
+
+  static const _languages = <({String code, String flag, String nativeName, String englishName})>[
+    (code: 'en', flag: '\u{1F1FA}\u{1F1F8}', nativeName: 'English', englishName: 'English'),
+    (code: 'es', flag: '\u{1F1EA}\u{1F1F8}', nativeName: 'Español', englishName: 'Spanish'),
+    (code: 'fr', flag: '\u{1F1EB}\u{1F1F7}', nativeName: 'Français', englishName: 'French'),
+    (code: 'de', flag: '\u{1F1E9}\u{1F1EA}', nativeName: 'Deutsch', englishName: 'German'),
+    (code: 'pt', flag: '\u{1F1E7}\u{1F1F7}', nativeName: 'Português', englishName: 'Portuguese'),
+    (code: 'ar', flag: '\u{1F1F8}\u{1F1E6}', nativeName: 'العربية', englishName: 'Arabic'),
+    (code: 'zh', flag: '\u{1F1E8}\u{1F1F3}', nativeName: '中文', englishName: 'Chinese'),
+    (code: 'ja', flag: '\u{1F1EF}\u{1F1F5}', nativeName: '日本語', englishName: 'Japanese'),
+    (code: 'ko', flag: '\u{1F1F0}\u{1F1F7}', nativeName: '한국어', englishName: 'Korean'),
+    (code: 'hi', flag: '\u{1F1EE}\u{1F1F3}', nativeName: 'हिन्दी', englishName: 'Hindi'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.translate_rounded,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tutor Language',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _languages.length,
+                itemBuilder: (context, index) {
+                  final lang = _languages[index];
+                  final isActive = lang.code == currentLocale;
+
+                  return ListTile(
+                    leading: Text(
+                      lang.flag,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                    title: Text(
+                      lang.nativeName,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                        color: isActive
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    subtitle: Text(
+                      lang.englishName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: isActive
+                        ? Icon(
+                            Icons.check_circle_rounded,
+                            color: theme.colorScheme.primary,
+                          )
+                        : null,
+                    onTap: () => onSelect(lang.code),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }

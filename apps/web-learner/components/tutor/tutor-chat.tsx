@@ -17,6 +17,8 @@ interface TutorChatProps {
   onPlayAudio?: (message: TutorMessage) => void;
   /** ID of the message whose audio is currently playing. */
   playingMessageId?: string | null;
+  /** Whether the current locale is RTL. */
+  isRTL?: boolean;
 }
 
 export function TutorChat({
@@ -27,6 +29,7 @@ export function TutorChat({
   streamingText,
   onPlayAudio,
   playingMessageId,
+  isRTL = false,
 }: TutorChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -48,16 +51,17 @@ export function TutorChat({
               : undefined
           }
           isPlayingAudio={playingMessageId === message.id}
+          isRTL={isRTL}
         />
       ))}
 
       {/* Streaming text while AI is generating */}
       {streamingText && (
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3" dir={isRTL ? 'rtl' : undefined}>
           <div className="max-w-[75%] rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
             <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900">
               {streamingText}
-              <span className="inline-block w-1.5 h-4 ml-0.5 bg-indigo-400 animate-pulse rounded-sm" />
+              <span className={`inline-block w-1.5 h-4 bg-indigo-400 animate-pulse rounded-sm ${isRTL ? 'mr-0.5' : 'ml-0.5'}`} />
             </div>
           </div>
         </div>

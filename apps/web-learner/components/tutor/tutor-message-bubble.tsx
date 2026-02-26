@@ -13,6 +13,8 @@ interface TutorMessageBubbleProps {
   onPlayAudio?: () => void;
   /** Whether this message's audio is currently playing. */
   isPlayingAudio?: boolean;
+  /** Whether the current locale is RTL. */
+  isRTL?: boolean;
 }
 
 export function TutorMessageBubble({
@@ -21,11 +23,15 @@ export function TutorMessageBubble({
   personaName,
   onPlayAudio,
   isPlayingAudio,
+  isRTL = false,
 }: TutorMessageBubbleProps) {
   const isUser = message.role === 'USER';
 
   return (
-    <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div
+      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+      dir={isRTL ? 'rtl' : undefined}
+    >
       {!isUser && (
         <AnimatedTutorAvatar
           personaSlug={personaSlug}

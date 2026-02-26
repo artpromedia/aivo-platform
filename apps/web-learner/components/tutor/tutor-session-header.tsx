@@ -1,10 +1,12 @@
 'use client';
 
 import { Volume2, VolumeX, X } from 'lucide-react';
+import type { UILocale } from '@aivo/i18n/config';
 
 import type { TutorSession } from '../../lib/hooks/use-tutor-session';
 import { AnimatedTutorAvatar } from './animated-tutor-avatar';
 import type { TutorAvatarState } from './animated-tutor-avatar';
+import { TutorLanguageIndicator, type TutorLocaleInfo } from './tutor-language-indicator';
 
 const SUBJECT_GRADIENTS: Record<string, string> = {
   MATH: 'from-blue-600 to-indigo-600',
@@ -23,6 +25,12 @@ interface TutorSessionHeaderProps {
   voiceEnabled: boolean;
   onToggleVoice: () => void;
   onEndSession: () => void;
+  /** Current session locale (e.g. 'en', 'es', 'ar') */
+  locale?: string;
+  /** Locale info from the session response */
+  localeInfo?: TutorLocaleInfo | null;
+  /** Callback when the user picks a new tutor language */
+  onLocaleChange?: (newLocale: UILocale) => void;
 }
 
 export function TutorSessionHeader({
@@ -34,6 +42,9 @@ export function TutorSessionHeader({
   voiceEnabled,
   onToggleVoice,
   onEndSession,
+  locale = 'en',
+  localeInfo,
+  onLocaleChange,
 }: TutorSessionHeaderProps) {
   const gradient = SUBJECT_GRADIENTS[session.subject] ?? 'from-indigo-600 to-purple-600';
 
@@ -67,6 +78,15 @@ export function TutorSessionHeader({
             {isConnected ? 'Connected' : 'Offline'}
           </span>
         </div>
+
+        {/* Language indicator with picker */}
+        <TutorLanguageIndicator
+          locale={locale}
+          localeInfo={localeInfo}
+          voiceEnabled={voiceEnabled}
+          onLocaleChange={onLocaleChange}
+          personaName={session.persona.name}
+        />
 
         <button
           onClick={onToggleVoice}

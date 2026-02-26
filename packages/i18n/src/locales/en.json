@@ -178,5 +178,45 @@
     "toggleTheme": "Toggle dark mode",
     "languageSwitcher": "Change language",
     "newNotifications": "{count, plural, one {# new notification} other {# new notifications}}"
+  },
+  "tutor": {
+    "title": "AI Tutors",
+    "subtitle": "Expert tutoring in every subject",
+    "startSession": "Start Session",
+    "endSession": "End Session",
+    "resumeSession": "Resume Session",
+    "voiceOn": "Voice On",
+    "voiceOff": "Voice Off",
+    "voiceUnavailable": "Voice not available in {language}",
+    "voiceUnavailableDetail": "Voice is available in English, Spanish, French, Portuguese, Arabic, and more.",
+    "voiceFallbackNotice": "Using {fallbackLanguage} voice. {nativeLanguage} voice coming soon!",
+    "textOnlyBanner": "{name} will respond in {language} as text. Voice support coming soon!",
+    "thinking": "{name} is thinking…",
+    "listening": "{name} is listening…",
+    "sessionWith": "Session with {name}",
+    "sessionDuration": "Session duration: {minutes} minutes",
+    "messagesExchanged": "{count, plural, one {# message} other {# messages}} exchanged",
+    "selectSubject": "Choose a subject to start tutoring",
+    "noSessions": "No tutoring sessions yet",
+    "history": "Session History",
+    "summary": "Session Summary",
+    "newSession": "Start New Session",
+    "xpEarned": "{xp} XP earned",
+    "changeLanguage": "Change tutor language",
+    "languageChanged": "{name} will now respond in {language}",
+    "subjects": {
+      "MATH": "Mathematics",
+      "ELA": "Reading & Writing",
+      "SCIENCE": "Science",
+      "HISTORY": "History & Social Studies",
+      "CODING": "Coding & Computer Science"
+    },
+    "personas": {
+      "nova": "Nova the Space Explorer",
+      "sage": "Sage the Storyteller",
+      "spark": "Spark the Scientist",
+      "chrono": "Chrono the Time Traveler",
+      "pixel": "Pixel the Robot"
+    }
   }
 }

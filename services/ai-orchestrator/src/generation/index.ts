@@ -81,3 +81,15 @@ export {
   getAllGameTypes,
   getParametersForDifficulty,
 } from './game-templates.js';
+
+// Tutor Locale Adapter
+export {
+  resolveLocaleConfig,
+  buildLocalePromptSection,
+  buildCurriculumPromptSection,
+  isVoiceAvailableForLocale,
+  getVoiceEnabledLocales,
+  getTextOnlyLocales,
+  TUTOR_LOCALE_CONFIGS,
+} from './tutor-locale-adapter.js';
+export type { TutorLocaleConfig } from './tutor-locale-adapter.js';

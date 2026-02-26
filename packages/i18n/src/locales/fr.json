@@ -178,5 +178,45 @@
     "toggleTheme": "Basculer le mode sombre",
     "languageSwitcher": "Changer de langue",
     "newNotifications": "{count, plural, one {# nouvelle notification} other {# nouvelles notifications}}"
+  },
+  "tutor": {
+    "title": "Tuteurs IA",
+    "subtitle": "Tutorat expert dans chaque matière",
+    "startSession": "Commencer la Session",
+    "endSession": "Terminer la Session",
+    "resumeSession": "Reprendre la Session",
+    "voiceOn": "Voix Activée",
+    "voiceOff": "Voix Désactivée",
+    "voiceUnavailable": "Voix non disponible en {language}",
+    "voiceUnavailableDetail": "La voix est disponible en anglais, espagnol, français, portugais, arabe et plus.",
+    "voiceFallbackNotice": "Utilisation de la voix en {fallbackLanguage}. La voix en {nativeLanguage} arrive bientôt !",
+    "textOnlyBanner": "{name} répondra en {language} sous forme de texte. Support vocal bientôt !",
+    "thinking": "{name} réfléchit…",
+    "listening": "{name} écoute…",
+    "sessionWith": "Session avec {name}",
+    "sessionDuration": "Durée de la session : {minutes} minutes",
+    "messagesExchanged": "{count, plural, one {# message} other {# messages}} échangés",
+    "selectSubject": "Choisissez une matière pour commencer le tutorat",
+    "noSessions": "Aucune session de tutorat pour le moment",
+    "history": "Historique des Sessions",
+    "summary": "Résumé de Session",
+    "newSession": "Nouvelle Session",
+    "xpEarned": "{xp} XP gagnés",
+    "changeLanguage": "Changer la langue du tuteur",
+    "languageChanged": "{name} répondra maintenant en {language}",
+    "subjects": {
+      "MATH": "Mathématiques",
+      "ELA": "Lecture et Écriture",
+      "SCIENCE": "Sciences",
+      "HISTORY": "Histoire et Sciences Sociales",
+      "CODING": "Programmation et Informatique"
+    },
+    "personas": {
+      "nova": "Nova l'Exploratrice Spatiale",
+      "sage": "Sage la Conteuse",
+      "spark": "Spark la Scientifique",
+      "chrono": "Chrono le Voyageur du Temps",
+      "pixel": "Pixel le Robot"
+    }
   }
 }

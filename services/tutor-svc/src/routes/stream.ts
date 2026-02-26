@@ -28,6 +28,7 @@ import {
 } from '../services/session.service.js';
 import { synthesizeSpeech, uploadAudio } from '../services/tts.service.js';
 import { getVoiceConfig } from '../services/voice-config.service.js';
+import { resolveLocaleConfig } from '../services/locale.service.js';
 
 const StreamMessageBody = z.object({
   content: z.string().min(1).max(5000),
@@ -203,7 +204,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
           durationMs: 800,
         });
 
-        // ── Synthesize audio via Piper TTS ──────────────────────────
+        // ── Synthesize audio via Piper TTS (only if voice available) ─
         let audioUrl: string | null = null;
         let visemeData: Array<{
           offsetMs: number;
@@ -217,7 +218,11 @@ export async function streamRoutes(fastify: FastifyInstance) {
           fallbackUsed: boolean;
         } | null = null;
 
-        if (config.ttsEnabled) {
+        const sessionLocaleConfig = resolveLocaleConfig(session.locale);
+        const voiceAvailable = sessionLocaleConfig.piperVoiceAvailable;
+
+        if (config.ttsEnabled && voiceAvailable) {
+          // Locale has a Piper voice — proceed with synthesis
           try {
             const voiceConfig = await getVoiceConfig(
               session.personaId,
@@ -250,6 +255,12 @@ export async function streamRoutes(fastify: FastifyInstance) {
             // TTS failure is non-fatal — message is delivered as text-only
             request.log.warn({ err: ttsError, sessionId }, 'TTS synthesis failed');
           }
+        } else if (config.ttsEnabled && !voiceAvailable) {
+          // Locale has no Piper voice — log but don't error
+          request.log.info(
+            { sessionId, locale: session.locale },
+            'TTS skipped: no Piper voice available for locale',
+          );
         }
 
         // ── Save assistant message to DB ────────────────────────────
@@ -294,6 +305,10 @@ export async function streamRoutes(fastify: FastifyInstance) {
           emotionTag,
           avatarState: audioUrl ? 'talking' : avatarState,
           voiceInfo,
+          localeInfo: {
+            voiceAvailable,
+            isRTL: sessionLocaleConfig.isRTL,
+          },
         });
       } catch (error) {
         request.log.error({ err: error, sessionId }, 'Stream processing error');

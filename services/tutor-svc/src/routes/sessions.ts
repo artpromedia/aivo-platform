@@ -6,6 +6,8 @@ import { entitlementService } from '../services/entitlement.service.js';
 import { personaService } from '../services/persona.service.js';
 import { prisma } from '../prisma.js';
 import type { JwtUser } from '../types/index.js';
+import { resolveLocaleConfig } from '../services/locale.service.js';
+import { getVoiceConfig } from '../services/voice-config.service.js';
 
 const CreateSessionSchema = z.object({
   learnerId: z.string().uuid(),
@@ -75,6 +77,13 @@ export async function sessionRoutes(fastify: FastifyInstance) {
         learnerProfile,
       });
 
+      // Resolve locale config for voice availability info
+      const localeConfig = resolveLocaleConfig(session.locale);
+      const voiceConfig = await getVoiceConfig(persona.id, session.locale);
+      const voiceFallbackUsed = voiceConfig
+        ? voiceConfig.locale !== session.locale
+        : false;
+
       return reply.status(201).send({
         id: session.id,
         learnerId: session.learnerId,
@@ -91,6 +100,15 @@ export async function sessionRoutes(fastify: FastifyInstance) {
           subject: session.persona.subject,
           avatarRivAsset: session.persona.avatarRivAsset,
           avatarStaticImage: session.persona.avatarStaticImage,
+        },
+        localeInfo: {
+          languageName: localeConfig.languageName,
+          nativeLanguageName: localeConfig.nativeLanguageName,
+          isRTL: localeConfig.isRTL,
+          voiceAvailable: localeConfig.piperVoiceAvailable,
+          voiceId: voiceConfig?.ttsVoiceId ?? null,
+          voiceFallbackUsed,
+          resolvedVoiceLocale: voiceConfig?.locale ?? null,
         },
         openingMessage: {
           content: openingMessage,
@@ -211,6 +229,89 @@ export async function sessionRoutes(fastify: FastifyInstance) {
           avatarState: m.avatarState,
           createdAt: m.createdAt.toISOString(),
         })),
+      };
+    },
+  );
+
+  /**
+   * PATCH /api/v1/tutor/sessions/:sessionId
+   * Update session locale mid-session. Re-resolves voice config and
+   * inserts a SYSTEM message instructing the AI to switch languages.
+   */
+  fastify.patch(
+    '/:sessionId',
+    async (
+      request: FastifyRequest<{
+        Params: { sessionId: string };
+        Body: { locale: string };
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const { sessionId } = request.params;
+      const body = z.object({ locale: z.string().min(2).max(10) }).parse(request.body);
+      const user = request.user as JwtUser;
+      const tenantId = user?.tenantId ?? user?.tenant_id;
+
+      if (!tenantId) {
+        return reply.status(401).send({ error: 'Tenant ID required' });
+      }
+
+      const existing = await sessionService.getById(sessionId);
+      if (!existing) {
+        return reply.status(404).send({ error: 'Session not found' });
+      }
+
+      if (existing.tenantId !== tenantId) {
+        return reply.status(403).send({ error: 'Access denied' });
+      }
+
+      if (existing.status !== 'ACTIVE') {
+        return reply.status(400).send({ error: 'Can only change locale on an active session' });
+      }
+
+      const previousLocale = existing.locale;
+      const newLocale = body.locale;
+
+      // Update session locale in DB
+      const updatedSession = await prisma.tutorSession.update({
+        where: { id: sessionId },
+        data: { locale: newLocale },
+        include: { persona: true },
+      });
+
+      // Resolve new locale and voice config
+      const localeConfig = resolveLocaleConfig(newLocale);
+      const voiceConfig = await getVoiceConfig(updatedSession.personaId, newLocale);
+      const voiceFallbackUsed = voiceConfig
+        ? voiceConfig.locale !== newLocale
+        : false;
+
+      // Insert a SYSTEM message instructing the AI to switch languages
+      await prisma.tutorMessage.create({
+        data: {
+          sessionId,
+          role: 'SYSTEM',
+          content: `[LANGUAGE SWITCH] The student has changed their preferred language from ${previousLocale} to ${newLocale} (${localeConfig.languageName}). From now on, respond exclusively in ${localeConfig.languageName}. Use culturally appropriate examples for ${localeConfig.culturalContext} context.`,
+        },
+      });
+
+      request.log.info(
+        { sessionId, previousLocale, newLocale, voiceAvailable: localeConfig.piperVoiceAvailable },
+        'Session locale changed',
+      );
+
+      return {
+        id: updatedSession.id,
+        locale: updatedSession.locale,
+        localeInfo: {
+          languageName: localeConfig.languageName,
+          nativeLanguageName: localeConfig.nativeLanguageName,
+          isRTL: localeConfig.isRTL,
+          voiceAvailable: localeConfig.piperVoiceAvailable,
+          voiceId: voiceConfig?.ttsVoiceId ?? null,
+          voiceFallbackUsed,
+          resolvedVoiceLocale: voiceConfig?.locale ?? null,
+        },
       };
     },
   );

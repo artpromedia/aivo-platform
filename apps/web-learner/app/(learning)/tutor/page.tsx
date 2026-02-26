@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Brain, Send, Sparkles, ArrowRight, Calculator, BookOpen, PenTool, Globe, Code } from 'lucide-react';
 
+import type { UILocale } from '@aivo/i18n/config';
 import { useTutorSession, type TutorMessage } from '../../../lib/hooks/use-tutor-session';
 import { useTutorWebSocket, type TutorMessage as WsMessage } from '../../../lib/hooks/use-tutor-websocket';
 import { useTutorAudio, type VisemeEvent } from '../../../lib/hooks/use-tutor-audio';
@@ -11,6 +12,7 @@ import { useVoicePreference } from '../../../lib/hooks/use-voice-preference';
 import { AnimatedTutorAvatar } from '../../../components/tutor/animated-tutor-avatar';
 import { TutorChat } from '../../../components/tutor/tutor-chat';
 import { TutorSessionHeader } from '../../../components/tutor/tutor-session-header';
+import type { TutorLocaleInfo } from '../../../components/tutor/tutor-language-indicator';
 
 const SUBJECT_ICONS: Record<string, typeof Calculator> = {
   MATH: Calculator,
@@ -54,6 +56,8 @@ export default function TutorPage() {
   const [input, setInput] = useState('');
   const [currentEmotion, setCurrentEmotion] = useState('NEUTRAL');
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [sessionLocale, setSessionLocale] = useState('en');
+  const [localeInfo, setLocaleInfo] = useState<TutorLocaleInfo | null>(null);
 
   const personaId = searchParams.get('personaId');
   const subject = searchParams.get('subject');
@@ -153,6 +157,28 @@ export default function TutorPage() {
       wsSendMessage(text.trim());
     },
     [isSending, session, wsSendMessage],
+  );
+
+  const handleLocaleChange = useCallback(
+    async (newLocale: UILocale) => {
+      if (!session) return;
+      const API_BASE = process.env.NEXT_PUBLIC_TUTOR_API_URL ?? '/api/tutor';
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${session.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locale: newLocale }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSessionLocale(newLocale);
+          if (data.localeInfo) setLocaleInfo(data.localeInfo);
+        }
+      } catch {
+        // locale change failed silently
+      }
+    },
+    [session],
   );
 
   const handleEndSession = async () => {
@@ -263,6 +289,9 @@ export default function TutorPage() {
         voiceEnabled={voiceEnabled}
         onToggleVoice={toggleVoice}
         onEndSession={handleEndSession}
+        locale={sessionLocale}
+        localeInfo={localeInfo}
+        onLocaleChange={handleLocaleChange}
       />
 
       <TutorChat
@@ -273,6 +302,7 @@ export default function TutorPage() {
         streamingText={streamingText}
         onPlayAudio={handlePlayAudio as (message: TutorMessage) => void}
         playingMessageId={playingMessageId}
+        isRTL={localeInfo?.isRTL ?? false}
       />
 
       {error && (
@@ -325,6 +355,7 @@ export default function TutorPage() {
               handleSend(input);
             }}
             className="flex gap-3"
+            dir={localeInfo?.isRTL ? 'rtl' : undefined}
           >
             <input
               type="text"
@@ -333,6 +364,7 @@ export default function TutorPage() {
               placeholder={`Ask ${session.persona.name} anything...`}
               className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
               disabled={isSending}
+              dir={localeInfo?.isRTL ? 'rtl' : 'auto'}
             />
             <button
               type="submit"
