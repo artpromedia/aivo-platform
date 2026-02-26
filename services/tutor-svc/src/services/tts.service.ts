@@ -20,11 +20,11 @@ export class TTSService {
       },
     });
 
-    if (!voiceConfig || !config.ttsApiKey) {
+    if (!voiceConfig || !config.azureSpeechKey) {
       return null;
     }
 
-    // In production, this would call Azure/Google TTS API
+    // In production, this would call Azure TTS API with voiceConfig.ttsVoiceId
     // For now, return a placeholder indicating TTS is available but not configured
     return {
       audioBase64: '',

@@ -1,28 +1,38 @@
-import { prisma, SessionStatus, TutorSubject, MessageRole, EmotionType } from '../prisma.js';
+import { prisma, TutorSessionStatus, TutorMessageRole } from '../prisma.js';
 
 export class SessionService {
   async create(params: {
     tenantId: string;
     learnerId: string;
+    parentUserId?: string;
     personaId: string;
     subject: string;
     topic?: string;
+    locale?: string;
   }) {
     const session = await prisma.tutorSession.create({
       data: {
         tenantId: params.tenantId,
         learnerId: params.learnerId,
+        parentUserId: params.parentUserId ?? null,
         personaId: params.personaId,
-        subject: params.subject as TutorSubject,
+        subject: params.subject,
         topic: params.topic ?? null,
-        status: SessionStatus.ACTIVE,
+        locale: params.locale ?? 'en-US',
+        status: TutorSessionStatus.ACTIVE,
       },
       include: { persona: true },
     });
 
     // Create initial analytics record
     await prisma.tutorSessionAnalytics.create({
-      data: { sessionId: session.id },
+      data: {
+        sessionId: session.id,
+        tenantId: params.tenantId,
+        learnerId: params.learnerId,
+        subject: params.subject,
+        date: new Date(),
+      },
     });
 
     // Create system greeting message
@@ -32,9 +42,10 @@ export class SessionService {
     await prisma.tutorMessage.create({
       data: {
         sessionId: session.id,
-        role: MessageRole.ASSISTANT,
+        role: TutorMessageRole.ASSISTANT,
         content: greeting,
-        emotion: EmotionType.HAPPY,
+        emotionTag: 'cheerful',
+        avatarState: 'talking',
       },
     });
 
@@ -58,7 +69,7 @@ export class SessionService {
     const where = {
       tenantId: params.tenantId,
       learnerId: params.learnerId,
-      ...(params.status ? { status: params.status as SessionStatus } : {}),
+      ...(params.status ? { status: params.status as TutorSessionStatus } : {}),
     };
 
     const [sessions, total] = await Promise.all([
@@ -79,15 +90,15 @@ export class SessionService {
     const session = await prisma.tutorSession.update({
       where: { id: sessionId },
       data: {
-        status: SessionStatus.COMPLETED,
+        status: TutorSessionStatus.COMPLETED,
         endedAt: new Date(),
       },
       include: { persona: true },
     });
 
-    // Update analytics with duration
-    const durationSeconds = session.endedAt && session.startedAt
-      ? Math.round((session.endedAt.getTime() - session.startedAt.getTime()) / 1000)
+    // Calculate duration
+    const totalMinutes = session.endedAt && session.startedAt
+      ? (session.endedAt.getTime() - session.startedAt.getTime()) / 60_000
       : 0;
 
     const messageCount = await prisma.tutorMessage.count({
@@ -95,22 +106,19 @@ export class SessionService {
     });
 
     const userMessageCount = await prisma.tutorMessage.count({
-      where: { sessionId, role: MessageRole.USER },
+      where: { sessionId, role: TutorMessageRole.USER },
+    });
+
+    const assistantMessageCount = await prisma.tutorMessage.count({
+      where: { sessionId, role: TutorMessageRole.ASSISTANT },
     });
 
     await prisma.tutorSessionAnalytics.update({
       where: { sessionId },
-      data: { durationSeconds, messageCount, userMessageCount },
+      data: { totalMinutes, messageCount, userMessageCount, assistantMessageCount },
     });
 
     return session;
-  }
-
-  async updateLastActive(sessionId: string) {
-    await prisma.tutorSession.update({
-      where: { id: sessionId },
-      data: { lastActiveAt: new Date() },
-    });
   }
 }
 

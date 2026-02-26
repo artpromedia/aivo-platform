@@ -9,11 +9,11 @@ const ListPersonasSchema = z.object({
 
 export async function personaRoutes(fastify: FastifyInstance) {
   /**
-   * GET /tutor/personas
-   * List all active tutor personas
+   * GET /api/v1/tutor/personas
+   * List all active personas (filterable by subject)
    */
   fastify.get(
-    '/tutor/personas',
+    '/',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof ListPersonasSchema> }>) => {
       const query = ListPersonasSchema.parse(request.query);
       const personas = await personaService.listAll(query.subject);
@@ -24,9 +24,14 @@ export async function personaRoutes(fastify: FastifyInstance) {
           slug: p.slug,
           name: p.name,
           subject: p.subject,
-          description: p.description,
-          avatarAssetKey: p.avatarAssetKey,
-          personality: p.personalityJson,
+          personality: p.personality,
+          teachingApproach: p.teachingApproach,
+          encouragementStyle: p.encouragementStyle,
+          voiceTone: p.voiceTone,
+          avatarRivAsset: p.avatarRivAsset,
+          avatarStaticImage: p.avatarStaticImage,
+          specialties: p.specialties,
+          gradeRange: p.gradeRange,
           sortOrder: p.sortOrder,
         })),
       };
@@ -34,11 +39,11 @@ export async function personaRoutes(fastify: FastifyInstance) {
   );
 
   /**
-   * GET /tutor/personas/:slug
-   * Get a specific persona by slug
+   * GET /api/v1/tutor/personas/:slug
+   * Get single persona details
    */
   fastify.get(
-    '/tutor/personas/:slug',
+    '/:slug',
     async (request: FastifyRequest<{ Params: { slug: string } }>, reply: FastifyReply) => {
       const { slug } = request.params;
       const persona = await personaService.getBySlug(slug);
@@ -52,11 +57,36 @@ export async function personaRoutes(fastify: FastifyInstance) {
         slug: persona.slug,
         name: persona.name,
         subject: persona.subject,
-        description: persona.description,
-        avatarAssetKey: persona.avatarAssetKey,
-        personality: persona.personalityJson,
+        personality: persona.personality,
+        teachingApproach: persona.teachingApproach,
+        encouragementStyle: persona.encouragementStyle,
+        voiceTone: persona.voiceTone,
+        avatarRivAsset: persona.avatarRivAsset,
+        avatarStaticImage: persona.avatarStaticImage,
+        systemPromptTemplate: persona.systemPromptTemplate,
+        specialties: persona.specialties,
+        gradeRange: persona.gradeRange,
         sortOrder: persona.sortOrder,
+        metadataJson: persona.metadataJson,
       };
+    },
+  );
+
+  /**
+   * GET /api/v1/tutor/personas/:slug/voices
+   * List available voices/locales for a persona
+   */
+  fastify.get(
+    '/:slug/voices',
+    async (request: FastifyRequest<{ Params: { slug: string } }>, reply: FastifyReply) => {
+      const { slug } = request.params;
+      const voices = await personaService.getVoicesBySlug(slug);
+
+      if (!voices) {
+        return reply.status(404).send({ error: 'Persona not found' });
+      }
+
+      return { voices };
     },
   );
 }

@@ -31,3 +31,4 @@ services:
   profile-svc: 3420
   personalization-svc: 3012
   life-skills-svc: 4050
+  tutor-svc: 4025

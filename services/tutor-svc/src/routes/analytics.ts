@@ -11,11 +11,11 @@ const AnalyticsQuerySchema = z.object({
 
 export async function analyticsRoutes(fastify: FastifyInstance) {
   /**
-   * GET /tutor/analytics
+   * GET /api/v1/tutor/analytics
    * Get tutor session analytics for a learner (parent-facing)
    */
   fastify.get(
-    '/tutor/analytics',
+    '/',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof AnalyticsQuerySchema> }>, reply: FastifyReply) => {
       const query = AnalyticsQuerySchema.parse(request.query);
       const user = request.user as JwtUser;
@@ -43,8 +43,8 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
 
       // Aggregate stats
       const totalSessions = sessions.length;
-      const totalDuration = sessions.reduce(
-        (acc, s) => acc + (s.analytics?.durationSeconds ?? 0),
+      const totalMinutes = sessions.reduce(
+        (acc, s) => acc + (s.analytics?.totalMinutes ?? 0),
         0,
       );
       const totalMessages = sessions.reduce(
@@ -57,14 +57,14 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         (acc, s) => {
           const key = s.subject;
           if (!acc[key]) {
-            acc[key] = { sessions: 0, durationSeconds: 0, messages: 0 };
+            acc[key] = { sessions: 0, totalMinutes: 0, messages: 0 };
           }
           acc[key].sessions++;
-          acc[key].durationSeconds += s.analytics?.durationSeconds ?? 0;
+          acc[key].totalMinutes += s.analytics?.totalMinutes ?? 0;
           acc[key].messages += s.analytics?.messageCount ?? 0;
           return acc;
         },
-        {} as Record<string, { sessions: number; durationSeconds: number; messages: number }>,
+        {} as Record<string, { sessions: number; totalMinutes: number; messages: number }>,
       );
 
       return {
@@ -72,10 +72,10 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
         period: { days: query.days, since: since.toISOString() },
         summary: {
           totalSessions,
-          totalDurationSeconds: totalDuration,
+          totalMinutes: Math.round(totalMinutes * 10) / 10,
           totalMessages,
-          averageSessionDurationSeconds:
-            totalSessions > 0 ? Math.round(totalDuration / totalSessions) : 0,
+          averageSessionMinutes:
+            totalSessions > 0 ? Math.round((totalMinutes / totalSessions) * 10) / 10 : 0,
         },
         bySubject,
         recentSessions: sessions.slice(0, 10).map((s) => ({
@@ -86,7 +86,7 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
           status: s.status,
           startedAt: s.startedAt.toISOString(),
           endedAt: s.endedAt?.toISOString() ?? null,
-          durationSeconds: s.analytics?.durationSeconds ?? 0,
+          totalMinutes: s.analytics?.totalMinutes ?? 0,
           messageCount: s.analytics?.messageCount ?? 0,
         })),
       };

@@ -11,6 +11,7 @@ function readKey(keyEnv: string | undefined, fileEnv: string | undefined): strin
     const abs = path.resolve(fileEnv);
     return fs.readFileSync(abs, 'utf-8');
   }
+  // In production, require JWT key
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_PUBLIC_KEY or JWT_PUBLIC_KEY_PATH is required in production');
   }
@@ -26,14 +27,13 @@ function requireEnvInProduction(name: string, devDefault: string): string {
 }
 
 export const config = {
-  port: Number(process.env.PORT || 4020),
+  port: Number(process.env.PORT || 4025),
   databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_tutor'),
-  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
-  aiOrchestratorApiKey: process.env.AI_ORCHESTRATOR_API_KEY || '',
-  billingSvcUrl: process.env.BILLING_SVC_URL || 'http://localhost:3150',
-  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
-  ttsProvider: process.env.TTS_PROVIDER || 'azure',
-  ttsApiKey: process.env.TTS_API_KEY || '',
-  ttsRegion: process.env.TTS_REGION || 'eastus',
+  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
+  learnerModelUrl: process.env.LEARNER_MODEL_URL || 'http://localhost:4015',
+  billingSvcUrl: process.env.BILLING_SVC_URL || 'http://localhost:3150',
+  realtimeSvcUrl: process.env.REALTIME_SVC_URL || 'http://localhost:4030',
+  azureSpeechKey: process.env.AZURE_SPEECH_KEY || '',
+  azureSpeechRegion: process.env.AZURE_SPEECH_REGION || 'eastus',
 };

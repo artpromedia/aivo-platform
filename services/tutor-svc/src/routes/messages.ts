@@ -1,10 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
-import { prisma, MessageRole } from '../prisma.js';
+import { prisma, TutorMessageRole } from '../prisma.js';
 import { sessionService } from '../services/session.service.js';
-import { emotionService } from '../services/emotion.service.js';
-import { ttsService } from '../services/tts.service.js';
 import { config } from '../config.js';
 
 const SendMessageSchema = z.object({
@@ -18,11 +16,11 @@ const ListMessagesSchema = z.object({
 
 export async function messageRoutes(fastify: FastifyInstance) {
   /**
-   * POST /tutor/sessions/:sessionId/messages
+   * POST /api/v1/tutor/sessions/:sessionId/messages
    * Send a message and get AI response
    */
   fastify.post(
-    '/tutor/sessions/:sessionId/messages',
+    '/:sessionId/messages',
     async (
       request: FastifyRequest<{
         Params: { sessionId: string };
@@ -46,7 +44,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const userMessage = await prisma.tutorMessage.create({
         data: {
           sessionId,
-          role: MessageRole.USER,
+          role: TutorMessageRole.USER,
           content,
         },
       });
@@ -72,17 +70,12 @@ export async function messageRoutes(fastify: FastifyInstance) {
       try {
         const aiResponse = await fetch(`${config.aiOrchestratorUrl}/api/v1/ai/chat`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(config.aiOrchestratorApiKey
-              ? { Authorization: `Bearer ${config.aiOrchestratorApiKey}` }
-              : {}),
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             agentType: 'SUBJECT_TUTOR',
             subject: session.subject,
             personaSlug: session.persona.slug,
-            systemPrompt: session.persona.systemPrompt,
+            systemPrompt: session.persona.systemPromptTemplate,
             messages: conversationHistory,
             context: {
               sessionId,
@@ -104,21 +97,24 @@ export async function messageRoutes(fastify: FastifyInstance) {
       }
 
       const latencyMs = Date.now() - startTime;
-      const emotion = emotionService.detectEmotion(aiContent);
 
       // Save AI response
       const aiMessage = await prisma.tutorMessage.create({
         data: {
           sessionId,
-          role: MessageRole.ASSISTANT,
+          role: TutorMessageRole.ASSISTANT,
           content: aiContent,
-          emotion,
+          emotionTag: 'neutral',
+          avatarState: 'talking',
           latencyMs,
         },
       });
 
-      // Update session last active
-      await sessionService.updateLastActive(sessionId);
+      // Update session message count
+      await prisma.tutorSession.update({
+        where: { id: sessionId },
+        data: { totalMessages: { increment: 2 } },
+      });
 
       // Update analytics
       await prisma.tutorSessionAnalytics.update({
@@ -126,11 +122,9 @@ export async function messageRoutes(fastify: FastifyInstance) {
         data: {
           messageCount: { increment: 2 },
           userMessageCount: { increment: 1 },
+          assistantMessageCount: { increment: 1 },
         },
       });
-
-      // Optionally generate TTS
-      const tts = await ttsService.synthesize(aiContent, session.personaId);
 
       return {
         userMessage: {
@@ -143,27 +137,21 @@ export async function messageRoutes(fastify: FastifyInstance) {
           id: aiMessage.id,
           role: aiMessage.role,
           content: aiMessage.content,
-          emotion: aiMessage.emotion,
+          emotionTag: aiMessage.emotionTag,
+          avatarState: aiMessage.avatarState,
           createdAt: aiMessage.createdAt.toISOString(),
           latencyMs,
         },
-        tts: tts
-          ? {
-              audioBase64: tts.audioBase64,
-              visemes: tts.visemes,
-              durationMs: tts.durationMs,
-            }
-          : null,
       };
     },
   );
 
   /**
-   * GET /tutor/sessions/:sessionId/messages
+   * GET /api/v1/tutor/sessions/:sessionId/messages
    * List messages in a session
    */
   fastify.get(
-    '/tutor/sessions/:sessionId/messages',
+    '/:sessionId/messages',
     async (
       request: FastifyRequest<{
         Params: { sessionId: string };
@@ -193,7 +181,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
           id: m.id,
           role: m.role,
           content: m.content,
-          emotion: m.emotion,
+          emotionTag: m.emotionTag,
+          avatarState: m.avatarState,
           createdAt: m.createdAt.toISOString(),
         })),
       };

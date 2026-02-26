@@ -9,21 +9,22 @@ const CreateSessionSchema = z.object({
   personaId: z.string().uuid(),
   subject: z.enum(['MATH', 'ELA', 'SCIENCE', 'HISTORY', 'CODING']),
   topic: z.string().max(255).optional(),
+  locale: z.string().max(10).default('en-US'),
 });
 
 const ListSessionsSchema = z.object({
-  status: z.enum(['ACTIVE', 'PAUSED', 'COMPLETED', 'EXPIRED']).optional(),
+  status: z.enum(['ACTIVE', 'PAUSED', 'COMPLETED', 'EXPIRED', 'ERROR']).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });
 
 export async function sessionRoutes(fastify: FastifyInstance) {
   /**
-   * POST /tutor/sessions
+   * POST /api/v1/tutor/sessions
    * Create a new tutor session
    */
   fastify.post(
-    '/tutor/sessions',
+    '/',
     async (request: FastifyRequest<{ Body: z.infer<typeof CreateSessionSchema> }>, reply: FastifyReply) => {
       const body = CreateSessionSchema.parse(request.body);
       const user = request.user as JwtUser;
@@ -48,6 +49,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
         personaId: body.personaId,
         subject: body.subject,
         topic: body.topic,
+        locale: body.locale,
       });
 
       return reply.status(201).send({
@@ -57,24 +59,26 @@ export async function sessionRoutes(fastify: FastifyInstance) {
         status: session.status,
         subject: session.subject,
         topic: session.topic,
+        locale: session.locale,
         startedAt: session.startedAt.toISOString(),
         persona: {
           id: session.persona.id,
           slug: session.persona.slug,
           name: session.persona.name,
           subject: session.persona.subject,
-          avatarAssetKey: session.persona.avatarAssetKey,
+          avatarRivAsset: session.persona.avatarRivAsset,
+          avatarStaticImage: session.persona.avatarStaticImage,
         },
       });
     },
   );
 
   /**
-   * GET /tutor/sessions
+   * GET /api/v1/tutor/sessions
    * List sessions for the current learner
    */
   fastify.get(
-    '/tutor/sessions',
+    '/',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof ListSessionsSchema> }>, reply: FastifyReply) => {
       const query = ListSessionsSchema.parse(request.query);
       const user = request.user as JwtUser;
@@ -100,6 +104,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
           status: s.status,
           subject: s.subject,
           topic: s.topic,
+          locale: s.locale,
           startedAt: s.startedAt.toISOString(),
           endedAt: s.endedAt?.toISOString() ?? null,
           persona: {
@@ -107,7 +112,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
             slug: s.persona.slug,
             name: s.persona.name,
             subject: s.persona.subject,
-            avatarAssetKey: s.persona.avatarAssetKey,
+            avatarRivAsset: s.persona.avatarRivAsset,
+            avatarStaticImage: s.persona.avatarStaticImage,
           },
         })),
         total,
@@ -116,11 +122,11 @@ export async function sessionRoutes(fastify: FastifyInstance) {
   );
 
   /**
-   * GET /tutor/sessions/:sessionId
+   * GET /api/v1/tutor/sessions/:sessionId
    * Get a specific session
    */
   fastify.get(
-    '/tutor/sessions/:sessionId',
+    '/:sessionId',
     async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
       const { sessionId } = request.params;
       const session = await sessionService.getById(sessionId);
@@ -136,25 +142,29 @@ export async function sessionRoutes(fastify: FastifyInstance) {
         status: session.status,
         subject: session.subject,
         topic: session.topic,
+        locale: session.locale,
         startedAt: session.startedAt.toISOString(),
         endedAt: session.endedAt?.toISOString() ?? null,
+        totalMessages: session.totalMessages,
+        totalDurationMs: session.totalDurationMs,
         persona: {
           id: session.persona.id,
           slug: session.persona.slug,
           name: session.persona.name,
           subject: session.persona.subject,
-          avatarAssetKey: session.persona.avatarAssetKey,
+          avatarRivAsset: session.persona.avatarRivAsset,
+          avatarStaticImage: session.persona.avatarStaticImage,
         },
       };
     },
   );
 
   /**
-   * POST /tutor/sessions/:sessionId/end
+   * POST /api/v1/tutor/sessions/:sessionId/end
    * End a tutor session
    */
   fastify.post(
-    '/tutor/sessions/:sessionId/end',
+    '/:sessionId/end',
     async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
       const { sessionId } = request.params;
       const session = await sessionService.end(sessionId);

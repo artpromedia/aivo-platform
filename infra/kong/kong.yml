@@ -351,7 +351,7 @@ services:
   # Tutor Service (AI tutoring sessions)
   # ---------------------------------------------------------------------------
   - name: tutor-svc
-    url: http://host.docker.internal:4020
+    url: http://host.docker.internal:4025
     connect_timeout: 5000
     write_timeout: 60000
     read_timeout: 120000

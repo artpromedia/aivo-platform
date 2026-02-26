@@ -3,8 +3,8 @@ import { FastifyRateLimitPresets } from '@aivo/ts-api-utils';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { authMiddleware } from './middleware/authMiddleware.js';
-import { sessionRoutes } from './routes/sessions.js';
 import { personaRoutes } from './routes/personas.js';
+import { sessionRoutes } from './routes/sessions.js';
 import { messageRoutes } from './routes/messages.js';
 import { analyticsRoutes } from './routes/analytics.js';
 
@@ -29,10 +29,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   }
 
   // Register routes
-  void fastify.register(sessionRoutes);
-  void fastify.register(personaRoutes);
-  void fastify.register(messageRoutes);
-  void fastify.register(analyticsRoutes);
+  void fastify.register(personaRoutes, { prefix: '/api/v1/tutor/personas' });
+  void fastify.register(sessionRoutes, { prefix: '/api/v1/tutor/sessions' });
+  void fastify.register(messageRoutes, { prefix: '/api/v1/tutor/sessions' });
+  void fastify.register(analyticsRoutes, { prefix: '/api/v1/tutor/analytics' });
 
   return fastify;
 }

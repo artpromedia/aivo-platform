@@ -301,7 +301,7 @@ services:
       context: .
       dockerfile: services/tutor-svc/Dockerfile
     ports:
-      - "4020:3000"
+      - "4025:3000"
     environment:
       - NODE_ENV=development
       - PORT=3000
