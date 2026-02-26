@@ -136,9 +136,14 @@ export default async function globalSetup(): Promise<void> {
   console.log('🧪 Integration Test Suite - Global Setup');
   console.log('='.repeat(60) + '\n');
 
-  // Check if we should skip Docker (for CI where containers are already running)
-  if (process.env.SKIP_DOCKER_SETUP === 'true') {
-    console.log('ℹ️  Skipping Docker setup (SKIP_DOCKER_SETUP=true)\n');
+  // Check if we should skip Docker setup entirely
+  // In CI, both SKIP_DOCKER_SETUP and USE_MOCKS are set — service containers
+  // are managed by GitHub Actions, not Docker Compose.
+  if (process.env.SKIP_DOCKER_SETUP === 'true' || process.env.USE_MOCKS === 'true') {
+    const reasons: string[] = [];
+    if (process.env.SKIP_DOCKER_SETUP === 'true') reasons.push('SKIP_DOCKER_SETUP=true');
+    if (process.env.USE_MOCKS === 'true') reasons.push('USE_MOCKS=true');
+    console.log(`ℹ️  Skipping Docker setup (${reasons.join(', ')})\n`);
     return;
   }
 
@@ -154,7 +159,7 @@ export default async function globalSetup(): Promise<void> {
     await waitForAllServices();
   } catch (error) {
     console.error('❌ Failed to set up test environment:', error);
-    
+
     // Don't fail entirely - allow tests to run with mocks
     console.log('⚠️  Falling back to mock mode');
     process.env.USE_MOCKS = 'true';

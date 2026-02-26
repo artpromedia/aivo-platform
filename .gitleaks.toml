@@ -1,0 +1,153 @@
+# =============================================================================
+# Gitleaks Configuration for AIVO Platform
+# =============================================================================
+#
+# Customizes secret detection to reduce false positives while still catching
+# real secrets. This config is automatically used by gitleaks/gitleaks-action@v2.
+#
+# False positive categories addressed:
+#   1. Firebase API keys (public by design, restricted by bundleId/SHA)
+#   2. Test Stripe keys (sk_test_placeholder, pk_test_placeholder, etc.)
+#   3. Dev-only secrets in .env.example files (not real credentials)
+#   4. Test fixture private keys (fake/truncated keys in test files)
+#   5. K8s secret templates with REPLACE_WITH_* placeholders
+#
+# IMPORTANT: Real secrets found in scripts/hetzner/ (Firebase creds, CF origin
+#   certs) are NOT allowlisted here. Those must be rotated and removed from
+#   git history separately.
+
+title = "AIVO Gitleaks Configuration"
+
+[extend]
+# Extend the default gitleaks config so we still detect real secrets
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for known false positives"
+
+# Paths that commonly contain test/example values
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.test$''',
+  '''\.env\.sample$''',
+  '''\.env\.template$''',
+  '''infra/k8s/secrets/.*-template\.yaml$''',
+  '''infra/k8s/secrets/staging-secrets\.yaml$''',
+]
+
+# Regex patterns for known safe values
+regexes = [
+  # Placeholder/template values (not real secrets)
+  '''(?i)REPLACE_ME''',
+  '''(?i)REPLACE_WITH_''',
+  '''(?i)YOUR_.*_KEY''',
+  '''(?i)your-.*-key''',
+  '''(?i)change-this''',
+  '''(?i)change-me''',
+  '''(?i)placeholder''',
+  '''(?i)REDACTED''',
+  '''(?i)XXXX''',
+  '''(?i)dev-only-not-for-production''',
+  '''(?i)dev-internal-key''',
+  '''(?i)not-for-production''',
+  # Test/CI-specific fake keys
+  '''sk_test_fake_key_for_ci''',
+  '''sk_test_mock''',
+  '''pk_test_mock''',
+  # MinIO default creds in dev/test configs
+  '''minioadmin''',
+  # Test JWT secrets
+  '''test-secret-key-for-ci-do-not-use-in-production''',
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Per-path allowlists
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Firebase options files contain public API keys (restricted by app bundleId/SHA)
+# These are safe to commit per Google's documentation.
+[[rules]]
+id = "gcp-api-key"
+description = "GCP API key"
+[rules.allowlist]
+paths = [
+  '''firebase_options\.dart$''',
+]
+
+# Test Stripe keys in test files, config defaults, CI workflows, and docker-compose
+[[rules]]
+id = "stripe-access-token"
+description = "Stripe Access Token"
+[rules.allowlist]
+regexes = [
+  '''sk_test_[A-Za-z0-9_-]*(?:placeholder|REPLACE|REDACTED|fake|mock|YOUR)''',
+  '''pk_test_[A-Za-z0-9_-]*(?:placeholder|REPLACE|REDACTED|fake|mock|YOUR|XXXX)''',
+  '''rk_test_[A-Za-z0-9_-]*(?:placeholder|REPLACE|REDACTED|fake|mock|YOUR)''',
+]
+paths = [
+  '''\.env\.example$''',
+  '''docker/''',
+  '''infra/''',
+  '''\.github/workflows/''',
+  '''scripts/hetzner/(?:deploy|patch|update)_''',
+  '''tests/''',
+  '''test/''',
+  '''__tests__/''',
+]
+
+# Test fixture private keys (fake/truncated keys used in unit tests)
+[[rules]]
+id = "private-key"
+description = "Private Key"
+[rules.allowlist]
+paths = [
+  '''\.test\.ts$''',
+  '''\.spec\.ts$''',
+  '''__tests__/''',
+  '''/test/''',
+  '''/tests/''',
+  '''fixtures/''',
+  '''mocks/''',
+  '''\.env\.example$''',
+  '''\.env\.test$''',
+  '''infra/k8s/secrets/.*-template\.yaml$''',
+  '''infra/k8s/secrets/staging-secrets\.yaml$''',
+  '''\.github/workflows/''',
+]
+
+# Generic API keys in dev/test contexts
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+[rules.allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.test$''',
+  '''\.env\.sample$''',
+  '''\.env\.template$''',
+  '''\.test\.ts$''',
+  '''\.spec\.ts$''',
+  '''__tests__/''',
+  '''/test/''',
+  '''/tests/''',
+  '''fixtures/''',
+  '''mocks/''',
+  '''docker/docker-compose\.yml$''',
+  '''docker/\.env\.example$''',
+  '''infra/k8s/secrets/''',
+  '''\.github/workflows/''',
+  '''scripts/hetzner/(?:deploy|patch|update)_''',
+]
+regexes = [
+  '''(?i)placeholder''',
+  '''(?i)REPLACE''',
+  '''(?i)REDACTED''',
+  '''(?i)change-this''',
+  '''(?i)change-me''',
+  '''(?i)dev-only''',
+  '''(?i)not-for-production''',
+  '''minioadmin''',
+  '''SG\.xxx''',
+  '''sk-REPLACE_ME''',
+  '''sk-ant-REPLACE_ME''',
+]

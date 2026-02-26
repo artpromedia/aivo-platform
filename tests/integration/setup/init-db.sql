@@ -12,6 +12,15 @@ CREATE EXTENSION IF NOT EXISTS "btree_gin";
 CREATE SCHEMA IF NOT EXISTS tenant_a;
 CREATE SCHEMA IF NOT EXISTS tenant_b;
 
+-- Create test role (idempotent — skip if already exists)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'aivo_test') THEN
+    CREATE ROLE aivo_test WITH LOGIN PASSWORD 'test_password';
+  END IF;
+END
+$$;
+
 -- Grant permissions
 GRANT ALL PRIVILEGES ON SCHEMA public TO aivo_test;
 GRANT ALL PRIVILEGES ON SCHEMA tenant_a TO aivo_test;

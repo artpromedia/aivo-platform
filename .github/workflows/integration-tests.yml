@@ -242,7 +242,8 @@ jobs:
             --reporter=json \
             --outputFile=test-results/learner-journey.json
         env:
-          USE_MOCKS: true
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
 
       - name: Upload test results
         if: always()
@@ -338,7 +339,8 @@ jobs:
             --reporter=json \
             --outputFile=test-results/teacher-classroom.json
         env:
-          USE_MOCKS: true
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
 
       - name: Upload test results
         if: always()
@@ -429,7 +431,8 @@ jobs:
             --reporter=json \
             --outputFile=test-results/billing-subscription.json
         env:
-          USE_MOCKS: true
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
           STRIPE_API_BASE: http://localhost:12111
 
       - name: Upload test results
@@ -526,7 +529,8 @@ jobs:
             --reporter=json \
             --outputFile=test-results/multi-tenant-isolation.json
         env:
-          USE_MOCKS: true
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
 
       - name: Upload test results
         if: always()
