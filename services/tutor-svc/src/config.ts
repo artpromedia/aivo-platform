@@ -53,4 +53,16 @@ export const config = {
     enabled: process.env.NATS_ENABLED !== 'false',
     url: process.env.NATS_URL || 'nats://localhost:4222',
   },
+  // Feature flags (server-side, env-driven)
+  featureFlags: {
+    tutorEnabled: process.env.FEATURE_TUTOR_ENABLED !== 'false',
+    tutorVoiceEnabled: process.env.FEATURE_TUTOR_VOICE_ENABLED !== 'false',
+    tutorSubjects: {
+      MATH: process.env.FEATURE_TUTOR_SUBJECTS_MATH !== 'false',
+      ELA: process.env.FEATURE_TUTOR_SUBJECTS_ELA !== 'false',
+      SCIENCE: process.env.FEATURE_TUTOR_SUBJECTS_SCIENCE !== 'false',
+      HISTORY: process.env.FEATURE_TUTOR_SUBJECTS_HISTORY !== 'false',
+      CODING: process.env.FEATURE_TUTOR_SUBJECTS_CODING !== 'false',
+    } as Record<string, boolean>,
+  },
 };

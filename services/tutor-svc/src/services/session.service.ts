@@ -16,6 +16,11 @@ export interface LearnerProfile {
     totalSkills: number;
     byDomain: Record<string, { count: number; avgMastery: number }>;
   };
+  // Accessibility profile fields
+  supportsDyslexiaFriendlyFont?: boolean;
+  estimatedCognitiveLoad?: 'LOW' | 'MEDIUM' | 'HIGH';
+  fontPreference?: string;
+  textSizePreference?: string;
 }
 
 export interface AiOrchestratorRequest {
@@ -41,6 +46,34 @@ export interface AiOrchestratorResponse {
     tokens?: number;
     latencyMs?: number;
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Accessibility Adaptations
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build additional system-prompt instructions based on the learner's
+ * accessibility profile. These are appended to the persona template.
+ */
+export function buildAccessibilityAdaptations(profile: LearnerProfile | null | undefined): string {
+  if (!profile) return '';
+
+  const parts: string[] = [];
+
+  if (profile.supportsDyslexiaFriendlyFont) {
+    parts.push(
+      'DYSLEXIA-FRIENDLY: Use simpler sentence structure. Prefer short, common words. Avoid walls of text. Break ideas into small paragraphs.',
+    );
+  }
+
+  if (profile.estimatedCognitiveLoad === 'LOW') {
+    parts.push(
+      'LOW COGNITIVE LOAD MODE: Keep responses under 3 sentences. Ask only one question at a time. Include frequent encouragement breaks. Use very simple vocabulary.',
+    );
+  }
+
+  return parts.join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

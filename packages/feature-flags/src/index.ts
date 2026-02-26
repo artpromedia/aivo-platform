@@ -179,6 +179,16 @@ export enum ParityFeature {
   AI_TUTOR = 'aiTutor',
   TEAM_CHALLENGES = 'teamChallenges',
   ADAPTIVE_ASSESSMENTS = 'adaptiveAssessments',
+
+  // Tutor-specific feature flags (Sprint 10 gradual rollout)
+  TUTOR_ENABLED = 'tutorEnabled',
+  TUTOR_VOICE_ENABLED = 'tutorVoiceEnabled',
+  TUTOR_SUBJECTS_MATH = 'tutorSubjectsMath',
+  TUTOR_SUBJECTS_ELA = 'tutorSubjectsEla',
+  TUTOR_SUBJECTS_SCIENCE = 'tutorSubjectsScience',
+  TUTOR_SUBJECTS_HISTORY = 'tutorSubjectsHistory',
+  TUTOR_SUBJECTS_CODING = 'tutorSubjectsCoding',
+  TUTOR_MARKETPLACE_VISIBLE = 'tutorMarketplaceVisible',
 }
 
 /**
@@ -262,6 +272,40 @@ const DEFAULT_FLAGS: Record<ParityFeature, FeatureFlagConfig> = {
   [ParityFeature.ADAPTIVE_ASSESSMENTS]: {
     enabled: true,
     rolloutPercentage: 75,
+  },
+
+  // Tutor-specific flags — disabled by default for gradual rollout
+  [ParityFeature.TUTOR_ENABLED]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_VOICE_ENABLED]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_SUBJECTS_MATH]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_SUBJECTS_ELA]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_SUBJECTS_SCIENCE]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_SUBJECTS_HISTORY]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_SUBJECTS_CODING]: {
+    enabled: false,
+    rolloutPercentage: 0,
+  },
+  [ParityFeature.TUTOR_MARKETPLACE_VISIBLE]: {
+    enabled: false,
+    rolloutPercentage: 0,
   },
 };
 
@@ -531,4 +575,24 @@ export function useFeatureFlag(feature: ParityFeature): boolean {
  */
 export function featureGate<T>(options: { feature: ParityFeature; enabled: T; disabled: T }): T {
   return featureFlags.isEnabled(options.feature) ? options.enabled : options.disabled;
+}
+
+/**
+ * Map a tutor subject (e.g. 'MATH') to its corresponding feature flag
+ */
+const TUTOR_SUBJECT_FLAG_MAP: Record<string, ParityFeature> = {
+  MATH: ParityFeature.TUTOR_SUBJECTS_MATH,
+  ELA: ParityFeature.TUTOR_SUBJECTS_ELA,
+  SCIENCE: ParityFeature.TUTOR_SUBJECTS_SCIENCE,
+  HISTORY: ParityFeature.TUTOR_SUBJECTS_HISTORY,
+  CODING: ParityFeature.TUTOR_SUBJECTS_CODING,
+};
+
+/**
+ * Check if a tutor subject is enabled via feature flags
+ */
+export function isTutorSubjectEnabled(subject: string): boolean {
+  const flag = TUTOR_SUBJECT_FLAG_MAP[subject.toUpperCase()];
+  if (!flag) return false;
+  return featureFlags.isEnabled(flag);
 }

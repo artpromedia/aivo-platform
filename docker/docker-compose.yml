@@ -694,6 +694,39 @@ services:
       <<: *healthcheck-defaults
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
 
+  tutor-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/tutor-svc/Dockerfile
+    ports:
+      - "4025:4025"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: tutor-svc
+      PORT: 4025
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_tutor
+      AI_ORCHESTRATOR_URL: http://ai-orchestrator:3200
+      LEARNER_MODEL_URL: http://learner-model-svc:3031
+      BILLING_SVC_URL: http://billing-svc:3000
+      TTS_SERVICE_URL: http://tts-engine:5100
+      REDIS_URL: redis://redis:6379/9
+      NATS_URL: nats://nats:4222
+      AUDIO_S3_ENDPOINT: http://minio:9000
+      AUDIO_S3_BUCKET: aivo-tutor-audio
+      AUDIO_S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      AUDIO_S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4025/health"]
+
   payments-svc:
     <<: *node-service
     build:

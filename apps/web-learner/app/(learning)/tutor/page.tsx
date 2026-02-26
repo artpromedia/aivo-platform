@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Brain, Send, Sparkles, ArrowRight, Calculator, BookOpen, PenTool, Globe, Code } from 'lucide-react';
+import { Brain, Send, Sparkles, ArrowRight, Calculator, BookOpen, PenTool, Globe, Code, Lock } from 'lucide-react';
 
 import type { UILocale } from '@aivo/i18n/config';
+import { useFeatureFlag, isTutorSubjectEnabled, ParityFeature } from '@aivo/feature-flags';
 import { useTutorSession, type TutorMessage } from '../../../lib/hooks/use-tutor-session';
 import { useTutorWebSocket, type TutorMessage as WsMessage } from '../../../lib/hooks/use-tutor-websocket';
 import { useTutorAudio, type VisemeEvent } from '../../../lib/hooks/use-tutor-audio';
@@ -59,8 +60,50 @@ export default function TutorPage() {
   const [sessionLocale, setSessionLocale] = useState('en');
   const [localeInfo, setLocaleInfo] = useState<TutorLocaleInfo | null>(null);
 
+  // Feature flag gates
+  const tutorEnabled = useFeatureFlag(ParityFeature.TUTOR_ENABLED);
+  const voiceEnabled_flag = useFeatureFlag(ParityFeature.TUTOR_VOICE_ENABLED);
+
   const personaId = searchParams.get('personaId');
   const subject = searchParams.get('subject');
+
+  // Feature flag: master tutor toggle
+  if (!tutorEnabled) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Lock className="mx-auto h-12 w-12 text-gray-300" />
+        <h2 className="mt-4 text-xl font-bold text-gray-900">AI Tutors Coming Soon</h2>
+        <p className="mt-2 text-gray-600">
+          AI tutoring is not yet available for your account. Stay tuned!
+        </p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
+  // Feature flag: check subject-specific flag when starting a session
+  if (subject && !isTutorSubjectEnabled(subject)) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Lock className="mx-auto h-12 w-12 text-gray-300" />
+        <h2 className="mt-4 text-xl font-bold text-gray-900">{subject} Tutor Coming Soon</h2>
+        <p className="mt-2 text-gray-600">
+          The {subject.toLowerCase()} tutor is not yet available. Try another subject!
+        </p>
+        <button
+          onClick={() => router.push('/tutor')}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+        >
+          Choose Another Tutor
+        </button>
+      </div>
+    );
+  }
 
   const {
     session,
@@ -223,7 +266,7 @@ export default function TutorPage() {
             { slug: 'spark-science', name: 'Spark', subject: 'SCIENCE', desc: 'Inventor who turns science into experiments' },
             { slug: 'chrono-history', name: 'Chrono', subject: 'HISTORY', desc: 'Time traveler who makes history come alive' },
             { slug: 'pixel-coding', name: 'Pixel', subject: 'CODING', desc: 'Robot who makes coding a fun game' },
-          ].map((persona) => {
+          ].filter((p) => isTutorSubjectEnabled(p.subject)).map((persona) => {
             const SubjectIcon = SUBJECT_ICONS[persona.subject] ?? Brain;
             return (
               <button
@@ -286,8 +329,8 @@ export default function TutorPage() {
         avatarState={avatarState as 'idle' | 'thinking' | 'talking' | 'celebrating' | 'encouraging' | 'listening' | undefined}
         mouthOpenAmount={mouthOpenAmount}
         isConnected={isConnected || useHttpFallback}
-        voiceEnabled={voiceEnabled}
-        onToggleVoice={toggleVoice}
+        voiceEnabled={voiceEnabled_flag && voiceEnabled}
+        onToggleVoice={voiceEnabled_flag ? toggleVoice : undefined}
         onEndSession={handleEndSession}
         locale={sessionLocale}
         localeInfo={localeInfo}

@@ -8,6 +8,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_common/features/feature_flags.dart';
 
 import '../models/tutor_models.dart';
 import '../providers/tutor_session_provider.dart';
@@ -156,9 +157,86 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     // The PATCH endpoint (Task 6) will handle the server-side update
   }
 
+  /// Map subject string to its corresponding feature flag.
+  static const _subjectFlagMap = <String, ParityFeature>{
+    'MATH': ParityFeature.tutorSubjectsMath,
+    'ELA': ParityFeature.tutorSubjectsEla,
+    'SCIENCE': ParityFeature.tutorSubjectsScience,
+    'HISTORY': ParityFeature.tutorSubjectsHistory,
+    'CODING': ParityFeature.tutorSubjectsCoding,
+  };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // Feature flag: master tutor toggle
+    if (!ParityFeature.tutorEnabled.isEnabled) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('AI Tutors')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 64, color: theme.disabledColor),
+                const SizedBox(height: 16),
+                Text('AI Tutors Coming Soon', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text(
+                  'AI tutoring is not yet available for your account. Stay tuned!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Feature flag: subject-specific toggle
+    final subjectFlag = _subjectFlagMap[widget.persona.subject.name.toUpperCase()];
+    if (subjectFlag != null && !subjectFlag.isEnabled) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.persona.name)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_outline_rounded, size: 64, color: theme.disabledColor),
+                const SizedBox(height: 16),
+                Text(
+                  '${widget.persona.subject.displayName} Tutor Coming Soon',
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This subject tutor is not yet available. Try another subject!',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final sessionState = ref.watch(tutorSessionProvider);
     final rtState = ref.watch(tutorRealtimeProvider);
     final audioState = ref.watch(tutorAudioProvider);
@@ -210,20 +288,21 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               voiceAvailable: _voiceAvailableForLocale,
               onTap: _showLanguagePicker,
             ),
-            IconButton(
-              icon: Icon(
-                voicePref.voiceEnabled
-                    ? Icons.volume_up_rounded
-                    : Icons.volume_off_rounded,
+            if (ParityFeature.tutorVoiceEnabled.isEnabled)
+              IconButton(
+                icon: Icon(
+                  voicePref.voiceEnabled
+                      ? Icons.volume_up_rounded
+                      : Icons.volume_off_rounded,
+                ),
+                tooltip: voicePref.voiceEnabled ? 'Voice on' : 'Voice off',
+                onPressed: () {
+                  ref.read(tutorVoicePreferenceProvider.notifier).toggle();
+                  if (voicePref.voiceEnabled) {
+                    ref.read(tutorAudioProvider.notifier).stop();
+                  }
+                },
               ),
-              tooltip: voicePref.voiceEnabled ? 'Voice on' : 'Voice off',
-              onPressed: () {
-                ref.read(tutorVoicePreferenceProvider.notifier).toggle();
-                if (voicePref.voiceEnabled) {
-                  ref.read(tutorAudioProvider.notifier).stop();
-                }
-              },
-            ),
             IconButton(
               icon: const Icon(Icons.stop_circle_outlined),
               tooltip: 'End Session',

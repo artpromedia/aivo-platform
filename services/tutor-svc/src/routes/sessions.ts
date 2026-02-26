@@ -10,6 +10,7 @@ import { resolveLocaleConfig } from '../services/locale.service.js';
 import { getVoiceConfig } from '../services/voice-config.service.js';
 import { trackSessionStarted, trackSessionEnded } from '../services/analytics.service.js';
 import { emitSessionCompleted } from '../services/notification.service.js';
+import { config } from '../config.js';
 
 const CreateSessionSchema = z.object({
   learnerId: z.string().uuid(),
@@ -41,6 +42,21 @@ export async function sessionRoutes(fastify: FastifyInstance) {
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
+      }
+
+      // 0. Feature flag gates (server-side)
+      if (!config.featureFlags.tutorEnabled) {
+        return reply.status(503).send({
+          error: 'AI tutoring is not yet available',
+          code: 'TUTOR_NOT_ENABLED',
+        });
+      }
+
+      if (!config.featureFlags.tutorSubjects[body.subject]) {
+        return reply.status(503).send({
+          error: `${body.subject} tutoring is not yet available`,
+          code: 'TUTOR_SUBJECT_NOT_ENABLED',
+        });
       }
 
       // 1. Check entitlement (base + subject-specific)
@@ -81,7 +97,9 @@ export async function sessionRoutes(fastify: FastifyInstance) {
 
       // Resolve locale config for voice availability info
       const localeConfig = resolveLocaleConfig(session.locale);
-      const voiceConfig = await getVoiceConfig(persona.id, session.locale);
+      const voiceConfig = config.featureFlags.tutorVoiceEnabled
+        ? await getVoiceConfig(persona.id, session.locale)
+        : null;
       const voiceFallbackUsed = voiceConfig
         ? voiceConfig.locale !== session.locale
         : false;
@@ -118,7 +136,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
           languageName: localeConfig.languageName,
           nativeLanguageName: localeConfig.nativeLanguageName,
           isRTL: localeConfig.isRTL,
-          voiceAvailable: localeConfig.piperVoiceAvailable,
+          voiceAvailable: config.featureFlags.tutorVoiceEnabled && localeConfig.piperVoiceAvailable,
           voiceId: voiceConfig?.ttsVoiceId ?? null,
           voiceFallbackUsed,
           resolvedVoiceLocale: voiceConfig?.locale ?? null,

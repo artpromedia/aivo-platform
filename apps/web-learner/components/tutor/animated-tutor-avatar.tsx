@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -88,7 +88,7 @@ interface AnimatedTutorAvatarProps {
   reducedMotion?: boolean;
 }
 
-export function AnimatedTutorAvatar({
+export const AnimatedTutorAvatar = memo(function AnimatedTutorAvatar({
   personaSlug,
   personaName,
   state = 'idle',
@@ -385,4 +385,4 @@ function FallbackAvatar({
       )}
     </div>
   );
-}
+});
