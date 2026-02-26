@@ -36,4 +36,9 @@ export const config = {
   realtimeSvcUrl: process.env.REALTIME_SVC_URL || 'http://localhost:4030',
   azureSpeechKey: process.env.AZURE_SPEECH_KEY || '',
   azureSpeechRegion: process.env.AZURE_SPEECH_REGION || 'eastus',
+  // Audio storage (S3/R2)
+  audioBucket: process.env.AUDIO_S3_BUCKET || 'aivo-tutor-audio',
+  audioS3Endpoint: process.env.AUDIO_S3_ENDPOINT || '',
+  audioS3Region: process.env.AUDIO_S3_REGION || 'us-east-1',
+  audioCdnBase: process.env.AUDIO_CDN_BASE || '',
 };

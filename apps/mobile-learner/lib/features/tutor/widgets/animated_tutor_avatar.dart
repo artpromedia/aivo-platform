@@ -33,6 +33,10 @@ class AnimatedTutorAvatar extends StatefulWidget {
   /// The current viseme ID for lip-sync. Null when not speaking.
   final String? visemeId;
 
+  /// Mouth open amount (0.0–1.0) for lip-sync animation.
+  /// Driven by [TutorAudioNotifier] at ~60fps.
+  final double mouthOpenAmount;
+
   /// Size of the avatar widget (width and height).
   final double size;
 
@@ -41,6 +45,7 @@ class AnimatedTutorAvatar extends StatefulWidget {
     required this.personaAssetKey,
     this.emotion = EmotionType.neutral,
     this.visemeId,
+    this.mouthOpenAmount = 0.0,
     this.size = 120,
   });
 
@@ -165,7 +170,8 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
 
   Widget _buildPlaceholderAvatar(BuildContext context) {
     final theme = Theme.of(context);
-    final isSpeaking = widget.visemeId != null && widget.visemeId != '0';
+    final isSpeaking = widget.mouthOpenAmount > 0.01 ||
+        (widget.visemeId != null && widget.visemeId != '0');
 
     return Semantics(
       label: 'Tutor avatar showing ${widget.emotion.label} expression',
@@ -200,11 +206,14 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
               color: Colors.white,
             ),
 
-            // Speaking indicator (mouth animation placeholder)
+            // Speaking indicator driven by mouthOpenAmount
             if (isSpeaking)
               Positioned(
                 bottom: widget.size * 0.18,
-                child: _SpeakingIndicator(size: widget.size * 0.15),
+                child: _MouthOpenIndicator(
+                  size: widget.size * 0.15,
+                  mouthOpenAmount: widget.mouthOpenAmount,
+                ),
               ),
           ],
         ),
@@ -230,50 +239,33 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
   }
 }
 
-/// Animated speaking indicator displayed when the tutor is vocalizing.
-class _SpeakingIndicator extends StatefulWidget {
+/// Mouth-open indicator that directly reflects [mouthOpenAmount].
+///
+/// The height of the "mouth" shape scales linearly with [mouthOpenAmount],
+/// providing real-time lip-sync feedback in the placeholder avatar.
+class _MouthOpenIndicator extends StatelessWidget {
   final double size;
+  final double mouthOpenAmount;
 
-  const _SpeakingIndicator({required this.size});
-
-  @override
-  State<_SpeakingIndicator> createState() => _SpeakingIndicatorState();
-}
-
-class _SpeakingIndicatorState extends State<_SpeakingIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const _MouthOpenIndicator({
+    required this.size,
+    required this.mouthOpenAmount,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final scale = 0.6 + (_controller.value * 0.4);
-        return Container(
-          width: widget.size,
-          height: widget.size * scale,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(widget.size * 0.3),
-          ),
-        );
-      },
+    // Scale height from 20% to 100% of size based on mouth openness
+    final openness = mouthOpenAmount.clamp(0.0, 1.0);
+    final height = size * (0.2 + openness * 0.8);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 16),
+      width: size,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(size * 0.3),
+      ),
     );
   }
 }

@@ -8,10 +8,16 @@ import {
   detectEmotion,
   mapEmotionToAvatarState,
 } from '../services/session.service.js';
+import {
+  synthesizeSpeech,
+  getVoiceConfig,
+  uploadAudio,
+} from '../services/tts.service.js';
 import type { JwtUser } from '../types/index.js';
 
 const SendMessageSchema = z.object({
   content: z.string().min(1).max(4000),
+  voiceEnabled: z.boolean().optional().default(false),
 });
 
 const ListMessagesSchema = z.object({
@@ -34,7 +40,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
       reply: FastifyReply,
     ) => {
       const { sessionId } = request.params;
-      const { content } = SendMessageSchema.parse(request.body);
+      const { content, voiceEnabled } = SendMessageSchema.parse(request.body);
       const user = request.user as JwtUser;
       const tenantId = user?.tenantId ?? user?.tenant_id;
 
@@ -112,6 +118,43 @@ export async function messageRoutes(fastify: FastifyInstance) {
       const emotionTag = detectEmotion(aiContent);
       const avatarState = mapEmotionToAvatarState(emotionTag);
 
+      // ── TTS synthesis (when voice is enabled) ──────────────────────────
+      let audioUrl: string | undefined;
+      let visemeData: unknown[] | undefined;
+
+      if (voiceEnabled) {
+        try {
+          const voiceConfig = await getVoiceConfig(
+            session.personaId,
+            session.locale,
+          );
+
+          if (voiceConfig) {
+            const ttsResult = await synthesizeSpeech(
+              aiContent,
+              voiceConfig,
+              session.locale,
+            );
+
+            // Upload audio to S3/R2 if we have real audio data
+            if (ttsResult.audioBase64) {
+              // Generate a temporary message ID for the upload path
+              const tempId = crypto.randomUUID();
+              audioUrl = await uploadAudio(
+                ttsResult.audioBase64,
+                sessionId,
+                tempId,
+              );
+            }
+
+            visemeData = ttsResult.visemes;
+          }
+        } catch (error) {
+          // TTS failure should not block the message response
+          console.warn('TTS synthesis failed, sending message without audio:', error);
+        }
+      }
+
       // Save AI response
       const aiMessage = await prisma.tutorMessage.create({
         data: {
@@ -119,7 +162,9 @@ export async function messageRoutes(fastify: FastifyInstance) {
           role: TutorMessageRole.ASSISTANT,
           content: aiContent,
           emotionTag,
-          avatarState,
+          avatarState: voiceEnabled && visemeData ? 'talking' : avatarState,
+          audioUrl: audioUrl ?? null,
+          visemeData: visemeData ?? undefined,
           tokensUsed,
           latencyMs,
         },
@@ -157,6 +202,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
           content: aiMessage.content,
           emotionTag: aiMessage.emotionTag,
           avatarState: aiMessage.avatarState,
+          audioUrl: aiMessage.audioUrl ?? undefined,
+          visemes: visemeData ?? [],
           tokensUsed,
           createdAt: aiMessage.createdAt.toISOString(),
           latencyMs,
@@ -213,6 +260,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
           content: m.content,
           emotionTag: m.emotionTag,
           avatarState: m.avatarState,
+          audioUrl: m.audioUrl ?? undefined,
+          visemes: (m.visemeData as unknown[]) ?? [],
           createdAt: m.createdAt.toISOString(),
         })),
       };

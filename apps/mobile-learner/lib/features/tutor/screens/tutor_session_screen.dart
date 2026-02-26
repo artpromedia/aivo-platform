@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/tutor_models.dart';
 import '../providers/tutor_session_provider.dart';
 import '../providers/tutor_audio_provider.dart';
+import '../providers/tutor_voice_preference_provider.dart';
 import '../widgets/animated_tutor_avatar.dart';
 import '../widgets/tutor_chat_bubble.dart';
 import '../widgets/tutor_input_bar.dart';
@@ -102,6 +103,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     final theme = Theme.of(context);
     final sessionState = ref.watch(tutorSessionProvider);
     final audioState = ref.watch(tutorAudioProvider);
+    final voicePref = ref.watch(tutorVoicePreferenceProvider);
 
     // Determine the current emotion for the avatar.
     final currentEmotion = _getCurrentEmotion(sessionState, audioState);
@@ -126,12 +128,28 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
           ],
         ),
         actions: [
-          if (sessionState is TutorSessionActive)
+          if (sessionState is TutorSessionActive) ...[
+            IconButton(
+              icon: Icon(
+                voicePref.voiceEnabled
+                    ? Icons.volume_up_rounded
+                    : Icons.volume_off_rounded,
+              ),
+              tooltip: voicePref.voiceEnabled ? 'Voice on' : 'Voice off',
+              onPressed: () {
+                ref.read(tutorVoicePreferenceProvider.notifier).toggle();
+                // Stop any currently playing audio when disabling voice
+                if (voicePref.voiceEnabled) {
+                  ref.read(tutorAudioProvider.notifier).stop();
+                }
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.stop_circle_outlined),
               tooltip: 'End Session',
               onPressed: _handleEndSession,
             ),
+          ],
         ],
       ),
       body: _buildBody(context, theme, sessionState, audioState, currentEmotion),
@@ -233,7 +251,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
             child: AnimatedTutorAvatar(
               personaAssetKey: widget.persona.avatarAssetKey,
               emotion: currentEmotion,
-              visemeId: audioState.isPlaying ? audioState.currentVisemeId : null,
+              mouthOpenAmount: audioState.mouthOpenAmount,
               size: 140,
             ),
           ),

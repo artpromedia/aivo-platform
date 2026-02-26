@@ -2,12 +2,14 @@
 ///
 /// Riverpod state management for TTS audio playback and avatar lip-sync.
 /// Manages audio lifecycle (play, pause, stop) and provides real-time
-/// viseme data to drive the animated tutor avatar's mouth movements.
+/// mouthOpenAmount values at ~60fps to drive the AnimatedTutorAvatar.
 library;
 
 import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/tutor_models.dart';
 
 // ============================================================================
@@ -25,13 +27,16 @@ enum AudioPlaybackStatus {
 }
 
 /// State for the tutor audio provider.
+///
+/// Exposes [mouthOpenAmount] (0.0–1.0) which should be wired directly
+/// into [AnimatedTutorAvatar.mouthOpenAmount] for lip-sync.
 class TutorAudioState {
   final AudioPlaybackStatus status;
   final String? currentMessageId;
   final String? currentAudioUrl;
   final List<VisemeData> visemes;
   final int currentVisemeIndex;
-  final String currentVisemeId;
+  final double mouthOpenAmount;
   final Duration position;
   final Duration duration;
   final String? errorMessage;
@@ -42,7 +47,7 @@ class TutorAudioState {
     this.currentAudioUrl,
     this.visemes = const [],
     this.currentVisemeIndex = 0,
-    this.currentVisemeId = '0',
+    this.mouthOpenAmount = 0.0,
     this.position = Duration.zero,
     this.duration = Duration.zero,
     this.errorMessage,
@@ -77,7 +82,7 @@ class TutorAudioState {
     String? currentAudioUrl,
     List<VisemeData>? visemes,
     int? currentVisemeIndex,
-    String? currentVisemeId,
+    double? mouthOpenAmount,
     Duration? position,
     Duration? duration,
     String? errorMessage,
@@ -88,7 +93,7 @@ class TutorAudioState {
       currentAudioUrl: currentAudioUrl ?? this.currentAudioUrl,
       visemes: visemes ?? this.visemes,
       currentVisemeIndex: currentVisemeIndex ?? this.currentVisemeIndex,
-      currentVisemeId: currentVisemeId ?? this.currentVisemeId,
+      mouthOpenAmount: mouthOpenAmount ?? this.mouthOpenAmount,
       position: position ?? this.position,
       duration: duration ?? this.duration,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -101,6 +106,13 @@ class TutorAudioState {
 // ============================================================================
 
 /// Manages TTS audio playback and viseme-based lip-sync for the tutor avatar.
+///
+/// Key design:
+/// - Audio playback via [AudioPlayer] from the `audioplayers` package
+/// - A 16ms (~60fps) periodic timer reads the current audio position and
+///   finds the matching viseme, then updates [mouthOpenAmount]
+/// - Smooth interpolation between viseme values for natural movement
+/// - Automatically transitions avatar state: idle → talking → idle
 class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
   TutorAudioNotifier() : super(const TutorAudioState()) {
     _initAudioPlayer();
@@ -110,42 +122,47 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<Duration>? _durationSubscription;
   StreamSubscription<PlayerState>? _stateSubscription;
-  Timer? _visemeTimer;
+  Timer? _lipSyncTimer;
+
+  /// Last known audio position (updated by both the position stream
+  /// and our interpolation between stream events).
+  Duration _lastKnownPosition = Duration.zero;
+
+  /// Timestamp of the last position event from AudioPlayer.
+  DateTime _lastPositionEventTime = DateTime.now();
 
   void _initAudioPlayer() {
-    _stateSubscription = _audioPlayer.onPlayerStateChanged.listen((playerState) {
+    _stateSubscription =
+        _audioPlayer.onPlayerStateChanged.listen((playerState) {
       switch (playerState) {
         case PlayerState.playing:
           state = state.copyWith(status: AudioPlaybackStatus.playing);
-          _startVisemeTracking();
+          _startLipSyncTimer();
         case PlayerState.paused:
           state = state.copyWith(status: AudioPlaybackStatus.paused);
-          _stopVisemeTracking();
+          _stopLipSyncTimer();
         case PlayerState.stopped:
           state = state.copyWith(
             status: AudioPlaybackStatus.stopped,
-            currentVisemeId: '0',
+            mouthOpenAmount: 0.0,
             currentVisemeIndex: 0,
           );
-          _stopVisemeTracking();
+          _stopLipSyncTimer();
         case PlayerState.completed:
-          state = state.copyWith(
+          state = TutorAudioState(
             status: AudioPlaybackStatus.idle,
-            currentMessageId: null,
-            currentAudioUrl: null,
-            currentVisemeId: '0',
-            currentVisemeIndex: 0,
-            position: Duration.zero,
+            // Clear everything — playback is done
           );
-          _stopVisemeTracking();
+          _stopLipSyncTimer();
         case PlayerState.disposed:
           break;
       }
     });
 
     _positionSubscription = _audioPlayer.onPositionChanged.listen((position) {
+      _lastKnownPosition = position;
+      _lastPositionEventTime = DateTime.now();
       state = state.copyWith(position: position);
-      _updateViseme(position);
     });
 
     _durationSubscription = _audioPlayer.onDurationChanged.listen((duration) {
@@ -171,6 +188,9 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
       currentAudioUrl: message.audioUrl,
       visemes: message.visemes ?? [],
     );
+
+    _lastKnownPosition = Duration.zero;
+    _lastPositionEventTime = DateTime.now();
 
     try {
       await _audioPlayer.play(UrlSource(message.audioUrl!));
@@ -199,7 +219,7 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
   /// Stop audio playback and reset state.
   Future<void> stop() async {
     await _audioPlayer.stop();
-    _stopVisemeTracking();
+    _stopLipSyncTimer();
     state = const TutorAudioState();
   }
 
@@ -208,50 +228,91 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
     await _audioPlayer.seek(position);
   }
 
-  /// Update the current viseme based on audio playback position.
-  void _updateViseme(Duration position) {
+  // --------------------------------------------------------------------------
+  // Lip-sync timer (60fps)
+  // --------------------------------------------------------------------------
+
+  /// Start the ~60fps timer that drives lip-sync.
+  void _startLipSyncTimer() {
+    _stopLipSyncTimer();
     if (state.visemes.isEmpty) return;
 
-    final positionMs = position.inMilliseconds;
-    int visemeIndex = state.currentVisemeIndex;
-
-    // Find the viseme that corresponds to the current audio position.
-    // Visemes are ordered by offsetMs, so we scan forward.
-    for (int i = 0; i < state.visemes.length; i++) {
-      if (state.visemes[i].offsetMs <= positionMs) {
-        visemeIndex = i;
-      } else {
-        break;
-      }
-    }
-
-    if (visemeIndex != state.currentVisemeIndex) {
-      state = state.copyWith(
-        currentVisemeIndex: visemeIndex,
-        currentVisemeId: state.visemes[visemeIndex].visemeId,
-      );
-    }
-  }
-
-  /// Start a timer for more granular viseme tracking between position events.
-  void _startVisemeTracking() {
-    _stopVisemeTracking();
-    if (state.visemes.isEmpty) return;
-
-    _visemeTimer = Timer.periodic(
-      const Duration(milliseconds: 50),
-      (_) {
-        if (state.isPlaying) {
-          _updateViseme(state.position);
-        }
-      },
+    _lipSyncTimer = Timer.periodic(
+      const Duration(milliseconds: 16), // ~60fps
+      (_) => _tickLipSync(),
     );
   }
 
-  /// Stop the viseme tracking timer.
-  void _stopVisemeTracking() {
-    _visemeTimer?.cancel();
-    _visemeTimer = null;
+  /// Stop the lip-sync timer.
+  void _stopLipSyncTimer() {
+    _lipSyncTimer?.cancel();
+    _lipSyncTimer = null;
+  }
+
+  /// Called ~60 times per second while audio is playing.
+  ///
+  /// Interpolates the audio position between AudioPlayer events
+  /// (which arrive at ~200ms intervals) and finds the current viseme.
+  void _tickLipSync() {
+    if (!state.isPlaying || state.visemes.isEmpty) return;
+
+    // Estimate current position by interpolating from last known event
+    final elapsed = DateTime.now().difference(_lastPositionEventTime);
+    final estimatedMs =
+        _lastKnownPosition.inMilliseconds + elapsed.inMilliseconds;
+
+    // Find the active viseme for this position
+    final visemes = state.visemes;
+    int idx = state.currentVisemeIndex;
+
+    // Scan forward from current index
+    while (idx < visemes.length - 1 &&
+        visemes[idx + 1].offsetMs <= estimatedMs) {
+      idx++;
+    }
+
+    // Also handle seeking backward
+    if (idx > 0 && visemes[idx].offsetMs > estimatedMs) {
+      idx = 0;
+      while (idx < visemes.length - 1 &&
+          visemes[idx + 1].offsetMs <= estimatedMs) {
+        idx++;
+      }
+    }
+
+    final currentViseme = visemes[idx];
+    double targetMouthOpen = currentViseme.mouthOpen;
+
+    // Smooth interpolation: if we're partway through a viseme, lerp
+    // towards the next viseme's value for smoother transitions.
+    if (idx < visemes.length - 1) {
+      final nextViseme = visemes[idx + 1];
+      final visemeStart = currentViseme.offsetMs;
+      final visemeEnd = nextViseme.offsetMs;
+      final span = visemeEnd - visemeStart;
+
+      if (span > 0) {
+        final progress =
+            ((estimatedMs - visemeStart) / span).clamp(0.0, 1.0);
+
+        // Ease-in-out interpolation for natural mouth movement
+        final t = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - (-2 * progress + 2) * (-2 * progress + 2) / 2;
+
+        targetMouthOpen = currentViseme.mouthOpen +
+            (nextViseme.mouthOpen - currentViseme.mouthOpen) * t;
+      }
+    }
+
+    // Only update state if values actually changed (avoid unnecessary rebuilds)
+    if (idx != state.currentVisemeIndex ||
+        (targetMouthOpen - state.mouthOpenAmount).abs() > 0.01) {
+      state = state.copyWith(
+        currentVisemeIndex: idx,
+        mouthOpenAmount: targetMouthOpen.clamp(0.0, 1.0),
+      );
+    }
   }
 
   @override
@@ -259,7 +320,7 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
     _positionSubscription?.cancel();
     _durationSubscription?.cancel();
     _stateSubscription?.cancel();
-    _stopVisemeTracking();
+    _stopLipSyncTimer();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -270,6 +331,18 @@ class TutorAudioNotifier extends StateNotifier<TutorAudioState> {
 // ============================================================================
 
 /// Provider for tutor audio playback and lip-sync state.
+///
+/// Usage in a widget:
+/// ```dart
+/// final audioState = ref.watch(tutorAudioProvider);
+/// AnimatedTutorAvatar(
+///   mouthOpenAmount: audioState.mouthOpenAmount,
+///   state: audioState.isPlaying
+///       ? TutorAvatarState.talking
+///       : TutorAvatarState.idle,
+///   ...
+/// )
+/// ```
 final tutorAudioProvider =
     StateNotifierProvider<TutorAudioNotifier, TutorAudioState>((ref) {
   return TutorAudioNotifier();

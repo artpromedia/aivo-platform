@@ -516,26 +516,35 @@ class TutorMessage {
 /// Viseme timing data for avatar lip-sync animation.
 ///
 /// Each viseme represents a mouth shape at a specific time offset
-/// in the TTS audio playback.
+/// in the TTS audio playback. The [mouthOpen] value (0.0–1.0) drives
+/// the avatar's mouth blend shape directly.
 class VisemeData {
   final int offsetMs;
   final String visemeId;
+  final double mouthOpen;
+  final int durationMs;
 
   const VisemeData({
     required this.offsetMs,
     required this.visemeId,
+    this.mouthOpen = 0.0,
+    this.durationMs = 0,
   });
 
   factory VisemeData.fromJson(Map<String, dynamic> json) {
     return VisemeData(
       offsetMs: json['offsetMs'] as int? ?? json['offset'] as int? ?? 0,
-      visemeId: json['visemeId'] as String? ?? json['id'] as String? ?? '0',
+      visemeId: (json['visemeId'] ?? json['id'] ?? '0').toString(),
+      mouthOpen: (json['mouthOpen'] as num?)?.toDouble() ?? 0.0,
+      durationMs: json['durationMs'] as int? ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'offsetMs': offsetMs,
         'visemeId': visemeId,
+        'mouthOpen': mouthOpen,
+        'durationMs': durationMs,
       };
 }
 
