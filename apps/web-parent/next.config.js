@@ -34,6 +34,7 @@ const nextConfig = {
     const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://localhost:4001';
     const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
     const TUTOR_SVC_URL = process.env.TUTOR_SVC_URL || 'http://localhost:4025';
+    const BILLING_SVC_URL = process.env.BILLING_SVC_URL || 'http://localhost:3150';
 
     // In development mode, don't proxy - use local API route handlers
     if (isDev) {
@@ -41,6 +42,11 @@ const nextConfig = {
     }
 
     return [
+      // Billing service routes
+      {
+        source: '/api/billing/:path*',
+        destination: `${BILLING_SVC_URL}/api/v1/billing/:path*`,
+      },
       // Tutor service routes
       {
         source: '/api/tutor/:path*',

@@ -480,6 +480,72 @@ export class EntitlementsService {
 
 export const entitlementsService = new EntitlementsService();
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ADD-ON FEATURE MAPPING
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Maps add-on plan SKUs to the feature flags they unlock.
+ * Used to check if a tenant has access to a specific add-on feature
+ * (e.g., TUTOR_MATH) based on their active subscriptions.
+ */
+export const ADDON_FEATURE_MAP: Record<string, string[]> = {
+  'ADDON_TUTOR_MATH_MONTHLY': ['TUTOR_MATH', 'TUTOR_SESSIONS', 'TUTOR_VOICE'],
+  'ADDON_TUTOR_ELA_MONTHLY': ['TUTOR_ELA', 'TUTOR_SESSIONS', 'TUTOR_VOICE'],
+  'ADDON_TUTOR_SCIENCE_MONTHLY': ['TUTOR_SCIENCE', 'TUTOR_SESSIONS', 'TUTOR_VOICE'],
+  'ADDON_TUTOR_HISTORY_MONTHLY': ['TUTOR_HISTORY', 'TUTOR_SESSIONS', 'TUTOR_VOICE'],
+  'ADDON_TUTOR_CODING_MONTHLY': ['TUTOR_CODING', 'TUTOR_SESSIONS', 'TUTOR_VOICE'],
+  'ADDON_TUTOR_BUNDLE_MONTHLY': [
+    'TUTOR_MATH', 'TUTOR_ELA', 'TUTOR_SCIENCE', 'TUTOR_HISTORY', 'TUTOR_CODING',
+    'TUTOR_SESSIONS', 'TUTOR_VOICE', 'TUTOR_BUNDLE',
+  ],
+  // Existing non-tutor add-ons
+  'ADDON_SEL_MONTHLY': ['SEL', 'FOCUS_TOOLS', 'EMOTION_TRACKING'],
+  'ADDON_SPEECH_MONTHLY': ['SPEECH', 'ARTICULATION_PRACTICE', 'THERAPIST_COLLABORATION'],
+  'ADDON_SCIENCE_MONTHLY': ['SCIENCE_ADDON', 'EXPERIMENTS', 'VIRTUAL_LABS'],
+};
+
+/**
+ * Check if a tenant has access to a specific add-on feature
+ * by looking up their active subscriptions against ADDON_FEATURE_MAP.
+ */
+export async function checkAddonFeatureAccess(
+  tenantId: string,
+  feature: string,
+): Promise<{ allowed: boolean; plan?: string; trialEndsAt?: string; reason?: string }> {
+  const billingAccount = await prisma.billingAccount.findFirst({
+    where: { tenantId },
+  });
+
+  if (!billingAccount) {
+    return { allowed: false, reason: 'No billing account found' };
+  }
+
+  const subscriptions = await prisma.subscription.findMany({
+    where: {
+      billingAccountId: billingAccount.id,
+      status: { in: ['ACTIVE', 'IN_TRIAL'] },
+    },
+    include: { plan: true },
+  });
+
+  for (const sub of subscriptions) {
+    const sku = sub.plan.sku;
+    const features = ADDON_FEATURE_MAP[sku];
+    if (features?.includes(feature)) {
+      return {
+        allowed: true,
+        plan: sku,
+        trialEndsAt: sub.status === 'IN_TRIAL' && sub.trialEndAt
+          ? sub.trialEndAt.toISOString()
+          : undefined,
+      };
+    }
+  }
+
+  return { allowed: false, reason: `No active subscription includes feature: ${feature}` };
+}
+
 // Convenience exports
 export const getEntitlements = (tenantId: string) => entitlementsService.getEntitlements(tenantId);
 export const checkFeatureAccess = (tenantId: string, feature: keyof PlanFeatures) =>

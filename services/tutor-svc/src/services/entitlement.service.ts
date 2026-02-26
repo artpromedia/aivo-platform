@@ -1,93 +1,115 @@
 import { config } from '../config.js';
 
 export interface TutorEntitlementResult {
-  allowed: boolean;
+  hasAccess: boolean;
+  plan?: string;
+  trialEndsAt?: string;
+  upgradeUrl: string;
   reason?: string;
-  sessionsRemaining?: number;
 }
 
 export class EntitlementService {
   /**
-   * Check tutor access for a tenant, optionally for a specific subject.
-   * Calls billing-svc entitlements API to verify the ai_tutor feature
-   * and optionally checks for subject-specific ADDON_TUTOR subscriptions.
+   * Check if a tenant has access to a tutor for a specific subject.
+   * Calls billing-svc internal entitlements endpoint:
+   *   GET /internal/entitlements/check?tenantId={tenantId}&feature=TUTOR_{subject}
+   *
+   * This checks both base plan features (aiTutor on PRO+) and
+   * add-on subscriptions (ADDON_TUTOR_*_MONTHLY, ADDON_TUTOR_BUNDLE_MONTHLY).
    */
-  async checkTutorAccess(tenantId: string, subject?: string): Promise<TutorEntitlementResult> {
+  async checkTutorEntitlement(tenantId: string, subject: string): Promise<TutorEntitlementResult> {
+    const feature = `TUTOR_${subject.toUpperCase()}`;
+    const upgradeUrl = `/billing/add-ons?highlight=ADDON_TUTOR_${subject.toUpperCase()}`;
+
     try {
-      // Check base ai_tutor feature access
       const response = await fetch(
-        `${config.billingSvcUrl}/api/v1/billing/entitlements/${tenantId}/features/ai_tutor`,
+        `${config.billingSvcUrl}/internal/entitlements/check?tenantId=${encodeURIComponent(tenantId)}&feature=${encodeURIComponent(feature)}`,
         {
           headers: { 'Content-Type': 'application/json' },
         },
       );
 
       if (!response.ok) {
-        // If billing service is unavailable, allow access (fail-open for dev)
+        // If billing service is unavailable, fail-open in dev
         if (process.env.NODE_ENV !== 'production') {
-          return { allowed: true };
+          return { hasAccess: true, upgradeUrl };
         }
-        return { allowed: false, reason: 'Unable to verify subscription' };
+        return { hasAccess: false, upgradeUrl, reason: 'Unable to verify subscription' };
       }
 
-      const data = (await response.json()) as { allowed: boolean; reason?: string };
+      const data = (await response.json()) as {
+        hasAccess: boolean;
+        plan?: string;
+        trialEndsAt?: string;
+        reason?: string;
+        upgradeUrl?: string;
+      };
 
-      if (!data.allowed) {
-        return { allowed: false, reason: data.reason ?? 'Tutor feature not available on your plan' };
-      }
-
-      // If subject specified, also check subject-specific add-on
-      if (subject) {
-        return this.checkSubjectAccess(tenantId, subject);
-      }
-
-      return { allowed: true };
+      return {
+        hasAccess: data.hasAccess,
+        plan: data.plan,
+        trialEndsAt: data.trialEndsAt,
+        upgradeUrl: data.upgradeUrl ?? upgradeUrl,
+        reason: data.reason,
+      };
     } catch {
       // Fail-open in development, fail-closed in production
       if (process.env.NODE_ENV !== 'production') {
-        return { allowed: true };
+        return { hasAccess: true, upgradeUrl };
       }
-      return { allowed: false, reason: 'Billing service unavailable' };
+      return { hasAccess: false, upgradeUrl, reason: 'Billing service unavailable' };
     }
   }
 
   /**
-   * Check subject-specific tutor add-on access.
-   * Queries billing-svc for ADDON_TUTOR subscriptions matching the subject.
+   * Convenience method matching the Sprint 2 API used by session routes.
+   * Returns `{ allowed, reason }` for backwards compatibility.
    */
-  private async checkSubjectAccess(tenantId: string, subject: string): Promise<TutorEntitlementResult> {
-    try {
-      const response = await fetch(
-        `${config.billingSvcUrl}/api/v1/billing/entitlements/${tenantId}/tutor/${subject.toLowerCase()}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+  async checkTutorAccess(tenantId: string, subject?: string): Promise<{ allowed: boolean; reason?: string }> {
+    if (!subject) {
+      // If no subject, check base ai_tutor feature on the plan
+      try {
+        const response = await fetch(
+          `${config.billingSvcUrl}/entitlements/check-feature`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-tenant-id': tenantId,
+              'x-user-id': 'system',
+            },
+            body: JSON.stringify({ feature: 'aiTutor' }),
+          },
+        );
 
-      if (!response.ok) {
-        // Subject-level check is optional — allow if billing doesn't support it
-        if (response.status === 404) {
-          return { allowed: true };
+        if (!response.ok) {
+          if (process.env.NODE_ENV !== 'production') return { allowed: true };
+          return { allowed: false, reason: 'Unable to verify subscription' };
         }
-        if (process.env.NODE_ENV !== 'production') {
-          return { allowed: true };
-        }
-        return { allowed: false, reason: `Unable to verify ${subject} tutor access` };
-      }
 
-      const data = (await response.json()) as { allowed: boolean; reason?: string; sessionsRemaining?: number };
-      return {
-        allowed: data.allowed,
-        reason: data.reason,
-        sessionsRemaining: data.sessionsRemaining,
-      };
-    } catch {
-      if (process.env.NODE_ENV !== 'production') {
-        return { allowed: true };
+        const data = (await response.json()) as { hasAccess: { allowed: boolean; reason?: string } };
+        return { allowed: data.hasAccess.allowed, reason: data.hasAccess.reason };
+      } catch {
+        if (process.env.NODE_ENV !== 'production') return { allowed: true };
+        return { allowed: false, reason: 'Billing service unavailable' };
       }
-      return { allowed: false, reason: 'Billing service unavailable' };
     }
+
+    // Subject-specific check via internal entitlements endpoint
+    const result = await this.checkTutorEntitlement(tenantId, subject);
+    return { allowed: result.hasAccess, reason: result.reason };
   }
 }
 
 export const entitlementService = new EntitlementService();
+
+/**
+ * Standalone function matching Sprint 3 spec:
+ * checkTutorEntitlement(tenantId, subject)
+ */
+export async function checkTutorEntitlement(
+  tenantId: string,
+  subject: string,
+): Promise<TutorEntitlementResult> {
+  return entitlementService.checkTutorEntitlement(tenantId, subject);
+}
