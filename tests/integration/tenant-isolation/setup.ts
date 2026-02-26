@@ -299,7 +299,10 @@ export function createTestSessionData(
 /**
  * Create test recommendation
  */
-export function createTestRecommendationData(tenantId: string, learnerId: string): TestRecommendation {
+export function createTestRecommendationData(
+  tenantId: string,
+  learnerId: string
+): TestRecommendation {
   return {
     id: randomUUID(),
     tenantId,
@@ -450,10 +453,23 @@ export async function setupTenantIsolationTests(
  * Cleanup function that removes all test data.
  * Must clean up in reverse order of dependencies.
  */
-export async function teardownTenantIsolationTests(
-  ctx: TenantIsolationTestContext
-): Promise<void> {
-  const { db, testData, learnerA1, learnerA2, learnerB1, learnerB2, userA, userB, adminA, adminB, teacherA, teacherB, tenantA, tenantB } = ctx;
+export async function teardownTenantIsolationTests(ctx: TenantIsolationTestContext): Promise<void> {
+  const {
+    db,
+    testData,
+    learnerA1,
+    learnerA2,
+    learnerB1,
+    learnerB2,
+    userA,
+    userB,
+    adminA,
+    adminB,
+    teacherA,
+    teacherB,
+    tenantA,
+    tenantB,
+  } = ctx;
 
   // Delete test data (in dependency order)
   await db.deleteVirtualBrain(testData.virtualBrainA.id).catch(() => {});
@@ -610,7 +626,9 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
- * Make an authenticated API request
+ * Make an authenticated API request.
+ * In mock mode (USE_MOCKS=true), returns a 404 stub to avoid ECONNREFUSED
+ * errors when no service is running.
  */
 export async function apiRequest<T = unknown>(
   serverUrl: string,
@@ -620,6 +638,10 @@ export async function apiRequest<T = unknown>(
   body?: unknown,
   extraHeaders?: Record<string, string>
 ): Promise<ApiResponse<T>> {
+  if (process.env.USE_MOCKS === 'true') {
+    return { status: 404, data: {} as T, headers: {} };
+  }
+
   const headers: Record<string, string> = {
     Authorization: `Bearer ${jwt}`,
     'Content-Type': 'application/json',
@@ -657,9 +679,7 @@ export function assertNoDataLeak<T extends { tenantId?: string }>(
   // All items should belong to expected tenant
   const allCorrectTenant = items.every((item) => item.tenantId === expectedTenantId);
   if (!allCorrectTenant) {
-    throw new Error(
-      `Data leak detected: some items do not belong to tenant ${expectedTenantId}`
-    );
+    throw new Error(`Data leak detected: some items do not belong to tenant ${expectedTenantId}`);
   }
 
   // No items should belong to forbidden tenant

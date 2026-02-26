@@ -19,6 +19,7 @@ on:
           - teacher-classroom
           - billing-subscription
           - multi-tenant-isolation
+          - additional
         default: all
       verbose:
         description: 'Enable verbose logging'
@@ -240,7 +241,8 @@ jobs:
             tests/integration/scenarios/learner-journey.integration.test.ts \
             --reporter=verbose \
             --reporter=json \
-            --outputFile=test-results/learner-journey.json
+            --outputFile=test-results/learner-journey.json \
+            --coverage.enabled
         env:
           USE_MOCKS: 'true'
           SKIP_DOCKER_SETUP: 'true'
@@ -252,6 +254,15 @@ jobs:
           name: test-results-learner-journey
           path: test-results/
           retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: tests/integration/reports/coverage
+          flags: integration-learner-journey
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # ===========================================================================
   # Integration Tests - Teacher Classroom
@@ -337,7 +348,8 @@ jobs:
             tests/integration/scenarios/teacher-classroom.integration.test.ts \
             --reporter=verbose \
             --reporter=json \
-            --outputFile=test-results/teacher-classroom.json
+            --outputFile=test-results/teacher-classroom.json \
+            --coverage.enabled
         env:
           USE_MOCKS: 'true'
           SKIP_DOCKER_SETUP: 'true'
@@ -349,6 +361,15 @@ jobs:
           name: test-results-teacher-classroom
           path: test-results/
           retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: tests/integration/reports/coverage
+          flags: integration-teacher-classroom
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # ===========================================================================
   # Integration Tests - Billing & Subscription
@@ -429,7 +450,8 @@ jobs:
             tests/integration/scenarios/billing-subscription.integration.test.ts \
             --reporter=verbose \
             --reporter=json \
-            --outputFile=test-results/billing-subscription.json
+            --outputFile=test-results/billing-subscription.json \
+            --coverage.enabled
         env:
           USE_MOCKS: 'true'
           SKIP_DOCKER_SETUP: 'true'
@@ -442,6 +464,15 @@ jobs:
           name: test-results-billing
           path: test-results/
           retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: tests/integration/reports/coverage
+          flags: integration-billing
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # ===========================================================================
   # Integration Tests - Multi-Tenant Isolation
@@ -527,7 +558,8 @@ jobs:
             tests/integration/scenarios/multi-tenant-isolation.integration.test.ts \
             --reporter=verbose \
             --reporter=json \
-            --outputFile=test-results/multi-tenant-isolation.json
+            --outputFile=test-results/multi-tenant-isolation.json \
+            --coverage.enabled
         env:
           USE_MOCKS: 'true'
           SKIP_DOCKER_SETUP: 'true'
@@ -539,6 +571,116 @@ jobs:
           name: test-results-tenant-isolation
           path: test-results/
           retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: tests/integration/reports/coverage
+          flags: integration-tenant-isolation
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # ===========================================================================
+  # Integration Tests - Additional Scenarios
+  # ===========================================================================
+  test-additional:
+    name: Test - Additional Scenarios
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: |
+      needs.build.result == 'success' && 
+      (github.event.inputs.scenario == 'all' || 
+       github.event.inputs.scenario == 'additional' ||
+       github.event.inputs.scenario == '')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.29.3
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.22.0"
+          cache: "pnpm"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run auth consistency tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/auth-consistency.test.ts \
+            --reporter=verbose \
+            --coverage.enabled
+        env:
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
+
+      - name: Run content workflow tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/content-workflow/content-workflow.test.ts \
+            --reporter=verbose \
+            --coverage.enabled
+        env:
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
+
+      - name: Run i18n integration tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/international/i18n-integration.test.ts \
+            --reporter=verbose \
+            --coverage.enabled
+        env:
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
+
+      - name: Run tenant isolation unit tests
+        run: |
+          pnpm vitest run \
+            --config tests/integration/vitest.config.ts \
+            tests/integration/tenant-isolation/ \
+            --reporter=verbose \
+            --reporter=json \
+            --outputFile=test-results/additional-scenarios.json \
+            --coverage.enabled
+        env:
+          USE_MOCKS: 'true'
+          SKIP_DOCKER_SETUP: 'true'
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-additional
+          path: test-results/
+          retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          directory: tests/integration/reports/coverage
+          flags: integration-additional
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   # ===========================================================================
   # Aggregate Results and Report
@@ -552,6 +694,7 @@ jobs:
       - test-teacher-classroom
       - test-billing
       - test-tenant-isolation
+      - test-additional
     if: always()
     
     steps:
@@ -683,6 +826,7 @@ jobs:
       - test-teacher-classroom
       - test-billing
       - test-tenant-isolation
+      - test-additional
     if: always()
     
     steps:
@@ -691,7 +835,8 @@ jobs:
           if [[ "${{ needs.test-learner-journey.result }}" == "failure" ]] || \
              [[ "${{ needs.test-teacher-classroom.result }}" == "failure" ]] || \
              [[ "${{ needs.test-billing.result }}" == "failure" ]] || \
-             [[ "${{ needs.test-tenant-isolation.result }}" == "failure" ]]; then
+             [[ "${{ needs.test-tenant-isolation.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-additional.result }}" == "failure" ]]; then
             echo "❌ Some integration tests failed"
             exit 1
           fi

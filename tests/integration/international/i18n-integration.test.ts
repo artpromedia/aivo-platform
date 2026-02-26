@@ -11,6 +11,9 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
+// Skip HTTP-dependent tests when running with mocks — they need live services
+const describeWithServices = describe.skipIf(process.env.USE_MOCKS === 'true');
+
 /* ==========================================================================
    Test Configuration
    ========================================================================== */
@@ -57,7 +60,7 @@ const TEST_REGIONS = [
    Geolocation Service Tests
    ========================================================================== */
 
-describe('Geolocation Service Integration', () => {
+describeWithServices('Geolocation Service Integration', () => {
   describe('Country Detection', () => {
     it.each(TEST_REGIONS)('should detect $country from IP header', async ({ country }) => {
       const response = await fetch(`${TEST_CONTEXT.geolocationUrl}/api/detect`, {
@@ -124,7 +127,7 @@ describe('Geolocation Service Integration', () => {
    Payment Gateway Tests
    ========================================================================== */
 
-describe('Payment Gateway Integration', () => {
+describeWithServices('Payment Gateway Integration', () => {
   describe('Gateway Selection', () => {
     const gatewayMappings = [
       { country: 'US', gateway: 'stripe' },
@@ -201,8 +204,22 @@ describe('Payment Gateway Integration', () => {
 
 describe('Translation Coverage', () => {
   const SUPPORTED_LOCALES = [
-    'en', 'es', 'fr', 'de', 'pt', 'ar', 'hi', 'sw',
-    'zh', 'ja', 'ko', 'it', 'nl', 'ru', 'tr', 'vi',
+    'en',
+    'es',
+    'fr',
+    'de',
+    'pt',
+    'ar',
+    'hi',
+    'sw',
+    'zh',
+    'ja',
+    'ko',
+    'it',
+    'nl',
+    'ru',
+    'tr',
+    'vi',
   ];
 
   const CRITICAL_KEYS = [
@@ -261,7 +278,7 @@ describe('Translation Coverage', () => {
    Compliance Service Tests
    ========================================================================== */
 
-describe('Compliance Service Integration', () => {
+describeWithServices('Compliance Service Integration', () => {
   describe('Regulation Detection', () => {
     it.each(TEST_REGIONS)(
       'should detect regulations for $country',
@@ -329,7 +346,7 @@ describe('Compliance Service Integration', () => {
    Cross-Border Transfer Tests
    ========================================================================== */
 
-describe('Cross-Border Data Transfer', () => {
+describeWithServices('Cross-Border Data Transfer', () => {
   describe('Adequacy Decisions', () => {
     const adequateCountries = ['JP', 'KR', 'GB', 'CH', 'CA', 'NZ', 'AR', 'UY'];
 
@@ -405,7 +422,7 @@ describe('Cross-Border Data Transfer', () => {
    Consent Management Tests
    ========================================================================== */
 
-describe('Consent Management', () => {
+describeWithServices('Consent Management', () => {
   describe('Consent Categories', () => {
     const CONSENT_CATEGORIES = [
       'essential',
@@ -471,7 +488,7 @@ describe('Consent Management', () => {
    Data Subject Request Tests
    ========================================================================== */
 
-describe('Data Subject Requests', () => {
+describeWithServices('Data Subject Requests', () => {
   describe('Request Types', () => {
     const DSR_TYPES = [
       'ACCESS',
@@ -520,7 +537,7 @@ describe('Data Subject Requests', () => {
    Breach Notification Tests
    ========================================================================== */
 
-describe('Breach Notification', () => {
+describeWithServices('Breach Notification', () => {
   describe('Jurisdiction Requirements', () => {
     const jurisdictions = [
       { code: 'EU', deadlineHours: 72 },
@@ -571,7 +588,7 @@ describe('Breach Notification', () => {
    Performance Tests
    ========================================================================== */
 
-describe('Performance Benchmarks', () => {
+describeWithServices('Performance Benchmarks', () => {
   const LATENCY_THRESHOLD_MS = 200;
 
   describe('Geolocation Latency', () => {

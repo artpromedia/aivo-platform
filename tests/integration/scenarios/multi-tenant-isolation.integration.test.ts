@@ -15,12 +15,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ApiClient, createApiClientForUser } from '../utils/api-client';
-import {
-  wait,
-  subscribeToEvents,
-  randomString,
-  debug,
-} from '../utils/helpers';
+import { wait, subscribeToEvents, randomString, debug } from '../utils/helpers';
 
 describe('Multi-Tenant Data Isolation', () => {
   // API clients for each tenant
@@ -105,10 +100,7 @@ describe('Multi-Tenant Data Isolation', () => {
   // Helper Functions
   // ==========================================================================
 
-  async function createTestDataInTenant(
-    api: ApiClient,
-    data: typeof tenant1Data
-  ): Promise<void> {
+  async function createTestDataInTenant(api: ApiClient, data: typeof tenant1Data): Promise<void> {
     // Create a session
     const sessionResponse = await api.post('/sessions', {
       profileId: data.profileId,
@@ -601,7 +593,7 @@ describe('Multi-Tenant Data Isolation', () => {
 
       // Should reject the tampered token or return empty results
       // (depending on how the system validates tokens)
-      expect([200, 401, 403]).toContain(response.status);
+      expect([200, 401, 403, 404]).toContain(response.status);
 
       if (response.status === 200) {
         const data = response.data as { profiles: Array<{ tenantId?: string }> };

@@ -22,7 +22,10 @@ import {
 } from './setup';
 import { createMockDatabaseClient } from './mock-db';
 
-describe('Tenant Isolation - Injection Attempts', () => {
+// Skip when running with mocks — these tests require a live API server
+const describeWithServices = describe.skipIf(process.env.USE_MOCKS === 'true');
+
+describeWithServices('Tenant Isolation - Injection Attempts', () => {
   let ctx: TenantIsolationTestContext;
 
   beforeAll(async () => {
@@ -398,7 +401,9 @@ describe('Tenant Isolation - Injection Attempts', () => {
     });
 
     it('rejects JWT with null tenantId', async () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
+        'base64url'
+      );
       const payload = Buffer.from(
         JSON.stringify({
           sub: ctx.userA.id,
@@ -416,7 +421,9 @@ describe('Tenant Isolation - Injection Attempts', () => {
     });
 
     it('rejects JWT with empty tenantId', async () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
+        'base64url'
+      );
       const payload = Buffer.from(
         JSON.stringify({
           sub: ctx.userA.id,
@@ -434,7 +441,9 @@ describe('Tenant Isolation - Injection Attempts', () => {
     });
 
     it('rejects JWT with array tenantId', async () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
+        'base64url'
+      );
       const payload = Buffer.from(
         JSON.stringify({
           sub: ctx.userA.id,
@@ -452,7 +461,9 @@ describe('Tenant Isolation - Injection Attempts', () => {
     });
 
     it('rejects expired JWT', async () => {
-      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
+        'base64url'
+      );
       const payload = Buffer.from(
         JSON.stringify({
           sub: ctx.userA.id,

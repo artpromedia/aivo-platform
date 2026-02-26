@@ -18,7 +18,10 @@ import {
 } from './setup';
 import { createMockDatabaseClient } from './mock-db';
 
-describe('Tenant Isolation - API Endpoints', () => {
+// Skip when running with mocks — these tests require a live API server
+const describeWithServices = describe.skipIf(process.env.USE_MOCKS === 'true');
+
+describeWithServices('Tenant Isolation - API Endpoints', () => {
   let ctx: TenantIsolationTestContext;
 
   beforeAll(async () => {

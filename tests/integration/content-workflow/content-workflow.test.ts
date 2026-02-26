@@ -89,7 +89,10 @@ async function apiRequest<T = unknown>(
 // TEST SETUP
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('Content Workflow', () => {
+// Skip when running with mocks — these tests require a live content-svc
+const describeWithServices = describe.skipIf(process.env.USE_MOCKS === 'true');
+
+describeWithServices('Content Workflow', () => {
   const ctx: TestContext = {
     serverUrl: process.env.CONTENT_SVC_URL || 'http://localhost:4020',
     author: {
@@ -344,18 +347,12 @@ describe('Content Workflow', () => {
 
     it('should allow author to resubmit after changes', async () => {
       // Update content
-      await apiRequest(
-        ctx.serverUrl,
-        'PATCH',
-        `/api/versions/${testVersionId}`,
-        ctx.author.jwt,
-        {
-          contentJson: {
-            type: 'generic',
-            body: { content: 'Updated content with more detail as requested' },
-          },
-        }
-      );
+      await apiRequest(ctx.serverUrl, 'PATCH', `/api/versions/${testVersionId}`, ctx.author.jwt, {
+        contentJson: {
+          type: 'generic',
+          body: { content: 'Updated content with more detail as requested' },
+        },
+      });
 
       // Resubmit
       const response = await apiRequest<Version>(
@@ -458,12 +455,7 @@ describe('Content Workflow', () => {
         role: 'TEACHER', // Not a reviewer
       });
 
-      const response = await apiRequest(
-        ctx.serverUrl,
-        'GET',
-        '/api/review-queue',
-        nonReviewerJwt
-      );
+      const response = await apiRequest(ctx.serverUrl, 'GET', '/api/review-queue', nonReviewerJwt);
 
       expect([401, 403]).toContain(response.status);
     });
