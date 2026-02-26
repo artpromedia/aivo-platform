@@ -844,8 +844,12 @@ jobs:
                     envFrom:
                       - secretRef:
                           name: shared-secrets
-                      - secretRef:
-                          name: auth-svc-secrets
+                    env:
+                      - name: DATABASE_URL
+                        valueFrom:
+                          secretKeyRef:
+                            name: auth-svc-secrets
+                            key: database-url
                     resources:
                       requests:
                         memory: "256Mi"
