@@ -1,6 +1,7 @@
 /// Tutor Sessions Screen
 ///
-/// View a child's tutor session history and detailed session reports.
+/// View a child's tutor session history with analytics summary,
+/// subject breakdown, and detailed session list with transcript access.
 library;
 
 import 'package:flutter/material.dart';
@@ -8,27 +9,69 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/tutor_models.dart';
 import '../providers/tutor_provider.dart';
+import 'tutor_transcript_screen.dart';
 
-/// Screen displaying a child's past tutor sessions.
-///
-/// Shows a chronological list of completed tutor sessions grouped by date.
-/// Tapping a session expands a detailed session report inline.
-class TutorSessionsScreen extends ConsumerWidget {
+/// Subject color lookup matching the backend SUBJECT_COLORS.
+const Map<String, Color> _subjectColors = {
+  'MATH': Color(0xFF3B82F6),
+  'ELA': Color(0xFFA855F7),
+  'SCIENCE': Color(0xFF22C55E),
+  'HISTORY': Color(0xFFF97316),
+  'CODING': Color(0xFF06B6D4),
+};
+
+Color _colorForSubject(String subject) =>
+    _subjectColors[subject.toUpperCase()] ?? Colors.grey;
+
+IconData _iconForSubject(String subject) {
+  switch (subject.toUpperCase()) {
+    case 'MATH':
+      return Icons.calculate;
+    case 'ELA':
+      return Icons.menu_book;
+    case 'SCIENCE':
+      return Icons.science;
+    case 'HISTORY':
+      return Icons.public;
+    case 'CODING':
+      return Icons.code;
+    default:
+      return Icons.school;
+  }
+}
+
+/// Screen displaying analytics summary and session list for a child.
+class TutorSessionsScreen extends ConsumerStatefulWidget {
   const TutorSessionsScreen({
     super.key,
     required this.childId,
     required this.childName,
   });
 
-  /// The ID of the child whose sessions to display.
   final String childId;
-
-  /// Display name for the child, used in the app bar subtitle.
   final String childName;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sessionsAsync = ref.watch(tutorSessionsProvider(childId));
+  ConsumerState<TutorSessionsScreen> createState() =>
+      _TutorSessionsScreenState();
+}
+
+class _TutorSessionsScreenState extends ConsumerState<TutorSessionsScreen> {
+  int _currentPage = 1;
+  String? _subjectFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final summaryAsync = ref.watch(
+      tutorAnalyticsSummaryProvider(learnerId: widget.childId),
+    );
+    final sessionsAsync = ref.watch(
+      tutorAnalyticsSessionsProvider(
+        learnerId: widget.childId,
+        subject: _subjectFilter,
+        page: _currentPage,
+      ),
+    );
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -41,7 +84,7 @@ class TutorSessionsScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.only(left: 16, bottom: 8),
               child: Text(
-                childName,
+                widget.childName,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -50,124 +93,341 @@ class TutorSessionsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: sessionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _ErrorState(
-          message: error.toString(),
-          onRetry: () => ref.invalidate(tutorSessionsProvider(childId)),
-        ),
-        data: (sessions) {
-          if (sessions.isEmpty) {
-            return _EmptyState(childName: childName);
-          }
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(
+            tutorAnalyticsSummaryProvider(learnerId: widget.childId),
+          );
+          ref.invalidate(
+            tutorAnalyticsSessionsProvider(
+              learnerId: widget.childId,
+              subject: _subjectFilter,
+              page: _currentPage,
+            ),
+          );
+        },
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
+          children: [
+            // ── Summary stats ──────────────────────────────────────
+            summaryAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Could not load summary',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+              data: (summary) => _SummarySection(summary: summary),
+            ),
 
-          return RefreshIndicator(
-            onRefresh: () async =>
-                ref.invalidate(tutorSessionsProvider(childId)),
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: sessions.length,
-              itemBuilder: (context, index) {
-                final session = sessions[index];
-                final showDateHeader = index == 0 ||
-                    !_isSameDay(
-                      sessions[index - 1].startedAt,
-                      session.startedAt,
-                    );
+            // ── Subject filter ─────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Sessions',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  _SubjectFilterChip(
+                    selected: _subjectFilter,
+                    onChanged: (subject) {
+                      setState(() {
+                        _subjectFilter = subject;
+                        _currentPage = 1;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Session list ───────────────────────────────────────
+            sessionsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, _) => _ErrorCard(
+                message: error.toString(),
+                onRetry: () => ref.invalidate(
+                  tutorAnalyticsSessionsProvider(
+                    learnerId: widget.childId,
+                    subject: _subjectFilter,
+                    page: _currentPage,
+                  ),
+                ),
+              ),
+              data: (response) {
+                if (response.sessions.isEmpty) {
+                  return _EmptyState(childName: widget.childName);
+                }
 
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (showDateHeader)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          _formatDateHeader(session.startedAt),
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    _SessionTile(
-                      session: session,
-                      childId: childId,
+                    ...response.sessions.map(
+                      (session) => _AnalyticsSessionTile(session: session),
                     ),
+                    if (response.totalPages > 1)
+                      _PaginationControls(
+                        currentPage: response.page,
+                        totalPages: response.totalPages,
+                        onPageChanged: (page) {
+                          setState(() => _currentPage = page);
+                        },
+                      ),
                   ],
                 );
               },
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
-  }
-
-  // ── Date helpers ───────────────────────────────────────────────────
-
-  static bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  static String _formatDateHeader(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(date.year, date.month, date.day);
-    final diff = today.difference(target).inDays;
-
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff < 7) return _weekdayName(date.weekday);
-
-    return '${_monthName(date.month)} ${date.day}, ${date.year}';
-  }
-
-  static String _weekdayName(int weekday) {
-    const days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return days[weekday - 1];
-  }
-
-  static String _monthName(int month) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return months[month - 1];
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SESSION TILE
+// SUMMARY SECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// A single session list tile. Tapping it opens the session report.
-class _SessionTile extends ConsumerWidget {
-  const _SessionTile({
-    required this.session,
-    required this.childId,
-  });
+class _SummarySection extends StatelessWidget {
+  const _SummarySection({required this.summary});
 
-  final TutorSession session;
-  final String childId;
+  final TutorAnalyticsSummary summary;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stats row
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.chat_bubble_outline,
+                  label: 'Sessions',
+                  value: '${summary.totalSessions}',
+                  color: Colors.indigo,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.timer_outlined,
+                  label: 'Minutes',
+                  value: '${summary.totalMinutes}',
+                  color: Colors.teal,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatCard(
+                  icon: Icons.message_outlined,
+                  label: 'Messages',
+                  value: '${summary.totalMessages}',
+                  color: Colors.purple,
+                ),
+              ),
+            ],
+          ),
+
+          // Subject breakdown
+          if (summary.subjectBreakdown.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'By Subject',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...summary.subjectBreakdown.map(
+              (sb) => _SubjectBar(breakdown: sb, total: summary.totalMinutes),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubjectBar extends StatelessWidget {
+  const _SubjectBar({required this.breakdown, required this.total});
+
+  final SubjectBreakdown breakdown;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = _colorForSubject(breakdown.subject);
+    final fraction = total > 0 ? breakdown.minutes / total : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(_iconForSubject(breakdown.subject), size: 16, color: color),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 64,
+            child: Text(
+              breakdown.subject,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: fraction.clamp(0.0, 1.0),
+                backgroundColor: color.withValues(alpha: 0.1),
+                valueColor: AlwaysStoppedAnimation(color),
+                minHeight: 8,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${breakdown.minutes}m',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUBJECT FILTER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _SubjectFilterChip extends StatelessWidget {
+  const _SubjectFilterChip({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final String? selected;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String?>(
+      initialValue: selected,
+      onSelected: onChanged,
+      child: Chip(
+        label: Text(selected ?? 'All Subjects'),
+        avatar: const Icon(Icons.filter_list, size: 16),
+        visualDensity: VisualDensity.compact,
+      ),
+      itemBuilder: (context) => [
+        const PopupMenuItem(value: null, child: Text('All Subjects')),
+        const PopupMenuDivider(),
+        const PopupMenuItem(value: 'MATH', child: Text('Math')),
+        const PopupMenuItem(value: 'ELA', child: Text('ELA')),
+        const PopupMenuItem(value: 'SCIENCE', child: Text('Science')),
+        const PopupMenuItem(value: 'HISTORY', child: Text('History')),
+        const PopupMenuItem(value: 'CODING', child: Text('Coding')),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS SESSION TILE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _AnalyticsSessionTile extends StatelessWidget {
+  const _AnalyticsSessionTile({required this.session});
+
+  final AnalyticsSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = _colorForSubject(session.subject);
+    final startedAt = DateTime.tryParse(session.startedAt);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showSessionReport(context, ref),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TutorTranscriptScreen(
+              sessionId: session.id,
+              personaName: session.persona.name,
+              subject: session.subject,
+            ),
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -177,12 +437,12 @@ class _SessionTile extends ConsumerWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _subjectColor(session.subject).withValues(alpha: 0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
-                  _subjectIcon(session.subject),
-                  color: _subjectColor(session.subject),
+                  _iconForSubject(session.subject),
+                  color: color,
                   size: 22,
                 ),
               ),
@@ -197,61 +457,71 @@ class _SessionTile extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            session.personaName,
+                            session.persona.name,
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Text(
-                          _formatTime(session.startedAt),
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                        if (startedAt != null)
+                          Text(
+                            _formatTime(startedAt),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(
-                          _subjectIcon(session.subject),
+                          _iconForSubject(session.subject),
                           size: 14,
-                          color: colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _subjectLabel(session.subject),
+                          session.subject,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Icon(
                           Icons.timer_outlined,
                           size: 14,
-                          color: colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${session.durationMinutes} min',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        if (session.masteryScoreDelta != null) ...[
-                          const SizedBox(width: 12),
-                          _MasteryDeltaBadge(delta: session.masteryScoreDelta!),
-                        ],
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.message_outlined,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${session.messageCount}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
-                    if (session.summary != null) ...[
+                    if (session.topic != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        session.summary!,
+                        session.topic!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -260,12 +530,11 @@ class _SessionTile extends ConsumerWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 4),
               Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -273,28 +542,6 @@ class _SessionTile extends ConsumerWidget {
       ),
     );
   }
-
-  void _showSessionReport(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) =>
-            _SessionReportSheet(
-              childId: childId,
-              sessionId: session.id,
-              scrollController: scrollController,
-            ),
-      ),
-    );
-  }
-
-  // ── Formatting helpers ─────────────────────────────────────────────
 
   static String _formatTime(DateTime dt) {
     final hour = dt.hour == 0
@@ -305,429 +552,48 @@ class _SessionTile extends ConsumerWidget {
     final period = dt.hour >= 12 ? 'PM' : 'AM';
     return '$hour:${dt.minute.toString().padLeft(2, '0')} $period';
   }
-
-  static IconData _subjectIcon(String subject) {
-    switch (subject.toLowerCase()) {
-      case 'math':
-        return Icons.calculate;
-      case 'reading':
-        return Icons.menu_book;
-      case 'science':
-        return Icons.science;
-      case 'writing':
-        return Icons.edit_note;
-      case 'socialstudies':
-      case 'social studies':
-        return Icons.public;
-      case 'sel':
-        return Icons.favorite;
-      case 'coding':
-        return Icons.code;
-      case 'language':
-        return Icons.translate;
-      default:
-        return Icons.school;
-    }
-  }
-
-  static String _subjectLabel(String subject) {
-    switch (subject.toLowerCase()) {
-      case 'math':
-        return 'Math';
-      case 'reading':
-        return 'Reading';
-      case 'science':
-        return 'Science';
-      case 'writing':
-        return 'Writing';
-      case 'socialstudies':
-      case 'social studies':
-        return 'Social Studies';
-      case 'sel':
-        return 'SEL';
-      case 'coding':
-        return 'Coding';
-      case 'language':
-        return 'Language';
-      default:
-        return subject;
-    }
-  }
-
-  static Color _subjectColor(String subject) {
-    switch (subject.toLowerCase()) {
-      case 'math':
-        return Colors.blue;
-      case 'reading':
-        return Colors.purple;
-      case 'science':
-        return Colors.teal;
-      case 'writing':
-        return Colors.orange;
-      case 'socialstudies':
-      case 'social studies':
-        return Colors.brown;
-      case 'sel':
-        return Colors.pink;
-      case 'coding':
-        return Colors.indigo;
-      case 'language':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SESSION REPORT SHEET
+// PAGINATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// Bottom sheet that fetches and shows the detailed session report.
-class _SessionReportSheet extends ConsumerWidget {
-  const _SessionReportSheet({
-    required this.childId,
-    required this.sessionId,
-    required this.scrollController,
+class _PaginationControls extends StatelessWidget {
+  const _PaginationControls({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
   });
 
-  final String childId;
-  final String sessionId;
-  final ScrollController scrollController;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final reportAsync =
-        ref.watch(tutorSessionReportProvider(childId, sessionId));
-    final theme = Theme.of(context);
-
-    return reportAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 12),
-            Text('Failed to load report', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(error.toString(), style: theme.textTheme.bodySmall),
-          ],
-        ),
-      ),
-      data: (report) => SingleChildScrollView(
-        controller: scrollController,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle bar
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Title
-            Text(
-              'Session Report',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${report.personaName} -- ${report.subject}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Quick stats row
-            Row(
-              children: [
-                _ReportStat(
-                  icon: Icons.timer,
-                  label: 'Duration',
-                  value: '${report.durationMinutes} min',
-                ),
-                const SizedBox(width: 16),
-                if (report.masteryScoreBefore != null &&
-                    report.masteryScoreAfter != null)
-                  _ReportStat(
-                    icon: Icons.trending_up,
-                    label: 'Mastery',
-                    value: '${report.masteryScoreBefore}% '
-                        '-> ${report.masteryScoreAfter}%',
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Summary
-            Text(
-              'Summary',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(report.summary, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 20),
-
-            // Topics covered
-            if (report.topicsCovered.isNotEmpty) ...[
-              Text(
-                'Topics Covered',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: report.topicsCovered
-                    .map(
-                      (topic) => Chip(
-                        label: Text(topic),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // Skills practiced
-            if (report.skillsPracticed.isNotEmpty) ...[
-              Text(
-                'Skills Practiced',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...report.skillsPracticed.map(
-                (skill) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(skill, style: theme.textTheme.bodyMedium),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // AI notes
-            if (report.aiNotes != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer
-                      .withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.psychology,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'AI Tutor Notes',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            report.aiNotes!,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // Parent recommendation
-            if (report.parentRecommendation != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.lightbulb_outline,
-                      size: 18,
-                      color: Colors.amber,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Recommendation',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.amber.shade800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            report.parentRecommendation!,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // Close button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Small stat block used in the report sheet.
-class _ReportStat extends StatelessWidget {
-  const _ReportStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    value,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Mastery score delta badge.
-class _MasteryDeltaBadge extends StatelessWidget {
-  const _MasteryDeltaBadge({required this.delta});
-
-  final int delta;
-
-  @override
-  Widget build(BuildContext context) {
-    final isPositive = delta > 0;
-    final color = isPositive ? Colors.green : Colors.red;
-    final prefix = isPositive ? '+' : '';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-            size: 10,
-            color: color,
+          IconButton(
+            onPressed:
+                currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
+            icon: const Icon(Icons.chevron_left),
+            iconSize: 20,
           ),
-          const SizedBox(width: 2),
           Text(
-            '$prefix$delta%',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+            'Page $currentPage of $totalPages',
+            style: theme.textTheme.bodySmall,
+          ),
+          IconButton(
+            onPressed: currentPage < totalPages
+                ? () => onPageChanged(currentPage + 1)
+                : null,
+            icon: const Icon(Icons.chevron_right),
+            iconSize: 20,
           ),
         ],
       ),
@@ -735,7 +601,10 @@ class _MasteryDeltaBadge extends StatelessWidget {
   }
 }
 
-/// Empty state when no sessions exist for the child.
+// ═══════════════════════════════════════════════════════════════════════════════
+// EMPTY / ERROR STATES
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.childName});
 
@@ -755,7 +624,8 @@ class _EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                color:
+                    theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -774,7 +644,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '$childName hasn\'t had any tutor sessions yet.\n'
-              'Sessions will appear here once they start learning with a tutor.',
+              'Sessions will appear here once they start learning.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -787,12 +657,8 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// Error state with retry affordance.
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -801,34 +667,31 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load sessions',
-              style: theme.textTheme.titleLarge,
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          const SizedBox(height: 12),
+          Text(
+            'Failed to load sessions',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

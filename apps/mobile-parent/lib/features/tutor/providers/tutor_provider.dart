@@ -67,3 +67,44 @@ Future<TutorSessionReport> tutorSessionReport(
   final api = ref.watch(tutorApiProvider);
   return api.fetchSessionReport(childId, sessionId);
 }
+
+// ============================================================
+// Analytics Providers (Sprint 9)
+// ============================================================
+
+/// Provider for the aggregated analytics summary.
+@riverpod
+Future<TutorAnalyticsSummary> tutorAnalyticsSummary(
+  Ref ref, {
+  String? learnerId,
+  int days = 30,
+}) async {
+  final api = ref.watch(tutorApiProvider);
+  return api.fetchAnalyticsSummary(learnerId: learnerId, days: days);
+}
+
+/// Provider for paginated analytics sessions.
+@riverpod
+Future<AnalyticsSessionsResponse> tutorAnalyticsSessions(
+  Ref ref, {
+  required String learnerId,
+  String? subject,
+  int page = 1,
+}) async {
+  final api = ref.watch(tutorApiProvider);
+  return api.fetchAnalyticsSessions(
+    learnerId: learnerId,
+    subject: subject,
+    page: page,
+  );
+}
+
+/// Provider for a session transcript.
+@riverpod
+Future<TranscriptResponse> tutorTranscript(
+  Ref ref,
+  String sessionId,
+) async {
+  final api = ref.watch(tutorApiProvider);
+  return api.fetchTranscript(sessionId);
+}

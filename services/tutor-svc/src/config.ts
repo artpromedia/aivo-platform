@@ -48,4 +48,9 @@ export const config = {
   aiStreamTimeoutMs: parseInt(process.env.AI_STREAM_TIMEOUT_MS || '30000', 10),
   // Redis (for TTS cache)
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379/9',
+  // NATS (for event publishing)
+  nats: {
+    enabled: process.env.NATS_ENABLED !== 'false',
+    url: process.env.NATS_URL || 'nats://localhost:4222',
+  },
 };

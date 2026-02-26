@@ -133,3 +133,161 @@ class TutorSessionReport with _$TutorSessionReport {
   factory TutorSessionReport.fromJson(Map<String, dynamic> json) =>
       _$TutorSessionReportFromJson(json);
 }
+
+// ============================================================================
+// ANALYTICS MODELS (Sprint 9)
+// ============================================================================
+
+/// Subject breakdown entry from the analytics summary.
+@freezed
+class SubjectBreakdown with _$SubjectBreakdown {
+  const factory SubjectBreakdown({
+    required String subject,
+    required int sessions,
+    required int minutes,
+    @Default([]) List<String> topTopics,
+    required String color,
+  }) = _SubjectBreakdown;
+
+  factory SubjectBreakdown.fromJson(Map<String, dynamic> json) =>
+      _$SubjectBreakdownFromJson(json);
+}
+
+/// Weekly usage entry from the analytics summary.
+@freezed
+class WeeklyUsage with _$WeeklyUsage {
+  const factory WeeklyUsage({
+    required String week,
+    required int sessions,
+    required int minutes,
+  }) = _WeeklyUsage;
+
+  factory WeeklyUsage.fromJson(Map<String, dynamic> json) =>
+      _$WeeklyUsageFromJson(json);
+}
+
+/// Per-learner breakdown from the analytics summary.
+@freezed
+class LearnerBreakdown with _$LearnerBreakdown {
+  const factory LearnerBreakdown({
+    required String learnerId,
+    required int totalSessions,
+    required int totalMinutes,
+    String? favoriteSubject,
+    String? lastSessionAt,
+  }) = _LearnerBreakdown;
+
+  factory LearnerBreakdown.fromJson(Map<String, dynamic> json) =>
+      _$LearnerBreakdownFromJson(json);
+}
+
+/// Aggregated analytics summary returned by GET /analytics/summary.
+@freezed
+class TutorAnalyticsSummary with _$TutorAnalyticsSummary {
+  const factory TutorAnalyticsSummary({
+    required int totalSessions,
+    required int totalMinutes,
+    required int totalMessages,
+    required double averageSessionMinutes,
+    @Default([]) List<SubjectBreakdown> subjectBreakdown,
+    @Default([]) List<WeeklyUsage> weeklyUsage,
+    @Default([]) List<LearnerBreakdown> learners,
+  }) = _TutorAnalyticsSummary;
+
+  factory TutorAnalyticsSummary.fromJson(Map<String, dynamic> json) =>
+      _$TutorAnalyticsSummaryFromJson(json);
+}
+
+/// Persona info embedded in an analytics session.
+@freezed
+class AnalyticsPersona with _$AnalyticsPersona {
+  const factory AnalyticsPersona({
+    required String name,
+    required String slug,
+    String? avatar,
+  }) = _AnalyticsPersona;
+
+  factory AnalyticsPersona.fromJson(Map<String, dynamic> json) =>
+      _$AnalyticsPersonaFromJson(json);
+}
+
+/// A session entry from the paginated analytics sessions endpoint.
+@freezed
+class AnalyticsSession with _$AnalyticsSession {
+  const factory AnalyticsSession({
+    required String id,
+    required String subject,
+    required AnalyticsPersona persona,
+    String? topic,
+    required String startedAt,
+    String? endedAt,
+    required int durationMinutes,
+    required int messageCount,
+    String? locale,
+    String? status,
+    required String color,
+  }) = _AnalyticsSession;
+
+  factory AnalyticsSession.fromJson(Map<String, dynamic> json) =>
+      _$AnalyticsSessionFromJson(json);
+}
+
+/// Paginated session list response.
+@freezed
+class AnalyticsSessionsResponse with _$AnalyticsSessionsResponse {
+  const factory AnalyticsSessionsResponse({
+    required List<AnalyticsSession> sessions,
+    required int total,
+    required int page,
+    required int pageSize,
+    required int totalPages,
+  }) = _AnalyticsSessionsResponse;
+
+  factory AnalyticsSessionsResponse.fromJson(Map<String, dynamic> json) =>
+      _$AnalyticsSessionsResponseFromJson(json);
+}
+
+/// A single message in a transcript.
+@freezed
+class TranscriptMessage with _$TranscriptMessage {
+  const factory TranscriptMessage({
+    required String id,
+    required String role,
+    required String content,
+    String? emotion,
+    required String createdAt,
+  }) = _TranscriptMessage;
+
+  factory TranscriptMessage.fromJson(Map<String, dynamic> json) =>
+      _$TranscriptMessageFromJson(json);
+}
+
+/// Transcript response with session metadata and messages.
+@freezed
+class TranscriptResponse with _$TranscriptResponse {
+  const factory TranscriptResponse({
+    required TranscriptSession session,
+    required List<TranscriptMessage> messages,
+  }) = _TranscriptResponse;
+
+  factory TranscriptResponse.fromJson(Map<String, dynamic> json) =>
+      _$TranscriptResponseFromJson(json);
+}
+
+/// Session metadata within a transcript response.
+@freezed
+class TranscriptSession with _$TranscriptSession {
+  const factory TranscriptSession({
+    required String id,
+    required String subject,
+    String? topic,
+    required AnalyticsPersona persona,
+    required String startedAt,
+    String? endedAt,
+    required int durationMinutes,
+    String? locale,
+  }) = _TranscriptSession;
+
+  factory TranscriptSession.fromJson(Map<String, dynamic> json) =>
+      _$TranscriptSessionFromJson(json);
+}

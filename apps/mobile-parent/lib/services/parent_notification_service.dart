@@ -64,9 +64,22 @@ class ParentNotificationService {
       case NotificationTypes.sessionCompleted:
       case NotificationTypes.sessionSummary:
         final childId = notification.data['child_id'];
-        if (childId != null) {
-          // Navigate to the child's progress report
+        final source = notification.data['source'];
+        if (childId != null && source == 'tutor') {
+          router.push('/tutor-sessions/$childId');
+        } else if (childId != null) {
           router.push('/progress-report/$childId');
+        } else {
+          router.push('/dashboard');
+        }
+        break;
+
+      case 'tutor_session_completed':
+      case 'tutor_mastery_milestone':
+      case 'tutor_weekly_summary':
+        final childId = notification.data['child_id'] ?? notification.data['learner_id'];
+        if (childId != null) {
+          router.push('/tutor-sessions/$childId');
         } else {
           router.push('/dashboard');
         }
@@ -152,6 +165,16 @@ class ParentNotificationService {
         final childId = notification.data['child_id'];
         if (childId != null) {
           _ref.invalidate(childProgressProvider(childId));
+        }
+        break;
+
+      case 'tutor_session_completed':
+      case 'tutor_mastery_milestone':
+      case 'tutor_weekly_summary':
+        // Refresh tutor analytics data
+        final tutorChildId = notification.data['child_id'] ?? notification.data['learner_id'];
+        if (tutorChildId != null) {
+          _ref.invalidate(childSessionsProvider(tutorChildId));
         }
         break;
     }

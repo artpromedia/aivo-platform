@@ -8,6 +8,8 @@ import { prisma } from '../prisma.js';
 import type { JwtUser } from '../types/index.js';
 import { resolveLocaleConfig } from '../services/locale.service.js';
 import { getVoiceConfig } from '../services/voice-config.service.js';
+import { trackSessionStarted, trackSessionEnded } from '../services/analytics.service.js';
+import { emitSessionCompleted } from '../services/notification.service.js';
 
 const CreateSessionSchema = z.object({
   learnerId: z.string().uuid(),
@@ -83,6 +85,17 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       const voiceFallbackUsed = voiceConfig
         ? voiceConfig.locale !== session.locale
         : false;
+
+      // Fire analytics event (non-blocking)
+      trackSessionStarted({
+        sessionId: session.id,
+        learnerId: session.learnerId,
+        tenantId,
+        subject: session.subject,
+        personaSlug: persona.slug,
+        locale: session.locale,
+        startedAt: session.startedAt.toISOString(),
+      }).catch(() => {});
 
       return reply.status(201).send({
         id: session.id,
@@ -345,6 +358,37 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       }
 
       const session = await sessionService.end(sessionId);
+
+      // Fire analytics + notification events (non-blocking)
+      const durationMs = session.endedAt && session.startedAt
+        ? session.endedAt.getTime() - session.startedAt.getTime()
+        : session.totalDurationMs ?? 0;
+
+      trackSessionEnded({
+        sessionId: session.id,
+        learnerId: session.learnerId,
+        tenantId,
+        subject: session.subject,
+        personaSlug: existing.persona?.slug ?? '',
+        locale: session.locale,
+        startedAt: session.startedAt.toISOString(),
+        endedAt: session.endedAt?.toISOString() ?? new Date().toISOString(),
+        durationMs,
+        messageCount: session.totalMessages ?? 0,
+        status: session.status,
+        topic: session.topic ?? undefined,
+      }).catch(() => {});
+
+      emitSessionCompleted({
+        sessionId: session.id,
+        learnerId: session.learnerId,
+        tenantId,
+        subject: session.subject,
+        personaName: existing.persona?.name ?? '',
+        durationMinutes: Math.round(durationMs / 60000),
+        messageCount: session.totalMessages ?? 0,
+        topic: session.topic ?? undefined,
+      }).catch(() => {});
 
       return {
         id: session.id,

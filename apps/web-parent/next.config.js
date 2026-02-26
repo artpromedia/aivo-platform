@@ -50,7 +50,7 @@ const nextConfig = {
       // Tutor service routes
       {
         source: '/api/tutor/:path*',
-        destination: `${TUTOR_SVC_URL}/tutor/:path*`,
+        destination: `${TUTOR_SVC_URL}/api/v1/tutor/:path*`,
       },
       // Parent service routes
       {

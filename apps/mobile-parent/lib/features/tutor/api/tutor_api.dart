@@ -79,4 +79,58 @@ class TutorApi {
       response.data as Map<String, dynamic>,
     );
   }
+
+  // ============================================================
+  // Analytics APIs (Sprint 9)
+  // ============================================================
+
+  /// Fetch aggregated analytics summary.
+  Future<TutorAnalyticsSummary> fetchAnalyticsSummary({
+    String? learnerId,
+    int days = 30,
+  }) async {
+    final params = <String, dynamic>{'days': days};
+    if (learnerId != null) params['learnerId'] = learnerId;
+
+    final response = await _dio.get(
+      '/api/v1/tutor/analytics/summary',
+      queryParameters: params,
+    );
+    return TutorAnalyticsSummary.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
+  /// Fetch paginated session list for analytics.
+  Future<AnalyticsSessionsResponse> fetchAnalyticsSessions({
+    required String learnerId,
+    String? subject,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final params = <String, dynamic>{
+      'learnerId': learnerId,
+      'page': page,
+      'pageSize': pageSize,
+    };
+    if (subject != null) params['subject'] = subject;
+
+    final response = await _dio.get(
+      '/api/v1/tutor/analytics/sessions',
+      queryParameters: params,
+    );
+    return AnalyticsSessionsResponse.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
+
+  /// Fetch full transcript for a session.
+  Future<TranscriptResponse> fetchTranscript(String sessionId) async {
+    final response = await _dio.get(
+      '/api/v1/tutor/analytics/sessions/$sessionId/transcript',
+    );
+    return TranscriptResponse.fromJson(
+      response.data as Map<String, dynamic>,
+    );
+  }
 }
