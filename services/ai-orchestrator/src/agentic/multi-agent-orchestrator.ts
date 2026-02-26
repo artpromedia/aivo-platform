@@ -27,6 +27,7 @@ import type { LLMMessage } from '../providers/llm-provider.interface.js';
  */
 export type SpecialistAgentType =
   | 'TUTOR'
+  | 'SUBJECT_TUTOR'
   | 'GOAL_PLANNER'
   | 'FOCUS_MONITOR'
   | 'EMOTIONAL_SUPPORT'
@@ -228,6 +229,16 @@ export const AGENT_REGISTRY: Record<SpecialistAgentType, AgentCapability> = {
     capabilities: ['explanation', 'scaffolding', 'question-answering', 'concept-teaching'],
     inputTypes: ['question', 'problem', 'concept'],
     outputTypes: ['explanation', 'guiding-question', 'hint'],
+    priority: 1,
+    maxConcurrentTasks: 1,
+  },
+  SUBJECT_TUTOR: {
+    type: 'SUBJECT_TUTOR',
+    name: 'Subject-Specific Tutor',
+    description: 'Subject-specific AI tutor with persona-driven teaching style for MATH, ELA, SCIENCE, HISTORY, and CODING',
+    capabilities: ['subject-tutoring', 'persona-driven-teaching', 'socratic-method', 'adaptive-difficulty', 'voice-responses'],
+    inputTypes: ['subject-question', 'topic-help', 'concept-explanation'],
+    outputTypes: ['guided-explanation', 'practice-question', 'encouragement'],
     priority: 1,
     maxConcurrentTasks: 1,
   },

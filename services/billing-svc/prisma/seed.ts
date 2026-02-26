@@ -36,6 +36,14 @@ const PLAN_ADDON_SCIENCE = '00000000-0000-0000-bb10-000000000012';
 const PLAN_DISTRICT_BASE = '00000000-0000-0000-bb10-000000000020';
 const PLAN_DISTRICT_SEL = '00000000-0000-0000-bb10-000000000021';
 
+// Tutor Add-on Plans
+const PLAN_ADDON_TUTOR_MATH = '00000000-0000-0000-bb10-000000000030';
+const PLAN_ADDON_TUTOR_ELA = '00000000-0000-0000-bb10-000000000031';
+const PLAN_ADDON_TUTOR_SCIENCE = '00000000-0000-0000-bb10-000000000032';
+const PLAN_ADDON_TUTOR_HISTORY = '00000000-0000-0000-bb10-000000000033';
+const PLAN_ADDON_TUTOR_CODING = '00000000-0000-0000-bb10-000000000034';
+const PLAN_ADDON_TUTOR_BUNDLE = '00000000-0000-0000-bb10-000000000035';
+
 async function main() {
   console.log('🌱 Seeding billing-svc...');
 
@@ -160,6 +168,110 @@ async function main() {
       metadataJson: {
         modules: ['SEL'],
         features: ['sel_curriculum', 'behavior_tracking', 'intervention_tools'],
+      },
+    },
+    // Tutor Add-on Plans
+    {
+      id: PLAN_ADDON_TUTOR_MATH,
+      sku: 'ADDON_TUTOR_MATH',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Math Tutor - Nova',
+      description: 'AI-powered math tutor with space-themed persona',
+      unitPriceCents: 499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersona: 'nova-math',
+        subject: 'MATH',
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking'],
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_ELA,
+      sku: 'ADDON_TUTOR_ELA',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI ELA Tutor - Sage',
+      description: 'AI-powered reading and writing tutor',
+      unitPriceCents: 499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersona: 'sage-ela',
+        subject: 'ELA',
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking'],
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_SCIENCE,
+      sku: 'ADDON_TUTOR_SCIENCE',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Science Tutor - Spark',
+      description: 'AI-powered science tutor with inventor persona',
+      unitPriceCents: 499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersona: 'spark-science',
+        subject: 'SCIENCE',
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking'],
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_HISTORY,
+      sku: 'ADDON_TUTOR_HISTORY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI History Tutor - Chrono',
+      description: 'AI-powered history tutor with time-travel persona',
+      unitPriceCents: 499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersona: 'chrono-history',
+        subject: 'HISTORY',
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking'],
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_CODING,
+      sku: 'ADDON_TUTOR_CODING',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Coding Tutor - Pixel',
+      description: 'AI-powered coding tutor with robot persona',
+      unitPriceCents: 499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersona: 'pixel-coding',
+        subject: 'CODING',
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking'],
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_BUNDLE,
+      sku: 'ADDON_TUTOR_BUNDLE',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Tutor Bundle - All Subjects',
+      description: 'All 5 AI tutors at a discounted price',
+      unitPriceCents: 1499,
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        tutorPersonas: ['nova-math', 'sage-ela', 'spark-science', 'chrono-history', 'pixel-coding'],
+        subjects: ['MATH', 'ELA', 'SCIENCE', 'HISTORY', 'CODING'],
+        features: ['unlimited_sessions', 'voice_responses', 'progress_tracking', 'priority_support'],
+        parentCategory: 'ai_tutor',
+        isBundle: true,
       },
     },
   ];
@@ -299,7 +411,7 @@ async function main() {
   console.log('✅ billing-svc seeding complete!');
   console.log('');
   console.log('Created:');
-  console.log('  - 7 plans (parent base/addons, district base/addons)');
+  console.log('  - 14 plans (parent base/addons, tutor addons, district base/addons)');
   console.log('  - 2 billing accounts (parent, district)');
   console.log('  - 3 subscriptions (parent trial with SEL, district active)');
   console.log('');

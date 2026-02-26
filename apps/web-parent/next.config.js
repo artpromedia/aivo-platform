@@ -33,6 +33,7 @@ const nextConfig = {
     const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
     const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://localhost:4001';
     const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
+    const TUTOR_SVC_URL = process.env.TUTOR_SVC_URL || 'http://localhost:4020';
 
     // In development mode, don't proxy - use local API route handlers
     if (isDev) {
@@ -40,6 +41,11 @@ const nextConfig = {
     }
 
     return [
+      // Tutor service routes
+      {
+        source: '/api/tutor/:path*',
+        destination: `${TUTOR_SVC_URL}/tutor/:path*`,
+      },
       // Parent service routes
       {
         source: '/api/parent/:path*',

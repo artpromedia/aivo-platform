@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum TutorSubject {
+  MATH
+  ELA
+  SCIENCE
+  HISTORY
+  CODING
+
+  @@map("tutor_subject")
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXPIRED
+
+  @@map("session_status")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+
+  @@map("message_role")
+}
+
+enum EmotionType {
+  NEUTRAL
+  HAPPY
+  THINKING
+  ENCOURAGING
+  EXCITED
+  EMPATHETIC
+
+  @@map("emotion_type")
+}
+
+// ── Models ───────────────────────────────────────────────────────────────────
+
+/// Tutor persona / character definitions
+model TutorPersona {
+  id              String       @id @default(uuid()) @db.Uuid
+  slug            String       @unique @db.VarChar(50)
+  name            String       @db.VarChar(100)
+  subject         TutorSubject
+  description     String
+  avatarAssetKey  String       @map("avatar_asset_key") @db.VarChar(100)
+  personalityJson Json         @map("personality_json")
+  systemPrompt    String       @map("system_prompt")
+  isActive        Boolean      @default(true) @map("is_active")
+  sortOrder       Int          @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  sessions     TutorSession[]
+  voiceConfigs TutorVoiceConfig[]
+
+  @@index([subject, isActive])
+  @@map("tutor_personas")
+}
+
+/// Active or completed tutor sessions
+model TutorSession {
+  id         String        @id @default(uuid()) @db.Uuid
+  tenantId   String        @map("tenant_id") @db.Uuid
+  learnerId  String        @map("learner_id") @db.Uuid
+  personaId  String        @map("persona_id") @db.Uuid
+  status     SessionStatus @default(ACTIVE)
+  subject    TutorSubject
+  topic      String?       @db.VarChar(255)
+
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  endedAt     DateTime? @map("ended_at") @db.Timestamptz
+  lastActiveAt DateTime @default(now()) @map("last_active_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  persona   TutorPersona          @relation(fields: [personaId], references: [id])
+  messages  TutorMessage[]
+  analytics TutorSessionAnalytics?
+
+  @@index([tenantId, learnerId, status])
+  @@index([personaId])
+  @@index([learnerId, startedAt(sort: Desc)])
+  @@map("tutor_sessions")
+}
+
+/// Chat message history within a tutor session
+model TutorMessage {
+  id        String      @id @default(uuid()) @db.Uuid
+  sessionId String      @map("session_id") @db.Uuid
+  role      MessageRole
+  content   String
+  emotion   EmotionType @default(NEUTRAL)
+
+  // Optional metadata for AI-generated messages
+  tokensUsed    Int?  @map("tokens_used")
+  latencyMs     Int?  @map("latency_ms")
+  metadataJson  Json? @map("metadata_json")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  session TutorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("tutor_messages")
+}
+
+/// Usage metrics per session (for parent analytics)
+model TutorSessionAnalytics {
+  id              String @id @default(uuid()) @db.Uuid
+  sessionId       String @unique @map("session_id") @db.Uuid
+
+  durationSeconds Int    @default(0) @map("duration_seconds")
+  messageCount    Int    @default(0) @map("message_count")
+  userMessageCount Int   @default(0) @map("user_message_count")
+  topicsDiscussed String[] @default([]) @map("topics_discussed")
+  averageResponseMs Int? @map("average_response_ms")
+  engagementScore Decimal? @map("engagement_score") @db.Decimal(4, 3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  session TutorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("tutor_session_analytics")
+}
+
+/// TTS voice configuration per persona and locale
+model TutorVoiceConfig {
+  id        String @id @default(uuid()) @db.Uuid
+  personaId String @map("persona_id") @db.Uuid
+  locale    String @db.VarChar(10)
+
+  voiceName   String @map("voice_name") @db.VarChar(100)
+  provider    String @db.VarChar(50)
+  speakingRate Decimal @default(1.0) @map("speaking_rate") @db.Decimal(3, 2)
+  pitch       Decimal @default(0) @db.Decimal(4, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  persona TutorPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([personaId, locale])
+  @@map("tutor_voice_configs")
+}

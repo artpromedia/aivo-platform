@@ -84,3 +84,8 @@ export 'utils/mock_guard.dart';
 
 // Feature flags for parity rollout
 export 'features/features.dart';
+
+// Tutor avatar (Rive animations)
+export 'widgets/tutor_avatar/animated_tutor_avatar.dart';
+export 'widgets/tutor_avatar/tutor_avatar_state.dart';
+export 'widgets/tutor_avatar/tutor_persona_asset.dart';

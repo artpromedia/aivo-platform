@@ -482,7 +482,10 @@ export const entitlementsService = new EntitlementsService();
 
 // Convenience exports
 export const getEntitlements = (tenantId: string) => entitlementsService.getEntitlements(tenantId);
-export const checkFeatureAccess = (tenantId: string, feature: keyof PlanFeatures) => 
+export const checkFeatureAccess = (tenantId: string, feature: keyof PlanFeatures) =>
   entitlementsService.checkFeatureAccess(tenantId, feature);
 export const checkLimitUsage = (tenantId: string, limitType: keyof PlanLimits, usage?: number) =>
   entitlementsService.checkLimitUsage(tenantId, limitType, usage);
+
+// Tutor entitlements — re-export from dedicated module
+export { tutorEntitlementsService, type TutorEntitlement } from './tutor-entitlements.js';

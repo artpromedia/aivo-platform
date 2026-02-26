@@ -348,6 +348,19 @@ services:
       - writing
 
   # ---------------------------------------------------------------------------
+  # Tutor Service (AI tutoring sessions)
+  # ---------------------------------------------------------------------------
+  - name: tutor-svc
+    url: http://host.docker.internal:4020
+    connect_timeout: 5000
+    write_timeout: 60000
+    read_timeout: 120000
+    retries: 2
+    tags:
+      - ai
+      - education
+
+  # ---------------------------------------------------------------------------
   # Apollo Router (GraphQL)
   # ---------------------------------------------------------------------------
   - name: apollo-router
@@ -1124,6 +1137,35 @@ routes:
           policy: redis
           redis_host: redis
           redis_port: 6379
+
+  # ---------------------------------------------------------------------------
+  # Tutor Routes (AI tutoring sessions - requires consent)
+  # ---------------------------------------------------------------------------
+  - name: tutor-routes
+    paths:
+      - /api/v1/tutor
+    methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+    strip_path: false
+    service: tutor-svc
+    plugins:
+      - name: jwt
+      - name: dash_context
+      - name: consent_gate
+        config:
+          consent_service_url: http://host.docker.internal:3020
+          required_consent_type: AI_TUTOR
+          cache_ttl: 300
+      - name: rate-limiting
+        config:
+          minute: 200
+          policy: redis
+          redis_host: redis
+          redis_port: 6379
+          limit_by: consumer
 
 # =============================================================================
 # CONSUMERS - API consumers (tenants/users with rate limit tiers)
