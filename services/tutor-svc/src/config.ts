@@ -44,6 +44,8 @@ export const config = {
   audioS3AccessKey: process.env.AUDIO_S3_ACCESS_KEY || '',
   audioS3SecretKey: process.env.AUDIO_S3_SECRET_KEY || '',
   audioCdnBase: process.env.AUDIO_CDN_BASE || '',
+  // Streaming
+  aiStreamTimeoutMs: parseInt(process.env.AI_STREAM_TIMEOUT_MS || '30000', 10),
   // Redis (for TTS cache)
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379/9',
 };

@@ -6,6 +6,7 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { personaRoutes } from './routes/personas.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { messageRoutes } from './routes/messages.js';
+import { streamRoutes } from './routes/stream.js';
 import { analyticsRoutes } from './routes/analytics.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -32,6 +33,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   void fastify.register(personaRoutes, { prefix: '/api/v1/tutor/personas' });
   void fastify.register(sessionRoutes, { prefix: '/api/v1/tutor/sessions' });
   void fastify.register(messageRoutes, { prefix: '/api/v1/tutor/sessions' });
+  void fastify.register(streamRoutes, { prefix: '/api/v1/tutor/sessions' });
   void fastify.register(analyticsRoutes, { prefix: '/api/v1/tutor/analytics' });
 
   return fastify;
