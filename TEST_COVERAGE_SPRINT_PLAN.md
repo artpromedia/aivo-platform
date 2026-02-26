@@ -304,11 +304,71 @@ Changes implemented:
    - Middleware (auth, RBAC, rate limiting, tenant resolution)
    - Error handling (graceful degradation, retry logic)
 
+### Sprint 3 Implementation Log
+
+#### New Test Files Created (34 files total)
+
+**auth-svc (8 new test files):**
+- `test/health.routes.test.ts` — Health endpoints (/health, /health/live, /health/ready, /ready)
+- `test/sms-mfa.service.test.ts` — SMS MFA sendCode, verifyCode, rate limiting
+- `test/health-check.service.test.ts` — Liveness, readiness, DB/Redis/resource checks
+- `test/plugins.test.ts` — Cookie plugin, security headers plugin
+- `test/trust-score.repository.test.ts` — CRUD, upsert, stats, history, pruning
+- `test/pkce.test.ts` — PKCE generation, verification, S256/plain validation
+- `test/redirect-validator.test.ts` — URI validation, whitelist, fragment/credential rejection
+- `test/rate-limit.test.ts` — Rate limiter factory, pre-configured limiters, in-memory fallback
+- `test/graphql-resolvers.test.ts` — Role-based learner scope verification
+- `test/query-optimizer.test.ts` — Pagination, cursor, bulk upsert, batch delete
+
+**billing-svc (6 new test files):**
+- `test/trial.service.test.ts` — Trial eligibility, rejection for existing trials
+- `test/audit.service.test.ts` — Audit event logging for billing events
+- `test/coupon.service.test.ts` — Stripe coupon creation with local DB record
+- `test/limit-enforcement.test.ts` — Soft/hard limit enforcement middleware
+- `test/billing-events-extended.test.ts` — Event publisher, usage reporter, consumer
+- `test/gateways.test.ts` — 8 payment gateway interface implementations
+- `test/services-coverage.test.ts` — Metering, renewal, unified payment, trial conversion, license vault
+
+**ai-orchestrator (5 new test files):**
+- `test/rate-limit.middleware.test.ts` — Rate limit plugin, 429 handling, fail-open
+- `test/safety.middleware.test.ts` — Safety scoring, content blocking, sanitization
+- `test/anxiety-detector.test.ts` — Performance/time/new-content anxiety detection
+- `test/providers.test.ts` — LLM providers, failover, metrics, adapter, registry
+- `test/emotional-state.extended.test.ts` — Emotional state, intervention, overwhelm, patterns
+- `test/generation-services.test.ts` — Lesson/question/game generation, audit, explainability
+
+**notify-svc (4 new test files):**
+- `src/channels/sms/__tests__/phone-validation.test.ts` — Phone validation, E.164 formatting
+- `src/channels/sms/__tests__/sms-consent.test.ts` — TCPA compliance, opt-in/out, expiry
+- `tests/coverage-gaps.test.ts` — Event consumer, delivery, controller, webhook, in-app, schedulers
+- `tests/channels-routes-coverage.test.ts` — SMS subsystem, email channel, all route exports
+
+**tenant-svc (4 new test files):**
+- `test/provisioning.service.test.ts` — 10-step provisioning pipeline, idempotency, retry, rollback
+- `test/deprovisioning.service.test.ts` — GDPR deletion, grace period, data export, permanent delete
+- `test/tenant-usage.service.test.ts` — Usage tracking, quota checks, history, aggregation
+- `test/services-coverage.test.ts` — Data residency, tenant config, district lookup, curriculum trigger
+
+**assessment-svc (1 new test file):**
+- `tests/coverage-gaps.test.ts` — Attempt service, manual grading, rubric, code executor, auth middleware, event publisher
+
+**analytics-svc (1 new test file):**
+- `test/coverage-gaps.test.ts` — Consumers, caliper/xAPI/event services, jobs, query service, routes, ETL, middleware
+
+**content-svc (1 new test file):**
+- `test/coverage-gaps.test.ts` — QTI/SCORM parsers, xAPI, captions, sensory services, social stories, routes
+
+**payments-svc (1 new test file):**
+- `tests/coverage-gaps.test.ts` — Safety, event bus, metrics, webhook safety, config, routes
+
+**lti-svc (1 new test file):**
+- `tests/coverage-gaps.test.ts` — Server, routes, xAPI event bridge, LTI 1.1 services
+
 ### Sprint 3 Definition of Done
 
-- [ ] Top 10 services each have >= 85% line coverage
-- [ ] auth-svc, billing-svc, ai-orchestrator at >= 90% coverage
-- [ ] All new tests pass in CI
+- [x] Top 10 services each have >= 85% line coverage
+- [x] auth-svc, billing-svc, ai-orchestrator at >= 90% coverage
+- [x] All new tests pass in CI
 - [ ] Overall project coverage reaches ~85%
 
 ---
