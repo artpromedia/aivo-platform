@@ -52,6 +52,9 @@ export const OWASP_COVERAGE = {
     testFiles: [
       'sso-security.test.ts', // Authentication flows
       'xss-csrf.security.test.ts', // CSRF protection
+      'authentication-bypass.security.test.ts', // JWT/auth bypass vectors
+      'authorization-escalation.security.test.ts', // Privilege escalation, IDOR
+      'api-abuse.security.test.ts', // Mass assignment, IDOR, excessive data exposure
     ],
     description:
       'Access control enforces policy such that users cannot act outside of their intended permissions.',
@@ -76,6 +79,7 @@ export const OWASP_COVERAGE = {
     testFiles: [
       'input-validation.security.test.ts', // Input validation design
       'rate-limiting.security.test.ts', // Rate limiting design
+      'api-abuse.security.test.ts', // API abuse patterns, resource exhaustion
     ],
     description: 'Missing or ineffective control design.',
   },
@@ -96,6 +100,8 @@ export const OWASP_COVERAGE = {
     testFiles: [
       'sso-security.test.ts', // SSO/SAML security
       'rate-limiting.security.test.ts', // Brute force protection
+      'authentication-bypass.security.test.ts', // JWT bypass, token manipulation
+      'session-fixation.security.test.ts', // Session fixation, hijacking, cookies
     ],
     description: 'Confirmation of the user identity, authentication, and session management.',
   },
@@ -250,17 +256,58 @@ afterEach(() => {
  * - HTTP Methods: ~4 tests
  * Subtotal: ~73 tests
  *
- * File: sso-security.test.ts (existing)
+ * File: sso-security.test.ts
  * - SAML Security: ~50+ tests
  * Subtotal: ~50 tests
  *
+ * File: authentication-bypass.security.test.ts (Sprint 4)
+ * - JWT Algorithm Bypass: ~7 tests
+ * - JWT Header Injection: ~4 tests
+ * - Auth Header Bypass: ~12 tests
+ * - Protected Endpoints: ~10 tests
+ * - Path Traversal Bypass: ~12 tests
+ * - Token Manipulation: ~6 tests
+ * - HTTP Method Override: ~3 tests
+ * - Cookie/Password/Registration Bypass: ~10 tests
+ * Subtotal: ~64 tests
+ *
+ * File: authorization-escalation.security.test.ts (Sprint 4)
+ * - Vertical Privilege Escalation: ~24 tests
+ * - Role Manipulation: ~4 tests
+ * - Horizontal Privilege Escalation (IDOR): ~11 tests
+ * - Tenant Isolation: ~8 tests
+ * - Function-Level Access Control: ~4 tests
+ * - Response Data Filtering: ~3 tests
+ * Subtotal: ~54 tests
+ *
+ * File: session-fixation.security.test.ts (Sprint 4)
+ * - Session Fixation Prevention: ~4 tests
+ * - Session ID Security: ~4 tests
+ * - Cookie Security Flags: ~5 tests
+ * - Session Hijacking Prevention: ~3 tests
+ * - Session Timeout: ~3 tests
+ * - Logout Security: ~4 tests
+ * - Session Replay Prevention: ~3 tests
+ * Subtotal: ~26 tests
+ *
+ * File: api-abuse.security.test.ts (Sprint 4)
+ * - Mass Assignment Protection: ~22 tests
+ * - Excessive Data Exposure: ~6 tests
+ * - IDOR Protection: ~4 tests
+ * - Pagination/Filtering Abuse: ~12 tests
+ * - GraphQL Abuse: ~7 tests
+ * - Bulk Operation Abuse: ~3 tests
+ * - API Versioning/Discovery: ~4 tests
+ * - Resource Exhaustion: ~3 tests
+ * Subtotal: ~61 tests
+ *
  * ===================================
- * TOTAL: ~307 security test cases
+ * TOTAL: ~512 security test cases
  * ===================================
  *
  * Acceptance Criteria Met:
- * ✅ Minimum 50 security test cases (actual: 307+)
- * ✅ All 4 new test files created
- * ✅ OWASP Top 10 basics covered
+ * ✅ Minimum 50 security test cases (actual: 512+)
+ * ✅ 9 security test files (5 existing + 4 new Sprint 4)
+ * ✅ OWASP Top 10 coverage expanded (8 of 10 directly tested)
  * ✅ Tests structured for CI pipeline
  */
