@@ -6,7 +6,6 @@ library;
 
 import 'package:flutter/material.dart';
 import 'i18n.dart';
-import 'i18n_provider.dart';
 import 'types.dart';
 
 /// The set of locales to show in the switcher (primary UI locales only)
@@ -288,7 +287,6 @@ class _BottomSheetSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentLocale = i18n.currentLocale;
-    final theme = Theme.of(context);
 
     return OutlinedButton.icon(
       onPressed: () => _showLanguageSheet(context),

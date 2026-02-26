@@ -110,7 +110,6 @@ class AivoToastController {
   static AivoToastController get instance => _instance;
 
   final _toasts = Queue<_ToastEntry>();
-  final _listeners = <VoidCallback>[];
 
   OverlayEntry? _overlayEntry;
   Timer? _dismissTimer;
