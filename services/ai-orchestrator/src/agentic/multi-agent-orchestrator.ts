@@ -17,6 +17,7 @@ import type { Redis } from 'ioredis';
 
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
+import { TUTOR_PREMIUM_REGISTRY } from './subject-tutor-registry.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -28,6 +29,11 @@ import type { LLMMessage } from '../providers/llm-provider.interface.js';
 export type SpecialistAgentType =
   | 'TUTOR'
   | 'SUBJECT_TUTOR'
+  | 'TUTOR_MATH_PREMIUM'
+  | 'TUTOR_ELA_PREMIUM'
+  | 'TUTOR_SCIENCE_PREMIUM'
+  | 'TUTOR_HISTORY_PREMIUM'
+  | 'TUTOR_CODING_PREMIUM'
   | 'GOAL_PLANNER'
   | 'FOCUS_MONITOR'
   | 'EMOTIONAL_SUPPORT'
@@ -222,6 +228,9 @@ export const DEFAULT_MULTI_AGENT_CONFIG: MultiAgentConfig = {
  * Registry of available specialist agents
  */
 export const AGENT_REGISTRY: Record<SpecialistAgentType, AgentCapability> = {
+  // Premium subject tutors (Sprint 2)
+  ...TUTOR_PREMIUM_REGISTRY,
+
   TUTOR: {
     type: 'TUTOR',
     name: 'Socratic Tutor',

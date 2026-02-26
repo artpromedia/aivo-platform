@@ -2,8 +2,13 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma, TutorMessageRole } from '../prisma.js';
-import { sessionService } from '../services/session.service.js';
-import { config } from '../config.js';
+import {
+  sessionService,
+  callAiOrchestrator,
+  detectEmotion,
+  mapEmotionToAvatarState,
+} from '../services/session.service.js';
+import type { JwtUser } from '../types/index.js';
 
 const SendMessageSchema = z.object({
   content: z.string().min(1).max(4000),
@@ -17,7 +22,7 @@ const ListMessagesSchema = z.object({
 export async function messageRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/v1/tutor/sessions/:sessionId/messages
-   * Send a message and get AI response
+   * Send a message and get AI response with emotion detection.
    */
   fastify.post(
     '/:sessionId/messages',
@@ -30,10 +35,21 @@ export async function messageRoutes(fastify: FastifyInstance) {
     ) => {
       const { sessionId } = request.params;
       const { content } = SendMessageSchema.parse(request.body);
+      const user = request.user as JwtUser;
+      const tenantId = user?.tenantId ?? user?.tenant_id;
+
+      if (!tenantId) {
+        return reply.status(401).send({ error: 'Tenant ID required' });
+      }
 
       const session = await sessionService.getById(sessionId);
       if (!session) {
         return reply.status(404).send({ error: 'Session not found' });
+      }
+
+      // Verify tenant ownership
+      if (session.tenantId !== tenantId) {
+        return reply.status(403).send({ error: 'Access denied' });
       }
 
       if (session.status !== 'ACTIVE') {
@@ -66,31 +82,25 @@ export async function messageRoutes(fastify: FastifyInstance) {
       // Call AI orchestrator for response
       const startTime = Date.now();
       let aiContent: string;
+      let tokensUsed = 0;
 
       try {
-        const aiResponse = await fetch(`${config.aiOrchestratorUrl}/api/v1/ai/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agentType: 'SUBJECT_TUTOR',
+        const aiResponse = await callAiOrchestrator({
+          agentType: `TUTOR_${session.subject}_PREMIUM`,
+          subject: session.subject,
+          personaSlug: session.persona.slug,
+          systemPrompt: session.persona.systemPromptTemplate,
+          messages: conversationHistory,
+          context: {
+            sessionId,
             subject: session.subject,
-            personaSlug: session.persona.slug,
-            systemPrompt: session.persona.systemPromptTemplate,
-            messages: conversationHistory,
-            context: {
-              sessionId,
-              subject: session.subject,
-              topic: session.topic,
-            },
-          }),
+            topic: session.topic ?? undefined,
+            locale: session.locale,
+          },
         });
 
-        if (aiResponse.ok) {
-          const data = (await aiResponse.json()) as { content: string };
-          aiContent = data.content;
-        } else {
-          aiContent = "I'm having a moment - could you try asking that again?";
-        }
+        aiContent = aiResponse.content;
+        tokensUsed = aiResponse.metadata?.tokens ?? 0;
       } catch {
         aiContent =
           "I'm having trouble connecting right now. Let me try again - could you repeat your question?";
@@ -98,22 +108,30 @@ export async function messageRoutes(fastify: FastifyInstance) {
 
       const latencyMs = Date.now() - startTime;
 
+      // Detect emotion and map to avatar state
+      const emotionTag = detectEmotion(aiContent);
+      const avatarState = mapEmotionToAvatarState(emotionTag);
+
       // Save AI response
       const aiMessage = await prisma.tutorMessage.create({
         data: {
           sessionId,
           role: TutorMessageRole.ASSISTANT,
           content: aiContent,
-          emotionTag: 'neutral',
-          avatarState: 'talking',
+          emotionTag,
+          avatarState,
+          tokensUsed,
           latencyMs,
         },
       });
 
-      // Update session message count
+      // Update session message count and token usage
       await prisma.tutorSession.update({
         where: { id: sessionId },
-        data: { totalMessages: { increment: 2 } },
+        data: {
+          totalMessages: { increment: 2 },
+          totalTokensUsed: { increment: tokensUsed },
+        },
       });
 
       // Update analytics
@@ -139,6 +157,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
           content: aiMessage.content,
           emotionTag: aiMessage.emotionTag,
           avatarState: aiMessage.avatarState,
+          tokensUsed,
           createdAt: aiMessage.createdAt.toISOString(),
           latencyMs,
         },
@@ -148,7 +167,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
 
   /**
    * GET /api/v1/tutor/sessions/:sessionId/messages
-   * List messages in a session
+   * List messages in a session with tenant ownership verification.
    */
   fastify.get(
     '/:sessionId/messages',
@@ -161,10 +180,21 @@ export async function messageRoutes(fastify: FastifyInstance) {
     ) => {
       const { sessionId } = request.params;
       const query = ListMessagesSchema.parse(request.query);
+      const user = request.user as JwtUser;
+      const tenantId = user?.tenantId ?? user?.tenant_id;
+
+      if (!tenantId) {
+        return reply.status(401).send({ error: 'Tenant ID required' });
+      }
 
       const session = await sessionService.getById(sessionId);
       if (!session) {
         return reply.status(404).send({ error: 'Session not found' });
+      }
+
+      // Verify tenant ownership
+      if (session.tenantId !== tenantId) {
+        return reply.status(403).send({ error: 'Access denied' });
       }
 
       const messages = await prisma.tutorMessage.findMany({

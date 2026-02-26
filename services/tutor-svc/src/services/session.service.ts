@@ -1,4 +1,146 @@
 import { prisma, TutorSessionStatus, TutorMessageRole } from '../prisma.js';
+import { config } from '../config.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Service Client Types
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface LearnerProfile {
+  id: string;
+  learnerId: string;
+  gradeBand: string;
+  gradeLevel?: number;
+  age?: number;
+  learningStyle?: string;
+  summary?: {
+    totalSkills: number;
+    byDomain: Record<string, { count: number; avgMastery: number }>;
+  };
+}
+
+export interface AiOrchestratorRequest {
+  agentType: string;
+  subject: string;
+  personaSlug: string;
+  systemPrompt: string;
+  messages: Array<{ role: string; content: string }>;
+  context: {
+    sessionId: string;
+    subject: string;
+    topic?: string;
+    locale?: string;
+    learnerProfile?: LearnerProfile;
+  };
+}
+
+export interface AiOrchestratorResponse {
+  content: string;
+  metadata?: {
+    model?: string;
+    provider?: string;
+    tokens?: number;
+    latencyMs?: number;
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Emotion Detection
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const EMOTION_KEYWORDS: Record<string, string[]> = {
+  encouraging: ['great', 'awesome', 'excellent', 'fantastic', 'wonderful', 'amazing', 'good job', 'well done', 'keep going', 'you got this', 'proud'],
+  celebrating: ['congratulations', 'hooray', 'yay', 'bravo', 'perfect', 'nailed it', 'correct', 'right answer', 'you did it'],
+  empathetic: ['understand', 'it\'s okay', 'don\'t worry', 'take your time', 'no rush', 'that\'s alright', 'happens to everyone', 'it\'s normal'],
+  curious: ['interesting', 'wonder', 'what if', 'think about', 'imagine', 'explore', 'discover', 'let\'s find out', 'curious'],
+  thinking: ['hmm', 'let me think', 'consider', 'let\'s look at', 'let\'s figure', 'let\'s work through', 'step by step'],
+  cheerful: ['hello', 'welcome', 'glad', 'happy', 'fun', 'excited', 'let\'s get started', 'ready'],
+};
+
+const AVATAR_STATE_MAP: Record<string, string> = {
+  encouraging: 'talking',
+  celebrating: 'celebrating',
+  empathetic: 'thinking',
+  curious: 'thinking',
+  thinking: 'thinking',
+  cheerful: 'talking',
+  neutral: 'idle',
+};
+
+/**
+ * Detect the emotional tone of an AI response using keyword matching
+ */
+export function detectEmotion(text: string): string {
+  const lowerText = text.toLowerCase();
+  let bestMatch = 'neutral';
+  let bestScore = 0;
+
+  for (const [emotion, keywords] of Object.entries(EMOTION_KEYWORDS)) {
+    const score = keywords.filter(kw => lowerText.includes(kw)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = emotion;
+    }
+  }
+
+  return bestMatch;
+}
+
+/**
+ * Map an emotion tag to a Rive avatar animation state
+ */
+export function mapEmotionToAvatarState(emotion: string): string {
+  return AVATAR_STATE_MAP[emotion] ?? 'idle';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Service Clients
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetch learner profile from learner-model-svc virtual brain API
+ */
+export async function fetchLearnerProfile(learnerId: string): Promise<LearnerProfile | null> {
+  try {
+    const response = await fetch(
+      `${config.learnerModelUrl}/virtual-brains/${learnerId}`,
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      console.warn(`learner-model-svc returned ${response.status} for learnerId=${learnerId}`);
+      return null;
+    }
+
+    return (await response.json()) as LearnerProfile;
+  } catch (error) {
+    console.warn('Failed to fetch learner profile:', error);
+    return null;
+  }
+}
+
+/**
+ * Call the AI orchestrator to generate a response
+ */
+export async function callAiOrchestrator(
+  request: AiOrchestratorRequest,
+): Promise<AiOrchestratorResponse> {
+  const response = await fetch(`${config.aiOrchestratorUrl}/api/v1/ai/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI orchestrator returned ${response.status}`);
+  }
+
+  return (await response.json()) as AiOrchestratorResponse;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Session Service
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export class SessionService {
   async create(params: {
@@ -9,6 +151,7 @@ export class SessionService {
     subject: string;
     topic?: string;
     locale?: string;
+    learnerProfile?: LearnerProfile | null;
   }) {
     const session = await prisma.tutorSession.create({
       data: {
@@ -20,6 +163,7 @@ export class SessionService {
         topic: params.topic ?? null,
         locale: params.locale ?? 'en-US',
         status: TutorSessionStatus.ACTIVE,
+        masteryBefore: params.learnerProfile?.summary?.byDomain?.[params.subject]?.avgMastery ?? null,
       },
       include: { persona: true },
     });
@@ -35,21 +179,56 @@ export class SessionService {
       },
     });
 
-    // Create system greeting message
-    const persona = session.persona;
-    const greeting = `Hi there! I'm ${persona.name}, your ${persona.subject.toLowerCase()} tutor. ${params.topic ? `I see you'd like to work on ${params.topic}. ` : ''}How can I help you today?`;
+    // Generate AI-powered opening message via ai-orchestrator
+    let greeting: string;
+    let emotionTag = 'cheerful';
+    let avatarState = 'talking';
+    let tokensUsed = 0;
+    let latencyMs = 0;
+
+    try {
+      const startTime = Date.now();
+      const persona = session.persona;
+
+      const aiResponse = await callAiOrchestrator({
+        agentType: `TUTOR_${params.subject}_PREMIUM`,
+        subject: params.subject,
+        personaSlug: persona.slug,
+        systemPrompt: persona.systemPromptTemplate,
+        messages: [],
+        context: {
+          sessionId: session.id,
+          subject: params.subject,
+          topic: params.topic ?? undefined,
+          locale: params.locale ?? 'en-US',
+          learnerProfile: params.learnerProfile ?? undefined,
+        },
+      });
+
+      greeting = aiResponse.content;
+      tokensUsed = aiResponse.metadata?.tokens ?? 0;
+      latencyMs = Date.now() - startTime;
+      emotionTag = detectEmotion(greeting);
+      avatarState = mapEmotionToAvatarState(emotionTag);
+    } catch (error) {
+      console.warn('AI opening message failed, using fallback:', error);
+      const persona = session.persona;
+      greeting = `Hi there! I'm ${persona.name}, your ${persona.subject.toLowerCase()} tutor. ${params.topic ? `I see you'd like to work on ${params.topic}. ` : ''}How can I help you today?`;
+    }
 
     await prisma.tutorMessage.create({
       data: {
         sessionId: session.id,
         role: TutorMessageRole.ASSISTANT,
         content: greeting,
-        emotionTag: 'cheerful',
-        avatarState: 'talking',
+        emotionTag,
+        avatarState,
+        tokensUsed,
+        latencyMs,
       },
     });
 
-    return session;
+    return { session, openingMessage: greeting, emotionTag, avatarState };
   }
 
   async getById(sessionId: string) {
