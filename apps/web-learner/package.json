@@ -17,6 +17,7 @@
     "@aivo/ts-types": "workspace:*",
     "@aivo/ui": "workspace:*",
     "@aivo/ui-web": "workspace:*",
+    "@rive-app/react-canvas": "^4.0.0",
     "@tanstack/react-query": "^5.79.0",
     "firebase": "^12.9.0",
     "framer-motion": "^11.18.0",

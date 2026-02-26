@@ -31,6 +31,9 @@ enum TutorAvatarState {
   /// Confetti / sparkle celebration after a correct answer or milestone.
   celebrating,
 
+  /// Thumbs up, warm smile, nodding -- used to offer encouragement.
+  encouraging,
+
   /// Friendly wave used for greetings and session starts.
   waving,
 
@@ -84,13 +87,16 @@ abstract final class TutorAvatarDurations {
   static const Duration talking = Duration(milliseconds: 500);
 
   /// Full thinking loop duration before the response arrives.
-  static const Duration thinking = Duration(milliseconds: 2000);
+  static const Duration thinking = Duration(milliseconds: 3000);
 
   /// Celebration animation from start to confetti settle.
-  static const Duration celebrating = Duration(milliseconds: 2500);
+  static const Duration celebrating = Duration(milliseconds: 2000);
+
+  /// Encouraging thumbs up / nodding gesture.
+  static const Duration encouraging = Duration(milliseconds: 2000);
 
   /// Single wave gesture from raise to lower.
-  static const Duration waving = Duration(milliseconds: 1800);
+  static const Duration waving = Duration(milliseconds: 2000);
 
   /// Minimum listening hold before the avatar can transition out.
   static const Duration listening = Duration(milliseconds: 1000);
@@ -108,8 +114,42 @@ abstract final class TutorAvatarDurations {
       TutorAvatarState.talking => talking,
       TutorAvatarState.thinking => thinking,
       TutorAvatarState.celebrating => celebrating,
+      TutorAvatarState.encouraging => encouraging,
       TutorAvatarState.waving => waving,
       TutorAvatarState.listening => listening,
+    };
+  }
+}
+
+// =============================================================================
+// TRIGGER NAMES (for TutorController state machine)
+// =============================================================================
+
+/// Mapping from [TutorAvatarState] to the trigger input name on the
+/// `TutorController` state machine. States without a trigger (idle) are
+/// reached by releasing other states or auto-return.
+abstract final class TutorTriggerNames {
+  static const String trigTalk = 'trigTalk';
+  static const String trigStopTalk = 'trigStopTalk';
+  static const String trigCelebrate = 'trigCelebrate';
+  static const String trigEncourage = 'trigEncourage';
+  static const String trigThink = 'trigThink';
+  static const String trigWave = 'trigWave';
+  static const String blinkTrigger = 'blinkTrigger';
+  static const String mouthOpen = 'mouthOpen';
+  static const String isListening = 'isListening';
+
+  /// Returns the trigger name that enters the given [state], or `null` if the
+  /// state is reached by other means (e.g. idle is reached via auto-return).
+  static String? triggerForState(TutorAvatarState state) {
+    return switch (state) {
+      TutorAvatarState.idle => null,
+      TutorAvatarState.talking => trigTalk,
+      TutorAvatarState.thinking => trigThink,
+      TutorAvatarState.celebrating => trigCelebrate,
+      TutorAvatarState.encouraging => trigEncourage,
+      TutorAvatarState.waving => trigWave,
+      TutorAvatarState.listening => null, // driven by isListening bool
     };
   }
 }
@@ -131,13 +171,14 @@ extension TutorAvatarStateX on TutorAvatarState {
   /// Whether this state should loop until explicitly cancelled.
   ///
   /// Looping states (idle, talking, listening) repeat indefinitely; one-shot
-  /// states (celebrating, waving) play once then fall back to idle.
+  /// states (celebrating, encouraging, waving) play once then fall back to idle.
   bool get isLooping => switch (this) {
         TutorAvatarState.idle => true,
         TutorAvatarState.talking => true,
         TutorAvatarState.listening => true,
         TutorAvatarState.thinking => true,
         TutorAvatarState.celebrating => false,
+        TutorAvatarState.encouraging => false,
         TutorAvatarState.waving => false,
       };
 
@@ -152,6 +193,7 @@ extension TutorAvatarStateX on TutorAvatarState {
             TutorAvatarState.idle,
             TutorAvatarState.thinking,
             TutorAvatarState.celebrating,
+            TutorAvatarState.encouraging,
             TutorAvatarState.listening,
           },
         TutorAvatarState.thinking => {
@@ -160,6 +202,10 @@ extension TutorAvatarStateX on TutorAvatarState {
             TutorAvatarState.celebrating,
           },
         TutorAvatarState.celebrating => {
+            TutorAvatarState.idle,
+            TutorAvatarState.talking,
+          },
+        TutorAvatarState.encouraging => {
             TutorAvatarState.idle,
             TutorAvatarState.talking,
           },
@@ -173,6 +219,7 @@ extension TutorAvatarStateX on TutorAvatarState {
             TutorAvatarState.talking,
             TutorAvatarState.thinking,
             TutorAvatarState.celebrating,
+            TutorAvatarState.encouraging,
           },
       };
 

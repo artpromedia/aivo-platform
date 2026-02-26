@@ -61,7 +61,21 @@ abstract final class TutorPersonaAsset {
     'spark-science-68': 'spark_science_68.riv',
     'spark-science-912': 'spark_science_912.riv',
 
-    // Social studies personas
+    // History personas
+    'chrono-history': 'chrono_history.riv',
+    'chrono-history-k2': 'chrono_history_k2.riv',
+    'chrono-history-35': 'chrono_history_35.riv',
+    'chrono-history-68': 'chrono_history_68.riv',
+    'chrono-history-912': 'chrono_history_912.riv',
+
+    // Coding personas
+    'pixel-coding': 'pixel_coding.riv',
+    'pixel-coding-k2': 'pixel_coding_k2.riv',
+    'pixel-coding-35': 'pixel_coding_35.riv',
+    'pixel-coding-68': 'pixel_coding_68.riv',
+    'pixel-coding-912': 'pixel_coding_912.riv',
+
+    // Social studies personas (legacy)
     'atlas-social': 'atlas_social.riv',
     'atlas-social-k2': 'atlas_social_k2.riv',
     'atlas-social-35': 'atlas_social_35.riv',
