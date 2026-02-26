@@ -10,9 +10,9 @@ import {
 } from '../services/session.service.js';
 import {
   synthesizeSpeech,
-  getVoiceConfig,
   uploadAudio,
 } from '../services/tts.service.js';
+import { getVoiceConfig } from '../services/voice-config.service.js';
 import type { JwtUser } from '../types/index.js';
 
 const SendMessageSchema = z.object({

@@ -34,11 +34,16 @@ export const config = {
   learnerModelUrl: process.env.LEARNER_MODEL_URL || 'http://localhost:4015',
   billingSvcUrl: process.env.BILLING_SVC_URL || 'http://localhost:3150',
   realtimeSvcUrl: process.env.REALTIME_SVC_URL || 'http://localhost:4030',
-  azureSpeechKey: process.env.AZURE_SPEECH_KEY || '',
-  azureSpeechRegion: process.env.AZURE_SPEECH_REGION || 'eastus',
-  // Audio storage (S3/R2)
+  // Piper TTS engine (self-hosted)
+  ttsServiceUrl: process.env.TTS_SERVICE_URL || 'http://localhost:5100',
+  ttsEnabled: process.env.TTS_ENABLED !== 'false',
+  // Audio storage (S3 / MinIO)
   audioBucket: process.env.AUDIO_S3_BUCKET || 'aivo-tutor-audio',
   audioS3Endpoint: process.env.AUDIO_S3_ENDPOINT || '',
   audioS3Region: process.env.AUDIO_S3_REGION || 'us-east-1',
+  audioS3AccessKey: process.env.AUDIO_S3_ACCESS_KEY || '',
+  audioS3SecretKey: process.env.AUDIO_S3_SECRET_KEY || '',
   audioCdnBase: process.env.AUDIO_CDN_BASE || '',
+  // Redis (for TTS cache)
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379/9',
 };

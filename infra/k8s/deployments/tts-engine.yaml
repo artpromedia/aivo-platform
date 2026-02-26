@@ -1,0 +1,186 @@
+---
+# TTS Engine — self-hosted Piper TTS for AI tutor lip-sync
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tts-engine-config
+  namespace: aivo
+  labels:
+    app: tts-engine
+    tier: ai
+data:
+  TTS_MODELS_DIR: "/models"
+  TTS_WORKERS: "2"
+  TTS_LOG_LEVEL: "INFO"
+  TTS_PORT: "5100"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-engine
+  namespace: aivo
+  labels:
+    app: tts-engine
+    tier: ai
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: tts-engine
+  template:
+    metadata:
+      labels:
+        app: tts-engine
+        tier: ai
+    spec:
+      containers:
+        - name: tts-engine
+          image: registry.aivo.ai/tts-engine:latest
+          ports:
+            - containerPort: 5100
+              name: http
+          envFrom:
+            - configMapRef:
+                name: tts-engine-config
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          volumeMounts:
+            - name: voice-models
+              mountPath: /models
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5100
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+      volumes:
+        - name: voice-models
+          persistentVolumeClaim:
+            claimName: tts-voice-models
+      # Schedule on nodes with enough RAM for ONNX inference
+      nodeSelector:
+        workload: ai
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tts-engine
+  namespace: aivo
+  labels:
+    app: tts-engine
+    tier: ai
+spec:
+  selector:
+    app: tts-engine
+  ports:
+    - port: 5100
+      targetPort: 5100
+      name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tts-voice-models
+  namespace: aivo
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 2Gi  # ~20 voice models at ~80MB each
+  storageClassName: hcloud-volumes
+
+---
+# One-time job to download voice models into the PVC
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tts-download-voices
+  namespace: aivo
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      containers:
+        - name: downloader
+          image: curlimages/curl:latest
+          command: ["/bin/sh", "/scripts/download_voices.sh", "/models"]
+          volumeMounts:
+            - name: voice-models
+              mountPath: /models
+            - name: scripts
+              mountPath: /scripts
+      volumes:
+        - name: voice-models
+          persistentVolumeClaim:
+            claimName: tts-voice-models
+        - name: scripts
+          configMap:
+            name: tts-download-script
+            defaultMode: 0755
+      restartPolicy: OnFailure
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tts-engine
+  namespace: aivo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tts-engine
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tts-engine
+  namespace: aivo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tts-engine

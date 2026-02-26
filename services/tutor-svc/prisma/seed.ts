@@ -224,25 +224,25 @@ RULES:
   const bySlug = new Map(allPersonas.map((p) => [p.slug, p.id]));
 
   const voiceConfigs = [
-    // Nova – Math
-    { personaId: bySlug.get('nova-math')!, locale: 'en-US', ttsProvider: 'azure', ttsVoiceId: 'en-US-JennyNeural', speakingRate: 1.05, pitch: 2.0, emotion: 'excited', isDefault: true },
-    { personaId: bySlug.get('nova-math')!, locale: 'es-MX', ttsProvider: 'azure', ttsVoiceId: 'es-MX-DaliaNeural', speakingRate: 1.0, pitch: 2.0, emotion: 'excited', isDefault: false },
+    // Nova – Math (bright, upbeat female voice)
+    { personaId: bySlug.get('nova-math')!, locale: 'en-US', ttsProvider: 'piper', ttsVoiceId: 'en_US-amy-medium', speakingRate: 1.05, pitch: 0.0, emotion: 'excited', isDefault: true },
+    { personaId: bySlug.get('nova-math')!, locale: 'es-MX', ttsProvider: 'piper', ttsVoiceId: 'es_MX-claude-high', speakingRate: 1.0, pitch: 0.0, emotion: 'excited', isDefault: false },
 
-    // Sage – ELA
-    { personaId: bySlug.get('sage-ela')!, locale: 'en-US', ttsProvider: 'azure', ttsVoiceId: 'en-US-AriaNeural', speakingRate: 0.95, pitch: 0.0, emotion: 'calm', isDefault: true },
-    { personaId: bySlug.get('sage-ela')!, locale: 'es-MX', ttsProvider: 'azure', ttsVoiceId: 'es-MX-NuriaNeural', speakingRate: 0.9, pitch: 0.0, emotion: 'calm', isDefault: false },
+    // Sage – ELA (warm, measured voice)
+    { personaId: bySlug.get('sage-ela')!, locale: 'en-US', ttsProvider: 'piper', ttsVoiceId: 'en_US-lessac-medium', speakingRate: 0.95, pitch: 0.0, emotion: 'calm', isDefault: true },
+    { personaId: bySlug.get('sage-ela')!, locale: 'es-MX', ttsProvider: 'piper', ttsVoiceId: 'es_MX-claude-high', speakingRate: 0.9, pitch: 0.0, emotion: 'calm', isDefault: false },
 
-    // Spark – Science
-    { personaId: bySlug.get('spark-science')!, locale: 'en-US', ttsProvider: 'azure', ttsVoiceId: 'en-US-GuyNeural', speakingRate: 1.1, pitch: 3.0, emotion: 'excited', isDefault: true },
-    { personaId: bySlug.get('spark-science')!, locale: 'es-MX', ttsProvider: 'azure', ttsVoiceId: 'es-MX-JorgeNeural', speakingRate: 1.05, pitch: 3.0, emotion: 'excited', isDefault: false },
+    // Spark – Science (energetic male voice)
+    { personaId: bySlug.get('spark-science')!, locale: 'en-US', ttsProvider: 'piper', ttsVoiceId: 'en_US-ryan-medium', speakingRate: 1.1, pitch: 0.0, emotion: 'excited', isDefault: true },
+    { personaId: bySlug.get('spark-science')!, locale: 'es-MX', ttsProvider: 'piper', ttsVoiceId: 'es_MX-claude-high', speakingRate: 1.05, pitch: 0.0, emotion: 'excited', isDefault: false },
 
-    // Chrono – History
-    { personaId: bySlug.get('chrono-history')!, locale: 'en-US', ttsProvider: 'azure', ttsVoiceId: 'en-US-DavisNeural', speakingRate: 0.9, pitch: -1.0, emotion: 'neutral', isDefault: true },
-    { personaId: bySlug.get('chrono-history')!, locale: 'es-MX', ttsProvider: 'azure', ttsVoiceId: 'es-MX-LibertoNeural', speakingRate: 0.85, pitch: -1.0, emotion: 'neutral', isDefault: false },
+    // Chrono – History (dramatic, deeper voice)
+    { personaId: bySlug.get('chrono-history')!, locale: 'en-US', ttsProvider: 'piper', ttsVoiceId: 'en_US-lessac-medium', speakingRate: 0.9, pitch: 0.0, emotion: 'neutral', isDefault: true },
+    { personaId: bySlug.get('chrono-history')!, locale: 'es-MX', ttsProvider: 'piper', ttsVoiceId: 'es_MX-claude-high', speakingRate: 0.85, pitch: 0.0, emotion: 'neutral', isDefault: false },
 
-    // Pixel – Coding
-    { personaId: bySlug.get('pixel-coding')!, locale: 'en-US', ttsProvider: 'azure', ttsVoiceId: 'en-US-JasonNeural', speakingRate: 1.0, pitch: 5.0, emotion: 'excited', isDefault: true },
-    { personaId: bySlug.get('pixel-coding')!, locale: 'es-MX', ttsProvider: 'azure', ttsVoiceId: 'es-MX-GerardoNeural', speakingRate: 1.0, pitch: 5.0, emotion: 'excited', isDefault: false },
+    // Pixel – Coding (playful, slightly robotic)
+    { personaId: bySlug.get('pixel-coding')!, locale: 'en-US', ttsProvider: 'piper', ttsVoiceId: 'en_US-amy-medium', speakingRate: 1.0, pitch: 0.0, emotion: 'excited', isDefault: true },
+    { personaId: bySlug.get('pixel-coding')!, locale: 'es-MX', ttsProvider: 'piper', ttsVoiceId: 'es_MX-claude-high', speakingRate: 1.0, pitch: 0.0, emotion: 'excited', isDefault: false },
   ];
 
   for (const vc of voiceConfigs) {

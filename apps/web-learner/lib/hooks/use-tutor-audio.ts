@@ -9,7 +9,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 export interface VisemeEvent {
   /** Time offset from audio start in milliseconds. */
   offsetMs: number;
-  /** Azure viseme ID (0–21). */
+  /** Viseme ID for reference. */
   visemeId: number;
   /** Mapped mouth-open amount (0.0–1.0) for avatar lip-sync. */
   mouthOpen: number;

@@ -309,18 +309,72 @@ services:
       - REDIS_URL=redis://redis:6379/9
       - AI_ORCHESTRATOR_URL=http://ai-inference-svc:8000
       - BILLING_SVC_URL=http://host.docker.internal:3150
+      - TTS_SERVICE_URL=http://tts-engine:5100
+      - TTS_ENABLED=true
+      - AUDIO_S3_ENDPOINT=http://minio:9000
+      - AUDIO_S3_BUCKET=aivo-tutor-audio
+      - AUDIO_CDN_BASE=http://localhost:9000/aivo-tutor-audio
       - LOG_LEVEL=info
     volumes:
       - ./services/tutor-svc:/app/services/tutor-svc
     depends_on:
       - postgres
       - redis
+      - tts-engine
+      - minio
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # Piper TTS Engine (self-hosted, zero API costs)
+  tts-engine:
+    build:
+      context: ./services/tts-engine
+      dockerfile: Dockerfile
+    ports:
+      - "5100:5100"
+    volumes:
+      - tts-models:/app/models
+    environment:
+      - TTS_MODELS_DIR=/app/models
+      - TTS_WORKERS=1
+      - TTS_LOG_LEVEL=DEBUG
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    networks:
+      - aivo-network
+    restart: unless-stopped
+
+  # MinIO for audio file storage (local dev — prod uses Hetzner Object Storage)
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - aivo-network
     restart: unless-stopped
@@ -334,6 +388,8 @@ volumes:
   speech-models:
   recommendation-models:
   geoip-data:
+  tts-models:
+  minio-data:
 
 networks:
   aivo-network:

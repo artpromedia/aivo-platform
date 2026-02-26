@@ -1,7 +1,6 @@
-import * as crypto from 'node:crypto';
-
 import { config } from '../config.js';
-import { prisma } from '../prisma.js';
+import { mapPhonemeEventsToVisemes } from './phoneme-viseme-map.js';
+import { getCachedTts, cacheTtsResult } from './tts-cache.service.js';
 
 // =============================================================================
 // Types
@@ -10,7 +9,7 @@ import { prisma } from '../prisma.js';
 export interface VisemeEvent {
   /** Time offset from audio start in milliseconds. */
   offsetMs: number;
-  /** Azure viseme ID (0–21). */
+  /** Viseme ID for reference. */
   visemeId: number;
   /** Mapped mouth-open amount (0.0 – 1.0) for Rive / fallback avatar. */
   mouthOpen: number;
@@ -19,7 +18,7 @@ export interface VisemeEvent {
 }
 
 export interface TtsSpeechResult {
-  /** Base64-encoded MP3 audio. */
+  /** Base64-encoded audio (MP3 or WAV). */
   audioBase64: string;
   /** CDN URL after upload (set by caller after uploading). */
   audioUrl?: string;
@@ -41,208 +40,80 @@ export interface TutorVoiceConfig {
 }
 
 // =============================================================================
-// Azure viseme-ID → mouthOpen mapping
+// Piper TTS engine types (response from /synthesize)
 // =============================================================================
 
-/**
- * Maps Azure viseme IDs (0–21) to a normalized mouth-open value (0.0–1.0).
- *
- * Reference: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-speech-synthesis-viseme
- *
- * Groups:
- *   0        – Silence / rest
- *   1,2      – Bilabial closed (p, b, m)
- *   3,4      – Labiodental (f, v)
- *   5,6      – Dental / alveolar (th, t, d)
- *   7,8      – Alveolar ridge (s, z, n, l)
- *   9,10     – Palatal (sh, ch, j)
- *   11,12    – Velar (k, g, ng)
- *   13,14    – Back vowels (oo, oh)
- *   15,16,17 – Mid vowels (uh, er, aw)
- *   18,19    – Front vowels (ee, ih)
- *   20,21    – Open vowels (ah, aa)
- */
-const VISEME_MOUTH_OPEN: Record<number, number> = {
-  0: 0.0,   // silence
-  1: 0.05,  // p, b, m — lips together
-  2: 0.05,  // p, b, m variant
-  3: 0.15,  // f, v — lower lip to upper teeth
-  4: 0.15,  // f, v variant
-  5: 0.2,   // th — tongue between teeth
-  6: 0.25,  // t, d — tongue behind teeth
-  7: 0.3,   // s, z — narrow opening
-  8: 0.3,   // n, l
-  9: 0.35,  // sh, ch
-  10: 0.35, // j, zh
-  11: 0.4,  // k, g — back of mouth
-  12: 0.4,  // ng
-  13: 0.45, // oo — rounded lips
-  14: 0.5,  // oh — more open rounded
-  15: 0.55, // uh
-  16: 0.6,  // er
-  17: 0.65, // aw
-  18: 0.5,  // ee — wide narrow
-  19: 0.5,  // ih — slightly open wide
-  20: 0.85, // ah — open
-  21: 0.95, // aa — fully open
-};
+interface PiperPhonemeEvent {
+  offset_ms: number;
+  phoneme: string;
+  duration_ms: number;
+}
 
-function visemeToMouthOpen(visemeId: number): number {
-  return VISEME_MOUTH_OPEN[visemeId] ?? 0.0;
+interface PiperSynthesizeResponse {
+  audio_base64: string;
+  duration_ms: number;
+  sample_rate: number;
+  phonemes: PiperPhonemeEvent[];
+  format: string;
+  voice_used: string;
+  latency_ms: number;
 }
 
 // =============================================================================
-// Azure Speech SDK synthesis
+// Piper TTS synthesis (internal HTTP call)
 // =============================================================================
 
-type SpeechSdkModule = typeof import('microsoft-cognitiveservices-speech-sdk');
-
-let speechSdk: SpeechSdkModule | null = null;
-
-async function loadSpeechSdk(): Promise<SpeechSdkModule> {
-  if (!speechSdk) {
-    speechSdk = await import('microsoft-cognitiveservices-speech-sdk');
-  }
-  return speechSdk;
-}
-
 /**
- * Build SSML with voice, rate, and pitch configuration.
- */
-function buildSsml(
-  text: string,
-  voiceId: string,
-  locale: string,
-  rate: number,
-  pitch: number,
-): string {
-  // Rate: 1.0 = default. Azure expects percentage strings like "+10%" or "-5%"
-  const ratePercent = Math.round((rate - 1.0) * 100);
-  const rateStr = ratePercent >= 0 ? `+${ratePercent}%` : `${ratePercent}%`;
-
-  // Pitch: Azure expects semitones like "+2st" or "-1st"
-  const pitchStr = pitch >= 0 ? `+${pitch.toFixed(1)}st` : `${pitch.toFixed(1)}st`;
-
-  // Escape XML special characters in text
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-  return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${locale}">
-  <voice name="${voiceId}">
-    <prosody rate="${rateStr}" pitch="${pitchStr}">
-      ${escaped}
-    </prosody>
-  </voice>
-</speak>`;
-}
-
-/**
- * Synthesize speech using Azure Cognitive Services Speech SDK.
+ * Synthesize speech using the self-hosted Piper TTS engine.
  *
- * Returns audio (base64 MP3) and viseme events with mouthOpen mapping.
+ * Calls the internal tts-engine service and maps IPA phonemes
+ * to viseme events for avatar lip-sync.
  */
-async function synthesizeWithAzure(
+async function synthesizeWithPiper(
   text: string,
   voiceConfig: TutorVoiceConfig,
   locale: string,
 ): Promise<TtsSpeechResult> {
-  const sdk = await loadSpeechSdk();
+  const ttsUrl = config.ttsServiceUrl;
 
-  const speechConfig = sdk.SpeechConfig.fromSubscription(
-    config.azureSpeechKey,
-    config.azureSpeechRegion,
-  );
-
-  // Output as MP3 for broad playback compatibility
-  speechConfig.speechSynthesisOutputFormat =
-    sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
-
-  const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
-
-  const visemes: VisemeEvent[] = [];
-  let lastOffsetMs = 0;
-
-  // Collect viseme events as they arrive
-  synthesizer.visemeReceived = (_sender, event) => {
-    const offsetMs = Math.round(event.audioOffset / 10_000); // 100-ns ticks → ms
-    const visemeId = event.visemeId;
-
-    // Set duration on previous viseme
-    if (visemes.length > 0) {
-      visemes[visemes.length - 1]!.durationMs = offsetMs - lastOffsetMs;
-    }
-
-    visemes.push({
-      offsetMs,
-      visemeId,
-      mouthOpen: visemeToMouthOpen(visemeId),
-      durationMs: 0, // will be set by next viseme or at end
-    });
-
-    lastOffsetMs = offsetMs;
-  };
-
-  const ssml = buildSsml(
-    text,
-    voiceConfig.ttsVoiceId,
-    locale,
-    voiceConfig.speakingRate,
-    voiceConfig.pitch,
-  );
-
-  return new Promise<TtsSpeechResult>((resolve, reject) => {
-    synthesizer.speakSsmlAsync(
-      ssml,
-      (result) => {
-        synthesizer.close();
-
-        if (
-          result.reason === sdk.ResultReason.SynthesizingAudioCompleted &&
-          result.audioData
-        ) {
-          const audioBuffer = Buffer.from(result.audioData);
-          const durationMs = Math.round(
-            (result.audioDuration ?? 0) / 10_000, // 100-ns ticks → ms
-          );
-
-          // Set duration on last viseme
-          if (visemes.length > 0) {
-            visemes[visemes.length - 1]!.durationMs =
-              durationMs - lastOffsetMs;
-          }
-
-          resolve({
-            audioBase64: audioBuffer.toString('base64'),
-            durationMs,
-            visemes,
-            text,
-          });
-        } else {
-          reject(
-            new Error(
-              `Azure TTS failed: ${result.errorDetails ?? sdk.ResultReason[result.reason]}`,
-            ),
-          );
-        }
-      },
-      (error) => {
-        synthesizer.close();
-        reject(new Error(`Azure TTS error: ${error}`));
-      },
-    );
+  const response = await fetch(`${ttsUrl}/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      voice: voiceConfig.ttsVoiceId,
+      locale,
+      output_format: 'mp3',
+      speaking_rate: voiceConfig.speakingRate,
+      include_phonemes: true,
+    }),
+    signal: AbortSignal.timeout(15_000),
   });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => 'unknown');
+    throw new Error(`Piper TTS returned ${response.status}: ${body}`);
+  }
+
+  const data = (await response.json()) as PiperSynthesizeResponse;
+
+  // Map IPA phonemes from Piper to viseme events for the avatar
+  const visemes = data.phonemes.length > 0
+    ? mapPhonemeEventsToVisemes(data.phonemes)
+    : [];
+
+  return {
+    audioBase64: data.audio_base64,
+    durationMs: data.duration_ms,
+    visemes,
+    text,
+  };
 }
 
 // =============================================================================
-// Fallback viseme estimator (text-based, no SDK required)
+// Fallback viseme estimator (text-based, no TTS engine required)
 // =============================================================================
 
-/**
- * Vowels and consonant groups for simple phoneme estimation.
- */
 const VOWELS = new Set('aeiouAEIOU');
 const CLOSED_CONSONANTS = new Set('bmpBMP');
 const FRICATIVES = new Set('fvszFVSZ');
@@ -251,15 +122,9 @@ const OPEN_CONSONANTS = new Set('hHyY');
 /**
  * Estimate viseme events from text without a TTS engine.
  *
- * Uses character-level heuristics:
- * - Spaces → silence (mouthOpen 0)
- * - Vowels → open mouth (0.6–0.9)
- * - Closed consonants (b, m, p) → nearly closed (0.05)
- * - Fricatives (f, v, s, z) → narrow (0.2)
- * - Other consonants → mid (0.3–0.4)
- *
- * Timing is estimated at ~60ms per character with adjustments for
- * spaces and punctuation.
+ * Uses character-level heuristics for when the Piper engine is
+ * unavailable or TTS is disabled. No audio is generated; the client
+ * can drive avatar animation from these estimated visemes alone.
  */
 export function estimateVisemesFromText(
   text: string,
@@ -273,7 +138,6 @@ export function estimateVisemesFromText(
     const char = text[i]!;
 
     if (char === ' ' || char === '\n' || char === '\t') {
-      // Brief silence between words
       visemes.push({
         offsetMs,
         visemeId: 0,
@@ -285,7 +149,6 @@ export function estimateVisemesFromText(
     }
 
     if (/[.!?]/.test(char)) {
-      // Pause on sentence-ending punctuation
       visemes.push({
         offsetMs,
         visemeId: 0,
@@ -297,7 +160,6 @@ export function estimateVisemesFromText(
     }
 
     if (/[,;:]/.test(char)) {
-      // Short pause on commas
       visemes.push({
         offsetMs,
         visemeId: 0,
@@ -312,51 +174,43 @@ export function estimateVisemesFromText(
     let visemeId: number;
 
     if (VOWELS.has(char)) {
-      // Map vowels to different openness
       const lower = char.toLowerCase();
       if (lower === 'a') {
         mouthOpen = 0.9;
-        visemeId = 21;
+        visemeId = 2;
       } else if (lower === 'o') {
         mouthOpen = 0.6;
-        visemeId = 14;
+        visemeId = 8;
       } else if (lower === 'e') {
         mouthOpen = 0.5;
-        visemeId = 18;
+        visemeId = 4;
       } else if (lower === 'i') {
         mouthOpen = 0.5;
-        visemeId = 19;
+        visemeId = 6;
       } else {
         mouthOpen = 0.55;
-        visemeId = 15;
+        visemeId = 1;
       }
     } else if (CLOSED_CONSONANTS.has(char)) {
       mouthOpen = 0.05;
-      visemeId = 1;
+      visemeId = 21;
     } else if (FRICATIVES.has(char)) {
       mouthOpen = 0.2;
-      visemeId = 7;
+      visemeId = 15;
     } else if (OPEN_CONSONANTS.has(char)) {
       mouthOpen = 0.4;
-      visemeId = 11;
+      visemeId = 12;
     } else if (/[a-zA-Z]/.test(char)) {
       mouthOpen = 0.35;
-      visemeId = 6;
+      visemeId = 19;
     } else {
-      // Skip non-alpha characters silently
       continue;
     }
 
-    visemes.push({
-      offsetMs,
-      visemeId,
-      mouthOpen,
-      durationMs: msPerChar,
-    });
+    visemes.push({ offsetMs, visemeId, mouthOpen, durationMs: msPerChar });
     offsetMs += msPerChar;
   }
 
-  // Add a final silence
   if (visemes.length > 0) {
     visemes.push({
       offsetMs,
@@ -371,7 +225,7 @@ export function estimateVisemesFromText(
 }
 
 // =============================================================================
-// Audio upload (S3/R2)
+// Audio upload (S3 / MinIO)
 // =============================================================================
 
 type S3ClientModule = typeof import('@aws-sdk/client-s3');
@@ -386,7 +240,7 @@ async function loadS3(): Promise<S3ClientModule> {
 }
 
 /**
- * Upload base64 audio to S3/R2 and return the public CDN URL.
+ * Upload base64 audio to S3/MinIO and return the public CDN URL.
  */
 export async function uploadAudio(
   audioBase64: string,
@@ -406,6 +260,14 @@ export async function uploadAudio(
         ? {
             endpoint: config.audioS3Endpoint,
             forcePathStyle: true,
+          }
+        : {}),
+      ...(config.audioS3AccessKey && config.audioS3SecretKey
+        ? {
+            credentials: {
+              accessKeyId: config.audioS3AccessKey,
+              secretAccessKey: config.audioS3SecretKey,
+            },
           }
         : {}),
     });
@@ -435,54 +297,44 @@ export async function uploadAudio(
 // =============================================================================
 
 /**
- * Look up the voice config for a persona + locale from the database.
- */
-export async function getVoiceConfig(
-  personaId: string,
-  locale: string = 'en-US',
-): Promise<TutorVoiceConfig | null> {
-  const vc = await prisma.tutorVoiceConfig.findUnique({
-    where: {
-      personaId_locale: { personaId, locale },
-    },
-  });
-
-  if (!vc) return null;
-
-  return {
-    ttsProvider: vc.ttsProvider,
-    ttsVoiceId: vc.ttsVoiceId,
-    speakingRate: vc.speakingRate,
-    pitch: vc.pitch,
-    emotion: vc.emotion,
-    locale: vc.locale,
-  };
-}
-
-/**
  * Synthesize speech for tutor response text.
  *
  * Strategy:
- * 1. If Azure Speech key is configured and provider is "azure" → full Azure
- *    synthesis with real viseme events.
- * 2. Otherwise → text-based estimated visemes (no audio generated server-side;
- *    the client can use browser SpeechSynthesis or skip audio entirely).
+ * 1. If TTS is enabled and the Piper engine is reachable → full synthesis
+ *    with IPA phoneme-based viseme events.
+ * 2. Otherwise → text-based estimated visemes (no audio generated;
+ *    the client drives avatar animation from estimates alone).
  */
 export async function synthesizeSpeech(
   text: string,
   voiceConfig: TutorVoiceConfig,
   locale: string,
 ): Promise<TtsSpeechResult> {
-  // Azure path — full TTS with real viseme data
-  if (
-    config.azureSpeechKey &&
-    voiceConfig.ttsProvider === 'azure'
-  ) {
+  if (config.ttsEnabled && config.ttsServiceUrl) {
+    // Check Redis cache first (short common phrases)
+    const cached = await getCachedTts(
+      text,
+      voiceConfig.ttsVoiceId,
+      locale,
+      voiceConfig.speakingRate,
+    );
+    if (cached) return cached;
+
     try {
-      return await synthesizeWithAzure(text, voiceConfig, locale);
+      const result = await synthesizeWithPiper(text, voiceConfig, locale);
+
+      // Cache the result for future requests (fire-and-forget)
+      cacheTtsResult(
+        text,
+        voiceConfig.ttsVoiceId,
+        locale,
+        voiceConfig.speakingRate,
+        result,
+      ).catch(() => {});
+
+      return result;
     } catch (error) {
-      console.warn('Azure TTS failed, falling back to estimated visemes:', error);
-      // Fall through to estimated visemes
+      console.warn('Piper TTS failed, falling back to estimated visemes:', error);
     }
   }
 
