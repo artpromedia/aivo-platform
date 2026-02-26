@@ -51,6 +51,8 @@ import 'social_stories/social_stories.dart';
 import 'features/reading_tools/reading_tools_screen.dart';
 import 'features/progress/progress_screen.dart';
 import 'features/goals/goals_screen.dart';
+import 'features/tutor/screens/tutor_home_screen.dart';
+import 'features/tutor/screens/tutor_history_screen.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
 
@@ -266,6 +268,21 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
           return GoalsScreen(learnerId: learnerId);
+        },
+      ),
+      // AI Tutor routes
+      GoRoute(
+        path: '/tutor',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return TutorHomeScreen(learnerId: learnerId);
+        },
+      ),
+      GoRoute(
+        path: '/tutor/history',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return TutorHistoryScreen(learnerId: learnerId);
         },
       ),
       if (_enableDesignSystemGallery)

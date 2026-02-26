@@ -2,16 +2,16 @@
 ///
 /// Active tutoring session screen with an animated avatar at the top,
 /// scrollable chat messages in the middle, and an input bar at the bottom.
-/// Uses the tutor_session_provider for state and tutor_audio_provider
-/// for TTS playback with lip-sync.
+/// Integrates both the REST session provider and the WebSocket realtime
+/// provider for streaming messages with audio lip-sync.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/tutor_models.dart';
 import '../providers/tutor_session_provider.dart';
+import '../providers/tutor_realtime_provider.dart';
 import '../providers/tutor_audio_provider.dart';
 import '../providers/tutor_voice_preference_provider.dart';
 import '../widgets/animated_tutor_avatar.dart';
@@ -34,11 +34,32 @@ class TutorSessionScreen extends ConsumerStatefulWidget {
 
 class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _realtimeConnected = false;
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Connect to the WebSocket once the session becomes active.
+  void _connectRealtime(TutorSession session) {
+    if (_realtimeConnected) return;
+    _realtimeConnected = true;
+
+    final sessionState = ref.read(tutorSessionProvider);
+    List<TutorMessage>? initialMessages;
+    if (sessionState is TutorSessionActive) {
+      initialMessages = sessionState.messages;
+    }
+
+    ref.read(tutorRealtimeProvider.notifier).connect(
+          sessionId: session.id,
+          realtimeUrl:
+              const String.fromEnvironment('REALTIME_URL', defaultValue: 'ws://localhost:4010'),
+          getAuthToken: () => '',
+          initialMessages: initialMessages,
+        );
   }
 
   /// Scroll the chat list to the bottom after a new message arrives.
@@ -57,7 +78,12 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   Future<void> _handleSendMessage(String content) async {
     if (content.trim().isEmpty) return;
 
-    await ref.read(tutorSessionProvider.notifier).sendMessage(content.trim());
+    final rtState = ref.read(tutorRealtimeProvider);
+    if (rtState.isConnected) {
+      ref.read(tutorRealtimeProvider.notifier).sendMessage(content.trim());
+    } else {
+      await ref.read(tutorSessionProvider.notifier).sendMessage(content.trim());
+    }
     _scrollToBottom();
   }
 
@@ -83,6 +109,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     );
 
     if (shouldEnd == true) {
+      await ref.read(tutorRealtimeProvider.notifier).disconnect();
       await ref.read(tutorSessionProvider.notifier).endSession();
       await ref.read(tutorAudioProvider.notifier).stop();
 
@@ -102,11 +129,17 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sessionState = ref.watch(tutorSessionProvider);
+    final rtState = ref.watch(tutorRealtimeProvider);
     final audioState = ref.watch(tutorAudioProvider);
     final voicePref = ref.watch(tutorVoicePreferenceProvider);
 
-    // Determine the current emotion for the avatar.
-    final currentEmotion = _getCurrentEmotion(sessionState, audioState);
+    // Connect realtime when session becomes active
+    if (sessionState is TutorSessionActive && !_realtimeConnected) {
+      _connectRealtime(sessionState.session);
+    }
+
+    // Determine the current emotion for the avatar
+    final currentEmotion = _getCurrentEmotion(sessionState, rtState, audioState);
 
     return Scaffold(
       appBar: AppBar(
@@ -129,6 +162,17 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
         ),
         actions: [
           if (sessionState is TutorSessionActive) ...[
+            // Connection indicator
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Icon(
+                rtState.isConnected
+                    ? Icons.wifi_rounded
+                    : Icons.wifi_off_rounded,
+                size: 16,
+                color: rtState.isConnected ? Colors.green : Colors.grey,
+              ),
+            ),
             IconButton(
               icon: Icon(
                 voicePref.voiceEnabled
@@ -138,7 +182,6 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               tooltip: voicePref.voiceEnabled ? 'Voice on' : 'Voice off',
               onPressed: () {
                 ref.read(tutorVoicePreferenceProvider.notifier).toggle();
-                // Stop any currently playing audio when disabling voice
                 if (voicePref.voiceEnabled) {
                   ref.read(tutorAudioProvider.notifier).stop();
                 }
@@ -152,7 +195,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
           ],
         ],
       ),
-      body: _buildBody(context, theme, sessionState, audioState, currentEmotion),
+      body: _buildBody(context, theme, sessionState, rtState, audioState, currentEmotion),
     );
   }
 
@@ -160,6 +203,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     BuildContext context,
     ThemeData theme,
     TutorSessionState sessionState,
+    TutorRealtimeState rtState,
     TutorAudioState audioState,
     EmotionType currentEmotion,
   ) {
@@ -215,6 +259,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
           context,
           theme,
           sessionState,
+          rtState,
           audioState,
           currentEmotion,
         );
@@ -228,9 +273,16 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     BuildContext context,
     ThemeData theme,
     TutorSessionActive sessionState,
+    TutorRealtimeState rtState,
     TutorAudioState audioState,
     EmotionType currentEmotion,
   ) {
+    // Prefer realtime messages if connected
+    final messages = rtState.isConnected && rtState.messages.isNotEmpty
+        ? rtState.messages
+        : sessionState.messages;
+    final isTyping = rtState.isAiTyping || sessionState.isSending;
+
     return Column(
       children: [
         // Animated tutor avatar area
@@ -257,16 +309,31 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
           ),
         ),
 
+        // Error banner from realtime
+        if (rtState.error != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: theme.colorScheme.errorContainer,
+            child: Text(
+              rtState.error!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onErrorContainer,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
         // Chat messages
         Expanded(
-          child: _buildMessageList(theme, sessionState),
+          child: _buildMessageList(theme, messages, rtState.streamingText, isTyping),
         ),
 
         // Input bar
         TutorInputBar(
           onSubmit: _handleSendMessage,
-          isLoading: sessionState.isSending,
-          enabled: !sessionState.isSending,
+          isLoading: isTyping,
+          enabled: !isTyping,
         ),
       ],
     );
@@ -274,11 +341,11 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
 
   Widget _buildMessageList(
     ThemeData theme,
-    TutorSessionActive sessionState,
+    List<TutorMessage> messages,
+    String streamingText,
+    bool isTyping,
   ) {
-    final messages = sessionState.messages;
-
-    if (messages.isEmpty) {
+    if (messages.isEmpty && streamingText.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -293,11 +360,25 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
       );
     }
 
+    final showStreaming = streamingText.isNotEmpty;
+    final itemCount = messages.length + (showStreaming ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: messages.length,
+      itemCount: itemCount,
       itemBuilder: (context, index) {
+        // Streaming text bubble at the end
+        if (showStreaming && index == messages.length) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _StreamingBubble(
+              text: streamingText,
+              personaName: widget.persona.name,
+            ),
+          );
+        }
+
         final message = messages[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
@@ -320,23 +401,27 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   ) {
     return Column(
       children: [
-        // Session summary header
+        // Session summary header with celebration
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primaryContainer.withOpacity(0.5),
+                theme.colorScheme.secondaryContainer.withOpacity(0.3),
+              ],
+            ),
           ),
           child: Column(
             children: [
-              Icon(
-                Icons.check_circle_rounded,
-                size: 48,
-                color: theme.colorScheme.primary,
+              const Text(
+                '🎉',
+                style: TextStyle(fontSize: 48),
               ),
               const SizedBox(height: 12),
               Text(
-                'Session Complete',
+                'Session Complete!',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -349,6 +434,10 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (sessionState.session.analytics != null) ...[
+                const SizedBox(height: 12),
+                _buildAnalyticsSummary(theme, sessionState.session.analytics!),
+              ],
             ],
           ),
         ),
@@ -389,11 +478,53 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     );
   }
 
+  Widget _buildAnalyticsSummary(ThemeData theme, SessionAnalytics analytics) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _AnalyticChip(
+          icon: Icons.help_outline_rounded,
+          label: '${analytics.questionsAsked} questions',
+          theme: theme,
+        ),
+        const SizedBox(width: 12),
+        _AnalyticChip(
+          icon: Icons.check_circle_outline_rounded,
+          label: '${analytics.correctAnswers} correct',
+          theme: theme,
+        ),
+        if (analytics.engagementScore > 0) ...[
+          const SizedBox(width: 12),
+          _AnalyticChip(
+            icon: Icons.star_outline_rounded,
+            label: '${(analytics.engagementScore * 100).toInt()}% engaged',
+            theme: theme,
+          ),
+        ],
+      ],
+    );
+  }
+
   /// Determine the current emotion to display on the avatar.
   EmotionType _getCurrentEmotion(
     TutorSessionState sessionState,
+    TutorRealtimeState rtState,
     TutorAudioState audioState,
   ) {
+    // Realtime avatar state takes priority
+    if (rtState.isConnected) {
+      switch (rtState.avatarState) {
+        case 'thinking':
+          return EmotionType.thinking;
+        case 'celebrating':
+          return EmotionType.excited;
+        case 'encouraging':
+          return EmotionType.encouraging;
+        case 'talking':
+          return EmotionType.happy;
+      }
+    }
+
     if (sessionState is TutorSessionActive && sessionState.isSending) {
       return EmotionType.thinking;
     }
@@ -410,5 +541,166 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     }
 
     return EmotionType.neutral;
+  }
+}
+
+// ============================================================================
+// STREAMING BUBBLE
+// ============================================================================
+
+/// Displays the AI's in-progress streaming text with a blinking cursor.
+class _StreamingBubble extends StatelessWidget {
+  final String text;
+  final String personaName;
+
+  const _StreamingBubble({required this.text, required this.personaName});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.80,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 4),
+              child: Text(
+                personaName,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  _BlinkingCursor(color: theme.colorScheme.primary),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// BLINKING CURSOR
+// ============================================================================
+
+class _BlinkingCursor extends StatefulWidget {
+  final Color color;
+  const _BlinkingCursor({required this.color});
+
+  @override
+  State<_BlinkingCursor> createState() => _BlinkingCursorState();
+}
+
+class _BlinkingCursorState extends State<_BlinkingCursor>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _controller.value,
+          child: Container(
+            width: 2,
+            height: 16,
+            decoration: BoxDecoration(
+              color: widget.color,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ============================================================================
+// ANALYTIC CHIP
+// ============================================================================
+
+class _AnalyticChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final ThemeData theme;
+
+  const _AnalyticChip({
+    required this.icon,
+    required this.label,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: theme.colorScheme.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

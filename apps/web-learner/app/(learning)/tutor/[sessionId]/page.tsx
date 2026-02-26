@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Send } from 'lucide-react';
 
-import { useTutorSession } from '../../../../lib/hooks/use-tutor-session';
-import { useTutorWebSocket } from '../../../../lib/hooks/use-tutor-websocket';
+import { useTutorSession, type TutorMessage } from '../../../../lib/hooks/use-tutor-session';
+import { useTutorWebSocket, type TutorMessage as WsMessage } from '../../../../lib/hooks/use-tutor-websocket';
+import { useTutorAudio, type VisemeEvent } from '../../../../lib/hooks/use-tutor-audio';
+import { useVoicePreference } from '../../../../lib/hooks/use-voice-preference';
 import { TutorSessionHeader } from '../../../../components/tutor/tutor-session-header';
 import { TutorChat } from '../../../../components/tutor/tutor-chat';
 
@@ -14,19 +16,53 @@ export default function TutorSessionPage() {
   const router = useRouter();
   const [input, setInput] = useState('');
   const [currentEmotion, setCurrentEmotion] = useState('NEUTRAL');
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
 
   const {
     session,
-    messages,
-    isSending,
-    error,
+    messages: restMessages,
+    isSending: isRestSending,
+    error: restError,
     loadMessages,
-    sendMessage,
     endSession,
     setSession,
   } = useTutorSession();
 
-  const { isConnected } = useTutorWebSocket(sessionId);
+  // Audio playback with lip-sync
+  const { mouthOpenAmount, isPlaying, playWithLipSync, stop: stopAudio } = useTutorAudio();
+
+  // Voice preference
+  const { voiceEnabled, toggleVoice } = useVoicePreference();
+
+  // Stable audio callback ref
+  const onAudioReadyRef = useRef<(audioUrl: string, visemes: VisemeEvent[]) => void>();
+  onAudioReadyRef.current = (audioUrl: string, visemes: VisemeEvent[]) => {
+    if (voiceEnabled) {
+      playWithLipSync(audioUrl, visemes);
+    }
+  };
+
+  // WebSocket real-time messaging
+  const {
+    messages: wsMessages,
+    streamingText,
+    isAiTyping,
+    avatarState,
+    isConnected,
+    useHttpFallback,
+    error: wsError,
+    sendMessage: wsSendMessage,
+    addInitialMessages,
+  } = useTutorWebSocket({
+    sessionId,
+    authToken: '',
+    onAudioReady: (audioUrl, visemes) => {
+      onAudioReadyRef.current?.(
+        audioUrl,
+        visemes.map((v, i) => ({ ...v, visemeId: i })),
+      );
+    },
+  });
 
   // Load session and messages on mount
   useEffect(() => {
@@ -47,30 +83,75 @@ export default function TutorSessionPage() {
     loadSession();
   }, [sessionId, loadMessages, setSession]);
 
+  // Prefer WS messages; fall back to REST
+  const messages = wsMessages.length > 0 ? wsMessages : restMessages;
+  const isSending = isAiTyping || isRestSending;
+  const error = wsError || restError;
+
+  // Seed WS hook with REST messages
+  useEffect(() => {
+    if (restMessages.length > 0 && wsMessages.length === 0) {
+      addInitialMessages(
+        restMessages.map((m) => ({
+          id: m.id,
+          role: m.role === 'USER' ? 'user' as const : 'assistant' as const,
+          content: m.content,
+          createdAt: new Date(m.createdAt),
+        })),
+      );
+    }
+  }, [restMessages, wsMessages.length, addInitialMessages]);
+
   // Update emotion from latest AI message
   useEffect(() => {
-    const lastAiMessage = [...messages].reverse().find((m) => m.role === 'ASSISTANT');
+    const lastAiMessage = [...messages].reverse().find(
+      (m) => m.role === 'ASSISTANT' || m.role === 'assistant',
+    );
     if (lastAiMessage) {
-      setCurrentEmotion(lastAiMessage.emotion);
+      const emotion = (lastAiMessage as TutorMessage).emotion ?? 'NEUTRAL';
+      setCurrentEmotion(emotion);
     }
   }, [messages]);
 
-  const handleSend = async () => {
+  // Clear playing ID when audio stops
+  useEffect(() => {
+    if (!isPlaying) setPlayingMessageId(null);
+  }, [isPlaying]);
+
+  const handleSend = useCallback(() => {
     if (!input.trim() || isSending) return;
     const text = input;
     setInput('');
-    await sendMessage(sessionId, text);
-  };
+    wsSendMessage(text.trim());
+  }, [input, isSending, wsSendMessage]);
 
   const handleEndSession = async () => {
+    stopAudio();
     await endSession(sessionId);
     router.push('/tutor');
   };
 
+  const handlePlayAudio = useCallback(
+    (message: TutorMessage | WsMessage) => {
+      const wsMsg = message as WsMessage;
+      if (wsMsg.audioUrl && wsMsg.visemes?.length) {
+        setPlayingMessageId(wsMsg.id);
+        playWithLipSync(
+          wsMsg.audioUrl,
+          wsMsg.visemes.map((v, i) => ({ ...v, visemeId: i })),
+        );
+      }
+    },
+    [playWithLipSync],
+  );
+
   if (!session) {
     return (
       <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading session...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+          <p className="text-gray-500">Loading session...</p>
+        </div>
       </div>
     );
   }
@@ -80,15 +161,22 @@ export default function TutorSessionPage() {
       <TutorSessionHeader
         session={session}
         emotion={currentEmotion}
-        isConnected={isConnected}
+        avatarState={avatarState as 'idle' | 'thinking' | 'talking' | 'celebrating' | 'encouraging' | 'listening' | undefined}
+        mouthOpenAmount={mouthOpenAmount}
+        isConnected={isConnected || useHttpFallback}
+        voiceEnabled={voiceEnabled}
+        onToggleVoice={toggleVoice}
         onEndSession={handleEndSession}
       />
 
       <TutorChat
-        messages={messages}
+        messages={messages as TutorMessage[]}
         personaSlug={session.persona.slug}
         personaName={session.persona.name}
         isSending={isSending}
+        streamingText={streamingText}
+        onPlayAudio={handlePlayAudio as (message: TutorMessage) => void}
+        playingMessageId={playingMessageId}
       />
 
       {error && (
@@ -97,31 +185,51 @@ export default function TutorSessionPage() {
         </div>
       )}
 
-      <div className="border-t border-gray-100 p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="flex gap-3"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask ${session.persona.name} anything...`}
-            className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-            disabled={session.status !== 'ACTIVE'}
-          />
+      {/* Session ended — inline summary */}
+      {session.status === 'COMPLETED' && (
+        <div className="border-t border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 text-center">
+          <div className="text-3xl mb-2">🎉</div>
+          <h3 className="text-lg font-bold text-gray-900">Session Complete!</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Great job! You had {messages.length} messages in this session.
+          </p>
           <button
-            type="submit"
-            disabled={!input.trim() || isSending || session.status !== 'ACTIVE'}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            onClick={() => router.push('/tutor')}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
           >
-            Send <Send className="h-4 w-4" />
+            Start New Session
           </button>
-        </form>
-      </div>
+        </div>
+      )}
+
+      {/* Input */}
+      {session.status === 'ACTIVE' && (
+        <div className="border-t border-gray-100 p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="flex gap-3"
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Ask ${session.persona.name} anything...`}
+              className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              disabled={isSending}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isSending}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              Send <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
