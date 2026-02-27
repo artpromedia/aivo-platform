@@ -20,6 +20,8 @@
     "app/**/*",
     "components/**/*",
     "lib/**/*",
+    "hooks/**/*",
+    "__tests__/**/*",
     "middleware.ts",
     "next-env.d.ts",
     ".next/types/**/*.ts"
@@ -28,9 +30,6 @@
     "node_modules",
     ".next",
     "dist",
-    "build",
-    "__tests__",
-    "vitest.config.ts",
-    "vitest.setup.ts"
+    "build"
   ]
 }

@@ -14,10 +14,10 @@ import { join } from 'path';
 // ═══════════════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  // Minimum coverage per service
-  minServiceCoverage: 75,
-  // Overall target coverage
-  targetOverallCoverage: 80,
+  // Minimum coverage per service (Sprint 8: raised from 75% to 90%)
+  minServiceCoverage: 90,
+  // Overall target coverage (Sprint 8: raised from 80% to 95%)
+  targetOverallCoverage: 95,
   // Critical services that MUST meet threshold (fail CI if below)
   criticalServices: [
     'auth-svc',
@@ -29,7 +29,14 @@ const CONFIG = {
     'legal-hold-svc',
     'ai-orchestrator',
     'ai-inference-svc',
+    'tenant-svc',
+    'notify-svc',
+    'content-svc',
+    'lti-svc',
+    'analytics-svc',
   ],
+  // Critical services must meet a higher bar
+  criticalServiceCoverage: 95,
   // Services that are exempt from coverage requirements
   exemptServices: [
     // Infrastructure/config services
@@ -172,9 +179,13 @@ function main() {
       totalCoverage += overall;
       coveredServices++;
 
-      if (overall < CONFIG.minServiceCoverage) {
+      const requiredCoverage = service.isCritical
+        ? CONFIG.criticalServiceCoverage
+        : CONFIG.minServiceCoverage;
+
+      if (overall < requiredCoverage) {
         if (service.isCritical) {
-          failures.push(`${service.name}: ${overall}% (required: ${CONFIG.minServiceCoverage}%)`);
+          failures.push(`${service.name}: ${overall}% (required: ${requiredCoverage}%)`);
         } else {
           warnings.push(`${service.name}: ${overall}% (target: ${CONFIG.minServiceCoverage}%)`);
         }

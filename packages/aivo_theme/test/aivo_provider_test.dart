@@ -55,7 +55,9 @@ void main() {
         displayName: 'After',
       );
 
+      final key = GlobalKey<_TrackingAppState>();
       final widget = _TrackingApp(
+        key: key,
         initialBranding: initial,
         onBuild: () => buildCount++,
       );
@@ -64,7 +66,7 @@ void main() {
       expect(buildCount, 1);
 
       // Update branding
-      widget.state!.updateBranding(updated);
+      key.currentState!.updateBranding(updated);
       await tester.pump();
       expect(buildCount, 2);
     });
@@ -75,7 +77,9 @@ void main() {
 
       final branding = AivoBranding.defaults();
 
+      final key = GlobalKey<_TrackingAppState>();
       final widget = _TrackingApp(
+        key: key,
         initialBranding: branding,
         onBuild: () => buildCount++,
       );
@@ -84,7 +88,7 @@ void main() {
       expect(buildCount, 1);
 
       // "Update" with identical branding
-      widget.state!.updateBranding(AivoBranding.defaults());
+      key.currentState!.updateBranding(AivoBranding.defaults());
       await tester.pump();
 
       // Should not trigger a rebuild of dependent widgets because
@@ -100,7 +104,9 @@ void main() {
         colorPrimary: const Color(0xFFFF0000),
       );
 
+      final key = GlobalKey<_TrackingAppState>();
       final widget = _TrackingApp(
+        key: key,
         initialBranding: initial,
         onBuild: () => buildCount++,
       );
@@ -108,7 +114,7 @@ void main() {
       await tester.pumpWidget(widget);
       expect(buildCount, 1);
 
-      widget.state!.updateBranding(updated);
+      key.currentState!.updateBranding(updated);
       await tester.pump();
       expect(buildCount, 2);
     });
@@ -179,7 +185,8 @@ void main() {
 /// A simple stateful app that allows updating branding and tracks rebuilds
 /// of a dependent widget.
 class _TrackingApp extends StatefulWidget {
-  _TrackingApp({
+  const _TrackingApp({
+    super.key,
     required this.initialBranding,
     required this.onBuild,
   });
@@ -187,13 +194,8 @@ class _TrackingApp extends StatefulWidget {
   final AivoBranding initialBranding;
   final VoidCallback onBuild;
 
-  _TrackingAppState? state;
-
   @override
-  State<_TrackingApp> createState() {
-    state = _TrackingAppState();
-    return state!;
-  }
+  State<_TrackingApp> createState() => _TrackingAppState();
 }
 
 class _TrackingAppState extends State<_TrackingApp> {

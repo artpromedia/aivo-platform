@@ -183,14 +183,14 @@ void main() {
     });
   });
 
-  group('AivoBranding color parsing edge cases', () => {
+  group('AivoBranding color parsing edge cases', () {
     test('fromJson handles 8-digit hex (with alpha)', () {
       final branding = AivoBranding.fromJson({
         'colorPrimary': '#80FF5733', // 8-digit with alpha
       });
       // Should parse the 8-digit hex directly
       expect(branding.colorPrimary, isNotNull);
-    });
+    });;
 
     test('fromJson handles missing # prefix', () {
       final branding = AivoBranding.fromJson({

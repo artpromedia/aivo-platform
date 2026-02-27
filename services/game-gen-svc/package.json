@@ -8,7 +8,9 @@
     "dev": "tsx watch src/index.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@aivo/ts-api-utils": "workspace:*",
@@ -29,7 +31,9 @@
     "@types/node": "^22.7.5",
     "prisma": "^5.22.0",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9",
+    "@vitest/coverage-v8": "^2.1.9"
   },
   "aivo": {
     "phase": 2,
