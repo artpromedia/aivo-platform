@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isApiProgressReport,
   isProgressReportData,
-} from '@/src/lib/adapters/progress-report.adapter';
+} from '@/lib/adapters/progress-report.adapter';
 
 describe('progress-report.adapter', () => {
   describe('isApiProgressReport', () => {

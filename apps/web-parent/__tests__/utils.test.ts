@@ -10,7 +10,7 @@ import {
   delay,
   isDev,
   generateId,
-} from '@/src/lib/utils';
+} from '@/lib/utils';
 
 // ── cn (class name merge) ────────────────────────────────────────
 

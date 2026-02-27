@@ -33,7 +33,7 @@ beforeEach(() => {
 // Use dynamic import to work around module caching
 describe('api module', () => {
   it('api export has CRUD methods', async () => {
-    const mod = await import('@/src/lib/api');
+    const mod = await import('@/lib/api');
     expect(mod.api).toBeDefined();
     expect(typeof mod.api.get).toBe('function');
     expect(typeof mod.api.post).toBe('function');
@@ -45,7 +45,7 @@ describe('api module', () => {
 describe('api.get', () => {
   it('makes GET request and returns JSON', async () => {
     mockFetch.mockResolvedValue(ok({ items: [1, 2, 3] }));
-    const { api } = await import('@/src/lib/api');
+    const { api } = await import('@/lib/api');
     const result = await api.get('/test-endpoint');
     expect(result).toEqual({ items: [1, 2, 3] });
   });
@@ -54,7 +54,7 @@ describe('api.get', () => {
 describe('api.post', () => {
   it('makes POST request with body', async () => {
     mockFetch.mockResolvedValue(ok({ id: 'new-1' }));
-    const { api } = await import('@/src/lib/api');
+    const { api } = await import('@/lib/api');
     const result = await api.post('/items', { name: 'Test' });
     expect(result).toEqual({ id: 'new-1' });
 
@@ -66,7 +66,7 @@ describe('api.post', () => {
 describe('api.put', () => {
   it('makes PUT request', async () => {
     mockFetch.mockResolvedValue(ok({ updated: true }));
-    const { api } = await import('@/src/lib/api');
+    const { api } = await import('@/lib/api');
     const result = await api.put('/items/1', { name: 'Updated' });
     expect(result).toEqual({ updated: true });
 
@@ -78,7 +78,7 @@ describe('api.put', () => {
 describe('api.delete', () => {
   it('makes DELETE request', async () => {
     mockFetch.mockResolvedValue(ok(null));
-    const { api } = await import('@/src/lib/api');
+    const { api } = await import('@/lib/api');
     await api.delete('/items/1');
 
     const [, opts] = mockFetch.mock.calls[0];
@@ -94,7 +94,7 @@ describe('getBlob', () => {
       status: 200,
       blob: () => Promise.resolve(blob),
     });
-    const { api } = await import('@/src/lib/api');
+    const { api } = await import('@/lib/api');
     const result = await api.getBlob('/download/file.pdf');
     expect(result).toBeInstanceOf(Blob);
   });
@@ -102,7 +102,7 @@ describe('getBlob', () => {
 
 describe('isDevMode', () => {
   it('returns a boolean', async () => {
-    const { isDevMode } = await import('@/src/lib/api');
+    const { isDevMode } = await import('@/lib/api');
     expect(typeof isDevMode()).toBe('boolean');
   });
 });

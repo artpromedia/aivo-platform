@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('API Client', () => {
   describe('ApiError class', async () => {
-    const { ApiError } = await import('@/src/lib/api/client');
+    const { ApiError } = await import('@/lib/api/client');
 
     it('is an instance of Error', () => {
       const err = new ApiError('test error', 'NETWORK_ERROR', 500);
@@ -26,10 +26,10 @@ describe('API Client', () => {
 
     it('sets optional details and requestId', () => {
       const err = new ApiError('err', 'SERVER_ERROR', 500, {
-        details: { field: 'email' },
+        details: [{ field: 'email', message: 'Invalid email' }],
         requestId: 'req-123',
       });
-      expect(err.details).toEqual({ field: 'email' });
+      expect(err.details).toEqual([{ field: 'email', message: 'Invalid email' }]);
       expect(err.requestId).toBe('req-123');
     });
 
@@ -123,7 +123,7 @@ describe('API Client', () => {
   });
 
   describe('isDevMode', async () => {
-    const { isDevMode } = await import('@/src/lib/api/client');
+    const { isDevMode } = await import('@/lib/api/client');
 
     it('returns a boolean', () => {
       expect(typeof isDevMode()).toBe('boolean');

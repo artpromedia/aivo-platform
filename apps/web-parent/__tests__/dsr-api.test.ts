@@ -3,8 +3,8 @@ import {
   formatGracePeriod,
   canCancelRequest,
   getStatusColor,
-} from '@/src/lib/dsr-api';
-import type { DsrRequestSummary, DsrRequestStatus } from '@/src/lib/dsr-api';
+} from '@/lib/dsr-api';
+import type { DsrRequestSummary, DsrRequestStatus } from '@/lib/dsr-api';
 
 describe('DSR API utility functions', () => {
   describe('formatGracePeriod', () => {
