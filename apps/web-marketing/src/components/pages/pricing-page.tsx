@@ -18,6 +18,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PricingCTA } from '@/components/cta';
 import { Navigation, Footer } from '@/components/shared';
@@ -44,169 +45,101 @@ interface PricingTier {
   planId: string;
 }
 
-const tiers: PricingTier[] = [
-  {
-    name: 'Free',
-    description: 'Get started with basic features',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    features: [
-      'Basic lessons & activities',
-      'Core subjects (Math, Reading)',
-      'Basic progress tracking',
-      'Community support',
-      'Limited AI interactions',
-    ],
-    notIncluded: [
-      'Full curriculum access',
-      'IEP integration',
-      'Parent dashboard',
-      'Priority support',
-    ],
-    cta: 'Get Started Free',
-    ctaVariant: 'outline',
-    planId: 'free',
-  },
-  {
-    name: 'Pro',
-    description: 'Perfect for most families',
-    monthlyPrice: 29.99,
-    annualPrice: 24.99,
-    originalPrice: 39.99,
-    popular: true,
-    discount: '50% Off',
-    features: [
-      'Everything in Free, plus:',
-      'Full lesson library access',
-      'Unlimited AI tutor sessions',
-      'IEP goal integration',
-      'Detailed progress tracking',
-      'Parent dashboard',
-      'Priority email support',
-      'Learning style assessment',
-      'Custom learning paths',
-    ],
-    cta: 'Start Pro Trial',
-    ctaVariant: 'coral',
-    planId: 'pro',
-  },
-  {
-    name: 'Premium',
-    description: 'For families needing extra support',
-    monthlyPrice: 49.99,
-    annualPrice: 41.99,
-    features: [
-      'Everything in Pro, plus:',
-      'Multiple learner profiles',
-      'Advanced teacher tools',
-      'Unlimited chat support',
-      '24/7 priority support',
-      'Custom learning plans',
-      'Family progress reports',
-      'Dedicated success manager',
-      'Early feature access',
-    ],
-    cta: 'Start Premium Trial',
-    ctaVariant: 'default',
-    planId: 'premium',
-  },
-];
-
-const featureComparison = [
-  { name: 'AI Tutor Sessions', free: '5 / week', pro: 'Unlimited', premium: 'Unlimited' },
-  { name: 'Subject Areas', free: '2', pro: 'All', premium: 'All' },
-  { name: 'Progress Reports', free: 'Basic', pro: 'Detailed', premium: 'Advanced + Export' },
-  { name: 'IEP Integration', free: false, pro: true, premium: true },
-  { name: 'Parent Dashboard', free: false, pro: true, premium: true },
-  { name: 'Learner Profiles', free: '1', pro: '1', premium: 'Up to 5' },
-  { name: 'Learning Style Assessment', free: false, pro: true, premium: true },
-  { name: 'Custom Learning Paths', free: false, pro: true, premium: true },
-  { name: 'Teacher Tools', free: false, pro: false, premium: true },
-  { name: 'Dedicated Success Manager', free: false, pro: false, premium: true },
-  { name: 'Support', free: 'Community', pro: 'Priority Email', premium: '24/7 Priority' },
-  { name: 'Early Feature Access', free: false, pro: false, premium: true },
-];
-
-const trustBadges = [
-  { icon: Shield, label: 'FERPA & COPPA Compliant' },
-  { icon: Clock, label: '14-Day Free Trial' },
-  { icon: Users, label: 'Family Dashboard' },
-  { icon: ClipboardList, label: 'IEP Integration' },
-];
-
-const faqs = [
-  {
-    question: 'Can I switch plans anytime?',
-    answer:
-      'Yes! You can upgrade, downgrade, or cancel your plan at any time. Changes take effect at the start of your next billing cycle.',
-  },
-  {
-    question: 'Is there a free trial?',
-    answer:
-      'Yes, Pro and Premium plans include a 14-day free trial. No credit card required to start.',
-  },
-  {
-    question: 'How does billing work?',
-    answer:
-      'You can choose monthly or annual billing. Annual billing saves you 50% compared to monthly.',
-  },
-  {
-    question: 'Can AIVO support multiple learning differences?',
-    answer:
-      'Absolutely! AIVO is designed to support learners with ADHD, Autism, Dyslexia, and many other learning differences simultaneously.',
-  },
-  {
-    question: 'Do you offer school or district pricing?',
-    answer:
-      'Yes! We offer special pricing for schools and districts. Contact our sales team for a custom quote tailored to your institution.',
-  },
-  {
-    question: 'What happens when my trial ends?',
-    answer:
-      'At the end of your trial you can choose a paid plan or continue with the Free tier. We will never charge without your consent.',
-  },
-];
-
-const educatorFeatures = [
-  {
-    icon: Brain,
-    title: 'AI-Powered Adaptation',
-    description: `Content adapts in real-time to each learner's pace and style`,
-  },
-  {
-    icon: BarChart3,
-    title: 'Actionable Analytics',
-    description: 'Deep insight into learner progress, strengths, and growth areas',
-  },
-  {
-    icon: BookOpen,
-    title: 'Full Curriculum Library',
-    description: 'Activities aligned to standards and IEP goals across all K-12 subjects',
-  },
-  {
-    icon: GraduationCap,
-    title: 'IEP Goal Tracking',
-    description: 'Track IEP objectives with measurable data and exportable reports',
-  },
-  {
-    icon: Headphones,
-    title: 'Multi-Sensory Learning',
-    description: 'Visual, auditory, and kinesthetic activities for every learner',
-  },
-  {
-    icon: Zap,
-    title: 'Instant Feedback',
-    description: 'Real-time guidance keeps learners motivated and on track',
-  },
-];
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function PricingPage() {
+  const { t } = useTranslation('marketing');
   const [isAnnual, setIsAnnual] = React.useState(true);
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
+
+  /* ── Locale-driven data ─────────────────────────────────── */
+  const tierKeys = ['free', 'pro', 'premium'] as const;
+  const tierMeta: Record<
+    string,
+    {
+      monthlyPrice: number;
+      annualPrice: number;
+      originalPrice?: number;
+      popular?: boolean;
+      ctaVariant: 'default' | 'coral' | 'outline';
+      planId: string;
+    }
+  > = {
+    free: { monthlyPrice: 0, annualPrice: 0, ctaVariant: 'outline', planId: 'free' },
+    pro: {
+      monthlyPrice: 29.99,
+      annualPrice: 24.99,
+      originalPrice: 39.99,
+      popular: true,
+      ctaVariant: 'coral',
+      planId: 'pro',
+    },
+    premium: { monthlyPrice: 49.99, annualPrice: 41.99, ctaVariant: 'default', planId: 'premium' },
+  };
+  const tiers: PricingTier[] = tierKeys.map((key) => ({
+    name: t(`pricing.${key}.name`),
+    description: t(`pricing.${key}.description`),
+    ...tierMeta[key],
+    discount: key === 'pro' ? t('pricing.pro.discount') : undefined,
+    features: t(`pricing.${key}.features`, { returnObjects: true }) as string[],
+    notIncluded:
+      key === 'free'
+        ? (t('pricing.free.notIncluded', { returnObjects: true }) as string[])
+        : undefined,
+    cta: t(`pricing.${key}.cta`),
+  }));
+
+  const fcStr = (key: string) => {
+    const d = t(`pricingPage.featureComparison.${key}`, { returnObjects: true }) as {
+      label: string;
+      free: string;
+      pro: string;
+      premium: string;
+    };
+    return { name: d.label, free: d.free, pro: d.pro, premium: d.premium };
+  };
+  const fcBool = (key: string, free: boolean, pro: boolean, premium: boolean) => ({
+    name: (
+      t(`pricingPage.featureComparison.${key}`, { returnObjects: true }) as { label: string }
+    ).label,
+    free,
+    pro,
+    premium,
+  });
+  const featureComparison = [
+    fcStr('aiTutorSessions'),
+    fcStr('subjectAreas'),
+    fcStr('progressReports'),
+    fcBool('iepIntegration', false, true, true),
+    fcBool('parentDashboard', false, true, true),
+    fcStr('learnerProfiles'),
+    fcBool('learningStyleAssessment', false, true, true),
+    fcBool('customLearningPaths', false, true, true),
+    fcBool('teacherTools', false, false, true),
+    fcBool('dedicatedSuccessManager', false, false, true),
+    fcStr('support'),
+    fcBool('earlyFeatureAccess', false, false, true),
+  ];
+
+  const trustBadgeIcons = [Shield, Clock, Users, ClipboardList];
+  const trustBadgeLabels = t('pricingPage.trustBadges', { returnObjects: true }) as string[];
+  const trustBadges = trustBadgeIcons.map((icon, i) => ({ icon, label: trustBadgeLabels[i] }));
+
+  const faqs = t('pricingPage.faqs', { returnObjects: true }) as Array<{
+    question: string;
+    answer: string;
+  }>;
+
+  const educatorIcons = [Brain, BarChart3, BookOpen, GraduationCap, Headphones, Zap];
+  const educatorFeatureData = t('pricingPage.educatorFeatures', {
+    returnObjects: true,
+  }) as Array<{ title: string; description: string }>;
+  const educatorFeatures = educatorFeatureData.map((f, i) => ({
+    ...f,
+    icon: educatorIcons[i],
+  }));
 
   return (
     <>
@@ -217,14 +150,14 @@ export function PricingPage() {
           <div className="container mx-auto px-4 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Badge variant="primary" className="mb-4">
-                Pricing
+                {t('pricingPage.heroBadge')}
               </Badge>
               <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                Simple, Transparent <span className="text-gradient-primary">Pricing</span>
+                {t('pricingPage.heroHeadingPrefix')}{' '}
+                <span className="text-gradient-primary">{t('pricingPage.heroHeadingHighlight')}</span>
               </h1>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Choose the plan that fits your family&apos;s needs. All plans include our core
-                AI-powered learning experience with a 14-day free trial.
+                {t('pricingPage.heroDescription')}
               </p>
             </motion.div>
           </div>
@@ -240,7 +173,7 @@ export function PricingPage() {
                   isAnnual ? 'text-gray-500' : 'text-gray-900'
                 )}
               >
-                Monthly
+                {t('pricingPage.monthly')}
               </span>
               <button
                 onClick={() => {
@@ -250,7 +183,7 @@ export function PricingPage() {
                   'relative w-14 h-8 rounded-full transition-colors',
                   isAnnual ? 'bg-theme-primary-500' : 'bg-gray-300'
                 )}
-                aria-label={isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
+                aria-label={isAnnual ? t('pricingPage.switchToMonthly') : t('pricingPage.switchToAnnual')}
               >
                 <motion.div
                   className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-md"
@@ -264,10 +197,10 @@ export function PricingPage() {
                   isAnnual ? 'text-gray-900' : 'text-gray-500'
                 )}
               >
-                Annual
+                {t('pricingPage.annual')}
               </span>
               <Badge variant="success" className="ml-2">
-                Save 50%
+                {t('pricingPage.saveBadge')}
               </Badge>
             </div>
           </div>
@@ -297,7 +230,7 @@ export function PricingPage() {
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                         <Badge variant="gradient" className="px-4 py-1">
                           <Star className="w-3 h-3 mr-1" />
-                          Most Popular
+                          {t('pricingPage.popularBadge')}
                         </Badge>
                       </div>
                     )}
@@ -322,11 +255,11 @@ export function PricingPage() {
                         <span className="text-5xl font-bold text-gray-900">
                           ${price.toFixed(price === 0 ? 0 : 2)}
                         </span>
-                        <span className="text-gray-500 mb-2">/month</span>
+                        <span className="text-gray-500 mb-2">{t('pricingPage.perMonth')}</span>
                       </div>
                       {isAnnual && price > 0 && (
                         <p className="text-sm text-gray-500 mt-1">
-                          Billed annually (${(price * 12).toFixed(2)}/year)
+                          {t('pricingPage.billedAnnually', { amount: (price * 12).toFixed(2) })}
                         </p>
                       )}
                     </div>
@@ -379,10 +312,10 @@ export function PricingPage() {
               className="text-center mb-12"
             >
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Compare Plans
+                {t('pricingPage.comparePlansHeading')}
               </h2>
               <p className="text-gray-600 max-w-xl mx-auto">
-                See exactly what you get with each plan
+                {t('pricingPage.comparePlansDescription')}
               </p>
             </motion.div>
 
@@ -390,15 +323,15 @@ export function PricingPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="py-4 pr-4 text-sm font-semibold text-gray-900">Feature</th>
+                    <th className="py-4 pr-4 text-sm font-semibold text-gray-900">{t('pricingPage.featureTableHeaders.feature')}</th>
                     <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">
-                      Free
+                      {t('pricingPage.featureTableHeaders.free')}
                     </th>
                     <th className="py-4 px-4 text-sm font-semibold text-theme-primary-600 text-center">
-                      Pro
+                      {t('pricingPage.featureTableHeaders.pro')}
                     </th>
                     <th className="py-4 px-4 text-sm font-semibold text-gray-900 text-center">
-                      Premium
+                      {t('pricingPage.featureTableHeaders.premium')}
                     </th>
                   </tr>
                 </thead>
@@ -447,14 +380,13 @@ export function PricingPage() {
               className="text-center mb-12"
             >
               <Badge variant="primary" className="mb-4">
-                Why AIVO
+                {t('pricingPage.whyAivoBadge')}
               </Badge>
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Built for Every Learner
+                {t('pricingPage.whyAivoHeading')}
               </h2>
               <p className="text-gray-600 max-w-xl mx-auto">
-                Powerful tools designed for neurodivergent learners and the educators who support
-                them
+                {t('pricingPage.whyAivoDescription')}
               </p>
             </motion.div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -490,7 +422,7 @@ export function PricingPage() {
               className="text-center mb-12"
             >
               <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Frequently Asked Questions
+                {t('pricingPage.faqHeading')}
               </h2>
             </motion.div>
             <div className="max-w-2xl mx-auto space-y-3">
@@ -549,9 +481,9 @@ export function PricingPage() {
                   <Shield className="w-6 h-6 text-mint-600" />
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold text-gray-900">30-Day Money-Back Guarantee</div>
+                  <div className="font-semibold text-gray-900">{t('pricingPage.moneyBack.heading')}</div>
                   <div className="text-sm text-gray-600">
-                    Try risk-free. Full refund if not satisfied.
+                    {t('pricingPage.moneyBack.description')}
                   </div>
                 </div>
               </div>
@@ -568,24 +500,23 @@ export function PricingPage() {
               viewport={{ once: true }}
             >
               <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
-                Need School or District Pricing?
+                {t('pricingPage.enterpriseHeading')}
               </h2>
               <p className="text-theme-primary-100 text-lg max-w-xl mx-auto mb-8">
-                We offer custom plans for schools, districts, and organizations. Get volume
-                discounts and dedicated support.
+                {t('pricingPage.enterpriseDescription')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a
                   href="/contact"
                   className="inline-flex items-center justify-center px-8 py-4 bg-white text-theme-primary-600 font-semibold rounded-2xl hover:shadow-lg transition-shadow"
                 >
-                  Contact Sales
+                  {t('pricingPage.enterpriseCtaPrimary')}
                 </a>
                 <a
                   href="/demo"
                   className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white font-semibold rounded-2xl hover:bg-white/10 transition-colors"
                 >
-                  Request a Demo
+                  {t('pricingPage.enterpriseCtaSecondary')}
                 </a>
               </div>
             </motion.div>

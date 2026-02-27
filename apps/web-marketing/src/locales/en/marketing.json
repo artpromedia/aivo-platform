@@ -231,7 +231,7 @@
     "switchToMonthly": "Switch to monthly billing",
     "switchToAnnual": "Switch to annual billing",
     "perMonth": "/month",
-    "billedAnnually": "Billed annually (${amount}/year)",
+    "billedAnnually": "Billed annually ({{amount}}/year)",
     "free": {
       "name": "Free",
       "description": "Get started with basic features",
@@ -548,7 +548,7 @@
     "switchToAnnual": "Switch to annual billing",
     "popularBadge": "Most Popular",
     "perMonth": "/month",
-    "billedAnnually": "Billed annually (${amount}/year)",
+    "billedAnnually": "Billed annually ({{amount}}/year)",
     "comparePlansHeading": "Compare Plans",
     "comparePlansDescription": "See exactly what you get with each plan",
     "featureTableHeaders": {

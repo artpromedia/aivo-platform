@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { AivoLogo } from '@/components/ui/aivo-logo';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ interface FooterLink {
   readonly label: string;
   readonly href: string;
   readonly badge?: string;
+  readonly badgeVariant?: 'success' | 'primary';
   readonly external?: boolean;
 }
 
@@ -36,62 +38,64 @@ interface FooterSection {
   readonly links: readonly FooterLink[];
 }
 
-const footerLinks: Record<string, FooterSection> = {
-  product: {
-    title: 'Product',
-    links: [
-      { label: 'Features', href: '/#features' },
-      { label: 'How It Works', href: '/how-it-works' },
-      { label: 'Pricing', href: '/pricing' },
-      { label: 'AI Tutoring', href: '/#features' },
-      { label: 'AIVO Pad', href: '/aivo-pad', badge: 'New' },
-      { label: 'Accessibility', href: '/accessibility' },
-    ],
-  },
-  solutions: {
-    title: 'Solutions',
-    links: [
-      { label: 'For Parents', href: '/features/parents' },
-      { label: 'For Teachers', href: '/features/teachers' },
-      { label: 'For Students', href: '/features/students' },
-      { label: 'For Schools', href: '/features/schools' },
-      { label: 'For Districts', href: '/features/districts' },
-      { label: 'Homeschool', href: '/features/homeschool' },
-    ],
-  },
-  resources: {
-    title: 'Resources',
-    links: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Blog', href: '/blog' },
-      { label: 'Research', href: '/research' },
-      { label: 'Case Studies', href: '/case-studies' },
-      { label: 'Webinars', href: '/webinars' },
-      { label: 'API Docs', href: '/docs', external: true },
-    ],
-  },
-  company: {
-    title: 'Company',
-    links: [
-      { label: 'About Us', href: '/about' },
-      { label: 'Careers', href: '/careers', badge: 'Hiring' },
-      { label: 'Press', href: '/press' },
-      { label: 'Contact', href: '/contact' },
-      { label: 'Partners', href: '/partners' },
-    ],
-  },
-  legal: {
-    title: 'Legal',
-    links: [
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'COPPA Compliance', href: '/compliance/coppa' },
-      { label: 'FERPA Compliance', href: '/compliance/ferpa' },
-      { label: 'Accessibility Statement', href: '/accessibility-statement' },
-    ],
-  },
-};
+function useFooterLinks(t: (key: string) => string): Record<string, FooterSection> {
+  return {
+    product: {
+      title: t('footer.sections.product'),
+      links: [
+        { label: t('footer.productLinks.features'), href: '/#features' },
+        { label: t('footer.productLinks.howItWorks'), href: '/how-it-works' },
+        { label: t('footer.productLinks.pricing'), href: '/pricing' },
+        { label: t('footer.productLinks.aiTutoring'), href: '/#features' },
+        { label: t('footer.productLinks.aivoPad'), href: '/aivo-pad', badge: t('footer.productLinks.new'), badgeVariant: 'success' as const },
+        { label: t('footer.productLinks.accessibility'), href: '/accessibility' },
+      ],
+    },
+    solutions: {
+      title: t('footer.sections.solutions'),
+      links: [
+        { label: t('footer.solutionsLinks.forParents'), href: '/features/parents' },
+        { label: t('footer.solutionsLinks.forTeachers'), href: '/features/teachers' },
+        { label: t('footer.solutionsLinks.forStudents'), href: '/features/students' },
+        { label: t('footer.solutionsLinks.forSchools'), href: '/features/schools' },
+        { label: t('footer.solutionsLinks.forDistricts'), href: '/features/districts' },
+        { label: t('footer.solutionsLinks.homeschool'), href: '/features/homeschool' },
+      ],
+    },
+    resources: {
+      title: t('footer.sections.resources'),
+      links: [
+        { label: t('footer.resourcesLinks.helpCenter'), href: '/help' },
+        { label: t('footer.resourcesLinks.blog'), href: '/blog' },
+        { label: t('footer.resourcesLinks.research'), href: '/research' },
+        { label: t('footer.resourcesLinks.caseStudies'), href: '/case-studies' },
+        { label: t('footer.resourcesLinks.webinars'), href: '/webinars' },
+        { label: t('footer.resourcesLinks.apiDocs'), href: '/docs', external: true },
+      ],
+    },
+    company: {
+      title: t('footer.sections.company'),
+      links: [
+        { label: t('footer.companyLinks.aboutUs'), href: '/about' },
+        { label: t('footer.companyLinks.careers'), href: '/careers', badge: t('footer.companyLinks.hiring'), badgeVariant: 'primary' as const },
+        { label: t('footer.companyLinks.press'), href: '/press' },
+        { label: t('footer.companyLinks.contact'), href: '/contact' },
+        { label: t('footer.companyLinks.partners'), href: '/partners' },
+      ],
+    },
+    legal: {
+      title: t('footer.sections.legal'),
+      links: [
+        { label: t('footer.legalLinks.privacyPolicy'), href: '/privacy' },
+        { label: t('footer.legalLinks.termsOfService'), href: '/terms' },
+        { label: t('footer.legalLinks.cookiePolicy'), href: '/cookies' },
+        { label: t('footer.legalLinks.coppaCompliance'), href: '/compliance/coppa' },
+        { label: t('footer.legalLinks.ferpaCompliance'), href: '/compliance/ferpa' },
+        { label: t('footer.legalLinks.accessibilityStatement'), href: '/accessibility-statement' },
+      ],
+    },
+  };
+}
 
 // Custom social media icons (lucide brand icons are deprecated)
 const FacebookIcon = ({ className }: { className?: string }) => (
@@ -172,36 +176,14 @@ const socialLinks = [
   },
 ];
 
-const trustBadges = [
-  { label: 'FERPA Compliant', icon: Shield },
-  { label: 'COPPA Certified', icon: Shield },
-  { label: 'SOC 2 Type II', icon: Shield },
-  { label: 'WCAG 2.1 AA', icon: CheckCircle },
-];
-
-const contactInfo = [
-  {
-    icon: Mail,
-    label: 'hello@aivolearning.com',
-    href: 'mailto:hello@aivolearning.com',
-  },
-  {
-    icon: Phone,
-    label: '1-800-AIVO-EDU',
-    href: 'tel:+18002486338',
-  },
-  {
-    icon: MapPin,
-    label: 'Minneapolis, MN',
-    href: null,
-  },
-];
+// trustBadges and contactInfo moved inside component for i18n
 
 // ===========================================
 // FOOTER COMPONENT
 // ===========================================
 
 export function Footer() {
+  const { t } = useTranslation('marketing');
   const [email, setEmail] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitStatus, setSubmitStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
@@ -209,13 +191,40 @@ export function Footer() {
 
   const currentYear = new Date().getFullYear();
 
+  const footerLinks = useFooterLinks(t);
+
+  const trustBadges = [
+    { label: t('footer.trustBadges.ferpa'), icon: Shield },
+    { label: t('footer.trustBadges.coppa'), icon: Shield },
+    { label: t('footer.trustBadges.soc2'), icon: Shield },
+    { label: t('footer.trustBadges.wcag'), icon: CheckCircle },
+  ];
+
+  const contactInfo = [
+    {
+      icon: Mail,
+      label: t('footer.contactInfo.email'),
+      href: 'mailto:hello@aivolearning.com',
+    },
+    {
+      icon: Phone,
+      label: t('footer.contactInfo.phone'),
+      href: 'tel:+18002486338',
+    },
+    {
+      icon: MapPin,
+      label: t('footer.contactInfo.location'),
+      href: null,
+    },
+  ];
+
   const validateEmail = (emailValue: string): boolean => {
     if (!emailValue) {
-      setEmailError('Email is required');
+      setEmailError(t('footer.newsletter.emailRequired'));
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-      setEmailError('Please enter a valid email');
+      setEmailError(t('footer.newsletter.emailInvalid'));
       return false;
     }
     setEmailError('');
@@ -268,15 +277,14 @@ export function Footer() {
               <div className="relative z-10">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-theme-primary-50 rounded-full mb-6">
                   <Sparkles className="w-4 h-4 text-theme-primary-600" />
-                  <span className="text-theme-primary-700 text-sm font-medium">Join 10,000+ subscribers</span>
+                  <span className="text-theme-primary-700 text-sm font-medium">{t('footer.newsletter.subscriberBadge')}</span>
                 </div>
 
                 <h3 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                  Stay Updated with AIVO
+                  {t('footer.newsletter.heading')}
                 </h3>
                 <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                  Get the latest updates on new features, learning tips, and special offers
-                  delivered to your inbox.
+                  {t('footer.newsletter.description')}
                 </p>
 
                 <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto">
@@ -291,7 +299,7 @@ export function Footer() {
                             setEmail(e.target.value);
                             if (emailError) validateEmail(e.target.value);
                           }}
-                          placeholder="Enter your email"
+                          placeholder={t('footer.newsletter.placeholder')}
                           className={cn(
                             'w-full pl-12 pr-4 py-3.5 rounded-xl border-2 focus:outline-none focus:ring-0 transition-colors',
                             emailError
@@ -309,7 +317,7 @@ export function Footer() {
                       disabled={isSubmitting}
                       className="bg-theme-primary-600 hover:bg-theme-primary-700 text-white px-6 py-3.5 rounded-xl font-semibold whitespace-nowrap"
                     >
-                      {isSubmitting ? 'Subscribing...' : 'Subscribe'}
+                      {isSubmitting ? t('footer.newsletter.subscribing') : t('footer.newsletter.subscribe')}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -322,18 +330,18 @@ export function Footer() {
                     className="mt-4 flex items-center justify-center gap-2 text-mint-600"
                   >
                     <CheckCircle className="w-5 h-5" />
-                    <span>Thanks for subscribing! Check your inbox.</span>
+                    <span>{t('footer.newsletter.successMessage')}</span>
                   </motion.div>
                 )}
 
                 {submitStatus === 'error' && (
-                  <p className="mt-4 text-red-500">Something went wrong. Please try again.</p>
+                  <p className="mt-4 text-red-500">{t('footer.newsletter.errorMessage')}</p>
                 )}
 
                 <p className="mt-4 text-xs text-gray-400">
-                  We respect your privacy. Unsubscribe at any time.{' '}
+                  {t('footer.newsletter.privacyNote')}{' '}
                   <Link href="/privacy" className="underline hover:text-gray-900">
-                    Privacy Policy
+                    {t('footer.newsletter.privacyPolicyLink')}
                   </Link>
                 </p>
               </div>
@@ -350,8 +358,7 @@ export function Footer() {
             <AivoLogo size="lg" variant="stacked-dark" className="mb-6" />
 
             <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              AI-powered personalized learning for neurodiverse students. Supporting ADHD, Autism,
-              Dyslexia, and all learning differences.
+              {t('footer.brandTagline')}
             </p>
 
             {/* Contact Info */}
@@ -389,7 +396,7 @@ export function Footer() {
                       'w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 transition-colors',
                       social.color
                     )}
-                    aria-label={social.name}
+                    aria-label={t(`footer.socialLabels.${social.name.toLowerCase()}`)}
                   >
                     <Icon className="w-5 h-5" />
                   </a>
@@ -415,7 +422,7 @@ export function Footer() {
                     >
                       {link.label}
                       {link.badge && (
-                        <Badge variant={link.badge === 'New' ? 'success' : 'primary'} size="sm">
+                        <Badge variant={link.badgeVariant || 'primary'} size="sm">
                           {link.badge}
                         </Badge>
                       )}
@@ -452,24 +459,23 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
             <div className="flex flex-col sm:flex-row items-center gap-2 text-sm text-gray-500">
-              <span>© {currentYear} AIVO Learning, Inc. All rights reserved.</span>
+              <span>{t('footer.copyright', { year: currentYear })}</span>
               <span className="hidden sm:inline">•</span>
               <span className="flex items-center gap-1">
-                Made with <Heart className="w-4 h-4 text-coral-500 fill-current" /> for neurodiverse
-                learners
+                {t('footer.madeWith')} <Heart className="w-4 h-4 text-coral-500 fill-current" /> {t('footer.forLearners')}
               </span>
             </div>
 
             {/* Bottom Links */}
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <Link href="/sitemap-html" className="hover:text-theme-primary-600 transition-colors">
-                Sitemap
+                {t('footer.sitemap')}
               </Link>
               <Link
                 href="/accessibility-statement"
                 className="hover:text-theme-primary-600 transition-colors"
               >
-                Accessibility
+                {t('footer.accessibility')}
               </Link>
               <button
                 onClick={() => {
@@ -478,7 +484,7 @@ export function Footer() {
                 }}
                 className="hover:text-theme-primary-600 transition-colors"
               >
-                Cookie Preferences
+                {t('footer.cookiePreferences')}
               </button>
             </div>
           </div>

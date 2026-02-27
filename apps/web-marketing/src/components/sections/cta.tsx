@@ -10,15 +10,17 @@ import {
   Mail,
 } from 'lucide-react';
 import * as React from 'react';
-
-const trustPoints = [
-  { icon: CreditCard, text: 'No credit card required' },
-  { icon: Calendar, text: '14-day free trial' },
-  { icon: XCircle, text: 'Cancel anytime' },
-];
+import { useTranslation } from 'react-i18next';
 
 export function CTA() {
+  const { t } = useTranslation('marketing');
   const [email, setEmail] = React.useState('');
+
+  const trustPoints = [
+    { icon: CreditCard, text: t('cta.trustPoints.0') },
+    { icon: Calendar, text: t('cta.trustPoints.1') },
+    { icon: XCircle, text: t('cta.trustPoints.2') },
+  ];
 
   const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
 
@@ -41,9 +43,9 @@ export function CTA() {
             viewport={{ once: true }}
             className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6"
           >
-            Ready to Start{' '}
+            {t('cta.headlinePrefix')}{' '}
             <span className="text-theme-primary-600">
-              Learning?
+              {t('cta.headlineHighlight')}
             </span>
           </motion.h2>
 
@@ -55,8 +57,7 @@ export function CTA() {
             transition={{ delay: 0.1 }}
             className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto"
           >
-            Join our growing community of learners and educators using AIVO for personalized,
-            AI-powered education.
+            {t('cta.subheadline')}
           </motion.p>
 
           {/* Email Capture */}
@@ -74,7 +75,7 @@ export function CTA() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('cta.emailPlaceholder')}
                 className="w-full pl-12 pr-4 py-4 rounded-full text-gray-900 bg-white border border-gray-200 focus:ring-2 focus:ring-theme-primary-400 outline-none text-base"
                 required
               />
@@ -83,7 +84,7 @@ export function CTA() {
               type="submit"
               className="w-full sm:w-auto px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-full transition-colors flex items-center justify-center gap-2 shadow-md"
             >
-              Get Started Free
+              {t('cta.submitButton')}
               <ArrowRight className="w-5 h-5" />
             </button>
           </motion.form>
@@ -114,8 +115,8 @@ export function CTA() {
           >
             <Shield className="w-5 h-5 text-mint-600" />
             <span className="text-gray-600 text-sm">
-              <span className="font-semibold text-gray-900">FERPA &amp; COPPA Compliant</span> — Your
-              child&apos;s data is always protected
+              <span className="font-semibold text-gray-900">{t('cta.complianceBold')}</span> —{' '}
+              {t('cta.complianceText')}
             </span>
           </motion.div>
         </div>

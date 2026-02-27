@@ -231,7 +231,7 @@
     "switchToMonthly": "월간 결제로 전환",
     "switchToAnnual": "연간 결제로 전환",
     "perMonth": "/월",
-    "billedAnnually": "연간 결제 (${amount}/년)",
+    "billedAnnually": "연간 결제 ({{amount}}/년)",
     "free": {
       "name": "무료",
       "description": "기본 기능으로 시작하세요",
@@ -548,7 +548,7 @@
     "switchToAnnual": "연간 결제로 전환",
     "popularBadge": "가장 인기",
     "perMonth": "/월",
-    "billedAnnually": "연간 결제 (${amount}/년)",
+    "billedAnnually": "연간 결제 ({{amount}}/년)",
     "comparePlansHeading": "요금제 비교",
     "comparePlansDescription": "각 요금제에 포함된 내용을 확인하세요",
     "featureTableHeaders": {

@@ -231,7 +231,7 @@
     "switchToMonthly": "Zur monatlichen Abrechnung wechseln",
     "switchToAnnual": "Zur jährlichen Abrechnung wechseln",
     "perMonth": "/Monat",
-    "billedAnnually": "Jährlich abgerechnet (${amount}/Jahr)",
+    "billedAnnually": "Jährlich abgerechnet ({{amount}}/Jahr)",
     "free": {
       "name": "Kostenlos",
       "description": "Starten Sie mit den Grundfunktionen",
@@ -548,7 +548,7 @@
     "switchToAnnual": "Zur jährlichen Abrechnung wechseln",
     "popularBadge": "Beliebteste Wahl",
     "perMonth": "/Monat",
-    "billedAnnually": "Jährlich abgerechnet (${amount}/Jahr)",
+    "billedAnnually": "Jährlich abgerechnet ({{amount}}/Jahr)",
     "comparePlansHeading": "Pläne vergleichen",
     "comparePlansDescription": "Sehen Sie genau, was Sie mit jedem Plan erhalten",
     "featureTableHeaders": {

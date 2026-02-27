@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Star, Shield, Clock, Users, ClipboardList, ChevronDown } from 'lucide-react';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PricingCTA } from '@/components/cta';
 import { Badge } from '@/components/ui/badge';
@@ -25,118 +26,47 @@ interface PricingTier {
   planId: string;
 }
 
-const pricingTiers: PricingTier[] = [
-  {
-    name: 'Free',
-    description: 'Get started with basic features',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    features: [
-      'Basic lessons & activities',
-      'Core subjects (Math, Reading)',
-      'Basic progress tracking',
-      'Community support',
-      'Limited AI interactions',
-    ],
-    notIncluded: [
-      'Full curriculum access',
-      'IEP integration',
-      'Parent dashboard',
-      'Priority support',
-    ],
-    cta: 'Get Started Free',
-    ctaVariant: 'outline',
-    planId: 'free',
-  },
-  {
-    name: 'Pro',
-    description: 'Perfect for most families',
-    monthlyPrice: 29.99,
-    annualPrice: 24.99,
-    originalPrice: 39.99,
-    popular: true,
-    discount: '50% Off',
-    features: [
-      'Everything in Free, plus:',
-      'Full lesson library access',
-      'Unlimited AI tutor sessions',
-      'IEP goal integration',
-      'Detailed progress tracking',
-      'Parent dashboard',
-      'Priority email support',
-      'Learning style assessment',
-      'Custom learning paths',
-    ],
-    cta: 'Start Pro Trial',
-    ctaVariant: 'coral',
-    planId: 'pro',
-  },
-  {
-    name: 'Premium',
-    description: 'For families needing extra support',
-    monthlyPrice: 49.99,
-    annualPrice: 41.99,
-    features: [
-      'Everything in Pro, plus:',
-      'Multiple learner profiles',
-      'Advanced teacher tools',
-      'Unlimited chat support',
-      '24/7 priority support',
-      'Custom learning plans',
-      'Family progress reports',
-      'Dedicated success manager',
-      'Early feature access',
-    ],
-    cta: 'Start Premium Trial',
-    ctaVariant: 'default',
-    planId: 'premium',
-  },
+const pricingMeta = [
+  { monthlyPrice: 0, annualPrice: 0, ctaVariant: 'outline' as const, planId: 'free' },
+  { monthlyPrice: 29.99, annualPrice: 24.99, originalPrice: 39.99, popular: true, ctaVariant: 'coral' as const, planId: 'pro' },
+  { monthlyPrice: 49.99, annualPrice: 41.99, ctaVariant: 'default' as const, planId: 'premium' },
 ];
 
-const trustBadges = [
-  { icon: Shield, label: 'FERPA & COPPA Compliant' },
-  { icon: Clock, label: '24/7 Support' },
-  { icon: Users, label: 'Family Dashboard' },
-  { icon: ClipboardList, label: 'IEP Integration' },
-];
-
-const faqs = [
-  {
-    question: 'Can I switch plans anytime?',
-    answer:
-      'Yes! You can upgrade, downgrade, or cancel your plan at any time. Changes take effect at the start of your next billing cycle.',
-  },
-  {
-    question: 'Is there a free trial?',
-    answer:
-      'Yes, Pro and Premium plans include a 14-day free trial. No credit card required to start.',
-  },
-  {
-    question: 'How does billing work?',
-    answer:
-      'You can choose monthly or annual billing. Annual billing saves you 50% compared to monthly.',
-  },
-  {
-    question: 'Can AIVO support multiple learning differences?',
-    answer:
-      'Absolutely! AIVO is designed to support learners with ADHD, Autism, Dyslexia, and many other learning differences simultaneously.',
-  },
-];
+const trustBadgeIcons = [Shield, Clock, Users, ClipboardList];
 
 export function Pricing() {
+  const { t } = useTranslation('marketing');
   const [isAnnual, setIsAnnual] = React.useState(true);
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
+
+  const tierKeys = ['free', 'pro', 'premium'] as const;
+  const pricingTiers = tierKeys.map((key, i) => ({
+    ...pricingMeta[i],
+    name: t(`pricing.${key}.name`),
+    description: t(`pricing.${key}.description`),
+    discount: key === 'pro' ? t('pricing.pro.discount') : undefined,
+    features: t(`pricing.${key}.features`, { returnObjects: true }) as string[],
+    notIncluded: key === 'free' ? (t('pricing.free.notIncluded', { returnObjects: true }) as string[]) : undefined,
+    cta: t(`pricing.${key}.cta`),
+  }));
+
+  const trustBadges = (t('pricing.trustBadges', { returnObjects: true }) as string[]).map((label, i) => ({
+    icon: trustBadgeIcons[i],
+    label,
+  }));
+
+  const faqs = t('pricing.faqs', { returnObjects: true }) as { question: string; answer: string }[];
 
   return (
     <Section id="pricing" background="white" padding="lg">
       <SectionHeader
-        badge="Pricing"
+        badge={t('pricing.badge')}
         title={
           <>
-            Simple, Transparent <span className="text-gradient-primary">Pricing</span>
+            {t('pricing.titlePrefix')}<span className="text-gradient-primary">{t('pricing.titleHighlight')}</span>
           </>
         }
-        description="Choose the plan that fits your family's needs. All plans include our core AI-powered learning experience."
+        description={t('pricing.description')}
       />
 
       {/* Billing Toggle */}
@@ -147,7 +77,7 @@ export function Pricing() {
             isAnnual ? 'text-gray-500' : 'text-gray-900'
           )}
         >
-          Monthly
+          {t('pricing.monthly')}
         </span>
         <button
           onClick={() => {
@@ -157,7 +87,7 @@ export function Pricing() {
             'relative w-14 h-8 rounded-full transition-colors',
             isAnnual ? 'bg-theme-primary-500' : 'bg-gray-300'
           )}
-          aria-label={isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
+          aria-label={isAnnual ? t('pricing.switchToMonthly') : t('pricing.switchToAnnual')}
         >
           <motion.div
             className="absolute top-1 w-6 h-6 bg-white rounded-full shadow-md"
@@ -171,10 +101,10 @@ export function Pricing() {
             isAnnual ? 'text-gray-900' : 'text-gray-500'
           )}
         >
-          Annual
+          {t('pricing.annual')}
         </span>
         <Badge variant="success" className="ml-2">
-          Save 50%
+          {t('pricing.saveBadge')}
         </Badge>
       </div>
 
@@ -202,7 +132,7 @@ export function Pricing() {
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <Badge variant="gradient" className="px-4 py-1">
                     <Star className="w-3 h-3 mr-1" />
-                    Most Popular
+                    {t('pricing.pro.popularBadge')}
                   </Badge>
                 </div>
               )}
@@ -231,11 +161,11 @@ export function Pricing() {
                   <span className="text-5xl font-bold text-gray-900">
                     ${price.toFixed(price === 0 ? 0 : 2)}
                   </span>
-                  <span className="text-gray-500 mb-2">/month</span>
+                  <span className="text-gray-500 mb-2">{t('pricing.perMonth')}</span>
                 </div>
                 {isAnnual && price > 0 && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Billed annually (${(price * 12).toFixed(2)}/year)
+                    {t('pricing.billedAnnually', { amount: (price * 12).toFixed(2) })}
                   </p>
                 )}
               </div>
@@ -294,18 +224,17 @@ export function Pricing() {
 
           {/* Quote */}
           <blockquote className="text-lg text-gray-700 mb-4 italic">
-            &quot;The personalized learning paths keep my child engaged, and the parent dashboard
-            lets us celebrate progress together. A real difference for our family.&quot;
+            &quot;{t('pricing.testimonial.quote')}&quot;
           </blockquote>
 
           {/* Author */}
           <div className="flex items-center justify-center gap-3">
             <div className="w-12 h-12 bg-theme-primary-200 rounded-full flex items-center justify-center font-bold text-theme-primary-700">
-              PP
+              {t('pricing.testimonial.initials')}
             </div>
             <div className="text-left">
-              <div className="font-semibold text-gray-900">Pilot Program Parent</div>
-              <div className="text-sm text-gray-500">AIVO Pilot Program, 2025</div>
+              <div className="font-semibold text-gray-900">{t('pricing.testimonial.author')}</div>
+              <div className="text-sm text-gray-500">{t('pricing.testimonial.detail')}</div>
             </div>
           </div>
         </div>
@@ -314,7 +243,7 @@ export function Pricing() {
       {/* FAQ Section */}
       <div className="max-w-2xl mx-auto">
         <h3 className="font-display text-2xl font-bold text-center text-gray-900 mb-8">
-          Frequently Asked Questions
+          {t('pricing.faqHeading')}
         </h3>
 
         <div className="space-y-3">
@@ -372,9 +301,9 @@ export function Pricing() {
             <Shield className="w-6 h-6 text-mint-600" />
           </div>
           <div className="text-left">
-            <div className="font-semibold text-gray-900">30-Day Money-Back Guarantee</div>
+            <div className="font-semibold text-gray-900">{t('pricing.moneyBack.heading')}</div>
             <div className="text-sm text-gray-600">
-              Try risk-free. Full refund if not satisfied.
+              {t('pricing.moneyBack.description')}
             </div>
           </div>
         </div>

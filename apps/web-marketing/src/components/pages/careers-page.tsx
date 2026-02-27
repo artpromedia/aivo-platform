@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Footer } from '@/components/shared/footer';
 import { Navigation } from '@/components/shared/navigation';
@@ -28,132 +29,41 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-// Company values
-const values = [
-  {
-    icon: Heart,
-    title: 'Empathy First',
-    description:
-      'We design for real people with real needs. Every decision starts with understanding our users.',
-  },
-  {
-    icon: Zap,
-    title: 'Move Fast, Learn Faster',
-    description:
-      'We ship quickly, gather feedback, and iterate. Failure is a stepping stone to success.',
-  },
-  {
-    icon: Users,
-    title: 'Diverse Perspectives',
-    description:
-      'We believe the best solutions come from teams with varied backgrounds and viewpoints.',
-  },
-  {
-    icon: Brain,
-    title: 'Neurodiversity Champions',
-    description: 'We celebrate all types of minds and actively create an inclusive workplace.',
-  },
-];
-
-// Benefits
-const benefits = [
-  {
-    icon: DollarSign,
-    title: 'Competitive Salary',
-    description: 'Top-tier compensation with equity',
-  },
-  { icon: Home, title: 'Remote-First', description: 'Work from anywhere in the US' },
-  { icon: Laptop, title: 'Equipment Budget', description: '$2,500 for your home office' },
-  {
-    icon: GraduationCap,
-    title: 'Learning Budget',
-    description: '$1,500/year for courses & conferences',
-  },
-  { icon: Plane, title: 'Unlimited PTO', description: 'Take the time you need' },
-  {
-    icon: Heart,
-    title: 'Health & Wellness',
-    description: 'Full medical, dental, vision + mental health',
-  },
-];
-
-// Open positions
-const openPositions = [
-  {
-    id: 1,
-    title: 'Senior Full Stack Engineer',
-    department: 'Engineering',
-    location: 'Remote (US)',
-    type: 'Full-time',
-    level: 'Senior',
-    posted: '2 days ago',
-    hot: true,
-  },
-  {
-    id: 2,
-    title: 'Machine Learning Engineer',
-    department: 'AI/ML',
-    location: 'Remote (US)',
-    type: 'Full-time',
-    level: 'Mid-Senior',
-    posted: '1 week ago',
-    hot: true,
-  },
-  {
-    id: 3,
-    title: 'Product Designer',
-    department: 'Design',
-    location: 'Remote (US)',
-    type: 'Full-time',
-    level: 'Senior',
-    posted: '3 days ago',
-    hot: false,
-  },
-  {
-    id: 4,
-    title: 'Special Education Curriculum Designer',
-    department: 'Content',
-    location: 'Remote (US)',
-    type: 'Full-time',
-    level: 'Mid',
-    posted: '1 week ago',
-    hot: false,
-  },
-  {
-    id: 5,
-    title: 'Customer Success Manager',
-    department: 'Customer Success',
-    location: 'Remote (US)',
-    type: 'Full-time',
-    level: 'Mid',
-    posted: '2 weeks ago',
-    hot: false,
-  },
-  {
-    id: 6,
-    title: 'Head of Marketing',
-    department: 'Marketing',
-    location: 'Remote (US) / SF Bay Area',
-    type: 'Full-time',
-    level: 'Director',
-    posted: '1 day ago',
-    hot: true,
-  },
-];
-
-// Department filters
-const departments = [
-  'All',
-  'Engineering',
-  'AI/ML',
-  'Design',
-  'Content',
-  'Customer Success',
-  'Marketing',
-];
-
 export function CareersPage() {
+  const { t } = useTranslation('marketing');
   const [selectedDepartment, setSelectedDepartment] = React.useState('All');
+
+  /* ── Locale-driven data ─────────────────────────────────── */
+  const valueIcons = [Heart, Zap, Users, Brain];
+  const valueData = t('careers.values', { returnObjects: true }) as Array<{
+    title: string;
+    description: string;
+  }>;
+  const values = valueData.map((v, i) => ({ ...v, icon: valueIcons[i] }));
+
+  const benefitIcons = [DollarSign, Home, Laptop, GraduationCap, Plane, Heart];
+  const benefitData = t('careers.benefits', { returnObjects: true }) as Array<{
+    title: string;
+    description: string;
+  }>;
+  const benefits = benefitData.map((b, i) => ({ ...b, icon: benefitIcons[i] }));
+
+  const positionHotFlags = [true, true, false, false, false, true];
+  const positionData = t('careers.positions', { returnObjects: true }) as Array<{
+    title: string;
+    department: string;
+    location: string;
+    type: string;
+    level: string;
+    posted: string;
+  }>;
+  const openPositions = positionData.map((pos, i) => ({
+    ...pos,
+    id: i + 1,
+    hot: positionHotFlags[i],
+  }));
+
+  const departments = t('careers.departmentFilters', { returnObjects: true }) as string[];
 
   const filteredPositions =
     selectedDepartment === 'All'
@@ -178,41 +88,35 @@ export function CareersPage() {
             <div className="max-w-4xl mx-auto text-center">
               <Badge variant="primary" className="mb-6">
                 <Briefcase className="w-3 h-3 mr-1" />
-                We&apos;re Hiring!
+                {t('careers.heroBadge')}
               </Badge>
 
               <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-                Help Us Build the Future of{' '}
+                {t('careers.heroHeadingPrefix')}{' '}
                 <span className="bg-gradient-to-r from-theme-primary-600 to-coral-500 bg-clip-text text-transparent">
-                  Inclusive Education
+                  {t('careers.heroHeadingHighlight')}
                 </span>
               </h1>
 
               <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Join a passionate team dedicated to making quality education accessible to every
-                learner, regardless of how their mind works.
+                {t('careers.heroDescription')}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button variant="coral" size="lg" asChild>
                   <a href="#positions">
-                    View Open Positions
+                    {t('careers.heroCtaPrimary')}
                     <ArrowRight className="w-5 h-5" />
                   </a>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <Link href="/about">Learn About Us</Link>
+                  <Link href="/about">{t('careers.heroCtaSecondary')}</Link>
                 </Button>
               </div>
 
               {/* Quick stats */}
               <div className="mt-12 flex flex-wrap items-center justify-center gap-8">
-                {[
-                  { value: '25+', label: 'Team Members' },
-                  { value: '100%', label: 'Remote-First' },
-                  { value: '150+', label: 'Students Served' },
-                  { value: '$5M', label: 'Raised' },
-                ].map((stat) => (
+                {(t('careers.heroStats', { returnObjects: true }) as Array<{ value: string; label: string }>).map((stat) => (
                   <div key={stat.label} className="text-center">
                     <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
                     <div className="text-sm text-gray-500">{stat.label}</div>
@@ -227,9 +131,9 @@ export function CareersPage() {
         <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
+              <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">{t('careers.valuesHeading')}</h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                These principles guide how we work, make decisions, and treat each other.
+                {t('careers.valuesDescription')}
               </p>
             </div>
 
@@ -262,10 +166,10 @@ export function CareersPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">
-                Benefits & Perks
+                {t('careers.benefitsHeading')}
               </h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                We take care of our team so they can focus on what matters.
+                {t('careers.benefitsDescription')}
               </p>
             </div>
 
@@ -299,9 +203,9 @@ export function CareersPage() {
         <section id="positions" className="py-20 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">Open Positions</h2>
+              <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">{t('careers.positionsHeading')}</h2>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Find your next role and help us make a difference.
+                {t('careers.positionsDescription')}
               </p>
             </div>
 
@@ -347,7 +251,7 @@ export function CareersPage() {
                           {position.hot && (
                             <Badge variant="coral" size="sm">
                               <Sparkles className="w-3 h-3 mr-1" />
-                              Hot
+                              {t('careers.hotBadge')}
                             </Badge>
                           )}
                         </div>
@@ -380,7 +284,7 @@ export function CareersPage() {
 
             {filteredPositions.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500">No positions found in this department.</p>
+                <p className="text-gray-500">{t('careers.noPositions')}</p>
               </div>
             )}
 
@@ -388,13 +292,12 @@ export function CareersPage() {
             <div className="mt-12 text-center">
               <div className="inline-block bg-white rounded-2xl p-8 border border-gray-100">
                 <Globe className="w-10 h-10 text-theme-primary-500 mx-auto mb-4" />
-                <h3 className="font-semibold text-gray-900 mb-2">Don&apos;t see a perfect fit?</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{t('careers.noFitHeading')}</h3>
                 <p className="text-gray-600 mb-4 max-w-md">
-                  We&apos;re always looking for talented people. Send us your resume and we&apos;ll
-                  keep you in mind for future opportunities.
+                  {t('careers.noFitDescription')}
                 </p>
                 <Button variant="outline" asChild>
-                  <a href="mailto:careers@aivolearning.com">Send Your Resume</a>
+                  <a href={`mailto:${t('careers.noFitEmail')}`}>{t('careers.noFitButton')}</a>
                 </Button>
               </div>
             </div>
@@ -407,53 +310,23 @@ export function CareersPage() {
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="font-display text-3xl font-bold text-gray-900 mb-4">
-                  Our Interview Process
+                  {t('careers.interviewHeading')}
                 </h2>
                 <p className="text-gray-600">
-                  We aim to make the process clear, respectful, and efficient.
+                  {t('careers.interviewDescription')}
                 </p>
               </div>
 
               <div className="space-y-6">
-                {[
-                  {
-                    step: 1,
-                    title: 'Application Review',
-                    description:
-                      'We review your application and get back to you within 5 business days.',
-                    duration: '3-5 days',
-                  },
-                  {
-                    step: 2,
-                    title: 'Initial Call',
-                    description:
-                      'A 30-minute call with our recruiting team to learn about you and answer your questions.',
-                    duration: '30 min',
-                  },
-                  {
-                    step: 3,
-                    title: 'Technical/Role Interview',
-                    description:
-                      'A deeper dive into your skills and experience relevant to the role.',
-                    duration: '60 min',
-                  },
-                  {
-                    step: 4,
-                    title: 'Team Interviews',
-                    description: 'Meet with potential teammates and cross-functional partners.',
-                    duration: '2-3 hours',
-                  },
-                  {
-                    step: 5,
-                    title: 'Offer',
-                    description: 'We extend an offer and welcome you to the team!',
-                    duration: '🎉',
-                  },
-                ].map((item, index) => (
-                  <div key={item.step} className="flex gap-4">
+                {(t('careers.interviewSteps', { returnObjects: true }) as Array<{
+                  title: string;
+                  description: string;
+                  duration: string;
+                }>).map((item, index) => (
+                  <div key={item.title} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-10 h-10 bg-theme-primary-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {item.step}
+                        {index + 1}
                       </div>
                       {index < 4 && <div className="w-0.5 h-full bg-theme-primary-200 my-2" />}
                     </div>

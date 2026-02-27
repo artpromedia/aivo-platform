@@ -231,7 +231,7 @@
     "switchToMonthly": "切换为按月计费",
     "switchToAnnual": "切换为按年计费",
     "perMonth": "/月",
-    "billedAnnually": "按年计费（${amount}/年）",
+    "billedAnnually": "按年计费（{{amount}}/年）",
     "free": {
       "name": "免费版",
       "description": "从基础功能开始",
@@ -548,7 +548,7 @@
     "switchToAnnual": "切换为按年计费",
     "popularBadge": "最受欢迎",
     "perMonth": "/月",
-    "billedAnnually": "按年计费（${amount}/年）",
+    "billedAnnually": "按年计费（{{amount}}/年）",
     "comparePlansHeading": "方案对比",
     "comparePlansDescription": "详细了解每个方案包含的内容",
     "featureTableHeaders": {

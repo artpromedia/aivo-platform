@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { HeroCTASection } from '@/components/cta';
 import { cn } from '@/lib/utils';
@@ -52,19 +53,18 @@ const floatVariants = {
   },
 };
 
-// Stats data
-const stats = [
-  { value: '150+', label: 'Pilot Students', icon: Users },
-  { value: 'K-12', label: 'Full Curriculum', icon: BookOpen },
-  { value: '100%', label: 'IEP Aligned', icon: Star },
-  { value: 'AI', label: 'Powered', icon: Brain },
-];
-
-// Trust indicators (used in HeroCTA component)
-const _trustIndicators = ['FERPA Compliant', 'COPPA Certified', 'No Ads', 'No Data Selling'];
+// Stats and trust indicators moved inside component for i18n
 
 export function HeroSection() {
+  const { t } = useTranslation('marketing');
   const [isVideoModalOpen, setIsVideoModalOpen] = React.useState(false);
+
+  const stats = [
+    { value: t('hero.statStudents'), label: t('hero.statStudentsLabel'), icon: Users },
+    { value: t('hero.statCurriculum'), label: t('hero.statCurriculumLabel'), icon: BookOpen },
+    { value: t('hero.statIep'), label: t('hero.statIepLabel'), icon: Star },
+    { value: t('hero.statAi'), label: t('hero.statAiLabel'), icon: Brain },
+  ];
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
@@ -90,7 +90,7 @@ export function HeroSection() {
               >
                 <Sparkles className="w-4 h-4 text-theme-primary-600" />
                 <span className="text-sm font-medium text-gray-700">
-                  Introducing <span className="text-theme-primary-600">Virtual Brain AI</span>
+                  {t('hero.announcementPrefix')}<span className="text-theme-primary-600">{t('hero.announcementHighlight')}</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-theme-primary-600 group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -101,18 +101,18 @@ export function HeroSection() {
               variants={itemVariants}
               className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight text-gray-900 mb-6"
             >
-              Welcome to{' '}
+              {t('hero.welcomeTo')}{' '}
               <span className="bg-gradient-to-r from-theme-primary-600 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                AIVO
+                {t('hero.aivo')}
               </span>
               <br />
               <span className="bg-gradient-to-r from-coral-400 via-rose-500 to-pink-500 bg-clip-text text-transparent">
-                Learning
+                {t('hero.learning')}
               </span>
               <br />
-              <span className="text-gray-900">Where Every Mind</span>
+              <span className="text-gray-900">{t('hero.whereEveryMind')}</span>
               <br />
-              <span className="text-gray-900">Thrives</span>
+              <span className="text-gray-900">{t('hero.thrives')}</span>
             </motion.h1>
 
             {/* Subheadline */}
@@ -120,10 +120,8 @@ export function HeroSection() {
               variants={itemVariants}
               className="text-lg sm:text-xl text-gray-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Revolutionary AI-powered learning platform with personalized{' '}
-              <span className="font-semibold text-gray-900">Virtual Brains</span> designed for
-              neurodiverse K-12 learners. Supporting ADHD, Autism, Dyslexia, and all learning
-              differences.
+              {t('hero.subheadlinePrefix')}{' '}
+              <span className="font-semibold text-gray-900">{t('hero.virtualBrains')}</span>{t('hero.subheadlineSuffix')}
             </motion.p>
 
             {/* Pilot Success Callout */}
@@ -136,10 +134,9 @@ export function HeroSection() {
                   <TrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
-                  <p className="font-semibold text-gray-900">Pilot Program Success</p>
+                  <p className="font-semibold text-gray-900">{t('hero.pilotCalloutHeading')}</p>
                   <p className="text-sm text-gray-600">
-                    <span className="font-bold text-mint-600">150 students</span> improved learning
-                    outcomes in just <span className="font-bold text-mint-600">3 months</span>
+                    <span className="font-bold text-mint-600">{t('hero.pilotStudents')}</span>{t('hero.pilotConnector')}<span className="font-bold text-mint-600">{t('hero.pilotDuration')}</span>
                   </p>
                 </div>
               </div>
@@ -151,7 +148,7 @@ export function HeroSection() {
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-theme-primary-600 hover:bg-theme-primary-700 text-white font-semibold rounded-full shadow-md hover:shadow-lg transition-all text-lg"
               >
-                Start Free Trial
+                {t('hero.ctaPrimary')}
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <button
@@ -161,7 +158,7 @@ export function HeroSection() {
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-full border border-gray-200 shadow-sm hover:shadow-md transition-all text-lg"
               >
                 <Play className="w-5 h-5 text-theme-primary-500" />
-                Watch Demo
+                {t('hero.ctaSecondary')}
               </button>
             </motion.div>
           </motion.div>
@@ -192,7 +189,7 @@ export function HeroSection() {
                     </div>
                     <div className="flex-1 text-center">
                       <span className="text-sm font-medium text-white/80">
-                        AIVO Learning Dashboard
+                        {t('hero.dashboardTitle')}
                       </span>
                     </div>
                   </div>
@@ -207,8 +204,8 @@ export function HeroSection() {
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-gray-900">Today&apos;s Progress</span>
-                        <span className="text-sm font-bold text-theme-primary-600">78%</span>
+                        <span className="font-semibold text-gray-900">{t('hero.todaysProgress')}</span>
+                        <span className="text-sm font-bold text-theme-primary-600">{t('hero.progressPercent')}</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <motion.div
@@ -225,23 +222,23 @@ export function HeroSection() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       {
-                        label: 'Lessons Completed',
-                        value: '12',
+                        label: t('hero.lessonsCompleted'),
+                        value: t('hero.lessonsCount'),
                         color: 'bg-mint-100 text-mint-700',
                       },
                       {
-                        label: 'XP Earned',
-                        value: '450',
+                        label: t('hero.xpEarned'),
+                        value: t('hero.xpCount'),
                         color: 'bg-sunshine-100 text-sunshine-700',
                       },
                       {
-                        label: 'Current Streak',
-                        value: '7 days',
+                        label: t('hero.currentStreak'),
+                        value: t('hero.streakDays'),
                         color: 'bg-coral-100 text-coral-700',
                       },
                       {
-                        label: 'Focus Score',
-                        value: '94%',
+                        label: t('hero.focusScore'),
+                        value: t('hero.focusPercent'),
                         color: 'bg-theme-primary-100 text-theme-primary-700',
                       },
                     ].map((stat) => (
@@ -256,8 +253,8 @@ export function HeroSection() {
                   <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
                     <div className="text-2xl">🏆</div>
                     <div>
-                      <div className="font-semibold text-gray-900">Achievement Unlocked!</div>
-                      <div className="text-sm text-gray-600">Math Master - Level 5</div>
+                      <div className="font-semibold text-gray-900">{t('hero.achievementUnlocked')}</div>
+                      <div className="text-sm text-gray-600">{t('hero.achievementDetail')}</div>
                     </div>
                   </div>
                 </div>
@@ -275,8 +272,8 @@ export function HeroSection() {
                     <CheckCircle className="w-5 h-5 text-mint-600" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">IEP Aligned</div>
-                    <div className="text-xs text-gray-500">Personalized goals</div>
+                    <div className="font-semibold text-gray-900 text-sm">{t('hero.iepAligned')}</div>
+                    <div className="text-xs text-gray-500">{t('hero.personalizedGoals')}</div>
                   </div>
                 </div>
               </motion.div>
@@ -292,8 +289,8 @@ export function HeroSection() {
                     <Brain className="w-5 h-5 text-coral-600" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">Virtual Brain</div>
-                    <div className="text-xs text-gray-500">AI-powered tutor</div>
+                    <div className="font-semibold text-gray-900 text-sm">{t('hero.virtualBrain')}</div>
+                    <div className="text-xs text-gray-500">{t('hero.aiPoweredTutor')}</div>
                   </div>
                 </div>
               </motion.div>
@@ -351,7 +348,7 @@ export function HeroSection() {
                 setIsVideoModalOpen(false);
               }}
               className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-              aria-label="Close video"
+              aria-label={t('hero.closeVideo')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -359,7 +356,7 @@ export function HeroSection() {
               <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
                 <Play className="w-10 h-10 text-white ml-1" />
               </div>
-              <p className="text-white/60 text-sm">Demo video coming soon</p>
+              <p className="text-white/60 text-sm">{t('hero.demoComingSoon')}</p>
             </div>
           </motion.div>
         </motion.div>

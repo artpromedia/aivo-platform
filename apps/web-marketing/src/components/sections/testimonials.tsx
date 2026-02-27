@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Section, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
@@ -17,48 +18,33 @@ interface Testimonial {
   avatar: string;
 }
 
-const testimonials: Testimonial[] = [
-  {
-    id: 1,
-    quote:
-      "My daughter actually looks forward to learning now. The AI tutor adapts to her ADHD and keeps her engaged without frustration. We saw real improvement in just 8 weeks of the pilot program.",
-    author: 'Parent',
-    role: 'Parent of a 4th Grader',
-    details: 'Minneapolis, MN',
-    rating: 5,
-    avatar: 'P',
-  },
-  {
-    id: 2,
-    quote:
-      "The IEP integration actually works. I can see each student's goals tracked automatically, and the AI recommendations help me adjust instruction in real time. This saves hours of documentation.",
-    author: 'Educator',
-    role: 'Special Education Teacher',
-    details: 'New York, NY',
-    rating: 5,
-    avatar: 'E',
-  },
-  {
-    id: 3,
-    quote:
-      "The predictable routines and sensory-friendly design made all the difference for my son on the autism spectrum. His confidence in learning has really grown during the pilot.",
-    author: 'Parent',
-    role: 'Parent of a 2nd Grader',
-    details: 'Minneapolis, MN',
-    rating: 5,
-    avatar: 'P',
-  },
-];
-
-const stats = [
-  { value: '150', label: 'Pilot Students', suffix: '+' },
-  { value: '3', label: 'Month Pilot', suffix: 'mo' },
-  { value: '100', label: 'IEP Aligned', suffix: '%' },
-  { value: 'K-12', label: 'Full Curriculum', suffix: '' },
-];
-
 export function Testimonials() {
+  const { t } = useTranslation('marketing');
   const [activeIndex, setActiveIndex] = React.useState(0);
+
+  const testimonialItems = t('testimonials.items', { returnObjects: true }) as Array<{
+    quote: string;
+    author: string;
+    role: string;
+    details: string;
+    avatar: string;
+  }>;
+  const testimonials: Testimonial[] = testimonialItems.map((item, i) => ({
+    id: i + 1,
+    quote: item.quote,
+    author: item.author,
+    role: item.role,
+    details: item.details,
+    rating: 5,
+    avatar: item.avatar,
+  }));
+
+  const statsData = t('testimonials.stats', { returnObjects: true }) as Record<string, { value: string; label: string; suffix?: string }>;
+  const stats = Object.values(statsData).map((s) => ({
+    value: s.value,
+    label: s.label,
+    suffix: s.suffix || '',
+  }));
 
   const next = () => setActiveIndex((i) => (i + 1) % testimonials.length);
   const prev = () => setActiveIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
@@ -74,13 +60,13 @@ export function Testimonials() {
   return (
     <Section id="testimonials" background="gradient" padding="lg">
       <SectionHeader
-        badge="Success Stories"
+        badge={t('testimonials.badge')}
         title={
           <>
-            Loved by <span className="text-gradient-primary">Families &amp; Educators</span>
+            {t('testimonials.titlePrefix')}<span className="text-gradient-primary">{t('testimonials.titleHighlight')}</span>
           </>
         }
-        description="Hear from the families and educators who trust AIVO every day."
+        description={t('testimonials.description')}
       />
 
       {/* Testimonial Carousel */}
@@ -140,7 +126,7 @@ export function Testimonials() {
             <button
               onClick={prev}
               className="w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-              aria-label="Previous testimonial"
+              aria-label={t('testimonials.previousTestimonial')}
             >
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
@@ -149,7 +135,7 @@ export function Testimonials() {
             <button
               onClick={next}
               className="w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-              aria-label="Next testimonial"
+              aria-label={t('testimonials.nextTestimonial')}
             >
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
@@ -168,7 +154,7 @@ export function Testimonials() {
                   ? 'bg-theme-primary-600 w-8'
                   : 'bg-gray-300 hover:bg-gray-400'
               )}
-              aria-label={`Go to testimonial ${i + 1}`}
+              aria-label={t('testimonials.goToTestimonial', { n: i + 1 })}
             />
           ))}
         </div>

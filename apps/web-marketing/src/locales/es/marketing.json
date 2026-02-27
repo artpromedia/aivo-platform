@@ -231,7 +231,7 @@
     "switchToMonthly": "Cambiar a facturación mensual",
     "switchToAnnual": "Cambiar a facturación anual",
     "perMonth": "/mes",
-    "billedAnnually": "Facturado anualmente (${amount}/año)",
+    "billedAnnually": "Facturado anualmente ({{amount}}/año)",
     "free": {
       "name": "Gratuito",
       "description": "Comience con las funciones básicas",
@@ -548,7 +548,7 @@
     "switchToAnnual": "Cambiar a facturación anual",
     "popularBadge": "Más Popular",
     "perMonth": "/mes",
-    "billedAnnually": "Facturado anualmente (${amount}/año)",
+    "billedAnnually": "Facturado anualmente ({{amount}}/año)",
     "comparePlansHeading": "Compare los Planes",
     "comparePlansDescription": "Vea exactamente lo que obtiene con cada plan",
     "featureTableHeaders": {

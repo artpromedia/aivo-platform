@@ -231,7 +231,7 @@
     "switchToMonthly": "月額プランに切替",
     "switchToAnnual": "年額プランに切替",
     "perMonth": "/月",
-    "billedAnnually": "年額一括払い（${amount}/年）",
+    "billedAnnually": "年額一括払い（{{amount}}/年）",
     "free": {
       "name": "フリー",
       "description": "基本機能で始めましょう",
@@ -548,7 +548,7 @@
     "switchToAnnual": "年額プランに切替",
     "popularBadge": "一番人気",
     "perMonth": "/月",
-    "billedAnnually": "年額一括払い（${amount}/年）",
+    "billedAnnually": "年額一括払い（{{amount}}/年）",
     "comparePlansHeading": "プラン比較",
     "comparePlansDescription": "各プランの内容を詳しく確認",
     "featureTableHeaders": {

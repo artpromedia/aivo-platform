@@ -231,7 +231,7 @@
     "switchToMonthly": "التبديل إلى الفوترة الشهرية",
     "switchToAnnual": "التبديل إلى الفوترة السنوية",
     "perMonth": "/شهرياً",
-    "billedAnnually": "يُفوتر سنوياً (${amount}/سنة)",
+    "billedAnnually": "يُفوتر سنوياً ({{amount}}/سنة)",
     "free": {
       "name": "مجاني",
       "description": "ابدأ بالمزايا الأساسية",
@@ -548,7 +548,7 @@
     "switchToAnnual": "التبديل إلى الفوترة السنوية",
     "popularBadge": "الأكثر شعبية",
     "perMonth": "/شهرياً",
-    "billedAnnually": "يُفوتر سنوياً (${amount}/سنة)",
+    "billedAnnually": "يُفوتر سنوياً ({{amount}}/سنة)",
     "comparePlansHeading": "قارن بين الخطط",
     "comparePlansDescription": "اطلع على ما تحصل عليه مع كل خطة بالتفصيل",
     "featureTableHeaders": {

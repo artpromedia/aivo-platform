@@ -11,48 +11,25 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { featureIllustrations } from '@/components/sections/feature-illustrations';
 import { Section, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 
-const features = [
-  {
-    title: 'AI-Powered Tutoring',
-    description:
-      'Each learner gets a personalized AI Virtual Brain that adapts in real-time to their unique learning style, pace, and preferences.',
-    icon: Brain,
-    color: 'bg-theme-primary-100 text-theme-primary-600',
-    points: ['Real-time adaptation', 'Emotional awareness', 'Multi-sensory support'],
-    image: '/images/features/ai-tutoring.svg',
-  },
-  {
-    title: 'IEP Goal Management',
-    description:
-      'Automatically syncs with IEP goals, tracks progress, and generates comprehensive reports for care teams and educators.',
-    icon: Target,
-    color: 'bg-accent-100 text-accent-600',
-    points: ['Automatic goal tracking', 'Progress reports', 'Team collaboration'],
-    image: '/images/features/iep-management.svg',
-  },
-  {
-    title: 'Progress Tracking',
-    description:
-      'Beautiful dashboards for parents and teachers to monitor growth, celebrate achievements, and identify areas for improvement.',
-    icon: BarChart3,
-    color: 'bg-mint-100 text-mint-600',
-    points: ['Real-time analytics', 'Subject breakdowns', 'Trend analysis'],
-    image: '/images/features/progress-tracking.svg',
-  },
-  {
-    title: 'Parent Dashboard',
-    description:
-      'Stay connected with your child\'s learning journey. View progress, communicate with teachers, and manage IEP goals all in one place.',
-    icon: Users,
-    color: 'bg-sky-100 text-sky-600',
-    points: ['Activity feed', 'Teacher messaging', 'Goal monitoring'],
-    image: '/images/features/parent-dashboard.svg',
-  },
+const featureKeys = ['aiTutoring', 'iepGoals', 'progressTracking', 'parentDashboard'] as const;
+const featureIcons = [Brain, Target, BarChart3, Users];
+const featureColors = [
+  'bg-theme-primary-100 text-theme-primary-600',
+  'bg-accent-100 text-accent-600',
+  'bg-mint-100 text-mint-600',
+  'bg-sky-100 text-sky-600',
+];
+const featureImages = [
+  '/images/features/ai-tutoring.svg',
+  '/images/features/iep-management.svg',
+  '/images/features/progress-tracking.svg',
+  '/images/features/parent-dashboard.svg',
 ];
 
 const itemVariants = {
@@ -65,23 +42,35 @@ const itemVariants = {
 };
 
 export function Features() {
+  const { t } = useTranslation('marketing');
+
+  const features = featureKeys.map((key, i) => ({
+    key,
+    title: t(`features.${key}.title`),
+    description: t(`features.${key}.description`),
+    icon: featureIcons[i],
+    color: featureColors[i],
+    points: (t(`features.${key}.points`, { returnObjects: true }) as string[]),
+    image: featureImages[i],
+  }));
+
   return (
     <Section id="features" background="gradient" padding="lg">
       <SectionHeader
-        badge="Platform Features"
+        badge={t('features.badge')}
         title={
           <>
-            Everything Your Learner Needs to <span className="text-gradient-primary">Succeed</span>
+            {t('features.titlePrefix')}<span className="text-gradient-primary">{t('features.titleHighlight')}</span>
           </>
         }
-        description="AIVO combines cutting-edge AI with proven educational strategies to create the most personalized learning experience for neurodiverse students."
+        description={t('features.description')}
       />
 
       <div className="space-y-24">
         {features.map((feature, index) => {
           const Icon = feature.icon;
           const isReversed = index % 2 === 1;
-          const Illustration = featureIllustrations[feature.title];
+          const Illustration = featureIllustrations[feature.key === 'aiTutoring' ? 'AI-Powered Tutoring' : feature.key === 'iepGoals' ? 'IEP Goal Management' : feature.key === 'progressTracking' ? 'Progress Tracking' : 'Parent Dashboard'];
 
           return (
             <motion.div
@@ -144,7 +133,7 @@ export function Features() {
         <div className="inline-flex items-center gap-2 px-6 py-3 bg-mint-50 border border-mint-200 rounded-full">
           <Shield className="w-5 h-5 text-mint-600" />
           <span className="text-mint-700 font-medium">
-            FERPA &amp; COPPA compliant — All features tested with 150+ students in our pilot program
+            {t('features.validationBadge')}
           </span>
         </div>
       </motion.div>

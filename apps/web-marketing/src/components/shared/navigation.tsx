@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { NavAuthSection } from '@/components/cta';
 import { AivoLogo } from '@/components/ui/aivo-logo';
@@ -35,55 +36,57 @@ interface NavItem {
   }[];
 }
 
-const navItems: NavItem[] = [
-  {
-    label: 'Features',
-    href: '#features',
-    children: [
-      {
-        label: 'For Parents',
-        href: '/features/parents',
-        description: "Support your child's unique learning journey",
-        icon: <Users className="w-5 h-5 text-coral-500" />,
-      },
-      {
-        label: 'For Students',
-        href: '/features/students',
-        description: 'Learn at your own pace with AI support',
-        icon: <GraduationCap className="w-5 h-5 text-theme-primary-500" />,
-      },
-      {
-        label: 'For Teachers',
-        href: '/features/teachers',
-        description: 'Differentiate instruction effortlessly',
-        icon: <School className="w-5 h-5 text-mint-500" />,
-      },
-    ],
-  },
-  {
-    label: 'AIVO Pad',
-    href: '/aivo-pad',
-    badge: 'New',
-  },
-  {
-    label: 'How It Works',
-    href: '#how-it-works',
-  },
-  {
-    label: 'Pricing',
-    href: '#pricing',
-  },
-  {
-    label: 'About',
-    href: '/about',
-  },
-  {
-    label: 'Contact',
-    href: '/contact',
-  },
-];
-
 export function Navigation() {
+  const { t } = useTranslation('marketing');
+
+  const navItems: NavItem[] = [
+    {
+      label: t('nav.features'),
+      href: '#features',
+      children: [
+        {
+          label: t('nav.forParents'),
+          href: '/features/parents',
+          description: t('nav.forParentsDesc'),
+          icon: <Users className="w-5 h-5 text-coral-500" />,
+        },
+        {
+          label: t('nav.forStudents'),
+          href: '/features/students',
+          description: t('nav.forStudentsDesc'),
+          icon: <GraduationCap className="w-5 h-5 text-theme-primary-500" />,
+        },
+        {
+          label: t('nav.forTeachers'),
+          href: '/features/teachers',
+          description: t('nav.forTeachersDesc'),
+          icon: <School className="w-5 h-5 text-mint-500" />,
+        },
+      ],
+    },
+    {
+      label: t('nav.aivoPad'),
+      href: '/aivo-pad',
+      badge: t('nav.new'),
+    },
+    {
+      label: t('nav.howItWorks'),
+      href: '#how-it-works',
+    },
+    {
+      label: t('nav.pricing'),
+      href: '#pricing',
+    },
+    {
+      label: t('nav.about'),
+      href: '/about',
+    },
+    {
+      label: t('nav.contact'),
+      href: '/contact',
+    },
+  ];
+
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
@@ -251,13 +254,13 @@ export function Navigation() {
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/login`}
                 className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
               >
-                Sign In
+                {t('nav.signIn')}
               </Link>
               <Link
                 href={`${process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com'}/register`}
                 className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-coral-400 via-rose-500 to-theme-primary-600 hover:from-coral-500 hover:via-rose-600 hover:to-theme-primary-700 text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all"
               >
-                Get Started
+                {t('nav.getStarted')}
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -270,7 +273,7 @@ export function Navigation() {
                 setIsMobileMenuOpen(!isMobileMenuOpen);
               }}
               className="lg:hidden p-2 -mr-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100/50 rounded-lg transition-colors"
-              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={isMobileMenuOpen ? t('nav.closeMenu') : t('nav.openMenu')}
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -374,7 +377,7 @@ export function Navigation() {
                 <div className="mt-8 p-4 bg-gray-50 rounded-2xl">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Sparkles className="w-4 h-4 text-theme-primary-500" />
-                    <span>Trusted by 150+ families in pilot program</span>
+                    <span>{t('nav.trustedByFamilies')}</span>
                   </div>
                 </div>
               </div>

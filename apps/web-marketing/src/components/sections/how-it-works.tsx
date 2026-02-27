@@ -15,53 +15,19 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Section, SectionHeader } from '@/components/ui/section';
 import { cn } from '@/lib/utils';
 
 /* ─── Step Data ─── */
-const steps = [
-  {
-    number: '01',
-    title: 'Create Your Profile',
-    description:
-      'Sign up in minutes. Tell us about your learner\'s needs, preferences, and any IEP goals. We support ADHD, Autism, Dyslexia, and more.',
-    icon: UserCog,
-    color: 'bg-theme-primary-600',
-    tags: ['2-minute setup', 'IEP import option', 'Learning style quiz'],
-  },
-  {
-    number: '02',
-    title: 'Meet Your Virtual Brain',
-    description:
-      'Your learner gets a personalized AI tutor that adapts to their unique way of thinking. It learns what works best for them.',
-    icon: Brain,
-    color: 'bg-theme-primary-600',
-    tags: ['Personalized AI agent', 'Adapts in real-time', 'Emotional awareness'],
-  },
-  {
-    number: '03',
-    title: 'Start Learning',
-    description:
-      'Engage with interactive lessons, games, and activities designed for neurodiverse minds. Content adjusts automatically.',
-    icon: Sparkles,
-    color: 'bg-accent-500',
-    tags: ['Gamified learning', 'Sensory-friendly', 'Break reminders'],
-  },
-  {
-    number: '04',
-    title: 'Track Progress',
-    description:
-      'Parents and teachers get beautiful dashboards showing growth, achievements, and insights. Celebrate every win together.',
-    icon: TrendingUp,
-    color: 'bg-mint-600',
-    tags: ['Real-time updates', 'IEP progress reports', 'Achievement celebrations'],
-  },
-];
+const stepIcons = [UserCog, Brain, Sparkles, TrendingUp];
+const stepColors = ['bg-theme-primary-600', 'bg-theme-primary-600', 'bg-accent-500', 'bg-mint-600'];
 
 /* ─── Illustrations ─── */
 
 function ProfileIllustration() {
+  const { t } = useTranslation('marketing');
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6 space-y-4">
       {/* Name field placeholder */}
@@ -72,11 +38,11 @@ function ProfileIllustration() {
       {/* Upload IEP button */}
       <div className="flex items-center justify-center gap-2 h-12 rounded-xl bg-theme-primary-100 border-2 border-dashed border-theme-primary-300">
         <Upload className="w-4 h-4 text-theme-primary-500" />
-        <span className="text-sm font-medium text-theme-primary-600">Upload IEP (Optional)</span>
+        <span className="text-sm font-medium text-theme-primary-600">{t('howItWorks.illustrations.uploadIep')}</span>
       </div>
       {/* Tag chips */}
       <div className="flex gap-3 justify-center">
-        {['ADHD', 'Dyslexia', 'Autism'].map((tag) => (
+        {[t('howItWorks.illustrations.adhd'), t('howItWorks.illustrations.dyslexia'), t('howItWorks.illustrations.autism')].map((tag) => (
           <span
             key={tag}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-full"
@@ -90,6 +56,7 @@ function ProfileIllustration() {
 }
 
 function VirtualBrainIllustration() {
+  const { t } = useTranslation('marketing');
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6 flex flex-col items-center text-center space-y-4">
       {/* Brain avatar */}
@@ -101,8 +68,8 @@ function VirtualBrainIllustration() {
         <Brain className="w-8 h-8 text-white" />
       </motion.div>
       <div>
-        <div className="font-display font-bold text-gray-900">Meet Alex&apos;s Brain</div>
-        <div className="text-sm text-gray-500">Personalized AI Tutor</div>
+        <div className="font-display font-bold text-gray-900">{t('howItWorks.illustrations.meetBrain')}</div>
+        <div className="text-sm text-gray-500">{t('howItWorks.illustrations.personalizedTutor')}</div>
       </div>
       {/* Chat bubble */}
       <motion.div
@@ -110,17 +77,18 @@ function VirtualBrainIllustration() {
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       >
-        &ldquo;Hi Alex! Ready to learn together? Let&apos;s start with something fun!&rdquo;
+        &ldquo;{t('howItWorks.illustrations.chatBubble')}&rdquo;
       </motion.div>
     </div>
   );
 }
 
 function CoursesIllustration() {
+  const { t } = useTranslation('marketing');
   const courses = [
-    { name: 'Math Quest', detail: 'Level 5 - Fractions', icon: Mountain, color: 'bg-amber-100 text-amber-600' },
-    { name: 'Reading Adventure', detail: 'Chapter 3', icon: BookOpen, color: 'bg-rose-100 text-rose-600' },
-    { name: 'Science Lab', detail: 'Plants & Growth', icon: Sprout, color: 'bg-green-100 text-green-600' },
+    { name: t('howItWorks.illustrations.mathQuest'), detail: t('howItWorks.illustrations.mathDetail'), icon: Mountain, color: 'bg-amber-100 text-amber-600' },
+    { name: t('howItWorks.illustrations.readingAdventure'), detail: t('howItWorks.illustrations.readingDetail'), icon: BookOpen, color: 'bg-rose-100 text-rose-600' },
+    { name: t('howItWorks.illustrations.scienceLab'), detail: t('howItWorks.illustrations.scienceDetail'), icon: Sprout, color: 'bg-green-100 text-green-600' },
   ];
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-soft divide-y divide-gray-100">
@@ -149,21 +117,22 @@ function CoursesIllustration() {
 }
 
 function WeeklyProgressIllustration() {
+  const { t } = useTranslation('marketing');
   const days = [
-    { label: 'Mon', h: 40 },
-    { label: 'Tue', h: 35 },
-    { label: 'Wed', h: 55 },
-    { label: 'Thu', h: 50 },
-    { label: 'Fri', h: 70 },
-    { label: 'Sat', h: 72 },
-    { label: 'Sun', h: 80 },
+    { label: t('howItWorks.illustrations.mon'), h: 40 },
+    { label: t('howItWorks.illustrations.tue'), h: 35 },
+    { label: t('howItWorks.illustrations.wed'), h: 55 },
+    { label: t('howItWorks.illustrations.thu'), h: 50 },
+    { label: t('howItWorks.illustrations.fri'), h: 70 },
+    { label: t('howItWorks.illustrations.sat'), h: 72 },
+    { label: t('howItWorks.illustrations.sun'), h: 80 },
   ];
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-soft p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <span className="font-display font-bold text-gray-900">Weekly Progress</span>
-        <span className="text-sm font-semibold text-mint-600">+23%</span>
+        <span className="font-display font-bold text-gray-900">{t('howItWorks.illustrations.weeklyProgress')}</span>
+        <span className="text-sm font-semibold text-mint-600">{t('howItWorks.illustrations.progressPercent')}</span>
       </div>
       {/* Bar Chart */}
       <div className="flex items-end gap-3 h-32">
@@ -193,18 +162,28 @@ const illustrations = [
 /* ─── Main Component ─── */
 
 export function HowItWorks() {
+  const { t } = useTranslation('marketing');
   const parentAppUrl = process.env.NEXT_PUBLIC_PARENT_APP_URL || 'https://parent.aivolearning.com';
+
+  const steps = ['step1', 'step2', 'step3', 'step4'].map((key, i) => ({
+    number: t(`howItWorks.${key}.number`),
+    title: t(`howItWorks.${key}.title`),
+    description: t(`howItWorks.${key}.description`),
+    icon: stepIcons[i],
+    color: stepColors[i],
+    tags: t(`howItWorks.${key}.tags`, { returnObjects: true }) as string[],
+  }));
 
   return (
     <Section id="how-it-works" background="gray" padding="lg">
       <SectionHeader
-        badge="How It Works"
+        badge={t('howItWorks.badge')}
         title={
           <>
-            Getting Started is <span className="text-gradient-primary">Simple</span>
+            {t('howItWorks.titlePrefix')}<span className="text-gradient-primary">{t('howItWorks.titleHighlight')}</span>
           </>
         }
-        description="From signup to success in four easy steps. No complex setup, no technical knowledge required."
+        description={t('howItWorks.description')}
       />
 
       {/* Steps with vertical timeline */}
@@ -296,11 +275,11 @@ export function HowItWorks() {
           href={`${parentAppUrl}/register`}
           className="inline-flex items-center gap-2 px-10 py-4 text-lg font-semibold text-white bg-gradient-to-r from-coral-400 via-rose-500 to-theme-primary-600 rounded-full shadow-lg hover:shadow-xl transition-shadow"
         >
-          Start Your Journey Today
+          {t('howItWorks.ctaButton')}
           <ArrowRight className="w-5 h-5" />
         </Link>
         <p className="mt-4 text-sm text-gray-500">
-          No credit card required • 14-day free trial • Cancel anytime
+          {t('howItWorks.ctaDisclaimer')}
         </p>
       </motion.div>
     </Section>

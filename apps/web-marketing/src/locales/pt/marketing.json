@@ -231,7 +231,7 @@
     "switchToMonthly": "Mudar para cobrança mensal",
     "switchToAnnual": "Mudar para cobrança anual",
     "perMonth": "/mês",
-    "billedAnnually": "Cobrado anualmente (${amount}/ano)",
+    "billedAnnually": "Cobrado anualmente ({{amount}}/ano)",
     "free": {
       "name": "Gratuito",
       "description": "Comece com as funcionalidades básicas",
@@ -548,7 +548,7 @@
     "switchToAnnual": "Mudar para cobrança anual",
     "popularBadge": "Mais Popular",
     "perMonth": "/mês",
-    "billedAnnually": "Cobrado anualmente (${amount}/ano)",
+    "billedAnnually": "Cobrado anualmente ({{amount}}/ano)",
     "comparePlansHeading": "Comparar Planos",
     "comparePlansDescription": "Veja exatamente o que você recebe com cada plano",
     "featureTableHeaders": {

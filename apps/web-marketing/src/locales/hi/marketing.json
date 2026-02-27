@@ -231,7 +231,7 @@
     "switchToMonthly": "मासिक बिलिंग पर स्विच करें",
     "switchToAnnual": "वार्षिक बिलिंग पर स्विच करें",
     "perMonth": "/माह",
-    "billedAnnually": "वार्षिक बिलिंग (${amount}/वर्ष)",
+    "billedAnnually": "वार्षिक बिलिंग ({{amount}}/वर्ष)",
     "free": {
       "name": "निःशुल्क",
       "description": "बुनियादी सुविधाओं से शुरू करें",
@@ -548,7 +548,7 @@
     "switchToAnnual": "वार्षिक बिलिंग पर स्विच करें",
     "popularBadge": "सबसे लोकप्रिय",
     "perMonth": "/माह",
-    "billedAnnually": "वार्षिक बिलिंग (${amount}/वर्ष)",
+    "billedAnnually": "वार्षिक बिलिंग ({{amount}}/वर्ष)",
     "comparePlansHeading": "योजनाओं की तुलना",
     "comparePlansDescription": "देखें कि प्रत्येक योजना में क्या शामिल है",
     "featureTableHeaders": {

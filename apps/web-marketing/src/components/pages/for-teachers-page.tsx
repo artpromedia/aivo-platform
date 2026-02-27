@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Footer } from '@/components/shared/footer';
 import { Navigation } from '@/components/shared/navigation';
@@ -36,100 +37,6 @@ function getProgressColor(progress: number): string {
   return 'bg-coral-500';
 }
 
-// Benefits for teachers
-const benefits = [
-  {
-    icon: Layers,
-    title: 'Differentiated Instruction',
-    description:
-      'Each student receives personalized content based on their learning profile, IEP goals, and performance—automatically.',
-    color: 'from-theme-primary-500 to-purple-600',
-  },
-  {
-    icon: BarChart3,
-    title: 'Classroom Insights',
-    description:
-      'Real-time dashboards show class-wide progress, individual growth, and areas where students need additional support.',
-    color: 'from-blue-500 to-cyan-500',
-  },
-  {
-    icon: Target,
-    title: 'Standards Alignment',
-    description:
-      'All content aligned to state standards and Common Core. Easy to integrate into your existing curriculum.',
-    color: 'from-mint-500 to-teal-500',
-  },
-  {
-    icon: FileText,
-    title: 'IEP Support',
-    description:
-      'Track IEP goals, generate progress reports, and document accommodations—all in one place.',
-    color: 'from-coral-500 to-pink-500',
-  },
-];
-
-// Classroom features
-const classroomFeatures = [
-  {
-    icon: Users,
-    title: 'Class Management',
-    description: 'Organize students into groups, assign activities, and manage rosters easily.',
-  },
-  {
-    icon: PieChart,
-    title: 'Progress Analytics',
-    description: 'Visualize learning data with charts showing mastery, engagement, and growth.',
-  },
-  {
-    icon: Brain,
-    title: 'AI-Powered Recommendations',
-    description: 'Get suggestions for intervention strategies and next steps for each student.',
-  },
-  {
-    icon: Clock,
-    title: 'Time Savings',
-    description: 'Reduce lesson planning time by 50% with AI-generated personalized content.',
-  },
-  {
-    icon: Settings,
-    title: 'Customization',
-    description: 'Adjust difficulty, pacing, and accommodations for individual students.',
-  },
-  {
-    icon: Shield,
-    title: 'FERPA Compliant',
-    description: 'Student data is protected with enterprise-grade security and privacy controls.',
-  },
-];
-
-// Teacher testimonials
-const testimonials = [
-  {
-    quote:
-      'AIVO has transformed how I support my students with IEPs. The automatic progress tracking saves me hours each week on documentation.',
-    author: 'Pilot Educator',
-    role: 'Special Education Teacher',
-    experience: '12 years',
-    rating: 5,
-  },
-  {
-    quote:
-      'For the first time, I can truly differentiate for every student in my inclusive classroom. AIVO handles the personalization so I can focus on teaching.',
-    author: 'Pilot Educator',
-    role: '3rd Grade Teacher',
-    experience: '8 years',
-    rating: 5,
-  },
-];
-
-// Stats
-const stats = [
-  { value: '50%', label: 'Less Planning Time' },
-  { value: '3x', label: 'More 1:1 Time' },
-  { value: '94%', label: 'Teacher Satisfaction' },
-  { value: '100%', label: 'IEP Alignment' },
-];
-
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -142,6 +49,37 @@ const staggerContainer = {
 };
 
 export function ForTeachersPage() {
+  const { t } = useTranslation('marketing');
+
+  const benefitIcons = [Layers, BarChart3, Target, FileText];
+  const benefitColors = [
+    'from-theme-primary-500 to-purple-600',
+    'from-blue-500 to-cyan-500',
+    'from-mint-500 to-teal-500',
+    'from-coral-500 to-pink-500',
+  ];
+  const benefits = (
+    t('forTeachers.benefits', { returnObjects: true }) as Array<{ title: string; description: string }>
+  ).map((b, i) => ({ ...b, icon: benefitIcons[i], color: benefitColors[i] }));
+
+  const featureIcons = [Users, PieChart, Brain, Clock, Settings, Shield];
+  const classroomFeatures = (
+    t('forTeachers.features', { returnObjects: true }) as Array<{ title: string; description: string }>
+  ).map((f, i) => ({ ...f, icon: featureIcons[i] }));
+
+  const testimonials = t('forTeachers.testimonials', { returnObjects: true }) as Array<{
+    quote: string;
+    author: string;
+    role: string;
+    experience: string;
+  }>;
+
+  const stats = t('forTeachers.stats', { returnObjects: true }) as Array<{
+    value: string;
+    label: string;
+  }>;
+
+  const heroCheckPoints = t('forTeachers.heroCheckPoints', { returnObjects: true }) as string[];
   return (
     <>
       <Navigation />
@@ -162,7 +100,7 @@ export function ForTeachersPage() {
                 <motion.div variants={fadeInUp}>
                   <Badge variant="primary" className="mb-6">
                     <GraduationCap className="w-3 h-3 mr-1" />
-                    For Educators
+                    {t('forTeachers.heroBadge')}
                   </Badge>
                 </motion.div>
 
@@ -170,9 +108,9 @@ export function ForTeachersPage() {
                   variants={fadeInUp}
                   className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6"
                 >
-                  Differentiate Instruction{' '}
+                  {t('forTeachers.heroHeadingPrefix')}{' '}
                   <span className="bg-gradient-to-r from-theme-primary-600 to-blue-600 bg-clip-text text-transparent">
-                    Effortlessly
+                    {t('forTeachers.heroHeadingHighlight')}
                   </span>
                 </motion.h1>
 
@@ -180,9 +118,7 @@ export function ForTeachersPage() {
                   variants={fadeInUp}
                   className="text-xl text-gray-600 mb-8 leading-relaxed"
                 >
-                  AIVO&apos;s AI-powered platform helps you meet every student where they are.
-                  Personalized learning paths, IEP goal tracking, and real-time insights—without the
-                  extra workload.
+                  {t('forTeachers.heroDescription')}
                 </motion.p>
 
                 <motion.div
@@ -191,12 +127,12 @@ export function ForTeachersPage() {
                 >
                   <Button variant="primary" size="lg" asChild>
                     <Link href="/demo">
-                      Schedule a Demo
+                      {t('forTeachers.heroCtaPrimary')}
                       <ArrowRight className="w-5 h-5" />
                     </Link>
                   </Button>
                   <Button variant="outline" size="lg" asChild>
-                    <Link href="#features">Explore Features</Link>
+                    <Link href="#features">{t('forTeachers.heroCtaSecondary')}</Link>
                   </Button>
                 </motion.div>
 
@@ -204,14 +140,12 @@ export function ForTeachersPage() {
                   variants={fadeInUp}
                   className="mt-8 flex items-center gap-4 text-sm text-gray-500"
                 >
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4 text-mint-500" />
-                    Free for individual teachers
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4 text-mint-500" />
-                    School pricing available
-                  </span>
+                  {heroCheckPoints.map((cp) => (
+                    <span key={cp} className="flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4 text-mint-500" />
+                      {cp}
+                    </span>
+                  ))}
                 </motion.div>
               </motion.div>
 
@@ -224,23 +158,23 @@ export function ForTeachersPage() {
               >
                 <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-100">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold text-gray-900">Class Overview - Period 3</h3>
-                    <Badge variant="outline">24 Students</Badge>
+                    <h3 className="font-semibold text-gray-900">{t('forTeachers.dashboardPreview.title')}</h3>
+                    <Badge variant="outline">{t('forTeachers.dashboardPreview.studentsBadge')}</Badge>
                   </div>
 
                   {/* Quick stats */}
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     <div className="bg-mint-50 rounded-xl p-3 text-center">
-                      <div className="text-2xl font-bold text-mint-700">18</div>
-                      <div className="text-xs text-mint-600">On Track</div>
+                      <div className="text-2xl font-bold text-mint-700">{t('forTeachers.dashboardPreview.onTrack')}</div>
+                      <div className="text-xs text-mint-600">{t('forTeachers.dashboardPreview.onTrackLabel')}</div>
                     </div>
                     <div className="bg-sunshine-50 rounded-xl p-3 text-center">
-                      <div className="text-2xl font-bold text-sunshine-700">4</div>
-                      <div className="text-xs text-sunshine-600">Needs Support</div>
+                      <div className="text-2xl font-bold text-sunshine-700">{t('forTeachers.dashboardPreview.needsSupport')}</div>
+                      <div className="text-xs text-sunshine-600">{t('forTeachers.dashboardPreview.needsSupportLabel')}</div>
                     </div>
                     <div className="bg-theme-primary-50 rounded-xl p-3 text-center">
-                      <div className="text-2xl font-bold text-theme-primary-700">2</div>
-                      <div className="text-xs text-theme-primary-600">Excelling</div>
+                      <div className="text-2xl font-bold text-theme-primary-700">{t('forTeachers.dashboardPreview.excelling')}</div>
+                      <div className="text-xs text-theme-primary-600">{t('forTeachers.dashboardPreview.excellingLabel')}</div>
                     </div>
                   </div>
 
@@ -248,18 +182,18 @@ export function ForTeachersPage() {
                   <div className="space-y-2">
                     {[
                       {
-                        name: 'Student A',
-                        status: 'Working on Fractions',
+                        name: t('forTeachers.dashboardPreview.studentA'),
+                        status: t('forTeachers.dashboardPreview.studentADetail'),
                         progress: 72,
                         iep: true,
                       },
                       {
-                        name: 'Student B',
-                        status: 'Completed Chapter 4',
+                        name: t('forTeachers.dashboardPreview.studentB'),
+                        status: t('forTeachers.dashboardPreview.studentBDetail'),
                         progress: 100,
                         iep: false,
                       },
-                      { name: 'Student C', status: 'Needs intervention', progress: 45, iep: true },
+                      { name: t('forTeachers.dashboardPreview.studentC'), status: t('forTeachers.dashboardPreview.studentCDetail'), progress: 45, iep: true },
                     ].map((student) => (
                       <div
                         key={student.name}
@@ -275,7 +209,7 @@ export function ForTeachersPage() {
                             </span>
                             {student.iep && (
                               <Badge variant="primary" size="sm">
-                                IEP
+                                {t('forTeachers.dashboardPreview.iepBadge')}
                               </Badge>
                             )}
                           </div>
@@ -325,9 +259,9 @@ export function ForTeachersPage() {
         {/* Benefits Section */}
         <Section background="white" padding="lg">
           <SectionHeader
-            badge="Why Teachers Choose AIVO"
-            title="More Teaching, Less Paperwork"
-            description="AIVO handles the personalization and documentation so you can focus on what you do best—teaching."
+            badge={t('forTeachers.benefitsBadge')}
+            title={t('forTeachers.benefitsHeading')}
+            description={t('forTeachers.benefitsDescription')}
           />
 
           <motion.div
@@ -366,9 +300,9 @@ export function ForTeachersPage() {
         {/* Features Grid */}
         <Section id="features" background="gradient" padding="lg">
           <SectionHeader
-            badge="Classroom Tools"
-            title="Built for Educators"
-            description="Powerful features designed by teachers, for teachers."
+            badge={t('forTeachers.featuresBadge')}
+            title={t('forTeachers.featuresHeading')}
+            description={t('forTeachers.featuresDescription')}
           />
 
           <motion.div
@@ -402,9 +336,9 @@ export function ForTeachersPage() {
         {/* Testimonials */}
         <Section background="white" padding="lg">
           <SectionHeader
-            badge="Educator Stories"
-            title="Trusted by Teachers"
-            description="Hear from educators using AIVO in their classrooms."
+            badge={t('forTeachers.testimonialsBadge')}
+            title={t('forTeachers.testimonialsHeading')}
+            description={t('forTeachers.testimonialsDescription')}
           />
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -459,10 +393,10 @@ export function ForTeachersPage() {
               viewport={{ once: true }}
             >
               <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to Transform Your Classroom?
+                {t('forTeachers.ctaHeading')}
               </h2>
               <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-                Schedule a demo to see how AIVO can help you support every learner.
+                {t('forTeachers.ctaDescription')}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
@@ -471,7 +405,7 @@ export function ForTeachersPage() {
                   asChild
                 >
                   <Link href="/demo">
-                    Schedule Demo
+                    {t('forTeachers.ctaButtonPrimary')}
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
@@ -481,7 +415,7 @@ export function ForTeachersPage() {
                   className="border-white/30 text-white hover:bg-white/10"
                   asChild
                 >
-                  <Link href="/features/schools">School &amp; District Plans</Link>
+                  <Link href="/features/schools">{t('forTeachers.ctaButtonSecondary')}</Link>
                 </Button>
               </div>
             </motion.div>

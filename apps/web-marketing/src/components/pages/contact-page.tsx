@@ -16,50 +16,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Navigation } from '@/components/shared/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-// Contact info data
-const contactInfo = [
-  {
-    icon: Mail,
-    title: 'Email',
-    details: ['hello@aivolearning.com', 'support@aivolearning.com'],
-    color: 'bg-theme-primary-100 text-theme-primary-600',
-  },
-  {
-    icon: Phone,
-    title: 'Phone',
-    details: ['1-800-AIVO-EDU', '(800) 248-6338'],
-    color: 'bg-coral-100 text-coral-600',
-  },
-  {
-    icon: MapPin,
-    title: 'Address',
-    details: ['123 Education Street', 'Learning City, CA 94105'],
-    color: 'bg-mint-100 text-mint-600',
-  },
-  {
-    icon: Clock,
-    title: 'Hours',
-    details: ['Mon - Fri: 9am - 6pm EST', 'Weekend: Email support'],
-    color: 'bg-sunshine-100 text-sunshine-600',
-  },
-];
-
-// Subject options
-const subjectOptions = [
-  { value: '', label: 'Select a topic...' },
-  { value: 'general', label: 'General Inquiry' },
-  { value: 'support', label: 'Technical Support' },
-  { value: 'sales', label: 'Sales & Pricing' },
-  { value: 'partnership', label: 'Partnership Opportunity' },
-  { value: 'press', label: 'Press & Media' },
-  { value: 'other', label: 'Other' },
-];
 
 interface FormData {
   name: string;
@@ -76,6 +38,28 @@ interface FormErrors {
 }
 
 export function ContactPage() {
+  const { t } = useTranslation('marketing');
+
+  /* ── Locale-driven data ─────────────────────────────────── */
+  const contactInfoKeys = ['email', 'phone', 'address', 'hours'] as const;
+  const contactInfoIcons = [Mail, Phone, MapPin, Clock];
+  const contactInfoColors = [
+    'bg-theme-primary-100 text-theme-primary-600',
+    'bg-coral-100 text-coral-600',
+    'bg-mint-100 text-mint-600',
+    'bg-sunshine-100 text-sunshine-600',
+  ];
+  const contactInfo = contactInfoKeys.map((key, i) => {
+    const d = t(`contact.contactInfo.${key}`, { returnObjects: true }) as {
+      title: string;
+      values: string[];
+    };
+    return { icon: contactInfoIcons[i], title: d.title, details: d.values, color: contactInfoColors[i] };
+  });
+
+  const topicLabels = t('contact.topicOptions', { returnObjects: true }) as string[];
+  const subjectValues = ['', 'general', 'support', 'sales', 'partnership', 'press', 'other'];
+  const subjectOptions = topicLabels.map((label, i) => ({ value: subjectValues[i], label }));
   const [formData, setFormData] = React.useState<FormData>({
     name: '',
     email: '',
@@ -90,23 +74,23 @@ export function ContactPage() {
     const newErrors: FormErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('contact.validation.nameRequired');
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('contact.validation.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('contact.validation.emailInvalid');
     }
 
     if (!formData.subject) {
-      newErrors.subject = 'Please select a topic';
+      newErrors.subject = t('contact.validation.topicRequired');
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+      newErrors.message = t('contact.validation.messageRequired');
     } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
+      newErrors.message = t('contact.validation.messageMinLength');
     }
 
     setErrors(newErrors);
@@ -139,7 +123,7 @@ export function ContactPage() {
       console.error('Form submission error:', error);
       setErrors({
         ...errors,
-        message: error instanceof Error ? error.message : 'Failed to submit. Please try again.',
+        message: error instanceof Error ? error.message : t('contact.validation.submitFailed'),
       });
     } finally {
       setIsSubmitting(false);
@@ -180,16 +164,15 @@ export function ContactPage() {
             >
               <Badge variant="primary" className="mb-6">
                 <MessageSquare className="w-3 h-3 mr-1" />
-                Get in Touch
+                {t('contact.heroBadge')}
               </Badge>
 
               <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4">
-                Contact Us
+                {t('contact.heroHeading')}
               </h1>
 
               <p className="text-xl text-gray-600">
-                Have questions about AIVO? We&apos;re here to help. Reach out and we&apos;ll respond
-                as soon as possible.
+                {t('contact.heroDescription')}
               </p>
             </motion.div>
           </div>
@@ -208,10 +191,10 @@ export function ContactPage() {
               >
                 <div>
                   <h2 className="font-display text-2xl font-bold text-gray-900 mb-2">
-                    Let&apos;s Connect
+                    {t('contact.contactInfo.heading')}
                   </h2>
                   <p className="text-gray-600">
-                    Choose the best way to reach us. We typically respond within 24 hours.
+                    {t('contact.contactInfo.description')}
                   </p>
                 </div>
 
@@ -248,8 +231,8 @@ export function ContactPage() {
                 <div className="flex items-center gap-3 p-4 bg-mint-50 rounded-2xl border border-mint-200">
                   <Clock className="w-5 h-5 text-mint-600" />
                   <div>
-                    <p className="font-medium text-mint-700">Average Response Time</p>
-                    <p className="text-sm text-mint-600">Within 24 hours on business days</p>
+                    <p className="font-medium text-mint-700">{t('contact.responseTime.label')}</p>
+                    <p className="text-sm text-mint-600">{t('contact.responseTime.value')}</p>
                   </div>
                 </div>
               </motion.div>
@@ -282,20 +265,19 @@ export function ContactPage() {
                         </motion.div>
 
                         <h3 className="font-display text-2xl font-bold text-gray-900 mb-2">
-                          Message Sent!
+                          {t('contact.success.heading')}
                         </h3>
                         <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                          Thank you for reaching out. We&apos;ve received your message and will get
-                          back to you within 24-48 hours.
+                          {t('contact.success.description')}
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                           <Button variant="outline" onClick={resetForm}>
                             <ArrowLeft className="w-4 h-4" />
-                            Send Another Message
+                            {t('contact.success.sendAnother')}
                           </Button>
                           <Button variant="primary" asChild>
-                            <Link href="/">Return to Home</Link>
+                            <Link href="/">{t('contact.success.returnHome')}</Link>
                           </Button>
                         </div>
                       </motion.div>
@@ -311,10 +293,10 @@ export function ContactPage() {
                       >
                         <div>
                           <h2 className="font-display text-2xl font-bold text-gray-900 mb-1">
-                            Send Us a Message
+                            {t('contact.form.heading')}
                           </h2>
                           <p className="text-gray-500 text-sm">
-                            Fill out the form below and we&apos;ll be in touch.
+                            {t('contact.form.description')}
                           </p>
                         </div>
 
@@ -324,7 +306,7 @@ export function ContactPage() {
                             htmlFor="name"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
-                            Your Name <span className="text-red-500">*</span>
+                            {t('contact.form.nameLabel')} <span className="text-red-500">{t('contact.form.required')}</span>
                           </label>
                           <input
                             type="text"
@@ -338,7 +320,7 @@ export function ContactPage() {
                                 ? 'border-red-300 bg-red-50'
                                 : 'border-gray-200 hover:border-gray-300'
                             )}
-                            placeholder="John Doe"
+                            placeholder={t('contact.form.namePlaceholder')}
                           />
                           {errors.name && (
                             <p className="mt-1 text-sm text-red-500">{errors.name}</p>
@@ -351,7 +333,7 @@ export function ContactPage() {
                             htmlFor="email"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
-                            Email Address <span className="text-red-500">*</span>
+                            {t('contact.form.emailLabel')} <span className="text-red-500">{t('contact.form.required')}</span>
                           </label>
                           <input
                             type="email"
@@ -365,7 +347,7 @@ export function ContactPage() {
                                 ? 'border-red-300 bg-red-50'
                                 : 'border-gray-200 hover:border-gray-300'
                             )}
-                            placeholder="john@example.com"
+                            placeholder={t('contact.form.emailPlaceholder')}
                           />
                           {errors.email && (
                             <p className="mt-1 text-sm text-red-500">{errors.email}</p>
@@ -378,7 +360,7 @@ export function ContactPage() {
                             htmlFor="subject"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
-                            Topic <span className="text-red-500">*</span>
+                            {t('contact.form.topicLabel')} <span className="text-red-500">{t('contact.form.required')}</span>
                           </label>
                           <select
                             id="subject"
@@ -409,7 +391,7 @@ export function ContactPage() {
                             htmlFor="message"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
-                            Message <span className="text-red-500">*</span>
+                            {t('contact.form.messageLabel')} <span className="text-red-500">{t('contact.form.required')}</span>
                           </label>
                           <textarea
                             id="message"
@@ -423,7 +405,7 @@ export function ContactPage() {
                                 ? 'border-red-300 bg-red-50'
                                 : 'border-gray-200 hover:border-gray-300'
                             )}
-                            placeholder="How can we help you?"
+                            placeholder={t('contact.form.messagePlaceholder')}
                           />
                           {errors.message && (
                             <p className="mt-1 text-sm text-red-500">{errors.message}</p>
@@ -439,13 +421,13 @@ export function ContactPage() {
                           loading={isSubmitting}
                         >
                           <Send className="w-5 h-5" />
-                          {isSubmitting ? 'Sending...' : 'Send Message'}
+                          {isSubmitting ? t('contact.form.submitting') : t('contact.form.submitButton')}
                         </Button>
 
                         <p className="text-xs text-gray-500 text-center">
-                          By submitting this form, you agree to our{' '}
+                          {t('contact.form.privacyNotice')}{' '}
                           <Link href="/privacy" className="text-theme-primary-600 hover:underline">
-                            Privacy Policy
+                            {t('contact.form.privacyPolicyLink')}
                           </Link>
                           .
                         </p>
@@ -462,41 +444,21 @@ export function ContactPage() {
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="font-display text-2xl font-bold text-center text-gray-900 mb-8">
-              Looking for Something Specific?
+              {t('contact.quickLinks.heading')}
             </h2>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              {[
-                {
-                  icon: HelpCircle,
-                  title: 'Help Center',
-                  description: 'Browse our FAQ',
-                  href: '/#faq',
-                },
-                {
-                  icon: Users,
-                  title: 'For Schools',
-                  description: 'Enterprise solutions',
-                  href: '/features/schools',
-                },
-                {
-                  icon: Building,
-                  title: 'Partnerships',
-                  description: 'Work with us',
-                  href: '/contact?subject=partnership',
-                },
-                {
-                  icon: Mail,
-                  title: 'Press Inquiries',
-                  description: 'Media contact',
-                  href: 'mailto:press@aivolearning.com',
-                },
-              ].map((item) => {
-                const Icon = item.icon;
+              {(t('contact.quickLinks.items', { returnObjects: true }) as Array<{
+                title: string;
+                description: string;
+              }>).map((item, i) => {
+                const icons = [HelpCircle, Users, Building, Mail];
+                const hrefs = ['/#faq', '/features/schools', '/contact?subject=partnership', `mailto:${t('contact.quickLinks.pressEmail')}`];
+                const Icon = icons[i];
                 return (
                   <Link
                     key={item.title}
-                    href={item.href}
+                    href={hrefs[i]}
                     className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-100 hover:border-theme-primary-200 hover:shadow-md transition-all group"
                   >
                     <div className="w-12 h-12 rounded-xl bg-theme-primary-50 flex items-center justify-center group-hover:bg-theme-primary-100 transition-colors">
