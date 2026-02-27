@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Plus_Jakarta_Sans } from 'next/font/google';
 import type { ReactNode } from 'react';
 
+import { I18nProvider } from '@/components/providers/i18n-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/lib/auth/auth-provider';
 import { organizationSchema, platformSchema, SchemaScript } from '@/lib/schema-org';
@@ -140,7 +141,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className="min-h-screen bg-white text-gray-900 font-sans antialiased">
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <I18nProvider locale={locale}>
+              {children}
+            </I18nProvider>
+          </AuthProvider>
         </ThemeProvider>
 
         {/* Analytics */}
