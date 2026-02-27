@@ -28,7 +28,7 @@ interface AnonymizationConfig {
 interface BulkSubmissionResult {
   accepted: number;
   rejected: number;
-  errors: Array<{ index: number; reason: string }>;
+  errors: { index: number; reason: string }[];
 }
 
 /* ---------- defaults ---------- */
@@ -91,10 +91,13 @@ describe('addDifferentialPrivacyNoise', () => {
 
 function validateMetricSubmission(
   m: MetricSubmission,
-  config: AnonymizationConfig,
+  config: AnonymizationConfig
 ): { valid: boolean; reason?: string } {
   if (m.sampleSize < config.minCohortSize && config.suppressBelowThreshold) {
-    return { valid: false, reason: `Sample size ${m.sampleSize} below minimum ${config.minCohortSize}` };
+    return {
+      valid: false,
+      reason: `Sample size ${m.sampleSize} below minimum ${config.minCohortSize}`,
+    };
   }
   if (m.metricValue < 0) {
     return { valid: false, reason: 'Metric value cannot be negative' };
@@ -147,17 +150,52 @@ describe('validateMetricSubmission', () => {
 /* ---------- mocked AggregationService ---------- */
 
 describe('AggregationService (mocked)', () => {
-  const mockSubmit = vi.fn<(tenantId: string, metrics: MetricSubmission[], submittedBy: string) => Promise<BulkSubmissionResult>>();
+  const mockSubmit =
+    vi.fn<
+      (
+        tenantId: string,
+        metrics: MetricSubmission[],
+        submittedBy: string
+      ) => Promise<BulkSubmissionResult>
+    >();
 
   beforeEach(() => vi.clearAllMocks());
 
   it('accepts valid metrics batch', async () => {
     mockSubmit.mockResolvedValue({ accepted: 3, rejected: 0, errors: [] });
-    const result = await mockSubmit('t-1', [
-      { category: 'ENGAGEMENT', metricKey: 'daily_active', metricValue: 120, periodStart: '2026-01-01', periodEnd: '2026-01-31', periodType: 'MONTHLY', sampleSize: 200 },
-      { category: 'ACADEMIC_PERFORMANCE', metricKey: 'avg_score', metricValue: 78, periodStart: '2026-01-01', periodEnd: '2026-01-31', periodType: 'MONTHLY', sampleSize: 150 },
-      { category: 'AI_EFFECTIVENESS', metricKey: 'recommendation_accuracy', metricValue: 0.85, periodStart: '2026-01-01', periodEnd: '2026-01-31', periodType: 'MONTHLY', sampleSize: 100 },
-    ], 'admin-1');
+    const result = await mockSubmit(
+      't-1',
+      [
+        {
+          category: 'ENGAGEMENT',
+          metricKey: 'daily_active',
+          metricValue: 120,
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          periodType: 'MONTHLY',
+          sampleSize: 200,
+        },
+        {
+          category: 'ACADEMIC_PERFORMANCE',
+          metricKey: 'avg_score',
+          metricValue: 78,
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          periodType: 'MONTHLY',
+          sampleSize: 150,
+        },
+        {
+          category: 'AI_EFFECTIVENESS',
+          metricKey: 'recommendation_accuracy',
+          metricValue: 0.85,
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          periodType: 'MONTHLY',
+          sampleSize: 100,
+        },
+      ],
+      'admin-1'
+    );
     expect(result.accepted).toBe(3);
     expect(result.rejected).toBe(0);
   });

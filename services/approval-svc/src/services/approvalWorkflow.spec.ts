@@ -14,7 +14,7 @@ type EscalationType = 'AUTO_APPROVE' | 'AUTO_REJECT' | 'ESCALATE_UP' | 'NOTIFY_O
 
 function isStepComplete(
   step: { type: StepType; quorumCount?: number },
-  decisions: Array<{ decision: 'APPROVED' | 'REJECTED' }>,
+  decisions: { decision: 'APPROVED' | 'REJECTED' }[]
 ): { complete: boolean; outcome?: 'APPROVED' | 'REJECTED' } {
   if (decisions.length === 0) return { complete: false };
 
@@ -50,62 +50,50 @@ function isStepComplete(
 
 describe('isStepComplete', () => {
   it('SINGLE: complete with first decision', () => {
-    const result = isStepComplete(
-      { type: 'SINGLE' },
-      [{ decision: 'APPROVED' }],
-    );
+    const result = isStepComplete({ type: 'SINGLE' }, [{ decision: 'APPROVED' }]);
     expect(result.complete).toBe(true);
     expect(result.outcome).toBe('APPROVED');
   });
 
   it('SINGLE: returns REJECTED when rejected', () => {
-    const result = isStepComplete(
-      { type: 'SINGLE' },
-      [{ decision: 'REJECTED' }],
-    );
+    const result = isStepComplete({ type: 'SINGLE' }, [{ decision: 'REJECTED' }]);
     expect(result.outcome).toBe('REJECTED');
   });
 
   it('ANY_OF: complete when any approves', () => {
-    const result = isStepComplete(
-      { type: 'ANY_OF' },
-      [{ decision: 'REJECTED' }, { decision: 'APPROVED' }],
-    );
+    const result = isStepComplete({ type: 'ANY_OF' }, [
+      { decision: 'REJECTED' },
+      { decision: 'APPROVED' },
+    ]);
     expect(result.complete).toBe(true);
     expect(result.outcome).toBe('APPROVED');
   });
 
   it('ANY_OF: not complete without approval', () => {
-    const result = isStepComplete(
-      { type: 'ANY_OF' },
-      [{ decision: 'REJECTED' }],
-    );
+    const result = isStepComplete({ type: 'ANY_OF' }, [{ decision: 'REJECTED' }]);
     expect(result.complete).toBe(false);
   });
 
   it('ALL_OF: rejected when any rejects', () => {
-    const result = isStepComplete(
-      { type: 'ALL_OF' },
-      [{ decision: 'APPROVED' }, { decision: 'REJECTED' }],
-    );
+    const result = isStepComplete({ type: 'ALL_OF' }, [
+      { decision: 'APPROVED' },
+      { decision: 'REJECTED' },
+    ]);
     expect(result.complete).toBe(true);
     expect(result.outcome).toBe('REJECTED');
   });
 
   it('QUORUM: complete when quorum reached', () => {
-    const result = isStepComplete(
-      { type: 'QUORUM', quorumCount: 2 },
-      [{ decision: 'APPROVED' }, { decision: 'APPROVED' }],
-    );
+    const result = isStepComplete({ type: 'QUORUM', quorumCount: 2 }, [
+      { decision: 'APPROVED' },
+      { decision: 'APPROVED' },
+    ]);
     expect(result.complete).toBe(true);
     expect(result.outcome).toBe('APPROVED');
   });
 
   it('QUORUM: not complete below quorum', () => {
-    const result = isStepComplete(
-      { type: 'QUORUM', quorumCount: 3 },
-      [{ decision: 'APPROVED' }],
-    );
+    const result = isStepComplete({ type: 'QUORUM', quorumCount: 3 }, [{ decision: 'APPROVED' }]);
     expect(result.complete).toBe(false);
   });
 
@@ -139,12 +127,12 @@ function isActiveDelegation(d: Delegation, workflowId: string, now = new Date())
 function resolveApprovers(
   approverIds: string[],
   delegations: Delegation[],
-  workflowId: string,
+  workflowId: string
 ): string[] {
   const resolved = new Set<string>();
   for (const id of approverIds) {
     const delegation = delegations.find(
-      (d) => d.fromUserId === id && isActiveDelegation(d, workflowId),
+      (d) => d.fromUserId === id && isActiveDelegation(d, workflowId)
     );
     resolved.add(delegation ? delegation.toUserId : id);
   }
