@@ -1,0 +1,1170 @@
+{
+  "nav": {
+    "features": "Características",
+    "forParents": "Para Padres",
+    "forParentsDesc": "Apoye el viaje de aprendizaje único de su hijo",
+    "forStudents": "Para Estudiantes",
+    "forStudentsDesc": "Aprenda a su propio ritmo con apoyo de IA",
+    "forTeachers": "Para Profesores",
+    "forTeachersDesc": "Diferencie la instrucción sin esfuerzo",
+    "aivoPad": "AIVO Pad",
+    "new": "Nuevo",
+    "howItWorks": "Cómo Funciona",
+    "pricing": "Precios",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "signIn": "Iniciar Sesión",
+    "getStarted": "Comenzar",
+    "closeMenu": "Cerrar menú",
+    "openMenu": "Abrir menú",
+    "trustedByFamilies": "Más de 150 familias confían en nuestro programa piloto"
+  },
+  "hero": {
+    "announcementPrefix": "Presentamos ",
+    "announcementHighlight": "Virtual Brain AI",
+    "welcomeTo": "Bienvenido a ",
+    "aivo": "AIVO",
+    "learning": "Learning",
+    "whereEveryMind": "Donde Cada Mente",
+    "thrives": "Prospera",
+    "subheadlinePrefix": "Plataforma de aprendizaje revolucionaria impulsada por IA con ",
+    "virtualBrains": "Virtual Brains",
+    "subheadlineSuffix": " personalizados, diseñada para estudiantes neurodiversos de K-12. Compatible con ADHD, Autismo, Dislexia y todas las diferencias de aprendizaje.",
+    "pilotCalloutHeading": "Éxito del Programa Piloto",
+    "pilotStudents": "150 estudiantes",
+    "pilotConnector": " mejoraron sus resultados de aprendizaje en solo ",
+    "pilotDuration": "3 meses",
+    "ctaPrimary": "Iniciar Prueba Gratuita",
+    "ctaSecondary": "Ver Demostración",
+    "dashboardTitle": "Panel de AIVO Learning",
+    "todaysProgress": "Progreso de Hoy",
+    "progressPercent": "78%",
+    "lessonsCompleted": "Lecciones Completadas",
+    "lessonsCount": "12",
+    "xpEarned": "XP Ganados",
+    "xpCount": "450",
+    "currentStreak": "Racha Actual",
+    "streakDays": "7 días",
+    "focusScore": "Puntuación de Enfoque",
+    "focusPercent": "94%",
+    "achievementUnlocked": "¡Logro Desbloqueado!",
+    "achievementDetail": "Maestro de Matemáticas - Nivel 5",
+    "iepAligned": "Alineado con IEP",
+    "personalizedGoals": "Metas personalizadas",
+    "virtualBrain": "Virtual Brain",
+    "aiPoweredTutor": "Tutor impulsado por IA",
+    "statStudents": "150+",
+    "statStudentsLabel": "Estudiantes Piloto",
+    "statCurriculum": "K-12",
+    "statCurriculumLabel": "Plan de Estudios Completo",
+    "statIep": "100%",
+    "statIepLabel": "Alineado con IEP",
+    "statAi": "IA",
+    "statAiLabel": "Impulsado",
+    "trustFerpa": "Cumple con FERPA",
+    "trustCoppa": "Certificado COPPA",
+    "trustNoAds": "Sin Anuncios",
+    "trustNoDataSelling": "Sin Venta de Datos",
+    "closeVideo": "Cerrar video",
+    "demoComingSoon": "Video de demostración próximamente"
+  },
+  "features": {
+    "badge": "Características de la Plataforma",
+    "titlePrefix": "Todo lo que Su Estudiante Necesita para ",
+    "titleHighlight": "Triunfar",
+    "description": "AIVO combina inteligencia artificial de vanguardia con estrategias educativas probadas para crear la experiencia de aprendizaje más personalizada para estudiantes neurodiversos.",
+    "aiTutoring": {
+      "title": "Tutoría Impulsada por IA",
+      "description": "Cada estudiante recibe un Virtual Brain de IA personalizado que se adapta en tiempo real a su estilo de aprendizaje, ritmo y preferencias únicas.",
+      "points": [
+        "Adaptación en tiempo real",
+        "Consciencia emocional",
+        "Soporte multisensorial"
+      ]
+    },
+    "iepGoals": {
+      "title": "Gestión de Metas IEP",
+      "description": "Se sincroniza automáticamente con las metas del IEP, rastrea el progreso y genera informes completos para equipos de atención y educadores.",
+      "points": [
+        "Seguimiento automático de metas",
+        "Informes de progreso",
+        "Colaboración en equipo"
+      ]
+    },
+    "progressTracking": {
+      "title": "Seguimiento del Progreso",
+      "description": "Paneles atractivos para que padres y profesores monitoreen el crecimiento, celebren logros e identifiquen áreas de mejora.",
+      "points": [
+        "Analíticas en tiempo real",
+        "Desglose por materias",
+        "Análisis de tendencias"
+      ]
+    },
+    "parentDashboard": {
+      "title": "Panel para Padres",
+      "description": "Manténgase conectado con el viaje de aprendizaje de su hijo. Vea el progreso, comuníquese con los profesores y gestione las metas del IEP, todo en un solo lugar.",
+      "points": [
+        "Feed de actividad",
+        "Mensajería con profesores",
+        "Monitoreo de metas"
+      ]
+    },
+    "validationBadge": "Cumple con FERPA y COPPA — Todas las funciones probadas con más de 150 estudiantes en nuestro programa piloto"
+  },
+  "courses": {
+    "badge": "Características de la Plataforma",
+    "titlePrefix": "Todo lo que Su Estudiante Necesita para ",
+    "titleHighlight": "Triunfar",
+    "description": "AIVO combina inteligencia artificial de vanguardia con estrategias educativas probadas para crear la experiencia de aprendizaje más personalizada para estudiantes neurodiversos.",
+    "aiVirtualBrain": {
+      "title": "Virtual Brain Impulsado por IA",
+      "description": "Cada estudiante recibe un agente de IA personalizado que comprende su estilo de aprendizaje único y se adapta en tiempo real."
+    },
+    "iepAlignment": {
+      "title": "Alineación con Metas IEP",
+      "description": "Se sincroniza automáticamente con las metas del IEP, rastrea el progreso y genera informes completos para los equipos de atención."
+    },
+    "neurodiversity": {
+      "title": "Apoyo a la Neurodiversidad",
+      "description": "Adaptaciones diseñadas específicamente para ADHD, Dislexia, Autismo y todas las diferencias de aprendizaje."
+    },
+    "compliance": {
+      "title": "Cumple con FERPA y COPPA",
+      "description": "Cifrado de nivel bancario, sin anuncios, sin venta de datos. La privacidad de su hijo es nuestra máxima prioridad."
+    },
+    "realTimeAdaptation": {
+      "title": "Adaptación en Tiempo Real",
+      "description": "La dificultad y la presentación del contenido se ajustan instantáneamente según el rendimiento y la participación."
+    },
+    "emotionalIntelligence": {
+      "title": "Inteligencia Emocional",
+      "description": "Reconoce la frustración, la ansiedad y la fatiga. Ofrece apoyo y técnicas de calma."
+    },
+    "curriculum": {
+      "title": "Plan de Estudios Completo K-12",
+      "description": "Cobertura completa de Matemáticas, Lectura, Ciencias y más, alineada con los estándares estatales."
+    },
+    "progress": {
+      "title": "Seguimiento del Progreso",
+      "description": "Paneles atractivos para que padres y profesores monitoreen el crecimiento y celebren los logros."
+    },
+    "validationBadge": "Todas las funciones probadas y validadas con más de 150 estudiantes en nuestro programa piloto"
+  },
+  "howItWorks": {
+    "badge": "Cómo Funciona",
+    "titlePrefix": "Comenzar es ",
+    "titleHighlight": "Sencillo",
+    "description": "Del registro al éxito en cuatro pasos fáciles. Sin configuraciones complejas, sin conocimientos técnicos necesarios.",
+    "step1": {
+      "number": "01",
+      "title": "Cree Su Perfil",
+      "description": "Regístrese en minutos. Cuéntenos sobre las necesidades, preferencias y metas del IEP de su estudiante. Apoyamos ADHD, Autismo, Dislexia y más.",
+      "tags": ["Configuración en 2 minutos", "Opción de importar IEP", "Cuestionario de estilo de aprendizaje"]
+    },
+    "step2": {
+      "number": "02",
+      "title": "Conozca Su Virtual Brain",
+      "description": "Su estudiante recibe un tutor de IA personalizado que se adapta a su forma única de pensar. Aprende qué funciona mejor para cada uno.",
+      "tags": ["Agente de IA personalizado", "Se adapta en tiempo real", "Consciencia emocional"]
+    },
+    "step3": {
+      "number": "03",
+      "title": "Comience a Aprender",
+      "description": "Participe en lecciones interactivas, juegos y actividades diseñadas para mentes neurodiversas. El contenido se ajusta automáticamente.",
+      "tags": ["Aprendizaje gamificado", "Amigable sensorialmente", "Recordatorios de descanso"]
+    },
+    "step4": {
+      "number": "04",
+      "title": "Siga el Progreso",
+      "description": "Padres y profesores obtienen paneles atractivos que muestran el crecimiento, los logros y las perspectivas. Celebren cada victoria juntos.",
+      "tags": ["Actualizaciones en tiempo real", "Informes de progreso IEP", "Celebraciones de logros"]
+    },
+    "illustrations": {
+      "uploadIep": "Cargar IEP (Opcional)",
+      "adhd": "ADHD",
+      "dyslexia": "Dislexia",
+      "autism": "Autismo",
+      "meetBrain": "Conoce el Brain de Alex",
+      "personalizedTutor": "Tutor de IA Personalizado",
+      "chatBubble": "¡Hola Alex! ¿Listo para aprender juntos? ¡Comencemos con algo divertido!",
+      "mathQuest": "Aventura Matemática",
+      "mathDetail": "Nivel 5 - Fracciones",
+      "readingAdventure": "Aventura de Lectura",
+      "readingDetail": "Capítulo 3",
+      "scienceLab": "Laboratorio de Ciencias",
+      "scienceDetail": "Plantas y Crecimiento",
+      "weeklyProgress": "Progreso Semanal",
+      "progressPercent": "+23%",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb",
+      "sun": "Dom"
+    },
+    "ctaButton": "Comience Su Viaje Hoy",
+    "ctaDisclaimer": "Sin tarjeta de crédito • Prueba gratuita de 14 días • Cancele cuando quiera"
+  },
+  "cta": {
+    "trustPoints": [
+      "Sin tarjeta de crédito",
+      "Prueba gratuita de 14 días",
+      "Cancele cuando quiera"
+    ],
+    "headlinePrefix": "¿Listo para Empezar a ",
+    "headlineHighlight": "Aprender?",
+    "subheadline": "Únase a nuestra creciente comunidad de estudiantes y educadores que usan AIVO para una educación personalizada e impulsada por IA.",
+    "emailPlaceholder": "Ingrese su correo electrónico",
+    "submitButton": "Comience Gratis",
+    "complianceBold": "Cumple con FERPA y COPPA",
+    "complianceText": "Los datos de su hijo siempre están protegidos"
+  },
+  "pricing": {
+    "badge": "Precios",
+    "titlePrefix": "Precios Simples y ",
+    "titleHighlight": "Transparentes",
+    "description": "Elija el plan que se adapte a las necesidades de su familia. Todos los planes incluyen nuestra experiencia de aprendizaje impulsada por IA.",
+    "monthly": "Mensual",
+    "annual": "Anual",
+    "saveBadge": "Ahorre 50%",
+    "switchToMonthly": "Cambiar a facturación mensual",
+    "switchToAnnual": "Cambiar a facturación anual",
+    "perMonth": "/mes",
+    "billedAnnually": "Facturado anualmente (${amount}/año)",
+    "free": {
+      "name": "Gratuito",
+      "description": "Comience con las funciones básicas",
+      "cta": "Comenzar Gratis",
+      "features": [
+        "Lecciones y actividades básicas",
+        "Materias principales (Matemáticas, Lectura)",
+        "Seguimiento básico del progreso",
+        "Soporte comunitario",
+        "Interacciones de IA limitadas"
+      ],
+      "notIncluded": [
+        "Acceso completo al plan de estudios",
+        "Integración con IEP",
+        "Panel para padres",
+        "Soporte prioritario"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "Perfecto para la mayoría de las familias",
+      "discount": "50% de Descuento",
+      "cta": "Iniciar Prueba Pro",
+      "popularBadge": "Más Popular",
+      "features": [
+        "Todo lo del plan Gratuito, más:",
+        "Acceso completo a la biblioteca de lecciones",
+        "Sesiones ilimitadas con tutor de IA",
+        "Integración con metas IEP",
+        "Seguimiento detallado del progreso",
+        "Panel para padres",
+        "Soporte prioritario por correo",
+        "Evaluación de estilo de aprendizaje",
+        "Rutas de aprendizaje personalizadas"
+      ]
+    },
+    "premium": {
+      "name": "Premium",
+      "description": "Para familias que necesitan apoyo adicional",
+      "cta": "Iniciar Prueba Premium",
+      "features": [
+        "Todo lo del plan Pro, más:",
+        "Múltiples perfiles de estudiantes",
+        "Herramientas avanzadas para profesores",
+        "Soporte de chat ilimitado",
+        "Soporte prioritario 24/7",
+        "Planes de aprendizaje personalizados",
+        "Informes de progreso familiar",
+        "Gerente de éxito dedicado",
+        "Acceso anticipado a nuevas funciones"
+      ]
+    },
+    "trustBadges": [
+      "Cumple con FERPA y COPPA",
+      "Soporte 24/7",
+      "Panel Familiar",
+      "Integración IEP"
+    ],
+    "testimonial": {
+      "quote": "Las rutas de aprendizaje personalizadas mantienen a mi hijo comprometido, y el panel para padres nos permite celebrar el progreso juntos. Una verdadera diferencia para nuestra familia.",
+      "initials": "PP",
+      "author": "Padre del Programa Piloto",
+      "detail": "Programa Piloto de AIVO, 2025"
+    },
+    "faqHeading": "Preguntas Frecuentes",
+    "faqs": [
+      {
+        "question": "¿Puedo cambiar de plan en cualquier momento?",
+        "answer": "¡Sí! Puede actualizar, bajar de categoría o cancelar su plan en cualquier momento. Los cambios se aplican al inicio de su próximo ciclo de facturación."
+      },
+      {
+        "question": "¿Hay una prueba gratuita?",
+        "answer": "Sí, los planes Pro y Premium incluyen una prueba gratuita de 14 días. No se requiere tarjeta de crédito para comenzar."
+      },
+      {
+        "question": "¿Cómo funciona la facturación?",
+        "answer": "Puede elegir facturación mensual o anual. La facturación anual le ahorra un 50% en comparación con la mensual."
+      },
+      {
+        "question": "¿Puede AIVO apoyar múltiples diferencias de aprendizaje?",
+        "answer": "¡Por supuesto! AIVO está diseñado para apoyar a estudiantes con ADHD, Autismo, Dislexia y muchas otras diferencias de aprendizaje simultáneamente."
+      }
+    ],
+    "moneyBack": {
+      "heading": "Garantía de Devolución de 30 Días",
+      "description": "Pruebe sin riesgo. Reembolso completo si no queda satisfecho."
+    }
+  },
+  "testimonials": {
+    "badge": "Historias de Éxito",
+    "titlePrefix": "Amado por ",
+    "titleHighlight": "Familias y Educadores",
+    "description": "Escuche a las familias y educadores que confían en AIVO cada día.",
+    "items": [
+      {
+        "quote": "Mi hija ahora realmente espera con ansias el momento de aprender. El tutor de IA se adapta a su ADHD y la mantiene comprometida sin frustración. Vimos una mejora real en solo 8 semanas del programa piloto.",
+        "author": "Padre",
+        "role": "Padre de estudiante de 4.° grado",
+        "details": "Minneapolis, MN",
+        "avatar": "P"
+      },
+      {
+        "quote": "La integración con el IEP realmente funciona. Puedo ver las metas de cada estudiante rastreadas automáticamente, y las recomendaciones de IA me ayudan a ajustar la instrucción en tiempo real. Esto ahorra horas de documentación.",
+        "author": "Educador",
+        "role": "Profesor de Educación Especial",
+        "details": "New York, NY",
+        "avatar": "E"
+      },
+      {
+        "quote": "Las rutinas predecibles y el diseño amigable sensorialmente hicieron toda la diferencia para mi hijo en el espectro autista. Su confianza en el aprendizaje realmente ha crecido durante el piloto.",
+        "author": "Padre",
+        "role": "Padre de estudiante de 2.° grado",
+        "details": "Minneapolis, MN",
+        "avatar": "P"
+      }
+    ],
+    "stats": {
+      "students": { "value": "150", "label": "Estudiantes Piloto", "suffix": "+" },
+      "duration": { "value": "3", "label": "Meses de Piloto", "suffix": "m" },
+      "iep": { "value": "100", "label": "Alineado con IEP", "suffix": "%" },
+      "curriculum": { "value": "K-12", "label": "Plan de Estudios Completo" }
+    },
+    "previousTestimonial": "Testimonio anterior",
+    "nextTestimonial": "Siguiente testimonio",
+    "goToTestimonial": "Ir al testimonio {n}"
+  },
+  "footer": {
+    "sections": {
+      "product": "Producto",
+      "solutions": "Soluciones",
+      "resources": "Recursos",
+      "company": "Empresa",
+      "legal": "Legal"
+    },
+    "productLinks": {
+      "features": "Características",
+      "howItWorks": "Cómo Funciona",
+      "pricing": "Precios",
+      "aiTutoring": "Tutoría con IA",
+      "aivoPad": "AIVO Pad",
+      "new": "Nuevo",
+      "accessibility": "Accesibilidad"
+    },
+    "solutionsLinks": {
+      "forParents": "Para Padres",
+      "forTeachers": "Para Profesores",
+      "forStudents": "Para Estudiantes",
+      "forSchools": "Para Escuelas",
+      "forDistricts": "Para Distritos",
+      "homeschool": "Educación en Casa"
+    },
+    "resourcesLinks": {
+      "helpCenter": "Centro de Ayuda",
+      "blog": "Blog",
+      "research": "Investigación",
+      "caseStudies": "Casos de Estudio",
+      "webinars": "Seminarios Web",
+      "apiDocs": "Documentación API"
+    },
+    "companyLinks": {
+      "aboutUs": "Acerca de Nosotros",
+      "careers": "Empleo",
+      "hiring": "Contratando",
+      "press": "Prensa",
+      "contact": "Contacto",
+      "partners": "Socios"
+    },
+    "legalLinks": {
+      "privacyPolicy": "Política de Privacidad",
+      "termsOfService": "Términos de Servicio",
+      "cookiePolicy": "Política de Cookies",
+      "coppaCompliance": "Cumplimiento COPPA",
+      "ferpaCompliance": "Cumplimiento FERPA",
+      "accessibilityStatement": "Declaración de Accesibilidad"
+    },
+    "socialLabels": {
+      "facebook": "Facebook",
+      "twitter": "Twitter",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "youtube": "YouTube"
+    },
+    "trustBadges": {
+      "ferpa": "Cumple con FERPA",
+      "coppa": "Certificado COPPA",
+      "soc2": "SOC 2 Type II",
+      "wcag": "WCAG 2.1 AA"
+    },
+    "contactInfo": {
+      "email": "hello@aivolearning.com",
+      "phone": "1-800-AIVO-EDU",
+      "location": "Minneapolis, MN"
+    },
+    "newsletter": {
+      "subscriberBadge": "Únase a más de 10,000 suscriptores",
+      "heading": "Manténgase Actualizado con AIVO",
+      "description": "Reciba las últimas novedades sobre nuevas funciones, consejos de aprendizaje y ofertas especiales directamente en su bandeja de entrada.",
+      "placeholder": "Ingrese su correo electrónico",
+      "subscribing": "Suscribiendo...",
+      "subscribe": "Suscribirse",
+      "successMessage": "¡Gracias por suscribirse! Revise su bandeja de entrada.",
+      "errorMessage": "Algo salió mal. Por favor, inténtelo de nuevo.",
+      "privacyNote": "Respetamos su privacidad. Cancele la suscripción en cualquier momento.",
+      "privacyPolicyLink": "Política de Privacidad",
+      "emailRequired": "El correo electrónico es obligatorio",
+      "emailInvalid": "Por favor, ingrese un correo electrónico válido"
+    },
+    "brandTagline": "Aprendizaje personalizado impulsado por IA para estudiantes neurodiversos. Compatible con ADHD, Autismo, Dislexia y todas las diferencias de aprendizaje.",
+    "copyright": "© {year} AIVO Learning, Inc. Todos los derechos reservados.",
+    "madeWith": "Hecho con",
+    "forLearners": "para estudiantes neurodiversos",
+    "sitemap": "Mapa del Sitio",
+    "accessibility": "Accesibilidad",
+    "cookiePreferences": "Preferencias de Cookies"
+  },
+  "about": {
+    "heroBadge": "Nuestra Historia",
+    "heroHeadingPrefix": "Nuestra Misión:",
+    "heroHeadingHighlight": "Cada Mente Importa",
+    "heroDescription": "AIVO fue fundada por padres y educadores que creen que la neurodiversidad es una fortaleza, no una limitación. Estamos construyendo el futuro de la educación personalizada, un estudiante a la vez.",
+    "founderBadge": "Por Qué Comenzamos",
+    "founderHeading": "Nacido de la Experiencia Personal",
+    "founderParagraphs": [
+      "AIVO comenzó con una observación simple: los sistemas educativos tradicionales a menudo fallan a los estudiantes neurodiversos. No porque estos estudiantes no puedan aprender, sino porque el sistema no fue diseñado para su forma de pensar.",
+      "Como padres de hijos neurodiversos y profesionales de educación especial, nuestro equipo fundador experimentó estos desafíos de primera mano. Vimos a niños brillantes luchar con planes de estudio de talla única, perder la confianza y quedarse atrás de sus compañeros.",
+      "Sabíamos que tenía que haber una mejor manera. Combinando experiencia en IA, educación y desarrollo infantil, nos propusimos crear algo revolucionario: una plataforma de aprendizaje que se adapta a la mente única de cada niño, y no al revés.",
+      "Hoy, AIVO atiende a más de 150 familias, y apenas estamos comenzando."
+    ],
+    "founderQuote": "\"Cada niño merece aprender de una manera que tenga sentido para él.\"",
+    "founderAttribution": "— Equipo Fundador de AIVO",
+    "valuesBadge": "Nuestros Valores",
+    "valuesHeading": "Lo Que Defendemos",
+    "valuesDescription": "Estos principios guían cada decisión que tomamos, desde el diseño del producto hasta el servicio al cliente.",
+    "values": [
+      {
+        "name": "Empatía Primero",
+        "description": "Cada función está diseñada con los estudiantes neurodiversos como centro. Escuchamos, comprendemos y nos adaptamos."
+      },
+      {
+        "name": "Basado en Evidencia",
+        "description": "Fundamentado en las mejores prácticas de educación especial, ciencia del aprendizaje y mejora continua a través de datos."
+      },
+      {
+        "name": "Impulsado por la Comunidad",
+        "description": "Construido con la retroalimentación continua de familias, educadores, terapeutas y los propios estudiantes."
+      },
+      {
+        "name": "Privacidad y Seguridad",
+        "description": "Comprometidos con la protección de los datos de los estudiantes con seguridad de nivel bancario. Cumple con FERPA y COPPA."
+      }
+    ],
+    "advisoryBadge": "Liderazgo",
+    "advisoryHeading": "Junta Asesora",
+    "advisoryDescription": "Guiados por expertos en medicina, educación, negocios y defensa de la educación especial.",
+    "advisors": [
+      {
+        "name": "Dr. Ike Osuji",
+        "role": "Presidente y Asesor Médico",
+        "expertise": "Medicina Familiar y Desarrollo Infantil",
+        "bio": "Médico de familia en ejercicio con más de 20 años de experiencia apoyando a niños neurodiversos y sus familias.",
+        "avatar": "IO"
+      },
+      {
+        "name": "Dr. Patrick Ukata",
+        "role": "Asesor Académico",
+        "expertise": "Psicología Educativa",
+        "bio": "Profesor en la Universidad Johns Hopkins especializado en diferencias de aprendizaje y tecnología educativa.",
+        "avatar": "PU"
+      },
+      {
+        "name": "Nnamdi Uzokwe",
+        "role": "Asesor Estratégico",
+        "expertise": "Desarrollo de Negocios y Operaciones",
+        "bio": "Veterano de la Marina retirado y Director de Ventas de Dispositivos Médicos con experiencia en el escalamiento de tecnología educativa.",
+        "avatar": "NU"
+      },
+      {
+        "name": "Edward Hamilton",
+        "role": "Asesor de Educación Especial",
+        "expertise": "Defensa de la Educación Especial",
+        "bio": "Primer interviniente del NYPD en el 9/11 y apasionado defensor de los derechos de educación especial y accesibilidad.",
+        "avatar": "EH"
+      }
+    ],
+    "pilotBadge": "Programa Piloto",
+    "pilotHeading": "Resultados Comprobados",
+    "pilotDescription": "Nuestro programa piloto de 3 meses demostró mejoras medibles en los resultados de aprendizaje.",
+    "pilotStats": [
+      { "value": "150+", "label": "Estudiantes Atendidos" },
+      { "value": "4.9/5", "label": "Satisfacción de los Padres" },
+      { "value": "87%", "label": "Participación Mejorada" },
+      { "value": "3 m", "label": "Tiempo para Resultados" }
+    ],
+    "pilotTestimonial": {
+      "quote": "La transformación que hemos visto en nuestros estudiantes es notable. AIVO entiende que cada estudiante es único, y los resultados hablan por sí mismos.",
+      "initials": "JM",
+      "author": "Educador Piloto",
+      "detail": "— Director de Educación Especial, Escuela Piloto"
+    },
+    "ctaHeading": "Únase a Nuestra Misión",
+    "ctaDescription": "Ayúdenos a construir un mundo donde cada estudiante tenga acceso a una educación diseñada para él.",
+    "ctaPrimary": "Acceso Anticipado",
+    "ctaSecondary": "Contáctenos"
+  },
+  "pricingPage": {
+    "heroBadge": "Precios",
+    "heroHeadingPrefix": "Precios Simples y",
+    "heroHeadingHighlight": "Transparentes",
+    "heroDescription": "Elija el plan que se adapte a las necesidades de su familia. Todos los planes incluyen nuestra experiencia de aprendizaje impulsada por IA con una prueba gratuita de 14 días.",
+    "monthly": "Mensual",
+    "annual": "Anual",
+    "saveBadge": "Ahorre 50%",
+    "switchToMonthly": "Cambiar a facturación mensual",
+    "switchToAnnual": "Cambiar a facturación anual",
+    "popularBadge": "Más Popular",
+    "perMonth": "/mes",
+    "billedAnnually": "Facturado anualmente (${amount}/año)",
+    "comparePlansHeading": "Compare los Planes",
+    "comparePlansDescription": "Vea exactamente lo que obtiene con cada plan",
+    "featureTableHeaders": {
+      "feature": "Característica",
+      "free": "Gratuito",
+      "pro": "Pro",
+      "premium": "Premium"
+    },
+    "featureComparison": {
+      "aiTutorSessions": { "label": "Sesiones de Tutor IA", "free": "5 / semana", "pro": "Ilimitadas", "premium": "Ilimitadas" },
+      "subjectAreas": { "label": "Áreas de Estudio", "free": "2", "pro": "Todas", "premium": "Todas" },
+      "progressReports": { "label": "Informes de Progreso", "free": "Básico", "pro": "Detallado", "premium": "Avanzado + Exportar" },
+      "iepIntegration": { "label": "Integración IEP" },
+      "parentDashboard": { "label": "Panel para Padres" },
+      "learnerProfiles": { "label": "Perfiles de Estudiantes", "free": "1", "pro": "1", "premium": "Hasta 5" },
+      "learningStyleAssessment": { "label": "Evaluación de Estilo de Aprendizaje" },
+      "customLearningPaths": { "label": "Rutas de Aprendizaje Personalizadas" },
+      "teacherTools": { "label": "Herramientas para Profesores" },
+      "dedicatedSuccessManager": { "label": "Gerente de Éxito Dedicado" },
+      "support": { "label": "Soporte", "free": "Comunitario", "pro": "Correo Prioritario", "premium": "Prioritario 24/7" },
+      "earlyFeatureAccess": { "label": "Acceso Anticipado a Funciones" }
+    },
+    "trustBadges": ["Cumple con FERPA y COPPA", "Prueba Gratuita de 14 Días", "Panel Familiar", "Integración IEP"],
+    "faqHeading": "Preguntas Frecuentes",
+    "faqs": [
+      { "question": "¿Puedo cambiar de plan en cualquier momento?", "answer": "¡Sí! Puede actualizar, bajar de categoría o cancelar su plan en cualquier momento. Los cambios se aplican al inicio de su próximo ciclo de facturación." },
+      { "question": "¿Hay una prueba gratuita?", "answer": "Sí, los planes Pro y Premium incluyen una prueba gratuita de 14 días. No se requiere tarjeta de crédito para comenzar." },
+      { "question": "¿Cómo funciona la facturación?", "answer": "Puede elegir facturación mensual o anual. La facturación anual le ahorra un 50% en comparación con la mensual." },
+      { "question": "¿Puede AIVO apoyar múltiples diferencias de aprendizaje?", "answer": "¡Por supuesto! AIVO está diseñado para apoyar a estudiantes con ADHD, Autismo, Dislexia y muchas otras diferencias de aprendizaje simultáneamente." },
+      { "question": "¿Ofrecen precios para escuelas o distritos?", "answer": "¡Sí! Ofrecemos precios especiales para escuelas y distritos. Contacte a nuestro equipo de ventas para una cotización personalizada para su institución." },
+      { "question": "¿Qué sucede cuando termina mi prueba?", "answer": "Al finalizar su prueba, puede elegir un plan de pago o continuar con el plan Gratuito. Nunca le cobraremos sin su consentimiento." }
+    ],
+    "whyAivoBadge": "Por Qué AIVO",
+    "whyAivoHeading": "Diseñado para Cada Estudiante",
+    "whyAivoDescription": "Herramientas potentes diseñadas para estudiantes neurodivergentes y los educadores que los apoyan",
+    "educatorFeatures": [
+      { "title": "Adaptación Impulsada por IA", "description": "El contenido se adapta en tiempo real al ritmo y estilo de cada estudiante" },
+      { "title": "Analíticas Accionables", "description": "Información profunda sobre el progreso, las fortalezas y las áreas de crecimiento del estudiante" },
+      { "title": "Biblioteca Completa de Plan de Estudios", "description": "Actividades alineadas con estándares y metas IEP en todas las materias K-12" },
+      { "title": "Seguimiento de Metas IEP", "description": "Rastree los objetivos del IEP con datos medibles e informes exportables" },
+      { "title": "Aprendizaje Multisensorial", "description": "Actividades visuales, auditivas y kinestésicas para cada estudiante" },
+      { "title": "Retroalimentación Instantánea", "description": "Orientación en tiempo real que mantiene a los estudiantes motivados y en camino" }
+    ],
+    "moneyBack": {
+      "heading": "Garantía de Devolución de 30 Días",
+      "description": "Pruebe sin riesgo. Reembolso completo si no queda satisfecho."
+    },
+    "enterpriseHeading": "¿Necesita Precios para Escuelas o Distritos?",
+    "enterpriseDescription": "Ofrecemos planes personalizados para escuelas, distritos y organizaciones. Obtenga descuentos por volumen y soporte dedicado.",
+    "enterpriseCtaPrimary": "Contactar Ventas",
+    "enterpriseCtaSecondary": "Solicitar una Demostración"
+  },
+  "careers": {
+    "heroBadge": "¡Estamos Contratando!",
+    "heroHeadingPrefix": "Ayúdenos a Construir el Futuro de la",
+    "heroHeadingHighlight": "Educación Inclusiva",
+    "heroDescription": "Únase a un equipo apasionado dedicado a hacer que la educación de calidad sea accesible para todos los estudiantes, sin importar cómo funcione su mente.",
+    "heroCtaPrimary": "Ver Posiciones Abiertas",
+    "heroCtaSecondary": "Conózcanos",
+    "heroStats": [
+      { "value": "25+", "label": "Miembros del Equipo" },
+      { "value": "100%", "label": "Trabajo Remoto" },
+      { "value": "150+", "label": "Estudiantes Atendidos" },
+      { "value": "$5M", "label": "Recaudados" }
+    ],
+    "valuesHeading": "Nuestros Valores",
+    "valuesDescription": "Estos principios guían cómo trabajamos, tomamos decisiones y nos tratamos mutuamente.",
+    "values": [
+      { "title": "Empatía Primero", "description": "Diseñamos para personas reales con necesidades reales. Cada decisión comienza con la comprensión de nuestros usuarios." },
+      { "title": "Moverse Rápido, Aprender Más Rápido", "description": "Lanzamos rápidamente, recopilamos retroalimentación e iteramos. El fracaso es un trampolín hacia el éxito." },
+      { "title": "Perspectivas Diversas", "description": "Creemos que las mejores soluciones provienen de equipos con orígenes y puntos de vista variados." },
+      { "title": "Defensores de la Neurodiversidad", "description": "Celebramos todos los tipos de mentes y creamos activamente un lugar de trabajo inclusivo." }
+    ],
+    "benefitsHeading": "Beneficios y Ventajas",
+    "benefitsDescription": "Cuidamos de nuestro equipo para que puedan concentrarse en lo que importa.",
+    "benefits": [
+      { "title": "Salario Competitivo", "description": "Compensación de primer nivel con participación accionaria" },
+      { "title": "Trabajo Remoto", "description": "Trabaje desde cualquier lugar en los EE. UU." },
+      { "title": "Presupuesto para Equipos", "description": "$2,500 para su oficina en casa" },
+      { "title": "Presupuesto de Aprendizaje", "description": "$1,500/año para cursos y conferencias" },
+      { "title": "Vacaciones Ilimitadas", "description": "Tome el tiempo que necesite" },
+      { "title": "Salud y Bienestar", "description": "Seguro médico, dental, visión completo + salud mental" }
+    ],
+    "positionsHeading": "Posiciones Abiertas",
+    "positionsDescription": "Encuentre su próximo puesto y ayúdenos a marcar la diferencia.",
+    "hotBadge": "Popular",
+    "noPositions": "No se encontraron posiciones en este departamento.",
+    "departmentFilters": ["Todos", "Ingeniería", "IA/ML", "Diseño", "Contenido", "Éxito del Cliente", "Marketing"],
+    "positions": [
+      { "title": "Ingeniero Full Stack Senior", "department": "Ingeniería", "location": "Remoto (EE. UU.)", "type": "Tiempo completo", "level": "Senior", "posted": "hace 2 días" },
+      { "title": "Ingeniero de Machine Learning", "department": "IA/ML", "location": "Remoto (EE. UU.)", "type": "Tiempo completo", "level": "Medio-Senior", "posted": "hace 1 semana" },
+      { "title": "Diseñador de Producto", "department": "Diseño", "location": "Remoto (EE. UU.)", "type": "Tiempo completo", "level": "Senior", "posted": "hace 3 días" },
+      { "title": "Diseñador de Currículo de Educación Especial", "department": "Contenido", "location": "Remoto (EE. UU.)", "type": "Tiempo completo", "level": "Medio", "posted": "hace 1 semana" },
+      { "title": "Gerente de Éxito del Cliente", "department": "Éxito del Cliente", "location": "Remoto (EE. UU.)", "type": "Tiempo completo", "level": "Medio", "posted": "hace 2 semanas" },
+      { "title": "Director de Marketing", "department": "Marketing", "location": "Remoto (EE. UU.) / SF Bay Area", "type": "Tiempo completo", "level": "Director", "posted": "hace 1 día" }
+    ],
+    "noFitHeading": "¿No encuentra el puesto ideal?",
+    "noFitDescription": "Siempre estamos buscando personas talentosas. Envíenos su currículum y lo tendremos en cuenta para futuras oportunidades.",
+    "noFitButton": "Enviar Su Currículum",
+    "noFitEmail": "careers@aivolearning.com",
+    "interviewHeading": "Nuestro Proceso de Entrevistas",
+    "interviewDescription": "Nuestro objetivo es hacer que el proceso sea claro, respetuoso y eficiente.",
+    "interviewSteps": [
+      { "title": "Revisión de Solicitud", "description": "Revisamos su solicitud y le respondemos en un máximo de 5 días hábiles.", "duration": "3-5 días" },
+      { "title": "Llamada Inicial", "description": "Una llamada de 30 minutos con nuestro equipo de reclutamiento para conocerle y responder sus preguntas.", "duration": "30 min" },
+      { "title": "Entrevista Técnica/de Rol", "description": "Una exploración más profunda de sus habilidades y experiencia relevante para el puesto.", "duration": "60 min" },
+      { "title": "Entrevistas con el Equipo", "description": "Conozca a sus posibles compañeros de equipo y colaboradores multifuncionales.", "duration": "2-3 horas" },
+      { "title": "Oferta", "description": "Le extendemos una oferta y le damos la bienvenida al equipo.", "duration": "🎉" }
+    ]
+  },
+  "contact": {
+    "heroBadge": "Contáctenos",
+    "heroHeading": "Contáctenos",
+    "heroDescription": "¿Tiene preguntas sobre AIVO? Estamos aquí para ayudar. Escríbanos y le responderemos lo antes posible.",
+    "contactInfo": {
+      "heading": "Conectemos",
+      "description": "Elija la mejor forma de comunicarse con nosotros. Generalmente respondemos en 24 horas.",
+      "email": { "title": "Correo Electrónico", "values": ["hello@aivolearning.com", "support@aivolearning.com"] },
+      "phone": { "title": "Teléfono", "values": ["1-800-AIVO-EDU", "(800) 248-6338"] },
+      "address": { "title": "Dirección", "values": ["123 Education Street", "Learning City, CA 94105"] },
+      "hours": { "title": "Horario", "values": ["Lun - Vie: 9am - 6pm EST", "Fin de semana: Soporte por correo"] }
+    },
+    "responseTime": {
+      "label": "Tiempo Promedio de Respuesta",
+      "value": "Dentro de 24 horas en días hábiles"
+    },
+    "form": {
+      "heading": "Envíenos un Mensaje",
+      "description": "Complete el formulario a continuación y nos pondremos en contacto.",
+      "nameLabel": "Su Nombre",
+      "namePlaceholder": "Juan Pérez",
+      "emailLabel": "Correo Electrónico",
+      "emailPlaceholder": "juan@ejemplo.com",
+      "topicLabel": "Tema",
+      "messageLabel": "Mensaje",
+      "messagePlaceholder": "¿Cómo podemos ayudarle?",
+      "submitButton": "Enviar Mensaje",
+      "submitting": "Enviando...",
+      "privacyNotice": "Al enviar este formulario, usted acepta nuestra",
+      "privacyPolicyLink": "Política de Privacidad",
+      "required": "*"
+    },
+    "topicOptions": [
+      "Seleccione un tema...",
+      "Consulta General",
+      "Soporte Técnico",
+      "Ventas y Precios",
+      "Oportunidad de Asociación",
+      "Prensa y Medios",
+      "Otro"
+    ],
+    "validation": {
+      "nameRequired": "El nombre es obligatorio",
+      "emailRequired": "El correo electrónico es obligatorio",
+      "emailInvalid": "Por favor, ingrese una dirección de correo electrónico válida",
+      "topicRequired": "Por favor, seleccione un tema",
+      "messageRequired": "El mensaje es obligatorio",
+      "messageMinLength": "El mensaje debe tener al menos 10 caracteres",
+      "submitFailed": "Error al enviar. Por favor, inténtelo de nuevo."
+    },
+    "success": {
+      "heading": "¡Mensaje Enviado!",
+      "description": "Gracias por comunicarse con nosotros. Hemos recibido su mensaje y le responderemos en un plazo de 24 a 48 horas.",
+      "sendAnother": "Enviar Otro Mensaje",
+      "returnHome": "Volver al Inicio"
+    },
+    "quickLinks": {
+      "heading": "¿Busca Algo Específico?",
+      "items": [
+        { "title": "Centro de Ayuda", "description": "Consulte nuestras preguntas frecuentes" },
+        { "title": "Para Escuelas", "description": "Soluciones empresariales" },
+        { "title": "Asociaciones", "description": "Trabaje con nosotros" },
+        { "title": "Consultas de Prensa", "description": "Contacto de medios" }
+      ],
+      "pressEmail": "press@aivolearning.com"
+    }
+  },
+  "forParents": {
+    "heroBadge": "Para Padres",
+    "heroHeadingPrefix": "Apoye el Viaje",
+    "heroHeadingHighlight": "Único de Su Hijo",
+    "heroDescription": "AIVO fue creado por padres que entienden los desafíos de apoyar a un estudiante neurodiverso. Nuestra plataforma impulsada por IA se adapta a la mente única de su hijo, para que pueda aprender, crecer y prosperar.",
+    "heroCtaPrimary": "Iniciar Prueba Gratuita",
+    "heroCtaSecondary": "Vea Cómo Funciona",
+    "heroCheckPoints": [
+      "Sin tarjeta de crédito",
+      "Prueba gratuita de 14 días"
+    ],
+    "dashboardPreview": {
+      "studentName": "Progreso de Emma",
+      "onTrack": "En Camino",
+      "thisWeek": "Esta Semana",
+      "thisWeekValue": "4.5 hrs",
+      "streak": "Racha",
+      "streakValue": "12 días",
+      "xpEarned": "XP Ganados",
+      "xpValue": "2,450",
+      "newAchievement": "¡Nuevo Logro!",
+      "achievementDetail": "Emma completó \"Maestro de Fracciones\" y ganó 100 XP de bonificación.",
+      "readingGoal": "Meta de Lectura",
+      "readingGoalPercent": "85%",
+      "sessionComplete": "¡Sesión Completada!",
+      "sessionDetail": "Emma aprendió durante 25 minutos"
+    },
+    "benefitsBadge": "Por Qué los Padres Aman AIVO",
+    "benefitsHeading": "Por Fin, un Aprendizaje que Funciona",
+    "benefitsDescription": "Acabe con las batallas por la tarea. Termine con la frustración. AIVO convierte el aprendizaje en algo que su hijo realmente disfruta.",
+    "benefits": [
+      { "title": "Tranquilidad", "description": "Sepa que su hijo está aprendiendo en un entorno seguro y de apoyo diseñado para sus necesidades únicas. Sin frustración, sin lágrimas." },
+      { "title": "Ahorre Tiempo", "description": "No más búsqueda de los recursos adecuados. AIVO crea lecciones personalizadas automáticamente, devolviéndole su tiempo." },
+      { "title": "Siga el Progreso", "description": "Paneles atractivos que muestran exactamente cómo crece su hijo. Celebre los logros e identifique áreas de apoyo." },
+      { "title": "Apoyo Experto", "description": "Acceso a recursos, consejos y una comunidad de padres que entienden su camino. Nunca estará solo." }
+    ],
+    "featuresBadge": "Características de la Plataforma",
+    "featuresHeading": "Todo lo que Necesita",
+    "featuresDescription": "Herramientas potentes diseñadas específicamente para padres de estudiantes neurodiversos.",
+    "features": [
+      { "title": "Tutor de IA Personalizado", "description": "Su hijo obtiene su propio Virtual Brain que aprende cómo piensa." },
+      { "title": "Seguimiento de Metas IEP", "description": "Importe las metas del IEP y rastree el progreso automáticamente con informes detallados." },
+      { "title": "Notificaciones en Tiempo Real", "description": "Reciba alertas cuando su hijo alcance hitos o necesite apoyo." },
+      { "title": "Comunicación con Profesores", "description": "Comparta el progreso con los educadores de forma fluida para un apoyo coordinado." },
+      { "title": "Plan de Estudios Completo", "description": "Matemáticas, lectura, ciencias y más, todo adaptado al nivel de su hijo." },
+      { "title": "Sistema de Motivación", "description": "Recompensas, insignias y celebraciones que mantienen a su hijo comprometido y entusiasmado." }
+    ],
+    "testimonialsBadge": "Historias de Padres",
+    "testimonialsHeading": "De Familias Como la Suya",
+    "testimonialsDescription": "Escuche a padres que han transformado la experiencia de aprendizaje de sus hijos con AIVO.",
+    "testimonials": [
+      { "quote": "Por primera vez, mi hijo con ADHD realmente pide que sea la hora de aprender. AIVO lo entiende de una manera que su escuela nunca pudo.", "author": "Padre Piloto", "child": "Hijo, 8 años, ADHD" },
+      { "quote": "El seguimiento del IEP ha sido un cambio total para nuestra familia. Puedo mostrar a la escuela exactamente cuánto progreso está haciendo Emma en casa.", "author": "Familia Piloto", "child": "Hija, 10 años, Dislexia" },
+      { "quote": "Mi hija está en el espectro autista y necesita previsibilidad. Las rutinas consistentes y los horarios visuales de AIVO han reducido su ansiedad respecto al aprendizaje.", "author": "Padre Piloto", "child": "Hija, 7 años, ASD" }
+    ],
+    "ctaHeading": "¿Listo para Ver a Su Hijo Prosperar?",
+    "ctaDescription": "Únase a los padres que han descubierto una mejor manera de apoyar a su estudiante neurodiverso.",
+    "ctaButton": "Inicie Su Prueba Gratuita",
+    "ctaFooter": "Sin tarjeta de crédito • Cancele cuando quiera"
+  },
+  "forTeachers": {
+    "heroBadge": "Para Educadores",
+    "heroHeadingPrefix": "Diferencie la Instrucción",
+    "heroHeadingHighlight": "Sin Esfuerzo",
+    "heroDescription": "La plataforma de AIVO impulsada por IA le ayuda a atender a cada estudiante donde se encuentra. Rutas de aprendizaje personalizadas, seguimiento de metas IEP y perspectivas en tiempo real, sin carga de trabajo adicional.",
+    "heroCtaPrimary": "Programar una Demostración",
+    "heroCtaSecondary": "Explorar Características",
+    "heroCheckPoints": [
+      "Gratis para profesores individuales",
+      "Precios para escuelas disponibles"
+    ],
+    "dashboardPreview": {
+      "title": "Vista General de la Clase - Período 3",
+      "studentsBadge": "24 Estudiantes",
+      "onTrack": "18",
+      "onTrackLabel": "En Camino",
+      "needsSupport": "4",
+      "needsSupportLabel": "Necesita Apoyo",
+      "excelling": "2",
+      "excellingLabel": "Sobresaliente",
+      "studentA": "Estudiante A",
+      "studentADetail": "Trabajando en Fracciones",
+      "studentB": "Estudiante B",
+      "studentBDetail": "Completó el Capítulo 4",
+      "studentC": "Estudiante C",
+      "studentCDetail": "Necesita intervención",
+      "iepBadge": "IEP"
+    },
+    "stats": [
+      { "value": "50%", "label": "Menos Tiempo de Planificación" },
+      { "value": "3x", "label": "Más Tiempo Individual" },
+      { "value": "94%", "label": "Satisfacción del Profesor" },
+      { "value": "100%", "label": "Alineación con IEP" }
+    ],
+    "benefitsBadge": "Por Qué los Profesores Eligen AIVO",
+    "benefitsHeading": "Más Enseñanza, Menos Papeleo",
+    "benefitsDescription": "AIVO se encarga de la personalización y la documentación para que usted pueda enfocarse en lo que mejor hace: enseñar.",
+    "benefits": [
+      { "title": "Instrucción Diferenciada", "description": "Cada estudiante recibe contenido personalizado basado en su perfil de aprendizaje, metas IEP y rendimiento, automáticamente." },
+      { "title": "Perspectivas del Aula", "description": "Paneles en tiempo real que muestran el progreso de toda la clase, el crecimiento individual y las áreas donde los estudiantes necesitan apoyo adicional." },
+      { "title": "Alineación con Estándares", "description": "Todo el contenido alineado con los estándares estatales y Common Core. Fácil de integrar en su plan de estudios existente." },
+      { "title": "Apoyo IEP", "description": "Rastree las metas del IEP, genere informes de progreso y documente las adaptaciones, todo en un solo lugar." }
+    ],
+    "featuresBadge": "Herramientas del Aula",
+    "featuresHeading": "Diseñado para Educadores",
+    "featuresDescription": "Funciones potentes diseñadas por profesores, para profesores.",
+    "features": [
+      { "title": "Gestión de Clase", "description": "Organice a los estudiantes en grupos, asigne actividades y gestione listas fácilmente." },
+      { "title": "Analíticas de Progreso", "description": "Visualice datos de aprendizaje con gráficos que muestran dominio, participación y crecimiento." },
+      { "title": "Recomendaciones Impulsadas por IA", "description": "Obtenga sugerencias de estrategias de intervención y próximos pasos para cada estudiante." },
+      { "title": "Ahorro de Tiempo", "description": "Reduzca el tiempo de planificación de lecciones en un 50% con contenido personalizado generado por IA." },
+      { "title": "Personalización", "description": "Ajuste la dificultad, el ritmo y las adaptaciones para estudiantes individuales." },
+      { "title": "Cumple con FERPA", "description": "Los datos de los estudiantes están protegidos con seguridad y controles de privacidad de nivel empresarial." }
+    ],
+    "testimonialsBadge": "Historias de Educadores",
+    "testimonialsHeading": "La Confianza de los Profesores",
+    "testimonialsDescription": "Escuche a los educadores que usan AIVO en sus aulas.",
+    "testimonials": [
+      { "quote": "AIVO ha transformado la forma en que apoyo a mis estudiantes con IEP. El seguimiento automático del progreso me ahorra horas cada semana en documentación.", "author": "Educador Piloto", "role": "Profesor de Educación Especial", "experience": "12 años" },
+      { "quote": "Por primera vez, puedo diferenciar verdaderamente para cada estudiante en mi aula inclusiva. AIVO se encarga de la personalización para que yo pueda concentrarme en enseñar.", "author": "Educador Piloto", "role": "Profesor de 3.er Grado", "experience": "8 años" }
+    ],
+    "ctaHeading": "¿Listo para Transformar Su Aula?",
+    "ctaDescription": "Programe una demostración para ver cómo AIVO puede ayudarle a apoyar a cada estudiante.",
+    "ctaButtonPrimary": "Programar Demostración",
+    "ctaButtonSecondary": "Planes para Escuelas y Distritos"
+  },
+  "terms": {
+    "metaTitle": "Términos de Servicio | AIVO Learning",
+    "metaDescription": "Términos de Servicio de AIVO Learning - Términos y condiciones para el uso de nuestra plataforma educativa impulsada por IA.",
+    "badge": "Legal",
+    "heading": "Términos de Servicio",
+    "lastUpdated": "Última actualización:",
+    "lastUpdatedDate": "19 de diciembre de 2025",
+    "effective": "Vigente desde:",
+    "effectiveDate": "19 de diciembre de 2025",
+    "sections": {
+      "agreementToTerms": { "title": "1. Aceptación de los Términos" },
+      "descriptionOfService": { "title": "2. Descripción del Servicio" },
+      "userAccounts": { "title": "3. Cuentas de Usuario", "subs": ["Creación de Cuenta", "Cuentas para Menores", "Cancelación de Cuenta"] },
+      "acceptableUse": { "title": "4. Uso Aceptable" },
+      "intellectualProperty": { "title": "5. Propiedad Intelectual", "subs": ["Nuestro Contenido", "Su Contenido", "Uso Permitido"] },
+      "subscriptionAndPayment": { "title": "6. Suscripción y Pago", "subs": ["Precios", "Facturación", "Cancelación", "Pruebas Gratuitas", "Reembolsos"] },
+      "educationalDisclaimer": { "title": "7. Aviso Legal sobre Contenido Educativo" },
+      "limitationOfLiability": { "title": "8. Limitación de Responsabilidad" },
+      "disclaimerOfWarranties": { "title": "9. Renuncia de Garantías" },
+      "indemnification": { "title": "10. Indemnización" },
+      "termination": { "title": "11. Terminación", "subs": ["Por Usted", "Por Nosotros", "Efecto de la Terminación"] },
+      "disputeResolution": { "title": "12. Resolución de Disputas", "subs": ["Resolución Informal", "Arbitraje", "Renuncia a Acciones Colectivas", "Excepciones"] },
+      "changesToTerms": { "title": "13. Cambios en los Términos" },
+      "governingLaw": { "title": "14. Ley Aplicable" },
+      "severability": { "title": "15. Divisibilidad" },
+      "entireAgreement": { "title": "16. Acuerdo Completo" },
+      "contactInformation": { "title": "17. Información de Contacto" }
+    },
+    "contactBlock": {
+      "department": "Departamento Legal",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "Correo:",
+      "email": "legal@aivolearning.com"
+    },
+    "backToHome": "← Volver al Inicio"
+  },
+  "privacy": {
+    "metaTitle": "Política de Privacidad | AIVO Learning",
+    "metaDescription": "Política de Privacidad de AIVO Learning - Conozca cómo recopilamos, usamos y protegemos su información personal. Cumple con FERPA y COPPA.",
+    "badge": "Legal",
+    "heading": "Política de Privacidad",
+    "lastUpdated": "Última actualización:",
+    "lastUpdatedDate": "19 de diciembre de 2025",
+    "sections": {
+      "introduction": "Introducción",
+      "informationWeCollect": "Información que Recopilamos",
+      "accountInformation": "Información de la Cuenta",
+      "learningData": "Datos de Aprendizaje",
+      "technicalData": "Datos Técnicos",
+      "childrensPrivacy": "Privacidad de los Niños (Cumplimiento COPPA)",
+      "parentalConsent": "Consentimiento de los Padres",
+      "informationFromChildren": "Información de los Niños",
+      "parentalRights": "Derechos de los Padres",
+      "howWeUse": "Cómo Usamos Su Información",
+      "dataSecurity": "Seguridad de los Datos",
+      "ferpaCompliance": "Cumplimiento FERPA",
+      "yourRights": "Sus Derechos",
+      "dataRetention": "Retención de Datos",
+      "thirdPartyServices": "Servicios de Terceros",
+      "changesToPolicy": "Cambios en Esta Política",
+      "contactUs": "Contáctenos"
+    },
+    "contactBlock": {
+      "department": "Oficial de Protección de Datos",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "Correo:",
+      "email": "privacy@aivolearning.com"
+    },
+    "backToHome": "← Volver al Inicio"
+  },
+  "cookies": {
+    "metaTitle": "Política de Cookies | AIVO Learning",
+    "metaDescription": "Conozca cómo AIVO Learning utiliza cookies y tecnologías similares para mejorar su experiencia.",
+    "badge": "Legal",
+    "heading": "Política de Cookies",
+    "lastUpdated": "Última actualización:",
+    "lastUpdatedDate": "19 de diciembre de 2025",
+    "quickSummary": {
+      "heading": "Resumen Rápido",
+      "points": [
+        "Usamos cookies para que AIVO funcione correctamente y mejorar su experiencia",
+        "Las cookies esenciales son necesarias para el funcionamiento de la plataforma",
+        "Puede controlar las cookies opcionales a través de su navegador o nuestras preferencias",
+        "Nunca usamos cookies para rastrear a los niños con fines publicitarios"
+      ]
+    },
+    "whatAreCookies": {
+      "heading": "¿Qué Son las Cookies?",
+      "paragraphs": [
+        "Las cookies son pequeños archivos de texto que se guardan en su dispositivo cuando visita un sitio web. Se utilizan ampliamente para que los sitios web funcionen de manera más eficiente y proporcionen información a los propietarios del sitio.",
+        "También utilizamos tecnologías similares como almacenamiento local y almacenamiento de sesión, que funcionan de manera similar a las cookies. Cuando nos referimos a \"cookies\" en esta política, incluimos estas tecnologías similares."
+      ]
+    },
+    "typesHeading": "Tipos de Cookies que Utilizamos",
+    "types": {
+      "essential": {
+        "title": "Cookies Esenciales",
+        "badge": "Obligatorias",
+        "description": "Estas cookies son necesarias para que el sitio web funcione correctamente. Permiten funcionalidades básicas como seguridad, autenticación y accesibilidad.",
+        "examplesLabel": "Ejemplos:",
+        "examples": [
+          "Cookies de sesión para mantenerle conectado",
+          "Cookies de seguridad para prevenir fraude",
+          "Cookies de preferencias para configuración de accesibilidad",
+          "Cookies de equilibrio de carga para rendimiento"
+        ]
+      },
+      "analytics": {
+        "title": "Cookies de Analíticas",
+        "badge": "Opcionales",
+        "description": "Estas cookies nos ayudan a entender cómo los visitantes interactúan con nuestro sitio web al recopilar y reportar información de forma anónima. Esto nos ayuda a mejorar la plataforma.",
+        "examplesLabel": "Ejemplos:",
+        "examples": [
+          "Estadísticas de páginas vistas",
+          "Patrones de uso de funciones",
+          "Seguimiento de errores para depuración",
+          "Monitoreo de rendimiento"
+        ]
+      },
+      "functional": {
+        "title": "Cookies Funcionales",
+        "badge": "Opcionales",
+        "description": "Estas cookies permiten funcionalidad mejorada y personalización, como recordar sus preferencias y configuraciones.",
+        "examplesLabel": "Ejemplos:",
+        "examples": [
+          "Preferencias de idioma",
+          "Configuración de tema (modo claro/oscuro)",
+          "Contenido visto recientemente",
+          "Diseños de panel personalizados"
+        ]
+      },
+      "marketing": {
+        "title": "Cookies de Marketing",
+        "badge": "Opcionales",
+        "description": "Estas cookies se utilizan para rastrear visitantes en sitios web y mostrar anuncios relevantes.",
+        "note": "Nota: No utilizamos cookies de marketing en páginas accesibles a los niños.",
+        "examplesLabel": "Ejemplos:",
+        "examples": [
+          "Seguimiento de conversiones para campañas de marketing",
+          "Funcionalidad de compartir en redes sociales",
+          "Píxeles de remarketing (solo en páginas para adultos)"
+        ],
+        "coppaNote": "Las cookies de marketing nunca se utilizan en el panel del estudiante ni en ninguna interfaz dirigida a niños."
+      }
+    },
+    "cookieTable": {
+      "heading": "Cookies Específicas que Utilizamos",
+      "headers": { "name": "Nombre de Cookie", "provider": "Proveedor", "purpose": "Propósito", "duration": "Duración", "type": "Tipo" },
+      "cookies": [
+        { "name": "aivo_session", "provider": "AIVO", "purpose": "Autenticación de usuario", "duration": "Sesión", "type": "Esencial" },
+        { "name": "aivo_csrf", "provider": "AIVO", "purpose": "Token de seguridad", "duration": "Sesión", "type": "Esencial" },
+        { "name": "aivo_preferences", "provider": "AIVO", "purpose": "Preferencias de usuario", "duration": "1 año", "type": "Funcional" },
+        { "name": "_ga", "provider": "Google", "purpose": "Analíticas", "duration": "2 años", "type": "Analíticas" },
+        { "name": "_gid", "provider": "Google", "purpose": "Analíticas", "duration": "24 horas", "type": "Analíticas" },
+        { "name": "intercom-*", "provider": "Intercom", "purpose": "Soporte al cliente", "duration": "9 meses", "type": "Funcional" }
+      ]
+    },
+    "managing": {
+      "heading": "Gestión de Sus Preferencias de Cookies",
+      "description": "Tiene varias opciones para gestionar las cookies:",
+      "preferencesCenter": {
+        "heading": "1. Centro de Preferencias de Cookies",
+        "description": "Puede gestionar sus preferencias de cookies en cualquier momento haciendo clic en el botón de abajo o a través del enlace \"Preferencias de Cookies\" en el pie de página de nuestro sitio web.",
+        "button": "Gestionar Preferencias de Cookies"
+      },
+      "browserSettings": {
+        "heading": "2. Configuración del Navegador",
+        "description": "La mayoría de los navegadores web le permiten controlar las cookies a través de su configuración. Aquí tiene enlaces a la configuración de cookies de los navegadores más comunes:",
+        "browsers": ["Chrome", "Firefox", "Safari", "Edge"]
+      },
+      "optOutTools": {
+        "heading": "3. Herramientas de Exclusión",
+        "description": "Puede optar por no recibir ciertas cookies de terceros utilizando estas herramientas:",
+        "tools": ["Exclusión de Google Analytics", "Exclusión NAI", "Exclusión DAA"]
+      },
+      "warning": {
+        "noteLabel": "Nota:",
+        "text": "Bloquear las cookies esenciales puede impedirle utilizar ciertas funciones de la plataforma AIVO, como iniciar sesión o guardar su progreso."
+      }
+    },
+    "changes": {
+      "heading": "Cambios en Esta Política",
+      "paragraphs": [
+        "Podemos actualizar esta Política de Cookies de vez en cuando. Cuando realicemos cambios, actualizaremos la fecha de \"Última actualización\" en la parte superior de esta página. Le recomendamos revisar esta política periódicamente.",
+        "Para cambios significativos, también podemos proporcionar avisos adicionales, como un banner en nuestro sitio web o una notificación por correo electrónico."
+      ]
+    },
+    "contactHeading": "Contáctenos",
+    "contactDescription": "Si tiene preguntas sobre nuestro uso de cookies, por favor contáctenos:",
+    "contactEmailLabel": "Correo:",
+    "contactEmail": "privacy@aivolearning.com",
+    "backToHome": "← Volver al Inicio"
+  },
+  "faq": {
+    "metaTitle": "Preguntas Frecuentes | AIVO Learning",
+    "metaDescription": "Encuentre respuestas a preguntas comunes sobre AIVO Learning, nuestra plataforma de tutoría con IA para estudiantes neurodiversos, precios, características e implementación.",
+    "ogTitle": "Preguntas Frecuentes - AIVO Learning",
+    "ogDescription": "Preguntas comunes sobre el aprendizaje personalizado con IA para estudiantes neurodiversos",
+    "heading": "Preguntas Frecuentes",
+    "description": "Encuentre respuestas a preguntas comunes sobre AIVO Learning, nuestra plataforma de tutoría con IA y cómo apoyamos a los estudiantes neurodiversos.",
+    "categories": {
+      "aboutAivo": {
+        "title": "Acerca de AIVO",
+        "items": [
+          { "question": "¿Qué es AIVO Learning?", "answer": "AIVO Learning es una plataforma de aprendizaje personalizado impulsada por IA, diseñada específicamente para estudiantes neurodiversos de K-12. Utilizamos tutores Virtual Brain de IA que se adaptan al estilo de aprendizaje, ritmo y necesidades únicas de cada estudiante. Nuestra plataforma apoya a estudiantes con ADHD, autismo, dislexia, discalculia y otras diferencias de aprendizaje." },
+          { "question": "¿Qué es un Virtual Brain?", "answer": "Un Virtual Brain es el tutor de IA personalizado de AIVO que se adapta a la forma en que cada estudiante aprende mejor. Rastrea patrones de aprendizaje, preferencias, fortalezas y desafíos para crear una experiencia de aprendizaje personalizada. Piense en él como un tutor dedicado que entiende exactamente cómo piensa y aprende su hijo." },
+          { "question": "¿AIVO es solo para estudiantes neurodiversos?", "answer": "Aunque AIVO está diseñado pensando en estudiantes neurodiversos, nuestra tecnología adaptativa beneficia a todos los estudiantes. Cada estudiante es único, y AIVO personaliza la educación para cada individuo, independientemente de si tiene una diferencia de aprendizaje diagnosticada." }
+        ]
+      },
+      "featuresCapabilities": {
+        "title": "Características y Capacidades",
+        "items": [
+          { "question": "¿Qué diferencias de aprendizaje apoya AIVO?", "answer": "AIVO ofrece apoyo especializado para ADHD, trastorno del espectro autista, dislexia, discalculia, disgrafía, desafíos de función ejecutiva y otras diferencias de aprendizaje. Cada condición tiene funciones dedicadas como modo de enfoque para ADHD, horarios visuales para autismo, texto a voz para dislexia y matemáticas visuales para discalculia." },
+          { "question": "¿Puede AIVO ayudar con las metas del IEP?", "answer": "¡Sí! AIVO incluye seguimiento de metas IEP y monitoreo de progreso en tiempo real. Los profesores pueden alinear las lecciones con los objetivos del IEP, rastrear el progreso del estudiante hacia las metas y generar informes detallados para las reuniones del IEP. La plataforma recopila automáticamente datos que demuestran el progreso en objetivos específicos." },
+          { "question": "¿Qué materias enseña AIVO?", "answer": "AIVO cubre todas las materias principales de K-12, incluyendo Matemáticas, Lectura/Lengua, Escritura, Ciencias y Estudios Sociales. También ofrecemos módulos de SEL (Aprendizaje Socioemocional), entrenamiento en funciones ejecutivas y habilidades para la vida. Todo el contenido está alineado con los estándares y se adapta al nivel y las capacidades de cada estudiante." },
+          { "question": "¿AIVO funciona las 24 horas?", "answer": "¡Sí! Los tutores de IA de AIVO están disponibles las 24 horas del día, los 7 días de la semana para ayuda con tareas, práctica y apoyo de aprendizaje. Los estudiantes pueden aprender a su propio ritmo, en cualquier momento del día. El soporte humano de nuestro equipo está disponible de 8am a 8pm ET para problemas técnicos y preguntas de implementación." },
+          { "question": "¿AIVO es accesible?", "answer": "Por supuesto. AIVO está desarrollado según los estándares de accesibilidad WCAG 2.1 Nivel AA. Incluimos texto a voz, voz a texto, fuentes y colores ajustables, navegación por teclado, soporte para lectores de pantalla, subtítulos, modos de alto contraste y más. La accesibilidad es fundamental en nuestro diseño." }
+        ]
+      },
+      "privacySecurity": {
+        "title": "Privacidad y Seguridad",
+        "items": [
+          { "question": "¿Los datos de mi hijo están seguros?", "answer": "Sí. AIVO cumple con FERPA y COPPA. Utilizamos cifrado de extremo a extremo, nunca vendemos datos de estudiantes, nunca mostramos anuncios y seguimos protocolos estrictos de protección de datos. Estamos comprometidos con el Compromiso de Privacidad del Estudiante y estamos en proceso de obtener la certificación SOC 2 Type II." },
+          { "question": "¿Quién puede ver los datos de aprendizaje de mi hijo?", "answer": "Solo usted (el padre/tutor), los profesores asignados de su hijo y los administradores escolares necesarios pueden acceder a los datos de aprendizaje de su hijo. Los datos nunca se comparten con terceros. Los padres tienen control total y pueden solicitar la eliminación de datos en cualquier momento." },
+          { "question": "¿Venden datos de estudiantes o muestran anuncios?", "answer": "No, nunca. AIVO no vende, alquila ni comparte datos de estudiantes con terceros. No mostramos publicidad. Nuestros ingresos provienen exclusivamente de suscripciones, no de la monetización de datos de usuarios." }
+        ]
+      },
+      "pricingPlans": {
+        "title": "Precios y Planes",
+        "items": [
+          { "question": "¿Cuánto cuesta AIVO?", "answer": "AIVO ofrece varios planes: Gratuito (funciones limitadas), Familiar ($29/mes para hasta 3 estudiantes), Aula ($15/estudiante/mes) y precios personalizados para Escuelas/Distritos. Todos los planes de pago incluyen una prueba gratuita de 30 días sin necesidad de tarjeta de crédito." },
+          { "question": "¿Hay una prueba gratuita?", "answer": "¡Sí! Todos los planes de pago incluyen una prueba gratuita de 30 días con acceso completo a todas las funciones. No se requiere tarjeta de crédito para iniciar su prueba. Puede cancelar en cualquier momento durante la prueba sin cargos." },
+          { "question": "¿Puedo obtener financiamiento o subvenciones para AIVO?", "answer": "Sí, muchas escuelas utilizan fondos IDEA, fondos del Título I, fondos ESSER o presupuestos de educación especial para cubrir AIVO. Proporcionamos documentación y apoyo para solicitudes de subvenciones. Contacte a nuestro equipo de ventas para obtener ayuda con opciones de financiamiento." },
+          { "question": "¿Ofrecen descuentos para múltiples estudiantes?", "answer": "Sí. Nuestro plan Familiar cubre hasta 3 estudiantes a $29/mes (ahorro significativo vs. individual). Las escuelas y distritos reciben descuentos por volumen. Las organizaciones sin fines de lucro y las escuelas del Título I pueden calificar para descuentos adicionales." }
+        ]
+      },
+      "implementationSetup": {
+        "title": "Implementación y Configuración",
+        "items": [
+          { "question": "¿Cuánto tiempo toma la implementación?", "answer": "Para familias individuales: 15 minutos. Para aulas: 1-2 días para la configuración de listas y capacitación. Para escuelas/distritos: 2-4 semanas incluyendo listas, capacitación y desarrollo profesional. Proporcionamos soporte completo de implementación." },
+          { "question": "¿AIVO se integra con Google Classroom?", "answer": "¡Sí! AIVO se integra perfectamente con Google Classroom para sincronización automática de listas, publicación de tareas y envío de calificaciones. También nos integramos con Canvas, Schoology, Clever y ClassLink." },
+          { "question": "¿Qué dispositivos funcionan con AIVO?", "answer": "AIVO funciona en cualquier dispositivo moderno: Chromebooks, iPads, tablets, computadoras Windows/Mac y smartphones. Tenemos aplicaciones web (Chrome, Safari, Firefox, Edge) y aplicaciones móviles para iOS y Android. También ofrecemos AIVO Pad, nuestra tablet de aprendizaje diseñada especialmente." },
+          { "question": "¿Necesito equipo especial?", "answer": "¡No se necesita equipo especial! AIVO funciona con dispositivos estándar y conexión a internet. Opcional: auriculares para contenido de audio, lápiz óptico para actividades de escritura, cámara web para ciertas funciones interactivas." }
+        ]
+      },
+      "forEducators": {
+        "title": "Para Educadores",
+        "items": [
+          { "question": "¿Cómo ayuda AIVO a los profesores a ahorrar tiempo?", "answer": "AIVO automatiza la diferenciación, el monitoreo del progreso y la recopilación de datos. Los profesores reportan ahorrar de 5 a 10 horas por semana en planificación de lecciones y evaluación. La plataforma maneja la individualización mientras los profesores se enfocan en la instrucción de alto impacto y las relaciones." },
+          { "question": "¿Los profesores pueden crear contenido personalizado?", "answer": "¡Sí! Los profesores pueden crear lecciones, tareas y evaluaciones personalizadas. También pueden seleccionar contenido de la biblioteca de AIVO, importar sus materiales existentes o usar la asistencia de IA para generar contenido adaptado." },
+          { "question": "¿Qué capacitación reciben los profesores?", "answer": "Proporcionamos capacitación integral que incluye tutoriales en video, incorporación interactiva, seminarios web en vivo y desarrollo profesional continuo. La mayoría de los profesores se sienten cómodos usando AIVO en 1-2 semanas. También hay cursos de certificación disponibles." }
+        ]
+      },
+      "resultsEffectiveness": {
+        "title": "Resultados y Efectividad",
+        "items": [
+          { "question": "¿Qué resultados ven los estudiantes con AIVO?", "answer": "Los estudiantes que usan AIVO promedian 1.5 años de crecimiento en aprendizaje en un año escolar. El 87% de los estudiantes participan diariamente, y el 94% de los padres reportan que su hijo es más seguro e independiente en el aprendizaje. Los resultados varían según cada individuo." },
+          { "question": "¿AIVO está basado en investigación?", "answer": "Sí. AIVO está construido sobre prácticas basadas en evidencia, incluyendo Diseño Universal para el Aprendizaje (UDL), instrucción diferenciada, instrucción multisensorial, repetición espaciada y teoría de la carga cognitiva. Nos asociamos con instituciones de investigación para validar continuamente nuestro enfoque." },
+          { "question": "¿Qué tan rápido veré progreso?", "answer": "La mayoría de las familias notan un aumento en la participación dentro de la primera semana. El progreso académico medible generalmente se muestra dentro de 4 a 6 semanas de uso constante (3-4 veces por semana). Las ganancias a largo plazo se acumulan a lo largo de meses de uso." }
+        ]
+      }
+    },
+    "contactHeading": "¿Aún tiene preguntas?",
+    "contactDescription": "Nuestro equipo está aquí para ayudar. Comuníquese y le responderemos en 24 horas.",
+    "contactCtaPrimary": "Contáctenos",
+    "contactCtaSecondary": "Programar una Demostración"
+  },
+  "sitemapPage": {
+    "metaTitle": "Mapa del Sitio | AIVO Learning",
+    "metaDescription": "Navegue por todas las páginas del sitio web de AIVO Learning. Encuentre características, recursos, páginas legales y más.",
+    "badge": "Navegación",
+    "heading": "Mapa del Sitio",
+    "description": "Encuentre su camino en el sitio web de AIVO Learning.",
+    "categories": {
+      "mainPages": {
+        "title": "Páginas Principales",
+        "links": ["Inicio", "Acerca de Nosotros", "Contacto", "Precios", "Cómo Funciona", "Programar Demostración"]
+      },
+      "featuresSolutions": {
+        "title": "Características y Soluciones",
+        "links": ["Todas las Características", "Para Padres", "Para Profesores", "Para Estudiantes", "Para Escuelas", "Para Distritos", "Educación en Casa", "AIVO Pad"],
+        "aivoPadBadge": "Nuevo"
+      },
+      "resources": {
+        "title": "Recursos",
+        "links": ["Centro de Ayuda", "Blog", "Investigación", "Casos de Estudio", "Seminarios Web", "Documentación API"]
+      },
+      "company": {
+        "title": "Empresa",
+        "links": ["Acerca de Nosotros", "Empleo", "Prensa", "Socios", "Contacto"],
+        "careersBadge": "Contratando"
+      },
+      "legal": {
+        "title": "Legal",
+        "links": ["Política de Privacidad", "Términos de Servicio", "Política de Cookies", "Cumplimiento COPPA", "Cumplimiento FERPA", "Declaración de Accesibilidad"]
+      },
+      "account": {
+        "title": "Cuenta",
+        "links": ["Iniciar Sesión", "Registrarse", "Panel"]
+      }
+    },
+    "xmlSitemapPrefix": "¿Busca nuestro mapa del sitio XML para motores de búsqueda?",
+    "xmlSitemapLink": "Ver sitemap.xml"
+  },
+  "common": {
+    "learnMore": "Más Información",
+    "contactUs": "Contáctenos",
+    "getStarted": "Comenzar",
+    "startFreeTrial": "Iniciar Prueba Gratuita",
+    "scheduleDemo": "Programar una Demostración",
+    "watchDemo": "Ver Demostración",
+    "backToHome": "← Volver al Inicio",
+    "coppaLabel": "Cumplimiento COPPA",
+    "ferpaLabel": "Cumplimiento FERPA"
+  }
+}

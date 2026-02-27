@@ -1,0 +1,1170 @@
+{
+  "nav": {
+    "features": "機能",
+    "forParents": "保護者の方へ",
+    "forParentsDesc": "お子さまの学びの旅をサポート",
+    "forStudents": "生徒の方へ",
+    "forStudentsDesc": "AIのサポートで自分のペースで学習",
+    "forTeachers": "教育者の方へ",
+    "forTeachersDesc": "個別指導を手軽に実現",
+    "aivoPad": "AIVO Pad",
+    "new": "新着",
+    "howItWorks": "仕組み",
+    "pricing": "料金プラン",
+    "about": "AIVOについて",
+    "contact": "お問い合わせ",
+    "signIn": "ログイン",
+    "getStarted": "はじめる",
+    "closeMenu": "メニューを閉じる",
+    "openMenu": "メニューを開く",
+    "trustedByFamilies": "パイロットプログラムで150以上のご家庭にご利用いただいています"
+  },
+  "hero": {
+    "announcementPrefix": "新登場 ",
+    "announcementHighlight": "バーチャルブレインAI",
+    "welcomeTo": "ようこそ ",
+    "aivo": "AIVO",
+    "learning": "ラーニング",
+    "whereEveryMind": "すべての才能が",
+    "thrives": "花開く場所",
+    "subheadlinePrefix": "ニューロダイバースなK-12学習者向けにパーソナライズされた",
+    "virtualBrains": "バーチャルブレイン",
+    "subheadlineSuffix": "を搭載した革新的なAI学習プラットフォーム。ADHD、自閉症、ディスレクシアなど、あらゆる学習特性をサポートします。",
+    "pilotCalloutHeading": "パイロットプログラムの成果",
+    "pilotStudents": "150名の生徒",
+    "pilotConnector": "がわずか",
+    "pilotDuration": "3ヶ月",
+    "ctaPrimary": "無料トライアルを開始",
+    "ctaSecondary": "デモを見る",
+    "dashboardTitle": "AIVO学習ダッシュボード",
+    "todaysProgress": "今日の進捗",
+    "progressPercent": "78%",
+    "lessonsCompleted": "完了したレッスン",
+    "lessonsCount": "12",
+    "xpEarned": "獲得XP",
+    "xpCount": "450",
+    "currentStreak": "連続記録",
+    "streakDays": "7日間",
+    "focusScore": "集中スコア",
+    "focusPercent": "94%",
+    "achievementUnlocked": "実績解除！",
+    "achievementDetail": "算数マスター - レベル5",
+    "iepAligned": "IEP対応",
+    "personalizedGoals": "個別目標",
+    "virtualBrain": "バーチャルブレイン",
+    "aiPoweredTutor": "AI搭載チューター",
+    "statStudents": "150+",
+    "statStudentsLabel": "パイロット生徒数",
+    "statCurriculum": "K-12",
+    "statCurriculumLabel": "全カリキュラム対応",
+    "statIep": "100%",
+    "statIepLabel": "IEP対応",
+    "statAi": "AI",
+    "statAiLabel": "搭載",
+    "trustFerpa": "FERPA準拠",
+    "trustCoppa": "COPPA認定",
+    "trustNoAds": "広告なし",
+    "trustNoDataSelling": "データ売却なし",
+    "closeVideo": "動画を閉じる",
+    "demoComingSoon": "デモ動画は近日公開"
+  },
+  "features": {
+    "badge": "プラットフォーム機能",
+    "titlePrefix": "学習者の成功に必要な",
+    "titleHighlight": "すべてがここに",
+    "description": "AIVOは最先端のAIと実証済みの教育戦略を組み合わせ、ニューロダイバースな生徒に最もパーソナライズされた学習体験を提供します。",
+    "aiTutoring": {
+      "title": "AI搭載チュータリング",
+      "description": "各学習者は、独自の学習スタイル、ペース、好みにリアルタイムで適応するパーソナライズされたAIバーチャルブレインを持ちます。",
+      "points": [
+        "リアルタイム適応",
+        "感情認識",
+        "マルチセンサリーサポート"
+      ]
+    },
+    "iepGoals": {
+      "title": "IEP目標管理",
+      "description": "IEP目標と自動同期し、進捗を追跡し、ケアチームや教育者のための包括的なレポートを生成します。",
+      "points": [
+        "自動目標追跡",
+        "進捗レポート",
+        "チーム連携"
+      ]
+    },
+    "progressTracking": {
+      "title": "進捗トラッキング",
+      "description": "保護者と教師が成長を確認し、達成を祝い、改善点を特定するための美しいダッシュボードです。",
+      "points": [
+        "リアルタイム分析",
+        "科目別分析",
+        "傾向分析"
+      ]
+    },
+    "parentDashboard": {
+      "title": "保護者ダッシュボード",
+      "description": "お子さまの学習の歩みに常に繋がりましょう。進捗確認、教師とのコミュニケーション、IEP目標の管理を一つの場所で。",
+      "points": [
+        "アクティビティフィード",
+        "教師メッセージ",
+        "目標モニタリング"
+      ]
+    },
+    "validationBadge": "FERPA・COPPA準拠 — パイロットプログラムで150名以上の生徒で検証済み"
+  },
+  "courses": {
+    "badge": "プラットフォーム機能",
+    "titlePrefix": "学習者の成功に必要な",
+    "titleHighlight": "すべてがここに",
+    "description": "AIVOは最先端のAIと実証済みの教育戦略を組み合わせ、ニューロダイバースな生徒に最もパーソナライズされた学習体験を提供します。",
+    "aiVirtualBrain": {
+      "title": "AI搭載バーチャルブレイン",
+      "description": "各学習者が独自の学習スタイルを理解し、リアルタイムで適応するパーソナライズされたAIエージェントを持ちます。"
+    },
+    "iepAlignment": {
+      "title": "IEP目標連携",
+      "description": "IEP目標と自動同期し、進捗を追跡し、ケアチームのための包括的なレポートを生成します。"
+    },
+    "neurodiversity": {
+      "title": "ニューロダイバーシティサポート",
+      "description": "ADHD、ディスレクシア、自閉症、そしてあらゆる学習特性に対応した専用アコモデーション。"
+    },
+    "compliance": {
+      "title": "FERPA・COPPA準拠",
+      "description": "銀行レベルの暗号化、広告なし、データ売却なし。お子さまのプライバシーが最優先です。"
+    },
+    "realTimeAdaptation": {
+      "title": "リアルタイム適応",
+      "description": "パフォーマンスとエンゲージメントに基づいて、コンテンツの難易度と表示方法が即座に調整されます。"
+    },
+    "emotionalIntelligence": {
+      "title": "感情インテリジェンス",
+      "description": "フラストレーション、不安、疲労を認識し、励ましと落ち着きを取り戻す介入を提供します。"
+    },
+    "curriculum": {
+      "title": "K-12全カリキュラム",
+      "description": "州基準に準拠した算数、国語、理科などの包括的なカバレッジ。"
+    },
+    "progress": {
+      "title": "進捗トラッキング",
+      "description": "保護者と教師が成長を確認し、達成を祝うための美しいダッシュボード。"
+    },
+    "validationBadge": "パイロットプログラムで150名以上の生徒で検証済みの全機能"
+  },
+  "howItWorks": {
+    "badge": "仕組み",
+    "titlePrefix": "始め方は",
+    "titleHighlight": "とてもシンプル",
+    "description": "登録から成功まで4つの簡単なステップ。複雑な設定も技術的な知識も不要です。",
+    "step1": {
+      "number": "01",
+      "title": "プロフィールを作成",
+      "description": "数分で登録完了。学習者のニーズ、好み、IEP目標についてお知らせください。ADHD、自閉症、ディスレクシアなど対応しています。",
+      "tags": ["2分でセットアップ", "IEPインポート対応", "学習スタイルクイズ"]
+    },
+    "step2": {
+      "number": "02",
+      "title": "バーチャルブレインと出会う",
+      "description": "学習者は自分だけのパーソナライズされたAIチューターを持ちます。お子さまの考え方に合わせて最適な方法を学びます。",
+      "tags": ["パーソナライズAIエージェント", "リアルタイム適応", "感情認識"]
+    },
+    "step3": {
+      "number": "03",
+      "title": "学習を始める",
+      "description": "ニューロダイバースな脳向けにデザインされたインタラクティブなレッスン、ゲーム、アクティビティに取り組みます。コンテンツは自動で調整されます。",
+      "tags": ["ゲーム化学習", "感覚に優しいデザイン", "休憩リマインダー"]
+    },
+    "step4": {
+      "number": "04",
+      "title": "進捗を確認",
+      "description": "保護者と教師に成長、達成、インサイトを表示する美しいダッシュボード。一緒に成果を祝いましょう。",
+      "tags": ["リアルタイム更新", "IEP進捗レポート", "達成のお祝い"]
+    },
+    "illustrations": {
+      "uploadIep": "IEPのアップロード（任意）",
+      "adhd": "ADHD",
+      "dyslexia": "ディスレクシア",
+      "autism": "自閉症",
+      "meetBrain": "アレックスのブレインと出会う",
+      "personalizedTutor": "パーソナライズAIチューター",
+      "chatBubble": "こんにちは、アレックス！一緒に学びましょう！楽しいことから始めよう！",
+      "mathQuest": "算数クエスト",
+      "mathDetail": "レベル5 - 分数",
+      "readingAdventure": "読書アドベンチャー",
+      "readingDetail": "第3章",
+      "scienceLab": "理科ラボ",
+      "scienceDetail": "植物と成長",
+      "weeklyProgress": "週間進捗",
+      "progressPercent": "+23%",
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土",
+      "sun": "日"
+    },
+    "ctaButton": "今日から旅を始めよう",
+    "ctaDisclaimer": "クレジットカード不要 • 14日間無料トライアル • いつでもキャンセル可能"
+  },
+  "cta": {
+    "trustPoints": [
+      "クレジットカード不要",
+      "14日間無料トライアル",
+      "いつでもキャンセル可能"
+    ],
+    "headlinePrefix": "学習を",
+    "headlineHighlight": "始めませんか？",
+    "subheadline": "AIVOでパーソナライズされたAI学習を利用する学習者と教育者のコミュニティに参加しましょう。",
+    "emailPlaceholder": "メールアドレスを入力",
+    "submitButton": "無料で始める",
+    "complianceBold": "FERPA・COPPA準拠",
+    "complianceText": "お子さまのデータは常に保護されています"
+  },
+  "pricing": {
+    "badge": "料金プラン",
+    "titlePrefix": "シンプルで透明な",
+    "titleHighlight": "料金体系",
+    "description": "ご家庭のニーズに合ったプランをお選びください。すべてのプランにAI学習体験が含まれています。",
+    "monthly": "月額",
+    "annual": "年額",
+    "saveBadge": "50%お得",
+    "switchToMonthly": "月額プランに切替",
+    "switchToAnnual": "年額プランに切替",
+    "perMonth": "/月",
+    "billedAnnually": "年額一括払い（${amount}/年）",
+    "free": {
+      "name": "フリー",
+      "description": "基本機能で始めましょう",
+      "cta": "無料で始める",
+      "features": [
+        "基本レッスンとアクティビティ",
+        "主要科目（算数、国語）",
+        "基本進捗トラッキング",
+        "コミュニティサポート",
+        "限定AIインタラクション"
+      ],
+      "notIncluded": [
+        "全カリキュラムアクセス",
+        "IEP連携",
+        "保護者ダッシュボード",
+        "優先サポート"
+      ]
+    },
+    "pro": {
+      "name": "プロ",
+      "description": "多くのご家庭に最適",
+      "discount": "50%オフ",
+      "cta": "プロトライアルを開始",
+      "popularBadge": "一番人気",
+      "features": [
+        "フリープランの全機能に加えて：",
+        "全レッスンライブラリアクセス",
+        "無制限AIチューターセッション",
+        "IEP目標連携",
+        "詳細な進捗トラッキング",
+        "保護者ダッシュボード",
+        "優先メールサポート",
+        "学習スタイル評価",
+        "カスタム学習パス"
+      ]
+    },
+    "premium": {
+      "name": "プレミアム",
+      "description": "より手厚いサポートが必要なご家庭に",
+      "cta": "プレミアムトライアルを開始",
+      "features": [
+        "プロプランの全機能に加えて：",
+        "複数学習者プロフィール",
+        "高度な教師ツール",
+        "無制限チャットサポート",
+        "24時間年中無休の優先サポート",
+        "カスタム学習プラン",
+        "ファミリー進捗レポート",
+        "専任サクセスマネージャー",
+        "新機能先行アクセス"
+      ]
+    },
+    "trustBadges": [
+      "FERPA・COPPA準拠",
+      "24時間年中無休サポート",
+      "ファミリーダッシュボード",
+      "IEP連携"
+    ],
+    "testimonial": {
+      "quote": "パーソナライズされた学習パスで子供が夢中になり、保護者ダッシュボードで一緒に成長を祝えます。私たちの家族に本当に変化をもたらしました。",
+      "initials": "PP",
+      "author": "パイロットプログラム保護者",
+      "detail": "AIVOパイロットプログラム、2025年"
+    },
+    "faqHeading": "よくあるご質問",
+    "faqs": [
+      {
+        "question": "プランはいつでも変更できますか？",
+        "answer": "はい！いつでもアップグレード、ダウングレード、またはキャンセルが可能です。変更は次の請求サイクルの開始時に適用されます。"
+      },
+      {
+        "question": "無料トライアルはありますか？",
+        "answer": "はい、プロおよびプレミアムプランには14日間の無料トライアルが含まれています。開始時にクレジットカードは不要です。"
+      },
+      {
+        "question": "請求はどのように行われますか？",
+        "answer": "月額または年額の請求をお選びいただけます。年額プランでは月額と比べて50%お得になります。"
+      },
+      {
+        "question": "AIVOは複数の学習特性に対応できますか？",
+        "answer": "もちろんです！AIVOはADHD、自閉症、ディスレクシアなど、さまざまな学習特性を同時にサポートするよう設計されています。"
+      }
+    ],
+    "moneyBack": {
+      "heading": "30日間返金保証",
+      "description": "リスクなしでお試しください。ご満足いただけない場合は全額返金。"
+    }
+  },
+  "testimonials": {
+    "badge": "成功事例",
+    "titlePrefix": "ご家族と教育者に",
+    "titleHighlight": "愛されています",
+    "description": "毎日AIVOを信頼してくださっているご家族と教育者の声をお聞きください。",
+    "items": [
+      {
+        "quote": "娘が学習を楽しみにするようになりました。AIチューターが彼女のADHDに合わせて適応し、フラストレーションなく学習に集中させてくれます。パイロットプログラムのわずか8週間で本当の進歩が見られました。",
+        "author": "保護者",
+        "role": "4年生のお子さまの保護者",
+        "details": "ミネアポリス、ミネソタ州",
+        "avatar": "P"
+      },
+      {
+        "quote": "IEP連携が本当に機能しています。各生徒の目標が自動的に追跡され、AIの推奨が指導をリアルタイムで調整するのに役立ちます。何時間もの書類作業が節約されます。",
+        "author": "教育者",
+        "role": "特別支援教育教師",
+        "details": "ニューヨーク、ニューヨーク州",
+        "avatar": "E"
+      },
+      {
+        "quote": "予測可能なルーティンと感覚に優しいデザインが、自閉症スペクトラムの息子に大きな違いをもたらしました。パイロット中に学習への自信が大きく成長しました。",
+        "author": "保護者",
+        "role": "2年生のお子さまの保護者",
+        "details": "ミネアポリス、ミネソタ州",
+        "avatar": "P"
+      }
+    ],
+    "stats": {
+      "students": { "value": "150", "label": "パイロット生徒数", "suffix": "+" },
+      "duration": { "value": "3", "label": "ヶ月パイロット", "suffix": "ヶ月" },
+      "iep": { "value": "100", "label": "IEP対応", "suffix": "%" },
+      "curriculum": { "value": "K-12", "label": "全カリキュラム" }
+    },
+    "previousTestimonial": "前のお客様の声",
+    "nextTestimonial": "次のお客様の声",
+    "goToTestimonial": "お客様の声 {n} へ"
+  },
+  "footer": {
+    "sections": {
+      "product": "製品",
+      "solutions": "ソリューション",
+      "resources": "リソース",
+      "company": "会社情報",
+      "legal": "法的情報"
+    },
+    "productLinks": {
+      "features": "機能",
+      "howItWorks": "仕組み",
+      "pricing": "料金プラン",
+      "aiTutoring": "AIチュータリング",
+      "aivoPad": "AIVO Pad",
+      "new": "新着",
+      "accessibility": "アクセシビリティ"
+    },
+    "solutionsLinks": {
+      "forParents": "保護者の方へ",
+      "forTeachers": "教育者の方へ",
+      "forStudents": "生徒の方へ",
+      "forSchools": "学校の方へ",
+      "forDistricts": "学区の方へ",
+      "homeschool": "ホームスクール"
+    },
+    "resourcesLinks": {
+      "helpCenter": "ヘルプセンター",
+      "blog": "ブログ",
+      "research": "研究",
+      "caseStudies": "導入事例",
+      "webinars": "ウェビナー",
+      "apiDocs": "APIドキュメント"
+    },
+    "companyLinks": {
+      "aboutUs": "AIVOについて",
+      "careers": "採用情報",
+      "hiring": "採用中",
+      "press": "プレス",
+      "contact": "お問い合わせ",
+      "partners": "パートナー"
+    },
+    "legalLinks": {
+      "privacyPolicy": "プライバシーポリシー",
+      "termsOfService": "利用規約",
+      "cookiePolicy": "クッキーポリシー",
+      "coppaCompliance": "COPPA準拠",
+      "ferpaCompliance": "FERPA準拠",
+      "accessibilityStatement": "アクセシビリティ声明"
+    },
+    "socialLabels": {
+      "facebook": "Facebook",
+      "twitter": "Twitter",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "youtube": "YouTube"
+    },
+    "trustBadges": {
+      "ferpa": "FERPA準拠",
+      "coppa": "COPPA認定",
+      "soc2": "SOC 2 Type II",
+      "wcag": "WCAG 2.1 AA"
+    },
+    "contactInfo": {
+      "email": "hello@aivolearning.com",
+      "phone": "1-800-AIVO-EDU",
+      "location": "ミネアポリス、ミネソタ州"
+    },
+    "newsletter": {
+      "subscriberBadge": "10,000人以上の購読者に参加",
+      "heading": "AIVOの最新情報を受け取る",
+      "description": "新機能、学習のヒント、特別オファーの最新情報をメールで受け取りましょう。",
+      "placeholder": "メールアドレスを入力",
+      "subscribing": "登録中...",
+      "subscribe": "登録する",
+      "successMessage": "ご登録ありがとうございます！受信箱をご確認ください。",
+      "errorMessage": "エラーが発生しました。もう一度お試しください。",
+      "privacyNote": "プライバシーを尊重します。いつでも配信停止できます。",
+      "privacyPolicyLink": "プライバシーポリシー",
+      "emailRequired": "メールアドレスは必須です",
+      "emailInvalid": "有効なメールアドレスを入力してください"
+    },
+    "brandTagline": "ニューロダイバースな生徒のためのAIパーソナライズ学習。ADHD、自閉症、ディスレクシアなど、あらゆる学習特性をサポートします。",
+    "copyright": "© {year} AIVO Learning, Inc. All rights reserved.",
+    "madeWith": "作られた心は",
+    "forLearners": "ニューロダイバースな学習者のために",
+    "sitemap": "サイトマップ",
+    "accessibility": "アクセシビリティ",
+    "cookiePreferences": "クッキー設定"
+  },
+  "about": {
+    "heroBadge": "私たちのストーリー",
+    "heroHeadingPrefix": "私たちの使命：",
+    "heroHeadingHighlight": "すべての才能は大切",
+    "heroDescription": "AIVOは、ニューロダイバーシティは制約ではなく強みであると信じる保護者と教育者によって設立されました。一人ひとりの学習者のために、パーソナライズ教育の未来を築いています。",
+    "founderBadge": "設立の理由",
+    "founderHeading": "個人的な経験から生まれたAIVO",
+    "founderParagraphs": [
+      "AIVOは、従来の教育システムがニューロダイバースな学習者にうまく対応できていないというシンプルな観察から始まりました。生徒が学べないからではなく、システムが彼らの考え方に合わせて設計されていなかったからです。",
+      "ニューロダイバースな子どもの親であり特別支援教育の専門家として、私たちの創設チームはこれらの課題を身をもって経験しました。画一的なカリキュラムに苦しみ、自信を失い、同級生に遅れをとる才能ある子どもたちを見てきました。",
+      "もっと良い方法があるはずだと確信しました。AI、教育、子どもの発達に関する専門知識を組み合わせ、革新的なものを作ることに着手しました：お子さまの独自の心に適応する学習プラットフォーム。その逆ではありません。",
+      "今日、AIVOは150以上のご家庭にサービスを提供しており、これはまだ始まりに過ぎません。"
+    ],
+    "founderQuote": "「すべての子どもは、自分に合った方法で学ぶ権利があります。」",
+    "founderAttribution": "— AIVO創設チーム",
+    "valuesBadge": "私たちの価値観",
+    "valuesHeading": "私たちが信じるもの",
+    "valuesDescription": "これらの原則が、製品設計からカスタマーサポートまで、すべての決定を導きます。",
+    "values": [
+      {
+        "name": "共感第一",
+        "description": "すべての機能はニューロダイバースな学習者を中心に設計されています。私たちは耳を傾け、理解し、適応します。"
+      },
+      {
+        "name": "エビデンスに基づく",
+        "description": "特別支援教育のベストプラクティス、学習科学、データによる継続的改善に基づいています。"
+      },
+      {
+        "name": "コミュニティ主導",
+        "description": "ご家族、教育者、セラピスト、そして学習者自身からの継続的なフィードバックをもとに構築されています。"
+      },
+      {
+        "name": "プライバシーと安全",
+        "description": "銀行レベルのセキュリティで学習者データを保護。FERPA・COPPA準拠。"
+      }
+    ],
+    "advisoryBadge": "リーダーシップ",
+    "advisoryHeading": "アドバイザリーボード",
+    "advisoryDescription": "医療、教育、ビジネス、特別支援教育アドボカシーの専門家がガイド。",
+    "advisors": [
+      {
+        "name": "Dr. Ike Osuji",
+        "role": "会長兼医療アドバイザー",
+        "expertise": "家庭医学・子どもの発達",
+        "bio": "ニューロダイバースな子どもたちとそのご家族を20年以上サポートしてきた家庭医。",
+        "avatar": "IO"
+      },
+      {
+        "name": "Dr. Patrick Ukata",
+        "role": "学術アドバイザー",
+        "expertise": "教育心理学",
+        "bio": "ジョンズ・ホプキンス大学教授。学習特性と教育テクノロジーを専門とする。",
+        "avatar": "PU"
+      },
+      {
+        "name": "Nnamdi Uzokwe",
+        "role": "戦略アドバイザー",
+        "expertise": "事業開発・オペレーション",
+        "bio": "退役海軍のベテランであり、教育テクノロジーのスケーリングに精通した医療機器セールスディレクター。",
+        "avatar": "NU"
+      },
+      {
+        "name": "Edward Hamilton",
+        "role": "特別支援教育アドバイザー",
+        "expertise": "特別支援教育アドボカシー",
+        "bio": "9/11 NYPDファーストレスポンダーであり、特別支援教育の権利とアクセシビリティの情熱的な支援者。",
+        "avatar": "EH"
+      }
+    ],
+    "pilotBadge": "パイロットプログラム",
+    "pilotHeading": "実証済みの成果",
+    "pilotDescription": "3ヶ月間のパイロットプログラムにより、学習成果の測定可能な改善が実証されました。",
+    "pilotStats": [
+      { "value": "150+", "label": "サービス提供生徒数" },
+      { "value": "4.9/5", "label": "保護者満足度" },
+      { "value": "87%", "label": "エンゲージメント向上" },
+      { "value": "3ヶ月", "label": "成果が出るまでの期間" }
+    ],
+    "pilotTestimonial": {
+      "quote": "生徒たちに見られた変化は目覚ましいものです。AIVOはすべての学習者がユニークであることを理解しており、結果がそれを物語っています。",
+      "initials": "JM",
+      "author": "パイロット教育者",
+      "detail": "— パイロットスクール 特別支援教育ディレクター"
+    },
+    "ctaHeading": "私たちの使命に参加しませんか",
+    "ctaDescription": "すべての学習者がその人に合った教育を受けられる世界を一緒に築きましょう。",
+    "ctaPrimary": "早期アクセスに参加",
+    "ctaSecondary": "お問い合わせ"
+  },
+  "pricingPage": {
+    "heroBadge": "料金プラン",
+    "heroHeadingPrefix": "シンプルで透明な",
+    "heroHeadingHighlight": "料金体系",
+    "heroDescription": "ご家庭のニーズに合ったプランをお選びください。すべてのプランに14日間の無料トライアル付きAI学習体験が含まれています。",
+    "monthly": "月額",
+    "annual": "年額",
+    "saveBadge": "50%お得",
+    "switchToMonthly": "月額プランに切替",
+    "switchToAnnual": "年額プランに切替",
+    "popularBadge": "一番人気",
+    "perMonth": "/月",
+    "billedAnnually": "年額一括払い（${amount}/年）",
+    "comparePlansHeading": "プラン比較",
+    "comparePlansDescription": "各プランの内容を詳しく確認",
+    "featureTableHeaders": {
+      "feature": "機能",
+      "free": "フリー",
+      "pro": "プロ",
+      "premium": "プレミアム"
+    },
+    "featureComparison": {
+      "aiTutorSessions": { "label": "AIチューターセッション", "free": "週5回", "pro": "無制限", "premium": "無制限" },
+      "subjectAreas": { "label": "対象科目", "free": "2科目", "pro": "全科目", "premium": "全科目" },
+      "progressReports": { "label": "進捗レポート", "free": "基本", "pro": "詳細", "premium": "高度＋エクスポート" },
+      "iepIntegration": { "label": "IEP連携" },
+      "parentDashboard": { "label": "保護者ダッシュボード" },
+      "learnerProfiles": { "label": "学習者プロフィール", "free": "1つ", "pro": "1つ", "premium": "最大5つ" },
+      "learningStyleAssessment": { "label": "学習スタイル評価" },
+      "customLearningPaths": { "label": "カスタム学習パス" },
+      "teacherTools": { "label": "教師ツール" },
+      "dedicatedSuccessManager": { "label": "専任サクセスマネージャー" },
+      "support": { "label": "サポート", "free": "コミュニティ", "pro": "優先メール", "premium": "24時間年中無休優先" },
+      "earlyFeatureAccess": { "label": "新機能先行アクセス" }
+    },
+    "trustBadges": ["FERPA・COPPA準拠", "14日間無料トライアル", "ファミリーダッシュボード", "IEP連携"],
+    "faqHeading": "よくあるご質問",
+    "faqs": [
+      { "question": "プランはいつでも変更できますか？", "answer": "はい！いつでもアップグレード、ダウングレード、またはキャンセルが可能です。変更は次の請求サイクルの開始時に適用されます。" },
+      { "question": "無料トライアルはありますか？", "answer": "はい、プロおよびプレミアムプランには14日間の無料トライアルが含まれています。開始時にクレジットカードは不要です。" },
+      { "question": "請求はどのように行われますか？", "answer": "月額または年額の請求をお選びいただけます。年額プランでは月額と比べて50%お得になります。" },
+      { "question": "AIVOは複数の学習特性に対応できますか？", "answer": "もちろんです！AIVOはADHD、自閉症、ディスレクシアなど、さまざまな学習特性を同時にサポートするよう設計されています。" },
+      { "question": "学校や学区向けの料金はありますか？", "answer": "はい！学校や学区向けの特別料金をご用意しています。お見積りについては営業チームまでお問い合わせください。" },
+      { "question": "トライアル終了後はどうなりますか？", "answer": "トライアル終了後、有料プランを選択するか、フリープランでの利用を継続できます。同意なく課金されることはありません。" }
+    ],
+    "whyAivoBadge": "AIVOの特長",
+    "whyAivoHeading": "すべての学習者のために設計",
+    "whyAivoDescription": "ニューロダイバーセントな学習者とそれをサポートする教育者のための強力なツール",
+    "educatorFeatures": [
+      { "title": "AIパワード適応", "description": "各学習者のペースとスタイルにリアルタイムでコンテンツが適応" },
+      { "title": "実用的な分析", "description": "学習者の進捗、強み、成長分野への深い洞察" },
+      { "title": "全カリキュラムライブラリ", "description": "K-12全科目の基準とIEP目標に沿ったアクティビティ" },
+      { "title": "IEP目標トラッキング", "description": "測定可能なデータとエクスポート可能なレポートでIEP目標を追跡" },
+      { "title": "マルチセンサリー学習", "description": "すべての学習者のための視覚的、聴覚的、運動感覚的アクティビティ" },
+      { "title": "インスタントフィードバック", "description": "リアルタイムのガイダンスで学習者のモチベーションと集中を維持" }
+    ],
+    "moneyBack": {
+      "heading": "30日間返金保証",
+      "description": "リスクなしでお試しください。ご満足いただけない場合は全額返金。"
+    },
+    "enterpriseHeading": "学校・学区向け料金をお探しですか？",
+    "enterpriseDescription": "学校、学区、組織向けにカスタムプランをご用意しています。ボリュームディスカウントと専用サポートをご利用いただけます。",
+    "enterpriseCtaPrimary": "営業に問い合わせ",
+    "enterpriseCtaSecondary": "デモをリクエスト"
+  },
+  "careers": {
+    "heroBadge": "採用情報",
+    "heroHeadingPrefix": "一緒に築こう",
+    "heroHeadingHighlight": "インクルーシブ教育の未来",
+    "heroDescription": "すべての学習者に質の高い教育を届けることに情熱を持つチームに参加しませんか。",
+    "heroCtaPrimary": "募集中のポジションを見る",
+    "heroCtaSecondary": "私たちについて知る",
+    "heroStats": [
+      { "value": "25+", "label": "チームメンバー" },
+      { "value": "100%", "label": "リモートファースト" },
+      { "value": "150+", "label": "サービス提供生徒数" },
+      { "value": "$5M", "label": "調達資金" }
+    ],
+    "valuesHeading": "私たちの価値観",
+    "valuesDescription": "これらの原則が、私たちの仕事の仕方、意思決定、お互いの接し方を導きます。",
+    "values": [
+      { "title": "共感第一", "description": "私たちはリアルなニーズを持つリアルな人々のためにデザインします。すべての決定はユーザー理解から始まります。" },
+      { "title": "速く動き、もっと速く学ぶ", "description": "素早くリリースし、フィードバックを集め、改善します。失敗は成功へのステップです。" },
+      { "title": "多様な視点", "description": "最良のソリューションは、多様な背景と視点を持つチームから生まれると信じています。" },
+      { "title": "ニューロダイバーシティの推進者", "description": "あらゆるタイプの心を称え、インクルーシブな職場環境を積極的に構築します。" }
+    ],
+    "benefitsHeading": "福利厚生",
+    "benefitsDescription": "チームが大切なことに集中できるよう、しっかりサポートします。",
+    "benefits": [
+      { "title": "競争力のある給与", "description": "エクイティ付きのトップクラスの報酬" },
+      { "title": "リモートファースト", "description": "米国内のどこからでも勤務可能" },
+      { "title": "機器予算", "description": "ホームオフィスに$2,500" },
+      { "title": "学習予算", "description": "コース・カンファレンスに年間$1,500" },
+      { "title": "無制限PTO", "description": "必要な時に休暇を取得" },
+      { "title": "健康・ウェルネス", "description": "医療・歯科・眼科完備＋メンタルヘルス" }
+    ],
+    "positionsHeading": "募集中のポジション",
+    "positionsDescription": "次のキャリアを見つけて、一緒に違いを作りましょう。",
+    "hotBadge": "注目",
+    "noPositions": "この部門には現在募集中のポジションがありません。",
+    "departmentFilters": ["すべて", "エンジニアリング", "AI/ML", "デザイン", "コンテンツ", "カスタマーサクセス", "マーケティング"],
+    "positions": [
+      { "title": "シニアフルスタックエンジニア", "department": "エンジニアリング", "location": "リモート（米国）", "type": "フルタイム", "level": "シニア", "posted": "2日前" },
+      { "title": "機械学習エンジニア", "department": "AI/ML", "location": "リモート（米国）", "type": "フルタイム", "level": "ミドル・シニア", "posted": "1週間前" },
+      { "title": "プロダクトデザイナー", "department": "デザイン", "location": "リモート（米国）", "type": "フルタイム", "level": "シニア", "posted": "3日前" },
+      { "title": "特別支援カリキュラムデザイナー", "department": "コンテンツ", "location": "リモート（米国）", "type": "フルタイム", "level": "ミドル", "posted": "1週間前" },
+      { "title": "カスタマーサクセスマネージャー", "department": "カスタマーサクセス", "location": "リモート（米国）", "type": "フルタイム", "level": "ミドル", "posted": "2週間前" },
+      { "title": "マーケティング責任者", "department": "マーケティング", "location": "リモート（米国）/ サンフランシスコベイエリア", "type": "フルタイム", "level": "ディレクター", "posted": "1日前" }
+    ],
+    "noFitHeading": "最適なポジションが見つかりませんか？",
+    "noFitDescription": "私たちは常に才能ある方を探しています。履歴書をお送りください。今後の機会にお声がけします。",
+    "noFitButton": "履歴書を送る",
+    "noFitEmail": "careers@aivolearning.com",
+    "interviewHeading": "面接プロセス",
+    "interviewDescription": "明確で、敬意を持った、効率的なプロセスを目指しています。",
+    "interviewSteps": [
+      { "title": "応募書類審査", "description": "応募書類を確認し、5営業日以内に回答します。", "duration": "3-5日" },
+      { "title": "初回面談", "description": "採用チームとの30分間の面談。あなたのことを知り、質問にお答えします。", "duration": "30分" },
+      { "title": "技術/職種面接", "description": "そのポジションに関連するスキルと経験をより深く確認します。", "duration": "60分" },
+      { "title": "チーム面接", "description": "将来のチームメイトやクロスファンクショナルパートナーと面談します。", "duration": "2-3時間" },
+      { "title": "内定", "description": "オファーを提示し、チームへようこそ！", "duration": "🎉" }
+    ]
+  },
+  "contact": {
+    "heroBadge": "お問い合わせ",
+    "heroHeading": "お問い合わせ",
+    "heroDescription": "AIVOについてご質問がありますか？お気軽にお問い合わせください。できるだけ早くお返事いたします。",
+    "contactInfo": {
+      "heading": "つながりましょう",
+      "description": "最適な連絡方法をお選びください。通常24時間以内に返信いたします。",
+      "email": { "title": "メール", "values": ["hello@aivolearning.com", "support@aivolearning.com"] },
+      "phone": { "title": "電話", "values": ["1-800-AIVO-EDU", "(800) 248-6338"] },
+      "address": { "title": "住所", "values": ["123 Education Street", "Learning City, CA 94105"] },
+      "hours": { "title": "営業時間", "values": ["月〜金：午前9時〜午後6時（東部時間）", "週末：メールサポート"] }
+    },
+    "responseTime": {
+      "label": "平均応答時間",
+      "value": "営業日で24時間以内"
+    },
+    "form": {
+      "heading": "メッセージを送る",
+      "description": "下記のフォームにご記入ください。折り返しご連絡いたします。",
+      "nameLabel": "お名前",
+      "namePlaceholder": "山田太郎",
+      "emailLabel": "メールアドレス",
+      "emailPlaceholder": "taro@example.com",
+      "topicLabel": "トピック",
+      "messageLabel": "メッセージ",
+      "messagePlaceholder": "どのようなご用件でしょうか？",
+      "submitButton": "メッセージを送信",
+      "submitting": "送信中...",
+      "privacyNotice": "このフォームを送信することで、以下に同意します：",
+      "privacyPolicyLink": "プライバシーポリシー",
+      "required": "＊"
+    },
+    "topicOptions": [
+      "トピックを選択...",
+      "一般的なお問い合わせ",
+      "技術サポート",
+      "セールス・料金",
+      "パートナーシップのご提案",
+      "プレス・メディア",
+      "その他"
+    ],
+    "validation": {
+      "nameRequired": "お名前は必須です",
+      "emailRequired": "メールアドレスは必須です",
+      "emailInvalid": "有効なメールアドレスを入力してください",
+      "topicRequired": "トピックを選択してください",
+      "messageRequired": "メッセージは必須です",
+      "messageMinLength": "メッセージは10文字以上で入力してください",
+      "submitFailed": "送信に失敗しました。もう一度お試しください。"
+    },
+    "success": {
+      "heading": "メッセージが送信されました！",
+      "description": "お問い合わせありがとうございます。メッセージを受信しました。24〜48時間以内にお返事いたします。",
+      "sendAnother": "別のメッセージを送る",
+      "returnHome": "ホームに戻る"
+    },
+    "quickLinks": {
+      "heading": "お探しのものはありますか？",
+      "items": [
+        { "title": "ヘルプセンター", "description": "よくある質問を閲覧" },
+        { "title": "学校向け", "description": "エンタープライズソリューション" },
+        { "title": "パートナーシップ", "description": "一緒に働きましょう" },
+        { "title": "プレスのお問い合わせ", "description": "メディア連絡先" }
+      ],
+      "pressEmail": "press@aivolearning.com"
+    }
+  },
+  "forParents": {
+    "heroBadge": "保護者の方へ",
+    "heroHeadingPrefix": "お子さまの",
+    "heroHeadingHighlight": "ユニークな学びの旅をサポート",
+    "heroDescription": "AIVOは、ニューロダイバースな学習者を支援する課題を理解する保護者によって作られました。AI搭載プラットフォームがお子さまの独自の心に適応し、学び、成長し、活躍できるよう支援します。",
+    "heroCtaPrimary": "無料トライアルを開始",
+    "heroCtaSecondary": "仕組みを見る",
+    "heroCheckPoints": [
+      "クレジットカード不要",
+      "14日間の無料トライアル"
+    ],
+    "dashboardPreview": {
+      "studentName": "エマの学習進捗",
+      "onTrack": "順調",
+      "thisWeek": "今週",
+      "thisWeekValue": "4.5時間",
+      "streak": "連続記録",
+      "streakValue": "12日間",
+      "xpEarned": "獲得XP",
+      "xpValue": "2,450",
+      "newAchievement": "新しい実績！",
+      "achievementDetail": "エマが「分数マスター」を達成し、100ボーナスXPを獲得しました！",
+      "readingGoal": "読書目標",
+      "readingGoalPercent": "85%",
+      "sessionComplete": "セッション完了！",
+      "sessionDetail": "エマは25分間学習しました"
+    },
+    "benefitsBadge": "保護者に選ばれる理由",
+    "benefitsHeading": "ついに効果的な学びを実現",
+    "benefitsDescription": "宿題の戦いを終わりに。フラストレーションをなくしましょう。AIVOはお子さまが楽しんで学べる環境を作ります。",
+    "benefits": [
+      { "title": "安心感", "description": "お子さまが安全で支援的な環境で、個々のニーズに合わせて学んでいることを確認できます。フラストレーションも涙もありません。" },
+      { "title": "時間の節約", "description": "適切な教材を探す必要はもうありません。AIVOがパーソナライズされたレッスンを自動作成し、あなたの時間を取り戻します。" },
+      { "title": "進捗トラッキング", "description": "美しいダッシュボードでお子さまの成長を正確に確認。成功を祝い、サポートが必要な分野を特定します。" },
+      { "title": "専門サポート", "description": "リソース、ヒント、そしてあなたの旅を理解する保護者コミュニティへのアクセス。あなたは一人ではありません。" }
+    ],
+    "featuresBadge": "プラットフォーム機能",
+    "featuresHeading": "必要なものすべて",
+    "featuresDescription": "ニューロダイバースな学習者の保護者のために特別に設計された強力なツール。",
+    "features": [
+      { "title": "パーソナライズAIチューター", "description": "お子さまが自分だけのバーチャルブレインを持ち、考え方を学びます。" },
+      { "title": "IEP目標トラッキング", "description": "IEP目標をインポートし、詳細なレポートで進捗を自動追跡します。" },
+      { "title": "リアルタイム通知", "description": "お子さまがマイルストーンを達成した時やサポートが必要な時にアラートを受け取ります。" },
+      { "title": "教師コミュニケーション", "description": "教育者とシームレスに進捗を共有し、連携したサポートを実現します。" },
+      { "title": "全カリキュラム", "description": "算数、国語、理科など—すべてお子さまのレベルに合わせて適応。" },
+      { "title": "モチベーションシステム", "description": "報酬、バッジ、お祝いでお子さまのやる気と興味を維持します。" }
+    ],
+    "testimonialsBadge": "保護者の声",
+    "testimonialsHeading": "同じような家族の声",
+    "testimonialsDescription": "AIVOでお子さまの学習体験を変えた保護者の声をお聞きください。",
+    "testimonials": [
+      { "quote": "ADHDの息子が初めて学習時間をリクエストするようになりました。AIVOは学校では理解できなかった方法で彼を理解してくれます。", "author": "パイロット保護者", "child": "息子、8歳、ADHD" },
+      { "quote": "IEPトラッキングは私たちの家族にとってゲームチェンジャーです。学校にエマが家庭でどれだけ進歩しているか正確に示すことができます。", "author": "パイロットファミリー", "child": "娘、10歳、ディスレクシア" },
+      { "quote": "自閉症スペクトラムの娘は予測可能性を必要としています。AIVOの一貫したルーティンと視覚的スケジュールが、学習に対する不安を和らげました。", "author": "パイロット保護者", "child": "娘、7歳、ASD" }
+    ],
+    "ctaHeading": "お子さまの成長を見る準備はできていますか？",
+    "ctaDescription": "ニューロダイバースな学習者をサポートするより良い方法を見つけた保護者に参加しましょう。",
+    "ctaButton": "無料トライアルを始める",
+    "ctaFooter": "クレジットカード不要 • いつでもキャンセル可能"
+  },
+  "forTeachers": {
+    "heroBadge": "教育者の方へ",
+    "heroHeadingPrefix": "個別指導を",
+    "heroHeadingHighlight": "手軽に実現",
+    "heroDescription": "AIVOのAI搭載プラットフォームが、すべての生徒にその場で対応するお手伝いをします。パーソナライズされた学習パス、IEP目標トラッキング、リアルタイムインサイト—追加の負担なしで。",
+    "heroCtaPrimary": "デモを予約",
+    "heroCtaSecondary": "機能を見る",
+    "heroCheckPoints": [
+      "個人教師は無料",
+      "学校向け料金あり"
+    ],
+    "dashboardPreview": {
+      "title": "クラス概要 - 3時限目",
+      "studentsBadge": "生徒24名",
+      "onTrack": "18",
+      "onTrackLabel": "順調",
+      "needsSupport": "4",
+      "needsSupportLabel": "サポート必要",
+      "excelling": "2",
+      "excellingLabel": "優秀",
+      "studentA": "生徒A",
+      "studentADetail": "分数を学習中",
+      "studentB": "生徒B",
+      "studentBDetail": "第4章完了",
+      "studentC": "生徒C",
+      "studentCDetail": "介入が必要",
+      "iepBadge": "IEP"
+    },
+    "stats": [
+      { "value": "50%", "label": "準備時間削減" },
+      { "value": "3x", "label": "個別指導時間増加" },
+      { "value": "94%", "label": "教師満足度" },
+      { "value": "100%", "label": "IEP対応" }
+    ],
+    "benefitsBadge": "教師がAIVOを選ぶ理由",
+    "benefitsHeading": "もっと教育、もっと少ない書類作業",
+    "benefitsDescription": "AIVOがパーソナライゼーションと書類作業を処理するので、あなたは最も得意なこと—教育—に集中できます。",
+    "benefits": [
+      { "title": "個別化指導", "description": "各生徒が学習プロフィール、IEP目標、パフォーマンスに基づいてパーソナライズされたコンテンツを自動的に受け取ります。" },
+      { "title": "クラスルームインサイト", "description": "リアルタイムダッシュボードでクラス全体の進捗、個々の成長、追加サポートが必要な領域を表示します。" },
+      { "title": "基準対応", "description": "すべてのコンテンツは州基準とCommon Coreに準拠。既存のカリキュラムに簡単に統合できます。" },
+      { "title": "IEPサポート", "description": "IEP目標の追跡、進捗レポートの生成、アコモデーションの文書化をすべて一つの場所で。" }
+    ],
+    "featuresBadge": "クラスルームツール",
+    "featuresHeading": "教育者のために設計",
+    "featuresDescription": "教師によって、教師のために設計された強力な機能。",
+    "features": [
+      { "title": "クラス管理", "description": "生徒をグループに整理し、アクティビティを割り当て、名簿を簡単に管理。" },
+      { "title": "進捗分析", "description": "習熟度、エンゲージメント、成長を示すチャートで学習データを可視化。" },
+      { "title": "AI推奨", "description": "各生徒への介入戦略と次のステップの提案を受け取ります。" },
+      { "title": "時間の節約", "description": "AI生成のパーソナライズコンテンツでレッスン計画時間を50%削減。" },
+      { "title": "カスタマイズ", "description": "個々の生徒に合わせて難易度、ペース、アコモデーションを調整。" },
+      { "title": "FERPA準拠", "description": "エンタープライズグレードのセキュリティとプライバシー管理で生徒データを保護。" }
+    ],
+    "testimonialsBadge": "教育者の声",
+    "testimonialsHeading": "教師に信頼されています",
+    "testimonialsDescription": "教室でAIVOを使っている教育者の声をお聞きください。",
+    "testimonials": [
+      { "quote": "AIVOはIEPを持つ生徒たちのサポート方法を変革しました。自動進捗トラッキングにより、毎週何時間もの書類作業が節約されます。", "author": "パイロット教育者", "role": "特別支援教育教師", "experience": "12年" },
+      { "quote": "初めてインクルーシブな教室でのすべての生徒に対して真の個別化が実現できました。AIVOがパーソナライゼーションを処理してくれるので、教育に集中できます。", "author": "パイロット教育者", "role": "3年生担任", "experience": "8年" }
+    ],
+    "ctaHeading": "教室を変革する準備はできましたか？",
+    "ctaDescription": "デモを予約して、AIVOがすべての学習者をどのようにサポートできるかをご覧ください。",
+    "ctaButtonPrimary": "デモを予約",
+    "ctaButtonSecondary": "学校・学区プラン"
+  },
+  "terms": {
+    "metaTitle": "利用規約 | AIVO Learning",
+    "metaDescription": "AIVO Learning利用規約 - AI搭載教育プラットフォームの利用に関する規約と条件。",
+    "badge": "法的情報",
+    "heading": "利用規約",
+    "lastUpdated": "最終更新日：",
+    "lastUpdatedDate": "2025年12月19日",
+    "effective": "発効日：",
+    "effectiveDate": "2025年12月19日",
+    "sections": {
+      "agreementToTerms": { "title": "1. 規約への同意" },
+      "descriptionOfService": { "title": "2. サービスの説明" },
+      "userAccounts": { "title": "3. ユーザーアカウント", "subs": ["アカウントの作成", "未成年者のアカウント", "アカウントの解約"] },
+      "acceptableUse": { "title": "4. 許容される使用" },
+      "intellectualProperty": { "title": "5. 知的財産権", "subs": ["私たちのコンテンツ", "あなたのコンテンツ", "許可された使用"] },
+      "subscriptionAndPayment": { "title": "6. サブスクリプションと支払い", "subs": ["料金", "請求", "キャンセル", "無料トライアル", "返金"] },
+      "educationalDisclaimer": { "title": "7. 教育コンテンツに関する免責事項" },
+      "limitationOfLiability": { "title": "8. 責任の制限" },
+      "disclaimerOfWarranties": { "title": "9. 保証の免責" },
+      "indemnification": { "title": "10. 補償" },
+      "termination": { "title": "11. 解約", "subs": ["お客様による解約", "当社による解約", "解約の効果"] },
+      "disputeResolution": { "title": "12. 紛争解決", "subs": ["非公式解決", "仲裁", "クラスアクション放棄", "例外"] },
+      "changesToTerms": { "title": "13. 規約の変更" },
+      "governingLaw": { "title": "14. 準拠法" },
+      "severability": { "title": "15. 可分性" },
+      "entireAgreement": { "title": "16. 完全合意" },
+      "contactInformation": { "title": "17. 連絡先情報" }
+    },
+    "contactBlock": {
+      "department": "法務部",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "メール：",
+      "email": "legal@aivolearning.com"
+    },
+    "backToHome": "← ホームに戻る"
+  },
+  "privacy": {
+    "metaTitle": "プライバシーポリシー | AIVO Learning",
+    "metaDescription": "AIVO Learningプライバシーポリシー - 個人情報の収集、使用、保護方法について。FERPA・COPPA準拠。",
+    "badge": "法的情報",
+    "heading": "プライバシーポリシー",
+    "lastUpdated": "最終更新日：",
+    "lastUpdatedDate": "2025年12月19日",
+    "sections": {
+      "introduction": "はじめに",
+      "informationWeCollect": "収集する情報",
+      "accountInformation": "アカウント情報",
+      "learningData": "学習データ",
+      "technicalData": "技術データ",
+      "childrensPrivacy": "お子さまのプライバシー（COPPA準拠）",
+      "parentalConsent": "保護者の同意",
+      "informationFromChildren": "お子さまから収集する情報",
+      "parentalRights": "保護者の権利",
+      "howWeUse": "情報の利用方法",
+      "dataSecurity": "データセキュリティ",
+      "ferpaCompliance": "FERPA準拠",
+      "yourRights": "あなたの権利",
+      "dataRetention": "データ保持",
+      "thirdPartyServices": "第三者サービス",
+      "changesToPolicy": "ポリシーの変更",
+      "contactUs": "お問い合わせ"
+    },
+    "contactBlock": {
+      "department": "データ保護責任者",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "メール：",
+      "email": "privacy@aivolearning.com"
+    },
+    "backToHome": "← ホームに戻る"
+  },
+  "cookies": {
+    "metaTitle": "クッキーポリシー | AIVO Learning",
+    "metaDescription": "AIVO Learningがクッキーおよび類似技術をどのように使用してエクスペリエンスを向上させるかについて。",
+    "badge": "法的情報",
+    "heading": "クッキーポリシー",
+    "lastUpdated": "最終更新日：",
+    "lastUpdatedDate": "2025年12月19日",
+    "quickSummary": {
+      "heading": "概要",
+      "points": [
+        "AIVOが適切に機能し、エクスペリエンスを向上させるためにクッキーを使用しています",
+        "必須クッキーはプラットフォームの機能に必要です",
+        "ブラウザまたは当社の設定からオプションのクッキーを制御できます",
+        "お子さまを対象とした広告トラッキングにクッキーを使用することはありません"
+      ]
+    },
+    "whatAreCookies": {
+      "heading": "クッキーとは？",
+      "paragraphs": [
+        "クッキーは、ウェブサイトを訪問した際にデバイスに配置される小さなテキストファイルです。ウェブサイトをより効率的に機能させ、ウェブサイト所有者に情報を提供するために広く使用されています。",
+        "また、ローカルストレージやセッションストレージなどの類似技術も使用しています。このポリシーで「クッキー」と言う場合、これらの類似技術も含みます。"
+      ]
+    },
+    "typesHeading": "使用するクッキーの種類",
+    "types": {
+      "essential": {
+        "title": "必須クッキー",
+        "badge": "必須",
+        "description": "ウェブサイトが適切に機能するために必要なクッキーです。セキュリティ、認証、アクセシビリティなどの中核機能を有効にします。",
+        "examplesLabel": "例：",
+        "examples": [
+          "ログイン状態を維持するセッションクッキー",
+          "不正行為を防止するセキュリティクッキー",
+          "アクセシビリティ設定の環境設定クッキー",
+          "パフォーマンスのためのロードバランシングクッキー"
+        ]
+      },
+      "analytics": {
+        "title": "分析クッキー",
+        "badge": "任意",
+        "description": "訪問者がウェブサイトとどのようにやり取りするかを匿名で収集・報告し、理解するのに役立つクッキーです。プラットフォームの改善に役立ちます。",
+        "examplesLabel": "例：",
+        "examples": [
+          "ページビュー統計",
+          "機能の利用パターン",
+          "デバッグのためのエラー追跡",
+          "パフォーマンスモニタリング"
+        ]
+      },
+      "functional": {
+        "title": "機能クッキー",
+        "badge": "任意",
+        "description": "好みや設定を記憶するなど、拡張機能とパーソナライゼーションを有効にするクッキーです。",
+        "examplesLabel": "例：",
+        "examples": [
+          "言語設定",
+          "テーマ設定（ライト/ダークモード）",
+          "最近閲覧したコンテンツ",
+          "カスタマイズされたダッシュボードレイアウト"
+        ]
+      },
+      "marketing": {
+        "title": "マーケティングクッキー",
+        "badge": "任意",
+        "description": "関連性のある広告を表示するために、複数のウェブサイトにわたって訪問者を追跡するクッキーです。",
+        "note": "注：お子さまがアクセスできるページではマーケティングクッキーを使用しません。",
+        "examplesLabel": "例：",
+        "examples": [
+          "マーケティングキャンペーンのコンバージョントラッキング",
+          "ソーシャルメディア共有機能",
+          "リマーケティングピクセル（大人向けページのみ）"
+        ],
+        "coppaNote": "マーケティングクッキーは、学習者ダッシュボードや子ども向けインターフェースでは使用されません。"
+      }
+    },
+    "cookieTable": {
+      "heading": "使用する具体的なクッキー",
+      "headers": { "name": "クッキー名", "provider": "提供元", "purpose": "目的", "duration": "期間", "type": "種類" },
+      "cookies": [
+        { "name": "aivo_session", "provider": "AIVO", "purpose": "ユーザー認証", "duration": "セッション", "type": "必須" },
+        { "name": "aivo_csrf", "provider": "AIVO", "purpose": "セキュリティトークン", "duration": "セッション", "type": "必須" },
+        { "name": "aivo_preferences", "provider": "AIVO", "purpose": "ユーザー設定", "duration": "1年", "type": "機能" },
+        { "name": "_ga", "provider": "Google", "purpose": "分析", "duration": "2年", "type": "分析" },
+        { "name": "_gid", "provider": "Google", "purpose": "分析", "duration": "24時間", "type": "分析" },
+        { "name": "intercom-*", "provider": "Intercom", "purpose": "カスタマーサポート", "duration": "9ヶ月", "type": "機能" }
+      ]
+    },
+    "managing": {
+      "heading": "クッキー設定の管理",
+      "description": "クッキーを管理するためのオプションがいくつかあります：",
+      "preferencesCenter": {
+        "heading": "1. クッキー設定センター",
+        "description": "下のボタンをクリックするか、ウェブサイトフッターの「クッキー設定」リンクからいつでもクッキー設定を管理できます。",
+        "button": "クッキー設定を管理"
+      },
+      "browserSettings": {
+        "heading": "2. ブラウザ設定",
+        "description": "ほとんどのウェブブラウザでは、設定からクッキーを制御できます。主要なブラウザのクッキー設定へのリンク：",
+        "browsers": ["Chrome", "Firefox", "Safari", "Edge"]
+      },
+      "optOutTools": {
+        "heading": "3. オプトアウトツール",
+        "description": "以下のツールを使用して、特定の第三者クッキーをオプトアウトできます：",
+        "tools": ["Google Analyticsオプトアウト", "NAIオプトアウト", "DAAオプトアウト"]
+      },
+      "warning": {
+        "noteLabel": "注意：",
+        "text": "必須クッキーをブロックすると、ログインや進捗の保存など、AIVOプラットフォームの一部の機能が使用できなくなる場合があります。"
+      }
+    },
+    "changes": {
+      "heading": "ポリシーの変更",
+      "paragraphs": [
+        "このクッキーポリシーは随時更新される場合があります。変更を行った場合、このページ上部の「最終更新日」を更新します。定期的にこのポリシーをご確認いただくことをお勧めします。",
+        "重要な変更については、ウェブサイトのバナーやメール通知など、追加の通知を提供する場合があります。"
+      ]
+    },
+    "contactHeading": "お問い合わせ",
+    "contactDescription": "クッキーの使用についてご質問がある場合は、以下までお問い合わせください：",
+    "contactEmailLabel": "メール：",
+    "contactEmail": "privacy@aivolearning.com",
+    "backToHome": "← ホームに戻る"
+  },
+  "faq": {
+    "metaTitle": "よくあるご質問 | AIVO Learning",
+    "metaDescription": "AIVO Learning、ニューロダイバースな生徒のためのAIチュータリングプラットフォーム、料金、機能、実装に関するよくある質問と回答。",
+    "ogTitle": "FAQ - AIVO Learning",
+    "ogDescription": "ニューロダイバースな生徒のためのAIパーソナライズ学習に関するよくある質問",
+    "heading": "よくあるご質問",
+    "description": "AIVO Learning、AIチュータリングプラットフォーム、そしてニューロダイバースな学習者のサポートに関するよくある質問への回答をご覧ください。",
+    "categories": {
+      "aboutAivo": {
+        "title": "AIVOについて",
+        "items": [
+          { "question": "AIVO Learningとは？", "answer": "AIVO Learningは、ニューロダイバースなK-12生徒のために特別に設計されたAI搭載のパーソナライズ学習プラットフォームです。各生徒のユニークな学習スタイル、ペース、ニーズに適応するバーチャルブレインAIチューターを使用しています。ADHD、自閉症、ディスレクシア、ディスカルキュリアなど、さまざまな学習特性をサポートしています。" },
+          { "question": "バーチャルブレインとは？", "answer": "バーチャルブレインは、各生徒の最適な学習方法に適応するAIVOのパーソナライズAIチューターです。学習パターン、好み、強み、課題を追跡し、カスタマイズされた学習体験を作ります。お子さまの考え方を正確に理解する専属チューターのようなものです。" },
+          { "question": "AIVOはニューロダイバースな生徒だけが対象ですか？", "answer": "AIVOはニューロダイバースな学習者を念頭に設計されていますが、適応技術はすべての生徒に恩恵をもたらします。すべての学習者はユニークであり、AIVOは診断の有無にかかわらず、各個人に合わせて教育をパーソナライズします。" }
+        ]
+      },
+      "featuresCapabilities": {
+        "title": "機能",
+        "items": [
+          { "question": "AIVOはどのような学習特性をサポートしますか？", "answer": "AIVOはADHD、自閉症スペクトラム障害、ディスレクシア、ディスカルキュリア、ディスグラフィア、実行機能の課題など、さまざまな学習特性に対応した専門サポートを提供します。各症状には専用機能があり、ADHDにはフォーカスモード、自閉症にはビジュアルスケジュール、ディスレクシアにはテキスト読み上げ、ディスカルキュリアにはビジュアル算数があります。" },
+          { "question": "AIVOはIEP目標に役立ちますか？", "answer": "はい！AIVOにはリアルタイムのIEP目標トラッキングと進捗モニタリングが含まれています。教師はレッスンをIEP目標に合わせ、目標への進捗を追跡し、IEPミーティング用の詳細なレポートを生成できます。プラットフォームは特定の目標に対する進捗を示すデータポイントを自動的に収集します。" },
+          { "question": "AIVOではどの科目を学べますか？", "answer": "AIVOは算数、国語、作文、理科、社会を含むK-12の全主要科目をカバーしています。また、SEL（社会性と情動の学習）、実行機能トレーニング、ライフスキルモジュールも提供しています。すべてのコンテンツは基準に準拠し、各生徒の学年レベルと能力に適応します。" },
+          { "question": "AIVOは24時間利用できますか？", "answer": "はい！AIVOのAIチューターは、宿題のヘルプ、練習、学習サポートのために24時間年中無休で利用できます。生徒はいつでも自分のペースで学習できます。チームからの人的サポートは、技術的な問題や実装に関する質問に対して東部時間午前8時から午後8時まで利用可能です。" },
+          { "question": "AIVOはアクセシブルですか？", "answer": "もちろんです。AIVOはWCAG 2.1レベルAAのアクセシビリティ基準に準拠して構築されています。テキスト読み上げ、音声入力、調整可能なフォントと色、キーボードナビゲーション、スクリーンリーダーサポート、字幕、ハイコントラストモードなどを含みます。アクセシビリティは私たちのデザインの核心です。" }
+        ]
+      },
+      "privacySecurity": {
+        "title": "プライバシーとセキュリティ",
+        "items": [
+          { "question": "子どものデータは安全ですか？", "answer": "はい。AIVOはFERPAおよびCOPPAに準拠しています。エンドツーエンドの暗号化を使用し、生徒データを販売せず、広告を表示せず、厳格なデータ保護プロトコルに従っています。Student Privacy Pledgeにコミットしており、SOC 2 Type II認証を取得中です。" },
+          { "question": "子どもの学習データを見られるのは誰ですか？", "answer": "あなた（保護者/後見人）、お子さまの担任教師、必要な学校管理者のみがお子さまの学習データにアクセスできます。データは第三者と共有されることはありません。保護者は完全な管理権を持ち、いつでもデータの削除を要求できます。" },
+          { "question": "生徒データを販売したり広告を表示しますか？", "answer": "いいえ、決してしません。AIVOは生徒データを第三者に販売、賃貸、または共有しません。広告を表示しません。収益はサブスクリプションのみから得ており、ユーザーデータの収益化からではありません。" }
+        ]
+      },
+      "pricingPlans": {
+        "title": "料金プランについて",
+        "items": [
+          { "question": "AIVOの料金はいくらですか？", "answer": "AIVOにはいくつかのプランがあります：フリー（機能限定）、ファミリー（月額$29、生徒3名まで）、クラスルーム（月額$15/生徒）、カスタム学校/学区料金。すべての有料プランには、クレジットカード不要の30日間無料トライアルが含まれています。" },
+          { "question": "無料トライアルはありますか？", "answer": "はい！すべての有料プランには、全機能にフルアクセスできる30日間の無料トライアルが含まれています。トライアル開始にクレジットカードは不要です。トライアル期間中はいつでも無料でキャンセルできます。" },
+          { "question": "AIVOに使える助成金はありますか？", "answer": "はい、多くの学校がIDEA資金、Title I資金、ESSER資金、または特別支援教育予算を使ってAIVOの費用をカバーしています。助成金申請のための書類作成とサポートを提供します。資金オプションについては営業チームまでお問い合わせください。" },
+          { "question": "複数の生徒向けの割引はありますか？", "answer": "はい。ファミリープランは月額$29で最大3名の生徒をカバー（個別と比べてかなりお得）。学校と学区はボリュームディスカウントを受けられます。非営利団体やTitle I指定校は追加割引の対象となる場合があります。" }
+        ]
+      },
+      "implementationSetup": {
+        "title": "導入とセットアップ",
+        "items": [
+          { "question": "導入にはどのくらいかかりますか？", "answer": "個人家庭：15分。クラスルーム：名簿設定とトレーニングに1〜2日。学校/学区：名簿登録、トレーニング、専門研修を含めて2〜4週間。完全な導入サポートを提供します。" },
+          { "question": "AIVOはGoogle Classroomと連携しますか？", "answer": "はい！AIVOはGoogle Classroomとシームレスに連携し、自動名簿同期、課題投稿、成績連携が可能です。Canvas、Schoology、Clever、ClassLinkとも連携しています。" },
+          { "question": "どのデバイスでAIVOを使えますか？", "answer": "AIVOはChromebook、iPad、タブレット、Windows/Macコンピューター、スマートフォンなど、あらゆる最新デバイスで動作します。ウェブアプリ（Chrome、Safari、Firefox、Edge）とiOS・Androidのモバイルアプリがあります。専用学習タブレットAIVO Padも提供しています。" },
+          { "question": "特別な機器は必要ですか？", "answer": "特別な機器は不要です！AIVOは標準的なデバイスとインターネット接続で動作します。オプション：オーディオコンテンツ用ヘッドフォン、書く活動用スタイラス、特定のインタラクティブ機能用ウェブカメラ。" }
+        ]
+      },
+      "forEducators": {
+        "title": "教育者向け",
+        "items": [
+          { "question": "AIVOは教師の時間節約にどう役立ちますか？", "answer": "AIVOは個別化、進捗モニタリング、データ収集を自動化します。教師はレッスン計画と評価で週5〜10時間の時間節約を報告しています。プラットフォームが個別化を処理し、教師はインパクトの高い指導と関係構築に集中できます。" },
+          { "question": "教師はカスタムコンテンツを作成できますか？", "answer": "はい！教師はカスタムレッスン、課題、評価を作成できます。AIVOのライブラリからコンテンツをキュレーションしたり、既存の教材をインポートしたり、AIアシスタントを使って適応コンテンツを生成したりすることもできます。" },
+          { "question": "教師はどのようなトレーニングを受けますか？", "answer": "ビデオチュートリアル、インタラクティブなオンボーディング、ライブウェビナー、継続的な専門研修を含む包括的なトレーニングを提供します。ほとんどの教師は1〜2週間でAIVOの使用に慣れます。認定コースも利用可能です。" }
+        ]
+      },
+      "resultsEffectiveness": {
+        "title": "成果と効果",
+        "items": [
+          { "question": "AIVOでどのような成果が見られますか？", "answer": "AIVOを使用する生徒は、1学年で平均1.5年分の学習成長を達成しています。87%の生徒が毎日エンゲージメントし、94%の保護者がお子さまがより自信を持ち、自立して学習するようになったと報告しています。結果は個人によって異なります。" },
+          { "question": "AIVOはエビデンスに基づいていますか？", "answer": "はい。AIVOはユニバーサルデザインフォーラーニング（UDL）、個別化指導、マルチセンサリー指導、間隔反復、認知負荷理論を含むエビデンスに基づくプラクティスの上に構築されています。研究機関と提携し、アプローチの継続的な妥当性検証を行っています。" },
+          { "question": "いつ頃から進歩が見られますか？", "answer": "ほとんどの家庭が最初の1週間でエンゲージメントの増加に気づきます。測定可能な学力向上は通常、一貫した使用（週3〜4回）の4〜6週間で現れます。長期的な成果は使用月数を重ねるごとに複合的に向上します。" }
+        ]
+      }
+    },
+    "contactHeading": "まだご質問がありますか？",
+    "contactDescription": "私たちのチームがお手伝いします。お問い合わせいただければ24時間以内にお返事します。",
+    "contactCtaPrimary": "お問い合わせ",
+    "contactCtaSecondary": "デモを予約"
+  },
+  "sitemapPage": {
+    "metaTitle": "サイトマップ | AIVO Learning",
+    "metaDescription": "AIVO Learningウェブサイトの全ページをナビゲート。機能、リソース、法的ページなどを検索できます。",
+    "badge": "ナビゲーション",
+    "heading": "サイトマップ",
+    "description": "AIVO Learningウェブサイト内をスムーズに移動できます。",
+    "categories": {
+      "mainPages": {
+        "title": "メインページ",
+        "links": ["ホーム", "AIVOについて", "お問い合わせ", "料金プラン", "仕組み", "デモを予約"]
+      },
+      "featuresSolutions": {
+        "title": "機能とソリューション",
+        "links": ["全機能", "保護者の方へ", "教育者の方へ", "生徒の方へ", "学校の方へ", "学区の方へ", "ホームスクール", "AIVO Pad"],
+        "aivoPadBadge": "新着"
+      },
+      "resources": {
+        "title": "リソース",
+        "links": ["ヘルプセンター", "ブログ", "研究", "導入事例", "ウェビナー", "APIドキュメント"]
+      },
+      "company": {
+        "title": "会社情報",
+        "links": ["AIVOについて", "採用情報", "プレス", "パートナー", "お問い合わせ"],
+        "careersBadge": "採用中"
+      },
+      "legal": {
+        "title": "法的情報",
+        "links": ["プライバシーポリシー", "利用規約", "クッキーポリシー", "COPPA準拠", "FERPA準拠", "アクセシビリティ声明"]
+      },
+      "account": {
+        "title": "アカウント",
+        "links": ["ログイン", "新規登録", "ダッシュボード"]
+      }
+    },
+    "xmlSitemapPrefix": "検索エンジン用のXMLサイトマップをお探しですか？",
+    "xmlSitemapLink": "sitemap.xmlを表示"
+  },
+  "common": {
+    "learnMore": "詳しく見る",
+    "contactUs": "お問い合わせ",
+    "getStarted": "はじめる",
+    "startFreeTrial": "無料トライアルを開始",
+    "scheduleDemo": "デモを予約",
+    "watchDemo": "デモを見る",
+    "backToHome": "← ホームに戻る",
+    "coppaLabel": "COPPA準拠",
+    "ferpaLabel": "FERPA準拠"
+  }
+}

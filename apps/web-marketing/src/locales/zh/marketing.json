@@ -1,0 +1,1170 @@
+{
+  "nav": {
+    "features": "功能特色",
+    "forParents": "家长专区",
+    "forParentsDesc": "支持您孩子独特的学习旅程",
+    "forStudents": "学生专区",
+    "forStudentsDesc": "借助AI支持，按照自己的节奏学习",
+    "forTeachers": "教师专区",
+    "forTeachersDesc": "轻松实现差异化教学",
+    "aivoPad": "AIVO Pad",
+    "new": "全新",
+    "howItWorks": "使用方法",
+    "pricing": "价格方案",
+    "about": "关于我们",
+    "contact": "联系我们",
+    "signIn": "登录",
+    "getStarted": "立即开始",
+    "closeMenu": "关闭菜单",
+    "openMenu": "打开菜单",
+    "trustedByFamilies": "已获得150多个试点项目家庭的信赖"
+  },
+  "hero": {
+    "announcementPrefix": "隆重推出 ",
+    "announcementHighlight": "Virtual Brain AI",
+    "welcomeTo": "欢迎来到 ",
+    "aivo": "AIVO",
+    "learning": "学习平台",
+    "whereEveryMind": "让每一个头脑",
+    "thrives": "蓬勃发展",
+    "subheadlinePrefix": "革命性的AI驱动学习平台，配备个性化的 ",
+    "virtualBrains": "Virtual Brains",
+    "subheadlineSuffix": "，专为神经多样性K-12学习者设计。支持ADHD、自闭症、阅读障碍及所有学习差异。",
+    "pilotCalloutHeading": "试点项目成果",
+    "pilotStudents": "150名学生",
+    "pilotConnector": " 在短短 ",
+    "pilotDuration": "3个月",
+    "ctaPrimary": "开始免费试用",
+    "ctaSecondary": "观看演示",
+    "dashboardTitle": "AIVO 学习仪表盘",
+    "todaysProgress": "今日进度",
+    "progressPercent": "78%",
+    "lessonsCompleted": "已完成课程",
+    "lessonsCount": "12",
+    "xpEarned": "获得经验值",
+    "xpCount": "450",
+    "currentStreak": "当前连续天数",
+    "streakDays": "7天",
+    "focusScore": "专注力评分",
+    "focusPercent": "94%",
+    "achievementUnlocked": "解锁成就！",
+    "achievementDetail": "数学大师 - 第5级",
+    "iepAligned": "IEP 对齐",
+    "personalizedGoals": "个性化目标",
+    "virtualBrain": "Virtual Brain",
+    "aiPoweredTutor": "AI智能导师",
+    "statStudents": "150+",
+    "statStudentsLabel": "试点学生",
+    "statCurriculum": "K-12",
+    "statCurriculumLabel": "全学段课程",
+    "statIep": "100%",
+    "statIepLabel": "IEP 对齐",
+    "statAi": "AI",
+    "statAiLabel": "驱动",
+    "trustFerpa": "FERPA 合规",
+    "trustCoppa": "COPPA 认证",
+    "trustNoAds": "无广告",
+    "trustNoDataSelling": "不出售数据",
+    "closeVideo": "关闭视频",
+    "demoComingSoon": "演示视频即将推出"
+  },
+  "features": {
+    "badge": "平台功能",
+    "titlePrefix": "您的学习者取得 ",
+    "titleHighlight": "成功",
+    "description": "AIVO 将尖端AI技术与经过验证的教育策略相结合，为神经多样性学生创造最个性化的学习体验。",
+    "aiTutoring": {
+      "title": "AI智能辅导",
+      "description": "每位学习者都拥有一个个性化的AI Virtual Brain，能够实时适应其独特的学习方式、节奏和偏好。",
+      "points": [
+        "实时自适应",
+        "情感感知",
+        "多感官支持"
+      ]
+    },
+    "iepGoals": {
+      "title": "IEP 目标管理",
+      "description": "自动同步IEP目标，跟踪进度，为护理团队和教育工作者生成全面的报告。",
+      "points": [
+        "自动目标跟踪",
+        "进度报告",
+        "团队协作"
+      ]
+    },
+    "progressTracking": {
+      "title": "进度追踪",
+      "description": "为家长和教师提供精美的仪表盘，用于监控成长、庆祝成就并发现改进空间。",
+      "points": [
+        "实时分析",
+        "学科细分",
+        "趋势分析"
+      ]
+    },
+    "parentDashboard": {
+      "title": "家长仪表盘",
+      "description": "随时了解孩子的学习旅程。在一个平台上查看进度、与教师沟通并管理IEP目标。",
+      "points": [
+        "活动动态",
+        "教师消息",
+        "目标监控"
+      ]
+    },
+    "validationBadge": "FERPA & COPPA 合规 — 所有功能已在150多名试点项目学生中经过测试"
+  },
+  "courses": {
+    "badge": "平台功能",
+    "titlePrefix": "您的学习者取得 ",
+    "titleHighlight": "成功",
+    "description": "AIVO 将尖端AI技术与经过验证的教育策略相结合，为神经多样性学生创造最个性化的学习体验。",
+    "aiVirtualBrain": {
+      "title": "AI Virtual Brain",
+      "description": "每位学习者都拥有一个个性化的AI智能体，理解其独特的学习方式并实时进行调整。"
+    },
+    "iepAlignment": {
+      "title": "IEP 目标对齐",
+      "description": "自动同步IEP目标，跟踪进度，为护理团队生成全面的报告。"
+    },
+    "neurodiversity": {
+      "title": "神经多样性支持",
+      "description": "专为ADHD、阅读障碍、自闭症及所有学习差异量身打造的辅助功能。"
+    },
+    "compliance": {
+      "title": "FERPA & COPPA 合规",
+      "description": "银行级别加密，无广告，不出售数据。保护孩子的隐私是我们的首要任务。"
+    },
+    "realTimeAdaptation": {
+      "title": "实时自适应",
+      "description": "内容难度和呈现方式根据学习表现和参与度即时调整。"
+    },
+    "emotionalIntelligence": {
+      "title": "情感智能",
+      "description": "识别挫败感、焦虑和疲劳，提供鼓励和舒缓干预。"
+    },
+    "curriculum": {
+      "title": "K-12全学段课程",
+      "description": "全面覆盖数学、阅读、科学等学科，与各州教学标准对齐。"
+    },
+    "progress": {
+      "title": "进度追踪",
+      "description": "为家长和教师提供精美的仪表盘，用于监控成长和庆祝成就。"
+    },
+    "validationBadge": "所有功能已通过150多名试点项目学生的测试和验证"
+  },
+  "howItWorks": {
+    "badge": "使用方法",
+    "titlePrefix": "开始使用非常 ",
+    "titleHighlight": "简单",
+    "description": "从注册到成功只需四个简单步骤。无需复杂设置，无需技术知识。",
+    "step1": {
+      "number": "01",
+      "title": "创建个人档案",
+      "description": "几分钟即可注册。告诉我们您学习者的需求、偏好和任何IEP目标。我们支持ADHD、自闭症、阅读障碍等。",
+      "tags": ["2分钟完成设置", "IEP导入选项", "学习方式测评"]
+    },
+    "step2": {
+      "number": "02",
+      "title": "认识您的 Virtual Brain",
+      "description": "您的学习者将获得一位个性化的AI导师，适应他们独特的思维方式。它会学习最适合他们的方法。",
+      "tags": ["个性化AI智能体", "实时自适应", "情感感知"]
+    },
+    "step3": {
+      "number": "03",
+      "title": "开始学习",
+      "description": "参与专为神经多样性思维设计的互动课程、游戏和活动。内容自动调整。",
+      "tags": ["游戏化学习", "感官友好型", "休息提醒"]
+    },
+    "step4": {
+      "number": "04",
+      "title": "追踪进度",
+      "description": "家长和教师通过精美的仪表盘查看成长、成就和洞察。一起庆祝每一次进步。",
+      "tags": ["实时更新", "IEP进度报告", "成就庆祝"]
+    },
+    "illustrations": {
+      "uploadIep": "上传IEP（可选）",
+      "adhd": "ADHD",
+      "dyslexia": "阅读障碍",
+      "autism": "自闭症",
+      "meetBrain": "认识Alex的Brain",
+      "personalizedTutor": "个性化AI导师",
+      "chatBubble": "嗨，Alex！准备好一起学习了吗？让我们从有趣的内容开始吧！",
+      "mathQuest": "数学冒险",
+      "mathDetail": "第5级 - 分数",
+      "readingAdventure": "阅读探险",
+      "readingDetail": "第3章",
+      "scienceLab": "科学实验室",
+      "scienceDetail": "植物与生长",
+      "weeklyProgress": "每周进度",
+      "progressPercent": "+23%",
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    },
+    "ctaButton": "立即开始您的旅程",
+    "ctaDisclaimer": "无需信用卡 • 14天免费试用 • 随时取消"
+  },
+  "cta": {
+    "trustPoints": [
+      "无需信用卡",
+      "14天免费试用",
+      "随时取消"
+    ],
+    "headlinePrefix": "准备好开始 ",
+    "headlineHighlight": "学习了吗？",
+    "subheadline": "加入我们日益壮大的学习者和教育工作者社区，使用AIVO进行个性化的AI驱动教育。",
+    "emailPlaceholder": "请输入您的电子邮箱",
+    "submitButton": "免费开始",
+    "complianceBold": "FERPA & COPPA 合规",
+    "complianceText": "您孩子的数据始终受到保护"
+  },
+  "pricing": {
+    "badge": "价格方案",
+    "titlePrefix": "简单、透明的 ",
+    "titleHighlight": "价格方案",
+    "description": "选择适合您家庭需求的方案。所有方案均包含核心AI驱动学习体验。",
+    "monthly": "月付",
+    "annual": "年付",
+    "saveBadge": "节省50%",
+    "switchToMonthly": "切换为按月计费",
+    "switchToAnnual": "切换为按年计费",
+    "perMonth": "/月",
+    "billedAnnually": "按年计费（${amount}/年）",
+    "free": {
+      "name": "免费版",
+      "description": "从基础功能开始",
+      "cta": "免费开始",
+      "features": [
+        "基础课程和活动",
+        "核心学科（数学、阅读）",
+        "基础进度追踪",
+        "社区支持",
+        "有限的AI互动次数"
+      ],
+      "notIncluded": [
+        "完整课程访问",
+        "IEP 集成",
+        "家长仪表盘",
+        "优先支持"
+      ]
+    },
+    "pro": {
+      "name": "专业版",
+      "description": "适合大多数家庭",
+      "discount": "五折优惠",
+      "cta": "开始专业版试用",
+      "popularBadge": "最受欢迎",
+      "features": [
+        "包含免费版全部功能，以及：",
+        "完整课程资源库",
+        "无限AI导师课程",
+        "IEP 目标集成",
+        "详细进度追踪",
+        "家长仪表盘",
+        "优先电子邮件支持",
+        "学习方式评估",
+        "自定义学习路径"
+      ]
+    },
+    "premium": {
+      "name": "高级版",
+      "description": "适合需要额外支持的家庭",
+      "cta": "开始高级版试用",
+      "features": [
+        "包含专业版全部功能，以及：",
+        "多学习者档案",
+        "高级教师工具",
+        "无限聊天支持",
+        "7×24小时优先支持",
+        "自定义学习计划",
+        "家庭进度报告",
+        "专属成功经理",
+        "提前体验新功能"
+      ]
+    },
+    "trustBadges": [
+      "FERPA & COPPA 合规",
+      "7×24小时支持",
+      "家庭仪表盘",
+      "IEP 集成"
+    ],
+    "testimonial": {
+      "quote": "个性化的学习路径让我的孩子保持专注，家长仪表盘让我们能够一起庆祝进步。这对我们家庭来说是真正的改变。",
+      "initials": "PP",
+      "author": "试点项目家长",
+      "detail": "AIVO 试点项目，2025年"
+    },
+    "faqHeading": "常见问题",
+    "faqs": [
+      {
+        "question": "我可以随时更换方案吗？",
+        "answer": "可以！您可以随时升级、降级或取消方案。更改将在下一个计费周期开始时生效。"
+      },
+      {
+        "question": "有免费试用吗？",
+        "answer": "有的，专业版和高级版方案均提供14天免费试用。开始试用无需信用卡。"
+      },
+      {
+        "question": "计费方式是怎样的？",
+        "answer": "您可以选择按月或按年计费。按年计费比按月计费节省50%。"
+      },
+      {
+        "question": "AIVO能同时支持多种学习差异吗？",
+        "answer": "当然可以！AIVO专为支持ADHD、自闭症、阅读障碍及其他多种学习差异的学习者而设计，可同时提供支持。"
+      }
+    ],
+    "moneyBack": {
+      "heading": "30天退款保证",
+      "description": "零风险试用。不满意全额退款。"
+    }
+  },
+  "testimonials": {
+    "badge": "成功案例",
+    "titlePrefix": "深受 ",
+    "titleHighlight": "家庭和教育工作者",
+    "description": "听听每天信赖AIVO的家庭和教育工作者怎么说。",
+    "items": [
+      {
+        "quote": "我女儿现在真的期待学习了。AI导师能够适应她的ADHD特点，让她保持专注而不会感到沮丧。在试点项目的短短8周内，我们就看到了真正的进步。",
+        "author": "家长",
+        "role": "四年级学生的家长",
+        "details": "明尼阿波利斯，明尼苏达州",
+        "avatar": "P"
+      },
+      {
+        "quote": "IEP集成功能真的很管用。我可以看到每个学生的目标被自动跟踪，AI的建议帮助我实时调整教学。这节省了数小时的文档工作。",
+        "author": "教育工作者",
+        "role": "特殊教育教师",
+        "details": "纽约，纽约州",
+        "avatar": "E"
+      },
+      {
+        "quote": "可预测的日常安排和感官友好型设计对我家自闭症谱系的儿子来说意义重大。在试点期间，他的学习信心确实有所增长。",
+        "author": "家长",
+        "role": "二年级学生的家长",
+        "details": "明尼阿波利斯，明尼苏达州",
+        "avatar": "P"
+      }
+    ],
+    "stats": {
+      "students": { "value": "150", "label": "试点学生", "suffix": "+" },
+      "duration": { "value": "3", "label": "个月试点", "suffix": "月" },
+      "iep": { "value": "100", "label": "IEP 对齐", "suffix": "%" },
+      "curriculum": { "value": "K-12", "label": "全学段课程" }
+    },
+    "previousTestimonial": "上一条评价",
+    "nextTestimonial": "下一条评价",
+    "goToTestimonial": "跳转到第{n}条评价"
+  },
+  "footer": {
+    "sections": {
+      "product": "产品",
+      "solutions": "解决方案",
+      "resources": "资源",
+      "company": "公司",
+      "legal": "法律信息"
+    },
+    "productLinks": {
+      "features": "功能特色",
+      "howItWorks": "使用方法",
+      "pricing": "价格方案",
+      "aiTutoring": "AI辅导",
+      "aivoPad": "AIVO Pad",
+      "new": "全新",
+      "accessibility": "无障碍访问"
+    },
+    "solutionsLinks": {
+      "forParents": "家长专区",
+      "forTeachers": "教师专区",
+      "forStudents": "学生专区",
+      "forSchools": "学校专区",
+      "forDistricts": "学区专区",
+      "homeschool": "在家教育"
+    },
+    "resourcesLinks": {
+      "helpCenter": "帮助中心",
+      "blog": "博客",
+      "research": "研究",
+      "caseStudies": "案例研究",
+      "webinars": "在线研讨会",
+      "apiDocs": "API 文档"
+    },
+    "companyLinks": {
+      "aboutUs": "关于我们",
+      "careers": "招聘",
+      "hiring": "招聘中",
+      "press": "新闻中心",
+      "contact": "联系我们",
+      "partners": "合作伙伴"
+    },
+    "legalLinks": {
+      "privacyPolicy": "隐私政策",
+      "termsOfService": "服务条款",
+      "cookiePolicy": "Cookie 政策",
+      "coppaCompliance": "COPPA 合规",
+      "ferpaCompliance": "FERPA 合规",
+      "accessibilityStatement": "无障碍声明"
+    },
+    "socialLabels": {
+      "facebook": "Facebook",
+      "twitter": "Twitter",
+      "instagram": "Instagram",
+      "linkedin": "LinkedIn",
+      "youtube": "YouTube"
+    },
+    "trustBadges": {
+      "ferpa": "FERPA 合规",
+      "coppa": "COPPA 认证",
+      "soc2": "SOC 2 Type II",
+      "wcag": "WCAG 2.1 AA"
+    },
+    "contactInfo": {
+      "email": "hello@aivolearning.com",
+      "phone": "1-800-AIVO-EDU",
+      "location": "明尼阿波利斯，明尼苏达州"
+    },
+    "newsletter": {
+      "subscriberBadge": "加入10,000+订阅者",
+      "heading": "关注AIVO最新动态",
+      "description": "获取最新功能更新、学习技巧和特惠信息，直接发送到您的收件箱。",
+      "placeholder": "请输入您的电子邮箱",
+      "subscribing": "订阅中...",
+      "subscribe": "订阅",
+      "successMessage": "感谢您的订阅！请查看您的收件箱。",
+      "errorMessage": "出了点问题，请重试。",
+      "privacyNote": "我们尊重您的隐私。您可以随时取消订阅。",
+      "privacyPolicyLink": "隐私政策",
+      "emailRequired": "请填写电子邮箱",
+      "emailInvalid": "请输入有效的电子邮箱地址"
+    },
+    "brandTagline": "为神经多样性学生提供AI驱动的个性化学习。支持ADHD、自闭症、阅读障碍及所有学习差异。",
+    "copyright": "© {year} AIVO Learning, Inc. 版权所有。",
+    "madeWith": "用心",
+    "forLearners": "为神经多样性学习者打造",
+    "sitemap": "网站地图",
+    "accessibility": "无障碍访问",
+    "cookiePreferences": "Cookie 偏好设置"
+  },
+  "about": {
+    "heroBadge": "我们的故事",
+    "heroHeadingPrefix": "我们的使命：",
+    "heroHeadingHighlight": "每一个头脑都很重要",
+    "heroDescription": "AIVO 由家长和教育工作者创立，他们相信神经多样性是一种优势，而非局限。我们正在构建个性化教育的未来——一次服务一位学习者。",
+    "founderBadge": "创立初衷",
+    "founderHeading": "源于亲身经历",
+    "founderParagraphs": [
+      "AIVO 始于一个简单的观察：传统教育体系往往无法满足神经多样性学习者的需求。不是因为这些学生不能学习，而是因为这个体系并非针对他们的思维方式而设计。",
+      "作为神经多样性儿童的家长和特殊教育专业人士，我们的创始团队亲身经历了这些挑战。我们看着聪明的孩子在千篇一律的课程中挣扎、失去信心、落后于同龄人。",
+      "我们知道一定有更好的方法。结合AI、教育和儿童发展方面的专业知识，我们着手创造一些革命性的东西：一个适应每个孩子独特思维的学习平台，而不是让孩子去适应平台。",
+      "如今，AIVO 已服务超过150个家庭，而我们才刚刚开始。"
+    ],
+    "founderQuote": ""每个孩子都值得以适合他们的方式来学习。"",
+    "founderAttribution": "— AIVO 创始团队",
+    "valuesBadge": "核心价值观",
+    "valuesHeading": "我们的坚守",
+    "valuesDescription": "这些原则指导着我们做出的每一个决策，从产品设计到客户支持。",
+    "values": [
+      {
+        "name": "以同理心为先",
+        "description": "每一项功能都以神经多样性学习者为中心进行设计。我们倾听、理解并适应。"
+      },
+      {
+        "name": "基于证据",
+        "description": "植根于特殊教育最佳实践、学习科学，以及通过数据进行的持续改进。"
+      },
+      {
+        "name": "社区驱动",
+        "description": "在家庭、教育工作者、治疗师和学习者本身的持续反馈中不断完善。"
+      },
+      {
+        "name": "隐私与安全",
+        "description": "致力于以银行级别的安全措施保护学习者数据。FERPA 和 COPPA 合规。"
+      }
+    ],
+    "advisoryBadge": "管理团队",
+    "advisoryHeading": "顾问委员会",
+    "advisoryDescription": "由医学、教育、商业和特殊教育倡导领域的专家提供指导。",
+    "advisors": [
+      {
+        "name": "Dr. Ike Osuji",
+        "role": "主席兼医学顾问",
+        "expertise": "家庭医学与儿童发展",
+        "bio": "执业家庭医师，拥有20多年支持神经多样性儿童及其家庭的经验。",
+        "avatar": "IO"
+      },
+      {
+        "name": "Dr. Patrick Ukata",
+        "role": "学术顾问",
+        "expertise": "教育心理学",
+        "bio": "约翰斯·霍普金斯大学教授，专注于学习差异和教育技术研究。",
+        "avatar": "PU"
+      },
+      {
+        "name": "Nnamdi Uzokwe",
+        "role": "战略顾问",
+        "expertise": "业务发展与运营",
+        "bio": "退役海军老兵兼医疗器械销售总监，在教育科技规模化方面拥有丰富经验。",
+        "avatar": "NU"
+      },
+      {
+        "name": "Edward Hamilton",
+        "role": "特殊教育顾问",
+        "expertise": "特殊教育倡导",
+        "bio": "9/11纽约市警察局第一响应者，特殊教育权利和无障碍访问的热情倡导者。",
+        "avatar": "EH"
+      }
+    ],
+    "pilotBadge": "试点项目",
+    "pilotHeading": "经过验证的成果",
+    "pilotDescription": "我们为期3个月的试点项目展示了学习成果的可衡量提升。",
+    "pilotStats": [
+      { "value": "150+", "label": "已服务学生" },
+      { "value": "4.9/5", "label": "家长满意度" },
+      { "value": "87%", "label": "参与度提升" },
+      { "value": "3 mo", "label": "见效时间" }
+    ],
+    "pilotTestimonial": {
+      "quote": "我们在学生身上看到的转变令人瞩目。AIVO理解每位学习者都是独一无二的，成果不言自明。",
+      "initials": "JM",
+      "author": "试点项目教育工作者",
+      "detail": "— 试点学校特殊教育总监"
+    },
+    "ctaHeading": "加入我们的使命",
+    "ctaDescription": "帮助我们构建一个让每位学习者都能获得专属教育的世界。",
+    "ctaPrimary": "加入抢先体验",
+    "ctaSecondary": "联系我们"
+  },
+  "pricingPage": {
+    "heroBadge": "价格方案",
+    "heroHeadingPrefix": "简单、透明的",
+    "heroHeadingHighlight": "价格方案",
+    "heroDescription": "选择适合您家庭需求的方案。所有方案均包含核心AI驱动学习体验，并提供14天免费试用。",
+    "monthly": "月付",
+    "annual": "年付",
+    "saveBadge": "节省50%",
+    "switchToMonthly": "切换为按月计费",
+    "switchToAnnual": "切换为按年计费",
+    "popularBadge": "最受欢迎",
+    "perMonth": "/月",
+    "billedAnnually": "按年计费（${amount}/年）",
+    "comparePlansHeading": "方案对比",
+    "comparePlansDescription": "详细了解每个方案包含的内容",
+    "featureTableHeaders": {
+      "feature": "功能",
+      "free": "免费版",
+      "pro": "专业版",
+      "premium": "高级版"
+    },
+    "featureComparison": {
+      "aiTutorSessions": { "label": "AI导师课程", "free": "5次/周", "pro": "无限次", "premium": "无限次" },
+      "subjectAreas": { "label": "学科领域", "free": "2个", "pro": "全部", "premium": "全部" },
+      "progressReports": { "label": "进度报告", "free": "基础版", "pro": "详细版", "premium": "高级版 + 导出" },
+      "iepIntegration": { "label": "IEP 集成" },
+      "parentDashboard": { "label": "家长仪表盘" },
+      "learnerProfiles": { "label": "学习者档案", "free": "1个", "pro": "1个", "premium": "最多5个" },
+      "learningStyleAssessment": { "label": "学习方式评估" },
+      "customLearningPaths": { "label": "自定义学习路径" },
+      "teacherTools": { "label": "教师工具" },
+      "dedicatedSuccessManager": { "label": "专属成功经理" },
+      "support": { "label": "支持", "free": "社区", "pro": "优先电子邮件", "premium": "7×24小时优先" },
+      "earlyFeatureAccess": { "label": "提前体验新功能" }
+    },
+    "trustBadges": ["FERPA & COPPA 合规", "14天免费试用", "家庭仪表盘", "IEP 集成"],
+    "faqHeading": "常见问题",
+    "faqs": [
+      { "question": "我可以随时更换方案吗？", "answer": "可以！您可以随时升级、降级或取消方案。更改将在下一个计费周期开始时生效。" },
+      { "question": "有免费试用吗？", "answer": "有的，专业版和高级版方案均提供14天免费试用。开始试用无需信用卡。" },
+      { "question": "计费方式是怎样的？", "answer": "您可以选择按月或按年计费。按年计费比按月计费节省50%。" },
+      { "question": "AIVO能同时支持多种学习差异吗？", "answer": "当然可以！AIVO专为支持ADHD、自闭症、阅读障碍及其他多种学习差异的学习者而设计，可同时提供支持。" },
+      { "question": "你们提供学校或学区定价吗？", "answer": "是的！我们为学校和学区提供特别定价。请联系我们的销售团队，获取为您的机构量身定制的报价。" },
+      { "question": "试用结束后会怎样？", "answer": "试用期结束时，您可以选择付费方案或继续使用免费版。未经您的同意，我们绝不会收费。" }
+    ],
+    "whyAivoBadge": "为什么选择 AIVO",
+    "whyAivoHeading": "为每一位学习者而打造",
+    "whyAivoDescription": "专为神经多样性学习者及支持他们的教育工作者设计的强大工具",
+    "educatorFeatures": [
+      { "title": "AI驱动自适应", "description": "内容根据每位学习者的节奏和方式实时调整" },
+      { "title": "可操作的分析", "description": "深入了解学习者的进度、优势和成长领域" },
+      { "title": "完整课程资源库", "description": "活动与K-12所有学科的标准和IEP目标对齐" },
+      { "title": "IEP 目标跟踪", "description": "通过可衡量的数据和可导出的报告跟踪IEP目标" },
+      { "title": "多感官学习", "description": "为每位学习者提供视觉、听觉和动觉活动" },
+      { "title": "即时反馈", "description": "实时指导让学习者保持积极性并保持在正轨上" }
+    ],
+    "moneyBack": {
+      "heading": "30天退款保证",
+      "description": "零风险试用。不满意全额退款。"
+    },
+    "enterpriseHeading": "需要学校或学区定价？",
+    "enterpriseDescription": "我们为学校、学区和机构提供定制方案。享受批量折扣和专属支持。",
+    "enterpriseCtaPrimary": "联系销售",
+    "enterpriseCtaSecondary": "申请演示"
+  },
+  "careers": {
+    "heroBadge": "我们在招聘！",
+    "heroHeadingPrefix": "帮助我们构建",
+    "heroHeadingHighlight": "全纳教育的未来",
+    "heroDescription": "加入一支充满热情的团队，致力于让每位学习者都能获得优质教育，无论他们的思维方式如何。",
+    "heroCtaPrimary": "查看开放职位",
+    "heroCtaSecondary": "了解我们",
+    "heroStats": [
+      { "value": "25+", "label": "团队成员" },
+      { "value": "100%", "label": "远程优先" },
+      { "value": "150+", "label": "已服务学生" },
+      { "value": "$5M", "label": "已融资" }
+    ],
+    "valuesHeading": "核心价值观",
+    "valuesDescription": "这些原则指导着我们的工作方式、决策过程以及彼此的相处。",
+    "values": [
+      { "title": "以同理心为先", "description": "我们为真实的人和真实的需求而设计。每一个决定都从理解用户开始。" },
+      { "title": "快速行动，更快学习", "description": "我们快速交付、收集反馈并迭代。失败是通往成功的垫脚石。" },
+      { "title": "多元视角", "description": "我们坚信最佳解决方案来自拥有不同背景和观点的团队。" },
+      { "title": "神经多样性倡导者", "description": "我们赞美各种类型的思维，并积极创造包容性的工作环境。" }
+    ],
+    "benefitsHeading": "福利待遇",
+    "benefitsDescription": "我们照顾好团队，让他们能专注于重要的事情。",
+    "benefits": [
+      { "title": "有竞争力的薪资", "description": "顶级薪酬加股权激励" },
+      { "title": "远程优先", "description": "在美国任何地方工作" },
+      { "title": "设备预算", "description": "$2,500 家庭办公预算" },
+      { "title": "学习预算", "description": "每年$1,500用于课程和会议" },
+      { "title": "无限带薪休假", "description": "在需要时休息" },
+      { "title": "健康与保健", "description": "全面医疗、牙科、视力保险 + 心理健康支持" }
+    ],
+    "positionsHeading": "开放职位",
+    "positionsDescription": "找到您的下一个角色，帮助我们创造改变。",
+    "hotBadge": "热门",
+    "noPositions": "该部门暂无开放职位。",
+    "departmentFilters": ["全部", "工程", "AI/ML", "设计", "内容", "客户成功", "市场营销"],
+    "positions": [
+      { "title": "高级全栈工程师", "department": "工程", "location": "远程（美国）", "type": "全职", "level": "高级", "posted": "2天前" },
+      { "title": "机器学习工程师", "department": "AI/ML", "location": "远程（美国）", "type": "全职", "level": "中高级", "posted": "1周前" },
+      { "title": "产品设计师", "department": "设计", "location": "远程（美国）", "type": "全职", "level": "高级", "posted": "3天前" },
+      { "title": "特殊教育课程设计师", "department": "内容", "location": "远程（美国）", "type": "全职", "level": "中级", "posted": "1周前" },
+      { "title": "客户成功经理", "department": "客户成功", "location": "远程（美国）", "type": "全职", "level": "中级", "posted": "2周前" },
+      { "title": "市场营销总监", "department": "市场营销", "location": "远程（美国）/ 旧金山湾区", "type": "全职", "level": "总监", "posted": "1天前" }
+    ],
+    "noFitHeading": "没有找到合适的职位？",
+    "noFitDescription": "我们一直在寻找优秀人才。请发送您的简历，我们会在未来有合适机会时与您联系。",
+    "noFitButton": "发送简历",
+    "noFitEmail": "careers@aivolearning.com",
+    "interviewHeading": "我们的面试流程",
+    "interviewDescription": "我们致力于让面试过程清晰、尊重且高效。",
+    "interviewSteps": [
+      { "title": "申请审核", "description": "我们将审核您的申请，并在5个工作日内回复您。", "duration": "3-5天" },
+      { "title": "初步电话交流", "description": "与我们的招聘团队进行30分钟的通话，了解您并解答您的问题。", "duration": "30分钟" },
+      { "title": "技术/岗位面试", "description": "深入考察与岗位相关的技能和经验。", "duration": "60分钟" },
+      { "title": "团队面试", "description": "与潜在的团队成员和跨职能合作伙伴会面。", "duration": "2-3小时" },
+      { "title": "发放录用通知", "description": "我们将发出录用邀请，欢迎您加入团队！", "duration": "🎉" }
+    ]
+  },
+  "contact": {
+    "heroBadge": "联系我们",
+    "heroHeading": "联系我们",
+    "heroDescription": "对AIVO有疑问？我们随时为您服务。请联系我们，我们会尽快回复。",
+    "contactInfo": {
+      "heading": "与我们联系",
+      "description": "选择最适合您的联系方式。我们通常在24小时内回复。",
+      "email": { "title": "电子邮箱", "values": ["hello@aivolearning.com", "support@aivolearning.com"] },
+      "phone": { "title": "电话", "values": ["1-800-AIVO-EDU", "(800) 248-6338"] },
+      "address": { "title": "地址", "values": ["123 Education Street", "Learning City, CA 94105"] },
+      "hours": { "title": "工作时间", "values": ["周一至周五：上午9点 - 下午6点（美东时间）", "周末：电子邮件支持"] }
+    },
+    "responseTime": {
+      "label": "平均响应时间",
+      "value": "工作日24小时内回复"
+    },
+    "form": {
+      "heading": "给我们留言",
+      "description": "请填写以下表单，我们将与您联系。",
+      "nameLabel": "您的姓名",
+      "namePlaceholder": "张明",
+      "emailLabel": "电子邮箱地址",
+      "emailPlaceholder": "john@example.com",
+      "topicLabel": "主题",
+      "messageLabel": "留言内容",
+      "messagePlaceholder": "我们能为您做些什么？",
+      "submitButton": "发送留言",
+      "submitting": "发送中...",
+      "privacyNotice": "提交此表单即表示您同意我们的",
+      "privacyPolicyLink": "隐私政策",
+      "required": "*"
+    },
+    "topicOptions": [
+      "请选择主题...",
+      "一般咨询",
+      "技术支持",
+      "销售与价格",
+      "合作机会",
+      "新闻与媒体",
+      "其他"
+    ],
+    "validation": {
+      "nameRequired": "请填写姓名",
+      "emailRequired": "请填写电子邮箱",
+      "emailInvalid": "请输入有效的电子邮箱地址",
+      "topicRequired": "请选择一个主题",
+      "messageRequired": "请填写留言内容",
+      "messageMinLength": "留言内容至少需要10个字符",
+      "submitFailed": "提交失败，请重试。"
+    },
+    "success": {
+      "heading": "留言已发送！",
+      "description": "感谢您的联系。我们已收到您的留言，将在24-48小时内回复。",
+      "sendAnother": "发送新留言",
+      "returnHome": "返回首页"
+    },
+    "quickLinks": {
+      "heading": "在寻找特定信息？",
+      "items": [
+        { "title": "帮助中心", "description": "浏览常见问题" },
+        { "title": "学校专区", "description": "企业解决方案" },
+        { "title": "合作伙伴", "description": "与我们合作" },
+        { "title": "新闻咨询", "description": "媒体联系" }
+      ],
+      "pressEmail": "press@aivolearning.com"
+    }
+  },
+  "forParents": {
+    "heroBadge": "家长专区",
+    "heroHeadingPrefix": "支持孩子的",
+    "heroHeadingHighlight": "独特旅程",
+    "heroDescription": "AIVO 由理解支持神经多样性学习者之挑战的家长打造。我们的AI驱动平台适应您孩子独特的思维方式 — 让他们学习、成长并茁壮发展。",
+    "heroCtaPrimary": "开始免费试用",
+    "heroCtaSecondary": "了解使用方法",
+    "heroCheckPoints": [
+      "无需信用卡",
+      "14天免费试用"
+    ],
+    "dashboardPreview": {
+      "studentName": "Emma的进度",
+      "onTrack": "进展顺利",
+      "thisWeek": "本周",
+      "thisWeekValue": "4.5小时",
+      "streak": "连续天数",
+      "streakValue": "12天",
+      "xpEarned": "获得经验值",
+      "xpValue": "2,450",
+      "newAchievement": "新成就！",
+      "achievementDetail": "Emma完成了"分数大师"并获得100点奖励经验值！",
+      "readingGoal": "阅读目标",
+      "readingGoalPercent": "85%",
+      "sessionComplete": "课程完成！",
+      "sessionDetail": "Emma学习了25分钟"
+    },
+    "benefitsBadge": "家长为什么喜欢AIVO",
+    "benefitsHeading": "终于找到有效的学习方式",
+    "benefitsDescription": "告别作业大战，结束挫败感。AIVO让学习成为孩子真正享受的事情。",
+    "benefits": [
+      { "title": "安心放心", "description": "您可以放心，孩子正在一个安全、支持性的环境中学习，这个环境专为他们的独特需求而设计。没有挫败感，没有眼泪。" },
+      { "title": "节省时间", "description": "不再需要四处寻找合适的资源。AIVO自动创建个性化课程，让您有更多自己的时间。" },
+      { "title": "追踪进度", "description": "精美的仪表盘准确展示孩子的成长情况。庆祝每一次进步，发现需要支持的领域。" },
+      { "title": "专家支持", "description": "获取资源、建议以及由理解您旅程的家长组成的社区。您永远不会孤单。" }
+    ],
+    "featuresBadge": "平台功能",
+    "featuresHeading": "您需要的一切",
+    "featuresDescription": "专为神经多样性学习者的家长设计的强大工具。",
+    "features": [
+      { "title": "个性化AI导师", "description": "您的孩子拥有自己的Virtual Brain，了解他们的思维方式。" },
+      { "title": "IEP 目标追踪", "description": "导入IEP目标，通过详细报告自动跟踪进度。" },
+      { "title": "实时通知", "description": "当孩子达成里程碑或需要支持时，立即获取通知。" },
+      { "title": "教师沟通", "description": "与教育工作者无缝共享进度，实现协调支持。" },
+      { "title": "完整课程", "description": "数学、阅读、科学等学科——全部根据孩子的水平进行调整。" },
+      { "title": "激励系统", "description": "奖励、徽章和庆祝活动让您的孩子保持参与和兴奋。" }
+    ],
+    "testimonialsBadge": "家长故事",
+    "testimonialsHeading": "来自和您一样的家庭",
+    "testimonialsDescription": "听听通过AIVO改变了孩子学习体验的家长们怎么说。",
+    "testimonials": [
+      { "quote": "我患有ADHD的儿子第一次主动要求学习时间。AIVO以学校从未做到的方式理解他。", "author": "试点家长", "child": "儿子，8岁，ADHD" },
+      { "quote": "IEP追踪对我们家庭来说是一个巨大的改变。我可以向学校展示Emma在家取得了多大的进步。", "author": "试点家庭", "child": "女儿，10岁，阅读障碍" },
+      { "quote": "我女儿在自闭症谱系上，需要可预测性。AIVO一致的日常安排和视觉计划减少了她对学习的焦虑。", "author": "试点家长", "child": "女儿，7岁，ASD" }
+    ],
+    "ctaHeading": "准备好看到您的孩子茁壮成长了吗？",
+    "ctaDescription": "加入那些发现了更好方式来支持神经多样性学习者的家长们。",
+    "ctaButton": "开始免费试用",
+    "ctaFooter": "无需信用卡 • 随时取消"
+  },
+  "forTeachers": {
+    "heroBadge": "教师专区",
+    "heroHeadingPrefix": "轻松实现",
+    "heroHeadingHighlight": "差异化教学",
+    "heroDescription": "AIVO的AI驱动平台帮助您满足每位学生的实际需求。个性化学习路径、IEP目标跟踪和实时洞察——不增加额外工作量。",
+    "heroCtaPrimary": "预约演示",
+    "heroCtaSecondary": "探索功能",
+    "heroCheckPoints": [
+      "个人教师免费使用",
+      "提供学校定价"
+    ],
+    "dashboardPreview": {
+      "title": "班级概览 - 第3课时",
+      "studentsBadge": "24名学生",
+      "onTrack": "18",
+      "onTrackLabel": "进展顺利",
+      "needsSupport": "4",
+      "needsSupportLabel": "需要支持",
+      "excelling": "2",
+      "excellingLabel": "表现优异",
+      "studentA": "学生A",
+      "studentADetail": "正在学习分数",
+      "studentB": "学生B",
+      "studentBDetail": "已完成第4章",
+      "studentC": "学生C",
+      "studentCDetail": "需要干预",
+      "iepBadge": "IEP"
+    },
+    "stats": [
+      { "value": "50%", "label": "减少备课时间" },
+      { "value": "3x", "label": "更多一对一时间" },
+      { "value": "94%", "label": "教师满意度" },
+      { "value": "100%", "label": "IEP 对齐" }
+    ],
+    "benefitsBadge": "教师为什么选择AIVO",
+    "benefitsHeading": "更多教学，更少文书",
+    "benefitsDescription": "AIVO处理个性化和文档工作，让您专注于最擅长的事情——教学。",
+    "benefits": [
+      { "title": "差异化教学", "description": "每位学生根据其学习档案、IEP目标和表现自动获得个性化内容。" },
+      { "title": "课堂洞察", "description": "实时仪表盘显示全班进度、个人成长以及学生需要额外支持的领域。" },
+      { "title": "标准对齐", "description": "所有内容与各州标准和共同核心标准对齐。轻松融入您现有的课程体系。" },
+      { "title": "IEP 支持", "description": "跟踪IEP目标、生成进度报告和记录辅助措施——全部在一个平台完成。" }
+    ],
+    "featuresBadge": "课堂工具",
+    "featuresHeading": "为教育工作者打造",
+    "featuresDescription": "由教师设计、为教师服务的强大功能。",
+    "features": [
+      { "title": "班级管理", "description": "轻松将学生分组、布置活动和管理名册。" },
+      { "title": "进度分析", "description": "通过图表可视化学习数据，展示掌握程度、参与度和成长。" },
+      { "title": "AI智能推荐", "description": "获取针对每位学生的干预策略和后续步骤建议。" },
+      { "title": "节省时间", "description": "通过AI生成的个性化内容，将备课时间减少50%。" },
+      { "title": "自定义调整", "description": "为个别学生调整难度、进度和辅助措施。" },
+      { "title": "FERPA 合规", "description": "学生数据受到企业级安全和隐私控制的保护。" }
+    ],
+    "testimonialsBadge": "教师故事",
+    "testimonialsHeading": "深受教师信赖",
+    "testimonialsDescription": "听听在课堂中使用AIVO的教育工作者怎么说。",
+    "testimonials": [
+      { "quote": "AIVO彻底改变了我支持IEP学生的方式。自动进度跟踪每周为我节省数小时的文档工作。", "author": "试点教育工作者", "role": "特殊教育教师", "experience": "12年" },
+      { "quote": "我第一次能够在融合课堂中真正实现每位学生的差异化教学。AIVO处理个性化工作，让我专注于教学。", "author": "试点教育工作者", "role": "三年级教师", "experience": "8年" }
+    ],
+    "ctaHeading": "准备好改变您的课堂了吗？",
+    "ctaDescription": "预约演示，了解AIVO如何帮助您支持每位学习者。",
+    "ctaButtonPrimary": "预约演示",
+    "ctaButtonSecondary": "学校与学区方案"
+  },
+  "terms": {
+    "metaTitle": "服务条款 | AIVO Learning",
+    "metaDescription": "AIVO Learning 服务条款 - 使用我们AI驱动教育平台的条款和条件。",
+    "badge": "法律信息",
+    "heading": "服务条款",
+    "lastUpdated": "最后更新：",
+    "lastUpdatedDate": "2025年12月19日",
+    "effective": "生效日期：",
+    "effectiveDate": "2025年12月19日",
+    "sections": {
+      "agreementToTerms": { "title": "1. 条款同意" },
+      "descriptionOfService": { "title": "2. 服务描述" },
+      "userAccounts": { "title": "3. 用户账户", "subs": ["账户创建", "未成年人账户", "账户终止"] },
+      "acceptableUse": { "title": "4. 可接受的使用" },
+      "intellectualProperty": { "title": "5. 知识产权", "subs": ["我们的内容", "您的内容", "许可使用"] },
+      "subscriptionAndPayment": { "title": "6. 订阅与付款", "subs": ["定价", "计费", "取消", "免费试用", "退款"] },
+      "educationalDisclaimer": { "title": "7. 教育内容免责声明" },
+      "limitationOfLiability": { "title": "8. 责任限制" },
+      "disclaimerOfWarranties": { "title": "9. 免责声明" },
+      "indemnification": { "title": "10. 赔偿条款" },
+      "termination": { "title": "11. 终止", "subs": ["由您终止", "由我们终止", "终止的效果"] },
+      "disputeResolution": { "title": "12. 争议解决", "subs": ["非正式解决", "仲裁", "集体诉讼弃权", "例外情况"] },
+      "changesToTerms": { "title": "13. 条款变更" },
+      "governingLaw": { "title": "14. 管辖法律" },
+      "severability": { "title": "15. 可分割性" },
+      "entireAgreement": { "title": "16. 完整协议" },
+      "contactInformation": { "title": "17. 联系信息" }
+    },
+    "contactBlock": {
+      "department": "法律部门",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "电子邮箱：",
+      "email": "legal@aivolearning.com"
+    },
+    "backToHome": "← 返回首页"
+  },
+  "privacy": {
+    "metaTitle": "隐私政策 | AIVO Learning",
+    "metaDescription": "AIVO Learning 隐私政策 - 了解我们如何收集、使用和保护您的个人信息。FERPA 和 COPPA 合规。",
+    "badge": "法律信息",
+    "heading": "隐私政策",
+    "lastUpdated": "最后更新：",
+    "lastUpdatedDate": "2025年12月19日",
+    "sections": {
+      "introduction": "简介",
+      "informationWeCollect": "我们收集的信息",
+      "accountInformation": "账户信息",
+      "learningData": "学习数据",
+      "technicalData": "技术数据",
+      "childrensPrivacy": "儿童隐私（COPPA 合规）",
+      "parentalConsent": "家长同意",
+      "informationFromChildren": "来自儿童的信息",
+      "parentalRights": "家长权利",
+      "howWeUse": "我们如何使用您的信息",
+      "dataSecurity": "数据安全",
+      "ferpaCompliance": "FERPA 合规",
+      "yourRights": "您的权利",
+      "dataRetention": "数据保留",
+      "thirdPartyServices": "第三方服务",
+      "changesToPolicy": "政策变更",
+      "contactUs": "联系我们"
+    },
+    "contactBlock": {
+      "department": "数据保护官",
+      "company": "AIVO Learning, Inc.",
+      "emailLabel": "电子邮箱：",
+      "email": "privacy@aivolearning.com"
+    },
+    "backToHome": "← 返回首页"
+  },
+  "cookies": {
+    "metaTitle": "Cookie 政策 | AIVO Learning",
+    "metaDescription": "了解AIVO Learning如何使用Cookie和类似技术来改善您的体验。",
+    "badge": "法律信息",
+    "heading": "Cookie 政策",
+    "lastUpdated": "最后更新：",
+    "lastUpdatedDate": "2025年12月19日",
+    "quickSummary": {
+      "heading": "快速摘要",
+      "points": [
+        "我们使用Cookie使AIVO正常运行并改善您的体验",
+        "基本Cookie是平台正常运行所必需的",
+        "您可以通过浏览器或我们的偏好设置控制可选Cookie",
+        "我们从不使用Cookie出于广告目的追踪儿童"
+      ]
+    },
+    "whatAreCookies": {
+      "heading": "什么是Cookie？",
+      "paragraphs": [
+        "Cookie是访问网站时存放在您设备上的小型文本文件。它们被广泛用于使网站更高效地运行并向网站所有者提供信息。",
+        "我们还使用类似的技术，如本地存储和会话存储，它们的工作方式与Cookie类似。当我们在本政策中提到"Cookie"时，也包括这些类似技术。"
+      ]
+    },
+    "typesHeading": "我们使用的Cookie类型",
+    "types": {
+      "essential": {
+        "title": "基本Cookie",
+        "badge": "必需",
+        "description": "这些Cookie是网站正常运行所必需的。它们支持安全性、身份验证和无障碍访问等核心功能。",
+        "examplesLabel": "示例：",
+        "examples": [
+          "保持您登录状态的会话Cookie",
+          "防止欺诈的安全Cookie",
+          "无障碍设置的偏好Cookie",
+          "性能优化的负载均衡Cookie"
+        ]
+      },
+      "analytics": {
+        "title": "分析Cookie",
+        "badge": "可选",
+        "description": "这些Cookie通过匿名收集和报告信息，帮助我们了解访问者如何与网站互动。这有助于我们改进平台。",
+        "examplesLabel": "示例：",
+        "examples": [
+          "页面浏览统计",
+          "功能使用模式",
+          "用于调试的错误跟踪",
+          "性能监控"
+        ]
+      },
+      "functional": {
+        "title": "功能Cookie",
+        "badge": "可选",
+        "description": "这些Cookie支持增强的功能和个性化设置，例如记住您的偏好和设置。",
+        "examplesLabel": "示例：",
+        "examples": [
+          "语言偏好",
+          "主题设置（亮色/暗色模式）",
+          "最近浏览的内容",
+          "自定义仪表盘布局"
+        ]
+      },
+      "marketing": {
+        "title": "营销Cookie",
+        "badge": "可选",
+        "description": "这些Cookie用于跨网站跟踪访问者以显示相关广告。",
+        "note": "注意：我们不在儿童可访问的页面上使用营销Cookie。",
+        "examplesLabel": "示例：",
+        "examples": [
+          "营销活动的转化跟踪",
+          "社交媒体分享功能",
+          "再营销像素（仅限成人页面）"
+        ],
+        "coppaNote": "营销Cookie从不在学习者仪表盘或任何面向儿童的界面上使用。"
+      }
+    },
+    "cookieTable": {
+      "heading": "我们使用的具体Cookie",
+      "headers": { "name": "Cookie 名称", "provider": "提供者", "purpose": "用途", "duration": "持续时间", "type": "类型" },
+      "cookies": [
+        { "name": "aivo_session", "provider": "AIVO", "purpose": "用户身份验证", "duration": "会话", "type": "基本" },
+        { "name": "aivo_csrf", "provider": "AIVO", "purpose": "安全令牌", "duration": "会话", "type": "基本" },
+        { "name": "aivo_preferences", "provider": "AIVO", "purpose": "用户偏好", "duration": "1年", "type": "功能" },
+        { "name": "_ga", "provider": "Google", "purpose": "数据分析", "duration": "2年", "type": "分析" },
+        { "name": "_gid", "provider": "Google", "purpose": "数据分析", "duration": "24小时", "type": "分析" },
+        { "name": "intercom-*", "provider": "Intercom", "purpose": "客户支持", "duration": "9个月", "type": "功能" }
+      ]
+    },
+    "managing": {
+      "heading": "管理您的Cookie偏好",
+      "description": "您有多种方式管理Cookie：",
+      "preferencesCenter": {
+        "heading": "1. Cookie偏好中心",
+        "description": "您可以随时通过点击下方按钮或网站页脚的"Cookie偏好设置"链接来管理您的Cookie偏好。",
+        "button": "管理Cookie偏好"
+      },
+      "browserSettings": {
+        "heading": "2. 浏览器设置",
+        "description": "大多数网络浏览器允许您通过设置控制Cookie。以下是常见浏览器的Cookie设置链接：",
+        "browsers": ["Chrome", "Firefox", "Safari", "Edge"]
+      },
+      "optOutTools": {
+        "heading": "3. 退出工具",
+        "description": "您可以使用以下工具退出某些第三方Cookie：",
+        "tools": ["Google Analytics 退出", "NAI 退出", "DAA 退出"]
+      },
+      "warning": {
+        "noteLabel": "注意：",
+        "text": "阻止基本Cookie可能导致您无法使用AIVO平台的某些功能，例如登录或保存进度。"
+      }
+    },
+    "changes": {
+      "heading": "政策变更",
+      "paragraphs": [
+        "我们可能会不时更新本Cookie政策。当我们进行更改时，会更新页面顶部的"最后更新"日期。我们建议您定期查看本政策。",
+        "对于重大变更，我们可能还会提供额外通知，例如在网站上显示横幅或发送电子邮件通知。"
+      ]
+    },
+    "contactHeading": "联系我们",
+    "contactDescription": "如果您对我们使用Cookie有任何疑问，请联系我们：",
+    "contactEmailLabel": "电子邮箱：",
+    "contactEmail": "privacy@aivolearning.com",
+    "backToHome": "← 返回首页"
+  },
+  "faq": {
+    "metaTitle": "常见问题 | AIVO Learning",
+    "metaDescription": "查找关于AIVO Learning的常见问题解答，包括我们面向神经多样性学生的AI辅导平台、价格、功能和实施方案。",
+    "ogTitle": "常见问题 - AIVO Learning",
+    "ogDescription": "关于为神经多样性学生提供AI个性化学习的常见问题",
+    "heading": "常见问题",
+    "description": "查找关于AIVO Learning、我们的AI辅导平台以及我们如何支持神经多样性学习者的常见问题解答。",
+    "categories": {
+      "aboutAivo": {
+        "title": "关于AIVO",
+        "items": [
+          { "question": "什么是AIVO Learning？", "answer": "AIVO Learning是一个AI驱动的个性化学习平台，专为神经多样性K-12学生设计。我们使用Virtual Brain AI导师，适应每位学生独特的学习方式、节奏和需求。我们的平台支持ADHD、自闭症、阅读障碍、计算障碍及其他学习差异的学生。" },
+          { "question": "什么是Virtual Brain？", "answer": "Virtual Brain是AIVO的个性化AI导师，能够适应每位学生最佳的学习方式。它跟踪学习模式、偏好、优势和挑战，为学生创建定制化的学习体验。可以将它想象为一位专属导师，完全理解您的孩子如何思考和学习。" },
+          { "question": "AIVO只适合神经多样性学生吗？", "answer": "虽然AIVO是以神经多样性学习者为核心设计的，但我们的自适应技术对所有学生都有益。每位学习者都是独特的，无论是否有确诊的学习差异，AIVO都会为每个人提供个性化教育。" }
+        ]
+      },
+      "featuresCapabilities": {
+        "title": "功能与能力",
+        "items": [
+          { "question": "AIVO支持哪些学习差异？", "answer": "AIVO为ADHD、自闭症谱系障碍、阅读障碍、计算障碍、书写障碍、执行功能挑战及其他学习差异提供专门支持。每种情况都有专属功能，如ADHD的专注模式、自闭症的视觉日程、阅读障碍的文字转语音以及计算障碍的视觉数学等。" },
+          { "question": "AIVO能帮助实现IEP目标吗？", "answer": "当然可以！AIVO包含实时IEP目标跟踪和进度监测。教师可以将课程与IEP目标对齐，跟踪学生朝目标的进展，并为IEP会议生成详细报告。平台会自动收集数据点，展示特定目标的进展情况。" },
+          { "question": "AIVO教授哪些科目？", "answer": "AIVO涵盖所有核心K-12学科，包括数学、阅读/英语语言艺术、写作、科学和社会研究。我们还提供社会情感学习（SEL）、执行功能训练和生活技能模块。所有内容均与标准对齐，并适应每位学生的年级水平和能力。" },
+          { "question": "AIVO全天候可用吗？", "answer": "是的！AIVO的AI导师全天候可用，提供作业帮助、练习和学习支持。学生可以随时按照自己的节奏学习。我们团队的人工支持在美东时间上午8点至晚上8点提供，处理技术问题和实施方面的咨询。" },
+          { "question": "AIVO具备无障碍访问功能吗？", "answer": "绝对如此。AIVO按照WCAG 2.1 AA级无障碍标准构建。我们提供文字转语音、语音转文字、可调字体和颜色、键盘导航、屏幕阅读器支持、字幕、高对比度模式等功能。无障碍访问是我们设计的核心。" }
+        ]
+      },
+      "privacySecurity": {
+        "title": "隐私与安全",
+        "items": [
+          { "question": "我孩子的数据安全吗？", "answer": "是的。AIVO符合FERPA和COPPA规定。我们使用端到端加密，绝不出售学生数据，绝不展示广告，并遵循严格的数据保护协议。我们承诺遵守《学生隐私承诺》，并正在申请SOC 2 Type II认证。" },
+          { "question": "谁可以查看我孩子的学习数据？", "answer": "只有您（家长/监护人）、您孩子的指定教师和必要的学校管理人员才能访问您孩子的学习数据。数据绝不与第三方共享。家长拥有完全控制权，可以随时请求删除数据。" },
+          { "question": "你们会出售学生数据或展示广告吗？", "answer": "不会，绝不会。AIVO不会出售、出租或与任何第三方共享学生数据。我们不展示广告。我们的收入完全来自订阅服务，而非将用户数据变现。" }
+        ]
+      },
+      "pricingPlans": {
+        "title": "价格与方案",
+        "items": [
+          { "question": "AIVO的价格是多少？", "answer": "AIVO提供多种方案：免费版（功能有限）、家庭版（$29/月，最多3名学生）、课堂版（$15/学生/月）以及学校/学区定制定价。所有付费方案均包含30天免费试用，无需信用卡。" },
+          { "question": "有免费试用吗？", "answer": "有的！所有付费方案均包含30天免费试用，可以体验所有功能。开始试用无需信用卡。试用期间可随时取消，不会产生任何费用。" },
+          { "question": "我可以获得AIVO的资金或拨款吗？", "answer": "可以，许多学校使用IDEA资金、Title I资金、ESSER资金或特殊教育预算来支付AIVO费用。我们提供拨款申请的文档和支持。请联系我们的销售团队了解资金选项。" },
+          { "question": "多名学生有折扣吗？", "answer": "有的。我们的家庭版方案以$29/月的价格覆盖最多3名学生（相比个人订阅有显著节省）。学校和学区享受批量折扣。非营利组织和Title I学校可能有资格获得额外折扣。" }
+        ]
+      },
+      "implementationSetup": {
+        "title": "实施与设置",
+        "items": [
+          { "question": "实施需要多长时间？", "answer": "个人家庭：15分钟。课堂：1-2天，包括名册设置和培训。学校/学区：2-4周，包括名册导入、培训和专业发展。我们提供全程实施支持。" },
+          { "question": "AIVO能与Google Classroom集成吗？", "answer": "可以！AIVO与Google Classroom无缝集成，支持自动名册同步、作业发布和成绩回传。我们还与Canvas、Schoology、Clever和ClassLink集成。" },
+          { "question": "AIVO支持哪些设备？", "answer": "AIVO可在任何现代设备上使用：Chromebook、iPad、平板电脑、Windows/Mac电脑和智能手机。我们提供网页应用（Chrome、Safari、Firefox、Edge）以及iOS和Android移动应用。我们还提供AIVO Pad，我们专门打造的学习平板。" },
+          { "question": "需要特殊设备吗？", "answer": "不需要任何特殊设备！AIVO可在标准设备和网络连接下使用。可选配件：用于音频内容的耳机、用于书写活动的触控笔、用于某些互动功能的摄像头。" }
+        ]
+      },
+      "forEducators": {
+        "title": "教师专区",
+        "items": [
+          { "question": "AIVO如何帮助教师节省时间？", "answer": "AIVO自动化了差异化教学、进度监测和数据收集。教师反馈表示每周在备课和评估上节省5-10小时。平台处理个性化工作，教师可以专注于高影响力的教学和师生关系。" },
+          { "question": "教师可以创建自定义内容吗？", "answer": "可以！教师可以创建自定义课程、作业和评估。您还可以从AIVO资源库策划内容、导入现有教材，或使用AI辅助生成改编后的内容。" },
+          { "question": "教师会接受什么样的培训？", "answer": "我们提供全面的培训，包括视频教程、互动式入门引导、在线研讨会和持续的专业发展。大多数教师在1-2周内即可熟练使用AIVO。还提供认证课程。" }
+        ]
+      },
+      "resultsEffectiveness": {
+        "title": "成果与成效",
+        "items": [
+          { "question": "学生使用AIVO会看到什么成果？", "answer": "使用AIVO的学生平均在一个学年内实现1.5年的学习增长。87%的学生每天保持参与，94%的家长反馈孩子在学习上更加自信和独立。具体效果因人而异。" },
+          { "question": "AIVO是基于研究的吗？", "answer": "是的。AIVO基于循证实践构建，包括通用学习设计（UDL）、差异化教学、多感官教学、间隔重复和认知负荷理论。我们与研究机构合作，持续验证我们的方法。" },
+          { "question": "多快能看到进步？", "answer": "大多数家庭在第一周内就会注意到参与度的提升。可衡量的学业进步通常在持续使用4-6周后（每周3-4次）显现。长期收益随着使用时间的增长而不断累积。" }
+        ]
+      }
+    },
+    "contactHeading": "还有其他问题？",
+    "contactDescription": "我们的团队随时为您服务。请联系我们，我们将在24小时内回复。",
+    "contactCtaPrimary": "联系我们",
+    "contactCtaSecondary": "预约演示"
+  },
+  "sitemapPage": {
+    "metaTitle": "网站地图 | AIVO Learning",
+    "metaDescription": "浏览AIVO Learning网站的所有页面。查找功能、资源、法律页面等。",
+    "badge": "导航",
+    "heading": "网站地图",
+    "description": "浏览AIVO Learning网站。",
+    "categories": {
+      "mainPages": {
+        "title": "主要页面",
+        "links": ["首页", "关于我们", "联系我们", "价格方案", "使用方法", "预约演示"]
+      },
+      "featuresSolutions": {
+        "title": "功能与解决方案",
+        "links": ["全部功能", "家长专区", "教师专区", "学生专区", "学校专区", "学区专区", "在家教育", "AIVO Pad"],
+        "aivoPadBadge": "全新"
+      },
+      "resources": {
+        "title": "资源",
+        "links": ["帮助中心", "博客", "研究", "案例研究", "在线研讨会", "API 文档"]
+      },
+      "company": {
+        "title": "公司",
+        "links": ["关于我们", "招聘", "新闻中心", "合作伙伴", "联系我们"],
+        "careersBadge": "招聘中"
+      },
+      "legal": {
+        "title": "法律信息",
+        "links": ["隐私政策", "服务条款", "Cookie 政策", "COPPA 合规", "FERPA 合规", "无障碍声明"]
+      },
+      "account": {
+        "title": "账户",
+        "links": ["登录", "注册", "仪表盘"]
+      }
+    },
+    "xmlSitemapPrefix": "寻找我们面向搜索引擎的XML网站地图？",
+    "xmlSitemapLink": "查看 sitemap.xml"
+  },
+  "common": {
+    "learnMore": "了解更多",
+    "contactUs": "联系我们",
+    "getStarted": "立即开始",
+    "startFreeTrial": "开始免费试用",
+    "scheduleDemo": "预约演示",
+    "watchDemo": "观看演示",
+    "backToHome": "← 返回首页",
+    "coppaLabel": "COPPA 合规",
+    "ferpaLabel": "FERPA 合规"
+  }
+}
