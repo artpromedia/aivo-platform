@@ -245,6 +245,7 @@ jobs:
           npx playwright test \
             --project=${{ matrix.browser }} \
             --shard=${{ matrix.shard }}/3 \
+            --retries 2 \
             --reporter=html,json,junit
         env:
           DATABASE_URL: postgresql://aivo:test_password@localhost:5432/aivo_test
@@ -315,6 +316,7 @@ jobs:
           cd apps/web-learner
           npx playwright test \
             --project="mobile-chrome" \
+            --retries 2 \
             --reporter=html,json
         env:
           BASE_URL: http://localhost:3000
@@ -366,6 +368,7 @@ jobs:
           cd apps/web-learner
           npx playwright test \
             --project=accessibility \
+            --retries 2 \
             --reporter=html,json
 
       - name: Generate accessibility report

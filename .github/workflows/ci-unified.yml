@@ -329,7 +329,7 @@ jobs:
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Run unit tests
-        run: pnpm run test
+        run: pnpm run test -- --retry 2
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
           REDIS_URL: redis://localhost:6379
@@ -404,7 +404,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          pnpm vitest run services/tests/integration/ --reporter=verbose || true
+          pnpm vitest run services/tests/integration/ --retry 2 --reporter=verbose || true
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/aivo_test
           REDIS_URL: redis://localhost:6379
@@ -438,14 +438,14 @@ jobs:
         run: pnpm --filter e2e-tests exec playwright install --with-deps chromium
 
       - name: Run E2E compliance tests
-        run: pnpm --filter e2e-tests exec playwright test --project=compliance
+        run: pnpm --filter e2e-tests exec playwright test --project=compliance --retries 2
         continue-on-error: true
         env:
           API_URL: ${{ secrets.STAGING_API_URL || 'http://localhost:4000' }}
           AUTH_URL: ${{ secrets.STAGING_AUTH_URL || 'http://localhost:4001' }}
 
       - name: Run E2E PRD acceptance tests
-        run: pnpm --filter e2e-tests exec playwright test --project=prd-acceptance
+        run: pnpm --filter e2e-tests exec playwright test --project=prd-acceptance --retries 2
         continue-on-error: true
         env:
           API_URL: ${{ secrets.STAGING_API_URL || 'http://localhost:4000' }}

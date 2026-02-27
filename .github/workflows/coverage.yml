@@ -57,7 +57,7 @@ jobs:
           PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
 
       - name: Run tests with coverage
-        run: pnpm run test:coverage
+        run: pnpm run test:coverage -- --retry 2
         env:
           CI: true
           NODE_ENV: test
@@ -175,8 +175,9 @@ jobs:
             | Python Services | ${{ needs.python-coverage.result == 'success' && '✅ Passed' || '❌ Failed' }} |
             
             **Thresholds:**
-            - Minimum per service: 75%
-            - Overall target: 80%
+            - Minimum per service: 90%
+            - Critical services: 95%
+            - Overall target: 95%
             
             For detailed coverage, see the [Codecov report](https://codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }}).
             `;

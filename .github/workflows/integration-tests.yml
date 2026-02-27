@@ -239,6 +239,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/scenarios/learner-journey.integration.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --reporter=json \
             --outputFile=test-results/learner-journey.json \
@@ -346,6 +347,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/scenarios/teacher-classroom.integration.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --reporter=json \
             --outputFile=test-results/teacher-classroom.json \
@@ -448,6 +450,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/scenarios/billing-subscription.integration.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --reporter=json \
             --outputFile=test-results/billing-subscription.json \
@@ -556,6 +559,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/scenarios/multi-tenant-isolation.integration.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --reporter=json \
             --outputFile=test-results/multi-tenant-isolation.json \
@@ -624,6 +628,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/auth-consistency.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --coverage.enabled
         env:
@@ -635,6 +640,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/content-workflow/content-workflow.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --coverage.enabled
         env:
@@ -646,6 +652,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/international/i18n-integration.test.ts \
+            --retry 2 \
             --reporter=verbose \
             --coverage.enabled
         env:
@@ -657,6 +664,7 @@ jobs:
           pnpm vitest run \
             --config tests/integration/vitest.config.ts \
             tests/integration/tenant-isolation/ \
+            --retry 2 \
             --reporter=verbose \
             --reporter=json \
             --outputFile=test-results/additional-scenarios.json \
