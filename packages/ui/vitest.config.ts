@@ -18,6 +18,13 @@ export default defineConfig({
         '**/*.stories.tsx',
         '**/*.d.ts',
       ],
+    
+      thresholds: {
+        lines: 90,
+        branches: 85,
+        functions: 90,
+        statements: 90,
+      },
     },
   },
   resolve: {
