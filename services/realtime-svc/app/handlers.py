@@ -387,6 +387,10 @@ class MessageHandler:
             MessageType.UNSUBSCRIBE_ROOM: self._handle_unsubscribe_room,
             MessageType.CHAT: self._handle_chat,
             MessageType.PRESENCE_UPDATE: self._handle_presence_update,
+            MessageType.TUTOR_JOIN: self._handle_tutor_join,
+            MessageType.TUTOR_LEAVE: self._handle_tutor_leave,
+            MessageType.TUTOR_MESSAGE: self._handle_tutor_message,
+            MessageType.TUTOR_TYPING: self._handle_tutor_typing,
         }
 
         logger.info("MessageHandler initialized")
@@ -715,6 +719,116 @@ class MessageHandler:
                 ),
                 exclude=[connection_id],
             )
+
+    # ════════════════════════════════════════════════════════════════════════
+    # TUTOR SESSION HANDLERS
+    # ════════════════════════════════════════════════════════════════════════
+
+    async def _handle_tutor_join(
+        self,
+        connection_id: str,
+        message: WebSocketMessage,
+    ) -> None:
+        """Handle tutor session join."""
+        session_id = message.payload.get("sessionId")
+        if not session_id:
+            await self._send_error(connection_id, "MISSING_SESSION_ID", "sessionId is required")
+            return
+
+        info = self.manager.get_connection(connection_id)
+        if not info:
+            return
+
+        # Join tutor-specific room
+        room_id = f"tutor:{session_id}"
+        await self.manager.join_room(connection_id, room_id)
+
+        logger.info(
+            "Learner joined tutor session",
+            connection_id=connection_id,
+            learner_id=info.learner_id,
+            tutor_session_id=session_id,
+        )
+
+    async def _handle_tutor_leave(
+        self,
+        connection_id: str,
+        message: WebSocketMessage,
+    ) -> None:
+        """Handle tutor session leave."""
+        session_id = message.payload.get("sessionId")
+        if not session_id:
+            return
+
+        room_id = f"tutor:{session_id}"
+        await self.manager.leave_room(connection_id, room_id)
+
+        logger.info(
+            "Learner left tutor session",
+            connection_id=connection_id,
+            tutor_session_id=session_id,
+        )
+
+    async def _handle_tutor_message(
+        self,
+        connection_id: str,
+        message: WebSocketMessage,
+    ) -> None:
+        """Handle tutor chat message broadcast."""
+        session_id = message.payload.get("sessionId")
+        content = message.payload.get("content")
+
+        if not session_id or not content:
+            await self._send_error(connection_id, "INVALID_TUTOR_MESSAGE", "sessionId and content required")
+            return
+
+        info = self.manager.get_connection(connection_id)
+        if not info:
+            return
+
+        room_id = f"tutor:{session_id}"
+        await self.manager.broadcast_to_room(
+            room_id,
+            WebSocketMessage(
+                type=MessageType.TUTOR_MESSAGE,
+                payload={
+                    "sessionId": session_id,
+                    "senderId": info.learner_id,
+                    "content": content,
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+            ),
+        )
+
+    async def _handle_tutor_typing(
+        self,
+        connection_id: str,
+        message: WebSocketMessage,
+    ) -> None:
+        """Handle tutor typing indicator."""
+        session_id = message.payload.get("sessionId")
+        is_typing = message.payload.get("isTyping", False)
+
+        if not session_id:
+            return
+
+        info = self.manager.get_connection(connection_id)
+        if not info:
+            return
+
+        room_id = f"tutor:{session_id}"
+        await self.manager.broadcast_to_room(
+            room_id,
+            WebSocketMessage(
+                type=MessageType.TUTOR_TYPING,
+                payload={
+                    "sessionId": session_id,
+                    "senderId": info.learner_id,
+                    "isTyping": is_typing,
+                },
+            ),
+            exclude=[connection_id],
+        )
 
     async def _send_error(
         self,

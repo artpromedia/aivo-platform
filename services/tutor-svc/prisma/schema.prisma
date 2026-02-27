@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TUTOR PERSONAS — the animated character definitions
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TutorPersona {
+  id                   String   @id @default(uuid())
+  slug                 String   @unique          // e.g., "nova-math"
+  name                 String                     // e.g., "Nova"
+  subject              String                     // e.g., "MATH", "ELA", "SCIENCE"
+  personality          String                     // Character personality description
+  teachingApproach     String                     // "socratic", "storytelling", "exploratory", "gamified"
+  encouragementStyle   String                     // "cheerful", "calm", "energetic", "wise"
+  voiceTone            String                     // Description of speaking style
+  avatarRivAsset       String                     // Path: "/rive/tutors/nova_math.riv"
+  avatarStaticImage    String                     // Fallback: "/images/tutors/nova_static.png"
+  systemPromptTemplate String   @db.Text          // The LLM system prompt with {{placeholders}}
+  specialties          String[]                   // Array of topic specialties
+  gradeRange           String                     // "K-2", "3-5", "6-8", "9-12", "ALL"
+  isActive             Boolean  @default(true)
+  sortOrder            Int      @default(0)
+  metadataJson         Json?                      // Extra config
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  sessions     TutorSession[]
+  voiceConfigs TutorVoiceConfig[]
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VOICE CONFIGURATION — per persona per locale
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TutorVoiceConfig {
+  id           String   @id @default(uuid())
+  personaId    String
+  locale       String                       // "en-US", "es-MX", "fr-FR"
+  ttsProvider  String                       // "azure", "elevenlabs", "google"
+  ttsVoiceId   String                       // Provider-specific voice ID
+  speakingRate Float    @default(1.0)
+  pitch        Float    @default(0.0)
+  emotion      String   @default("neutral") // "neutral", "excited", "calm"
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  persona TutorPersona @relation(fields: [personaId], references: [id])
+
+  @@unique([personaId, locale])
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TUTOR SESSIONS — one per tutoring conversation
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TutorSession {
+  id              String             @id @default(uuid())
+  tenantId        String
+  learnerId       String                       // FK to learner (cross-service)
+  parentUserId    String?                      // Parent who owns the subscription
+  personaId       String
+  subject         String                       // "MATH", "ELA", etc.
+  topic           String?                      // Optional specific topic
+  locale          String             @default("en-US")
+  status          TutorSessionStatus @default(ACTIVE)
+  startedAt       DateTime           @default(now())
+  endedAt         DateTime?
+  totalMessages   Int                @default(0)
+  totalDurationMs Int                @default(0)         // Total session duration
+  totalTokensUsed Int                @default(0)
+  masteryBefore   Float?                       // Mastery at start (from learner-model-svc)
+  masteryAfter    Float?                       // Mastery at end
+  metadataJson    Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  persona   TutorPersona          @relation(fields: [personaId], references: [id])
+  messages  TutorMessage[]
+  analytics TutorSessionAnalytics?
+
+  @@index([tenantId, learnerId])
+  @@index([tenantId, status])
+  @@index([learnerId, subject])
+}
+
+enum TutorSessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  EXPIRED
+  ERROR
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TUTOR MESSAGES — individual messages in a tutoring session
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TutorMessage {
+  id           String           @id @default(uuid())
+  sessionId    String
+  role         TutorMessageRole
+  content      String           @db.Text
+  audioUrl     String?                        // TTS audio URL
+  visemeData   Json?                          // Lip-sync viseme array
+  emotionTag   String?                        // "encouraging", "celebrating", etc.
+  avatarState  String?                        // "talking", "thinking", "celebrating"
+  tokensUsed   Int              @default(0)
+  latencyMs    Int              @default(0)   // Response generation time
+  metadataJson Json?
+  createdAt    DateTime         @default(now())
+
+  session TutorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+enum TutorMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SESSION ANALYTICS — aggregated analytics per session
+// ══════════════════════════════════════════════════════════════════════════════
+
+model TutorSessionAnalytics {
+  id                    String   @id @default(uuid())
+  sessionId             String   @unique
+  tenantId              String
+  learnerId             String
+  subject               String
+  totalMinutes          Float    @default(0)
+  messageCount          Int      @default(0)
+  userMessageCount      Int      @default(0)
+  assistantMessageCount Int      @default(0)
+  avgResponseLatencyMs  Float    @default(0)
+  topicsDiscussed       String[]
+  skillsTargeted        String[]
+  masteryDelta          Float?                 // Change in mastery
+  engagementScore       Float?                 // 0-1 based on interaction patterns
+  date                  DateTime @db.Date      // For daily aggregation
+  createdAt             DateTime @default(now())
+
+  session TutorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, learnerId, date])
+  @@index([tenantId, subject, date])
+}

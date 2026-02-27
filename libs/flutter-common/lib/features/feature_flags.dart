@@ -31,6 +31,16 @@ enum ParityFeature {
   aiTutor,
   teamChallenges,
   adaptiveAssessments,
+
+  // Tutor-specific feature flags (Sprint 10 gradual rollout)
+  tutorEnabled,
+  tutorVoiceEnabled,
+  tutorSubjectsMath,
+  tutorSubjectsEla,
+  tutorSubjectsScience,
+  tutorSubjectsHistory,
+  tutorSubjectsCoding,
+  tutorMarketplaceVisible,
 }
 
 /// Feature flag configuration
@@ -163,6 +173,40 @@ class FeatureFlagsService {
     ParityFeature.adaptiveAssessments: const FeatureFlagConfig(
       enabled: true,
       rolloutPercentage: 75.0,
+    ),
+
+    // Tutor-specific flags — disabled by default for gradual rollout
+    ParityFeature.tutorEnabled: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorVoiceEnabled: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorSubjectsMath: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorSubjectsEla: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorSubjectsScience: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorSubjectsHistory: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorSubjectsCoding: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
+    ),
+    ParityFeature.tutorMarketplaceVisible: const FeatureFlagConfig(
+      enabled: false,
+      rolloutPercentage: 0.0,
     ),
   };
 

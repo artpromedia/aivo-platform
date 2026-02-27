@@ -1,165 +1,385 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Brain, Send, Calculator, BookOpen, PenTool, Globe } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Brain, Send, Sparkles, ArrowRight, Calculator, BookOpen, PenTool, Globe, Code, Lock } from 'lucide-react';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+import type { UILocale } from '@aivo/i18n/config';
+import { useFeatureFlag, isTutorSubjectEnabled, ParityFeature } from '@aivo/feature-flags';
+import { useTutorSession, type TutorMessage } from '../../../lib/hooks/use-tutor-session';
+import { useTutorWebSocket, type TutorMessage as WsMessage } from '../../../lib/hooks/use-tutor-websocket';
+import { useTutorAudio, type VisemeEvent } from '../../../lib/hooks/use-tutor-audio';
+import { useVoicePreference } from '../../../lib/hooks/use-voice-preference';
+import { AnimatedTutorAvatar } from '../../../components/tutor/animated-tutor-avatar';
+import { TutorChat } from '../../../components/tutor/tutor-chat';
+import { TutorSessionHeader } from '../../../components/tutor/tutor-session-header';
+import type { TutorLocaleInfo } from '../../../components/tutor/tutor-language-indicator';
 
-const SUGGESTED_QUESTIONS = [
-  { icon: Calculator, text: 'Help me with fractions' },
-  { icon: Globe, text: 'Explain the water cycle' },
-  { icon: PenTool, text: 'How do I write a good paragraph?' },
-  { icon: BookOpen, text: 'What are the planets in order?' },
-];
-
-const AI_RESPONSES: Record<string, string> = {
-  default:
-    "I'm here to help you learn! Ask me anything about your lessons - math, reading, science, or any subject you're curious about. What would you like to explore today?",
-  fractions:
-    "Great question! Fractions are like pizza slices!\n\nImagine a pizza cut into 4 equal pieces. If you eat 1 piece, you've eaten 1/4 (one-fourth) of the pizza.\n\nThe top number (1) is called the **numerator** - it's how many pieces you have.\nThe bottom number (4) is called the **denominator** - it's how many total pieces there are.\n\nWant me to show you how to add or multiply fractions?",
-  water:
-    "The water cycle is like nature's recycling system!\n\n1. **Evaporation** - The sun heats up water in oceans and lakes, turning it into invisible water vapor that rises into the air.\n\n2. **Condensation** - When water vapor gets high in the sky where it's cold, it turns back into tiny water droplets that form clouds.\n\n3. **Precipitation** - When clouds get heavy with water droplets, the water falls back down as rain, snow, or hail.\n\n4. **Collection** - Water collects in oceans, lakes, and rivers... and the cycle starts again!\n\nPretty cool, right?",
-  paragraph:
-    "Writing a great paragraph is like building a sandwich!\n\n**Top Bun = Topic Sentence**\nStart with one sentence that tells what the paragraph is about.\n\n**The Filling = Supporting Details**\nAdd 2-4 sentences with facts, examples, or explanations.\n\n**Bottom Bun = Closing Sentence**\nEnd with a sentence that wraps it all up.\n\n**Example:**\n*Dogs make wonderful pets. They are loyal and love to play with their owners. Dogs can learn tricks and even help people who need assistance. Having a dog as a pet brings joy to many families.*\n\nWant to practice writing one together?",
-  planets:
-    "Great astronomy question! Here are the 8 planets in order from the Sun:\n\n1. **Mercury** - Smallest & closest to the Sun\n2. **Venus** - Hottest planet!\n3. **Earth** - That's us!\n4. **Mars** - The red planet\n5. **Jupiter** - Biggest planet\n6. **Saturn** - Famous for its rings\n7. **Uranus** - Tilted on its side\n8. **Neptune** - Farthest & windiest\n\n**Memory trick:** *My Very Educated Mother Just Served Us Nachos*\n\n(Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune)",
+const SUBJECT_ICONS: Record<string, typeof Calculator> = {
+  MATH: Calculator,
+  ELA: BookOpen,
+  SCIENCE: Globe,
+  HISTORY: PenTool,
+  CODING: Code,
 };
 
-function getAIResponse(message: string): string {
-  const lowerMessage = message.toLowerCase();
-  if (lowerMessage.includes('fraction')) return AI_RESPONSES.fractions;
-  if (lowerMessage.includes('water') && lowerMessage.includes('cycle'))
-    return AI_RESPONSES.water;
-  if (lowerMessage.includes('paragraph') || lowerMessage.includes('write'))
-    return AI_RESPONSES.paragraph;
-  if (lowerMessage.includes('planet')) return AI_RESPONSES.planets;
-  return AI_RESPONSES.default;
-}
+const SUGGESTED_QUESTIONS: Record<string, Array<{ icon: typeof Calculator; text: string }>> = {
+  MATH: [
+    { icon: Calculator, text: 'Help me with fractions' },
+    { icon: Calculator, text: 'How do I solve word problems?' },
+    { icon: Calculator, text: 'What is the order of operations?' },
+  ],
+  ELA: [
+    { icon: BookOpen, text: 'How do I write a good paragraph?' },
+    { icon: BookOpen, text: 'What are the parts of speech?' },
+    { icon: BookOpen, text: 'Help me understand this story' },
+  ],
+  SCIENCE: [
+    { icon: Globe, text: 'Explain the water cycle' },
+    { icon: Globe, text: 'What are the states of matter?' },
+    { icon: Globe, text: 'How do plants make food?' },
+  ],
+  HISTORY: [
+    { icon: PenTool, text: 'What caused the American Revolution?' },
+    { icon: PenTool, text: 'Tell me about ancient Egypt' },
+    { icon: PenTool, text: 'Who were the first Americans?' },
+  ],
+  CODING: [
+    { icon: Code, text: 'What is a variable?' },
+    { icon: Code, text: 'How do loops work?' },
+    { icon: Code, text: 'Help me fix a bug in my code' },
+  ],
+};
 
 export default function TutorPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content:
-        "Hi there! I'm your AI learning buddy. I'm here to help you understand anything you're learning about. What would you like to explore today?",
-      timestamp: new Date(),
-    },
-  ]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentEmotion, setCurrentEmotion] = useState('NEUTRAL');
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [sessionLocale, setSessionLocale] = useState('en');
+  const [localeInfo, setLocaleInfo] = useState<TutorLocaleInfo | null>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Feature flag gates
+  const tutorEnabled = useFeatureFlag(ParityFeature.TUTOR_ENABLED);
+  const voiceEnabled_flag = useFeatureFlag(ParityFeature.TUTOR_VOICE_ENABLED);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+  const personaId = searchParams.get('personaId');
+  const subject = searchParams.get('subject');
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    };
+  // Feature flag: master tutor toggle
+  if (!tutorEnabled) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Lock className="mx-auto h-12 w-12 text-gray-300" />
+        <h2 className="mt-4 text-xl font-bold text-gray-900">AI Tutors Coming Soon</h2>
+        <p className="mt-2 text-gray-600">
+          AI tutoring is not yet available for your account. Stay tuned!
+        </p>
+        <button
+          onClick={() => router.push('/')}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsTyping(true);
+  // Feature flag: check subject-specific flag when starting a session
+  if (subject && !isTutorSubjectEnabled(subject)) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Lock className="mx-auto h-12 w-12 text-gray-300" />
+        <h2 className="mt-4 text-xl font-bold text-gray-900">{subject} Tutor Coming Soon</h2>
+        <p className="mt-2 text-gray-600">
+          The {subject.toLowerCase()} tutor is not yet available. Try another subject!
+        </p>
+        <button
+          onClick={() => router.push('/tutor')}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+        >
+          Choose Another Tutor
+        </button>
+      </div>
+    );
+  }
 
-    // Simulate AI thinking time
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
+  const {
+    session,
+    messages: restMessages,
+    isLoading,
+    isSending: isRestSending,
+    error: restError,
+    createSession,
+    endSession,
+  } = useTutorSession();
 
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: getAIResponse(text),
-      timestamp: new Date(),
-    };
+  // Audio playback with lip-sync
+  const { mouthOpenAmount, isPlaying, playWithLipSync, stop: stopAudio } = useTutorAudio();
 
-    setIsTyping(false);
-    setMessages((prev) => [...prev, aiMessage]);
+  // Voice preference persistence
+  const { voiceEnabled, toggleVoice } = useVoicePreference();
+
+  // Stable audio callback ref
+  const onAudioReadyRef = useRef<(audioUrl: string, visemes: VisemeEvent[]) => void>();
+  onAudioReadyRef.current = (audioUrl: string, visemes: VisemeEvent[]) => {
+    if (voiceEnabled) {
+      playWithLipSync(audioUrl, visemes);
+    }
   };
 
+  // WebSocket real-time messaging (active when session exists)
+  const {
+    messages: wsMessages,
+    streamingText,
+    isAiTyping,
+    avatarState,
+    isConnected,
+    useHttpFallback,
+    error: wsError,
+    sendMessage: wsSendMessage,
+    addInitialMessages,
+  } = useTutorWebSocket({
+    sessionId: session?.id ?? '',
+    authToken: '',
+    onAudioReady: (audioUrl, visemes) => {
+      onAudioReadyRef.current?.(
+        audioUrl,
+        visemes.map((v, i) => ({ ...v, visemeId: i })),
+      );
+    },
+  });
+
+  // Create session if personaId and subject are provided
+  useEffect(() => {
+    if (personaId && subject && !session) {
+      createSession(personaId, subject);
+    }
+  }, [personaId, subject, session, createSession]);
+
+  // Prefer WS messages when available; fall back to REST messages
+  const messages = wsMessages.length > 0 ? wsMessages : restMessages;
+  const isSending = isAiTyping || isRestSending;
+  const error = wsError || restError;
+
+  // Seed WS hook with REST messages when session loads
+  useEffect(() => {
+    if (session && restMessages.length > 0 && wsMessages.length === 0) {
+      addInitialMessages(
+        restMessages.map((m) => ({
+          id: m.id,
+          role: m.role === 'USER' ? 'user' as const : 'assistant' as const,
+          content: m.content,
+          createdAt: new Date(m.createdAt),
+        })),
+      );
+    }
+  }, [session, restMessages, wsMessages.length, addInitialMessages]);
+
+  // Update emotion from latest AI message
+  useEffect(() => {
+    const lastAiMessage = [...messages].reverse().find(
+      (m) => m.role === 'ASSISTANT' || m.role === 'assistant',
+    );
+    if (lastAiMessage) {
+      const emotion = (lastAiMessage as TutorMessage).emotion ?? 'NEUTRAL';
+      setCurrentEmotion(emotion);
+    }
+  }, [messages]);
+
+  // Clear playing ID when audio stops
+  useEffect(() => {
+    if (!isPlaying) setPlayingMessageId(null);
+  }, [isPlaying]);
+
+  const handleSend = useCallback(
+    (text: string) => {
+      if (!text.trim() || isSending || !session) return;
+      setInput('');
+      wsSendMessage(text.trim());
+    },
+    [isSending, session, wsSendMessage],
+  );
+
+  const handleLocaleChange = useCallback(
+    async (newLocale: UILocale) => {
+      if (!session) return;
+      const API_BASE = process.env.NEXT_PUBLIC_TUTOR_API_URL ?? '/api/tutor';
+      try {
+        const res = await fetch(`${API_BASE}/sessions/${session.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locale: newLocale }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSessionLocale(newLocale);
+          if (data.localeInfo) setLocaleInfo(data.localeInfo);
+        }
+      } catch {
+        // locale change failed silently
+      }
+    },
+    [session],
+  );
+
+  const handleEndSession = async () => {
+    if (session) {
+      stopAudio();
+      await endSession(session.id);
+    }
+  };
+
+  const handlePlayAudio = useCallback(
+    (message: TutorMessage | WsMessage) => {
+      const wsMsg = message as WsMessage;
+      if (wsMsg.audioUrl && wsMsg.visemes?.length) {
+        setPlayingMessageId(wsMsg.id);
+        playWithLipSync(
+          wsMsg.audioUrl,
+          wsMsg.visemes.map((v, i) => ({ ...v, visemeId: i })),
+        );
+      }
+    },
+    [playWithLipSync],
+  );
+
+  // ── Landing page (no session) ──────────────────────────────────────
+  if (!session && !personaId) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-600 mb-4">
+            <Sparkles className="h-4 w-4" /> AI Tutors
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Meet Your AI Tutors</h1>
+          <p className="mt-2 text-lg text-gray-600">
+            Choose a tutor to start learning. Each one has their own unique personality!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+          {[
+            { slug: 'nova-math', name: 'Nova', subject: 'MATH', desc: 'Space explorer who makes math an adventure' },
+            { slug: 'sage-ela', name: 'Sage', subject: 'ELA', desc: 'Storyteller who brings reading to life' },
+            { slug: 'spark-science', name: 'Spark', subject: 'SCIENCE', desc: 'Inventor who turns science into experiments' },
+            { slug: 'chrono-history', name: 'Chrono', subject: 'HISTORY', desc: 'Time traveler who makes history come alive' },
+            { slug: 'pixel-coding', name: 'Pixel', subject: 'CODING', desc: 'Robot who makes coding a fun game' },
+          ].filter((p) => isTutorSubjectEnabled(p.subject)).map((persona) => {
+            const SubjectIcon = SUBJECT_ICONS[persona.subject] ?? Brain;
+            return (
+              <button
+                key={persona.slug}
+                onClick={() => router.push(`/tutor/select`)}
+                className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-100 bg-white p-6 text-center transition-all hover:border-indigo-300 hover:shadow-lg"
+              >
+                <AnimatedTutorAvatar
+                  personaSlug={persona.slug}
+                  personaName={persona.name}
+                  size="lg"
+                  emotion="HAPPY"
+                />
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">{persona.name}</h3>
+                  <p className="flex items-center justify-center gap-1 text-sm text-gray-500">
+                    <SubjectIcon className="h-3.5 w-3.5" /> {persona.subject}
+                  </p>
+                </div>
+                <p className="text-sm text-gray-600">{persona.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => router.push('/tutor/select')}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
+          >
+            Choose a Tutor <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading ─────────────────────────────────────────────────────────
+  if (isLoading || (!session && personaId)) {
+    return (
+      <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+          <p className="text-gray-500">Setting up your tutor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  const suggestions = SUGGESTED_QUESTIONS[session.subject] ?? [];
+
+  // ── Active session ──────────────────────────────────────────────────
   return (
     <div className="flex h-[calc(100vh-12rem)] flex-col rounded-2xl border border-gray-100 bg-white shadow-sm">
-      {/* Header */}
-      <div className="flex items-center gap-4 border-b border-gray-100 bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white rounded-t-2xl">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
-          <Brain className="h-6 w-6" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold">AIVO AI Tutor</h1>
-          <p className="text-sm text-indigo-200">Your personal learning assistant</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-green-400" />
-          <span className="text-sm text-indigo-200">Online</span>
-        </div>
-      </div>
+      <TutorSessionHeader
+        session={session}
+        emotion={currentEmotion}
+        avatarState={avatarState as 'idle' | 'thinking' | 'talking' | 'celebrating' | 'encouraging' | 'listening' | undefined}
+        mouthOpenAmount={mouthOpenAmount}
+        isConnected={isConnected || useHttpFallback}
+        voiceEnabled={voiceEnabled_flag && voiceEnabled}
+        onToggleVoice={voiceEnabled_flag ? toggleVoice : undefined}
+        onEndSession={handleEndSession}
+        locale={sessionLocale}
+        localeInfo={localeInfo}
+        onLocaleChange={handleLocaleChange}
+      />
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+      <TutorChat
+        messages={messages as TutorMessage[]}
+        personaSlug={session.persona.slug}
+        personaName={session.persona.name}
+        isSending={isSending}
+        streamingText={streamingText}
+        onPlayAudio={handlePlayAudio as (message: TutorMessage) => void}
+        playingMessageId={playingMessageId}
+        isRTL={localeInfo?.isRTL ?? false}
+      />
+
+      {error && (
+        <div className="px-4 py-2 text-sm text-red-500 bg-red-50 border-t border-red-100">
+          {error}
+        </div>
+      )}
+
+      {/* Session ended — inline summary */}
+      {session.status === 'COMPLETED' && (
+        <div className="border-t border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 text-center">
+          <div className="text-3xl mb-2">🎉</div>
+          <h3 className="text-lg font-bold text-gray-900">Session Complete!</h3>
+          <p className="text-sm text-gray-600 mt-1">
+            Great job! You had {messages.length} messages in this session.
+          </p>
+          <button
+            onClick={() => router.push('/tutor')}
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
           >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                message.role === 'user'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-50 text-gray-900'
-              }`}
-            >
-              <div className="whitespace-pre-wrap">{message.content}</div>
-              <div
-                className={`mt-1 text-xs ${
-                  message.role === 'user' ? 'text-indigo-200' : 'text-gray-400'
-                }`}
-              >
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </div>
-            </div>
-          </div>
-        ))}
+            Start New Session
+          </button>
+        </div>
+      )}
 
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-2xl bg-gray-50 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Thinking</span>
-                <span className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '0ms' }} />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '150ms' }} />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '300ms' }} />
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Suggested Questions */}
-      {messages.length <= 2 && (
+      {/* Suggested Questions (early in conversation) */}
+      {session.status === 'ACTIVE' && messages.length <= 2 && suggestions.length > 0 && (
         <div className="border-t border-gray-100 p-3">
           <p className="mb-2 text-sm text-gray-500">Try asking:</p>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTED_QUESTIONS.map((q) => (
+            {suggestions.map((q) => (
               <button
                 key={q.text}
-                onClick={() => sendMessage(q.text)}
+                onClick={() => handleSend(q.text)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-indigo-50 hover:text-indigo-700"
               >
                 <q.icon className="h-3.5 w-3.5" /> {q.text}
@@ -170,30 +390,35 @@ export default function TutorPage() {
       )}
 
       {/* Input */}
-      <div className="border-t border-gray-100 p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            sendMessage(input);
-          }}
-          className="flex gap-3"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isTyping}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+      {session.status === 'ACTIVE' && (
+        <div className="border-t border-gray-100 p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend(input);
+            }}
+            className="flex gap-3"
+            dir={localeInfo?.isRTL ? 'rtl' : undefined}
           >
-            Send <Send className="h-4 w-4" />
-          </button>
-        </form>
-      </div>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={`Ask ${session.persona.name} anything...`}
+              className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+              disabled={isSending}
+              dir={localeInfo?.isRTL ? 'rtl' : 'auto'}
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isSending}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              Send <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

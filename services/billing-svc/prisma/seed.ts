@@ -36,6 +36,14 @@ const PLAN_ADDON_SCIENCE = '00000000-0000-0000-bb10-000000000012';
 const PLAN_DISTRICT_BASE = '00000000-0000-0000-bb10-000000000020';
 const PLAN_DISTRICT_SEL = '00000000-0000-0000-bb10-000000000021';
 
+// Tutor Add-on Plans
+const PLAN_ADDON_TUTOR_MATH = '00000000-0000-0000-cc00-000000000001';
+const PLAN_ADDON_TUTOR_ELA = '00000000-0000-0000-cc00-000000000002';
+const PLAN_ADDON_TUTOR_SCIENCE = '00000000-0000-0000-cc00-000000000003';
+const PLAN_ADDON_TUTOR_HISTORY = '00000000-0000-0000-cc00-000000000004';
+const PLAN_ADDON_TUTOR_CODING = '00000000-0000-0000-cc00-000000000005';
+const PLAN_ADDON_TUTOR_BUNDLE = '00000000-0000-0000-cc00-000000000006';
+
 async function main() {
   console.log('🌱 Seeding billing-svc...');
 
@@ -160,6 +168,135 @@ async function main() {
       metadataJson: {
         modules: ['SEL'],
         features: ['sel_curriculum', 'behavior_tracking', 'intervention_tools'],
+      },
+    },
+    // Tutor Add-on Plans
+    {
+      id: PLAN_ADDON_TUTOR_MATH,
+      sku: 'ADDON_TUTOR_MATH_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Math Tutor (Nova)',
+      description: 'AI-powered math tutor with space-themed persona, Socratic method, and adaptive difficulty',
+      unitPriceCents: 999, // $9.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        modules: ['TUTOR_MATH'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring'],
+        persona: 'nova-math',
+        tutorType: 'subject',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subject: 'MATH',
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_ELA,
+      sku: 'ADDON_TUTOR_ELA_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Reading & Writing Tutor (Sage)',
+      description: 'AI-powered ELA tutor with storytelling approach, reading comprehension, and creative writing guidance',
+      unitPriceCents: 999, // $9.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        modules: ['TUTOR_ELA'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring'],
+        persona: 'sage-ela',
+        tutorType: 'subject',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subject: 'ELA',
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_SCIENCE,
+      sku: 'ADDON_TUTOR_SCIENCE_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Science Tutor (Spark)',
+      description: 'AI-powered science tutor with inquiry-based learning, experiment design, and hypothesis testing',
+      unitPriceCents: 999, // $9.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        modules: ['TUTOR_SCIENCE'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring'],
+        persona: 'spark-science',
+        tutorType: 'subject',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subject: 'SCIENCE',
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_HISTORY,
+      sku: 'ADDON_TUTOR_HISTORY_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI History Tutor (Chrono)',
+      description: 'AI-powered history tutor with time-travel narrative, primary source analysis, and critical thinking',
+      unitPriceCents: 999, // $9.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        modules: ['TUTOR_HISTORY'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring'],
+        persona: 'chrono-history',
+        tutorType: 'subject',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subject: 'HISTORY',
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_CODING,
+      sku: 'ADDON_TUTOR_CODING_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Coding Tutor (Pixel)',
+      description: 'AI-powered coding tutor with pair-programming guidance, debugging help, and project-based learning',
+      unitPriceCents: 1499, // $14.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 7,
+      metadataJson: {
+        modules: ['TUTOR_CODING'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring'],
+        persona: 'pixel-coding',
+        tutorType: 'subject',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subject: 'CODING',
+        parentCategory: 'ai_tutor',
+      },
+    },
+    {
+      id: PLAN_ADDON_TUTOR_BUNDLE,
+      sku: 'ADDON_TUTOR_BUNDLE_MONTHLY',
+      planType: PlanType.PARENT_ADDON,
+      name: 'AI Tutor Bundle — All Subjects',
+      description: 'All 5 AI tutors (Math, ELA, Science, History, Coding) at a discounted bundle price',
+      unitPriceCents: 2999, // $29.99/month
+      billingPeriod: BillingPeriod.MONTHLY,
+      isActive: true,
+      trialDays: 14,
+      metadataJson: {
+        modules: ['TUTOR_MATH', 'TUTOR_ELA', 'TUTOR_SCIENCE', 'TUTOR_HISTORY', 'TUTOR_CODING'],
+        features: ['unlimited_sessions', 'progress_tracking', 'animated_avatar', 'voice_tutoring', 'priority_support'],
+        persona: null,
+        tutorType: 'bundle',
+        maxSessionsPerDay: null,
+        includesVoice: true,
+        subjects: ['MATH', 'ELA', 'SCIENCE', 'HISTORY', 'CODING'],
+        tutorPersonas: ['nova-math', 'sage-ela', 'spark-science', 'chrono-history', 'pixel-coding'],
+        isBundle: true,
+        parentCategory: 'ai_tutor',
       },
     },
   ];
@@ -299,13 +436,15 @@ async function main() {
   console.log('✅ billing-svc seeding complete!');
   console.log('');
   console.log('Created:');
-  console.log('  - 7 plans (parent base/addons, district base/addons)');
+  console.log('  - 14 plans (parent base/addons, tutor addons, district base/addons)');
   console.log('  - 2 billing accounts (parent, district)');
   console.log('  - 3 subscriptions (parent trial with SEL, district active)');
   console.log('');
   console.log('Pricing:');
   console.log('  - Parent Base: $19.99/mo or $191.90/yr');
   console.log('  - SEL Add-on: $4.99/mo');
+  console.log('  - AI Tutor (individual): $9.99/mo ($14.99 for Coding)');
+  console.log('  - AI Tutor Bundle: $29.99/mo (all 5 subjects)');
   console.log('  - District: $45/seat/year');
 }
 

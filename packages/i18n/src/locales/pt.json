@@ -178,5 +178,45 @@
     "toggleTheme": "Alternar modo escuro",
     "languageSwitcher": "Mudar idioma",
     "newNotifications": "{count, plural, one {# nova notificação} other {# novas notificações}}"
+  },
+  "tutor": {
+    "title": "Tutores IA",
+    "subtitle": "Tutoria especializada em cada matéria",
+    "startSession": "Iniciar Sessão",
+    "endSession": "Encerrar Sessão",
+    "resumeSession": "Retomar Sessão",
+    "voiceOn": "Voz Ativada",
+    "voiceOff": "Voz Desativada",
+    "voiceUnavailable": "Voz não disponível em {language}",
+    "voiceUnavailableDetail": "A voz está disponível em inglês, espanhol, francês, português, árabe e mais.",
+    "voiceFallbackNotice": "Usando voz em {fallbackLanguage}. Voz em {nativeLanguage} em breve!",
+    "textOnlyBanner": "{name} responderá em {language} como texto. Suporte de voz em breve!",
+    "thinking": "{name} está pensando…",
+    "listening": "{name} está ouvindo…",
+    "sessionWith": "Sessão com {name}",
+    "sessionDuration": "Duração da sessão: {minutes} minutos",
+    "messagesExchanged": "{count, plural, one {# mensagem} other {# mensagens}} trocadas",
+    "selectSubject": "Escolha uma matéria para começar a tutoria",
+    "noSessions": "Nenhuma sessão de tutoria ainda",
+    "history": "Histórico de Sessões",
+    "summary": "Resumo da Sessão",
+    "newSession": "Nova Sessão",
+    "xpEarned": "{xp} XP ganhos",
+    "changeLanguage": "Mudar idioma do tutor",
+    "languageChanged": "{name} agora responderá em {language}",
+    "subjects": {
+      "MATH": "Matemática",
+      "ELA": "Leitura e Escrita",
+      "SCIENCE": "Ciências",
+      "HISTORY": "História e Estudos Sociais",
+      "CODING": "Programação e Informática"
+    },
+    "personas": {
+      "nova": "Nova a Exploradora Espacial",
+      "sage": "Sage a Contadora de Histórias",
+      "spark": "Spark a Cientista",
+      "chrono": "Chrono o Viajante do Tempo",
+      "pixel": "Pixel o Robô"
+    }
   }
 }

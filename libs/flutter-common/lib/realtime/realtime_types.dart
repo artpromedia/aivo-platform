@@ -40,6 +40,14 @@ enum WSEventType {
   analyticsAlert('analytics:alert'),
   alertAcknowledge('alert:acknowledge'),
 
+  // Tutor session events
+  tutorJoin('tutor:join'),
+  tutorLeave('tutor:leave'),
+  tutorMessage('tutor:message'),
+  tutorTyping('tutor:typing'),
+  tutorEmotion('tutor:emotion'),
+  tutorSessionEnd('tutor:session_end'),
+
   // Control events
   heartbeat('heartbeat'),
   pong('pong');

@@ -8,7 +8,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import type { PlanFeatures, Plan } from '../config/plans.config.js';
-import { entitlementsService } from '../services/entitlements.service.js';
+import { entitlementsService, checkAddonFeatureAccess } from '../services/entitlements.service.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCHEMAS
@@ -236,6 +236,44 @@ export async function entitlementsRoutes(app: FastifyInstance): Promise<void> {
       return reply.send({
         message: 'Cache invalidated successfully',
         tenantId: ctx.tenantId,
+      });
+    }
+  );
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // INTERNAL: CHECK ADD-ON FEATURE ACCESS
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /**
+   * GET /internal/entitlements/check
+   * Check if a tenant has access to an add-on feature (e.g., TUTOR_MATH).
+   * Used for internal service-to-service calls (tutor-svc → billing-svc).
+   *
+   * Query params: tenantId, feature
+   */
+  app.get(
+    '/internal/entitlements/check',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = request.query as { tenantId?: string; feature?: string };
+
+      if (!query.tenantId || !query.feature) {
+        return reply.status(400).send({
+          error: 'Missing required query parameters: tenantId, feature',
+        });
+      }
+
+      const result = await checkAddonFeatureAccess(query.tenantId, query.feature);
+
+      return reply.send({
+        tenantId: query.tenantId,
+        feature: query.feature,
+        hasAccess: result.allowed,
+        plan: result.plan,
+        trialEndsAt: result.trialEndsAt,
+        reason: result.reason,
+        upgradeUrl: result.allowed
+          ? undefined
+          : `/billing/add-ons?highlight=ADDON_TUTOR_${query.feature.replace('TUTOR_', '')}`,
       });
     }
   );

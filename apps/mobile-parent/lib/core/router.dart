@@ -12,6 +12,7 @@ import '../features/resources/presentation/resource_library_screen.dart';
 import '../features/community/presentation/community_support_screen.dart';
 import '../features/privacy/presentation/data_rights_screen.dart';
 import '../features/iep/presentation/iep_upload_screen.dart';
+import '../features/tutor/screens/tutor_sessions_screen.dart';
 import '../screens/parent_assessment_screen.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
@@ -103,6 +104,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               final childId = state.pathParameters['childId']!;
               final childName = state.extra as String? ?? 'Child';
               return IEPUploadScreen(childId: childId, childName: childName);
+            },
+          ),
+          GoRoute(
+            path: '/tutor-sessions/:childId',
+            name: 'tutor-sessions',
+            builder: (context, state) {
+              final childId = state.pathParameters['childId']!;
+              final childName = state.extra as String? ?? 'Child';
+              return TutorSessionsScreen(childId: childId, childName: childName);
             },
           ),
           GoRoute(

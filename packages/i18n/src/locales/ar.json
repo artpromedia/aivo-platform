@@ -178,5 +178,45 @@
     "toggleTheme": "تبديل الوضع الداكن",
     "languageSwitcher": "تغيير اللغة",
     "newNotifications": "{count, plural, one {إشعار جديد #} other {# إشعارات جديدة}}"
+  },
+  "tutor": {
+    "title": "المعلمون الأذكياء",
+    "subtitle": "تعليم متخصص في كل مادة",
+    "startSession": "بدء الجلسة",
+    "endSession": "إنهاء الجلسة",
+    "resumeSession": "استئناف الجلسة",
+    "voiceOn": "الصوت مفعّل",
+    "voiceOff": "الصوت مُعطّل",
+    "voiceUnavailable": "الصوت غير متاح بـ{language}",
+    "voiceUnavailableDetail": "الصوت متاح بالإنجليزية والإسبانية والفرنسية والبرتغالية والعربية والمزيد.",
+    "voiceFallbackNotice": "استخدام صوت {fallbackLanguage}. صوت {nativeLanguage} قريباً!",
+    "textOnlyBanner": "{name} سيرد بـ{language} كنص. دعم الصوت قريباً!",
+    "thinking": "{name} يفكر…",
+    "listening": "{name} يستمع…",
+    "sessionWith": "جلسة مع {name}",
+    "sessionDuration": "مدة الجلسة: {minutes} دقائق",
+    "messagesExchanged": "{count, plural, one {رسالة واحدة} other {# رسائل}} تم تبادلها",
+    "selectSubject": "اختر مادة لبدء الدراسة",
+    "noSessions": "لا توجد جلسات تعليمية بعد",
+    "history": "سجل الجلسات",
+    "summary": "ملخص الجلسة",
+    "newSession": "جلسة جديدة",
+    "xpEarned": "{xp} نقطة خبرة مكتسبة",
+    "changeLanguage": "تغيير لغة المعلم",
+    "languageChanged": "{name} سيرد الآن بـ{language}",
+    "subjects": {
+      "MATH": "الرياضيات",
+      "ELA": "القراءة والكتابة",
+      "SCIENCE": "العلوم",
+      "HISTORY": "التاريخ والدراسات الاجتماعية",
+      "CODING": "البرمجة وعلوم الحاسوب"
+    },
+    "personas": {
+      "nova": "نوفا مستكشفة الفضاء",
+      "sage": "سيج راوية القصص",
+      "spark": "سبارك العالمة",
+      "chrono": "كرونو المسافر عبر الزمن",
+      "pixel": "بيكسل الروبوت"
+    }
   }
 }

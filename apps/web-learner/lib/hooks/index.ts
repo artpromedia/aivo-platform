@@ -1,3 +1,8 @@
 export { useIdleDetection } from './use-idle-detection'
 export { useConnectivity } from './use-connectivity'
 export type { ConnectivityState } from './use-connectivity'
+export { useTutorAudio } from './use-tutor-audio'
+export type { VisemeEvent, TutorAudioState } from './use-tutor-audio'
+export { useVoicePreference } from './use-voice-preference'
+export { useTutorWebSocket } from './use-tutor-websocket'
+export type { TutorMessage, AvatarState, UseTutorWebSocketReturn } from './use-tutor-websocket'

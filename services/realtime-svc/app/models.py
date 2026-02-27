@@ -52,6 +52,14 @@ class MessageType(str, Enum):
     PRESENCE_UPDATE = "presence_update"
     ROOM_MESSAGE = "room_message"
 
+    # Tutor session events
+    TUTOR_JOIN = "tutor:join"
+    TUTOR_LEAVE = "tutor:leave"
+    TUTOR_MESSAGE = "tutor:message"
+    TUTOR_TYPING = "tutor:typing"
+    TUTOR_EMOTION = "tutor:emotion"
+    TUTOR_SESSION_END = "tutor:session_end"
+
 
 class ActionType(str, Enum):
     """Types of learner actions that can be tracked."""

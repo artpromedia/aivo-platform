@@ -1,0 +1,68 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+function readKey(keyEnv: string | undefined, fileEnv: string | undefined): string {
+  if (keyEnv) return keyEnv;
+  if (fileEnv) {
+    const abs = path.resolve(fileEnv);
+    return fs.readFileSync(abs, 'utf-8');
+  }
+  // In production, require JWT key
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_PUBLIC_KEY or JWT_PUBLIC_KEY_PATH is required in production');
+  }
+  return 'test-jwt-key';
+}
+
+function requireEnvInProduction(name: string, devDefault: string): string {
+  const value = process.env[name];
+  if (!value && process.env.NODE_ENV === 'production') {
+    throw new Error(`${name} is required in production`);
+  }
+  return value || devDefault;
+}
+
+export const config = {
+  port: Number(process.env.PORT || 4025),
+  databaseUrl: requireEnvInProduction('DATABASE_URL', 'postgresql://localhost:5432/aivo_tutor'),
+  jwtPublicKey: readKey(process.env.JWT_PUBLIC_KEY, process.env.JWT_PUBLIC_KEY_PATH),
+  aiOrchestratorUrl: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
+  learnerModelUrl: process.env.LEARNER_MODEL_URL || 'http://localhost:4015',
+  billingSvcUrl: process.env.BILLING_SVC_URL || 'http://localhost:3150',
+  realtimeSvcUrl: process.env.REALTIME_SVC_URL || 'http://localhost:4030',
+  // Piper TTS engine (self-hosted)
+  ttsServiceUrl: process.env.TTS_SERVICE_URL || 'http://localhost:5100',
+  ttsEnabled: process.env.TTS_ENABLED !== 'false',
+  // Audio storage (S3 / MinIO)
+  audioBucket: process.env.AUDIO_S3_BUCKET || 'aivo-tutor-audio',
+  audioS3Endpoint: process.env.AUDIO_S3_ENDPOINT || '',
+  audioS3Region: process.env.AUDIO_S3_REGION || 'us-east-1',
+  audioS3AccessKey: process.env.AUDIO_S3_ACCESS_KEY || '',
+  audioS3SecretKey: process.env.AUDIO_S3_SECRET_KEY || '',
+  audioCdnBase: process.env.AUDIO_CDN_BASE || '',
+  // Streaming
+  aiStreamTimeoutMs: parseInt(process.env.AI_STREAM_TIMEOUT_MS || '30000', 10),
+  // Redis (for TTS cache)
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379/9',
+  // NATS (for event publishing)
+  nats: {
+    enabled: process.env.NATS_ENABLED !== 'false',
+    url: process.env.NATS_URL || 'nats://localhost:4222',
+  },
+  // Feature flags (server-side, env-driven)
+  featureFlags: {
+    tutorEnabled: process.env.FEATURE_TUTOR_ENABLED !== 'false',
+    tutorVoiceEnabled: process.env.FEATURE_TUTOR_VOICE_ENABLED !== 'false',
+    tutorSubjects: {
+      MATH: process.env.FEATURE_TUTOR_SUBJECTS_MATH !== 'false',
+      ELA: process.env.FEATURE_TUTOR_SUBJECTS_ELA !== 'false',
+      SCIENCE: process.env.FEATURE_TUTOR_SUBJECTS_SCIENCE !== 'false',
+      HISTORY: process.env.FEATURE_TUTOR_SUBJECTS_HISTORY !== 'false',
+      CODING: process.env.FEATURE_TUTOR_SUBJECTS_CODING !== 'false',
+    } as Record<string, boolean>,
+  },
+};

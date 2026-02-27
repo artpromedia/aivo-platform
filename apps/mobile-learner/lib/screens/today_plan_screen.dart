@@ -35,6 +35,18 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
       appBar: AppBar(
         title: Text(strings.todayPlan),
         actions: [
+          // AI Tutor button
+          Semantics(
+            label: 'AI Tutor',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.school_rounded),
+              tooltip: 'AI Tutor',
+              onPressed: () {
+                context.push('/tutor', extra: widget.learnerId);
+              },
+            ),
+          ),
           // Social Stories button
           Semantics(
             label: 'Social Stories',

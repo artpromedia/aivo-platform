@@ -22,6 +22,7 @@ import { getRedisClient, getSubscriberClient, RedisKeys } from '../redis/index.j
 import type { MessageBrokerService } from '../services/message-broker.service.js';
 import type { PresenceService } from '../services/presence.service.js';
 import type { RoomService } from '../services/room.service.js';
+import { registerTutorHandlers } from '../handlers/tutor.handler.js';
 import {
   WSEventType,
   type SocketData,
@@ -172,6 +173,9 @@ export class WebSocketGateway {
 
       // Register event handlers
       this.registerEventHandlers(socket);
+
+      // Register tutor-specific handlers (stream-then-synthesize pattern)
+      registerTutorHandlers(socket);
 
       // Send connection acknowledgment
       socket.emit(WSEventType.CONNECT, {

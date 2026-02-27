@@ -425,6 +425,121 @@ export interface AnalyticsSubscribePayload {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// TUTOR SESSION EVENTS & PAYLOADS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Tutor session WebSocket event names.
+ *
+ * Uses "tutor:" namespace to avoid collisions with other event types.
+ * These events drive the stream-then-synthesize pattern:
+ *   1. Client sends MESSAGE_SEND
+ *   2. Server replies with TYPING → MESSAGE_CHUNK (×N) → MESSAGE_END
+ *   3. Client plays audio with lip-sync from MESSAGE_END visemes
+ */
+export const TutorEvents = {
+  /** Client → Server: Student sends a message to the tutor */
+  MESSAGE_SEND: 'tutor:message:send',
+  /** Server → Client: AI tutor is processing the message */
+  TYPING: 'tutor:typing',
+  /** Server → Client: A chunk of the AI response (streamed text) */
+  MESSAGE_CHUNK: 'tutor:message:chunk',
+  /** Server → Client: Full response complete with audio + visemes */
+  MESSAGE_END: 'tutor:message:end',
+  /** Server → Client: Avatar state change (without audio) */
+  AVATAR_STATE: 'tutor:avatar:state',
+  /** Server → Client: Error during tutor processing */
+  ERROR: 'tutor:error',
+  /** Client → Server: Student requests to replay audio for a message */
+  AUDIO_REPLAY: 'tutor:audio:replay',
+  /** Client → Server: Join a tutor session room */
+  JOIN_SESSION: 'tutor:session:join',
+  /** Client → Server: Leave a tutor session room */
+  LEAVE_SESSION: 'tutor:session:leave',
+  /** Server → Client: Session state update (paused, ended by time limit, etc.) */
+  SESSION_STATE: 'tutor:session:state',
+} as const;
+
+/**
+ * Payload for tutor:message:send
+ */
+export interface TutorMessageSendPayload {
+  sessionId: string;
+  content: string;
+}
+
+/**
+ * Payload for tutor:typing
+ */
+export interface TutorTypingPayload {
+  sessionId: string;
+  personaName: string;
+  avatarState: 'thinking';
+}
+
+/**
+ * Payload for tutor:message:chunk
+ */
+export interface TutorMessageChunkPayload {
+  sessionId: string;
+  chunkText: string;
+  accumulatedText: string;
+  chunkIndex: number;
+}
+
+/**
+ * Payload for tutor:message:end
+ */
+export interface TutorMessageEndPayload {
+  sessionId: string;
+  messageId: string;
+  content: string;
+  audioUrl: string | null;
+  visemes: Array<{
+    offsetMs: number;
+    visemeId: number;
+    mouthOpen: number;
+    durationMs: number;
+  }>;
+  emotionTag: string;
+  avatarState: string;
+  voiceInfo: {
+    voiceUsed: string;
+    locale: string;
+    fallbackUsed: boolean;
+  } | null;
+}
+
+/**
+ * Payload for tutor:avatar:state
+ */
+export interface TutorAvatarStatePayload {
+  sessionId: string;
+  avatarState: string;
+  emotionTag?: string;
+  durationMs?: number;
+}
+
+/**
+ * Payload for tutor:error
+ */
+export interface TutorErrorPayload {
+  sessionId: string;
+  code: string;
+  message: string;
+  recoverable: boolean;
+}
+
+/**
+ * Payload for tutor:session:state
+ */
+export interface TutorSessionStatePayload {
+  sessionId: string;
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'EXPIRED';
+  reason?: string;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // CROSS-SERVER MESSAGE TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
 

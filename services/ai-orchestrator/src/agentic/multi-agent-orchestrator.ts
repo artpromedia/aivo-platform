@@ -17,6 +17,7 @@ import type { Redis } from 'ioredis';
 
 import type { LLMOrchestrator } from '../providers/llm-orchestrator.js';
 import type { LLMMessage } from '../providers/llm-provider.interface.js';
+import { TUTOR_PREMIUM_REGISTRY } from './subject-tutor-registry.js';
 
 // ════════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -27,6 +28,12 @@ import type { LLMMessage } from '../providers/llm-provider.interface.js';
  */
 export type SpecialistAgentType =
   | 'TUTOR'
+  | 'SUBJECT_TUTOR'
+  | 'TUTOR_MATH_PREMIUM'
+  | 'TUTOR_ELA_PREMIUM'
+  | 'TUTOR_SCIENCE_PREMIUM'
+  | 'TUTOR_HISTORY_PREMIUM'
+  | 'TUTOR_CODING_PREMIUM'
   | 'GOAL_PLANNER'
   | 'FOCUS_MONITOR'
   | 'EMOTIONAL_SUPPORT'
@@ -221,6 +228,9 @@ export const DEFAULT_MULTI_AGENT_CONFIG: MultiAgentConfig = {
  * Registry of available specialist agents
  */
 export const AGENT_REGISTRY: Record<SpecialistAgentType, AgentCapability> = {
+  // Premium subject tutors (Sprint 2)
+  ...TUTOR_PREMIUM_REGISTRY,
+
   TUTOR: {
     type: 'TUTOR',
     name: 'Socratic Tutor',
@@ -228,6 +238,16 @@ export const AGENT_REGISTRY: Record<SpecialistAgentType, AgentCapability> = {
     capabilities: ['explanation', 'scaffolding', 'question-answering', 'concept-teaching'],
     inputTypes: ['question', 'problem', 'concept'],
     outputTypes: ['explanation', 'guiding-question', 'hint'],
+    priority: 1,
+    maxConcurrentTasks: 1,
+  },
+  SUBJECT_TUTOR: {
+    type: 'SUBJECT_TUTOR',
+    name: 'Subject-Specific Tutor',
+    description: 'Subject-specific AI tutor with persona-driven teaching style for MATH, ELA, SCIENCE, HISTORY, and CODING',
+    capabilities: ['subject-tutoring', 'persona-driven-teaching', 'socratic-method', 'adaptive-difficulty', 'voice-responses'],
+    inputTypes: ['subject-question', 'topic-help', 'concept-explanation'],
+    outputTypes: ['guided-explanation', 'practice-question', 'encouragement'],
     priority: 1,
     maxConcurrentTasks: 1,
   },

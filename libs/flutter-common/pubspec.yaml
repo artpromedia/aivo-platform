@@ -42,6 +42,8 @@ dependencies:
   firebase_core: ^2.24.2
   firebase_crashlytics: ^3.5.7
   firebase_analytics: ^10.10.7
+  # Rive animations (tutor avatar)
+  rive: ^0.13.14
 
 dev_dependencies:
   flutter_test:
@@ -54,4 +56,5 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
+    - assets/rive/
 

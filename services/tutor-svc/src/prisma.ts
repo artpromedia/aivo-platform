@@ -1,0 +1,15 @@
+import {
+  PrismaClient,
+  Prisma,
+  TutorSessionStatus,
+  TutorMessageRole,
+} from '../generated/prisma-client/index.js';
+
+import { config } from './config.js';
+
+export const prisma = new PrismaClient({
+  datasources: { db: { url: config.databaseUrl } },
+});
+
+export { Prisma, TutorSessionStatus, TutorMessageRole };
+export type { PrismaClient };
