@@ -103,12 +103,12 @@ jobs:
           MISSING=0
           VERIFIED=0
 
-          # Phase 1 TypeScript backend services (14 — must match staging pipeline)
+          # Phase 1 TypeScript backend services (15 — must match staging pipeline)
           TS_SERVICES=(
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
           )
 
           # Python AI/ML services (20)
@@ -513,12 +513,12 @@ jobs:
 
           cd infra/k8s/overlays/hetzner
 
-          # Phase 1 TypeScript services (14 — must match staging pipeline)
+          # Phase 1 TypeScript services (15 — must match staging pipeline)
           TS_SERVICES=(
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
           )
 
           # Python AI/ML services (20)
@@ -567,7 +567,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
           )
 
           PY_SERVICES=(

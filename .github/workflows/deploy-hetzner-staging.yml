@@ -168,6 +168,7 @@ jobs:
           - realtime-svc
           - compliance-svc
           - gamification-svc
+          - tutor-svc
     steps:
       - uses: actions/checkout@v4
 
@@ -703,7 +704,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
           )
           PY_SERVICES=(
             ai-inference-svc training-svc ml-recommendation-svc
@@ -797,7 +798,7 @@ jobs:
 
           # Backend services (use wget + pod IP since services may not bind to 127.0.0.1)
           # Phase 1 backend services
-          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc)
+          SERVICES=(auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc tutor-svc)
 
           for svc in "${SERVICES[@]}"; do
             if kubectl exec -n "$NAMESPACE" "deploy/${svc}" -- \
@@ -889,7 +890,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
             # Python AI/ML services
             ai-inference-svc training-svc ml-recommendation-svc
             brain-engine python-api-gateway vision-analysis-svc
@@ -1287,7 +1288,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
             ai-inference-svc training-svc ml-recommendation-svc
             brain-engine python-api-gateway vision-analysis-svc
             speech-analysis-svc accessibility-ai-svc question-generation-svc
@@ -1368,7 +1369,7 @@ jobs:
 
           echo "═══ Backend Health ═══"
           # Use pod IP (hostname -i) since services may not bind to 127.0.0.1
-          for svc in auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc; do
+          for svc in auth-svc api-gateway tenant-svc sis-sync-svc iep-svc parent-svc profile-svc messaging-svc audit-svc notify-svc reports-svc realtime-svc compliance-svc gamification-svc tutor-svc; do
             if kubectl exec -n "$NS" "deploy/${svc}" -- \
               sh -c 'wget -q -O /dev/null --timeout=10 http://$(hostname -i):3000/health' 2>/dev/null; then
               echo "✅ ${svc}"
