@@ -460,7 +460,7 @@
       "我们知道一定有更好的方法。结合AI、教育和儿童发展方面的专业知识，我们着手创造一些革命性的东西：一个适应每个孩子独特思维的学习平台，而不是让孩子去适应平台。",
       "如今，AIVO 已服务超过150个家庭，而我们才刚刚开始。"
     ],
-    "founderQuote": ""每个孩子都值得以适合他们的方式来学习。"",
+    "founderQuote": "\"每个孩子都值得以适合他们的方式来学习。\"",
     "founderAttribution": "— AIVO 创始团队",
     "valuesBadge": "核心价值观",
     "valuesHeading": "我们的坚守",
@@ -747,7 +747,7 @@
       "xpEarned": "获得经验值",
       "xpValue": "2,450",
       "newAchievement": "新成就！",
-      "achievementDetail": "Emma完成了"分数大师"并获得100点奖励经验值！",
+      "achievementDetail": "Emma完成了\"分数大师\"并获得100点奖励经验值！",
       "readingGoal": "阅读目标",
       "readingGoalPercent": "85%",
       "sessionComplete": "课程完成！",
@@ -942,7 +942,7 @@
       "heading": "什么是Cookie？",
       "paragraphs": [
         "Cookie是访问网站时存放在您设备上的小型文本文件。它们被广泛用于使网站更高效地运行并向网站所有者提供信息。",
-        "我们还使用类似的技术，如本地存储和会话存储，它们的工作方式与Cookie类似。当我们在本政策中提到"Cookie"时，也包括这些类似技术。"
+        "我们还使用类似的技术，如本地存储和会话存储，它们的工作方式与Cookie类似。当我们在本政策中提到\"Cookie\"时，也包括这些类似技术。"
       ]
     },
     "typesHeading": "我们使用的Cookie类型",
@@ -1014,7 +1014,7 @@
       "description": "您有多种方式管理Cookie：",
       "preferencesCenter": {
         "heading": "1. Cookie偏好中心",
-        "description": "您可以随时通过点击下方按钮或网站页脚的"Cookie偏好设置"链接来管理您的Cookie偏好。",
+        "description": "您可以随时通过点击下方按钮或网站页脚的\"Cookie偏好设置\"链接来管理您的Cookie偏好。",
         "button": "管理Cookie偏好"
       },
       "browserSettings": {
@@ -1035,7 +1035,7 @@
     "changes": {
       "heading": "政策变更",
       "paragraphs": [
-        "我们可能会不时更新本Cookie政策。当我们进行更改时，会更新页面顶部的"最后更新"日期。我们建议您定期查看本政策。",
+        "我们可能会不时更新本Cookie政策。当我们进行更改时，会更新页面顶部的\"最后更新\"日期。我们建议您定期查看本政策。",
         "对于重大变更，我们可能还会提供额外通知，例如在网站上显示横幅或发送电子邮件通知。"
       ]
     },
