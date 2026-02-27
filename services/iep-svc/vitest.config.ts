@@ -14,6 +14,13 @@ export default defineConfig({
         '**/*.d.ts',
         'vitest.config.ts',
       ],
+    
+      thresholds: {
+        lines: 90,
+        branches: 85,
+        functions: 90,
+        statements: 90,
+      },
     },
     // Ensure proper handling of ES modules
     alias: {
