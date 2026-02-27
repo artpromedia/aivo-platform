@@ -8,7 +8,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
-const BASE_URL = process.env.DISTRICT_URL || 'http://localhost:3004';
+const BASE_URL = process.env.DISTRICT_URL || 'http://localhost:3003';
 
 const testAdmin = {
   email: 'district-admin@example.com',
@@ -65,7 +65,9 @@ test.describe('District Admin Journey — View Schools', () => {
   test('should display school cards or table', async ({ page }) => {
     await page.goto(`${BASE_URL}/schools`);
     await waitForPageReady(page);
-    const schools = page.locator('[data-testid="school-card"], .school-card, table, a[href*="school"]');
+    const schools = page.locator(
+      '[data-testid="school-card"], .school-card, table, a[href*="school"]'
+    );
     await expect(schools.first()).toBeVisible({ timeout: 10000 });
   });
 });
@@ -89,14 +91,18 @@ test.describe('District Admin Journey — Manage Users', () => {
   test('should display user list with search', async ({ page }) => {
     await page.goto(`${BASE_URL}/users`).catch(() => page.goto(`${BASE_URL}/staff`));
     await waitForPageReady(page);
-    const search = page.locator('input[type="search"], input[placeholder*="Search"], input[placeholder*="search"]');
+    const search = page.locator(
+      'input[type="search"], input[placeholder*="Search"], input[placeholder*="search"]'
+    );
     await expect(search.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should have add user capability', async ({ page }) => {
     await page.goto(`${BASE_URL}/users`).catch(() => page.goto(`${BASE_URL}/staff`));
     await waitForPageReady(page);
-    const addBtn = page.locator('button:has-text("Add"), button:has-text("Invite"), a:has-text("Add"), a:has-text("Invite")');
+    const addBtn = page.locator(
+      'button:has-text("Add"), button:has-text("Invite"), a:has-text("Add"), a:has-text("Invite")'
+    );
     await expect(addBtn.first()).toBeVisible({ timeout: 10000 });
   });
 });

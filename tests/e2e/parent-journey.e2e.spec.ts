@@ -8,7 +8,7 @@
 
 import { test, expect, type Page } from '@playwright/test';
 
-const BASE_URL = process.env.PARENT_URL || 'http://localhost:3003';
+const BASE_URL = process.env.PARENT_URL || 'http://localhost:3001';
 
 const testParent = {
   email: 'parent-journey@example.com',
@@ -60,7 +60,10 @@ test.describe('Parent Journey — Onboarding', () => {
 
   test('should allow adding a child profile', async ({ page }) => {
     await loginAsParent(page);
-    await page.goto(`${BASE_URL}/onboarding`).catch(() => page.goto(`${BASE_URL}/children/add`)).catch(() => {});
+    await page
+      .goto(`${BASE_URL}/onboarding`)
+      .catch(() => page.goto(`${BASE_URL}/children/add`))
+      .catch(() => {});
     await waitForPageReady(page);
     const form = page.locator('form, [data-testid="add-child"], button:has-text("Add")');
     await expect(form.first()).toBeVisible({ timeout: 10000 });
@@ -86,7 +89,9 @@ test.describe('Parent Journey — Child Dashboard', () => {
   test('should show progress metrics for child', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
     await waitForPageReady(page);
-    const progress = page.locator('[data-testid="progress"], [role="progressbar"], .progress, canvas, svg');
+    const progress = page.locator(
+      '[data-testid="progress"], [role="progressbar"], .progress, canvas, svg'
+    );
     await expect(progress.first()).toBeVisible({ timeout: 10000 });
   });
 });
@@ -98,7 +103,10 @@ test.describe('Parent Journey — Child Dashboard', () => {
 test.describe('Parent Journey — Assessments', () => {
   test('should view assessment results', async ({ page }) => {
     await loginAsParent(page);
-    await page.goto(`${BASE_URL}/assessments`).catch(() => page.goto(`${BASE_URL}/reports`)).catch(() => {});
+    await page
+      .goto(`${BASE_URL}/assessments`)
+      .catch(() => page.goto(`${BASE_URL}/reports`))
+      .catch(() => {});
     await waitForPageReady(page);
     const heading = page.locator('h1, h2');
     await expect(heading.first()).toBeVisible();
@@ -112,7 +120,11 @@ test.describe('Parent Journey — Assessments', () => {
 test.describe('Parent Journey — Billing', () => {
   test('should navigate to billing or subscription page', async ({ page }) => {
     await loginAsParent(page);
-    await page.goto(`${BASE_URL}/billing`).catch(() => page.goto(`${BASE_URL}/settings/billing`)).catch(() => page.goto(`${BASE_URL}/subscription`)).catch(() => {});
+    await page
+      .goto(`${BASE_URL}/billing`)
+      .catch(() => page.goto(`${BASE_URL}/settings/billing`))
+      .catch(() => page.goto(`${BASE_URL}/subscription`))
+      .catch(() => {});
     await waitForPageReady(page);
     const heading = page.locator('h1, h2');
     await expect(heading.first()).toBeVisible();
@@ -120,7 +132,10 @@ test.describe('Parent Journey — Billing', () => {
 
   test('should display subscription status', async ({ page }) => {
     await loginAsParent(page);
-    await page.goto(`${BASE_URL}/billing`).catch(() => page.goto(`${BASE_URL}/subscription`)).catch(() => {});
+    await page
+      .goto(`${BASE_URL}/billing`)
+      .catch(() => page.goto(`${BASE_URL}/subscription`))
+      .catch(() => {});
     await waitForPageReady(page);
     const content = page.locator('text=/plan|subscription|billing|payment/i');
     await expect(content.first()).toBeVisible({ timeout: 10000 });

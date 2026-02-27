@@ -100,7 +100,9 @@ test.describe('Teacher Login and Dashboard', () => {
   test('1.2 Dashboard displays class overview', async ({ page }) => {
     await loginAsTeacher(page);
 
-    const classesSection = page.locator('[data-testid="my-classes"], .classes-overview, text=/my classes/i');
+    const classesSection = page.locator(
+      '[data-testid="my-classes"], .classes-overview, text=/my classes/i'
+    );
     await expect(classesSection.first()).toBeVisible();
   });
 
@@ -131,6 +133,7 @@ test.describe('Teacher Login and Dashboard', () => {
 // =============================================================================
 
 test.describe('Class Management Flows', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -162,7 +165,9 @@ test.describe('Class Management Flows', () => {
     await waitForPageReady(page);
 
     // Click create button
-    await page.click('button:has-text("Create"), button:has-text("New Class"), [data-testid="create-class"]');
+    await page.click(
+      'button:has-text("Create"), button:has-text("New Class"), [data-testid="create-class"]'
+    );
 
     // Fill class details
     await page.fill('[name="name"], [name="className"]', testClass.name);
@@ -201,7 +206,9 @@ test.describe('Class Management Flows', () => {
     const classCard = page.locator('.class-card').first();
     await classCard.click();
 
-    const rosterTab = page.locator('[data-testid="roster-tab"], button:has-text("Students"), a:has-text("Roster")');
+    const rosterTab = page.locator(
+      '[data-testid="roster-tab"], button:has-text("Students"), a:has-text("Roster")'
+    );
     if (await rosterTab.isVisible()) {
       await rosterTab.click();
     }
@@ -217,12 +224,16 @@ test.describe('Class Management Flows', () => {
     const classCard = page.locator('.class-card').first();
     await classCard.click();
 
-    const addStudentBtn = page.locator('button:has-text("Add Student"), [data-testid="add-student"]');
+    const addStudentBtn = page.locator(
+      'button:has-text("Add Student"), [data-testid="add-student"]'
+    );
     if (await addStudentBtn.isVisible()) {
       await addStudentBtn.click();
 
       // Search for student
-      const searchInput = page.locator('[data-testid="student-search"], input[placeholder*="search" i]');
+      const searchInput = page.locator(
+        '[data-testid="student-search"], input[placeholder*="search" i]'
+      );
       if (await searchInput.isVisible()) {
         await searchInput.fill('test');
         await page.waitForTimeout(500);
@@ -259,6 +270,7 @@ test.describe('Class Management Flows', () => {
 // =============================================================================
 
 test.describe('Assignment Creation and Grading', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -290,7 +302,10 @@ test.describe('Assignment Creation and Grading', () => {
 
     // Fill assignment details
     await page.fill('[name="title"], [name="name"]', 'E2E Test Assignment');
-    await page.fill('[name="instructions"], textarea[name="description"]', 'This is a test assignment for E2E testing.');
+    await page.fill(
+      '[name="instructions"], textarea[name="description"]',
+      'This is a test assignment for E2E testing.'
+    );
 
     // Set due date
     const dueDateInput = page.locator('[name="dueDate"], input[type="date"]');
@@ -345,13 +360,17 @@ test.describe('Assignment Creation and Grading', () => {
     const assignmentCard = page.locator('.assignment-card').first();
     await assignmentCard.click();
 
-    const submissionsTab = page.locator('[data-testid="submissions-tab"], button:has-text("Submissions")');
+    const submissionsTab = page.locator(
+      '[data-testid="submissions-tab"], button:has-text("Submissions")'
+    );
     if (await submissionsTab.isVisible()) {
       await submissionsTab.click();
     }
 
     const submissionsList = page.locator('[data-testid="submissions-list"], .submissions-table');
-    await expect(submissionsList.or(page.locator('text=/submission|submitted/i').first())).toBeVisible();
+    await expect(
+      submissionsList.or(page.locator('text=/submission|submitted/i').first())
+    ).toBeVisible();
   });
 
   test('3.5 Teacher can grade a submission', async () => {
@@ -362,7 +381,9 @@ test.describe('Assignment Creation and Grading', () => {
     await assignmentCard.click();
 
     // Navigate to submissions
-    const submissionsTab = page.locator('button:has-text("Submissions"), [data-testid="submissions-tab"]');
+    const submissionsTab = page.locator(
+      'button:has-text("Submissions"), [data-testid="submissions-tab"]'
+    );
     if (await submissionsTab.isVisible()) {
       await submissionsTab.click();
     }
@@ -431,6 +452,7 @@ test.describe('Assignment Creation and Grading', () => {
 // =============================================================================
 
 test.describe('Student Progress Review', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -453,7 +475,9 @@ test.describe('Student Progress Review', () => {
     await waitForPageReady(page);
 
     const progressOverview = page.locator('[data-testid="class-progress"], .progress-dashboard');
-    await expect(progressOverview.or(page.locator('text=/progress|performance/i').first())).toBeVisible();
+    await expect(
+      progressOverview.or(page.locator('text=/progress|performance/i').first())
+    ).toBeVisible();
   });
 
   test('4.2 Teacher can view individual student progress', async () => {
@@ -465,7 +489,9 @@ test.describe('Student Progress Review', () => {
       await studentRow.click();
 
       const progressSection = page.locator('[data-testid="student-progress"], .progress-details');
-      await expect(progressSection.or(page.locator('text=/progress|grades/i').first())).toBeVisible();
+      await expect(
+        progressSection.or(page.locator('text=/progress|grades/i').first())
+      ).toBeVisible();
     }
   });
 
@@ -493,7 +519,9 @@ test.describe('Student Progress Review', () => {
     await waitForPageReady(page);
 
     const atRiskSection = page.locator('[data-testid="at-risk-students"], .struggling-students');
-    await expect(atRiskSection.or(page.locator('text=/at risk|struggling|needs attention/i').first())).toBeVisible();
+    await expect(
+      atRiskSection.or(page.locator('text=/at risk|struggling|needs attention/i').first())
+    ).toBeVisible();
   });
 
   test('4.6 Teacher can view skill mastery breakdown', async () => {
@@ -510,6 +538,7 @@ test.describe('Student Progress Review', () => {
 // =============================================================================
 
 test.describe('Communication Tools', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -539,7 +568,9 @@ test.describe('Communication Tools', () => {
     await page.goto(`${BASE_URL}/messages`);
     await waitForPageReady(page);
 
-    await page.click('button:has-text("Compose"), button:has-text("New Message"), [data-testid="compose"]');
+    await page.click(
+      'button:has-text("Compose"), button:has-text("New Message"), [data-testid="compose"]'
+    );
 
     const composeModal = page.locator('[data-testid="compose-modal"], .compose-message');
     await expect(composeModal.or(page.locator('form').first())).toBeVisible();
@@ -555,7 +586,9 @@ test.describe('Communication Tools', () => {
       await recipientInput.fill('parent');
       await page.waitForTimeout(500);
 
-      const recipientOption = page.locator('.recipient-option, [data-testid="recipient-option"]').first();
+      const recipientOption = page
+        .locator('.recipient-option, [data-testid="recipient-option"]')
+        .first();
       if (await recipientOption.isVisible()) {
         await recipientOption.click();
       }
@@ -615,11 +648,15 @@ test.describe('Communication Tools', () => {
     await page.goto(`${BASE_URL}/messages/compose`);
     await waitForPageReady(page);
 
-    const scheduleBtn = page.locator('button:has-text("Schedule"), [data-testid="schedule-message"]');
+    const scheduleBtn = page.locator(
+      'button:has-text("Schedule"), [data-testid="schedule-message"]'
+    );
     if (await scheduleBtn.isVisible()) {
       await scheduleBtn.click();
 
-      const dateTimePicker = page.locator('[data-testid="schedule-datetime"], input[type="datetime-local"]');
+      const dateTimePicker = page.locator(
+        '[data-testid="schedule-datetime"], input[type="datetime-local"]'
+      );
       if (await dateTimePicker.isVisible()) {
         const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
         await dateTimePicker.fill(futureDate);
@@ -644,7 +681,9 @@ test.describe('Communication Tools', () => {
       // Hover to show actions
       await messageRow.hover();
 
-      const deleteBtn = page.locator('button[aria-label="Delete"], [data-testid="delete-message"]').first();
+      const deleteBtn = page
+        .locator('button[aria-label="Delete"], [data-testid="delete-message"]')
+        .first();
       if (await deleteBtn.isVisible()) {
         await deleteBtn.click();
 
@@ -662,6 +701,7 @@ test.describe('Communication Tools', () => {
 // =============================================================================
 
 test.describe('Gradebook Management', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -708,7 +748,9 @@ test.describe('Gradebook Management', () => {
       await gradeCell.fill('90');
       await gradeCell.press('Tab');
 
-      await expect(page.locator('text=/saved|updated/i').first()).toBeVisible({ timeout: 3000 }).catch(() => {});
+      await expect(page.locator('text=/saved|updated/i').first())
+        .toBeVisible({ timeout: 3000 })
+        .catch(() => {});
     }
   });
 

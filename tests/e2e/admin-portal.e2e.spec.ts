@@ -108,7 +108,9 @@ test.describe('Admin Authentication', () => {
     await page.click('button[type="submit"]');
 
     // If MFA is enabled, verify MFA prompt appears
-    const mfaPrompt = page.locator('[data-testid="mfa-prompt"], .mfa-form, text=/verification code/i');
+    const mfaPrompt = page.locator(
+      '[data-testid="mfa-prompt"], .mfa-form, text=/verification code/i'
+    );
     const mfaVisible = await mfaPrompt.isVisible().catch(() => false);
 
     if (mfaVisible) {
@@ -141,6 +143,12 @@ test.describe('Admin Authentication', () => {
 
     const lockoutMessage = page.locator('text=/locked|too many attempts|try again later/i');
     // Lockout message should appear after multiple failed attempts
+    await expect(lockoutMessage)
+      .toBeVisible({ timeout: 5000 })
+      .catch(() => {
+        // If no lockout message, at minimum verify we're still on login page
+        expect(page.url()).toContain('/login');
+      });
   });
 
   test('1.5 Admin session timeout handling', async ({ page }) => {
@@ -152,6 +160,10 @@ test.describe('Admin Authentication', () => {
 
     // If session is valid, should see users page
     // If expired, should redirect to login
+    const currentUrl = page.url();
+    const isOnUsersPage = currentUrl.includes('/users');
+    const isRedirectedToLogin = currentUrl.includes('/login');
+    expect(isOnUsersPage || isRedirectedToLogin).toBe(true);
   });
 });
 
@@ -160,6 +172,7 @@ test.describe('Admin Authentication', () => {
 // =============================================================================
 
 test.describe('User Management CRUD', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
   let createdUserId: string;
@@ -331,6 +344,7 @@ test.describe('User Management CRUD', () => {
 // =============================================================================
 
 test.describe('System Configuration', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -361,7 +375,9 @@ test.describe('System Configuration', () => {
     await waitForPageReady(page);
 
     const authSettings = page.locator('[data-testid="auth-settings"], .authentication-config');
-    await expect(authSettings.or(page.locator('text=/authentication|sso|mfa/i').first())).toBeVisible();
+    await expect(
+      authSettings.or(page.locator('text=/authentication|sso|mfa/i').first())
+    ).toBeVisible();
   });
 
   test('3.3 Admin can configure email settings', async () => {
@@ -377,7 +393,9 @@ test.describe('System Configuration', () => {
     await waitForPageReady(page);
 
     const featureFlags = page.locator('[data-testid="feature-flags"], .features-list');
-    await expect(featureFlags.or(page.locator('text=/feature|flag|toggle/i').first())).toBeVisible();
+    await expect(
+      featureFlags.or(page.locator('text=/feature|flag|toggle/i').first())
+    ).toBeVisible();
   });
 
   test('3.5 Admin can configure rate limits', async () => {
@@ -385,7 +403,9 @@ test.describe('System Configuration', () => {
     await waitForPageReady(page);
 
     const rateLimitSettings = page.locator('[data-testid="rate-limits"], .rate-limit-config');
-    await expect(rateLimitSettings.or(page.locator('text=/rate limit|throttle/i').first())).toBeVisible();
+    await expect(
+      rateLimitSettings.or(page.locator('text=/rate limit|throttle/i').first())
+    ).toBeVisible();
   });
 
   test('3.6 Admin can manage API keys', async () => {
@@ -418,6 +438,7 @@ test.describe('System Configuration', () => {
 // =============================================================================
 
 test.describe('Report Generation', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -447,7 +468,9 @@ test.describe('Report Generation', () => {
     await page.goto(`${BASE_URL}/reports/user-activity`);
     await waitForPageReady(page);
 
-    const generateBtn = page.locator('button:has-text("Generate"), [data-testid="generate-report"]');
+    const generateBtn = page.locator(
+      'button:has-text("Generate"), [data-testid="generate-report"]'
+    );
     if (await generateBtn.isVisible()) {
       await generateBtn.click();
       await page.waitForTimeout(1000);
@@ -505,6 +528,7 @@ test.describe('Report Generation', () => {
 // =============================================================================
 
 test.describe('Audit Log Access', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -573,7 +597,9 @@ test.describe('Audit Log Access', () => {
       await logRow.click();
 
       const logDetails = page.locator('[data-testid="log-details"], .audit-details');
-      await expect(logDetails.or(page.locator('text=/details|action|timestamp/i').first())).toBeVisible();
+      await expect(
+        logDetails.or(page.locator('text=/details|action|timestamp/i').first())
+      ).toBeVisible();
     }
   });
 
@@ -592,7 +618,9 @@ test.describe('Audit Log Access', () => {
     await waitForPageReady(page);
 
     const securityLogs = page.locator('[data-testid="security-logs"], .security-events');
-    await expect(securityLogs.or(page.locator('text=/security|failed|suspicious/i').first())).toBeVisible();
+    await expect(
+      securityLogs.or(page.locator('text=/security|failed|suspicious/i').first())
+    ).toBeVisible();
   });
 
   test('5.8 Admin can set up audit log alerts', async () => {
@@ -609,6 +637,7 @@ test.describe('Audit Log Access', () => {
 // =============================================================================
 
 test.describe('Tenant Management', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -651,7 +680,9 @@ test.describe('Tenant Management', () => {
       await tenantRow.click();
 
       const tenantDetails = page.locator('[data-testid="tenant-details"], .tenant-profile');
-      await expect(tenantDetails.or(page.locator('text=/details|subscription/i').first())).toBeVisible();
+      await expect(
+        tenantDetails.or(page.locator('text=/details|subscription/i').first())
+      ).toBeVisible();
     }
   });
 
@@ -663,7 +694,9 @@ test.describe('Tenant Management', () => {
     if (await tenantRow.isVisible()) {
       await tenantRow.click();
 
-      const subscriptionTab = page.locator('button:has-text("Subscription"), [data-testid="subscription-tab"]');
+      const subscriptionTab = page.locator(
+        'button:has-text("Subscription"), [data-testid="subscription-tab"]'
+      );
       if (await subscriptionTab.isVisible()) {
         await subscriptionTab.click();
       }

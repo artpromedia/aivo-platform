@@ -139,6 +139,7 @@ test.describe('District Admin Flows', () => {
 // =============================================================================
 
 test.describe('School Management', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -169,7 +170,9 @@ test.describe('School Management', () => {
     await page.goto(`${BASE_URL}/schools`);
     await waitForPageReady(page);
 
-    const searchInput = page.locator('[data-testid="school-search"], input[placeholder*="search" i]');
+    const searchInput = page.locator(
+      '[data-testid="school-search"], input[placeholder*="search" i]'
+    );
     await searchInput.fill('Elementary');
 
     await page.waitForTimeout(500);
@@ -249,7 +252,9 @@ test.describe('School Management', () => {
     if (await assignBtn.isVisible()) {
       await assignBtn.click();
 
-      const userSearch = page.locator('[data-testid="user-search"], input[placeholder*="search" i]');
+      const userSearch = page.locator(
+        '[data-testid="user-search"], input[placeholder*="search" i]'
+      );
       if (await userSearch.isVisible()) {
         await userSearch.fill('admin');
       }
@@ -263,12 +268,16 @@ test.describe('School Management', () => {
     const schoolCard = page.locator('.school-card').first();
     await schoolCard.click();
 
-    const enrollmentTab = page.locator('button:has-text("Enrollment"), [data-testid="enrollment-tab"]');
+    const enrollmentTab = page.locator(
+      'button:has-text("Enrollment"), [data-testid="enrollment-tab"]'
+    );
     if (await enrollmentTab.isVisible()) {
       await enrollmentTab.click();
 
       const enrollmentData = page.locator('[data-testid="enrollment-data"], .enrollment-stats');
-      await expect(enrollmentData.or(page.locator('text=/student|enrolled/i').first())).toBeVisible();
+      await expect(
+        enrollmentData.or(page.locator('text=/student|enrolled/i').first())
+      ).toBeVisible();
     }
   });
 
@@ -279,7 +288,9 @@ test.describe('School Management', () => {
     const schoolCard = page.locator('.school-card').first();
     await schoolCard.click();
 
-    const deactivateBtn = page.locator('button:has-text("Deactivate"), [data-testid="deactivate-school"]');
+    const deactivateBtn = page.locator(
+      'button:has-text("Deactivate"), [data-testid="deactivate-school"]'
+    );
     if (await deactivateBtn.isVisible()) {
       await deactivateBtn.click();
 
@@ -308,6 +319,7 @@ test.describe('School Management', () => {
 // =============================================================================
 
 test.describe('Aggregate Reporting', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -337,8 +349,12 @@ test.describe('Aggregate Reporting', () => {
     await page.goto(`${BASE_URL}/reports/performance`);
     await waitForPageReady(page);
 
-    const performanceReport = page.locator('[data-testid="performance-report"], .performance-chart');
-    await expect(performanceReport.or(page.locator('text=/performance|score/i').first())).toBeVisible();
+    const performanceReport = page.locator(
+      '[data-testid="performance-report"], .performance-chart'
+    );
+    await expect(
+      performanceReport.or(page.locator('text=/performance|score/i').first())
+    ).toBeVisible();
   });
 
   test('3.3 Admin can compare schools', async () => {
@@ -362,7 +378,9 @@ test.describe('Aggregate Reporting', () => {
     await waitForPageReady(page);
 
     const enrollmentReport = page.locator('[data-testid="enrollment-report"], .enrollment-chart');
-    await expect(enrollmentReport.or(page.locator('text=/enrollment|trend/i').first())).toBeVisible();
+    await expect(
+      enrollmentReport.or(page.locator('text=/enrollment|trend/i').first())
+    ).toBeVisible();
   });
 
   test('3.6 Admin can filter reports by school', async () => {
@@ -401,7 +419,9 @@ test.describe('Aggregate Reporting', () => {
     await waitForPageReady(page);
 
     const complianceReport = page.locator('[data-testid="compliance-report"], .compliance-status');
-    await expect(complianceReport.or(page.locator('text=/compliance|state/i').first())).toBeVisible();
+    await expect(
+      complianceReport.or(page.locator('text=/compliance|state/i').first())
+    ).toBeVisible();
   });
 
   test('3.10 Admin can schedule recurring reports', async () => {
@@ -418,6 +438,7 @@ test.describe('Aggregate Reporting', () => {
 // =============================================================================
 
 test.describe('Policy Configuration', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -491,7 +512,9 @@ test.describe('Policy Configuration', () => {
     if (await policyRow.isVisible()) {
       await policyRow.click();
 
-      const applyBtn = page.locator('button:has-text("Apply to Schools"), [data-testid="apply-policy"]');
+      const applyBtn = page.locator(
+        'button:has-text("Apply to Schools"), [data-testid="apply-policy"]'
+      );
       if (await applyBtn.isVisible()) {
         await applyBtn.click();
       }
@@ -511,14 +534,18 @@ test.describe('Policy Configuration', () => {
     await waitForPageReady(page);
 
     const curriculumPolicy = page.locator('[data-testid="curriculum-policy"], .curriculum-config');
-    await expect(curriculumPolicy.or(page.locator('text=/curriculum|standard/i').first())).toBeVisible();
+    await expect(
+      curriculumPolicy.or(page.locator('text=/curriculum|standard/i').first())
+    ).toBeVisible();
   });
 
   test('4.10 Admin can set district-wide announcements', async () => {
     await page.goto(`${BASE_URL}/announcements/create`);
     await waitForPageReady(page);
 
-    const announcementForm = page.locator('[data-testid="announcement-form"], .create-announcement');
+    const announcementForm = page.locator(
+      '[data-testid="announcement-form"], .create-announcement'
+    );
     await expect(announcementForm.or(page.locator('form').first())).toBeVisible();
   });
 });
@@ -528,6 +555,7 @@ test.describe('Policy Configuration', () => {
 // =============================================================================
 
 test.describe('District User Management', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 

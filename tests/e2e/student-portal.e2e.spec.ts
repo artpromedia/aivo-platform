@@ -116,21 +116,29 @@ test.describe('Student Login and Dashboard Access', () => {
   test('1.3 Dashboard displays enrolled courses', async ({ page }) => {
     await loginAsStudent(page);
 
-    const coursesSection = page.locator('[data-testid="enrolled-courses"], .courses-section, .my-courses');
-    await expect(coursesSection.or(page.locator('text=/my courses|enrolled/i').first())).toBeVisible();
+    const coursesSection = page.locator(
+      '[data-testid="enrolled-courses"], .courses-section, .my-courses'
+    );
+    await expect(
+      coursesSection.or(page.locator('text=/my courses|enrolled/i').first())
+    ).toBeVisible();
   });
 
   test('1.4 Dashboard shows progress summary', async ({ page }) => {
     await loginAsStudent(page);
 
-    const progressSection = page.locator('[data-testid="progress-summary"], .progress-overview, text=/progress/i');
+    const progressSection = page.locator(
+      '[data-testid="progress-summary"], .progress-overview, text=/progress/i'
+    );
     await expect(progressSection.first()).toBeVisible();
   });
 
   test('1.5 Dashboard displays upcoming assignments', async ({ page }) => {
     await loginAsStudent(page);
 
-    const assignmentsSection = page.locator('[data-testid="upcoming-assignments"], .assignments-widget, text=/upcoming|due/i');
+    const assignmentsSection = page.locator(
+      '[data-testid="upcoming-assignments"], .assignments-widget, text=/upcoming|due/i'
+    );
     await expect(assignmentsSection.first()).toBeVisible();
   });
 
@@ -138,7 +146,9 @@ test.describe('Student Login and Dashboard Access', () => {
     await loginAsStudent(page);
 
     // Click profile menu or settings link
-    await page.click('[data-testid="profile-menu"], [aria-label="Profile"], .profile-avatar, button:has-text("Profile")');
+    await page.click(
+      '[data-testid="profile-menu"], [aria-label="Profile"], .profile-avatar, button:has-text("Profile")'
+    );
 
     const settingsLink = page.locator('a:has-text("Settings"), [data-testid="settings-link"]');
     if (await settingsLink.isVisible()) {
@@ -151,7 +161,9 @@ test.describe('Student Login and Dashboard Access', () => {
     await loginAsStudent(page);
 
     // Find and click logout
-    const profileMenu = page.locator('[data-testid="profile-menu"], .profile-avatar, [aria-label="Profile"]');
+    const profileMenu = page.locator(
+      '[data-testid="profile-menu"], .profile-avatar, [aria-label="Profile"]'
+    );
     if (await profileMenu.isVisible()) {
       await profileMenu.click();
     }
@@ -167,6 +179,7 @@ test.describe('Student Login and Dashboard Access', () => {
 // =============================================================================
 
 test.describe('Course Enrollment Flow', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -189,7 +202,9 @@ test.describe('Course Enrollment Flow', () => {
     await page.goto(`${BASE_URL}/courses`);
     await waitForPageReady(page);
 
-    const courseList = page.locator('[data-testid="course-list"], .course-grid, .courses-container');
+    const courseList = page.locator(
+      '[data-testid="course-list"], .course-grid, .courses-container'
+    );
     await expect(courseList.or(page.locator('.course-card').first())).toBeVisible();
   });
 
@@ -197,7 +212,9 @@ test.describe('Course Enrollment Flow', () => {
     await page.goto(`${BASE_URL}/courses`);
     await waitForPageReady(page);
 
-    const searchInput = page.locator('[data-testid="course-search"], input[placeholder*="search" i], input[type="search"]');
+    const searchInput = page.locator(
+      '[data-testid="course-search"], input[placeholder*="search" i], input[type="search"]'
+    );
     await searchInput.fill('Math');
 
     // Wait for search results
@@ -211,7 +228,9 @@ test.describe('Course Enrollment Flow', () => {
     await page.goto(`${BASE_URL}/courses`);
     await waitForPageReady(page);
 
-    const subjectFilter = page.locator('[data-testid="subject-filter"], select[name="subject"], .filter-subject');
+    const subjectFilter = page.locator(
+      '[data-testid="subject-filter"], select[name="subject"], .filter-subject'
+    );
     if (await subjectFilter.isVisible()) {
       await subjectFilter.selectOption({ label: /math/i });
       await page.waitForTimeout(500);
@@ -238,7 +257,9 @@ test.describe('Course Enrollment Flow', () => {
     await waitForPageReady(page);
 
     // Find a course not yet enrolled
-    const enrollButton = page.locator('button:has-text("Enroll"), [data-testid="enroll-button"]').first();
+    const enrollButton = page
+      .locator('button:has-text("Enroll"), [data-testid="enroll-button"]')
+      .first();
     if (await enrollButton.isVisible()) {
       await enrollButton.click();
 
@@ -262,8 +283,12 @@ test.describe('Course Enrollment Flow', () => {
       await courseLink.click();
 
       // Verify course content page
-      const contentSection = page.locator('[data-testid="course-content"], .lessons-list, .modules-list');
-      await expect(contentSection.or(page.locator('text=/lesson|module|chapter/i').first())).toBeVisible();
+      const contentSection = page.locator(
+        '[data-testid="course-content"], .lessons-list, .modules-list'
+      );
+      await expect(
+        contentSection.or(page.locator('text=/lesson|module|chapter/i').first())
+      ).toBeVisible();
     }
   });
 });
@@ -273,6 +298,7 @@ test.describe('Course Enrollment Flow', () => {
 // =============================================================================
 
 test.describe('Assignment Submission Flow', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -319,7 +345,9 @@ test.describe('Assignment Submission Flow', () => {
     await expect(page).toHaveURL(/\/assignment(s)?\/[a-zA-Z0-9-]+/);
 
     // Verify assignment details
-    const instructions = page.locator('[data-testid="instructions"], .assignment-instructions, text=/instructions/i');
+    const instructions = page.locator(
+      '[data-testid="instructions"], .assignment-instructions, text=/instructions/i'
+    );
     await expect(instructions.first()).toBeVisible();
   });
 
@@ -328,7 +356,9 @@ test.describe('Assignment Submission Flow', () => {
     await waitForPageReady(page);
 
     // Find a pending assignment
-    const pendingAssignment = page.locator('[data-testid="assignment-pending"], .assignment-card:has-text("Pending")').first();
+    const pendingAssignment = page
+      .locator('[data-testid="assignment-pending"], .assignment-card:has-text("Pending")')
+      .first();
     if (await pendingAssignment.isVisible()) {
       await pendingAssignment.click();
 
@@ -356,7 +386,9 @@ test.describe('Assignment Submission Flow', () => {
     await page.goto(`${BASE_URL}/assignments`);
     await waitForPageReady(page);
 
-    const assignmentWithUpload = page.locator('.assignment-card:has([data-testid="file-upload"])').first();
+    const assignmentWithUpload = page
+      .locator('.assignment-card:has([data-testid="file-upload"])')
+      .first();
     if (await assignmentWithUpload.isVisible()) {
       await assignmentWithUpload.click();
 
@@ -383,7 +415,9 @@ test.describe('Assignment Submission Flow', () => {
       await submittedAssignment.click();
 
       const status = page.locator('[data-testid="submission-status"], .status-badge');
-      await expect(status.or(page.locator('text=/submitted|pending review/i').first())).toBeVisible();
+      await expect(
+        status.or(page.locator('text=/submitted|pending review/i').first())
+      ).toBeVisible();
     }
   });
 
@@ -408,6 +442,7 @@ test.describe('Assignment Submission Flow', () => {
 // =============================================================================
 
 test.describe('Progress Tracking Views', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -430,7 +465,9 @@ test.describe('Progress Tracking Views', () => {
     await waitForPageReady(page);
 
     const progressOverview = page.locator('[data-testid="progress-overview"], .progress-dashboard');
-    await expect(progressOverview.or(page.locator('text=/progress|performance/i').first())).toBeVisible();
+    await expect(
+      progressOverview.or(page.locator('text=/progress|performance/i').first())
+    ).toBeVisible();
   });
 
   test('4.2 Student can view progress by subject', async () => {
@@ -438,7 +475,9 @@ test.describe('Progress Tracking Views', () => {
     await waitForPageReady(page);
 
     const subjectProgress = page.locator('[data-testid="subject-progress"], .subject-breakdown');
-    await expect(subjectProgress.or(page.locator('text=/math|science|english/i').first())).toBeVisible();
+    await expect(
+      subjectProgress.or(page.locator('text=/math|science|english/i').first())
+    ).toBeVisible();
   });
 
   test('4.3 Student can view learning streak', async () => {
@@ -453,7 +492,9 @@ test.describe('Progress Tracking Views', () => {
     await page.goto(`${BASE_URL}/progress/achievements`);
     await waitForPageReady(page);
 
-    const achievements = page.locator('[data-testid="achievements"], .badges-container, .achievements-grid');
+    const achievements = page.locator(
+      '[data-testid="achievements"], .badges-container, .achievements-grid'
+    );
     await expect(achievements.or(page.locator('text=/badge|achievement/i').first())).toBeVisible();
   });
 
@@ -461,7 +502,9 @@ test.describe('Progress Tracking Views', () => {
     await page.goto(`${BASE_URL}/progress`);
     await waitForPageReady(page);
 
-    const chart = page.locator('[data-testid="progress-chart"], canvas, .recharts-wrapper, svg.chart');
+    const chart = page.locator(
+      '[data-testid="progress-chart"], canvas, .recharts-wrapper, svg.chart'
+    );
     await expect(chart.first()).toBeVisible();
   });
 
@@ -490,6 +533,7 @@ test.describe('Progress Tracking Views', () => {
 // =============================================================================
 
 test.describe('Notification Interactions', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -511,7 +555,9 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/dashboard`);
     await waitForPageReady(page);
 
-    const notificationBell = page.locator('[data-testid="notification-bell"], [aria-label*="notification" i], .notification-icon');
+    const notificationBell = page.locator(
+      '[data-testid="notification-bell"], [aria-label*="notification" i], .notification-icon'
+    );
     await expect(notificationBell.first()).toBeVisible();
   });
 
@@ -519,10 +565,14 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/dashboard`);
     await waitForPageReady(page);
 
-    const notificationBell = page.locator('[data-testid="notification-bell"], [aria-label*="notification" i]').first();
+    const notificationBell = page
+      .locator('[data-testid="notification-bell"], [aria-label*="notification" i]')
+      .first();
     await notificationBell.click();
 
-    const dropdown = page.locator('[data-testid="notification-dropdown"], .notification-list, .notifications-panel');
+    const dropdown = page.locator(
+      '[data-testid="notification-dropdown"], .notification-list, .notifications-panel'
+    );
     await expect(dropdown.first()).toBeVisible();
   });
 
@@ -530,7 +580,9 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/notifications`);
     await waitForPageReady(page);
 
-    const notificationList = page.locator('[data-testid="notifications-list"], .notifications-container');
+    const notificationList = page.locator(
+      '[data-testid="notifications-list"], .notifications-container'
+    );
     await expect(notificationList.or(page.locator('.notification-item').first())).toBeVisible();
   });
 
@@ -538,7 +590,9 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/notifications`);
     await waitForPageReady(page);
 
-    const unreadNotification = page.locator('.notification-item.unread, [data-testid="notification-unread"]').first();
+    const unreadNotification = page
+      .locator('.notification-item.unread, [data-testid="notification-unread"]')
+      .first();
     if (await unreadNotification.isVisible()) {
       await unreadNotification.click();
 
@@ -576,7 +630,9 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/notifications`);
     await waitForPageReady(page);
 
-    const notification = page.locator('.notification-item a, [data-testid="notification-link"]').first();
+    const notification = page
+      .locator('.notification-item a, [data-testid="notification-link"]')
+      .first();
     if (await notification.isVisible()) {
       const initialUrl = page.url();
       await notification.click();
@@ -590,8 +646,12 @@ test.describe('Notification Interactions', () => {
     await page.goto(`${BASE_URL}/settings/notifications`);
     await waitForPageReady(page);
 
-    const notificationSettings = page.locator('[data-testid="notification-settings"], .notification-preferences');
-    await expect(notificationSettings.or(page.locator('text=/email notification|push notification/i').first())).toBeVisible();
+    const notificationSettings = page.locator(
+      '[data-testid="notification-settings"], .notification-preferences'
+    );
+    await expect(
+      notificationSettings.or(page.locator('text=/email notification|push notification/i').first())
+    ).toBeVisible();
   });
 });
 
@@ -600,6 +660,7 @@ test.describe('Notification Interactions', () => {
 // =============================================================================
 
 test.describe('Lesson and Learning Flow', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -625,7 +686,9 @@ test.describe('Lesson and Learning Flow', () => {
     if (await courseCard.isVisible()) {
       await courseCard.click();
 
-      const startBtn = page.locator('button:has-text("Start"), button:has-text("Continue")').first();
+      const startBtn = page
+        .locator('button:has-text("Start"), button:has-text("Continue")')
+        .first();
       if (await startBtn.isVisible()) {
         await startBtn.click();
         await expect(page).toHaveURL(/\/lesson/);
@@ -672,7 +735,9 @@ test.describe('Lesson and Learning Flow', () => {
     await page.goto(`${BASE_URL}/my-courses`);
     await waitForPageReady(page);
 
-    const bookmarkBtn = page.locator('[data-testid="bookmark"], button[aria-label*="bookmark" i]').first();
+    const bookmarkBtn = page
+      .locator('[data-testid="bookmark"], button[aria-label*="bookmark" i]')
+      .first();
     if (await bookmarkBtn.isVisible()) {
       await bookmarkBtn.click();
       await expect(page.locator('text=/bookmarked|saved/i').first()).toBeVisible();

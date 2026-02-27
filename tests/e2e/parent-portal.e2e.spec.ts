@@ -132,7 +132,9 @@ test.describe('Parent Login and Dashboard', () => {
   test('1.6 Parent can switch between children', async ({ page }) => {
     await loginAsParent(page);
 
-    const childSelector = page.locator('[data-testid="child-selector"], select[name="child"], .child-tabs');
+    const childSelector = page.locator(
+      '[data-testid="child-selector"], select[name="child"], .child-tabs'
+    );
     if (await childSelector.isVisible()) {
       await childSelector.click();
       await page.waitForTimeout(500);
@@ -145,6 +147,7 @@ test.describe('Parent Login and Dashboard', () => {
 // =============================================================================
 
 test.describe('Child Progress Viewing', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -168,7 +171,9 @@ test.describe('Child Progress Viewing', () => {
     await waitForPageReady(page);
 
     const progressOverview = page.locator('[data-testid="progress-overview"], .progress-dashboard');
-    await expect(progressOverview.or(page.locator('text=/progress|performance/i').first())).toBeVisible();
+    await expect(
+      progressOverview.or(page.locator('text=/progress|performance/i').first())
+    ).toBeVisible();
   });
 
   test('2.2 Parent can view progress by subject', async () => {
@@ -176,7 +181,9 @@ test.describe('Child Progress Viewing', () => {
     await waitForPageReady(page);
 
     const subjectProgress = page.locator('[data-testid="subject-progress"], .subject-breakdown');
-    await expect(subjectProgress.or(page.locator('text=/math|science|reading/i').first())).toBeVisible();
+    await expect(
+      subjectProgress.or(page.locator('text=/math|science|reading/i').first())
+    ).toBeVisible();
   });
 
   test('2.3 Parent can view grades and assignments', async () => {
@@ -223,7 +230,9 @@ test.describe('Child Progress Viewing', () => {
     await page.goto(`${BASE_URL}/progress`);
     await waitForPageReady(page);
 
-    const downloadBtn = page.locator('button:has-text("Download"), button:has-text("Export"), [data-testid="download-report"]');
+    const downloadBtn = page.locator(
+      'button:has-text("Download"), button:has-text("Export"), [data-testid="download-report"]'
+    );
     if (await downloadBtn.isVisible()) {
       const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
       await downloadBtn.click();
@@ -236,6 +245,7 @@ test.describe('Child Progress Viewing', () => {
 // =============================================================================
 
 test.describe('Communication with Teachers', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -328,6 +338,7 @@ test.describe('Communication with Teachers', () => {
 // =============================================================================
 
 test.describe('Payment/Billing Access', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -349,8 +360,12 @@ test.describe('Payment/Billing Access', () => {
     await page.goto(`${BASE_URL}/billing`);
     await waitForPageReady(page);
 
-    const subscriptionSection = page.locator('[data-testid="subscription-status"], .subscription-info');
-    await expect(subscriptionSection.or(page.locator('text=/subscription|plan/i').first())).toBeVisible();
+    const subscriptionSection = page.locator(
+      '[data-testid="subscription-status"], .subscription-info'
+    );
+    await expect(
+      subscriptionSection.or(page.locator('text=/subscription|plan/i').first())
+    ).toBeVisible();
   });
 
   test('4.2 Parent can view billing history', async () => {
@@ -358,7 +373,9 @@ test.describe('Payment/Billing Access', () => {
     await waitForPageReady(page);
 
     const billingHistory = page.locator('[data-testid="billing-history"], .invoices-list');
-    await expect(billingHistory.or(page.locator('text=/invoice|payment|history/i').first())).toBeVisible();
+    await expect(
+      billingHistory.or(page.locator('text=/invoice|payment|history/i').first())
+    ).toBeVisible();
   });
 
   test('4.3 Parent can view payment methods', async () => {
@@ -366,7 +383,9 @@ test.describe('Payment/Billing Access', () => {
     await waitForPageReady(page);
 
     const paymentMethods = page.locator('[data-testid="payment-methods"], .cards-list');
-    await expect(paymentMethods.or(page.locator('text=/payment method|card/i').first())).toBeVisible();
+    await expect(
+      paymentMethods.or(page.locator('text=/payment method|card/i').first())
+    ).toBeVisible();
   });
 
   test('4.4 Parent can add new payment method', async () => {
@@ -388,14 +407,18 @@ test.describe('Payment/Billing Access', () => {
     await waitForPageReady(page);
 
     const plansSection = page.locator('[data-testid="plans-list"], .pricing-plans');
-    await expect(plansSection.or(page.locator('text=/plan|monthly|annual/i').first())).toBeVisible();
+    await expect(
+      plansSection.or(page.locator('text=/plan|monthly|annual/i').first())
+    ).toBeVisible();
   });
 
   test('4.6 Parent can download invoice', async () => {
     await page.goto(`${BASE_URL}/billing/history`);
     await waitForPageReady(page);
 
-    const downloadBtn = page.locator('button:has-text("Download"), [data-testid="download-invoice"]').first();
+    const downloadBtn = page
+      .locator('button:has-text("Download"), [data-testid="download-invoice"]')
+      .first();
     if (await downloadBtn.isVisible()) {
       const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
       await downloadBtn.click();
@@ -414,7 +437,9 @@ test.describe('Payment/Billing Access', () => {
     await page.goto(`${BASE_URL}/billing`);
     await waitForPageReady(page);
 
-    const cancelBtn = page.locator('button:has-text("Cancel"), [data-testid="cancel-subscription"]');
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
     if (await cancelBtn.isVisible()) {
       await cancelBtn.click();
 
@@ -435,6 +460,7 @@ test.describe('Payment/Billing Access', () => {
 // =============================================================================
 
 test.describe('Settings Management', () => {
+  test.describe.configure({ mode: 'serial' });
   let page: Page;
   let context: BrowserContext;
 
@@ -477,7 +503,9 @@ test.describe('Settings Management', () => {
     await page.goto(`${BASE_URL}/settings/security`);
     await waitForPageReady(page);
 
-    const changePasswordBtn = page.locator('button:has-text("Change Password"), [data-testid="change-password"]');
+    const changePasswordBtn = page.locator(
+      'button:has-text("Change Password"), [data-testid="change-password"]'
+    );
     if (await changePasswordBtn.isVisible()) {
       await changePasswordBtn.click();
 
@@ -490,11 +518,17 @@ test.describe('Settings Management', () => {
     await page.goto(`${BASE_URL}/settings/notifications`);
     await waitForPageReady(page);
 
-    const notificationSettings = page.locator('[data-testid="notification-settings"], .notification-preferences');
-    await expect(notificationSettings.or(page.locator('text=/notification/i').first())).toBeVisible();
+    const notificationSettings = page.locator(
+      '[data-testid="notification-settings"], .notification-preferences'
+    );
+    await expect(
+      notificationSettings.or(page.locator('text=/notification/i').first())
+    ).toBeVisible();
 
     // Toggle a notification setting
-    const toggle = page.locator('[data-testid="email-notifications"], input[type="checkbox"]').first();
+    const toggle = page
+      .locator('[data-testid="email-notifications"], input[type="checkbox"]')
+      .first();
     if (await toggle.isVisible()) {
       await toggle.click();
     }
@@ -505,7 +539,9 @@ test.describe('Settings Management', () => {
     await waitForPageReady(page);
 
     const screenTimeSettings = page.locator('[data-testid="screen-time"], .parental-controls');
-    await expect(screenTimeSettings.or(page.locator('text=/screen time|limit/i').first())).toBeVisible();
+    await expect(
+      screenTimeSettings.or(page.locator('text=/screen time|limit/i').first())
+    ).toBeVisible();
   });
 
   test('5.6 Parent can manage linked accounts', async () => {
@@ -546,7 +582,9 @@ test.describe('Settings Management', () => {
     await page.goto(`${BASE_URL}/settings/account`);
     await waitForPageReady(page);
 
-    const deleteBtn = page.locator('button:has-text("Delete Account"), [data-testid="delete-account"]');
+    const deleteBtn = page.locator(
+      'button:has-text("Delete Account"), [data-testid="delete-account"]'
+    );
     if (await deleteBtn.isVisible()) {
       await deleteBtn.click();
 
