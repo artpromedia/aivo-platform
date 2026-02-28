@@ -199,6 +199,8 @@ export interface RegisterLearnerInput {
   location: LocationInput;
   /** Manually selected district ID (if multiple options) */
   selectedDistrictId?: string;
+  /** 6-digit PIN chosen by parent/teacher */
+  pin: string;
 }
 
 /** Result of learner registration */

@@ -7,7 +7,7 @@
 
 import { logger } from '@aivo/ts-observability';
 
-import { NotFoundException } from '../errors.js';
+import { BadRequestException, NotFoundException } from '../errors.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
 import type {
@@ -136,14 +136,17 @@ export class OnboardingService {
         };
       }
 
-      const response = await fetch(`${this.tenantServiceUrl}/internal/tenants/${tenantId}/curriculum-standards`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Service-Name': 'parent-svc',
-        },
-        body: JSON.stringify(body),
-      });
+      const response = await fetch(
+        `${this.tenantServiceUrl}/internal/tenants/${tenantId}/curriculum-standards`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Service-Name': 'parent-svc',
+          },
+          body: JSON.stringify(body),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -159,10 +162,7 @@ export class OnboardingService {
       }
     } catch (error) {
       // Non-critical — log and continue. Curriculum will still work with defaults.
-      logger.warn(
-        { tenantId, error },
-        'Error persisting curriculum standards to TenantConfig'
-      );
+      logger.warn({ tenantId, error }, 'Error persisting curriculum standards to TenantConfig');
     }
   }
 
@@ -238,12 +238,48 @@ export class OnboardingService {
       }
     }
 
-    // Generate a PIN for the learner
-    const learnerPin = this.generateLearnerPin();
+    // Validate parent-chosen PIN
+    const learnerPin = input.pin;
+
+    if (!/^\d{6}$/.test(learnerPin)) {
+      throw new BadRequestException('PIN must be exactly 6 digits');
+    }
+
+    const WEAK_PINS = [
+      '000000',
+      '111111',
+      '222222',
+      '333333',
+      '444444',
+      '555555',
+      '666666',
+      '777777',
+      '888888',
+      '999999',
+      '123456',
+      '654321',
+      '012345',
+      '123123',
+      '112233',
+    ];
+    if (WEAK_PINS.includes(learnerPin)) {
+      throw new BadRequestException('PIN is too easy to guess — please choose a stronger one');
+    }
 
     // Hash the PIN for storage
     const crypto = await import('node:crypto');
     const pinHash = crypto.createHash('sha256').update(learnerPin).digest('hex');
+
+    // Check PIN uniqueness among active profiles
+    const existingPin = await this.prisma.profile.findFirst({
+      where: {
+        OR: [{ pin: learnerPin }, { pinHash }],
+        status: 'active',
+      },
+    });
+    if (existingPin) {
+      throw new BadRequestException('This PIN is already in use — please choose a different one');
+    }
 
     // Create learner profile in parent-svc database
     // Note: The Profile model stores the learner profile.
@@ -323,13 +359,6 @@ export class OnboardingService {
       curriculumStandards: locationResult.curriculum.curriculumStandards,
       needsBaseline: true, // New learners need baseline assessment
     };
-  }
-
-  /**
-   * Generate a 6-digit PIN for learner login
-   */
-  private generateLearnerPin(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
   /**
@@ -604,21 +633,18 @@ export class OnboardingService {
         });
 
         if (res.ok) {
-          logger.info(
-            { learnerId },
-            '[Gamification] Player profile initialized for new learner',
-          );
+          logger.info({ learnerId }, '[Gamification] Player profile initialized for new learner');
         } else {
           const text = await res.text().catch(() => 'unknown');
           logger.warn(
             { learnerId, status: res.status, body: text.slice(0, 200) },
-            '[Gamification] Failed to initialize player profile',
+            '[Gamification] Failed to initialize player profile'
           );
         }
       } catch (err) {
         logger.warn(
           { learnerId, err },
-          '[Gamification] Could not reach gamification-svc — profile will be created on first activity',
+          '[Gamification] Could not reach gamification-svc — profile will be created on first activity'
         );
       }
     })();
@@ -648,7 +674,7 @@ export class OnboardingService {
       try {
         logger.info(
           { tenantId, stateCode, curriculumStandards, gradeLevel },
-          '[HomeschoolCurriculum] Starting curriculum generation for homeschool learner',
+          '[HomeschoolCurriculum] Starting curriculum generation for homeschool learner'
         );
 
         // 1. Fetch available templates
@@ -656,7 +682,7 @@ export class OnboardingService {
         if (!res.ok) {
           logger.error(
             { status: res.status },
-            '[HomeschoolCurriculum] Failed to fetch templates from curriculum-svc',
+            '[HomeschoolCurriculum] Failed to fetch templates from curriculum-svc'
           );
           return;
         }
@@ -677,14 +703,14 @@ export class OnboardingService {
           templates = templates.filter((t) => bands.includes(t.gradeBand));
           logger.info(
             { bands, matched: templates.length },
-            '[HomeschoolCurriculum] Filtered templates by grade band',
+            '[HomeschoolCurriculum] Filtered templates by grade band'
           );
         }
 
         if (templates.length === 0) {
           logger.warn(
             { gradeLevel, bands },
-            '[HomeschoolCurriculum] No templates matched grade band — skipping',
+            '[HomeschoolCurriculum] No templates matched grade band — skipping'
           );
           return;
         }
@@ -719,26 +745,26 @@ export class OnboardingService {
               const text = await trigRes.text().catch(() => 'unknown');
               logger.warn(
                 { templateId: tpl.id, status: trigRes.status, body: text.slice(0, 200) },
-                '[HomeschoolCurriculum] Template trigger failed',
+                '[HomeschoolCurriculum] Template trigger failed'
               );
             }
           } catch (err) {
             failed++;
             logger.warn(
               { templateId: tpl.id, err },
-              '[HomeschoolCurriculum] Template trigger error',
+              '[HomeschoolCurriculum] Template trigger error'
             );
           }
         }
 
         logger.info(
           { tenantId, triggered, skipped, failed, total: templates.length },
-          '[HomeschoolCurriculum] Generation trigger complete',
+          '[HomeschoolCurriculum] Generation trigger complete'
         );
       } catch (err) {
         logger.error(
           { err },
-          '[HomeschoolCurriculum] Unexpected error during curriculum generation trigger',
+          '[HomeschoolCurriculum] Unexpected error during curriculum generation trigger'
         );
       }
     })();

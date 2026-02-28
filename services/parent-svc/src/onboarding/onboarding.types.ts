@@ -46,7 +46,8 @@ export interface RegisterLearnerInput {
   dateOfBirth: string;
   gradeLevel: string;
   location: LocationInput;
-  selectedDistrictId?: string;  // If multiple districts, parent can select
+  selectedDistrictId?: string; // If multiple districts, parent can select
+  pin: string; // 6-digit PIN chosen by parent/teacher (required)
 }
 
 export interface RegisterLearnerResult {

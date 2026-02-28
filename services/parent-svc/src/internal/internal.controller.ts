@@ -36,6 +36,10 @@ export async function internalRoutes(app: FastifyInstance) {
       throw new BadRequestException('Missing required fields: id, givenName, pin');
     }
 
+    if (!/^\d{6}$/.test(input.pin)) {
+      throw new BadRequestException('PIN must be exactly 6 digits');
+    }
+
     const pinHash = input.pinHash || crypto.createHash('sha256').update(input.pin).digest('hex');
 
     try {
