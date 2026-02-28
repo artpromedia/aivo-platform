@@ -19,6 +19,7 @@ import type {
   GameStats,
   ActiveGameResponse,
 } from './game-types';
+import i18n from '../i18n';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_FOCUS_API_URL || '/api/focus';
 
@@ -215,29 +216,32 @@ export function getEncouragementMessage(
   score?: number,
   maxScore?: number
 ): string {
+  const tt = (key: string, fallback: string) =>
+    i18n.t(`games.encouragement.${key}`, { ns: 'learner', defaultValue: fallback });
+
   if (!completed) {
-    return "No worries! Taking breaks is what matters. Ready to focus again?";
+    return tt('notCompleted', "No worries! Taking breaks is what matters. Ready to focus again?");
   }
 
   if (score === undefined || maxScore === undefined) {
-    return "Great job completing the activity! You're doing amazing.";
+    return tt('completedNoScore', "Great job completing the activity! You're doing amazing.");
   }
 
   const percentage = (score / maxScore) * 100;
 
   if (percentage === 100) {
-    return "Perfect score! You're a superstar!";
+    return tt('perfect', "Perfect score! You're a superstar!");
   }
   if (percentage >= 80) {
-    return "Excellent work! You're really getting the hang of this!";
+    return tt('excellent', "Excellent work! You're really getting the hang of this!");
   }
   if (percentage >= 60) {
-    return "Good effort! Keep practicing and you'll get even better!";
+    return tt('good', "Good effort! Keep practicing and you'll get even better!");
   }
   if (percentage >= 40) {
-    return "Nice try! Every attempt helps your brain grow stronger!";
+    return tt('niceTry', "Nice try! Every attempt helps your brain grow stronger!");
   }
-  return "Thanks for playing! Remember, practice makes progress!";
+  return tt('default', "Thanks for playing! Remember, practice makes progress!");
 }
 
 // ============ Mock Data for Development ============

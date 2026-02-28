@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import i18n from '../../../lib/i18n';
 
 interface EncouragementBubbleProps {
   message: string;
@@ -71,7 +72,7 @@ export function EncouragementBubble({
   );
 }
 
-// Pre-defined encouragement messages
+// Pre-defined encouragement messages (English fallback)
 export const ENCOURAGEMENT_MESSAGES = {
   correct: [
     'Great job! 🌟',
@@ -101,6 +102,13 @@ export const ENCOURAGEMENT_MESSAGES = {
 export function getRandomEncouragement(
   type: 'correct' | 'incorrect' | 'milestone'
 ): string {
-  const messages = ENCOURAGEMENT_MESSAGES[type];
+  const translated = i18n.t(`assessment.encouragement.${type}`, {
+    ns: 'learner',
+    returnObjects: true,
+  }) as string[];
+  const messages =
+    Array.isArray(translated) && translated.length > 0
+      ? translated
+      : ENCOURAGEMENT_MESSAGES[type];
   return messages[Math.floor(Math.random() * messages.length)];
 }

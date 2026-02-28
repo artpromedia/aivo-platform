@@ -13,6 +13,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GameSession, GameDefinition, EndGameResponse } from '../../lib/games/game-types';
 import { GameStars } from './shared/GameScore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../../lib/games/game-types';
@@ -38,6 +39,7 @@ export function GameResults({
   onExit,
   onRateGame,
 }: GameResultsProps) {
+  const { t } = useTranslation('learner');
   const [helpfulnessRating, setHelpfulnessRating] = useState<number | null>(null);
   const [hasRated, setHasRated] = useState(false);
 
@@ -70,10 +72,10 @@ export function GameResults({
 
   // Get performance message
   const getPerformanceMessage = () => {
-    if (stars === 3) return 'Outstanding!';
-    if (stars === 2) return 'Great job!';
-    if (stars === 1) return 'Good effort!';
-    return 'Keep practicing!';
+    if (stars === 3) return t('games.results.performanceOutstanding');
+    if (stars === 2) return t('games.results.performanceGreat');
+    if (stars === 1) return t('games.results.performanceGood');
+    return t('games.results.performanceKeepPracticing');
   };
 
   // Get emoji based on performance
@@ -94,7 +96,7 @@ export function GameResults({
 
       {/* Title */}
       <h2 className="text-2xl font-bold text-gray-800 mb-1">
-        {gameSession.completed ? getPerformanceMessage() : 'Game Ended'}
+        {gameSession.completed ? getPerformanceMessage() : t('games.results.gameEnded')}
       </h2>
 
       {/* Game title */}
@@ -115,7 +117,7 @@ export function GameResults({
           {/* Score */}
           {gameSession.score !== undefined && (
             <div className="text-center">
-              <p className="text-sm text-gray-500">Score</p>
+              <p className="text-sm text-gray-500">{t('games.results.score')}</p>
               <p className="text-2xl font-bold text-gray-800">
                 {gameSession.score}
                 {gameSession.maxScore && (
@@ -127,7 +129,7 @@ export function GameResults({
 
           {/* Time */}
           <div className="text-center">
-            <p className="text-sm text-gray-500">Time</p>
+            <p className="text-sm text-gray-500">{t('games.results.time')}</p>
             <p className="text-2xl font-bold text-gray-800">
               {formatDuration(gameSession.durationSeconds)}
             </p>
@@ -135,7 +137,7 @@ export function GameResults({
 
           {/* Category */}
           <div className="text-center">
-            <p className="text-sm text-gray-500">Category</p>
+            <p className="text-sm text-gray-500">{t('games.results.category')}</p>
             <p className="text-lg font-medium text-gray-700 flex items-center justify-center gap-1">
               <span>{CATEGORY_ICONS[game.category]}</span>
               {CATEGORY_LABELS[game.category]}
@@ -144,13 +146,13 @@ export function GameResults({
 
           {/* Status */}
           <div className="text-center">
-            <p className="text-sm text-gray-500">Status</p>
+            <p className="text-sm text-gray-500">{t('games.results.status')}</p>
             <p
               className={`text-lg font-medium ${
                 gameSession.completed ? 'text-green-600' : 'text-gray-600'
               }`}
             >
-              {gameSession.completed ? 'Completed' : 'Not finished'}
+              {gameSession.completed ? t('games.results.completed') : t('games.results.notFinished')}
             </p>
           </div>
         </div>
@@ -161,7 +163,7 @@ export function GameResults({
         <div className="w-full bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
           <h3 className="text-sm font-semibold text-yellow-800 mb-2 flex items-center gap-2">
             <span>🏆</span>
-            Rewards Earned
+            {t('games.results.rewardsEarned')}
           </h3>
           <div className="flex justify-center gap-6">
             {rewards.xpEarned > 0 && (
@@ -169,7 +171,7 @@ export function GameResults({
                 <p className="text-2xl font-bold text-yellow-700">
                   +{rewards.xpEarned}
                 </p>
-                <p className="text-xs text-yellow-600">XP</p>
+                <p className="text-xs text-yellow-600">{t('games.results.xp')}</p>
               </div>
             )}
             {rewards.coinsEarned > 0 && (
@@ -177,7 +179,7 @@ export function GameResults({
                 <p className="text-2xl font-bold text-yellow-700">
                   +{rewards.coinsEarned}
                 </p>
-                <p className="text-xs text-yellow-600">Coins</p>
+                <p className="text-xs text-yellow-600">{t('games.results.coins')}</p>
               </div>
             )}
             {rewards.streakBonus !== undefined && rewards.streakBonus > 0 && (
@@ -185,7 +187,7 @@ export function GameResults({
                 <p className="text-2xl font-bold text-orange-600">
                   +{rewards.streakBonus}
                 </p>
-                <p className="text-xs text-orange-500">Streak Bonus</p>
+                <p className="text-xs text-orange-500">{t('games.results.streakBonus')}</p>
               </div>
             )}
           </div>
@@ -201,7 +203,7 @@ export function GameResults({
       {!hasRated && onRateGame && (
         <div className="w-full bg-blue-50 rounded-xl p-4 mb-6">
           <p className="text-sm text-blue-700 text-center mb-3">
-            Did this break help you feel better?
+            {t('games.results.helpfulnessQuestion')}
           </p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((rating) => (
@@ -217,14 +219,14 @@ export function GameResults({
                   }
                   shadow-sm border border-blue-200
                 `}
-                aria-label={`Rate ${rating} out of 5`}
+                aria-label={t('games.results.rateAriaLabel', { rating })}
               >
                 {rating <= 2 ? '😐' : rating === 3 ? '🙂' : rating === 4 ? '😊' : '😄'}
               </button>
             ))}
           </div>
           <p className="text-xs text-blue-600 text-center mt-2">
-            1 = Not really &nbsp;&nbsp; 5 = A lot!
+            {t('games.results.ratingScale')}
           </p>
         </div>
       )}
@@ -232,7 +234,7 @@ export function GameResults({
       {/* Thank you message after rating */}
       {hasRated && (
         <div className="w-full bg-green-50 rounded-xl p-4 mb-6 text-center">
-          <p className="text-green-700">Thanks for your feedback! 💚</p>
+          <p className="text-green-700">{t('games.results.thanksFeedback')}</p>
         </div>
       )}
 
@@ -250,7 +252,7 @@ export function GameResults({
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          Ready to Focus
+          {t('games.results.readyToFocus')}
         </button>
 
         <div className="flex gap-3">
@@ -266,14 +268,14 @@ export function GameResults({
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            Play Again
+            {t('games.results.playAgain')}
           </button>
 
           <button
             onClick={onExit}
             className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
           >
-            Choose Another
+            {t('games.results.chooseAnother')}
           </button>
         </div>
       </div>

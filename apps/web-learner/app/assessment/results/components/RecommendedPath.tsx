@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { RecommendedPathItem } from '../../../../hooks/useAssessmentEngine';
 
 interface RecommendedPathProps {
@@ -37,21 +38,29 @@ const SUBJECT_EMOJIS: Record<string, string> = {
 };
 
 export function RecommendedPath({ recommendations }: RecommendedPathProps) {
+  const { t } = useTranslation('learner');
+
   if (!recommendations || recommendations.length === 0) {
     return (
       <div className="text-center py-8">
         <span className="text-4xl mb-4 block">🎉</span>
         <p className="text-gray-600">
-          Great job! You&apos;re doing well in all areas!
+          {t('assessment.recommendedPath.emptyState')}
         </p>
       </div>
     );
   }
 
+  const PRIORITY_LABELS: Record<string, string> = {
+    high: t('assessment.recommendedPath.priorityHigh'),
+    medium: t('assessment.recommendedPath.priorityMedium'),
+    low: t('assessment.recommendedPath.priorityLow'),
+  };
+
   return (
     <div className="space-y-4">
       <p className="text-gray-600 mb-6">
-        Based on your assessment, here&apos;s your personalized learning journey:
+        {t('assessment.recommendedPath.intro')}
       </p>
 
       <div className="relative">
@@ -92,15 +101,13 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
                     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${priority.bg} ${priority.text} font-medium border ${priority.border}`}
                   >
                     {priority.icon}
-                    {rec.priority === 'high' && 'Focus Area'}
-                    {rec.priority === 'medium' && 'Practice More'}
-                    {rec.priority === 'low' && 'Good Progress'}
+                    {PRIORITY_LABELS[rec.priority]}
                   </span>
                 </div>
 
                 {/* Action button */}
                 <button className="px-4 py-2 bg-white rounded-lg shadow-sm text-indigo-600 font-medium hover:bg-indigo-50 transition-colors flex-shrink-0">
-                  Start
+                  {t('assessment.recommendedPath.start')}
                 </button>
               </motion.div>
             );
@@ -117,7 +124,7 @@ export function RecommendedPath({ recommendations }: RecommendedPathProps) {
         <div className="flex items-center gap-3">
           <span className="text-2xl">🧠</span>
           <p className="text-sm text-gray-600">
-            AIVO will adapt your lessons as you learn. The more you practice, the smarter your path becomes!
+            {t('assessment.recommendedPath.adaptiveMessage')}
           </p>
         </div>
       </motion.div>

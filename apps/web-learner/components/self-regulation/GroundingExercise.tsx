@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GROUNDING_STEPS, type GradeBand, type GroundingStep } from '@/lib/self-regulation/regulation-types';
 
 // ============================================================================
@@ -27,6 +28,7 @@ export function GroundingExercise({
   onComplete,
   onCancel,
 }: Readonly<GroundingExerciseProps>) {
+  const { t } = useTranslation('learner');
   // State
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
@@ -45,49 +47,10 @@ export function GroundingExercise({
     0
   ) + currentItemIndex;
 
-  // Get age-appropriate text
+  // Get age-appropriate text from i18n
   const getText = useCallback(
-    (key: string): string => {
-      const texts: Record<string, Record<GradeBand, string>> = {
-        introTitle: {
-          K5: "Let's use our senses!",
-          G6_8: '5-4-3-2-1 Grounding',
-          G9_12: '5-4-3-2-1 Grounding Technique',
-        },
-        introDesc: {
-          K5: "We're going to look, touch, listen, smell, and taste to feel calm!",
-          G6_8: 'This technique uses your senses to help you feel present and grounded.',
-          G9_12: 'This evidence-based technique engages your senses to interrupt anxious thoughts and bring you back to the present moment.',
-        },
-        startBtn: {
-          K5: "Let's go!",
-          G6_8: 'Start Exercise',
-          G9_12: 'Begin',
-        },
-        nextBtn: {
-          K5: 'Next!',
-          G6_8: 'Next',
-          G9_12: 'Continue',
-        },
-        skipBtn: {
-          K5: 'Skip',
-          G6_8: 'Skip',
-          G9_12: 'Skip',
-        },
-        completeTitle: {
-          K5: 'You did it!',
-          G6_8: 'Great job!',
-          G9_12: 'Exercise Complete',
-        },
-        completeDesc: {
-          K5: 'You used all your senses! How do you feel now?',
-          G6_8: "You've engaged all five senses. Notice how you feel.",
-          G9_12: "You've completed the 5-4-3-2-1 technique. Take a moment to observe how your body and mind feel now.",
-        },
-      };
-      return texts[key]?.[gradeBand] || texts[key]?.G6_8 || '';
-    },
-    [gradeBand]
+    (key: string): string => t(`grounding.${gradeBand}.${key}`),
+    [gradeBand, t]
   );
 
   // Handle input submission
@@ -161,7 +124,7 @@ export function GroundingExercise({
               onClick={onCancel}
               className="text-slate-600 hover:text-slate-900"
             >
-              ← Back
+              {t('grounding.back')}
             </button>
           )}
           <div className="w-12" />
@@ -188,9 +151,7 @@ export function GroundingExercise({
           </div>
 
           <p className="text-sm text-slate-500 mb-6">
-            {gradeBand === 'K5'
-              ? '5 things to see, 4 to touch, 3 to hear, 2 to smell, 1 to taste'
-              : 'Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste'}
+            {getText('stepsPreview')}
           </p>
 
           <button
@@ -220,12 +181,10 @@ export function GroundingExercise({
       >
         <span className="text-6xl block mb-4">{nextStep.emoji}</span>
         <h2 className="text-xl font-semibold text-slate-900 mb-2">
-          {gradeBand === 'K5' ? 'Great job!' : 'Well done!'}
+          {getText('transitionTitle')}
         </h2>
         <p className="text-slate-600 mb-4">
-          {gradeBand === 'K5'
-            ? `Now let's find ${nextStep.count} things we can ${nextStep.sense}!`
-            : `Now notice ${nextStep.count} things you can ${nextStep.sense}.`}
+          {t(`grounding.${gradeBand}.transitionDesc`, { count: nextStep.count, sense: nextStep.sense })}
         </p>
 
         <button
@@ -254,7 +213,7 @@ export function GroundingExercise({
         {/* Summary of what they noticed */}
         <div className="bg-white rounded-lg p-4 mb-6 text-left">
           <p className="text-sm font-medium text-slate-700 mb-3">
-            {gradeBand === 'K5' ? 'You noticed:' : 'What you grounded with:'}
+            {getText('summaryLabel')}
           </p>
           <div className="space-y-2">
             {GROUNDING_STEPS.map((step, stepIdx) => {
@@ -278,7 +237,7 @@ export function GroundingExercise({
           onClick={onComplete}
           className="w-full py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
         >
-          {gradeBand === 'K5' ? 'Done!' : 'Continue'}
+          {getText('doneBtn')}
         </button>
       </div>
     );
@@ -296,10 +255,10 @@ export function GroundingExercise({
           onClick={onCancel}
           className="text-slate-600 hover:text-slate-900 text-sm"
         >
-          Exit
+          {t('grounding.exit')}
         </button>
         <span className="text-sm text-slate-600">
-          {completedItems + 1} of {totalItems}
+          {t('grounding.progressOf', { current: completedItems + 1, total: totalItems })}
         </span>
         <div className="w-12" />
       </div>
@@ -337,9 +296,7 @@ export function GroundingExercise({
           {currentStep.instruction}
         </h2>
         <p className="text-slate-600">
-          {gradeBand === 'K5'
-            ? `Thing ${currentItemIndex + 1} of ${currentStep.count}`
-            : `${currentItemIndex + 1} of ${currentStep.count}`}
+          {t(`grounding.${gradeBand}.itemOf`, { current: currentItemIndex + 1, total: currentStep.count })}
         </p>
       </div>
 
@@ -350,11 +307,7 @@ export function GroundingExercise({
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder={
-            gradeBand === 'K5'
-              ? `What can you ${currentStep.sense}?`
-              : `Name something you can ${currentStep.sense}...`
-          }
+          placeholder={t(`grounding.${gradeBand}.inputPlaceholder`, { sense: currentStep.sense })}
           className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           autoFocus
         />
@@ -365,7 +318,7 @@ export function GroundingExercise({
             onClick={() => setShowHint(true)}
             className="text-sm text-indigo-600 hover:text-indigo-800"
           >
-            {gradeBand === 'K5' ? 'Need help? 💡' : 'Show hint'}
+            {getText('needHelp')}
           </button>
         )}
 
@@ -373,7 +326,7 @@ export function GroundingExercise({
         {showHint && (
           <div className="p-3 bg-white rounded-lg text-sm text-slate-600">
             <p className="font-medium mb-1">
-              {gradeBand === 'K5' ? 'Try one of these:' : 'Examples:'}
+              {getText('hintLabel')}
             </p>
             <p>{currentStep.examples.join(', ')}</p>
           </div>
@@ -401,7 +354,7 @@ export function GroundingExercise({
       {userInputs.length > 0 && (
         <div className="mt-6 p-3 bg-white/50 rounded-lg">
           <p className="text-xs text-slate-500 mb-2">
-            {gradeBand === 'K5' ? 'You found:' : 'Identified:'}
+            {getText('foundLabel')}
           </p>
           <div className="flex flex-wrap gap-2">
             {userInputs

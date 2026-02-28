@@ -1,0 +1,233 @@
+{
+  "assessment": {
+    "encouragement": {
+      "correct": [
+        "Great job! 🌟",
+        "Awesome! 🎉",
+        "You got it! 💪",
+        "Perfect! ⭐",
+        "Excellent work! 🏆",
+        "Amazing! 🚀",
+        "Way to go! 🎯",
+        "Super smart! 🧠"
+      ],
+      "incorrect": [
+        "Good try! Let's keep going! 💪",
+        "You're doing great! 🌟",
+        "Nice effort! Keep learning! 📚",
+        "Every answer helps me learn about you! 🧠",
+        "That was tricky! You're doing awesome! ⭐"
+      ],
+      "milestone": [
+        "Halfway there! You're crushing it! 🔥",
+        "Great progress! Keep it up! 🎯",
+        "You're on fire! 🌟",
+        "Almost done! So proud of you! 💪"
+      ]
+    },
+    "recommendedPath": {
+      "emptyState": "Great job! You're doing well in all areas!",
+      "intro": "Based on your assessment, here's your personalized learning journey:",
+      "priorityHigh": "Focus Area",
+      "priorityMedium": "Practice More",
+      "priorityLow": "Good Progress",
+      "start": "Start",
+      "adaptiveMessage": "AIVO will adapt your lessons as you learn. The more you practice, the smarter your path becomes!"
+    }
+  },
+  "focus": {
+    "completion": {
+      "K5": {
+        "title": "Great Job!",
+        "ratingPrompt": "Did the break help you?",
+        "doneButtonText": "All Done!",
+        "skipButtonText": "I'm Ready to Go Back",
+        "completionMessage": "You did awesome! You're ready to learn more!",
+        "earlyEndPrompt": "That's okay! Ready to keep learning?"
+      },
+      "G6_8": {
+        "title": "Break Complete",
+        "ratingPrompt": "How helpful was this break?",
+        "doneButtonText": "Complete",
+        "skipButtonText": "End Early",
+        "completionMessage": "Nice work! You should feel more focused now.",
+        "earlyEndPrompt": "Ready to continue?"
+      },
+      "G9_12": {
+        "title": "Break Finished",
+        "ratingPrompt": "Rate this break:",
+        "doneButtonText": "Done",
+        "skipButtonText": "Skip",
+        "completionMessage": "Break completed. Ready to continue.",
+        "earlyEndPrompt": "Continue to learning?"
+      }
+    },
+    "activitySteps": {
+      "breathing": {
+        "title": "Breathing Exercise",
+        "steps": [
+          "Find a comfortable position",
+          "Breathe in slowly through your nose for 4 counts",
+          "Hold your breath gently for 4 counts",
+          "Exhale slowly through your mouth for 4 counts",
+          "Repeat 3-4 times"
+        ]
+      },
+      "stretching": {
+        "title": "Quick Stretch",
+        "steps": [
+          "Stand up or sit up straight",
+          "Reach your arms up high above your head",
+          "Gently lean to each side",
+          "Roll your shoulders forward and back",
+          "Take a deep breath and relax"
+        ]
+      },
+      "movement": {
+        "title": "Movement Break",
+        "steps": [
+          "Stand up from your seat",
+          "March in place for 10 steps",
+          "Shake out your arms and legs",
+          "Do 5 jumping jacks or arm circles",
+          "Take a deep breath and return to your seat"
+        ]
+      },
+      "grounding": {
+        "title": "Grounding Exercise",
+        "steps": [
+          "Place your feet flat on the floor",
+          "Notice 5 things you can see around you",
+          "Notice 4 things you can hear",
+          "Notice 3 things you can touch",
+          "Take 2 deep breaths"
+        ]
+      },
+      "mindful_pause": {
+        "title": "Mindful Pause",
+        "steps": [
+          "Close your eyes or look at one spot",
+          "Focus on your breathing",
+          "Notice how your body feels",
+          "Let any thoughts pass like clouds",
+          "When ready, gently return your attention"
+        ]
+      },
+      "simple_game": {
+        "title": "Brain Break Game",
+        "steps": [
+          "Look around the room",
+          "Find something blue",
+          "Find something that starts with the letter A",
+          "Think of 3 things you are grateful for",
+          "Smile and take a deep breath"
+        ]
+      }
+    },
+    "timeComplete": "Time complete! Finish when ready.",
+    "ofTime": "of {{time}}",
+    "stepOf": "Step {{current}} of {{total}}",
+    "previousStep": "Previous step",
+    "nextStep": "Next step",
+    "goToStep": "Go to step {{step}}",
+    "rateStarAriaLabel": "Rate {{star}} out of 5",
+    "focusBreakAriaLabel": "Focus break activity"
+  },
+  "grounding": {
+    "K5": {
+      "introTitle": "Let's use our senses!",
+      "introDesc": "We're going to look, touch, listen, smell, and taste to feel calm!",
+      "startBtn": "Let's go!",
+      "nextBtn": "Next!",
+      "skipBtn": "Skip",
+      "completeTitle": "You did it!",
+      "completeDesc": "You used all your senses! How do you feel now?",
+      "stepsPreview": "5 things to see, 4 to touch, 3 to hear, 2 to smell, 1 to taste",
+      "transitionTitle": "Great job!",
+      "transitionDesc": "Now let's find {{count}} things we can {{sense}}!",
+      "summaryLabel": "You noticed:",
+      "doneBtn": "Done!",
+      "itemOf": "Thing {{current}} of {{total}}",
+      "inputPlaceholder": "What can you {{sense}}?",
+      "needHelp": "Need help? 💡",
+      "hintLabel": "Try one of these:",
+      "foundLabel": "You found:"
+    },
+    "G6_8": {
+      "introTitle": "5-4-3-2-1 Grounding",
+      "introDesc": "This technique uses your senses to help you feel present and grounded.",
+      "startBtn": "Start Exercise",
+      "nextBtn": "Next",
+      "skipBtn": "Skip",
+      "completeTitle": "Great job!",
+      "completeDesc": "You've engaged all five senses. Notice how you feel.",
+      "stepsPreview": "Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste",
+      "transitionTitle": "Well done!",
+      "transitionDesc": "Now notice {{count}} things you can {{sense}}.",
+      "summaryLabel": "What you grounded with:",
+      "doneBtn": "Continue",
+      "itemOf": "{{current}} of {{total}}",
+      "inputPlaceholder": "Name something you can {{sense}}...",
+      "needHelp": "Show hint",
+      "hintLabel": "Examples:",
+      "foundLabel": "Identified:"
+    },
+    "G9_12": {
+      "introTitle": "5-4-3-2-1 Grounding Technique",
+      "introDesc": "This evidence-based technique engages your senses to interrupt anxious thoughts and bring you back to the present moment.",
+      "startBtn": "Begin",
+      "nextBtn": "Continue",
+      "skipBtn": "Skip",
+      "completeTitle": "Exercise Complete",
+      "completeDesc": "You've completed the 5-4-3-2-1 technique. Take a moment to observe how your body and mind feel now.",
+      "stepsPreview": "Name 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste",
+      "transitionTitle": "Well done!",
+      "transitionDesc": "Now notice {{count}} things you can {{sense}}.",
+      "summaryLabel": "What you grounded with:",
+      "doneBtn": "Continue",
+      "itemOf": "{{current}} of {{total}}",
+      "inputPlaceholder": "Name something you can {{sense}}...",
+      "needHelp": "Show hint",
+      "hintLabel": "Examples:",
+      "foundLabel": "Identified:"
+    },
+    "back": "← Back",
+    "exit": "Exit",
+    "progressOf": "{{current}} of {{total}}"
+  },
+  "games": {
+    "results": {
+      "performanceOutstanding": "Outstanding!",
+      "performanceGreat": "Great job!",
+      "performanceGood": "Good effort!",
+      "performancePractice": "Keep practicing!",
+      "gameEnded": "Game Ended",
+      "score": "Score",
+      "time": "Time",
+      "category": "Category",
+      "status": "Status",
+      "completed": "Completed",
+      "notFinished": "Not finished",
+      "rewardsEarned": "Rewards Earned",
+      "xp": "XP",
+      "coins": "Coins",
+      "streakBonus": "Streak Bonus",
+      "ratingPrompt": "Did this break help you feel better?",
+      "ratingScale": "1 = Not really    5 = A lot!",
+      "rateStarAriaLabel": "Rate {{rating}} out of 5",
+      "thanksFeedback": "Thanks for your feedback! 💚",
+      "readyToFocus": "Ready to Focus",
+      "playAgain": "Play Again",
+      "chooseAnother": "Choose Another"
+    },
+    "encouragement": {
+      "notCompleted": "No worries! Taking breaks is what matters. Ready to focus again?",
+      "completedNoScore": "Great job completing the activity! You're doing amazing.",
+      "perfect": "Perfect score! You're a superstar!",
+      "excellent": "Excellent work! You're really getting the hang of this!",
+      "good": "Good effort! Keep practicing and you'll get even better!",
+      "niceTry": "Nice try! Every attempt helps your brain grow stronger!",
+      "default": "Thanks for playing! Remember, practice makes progress!"
+    }
+  }
+}

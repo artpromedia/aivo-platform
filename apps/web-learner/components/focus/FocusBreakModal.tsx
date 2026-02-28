@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { GradeBand, RegulationActivity } from '../../lib/focus/focus-api';
 
@@ -20,7 +21,7 @@ export interface FocusBreakModalProps {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MESSAGING
+// MESSAGING (sourced from i18n learner namespace)
 // ══════════════════════════════════════════════════════════════════════════════
 
 interface CompletionMessaging {
@@ -31,97 +32,6 @@ interface CompletionMessaging {
   completionMessage: string;
   earlyEndPrompt: string;
 }
-
-const COMPLETION_MESSAGING: Record<GradeBand, CompletionMessaging> = {
-  K5: {
-    title: 'Great Job!',
-    ratingPrompt: 'Did the break help you?',
-    doneButtonText: 'All Done!',
-    skipButtonText: "I'm Ready to Go Back",
-    completionMessage: "You did awesome! You're ready to learn more!",
-    earlyEndPrompt: "That's okay! Ready to keep learning?",
-  },
-  G6_8: {
-    title: 'Break Complete',
-    ratingPrompt: 'How helpful was this break?',
-    doneButtonText: 'Complete',
-    skipButtonText: 'End Early',
-    completionMessage: 'Nice work! You should feel more focused now.',
-    earlyEndPrompt: 'Ready to continue?',
-  },
-  G9_12: {
-    title: 'Break Finished',
-    ratingPrompt: 'Rate this break:',
-    doneButtonText: 'Done',
-    skipButtonText: 'Skip',
-    completionMessage: 'Break completed. Ready to continue.',
-    earlyEndPrompt: 'Continue to learning?',
-  },
-};
-
-// Activity step content based on type
-const ACTIVITY_STEPS: Record<string, { title: string; steps: string[] }> = {
-  breathing: {
-    title: 'Breathing Exercise',
-    steps: [
-      'Find a comfortable position',
-      'Breathe in slowly through your nose for 4 counts',
-      'Hold your breath gently for 4 counts',
-      'Exhale slowly through your mouth for 4 counts',
-      'Repeat 3-4 times',
-    ],
-  },
-  stretching: {
-    title: 'Quick Stretch',
-    steps: [
-      'Stand up or sit up straight',
-      'Reach your arms up high above your head',
-      'Gently lean to each side',
-      'Roll your shoulders forward and back',
-      'Take a deep breath and relax',
-    ],
-  },
-  movement: {
-    title: 'Movement Break',
-    steps: [
-      'Stand up from your seat',
-      'March in place for 10 steps',
-      'Shake out your arms and legs',
-      'Do 5 jumping jacks or arm circles',
-      'Take a deep breath and return to your seat',
-    ],
-  },
-  grounding: {
-    title: 'Grounding Exercise',
-    steps: [
-      'Place your feet flat on the floor',
-      'Notice 5 things you can see around you',
-      'Notice 4 things you can hear',
-      'Notice 3 things you can touch',
-      'Take 2 deep breaths',
-    ],
-  },
-  mindful_pause: {
-    title: 'Mindful Pause',
-    steps: [
-      'Close your eyes or look at one spot',
-      'Focus on your breathing',
-      'Notice how your body feels',
-      'Let any thoughts pass like clouds',
-      'When ready, gently return your attention',
-    ],
-  },
-  simple_game: {
-    title: 'Brain Break Game',
-    steps: [
-      'Look around the room',
-      'Find something blue',
-      'Find something that starts with the letter A',
-      'Think of 3 things you are grateful for',
-      'Smile and take a deep breath',
-    ],
-  },
-};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // COMPONENT
@@ -147,14 +57,23 @@ export function FocusBreakModal({
   startTime,
   onComplete,
 }: FocusBreakModalProps) {
+  const { t } = useTranslation('learner');
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [helpfulnessRating, setHelpfulnessRating] = useState<number | null>(null);
 
-  const messaging = COMPLETION_MESSAGING[gradeBand];
-  const activitySteps =
-    ACTIVITY_STEPS[activity.activityType] || ACTIVITY_STEPS.breathing;
+  const messaging: CompletionMessaging = t(`focus.completion.${gradeBand}`, {
+    returnObjects: true,
+  }) as CompletionMessaging;
+  const activityStepsData = t(
+    `focus.activitySteps.${activity.activityType}`,
+    { returnObjects: true, defaultValue: null },
+  ) as { title: string; steps: string[] } | null;
+  const fallbackSteps = t('focus.activitySteps.breathing', {
+    returnObjects: true,
+  }) as { title: string; steps: string[] };
+  const activitySteps = activityStepsData ?? fallbackSteps;
   const steps = activity.instructions?.length ? activity.instructions : activitySteps.steps;
   const totalSteps = steps.length;
   const estimatedDuration = activity.estimatedDurationSeconds;
@@ -230,7 +149,7 @@ export function FocusBreakModal({
               ? 'text-yellow-400 scale-110'
               : 'text-slate-300 hover:text-yellow-300'
           }`}
-          aria-label={`Rate ${star} out of 5`}
+          aria-label={t('focus.rateStarAriaLabel', { star })}
         >
           ★
         </button>
@@ -243,7 +162,7 @@ export function FocusBreakModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Focus break activity"
+      aria-label={t('focus.focusBreakAriaLabel')}
     >
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
@@ -267,8 +186,8 @@ export function FocusBreakModal({
                 </div>
                 <p className="text-sm text-slate-500">
                   {isTimeComplete
-                    ? 'Time complete! Finish when ready.'
-                    : `of ${formatTime(estimatedDuration)}`}
+                    ? t('focus.timeComplete')
+                    : t('focus.ofTime', { time: formatTime(estimatedDuration) })}
                 </p>
                 {/* Progress bar */}
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
@@ -283,14 +202,14 @@ export function FocusBreakModal({
               <div className="rounded-xl bg-slate-50 p-4">
                 <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
                   <span>
-                    Step {currentStep + 1} of {totalSteps}
+                    {t('focus.stepOf', { current: currentStep + 1, total: totalSteps })}
                   </span>
                   <div className="flex gap-1">
                     <button
                       onClick={handlePrevStep}
                       disabled={currentStep === 0}
                       className="rounded p-1 hover:bg-slate-200 disabled:opacity-30"
-                      aria-label="Previous step"
+                      aria-label={t('focus.previousStep')}
                     >
                       ◀
                     </button>
@@ -298,7 +217,7 @@ export function FocusBreakModal({
                       onClick={handleNextStep}
                       disabled={currentStep === totalSteps - 1}
                       className="rounded p-1 hover:bg-slate-200 disabled:opacity-30"
-                      aria-label="Next step"
+                      aria-label={t('focus.nextStep')}
                     >
                       ▶
                     </button>
@@ -322,7 +241,7 @@ export function FocusBreakModal({
                           ? 'w-2 bg-blue-300'
                           : 'w-2 bg-slate-300'
                     }`}
-                    aria-label={`Go to step ${index + 1}`}
+                    aria-label={t('focus.goToStep', { step: index + 1 })}
                   />
                 ))}
               </div>
