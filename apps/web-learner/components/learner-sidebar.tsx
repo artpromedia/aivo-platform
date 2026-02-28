@@ -9,6 +9,7 @@ import {
   Settings,
   Brain,
   Gamepad2,
+  PenTool,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,6 +24,7 @@ const navItems = [
   { id: 'achievements', label: 'Achievements', icon: Trophy, href: '/achievements' },
   { id: 'tutor', label: 'AI Tutor', icon: Brain, href: '/tutor' },
   { id: 'games', label: 'Games', icon: Gamepad2, href: '/games' },
+  { id: 'homework', label: 'Homework Helper', icon: PenTool, href: '/homework' },
 ];
 
 const bottomItems = [

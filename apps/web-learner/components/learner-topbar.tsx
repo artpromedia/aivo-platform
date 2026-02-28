@@ -27,6 +27,7 @@ const mobileNavItems = [
   { label: 'Achievements', href: '/achievements' },
   { label: 'AI Tutor', href: '/tutor' },
   { label: 'Games', href: '/games' },
+  { label: 'Homework Helper', href: '/homework' },
   { label: 'Settings', href: '/settings' },
 ];
 
