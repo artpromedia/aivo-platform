@@ -6,6 +6,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { type AssessmentDomain, type AssessmentQuestion } from './types';
 
+const STORAGE_KEY = 'aivo_baseline_progress';
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ASSESSMENT CONFIGURATION TYPES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -380,11 +382,113 @@ export default function BaselineAssessmentPage() {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Progress persistence state
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const savedProgressRef = useRef<Record<string, unknown> | null>(null);
+  const prepareAssessmentRef = useRef<() => Promise<void>>();
+
   // Pre-generated questions (loaded during 'preparing' phase)
   const [preparedDomains, setPreparedDomains] = useState<PreparedDomain[]>([]);
   const [preparationProgress, setPreparationProgress] = useState(0);
   const [preparationStatus, setPreparationStatus] = useState<string>('Connecting to AI...');
   const [isPrepared, setIsPrepared] = useState(false);
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // PROGRESS PERSISTENCE (localStorage)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const saveProgress = useCallback(() => {
+    if (phase === 'loading' || phase === 'preparing' || showResumeDialog) return;
+    const progress = {
+      phase,
+      lsIndex,
+      lsAnswers,
+      selectedOptions,
+      currentDomainIndex,
+      currentQuestionInDomain,
+      domainAnswers,
+      currentBreakIndex,
+      preparedDomains,
+      config,
+      learnerName,
+      isPrepared,
+      savedAt: Date.now(),
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch {
+      // Storage full or unavailable — silently ignore
+    }
+  }, [
+    phase, lsIndex, lsAnswers, selectedOptions, currentDomainIndex,
+    currentQuestionInDomain, domainAnswers, currentBreakIndex,
+    preparedDomains, config, learnerName, isPrepared, showResumeDialog,
+  ]);
+
+  // Auto-save whenever assessment progress changes
+  useEffect(() => {
+    if (phase === 'loading' || phase === 'preparing' || showResumeDialog) return;
+    saveProgress();
+  }, [saveProgress, phase, showResumeDialog]);
+
+  // Save on browser close / tab close
+  useEffect(() => {
+    const handler = () => saveProgress();
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [saveProgress]);
+
+  const handleResume = useCallback(() => {
+    const data = savedProgressRef.current as Record<string, any> | null;
+    if (!data) return;
+
+    setPhase(data.phase);
+    setLsIndex(data.lsIndex ?? 0);
+    setLsAnswers(data.lsAnswers ?? {});
+    setSelectedOptions(data.selectedOptions ?? []);
+    setCurrentDomainIndex(data.currentDomainIndex ?? 0);
+    setCurrentQuestionInDomain(data.currentQuestionInDomain ?? 0);
+    setDomainAnswers(data.domainAnswers ?? {});
+    setCurrentBreakIndex(data.currentBreakIndex ?? 0);
+    setPreparedDomains(data.preparedDomains ?? []);
+    setConfig(data.config ?? DEFAULT_CONFIG);
+    setLearnerName(data.learnerName ?? '');
+    setIsPrepared(data.isPrepared ?? false);
+    setIsConfigLoaded(true);
+    setQuestionStartTime(Date.now());
+
+    // Restore domain questions if resuming in domain-questions phase
+    if (data.phase === 'domain_questions' && data.preparedDomains?.length > 0) {
+      const enabledDoms = (data.config?.domains ?? []).filter(
+        (d: DomainConfig) => d.enabled,
+      );
+      const currentDom = enabledDoms[data.currentDomainIndex ?? 0];
+      if (currentDom) {
+        const prepared = (data.preparedDomains as PreparedDomain[]).find(
+          (d) => d.domain === currentDom.domain,
+        );
+        if (prepared) setDomainQuestions(prepared.questions);
+      }
+    }
+
+    setShowResumeDialog(false);
+    savedProgressRef.current = null;
+  }, []);
+
+  const handleStartOver = useCallback(() => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setShowResumeDialog(false);
+    savedProgressRef.current = null;
+    // Reset all progress state
+    setLsIndex(0);
+    setLsAnswers({});
+    setSelectedOptions([]);
+    setCurrentDomainIndex(0);
+    setCurrentQuestionInDomain(0);
+    setDomainAnswers({});
+    setCurrentBreakIndex(0);
+    prepareAssessmentRef.current?.();
+  }, []);
 
   // ════════════════════════════════════════════════════════════════════════════
   // FETCH ASSESSMENT CONFIG ON LOAD
@@ -477,6 +581,25 @@ export default function BaselineAssessmentPage() {
         setPhase('learning_style');
       }
     }
+
+    prepareAssessmentRef.current = prepareAssessment;
+
+    // Check for saved progress in localStorage before preparing
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (Date.now() - data.savedAt < 24 * 60 * 60 * 1000) {
+          savedProgressRef.current = data;
+          setShowResumeDialog(true);
+          return; // Wait for user to choose resume or start over
+        }
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    }
+
     prepareAssessment();
   }, []);
 
@@ -1140,10 +1263,14 @@ export default function BaselineAssessmentPage() {
         throw new Error('Failed to save baseline');
       }
 
+      // Clear saved progress on successful submission
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+
       // Navigate to brain cloning page
       router.push('/baseline/brain-clone');
     } catch (error) {
       console.error('Failed to submit baseline:', error);
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
       // Still proceed to brain cloning
       router.push('/baseline/brain-clone');
     }
@@ -1621,6 +1748,42 @@ export default function BaselineAssessmentPage() {
     </div>
   );
 
+  const renderResumeDialog = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="max-w-md w-full mx-4 bg-white rounded-3xl shadow-2xl p-8 border-2 border-indigo-100">
+        <div className="text-center mb-6">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-full flex items-center justify-center mb-4">
+            <span className="text-4xl">📝</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back!</h2>
+          <p className="text-gray-600">
+            You have a saved assessment in progress. Would you like to continue
+            where you left off?
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={handleResume}
+            className="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:opacity-90 text-white text-lg font-bold rounded-xl transition-all"
+          >
+            Continue where I left off →
+          </button>
+          <button
+            onClick={handleStartOver}
+            className="w-full py-3 px-6 border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-gray-700 font-medium rounded-xl transition-all"
+          >
+            Start over
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-400 text-center mt-4">
+          Saved progress expires after 24 hours
+        </p>
+      </div>
+    </div>
+  );
+
   // ════════════════════════════════════════════════════════════════════════════
   // MAIN RENDER
   // ════════════════════════════════════════════════════════════════════════════
@@ -1725,6 +1888,8 @@ export default function BaselineAssessmentPage() {
       {phase === 'domain_questions' && renderDomainQuestions()}
       {phase === 'game_break' && renderGameBreak()}
       {phase === 'completing' && renderCompleting()}
+
+      {showResumeDialog && renderResumeDialog()}
     </div>
   );
 }
