@@ -13,6 +13,7 @@ import {
   useSendQuote,
   useApprovePO,
   useRejectPO,
+  useActivateContract,
   useProcessRenewal,
 } from '@/hooks/use-billing';
 import type { Quote, PurchaseOrder, Renewal } from '@/lib/api/billing.api';
@@ -65,6 +66,7 @@ export default function BillingDashboardPage() {
   const sendQuoteMutation = useSendQuote();
   const approvePOMutation = useApprovePO();
   const rejectPOMutation = useRejectPO();
+  const activateContractMutation = useActivateContract();
   const processRenewalMutation = useProcessRenewal();
 
   const quotes = quotesData?.data ?? [];
@@ -244,9 +246,12 @@ export default function BillingDashboardPage() {
                           </button>
                         )}
                         {quote.status === 'ACCEPTED' && (
-                          <button className="text-sm text-green-600 hover:underline">
+                          <Link
+                            href={`/billing/quotes/${quote.id}?action=create-contract`}
+                            className="text-sm text-green-600 hover:underline"
+                          >
                             Create Contract
-                          </button>
+                          </Link>
                         )}
                         <Link
                           href={`/billing/quotes/${quote.id}`}
@@ -331,8 +336,14 @@ export default function BillingDashboardPage() {
                           </>
                         )}
                         {po.status === 'APPROVED' && (
-                          <button className="text-sm text-blue-600 hover:underline">
-                            Activate Contract
+                          <button
+                            onClick={() => {
+                              activateContractMutation.mutate({ id: po.id });
+                            }}
+                            disabled={activateContractMutation.isPending}
+                            className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                          >
+                            {activateContractMutation.isPending ? 'Activating...' : 'Activate Contract'}
                           </button>
                         )}
                         <Link
@@ -413,10 +424,13 @@ export default function BillingDashboardPage() {
                             {processRenewalMutation.isPending ? 'Starting...' : 'Create Quote'}
                           </button>
                         )}
-                        {renewal.status === 'IN_PROGRESS' && (
-                          <button className="text-sm text-green-600 hover:underline">
+                        {renewal.status === 'IN_PROGRESS' && renewal.quoteId && (
+                          <Link
+                            href={`/billing/quotes/${renewal.quoteId}`}
+                            className="text-sm text-green-600 hover:underline"
+                          >
                             View Quote
-                          </button>
+                          </Link>
                         )}
                         <Link
                           href={`/billing/renewals/${renewal.id}`}

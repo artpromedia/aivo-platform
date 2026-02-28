@@ -158,6 +158,7 @@ export interface Renewal {
   totalValueCents: number;
   assignedTo: string | null;
   lastContactDate: string | null;
+  quoteId: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;

@@ -13,6 +13,7 @@
 import { Suspense } from 'react';
 
 import { AIModelManagement } from './components/ai-model-management';
+import { RefreshButton } from './components/refresh-button';
 import { AIOrchestrationPanel } from './components/ai-orchestration-panel';
 import { AuditLogViewer } from './components/audit-log-viewer';
 import { IntegrationStatus } from './components/integration-status';
@@ -41,9 +42,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleString()}</div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-            Refresh Data
-          </button>
+          <RefreshButton />
         </div>
       </div>
 

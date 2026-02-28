@@ -304,6 +304,23 @@ export function useRejectPO() {
   });
 }
 
+export function useActivateContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const response = await fetch(`/api/billing/purchase-orders/${id}/activate`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to activate contract');
+      return response.json() as Promise<PurchaseOrder>;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.purchaseOrders });
+    },
+  });
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // RENEWALS HOOKS
 // ══════════════════════════════════════════════════════════════════════════════
