@@ -385,4 +385,4 @@ function FallbackAvatar({
       )}
     </div>
   );
-});
+}
