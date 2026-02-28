@@ -26,6 +26,7 @@ import 'widgets/connectivity_banner.dart';
 import 'screens/baseline_break_screen.dart';
 import 'screens/baseline_complete_screen.dart';
 import 'screens/baseline_intro_screen.dart';
+import 'screens/baseline_learning_style_screen.dart';
 import 'screens/baseline_preparing_screen.dart';
 import 'screens/baseline_question_screen.dart';
 import 'screens/focus_break_screen.dart';
@@ -84,6 +85,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/complete', builder: (context, state) => const SessionCompleteScreen()),
       // Baseline flow routes
       GoRoute(path: '/baseline/intro', builder: (context, state) => const BaselineIntroScreen()),
+      GoRoute(path: '/baseline/learning-style', builder: (context, state) => const BaselineLearningStyleScreen()),
       GoRoute(
         path: '/baseline/preparing',
         builder: (context, state) {

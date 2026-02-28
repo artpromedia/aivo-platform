@@ -94,7 +94,7 @@ class BaselineIntroScreen extends ConsumerWidget {
 
               // Start button
               FilledButton(
-                onPressed: () => context.go('/baseline/question'),
+                onPressed: () => context.go('/baseline/learning-style'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 64),
                   textStyle: theme.textTheme.titleMedium?.copyWith(

@@ -15,6 +15,8 @@ class LearnerBaselineState {
     this.isComplete = false,
     this.isOnBreak = false,
     this.questionStartTime,
+    this.learningStyleAnswers = const {},
+    this.learningStyleComplete = false,
   });
 
   final BaselineProfile? profile;
@@ -25,6 +27,12 @@ class LearnerBaselineState {
   final bool isComplete;
   final bool isOnBreak;
   final DateTime? questionStartTime;
+
+  /// Answers to learning-style questions keyed by question ID (e.g. 'ls-1').
+  final Map<String, dynamic> learningStyleAnswers;
+
+  /// Whether the learning-style phase is finished.
+  final bool learningStyleComplete;
 
   /// Current question number (1-based).
   int get currentQuestion => currentItem?.sequence ?? 0;
@@ -61,6 +69,8 @@ class LearnerBaselineState {
     bool? isOnBreak,
     DateTime? questionStartTime,
     bool clearCurrentItem = false,
+    Map<String, dynamic>? learningStyleAnswers,
+    bool? learningStyleComplete,
   }) {
     return LearnerBaselineState(
       profile: profile ?? this.profile,
@@ -71,6 +81,8 @@ class LearnerBaselineState {
       isComplete: isComplete ?? this.isComplete,
       isOnBreak: isOnBreak ?? this.isOnBreak,
       questionStartTime: questionStartTime ?? this.questionStartTime,
+      learningStyleAnswers: learningStyleAnswers ?? this.learningStyleAnswers,
+      learningStyleComplete: learningStyleComplete ?? this.learningStyleComplete,
     );
   }
 }
@@ -224,6 +236,18 @@ class LearnerBaselineController extends StateNotifier<LearnerBaselineState> {
       isOnBreak: false,
       questionStartTime: DateTime.now(), // Reset timer after break
     );
+  }
+
+  /// Save a learning-style answer.
+  void setLearningStyleAnswer(String questionId, dynamic answer) {
+    final updated = Map<String, dynamic>.from(state.learningStyleAnswers)
+      ..[questionId] = answer;
+    state = state.copyWith(learningStyleAnswers: updated);
+  }
+
+  /// Mark the learning-style phase as done.
+  void completeLearningStyle() {
+    state = state.copyWith(learningStyleComplete: true);
   }
 
   /// Clear error.
