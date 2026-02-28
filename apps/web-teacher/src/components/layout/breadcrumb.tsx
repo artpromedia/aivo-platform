@@ -41,6 +41,13 @@ const routeLabels: Record<string, string> = {
   notifications: 'Notifications',
   account: 'Account',
   iep: 'IEP Goals',
+  create: 'Create',
+  lessons: 'Lessons',
+  assessments: 'Assessments',
+  feedback: 'Feedback',
+  'ai-generate': 'AI Generator',
+  'ai-create': 'AI Creator',
+  'ai-assist': 'AI Assistant',
   progress: 'Progress',
   accommodations: 'Accommodations',
 };
