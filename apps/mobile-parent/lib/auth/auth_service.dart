@@ -18,7 +18,10 @@ class AuthService {
   ///
   /// Returns [AuthTokens] containing access and refresh tokens from the server.
   /// Throws [AuthException] if authentication fails.
-  Future<AuthTokens> login(String email, String password) async {
+  /// 
+  /// If [locale] is provided, it is sent to the backend so that any
+  /// verification emails are generated in the user's preferred language.
+  Future<AuthTokens> login(String email, String password, {String? locale}) async {
     // Mock mode only available in development with explicit opt-in
     if (EnvironmentConfig.useAuthMock) {
       debugPrint('⚠️ [AuthService] Using mock authentication - development only');
@@ -29,6 +32,7 @@ class AuthService {
       final response = await _dio.post('/auth/login', data: {
         'email': email,
         'password': password,
+        if (locale != null) 'locale': locale,
       });
 
       final data = response.data as Map<String, dynamic>;
@@ -37,7 +41,11 @@ class AuthService {
       if (access == null || refresh == null) {
         throw const AuthException('Missing tokens in response');
       }
-      return AuthTokens(accessToken: access, refreshToken: refresh);
+      return AuthTokens(
+        accessToken: access,
+        refreshToken: refresh,
+        requiresVerification: data['requiresVerification'] == true,
+      );
     } on DioException catch (err) {
       final message = err.response?.data is Map && (err.response!.data as Map)['error'] != null
           ? (err.response!.data as Map)['error'].toString()
@@ -82,9 +90,14 @@ class AuthService {
 }
 
 class AuthTokens {
-  AuthTokens({required this.accessToken, required this.refreshToken});
+  AuthTokens({
+    required this.accessToken,
+    required this.refreshToken,
+    this.requiresVerification = false,
+  });
   final String accessToken;
   final String refreshToken;
+  final bool requiresVerification;
 }
 
 class AuthException implements Exception {

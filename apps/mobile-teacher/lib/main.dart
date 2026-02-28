@@ -121,14 +121,18 @@ class TeacherAuthNotifier extends StateNotifier<TeacherAuthState> {
     state = state.copyWith(isAuthenticated: false, isLoading: false);
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {String? locale}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final apiClient = AivoApiClient.instance;
       final response = await apiClient.post(
         '/auth/login',
-        data: {'email': email, 'password': password},
+        data: {
+          'email': email,
+          'password': password,
+          if (locale != null) 'locale': locale,
+        },
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -499,12 +503,12 @@ class TeacherApp extends ConsumerWidget {
     final a11yState = ref.watch(teacherAccessibilityProvider);
 
     if (authState.isLoading) {
-      return MaterialApp(
+      return const MaterialApp(
         home: Scaffold(
           body: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text('Loading...'),

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthState;
+import 'package:flutter_common/i18n/aivo_i18n.dart';
 
 import '../main.dart';
 
@@ -52,6 +53,7 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
   _LoginMode _mode = _LoginMode.credentials;
   bool _isLookingUpDomain = false;
   TenantSsoInfo? _tenantSsoInfo;
+  SupportedLocale _selectedLocale = SupportedLocale.en;
 
   @override
   void dispose() {
@@ -67,9 +69,11 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
     final success = await ref.read(teacherAuthProvider.notifier).login(
           _emailController.text.trim(),
           _passwordController.text,
+          locale: _selectedLocale.code,
         );
 
     if (success && mounted) {
+      localeManager.changeLocale(_selectedLocale);
       context.go('/classes');
     }
   }
@@ -300,6 +304,40 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+
+        // Language selector
+        DropdownButtonFormField<SupportedLocale>(
+          value: _selectedLocale,
+          decoration: InputDecoration(
+            labelText: 'Preferred Language',
+            prefixIcon: const Icon(Icons.language),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          items: [
+            for (final locale in [
+              SupportedLocale.en,
+              SupportedLocale.es,
+              SupportedLocale.fr,
+              SupportedLocale.ar,
+              SupportedLocale.pt,
+              SupportedLocale.de,
+              SupportedLocale.zhCN,
+              SupportedLocale.hi,
+              SupportedLocale.ja,
+              SupportedLocale.ko,
+            ])
+              DropdownMenuItem(
+                value: locale,
+                child: Text('${localeFlags[locale]} ${locale.nativeName}'),
+              ),
+          ],
+          onChanged: (locale) {
+            if (locale != null) setState(() => _selectedLocale = locale);
+          },
         ),
         const SizedBox(height: 8),
 
@@ -577,27 +615,27 @@ class _SsoProviderButton extends StatelessWidget {
   _ProviderConfig _getProviderConfig(String type) {
     switch (type.toUpperCase()) {
       case 'CLEVER':
-        return _ProviderConfig(
+        return const _ProviderConfig(
           icon: Icons.school,
-          brandColor: const Color(0xFF4285F4),
+          brandColor: Color(0xFF4285F4),
         );
       case 'CLASSLINK':
-        return _ProviderConfig(
+        return const _ProviderConfig(
           icon: Icons.link,
-          brandColor: const Color(0xFF00A0E4),
+          brandColor: Color(0xFF00A0E4),
         );
       case 'GOOGLE':
-        return _ProviderConfig(
+        return const _ProviderConfig(
           icon: Icons.g_mobiledata,
-          brandColor: const Color(0xFF4285F4),
+          brandColor: Color(0xFF4285F4),
         );
       case 'MICROSOFT':
-        return _ProviderConfig(
+        return const _ProviderConfig(
           icon: Icons.window,
-          brandColor: const Color(0xFF00A4EF),
+          brandColor: Color(0xFF00A4EF),
         );
       default:
-        return _ProviderConfig(
+        return const _ProviderConfig(
           icon: Icons.login,
           brandColor: AivoBrand.gray,
         );

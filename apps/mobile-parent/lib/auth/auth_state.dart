@@ -24,12 +24,17 @@ class AuthState {
     required List<String> roles,
   }) => AuthState._(status: AuthStatus.authenticated, userId: userId, tenantId: tenantId, roles: roles);
 
+  factory AuthState.emailUnverified({
+    required String userId,
+    required String tenantId,
+  }) => AuthState._(status: AuthStatus.emailUnverified, userId: userId, tenantId: tenantId);
+
   bool get isAuthenticated => status == AuthStatus.authenticated;
 
   static DecodedPayload decode(String jwt) => DecodedPayload.fromMap(Jwt.parseJwt(jwt));
 }
 
-enum AuthStatus { unauthenticated, authenticated, loading }
+enum AuthStatus { unauthenticated, authenticated, loading, emailUnverified }
 
 class DecodedPayload {
   DecodedPayload({

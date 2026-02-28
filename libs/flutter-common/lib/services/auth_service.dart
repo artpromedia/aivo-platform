@@ -259,6 +259,7 @@ class AuthService {
     required String email,
     required String password,
     String? tenantId,
+    String? locale,
   }) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
@@ -267,6 +268,7 @@ class AuthService {
           'email': email,
           'password': password,
           if (tenantId != null) 'tenantId': tenantId,
+          if (locale != null) 'locale': locale,
         },
       );
 
@@ -314,6 +316,7 @@ class AuthService {
     required String firstName,
     required String lastName,
     required String tenantId,
+    String? locale,
     Map<String, dynamic>? additionalData,
   }) async {
     try {
@@ -325,6 +328,7 @@ class AuthService {
           'firstName': firstName,
           'lastName': lastName,
           'tenantId': tenantId,
+          if (locale != null) 'locale': locale,
           ...?additionalData,
         },
       );

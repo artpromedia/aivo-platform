@@ -34,16 +34,22 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.authenticated(userId: decoded.userId, tenantId: decoded.tenantId, roles: decoded.roles);
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, {String? locale}) async {
     state = AuthState.loading();
     try {
-      final tokens = await _service.login(email, password);
+      final tokens = await _service.login(email, password, locale: locale);
       final decoded = AuthState.decode(tokens.accessToken);
       if (decoded.userId.isEmpty || decoded.tenantId.isEmpty || decoded.isExpired) {
         state = AuthState.error('Invalid token received');
         return;
       }
       await _storage.saveTokens(accessToken: tokens.accessToken, refreshToken: tokens.refreshToken);
+
+      if (tokens.requiresVerification) {
+        state = AuthState.emailUnverified(userId: decoded.userId, tenantId: decoded.tenantId);
+        return;
+      }
+
       state = AuthState.authenticated(userId: decoded.userId, tenantId: decoded.tenantId, roles: decoded.roles);
     } on AuthException catch (err) {
       state = AuthState.error(err.message);

@@ -30,6 +30,7 @@ import 'screens/parent_dashboard_screen.dart';
 import 'screens/payment_setup_screen.dart';
 import 'screens/progress_report_screen.dart';
 import 'screens/subscription_management_screen.dart';
+import 'screens/verify_email_screen.dart';
 import 'screens/virtual_brain_screen.dart';
 import 'home_activities/home_activities_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -43,6 +44,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        builder: (context, state) => const VerifyEmailScreen(),
       ),
       GoRoute(
         path: '/dashboard',
@@ -181,9 +186,15 @@ final _routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       if (authState.status == AuthStatus.loading) return null;
       final isAuth = authState.isAuthenticated;
-      final loggingIn = state.matchedLocation == '/login';
-      if (!isAuth && !loggingIn) return '/login';
-      if (isAuth && loggingIn) return '/dashboard';
+      final isUnverified = authState.status == AuthStatus.emailUnverified;
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc == '/login' || loc == '/verify-email';
+
+      // Unverified email → always go to verify screen
+      if (isUnverified && loc != '/verify-email') return '/verify-email';
+
+      if (!isAuth && !isUnverified && !isAuthRoute) return '/login';
+      if (isAuth && isAuthRoute) return '/dashboard';
       return null;
     },
   );

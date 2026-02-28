@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart' hide AuthStatus, AuthState;
+import 'package:flutter_common/i18n/aivo_i18n.dart';
 
 import '../auth/auth_controller.dart';
 import '../auth/auth_state.dart';
@@ -40,6 +41,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   _LoginMode _mode = _LoginMode.credentials;
   bool _isLookingUpDomain = false;
   TenantSsoInfo? _tenantSsoInfo;
+  SupportedLocale _selectedLocale = SupportedLocale.en;
 
   @override
   void dispose() {
@@ -55,10 +57,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await ref.read(authControllerProvider.notifier).login(
           _emailController.text.trim(),
           _passwordController.text,
+          locale: _selectedLocale.code,
         );
 
     final state = ref.read(authControllerProvider);
+    if (state.status == AuthStatus.emailUnverified && mounted) {
+      // Apply selected locale before navigating
+      localeManager.changeLocale(_selectedLocale);
+      context.go('/verify-email');
+      return;
+    }
     if (state.isAuthenticated && mounted) {
+      // Apply selected locale after successful login
+      localeManager.changeLocale(_selectedLocale);
       context.go('/dashboard');
     }
   }
@@ -289,6 +300,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+
+        // Language selector
+        DropdownButtonFormField<SupportedLocale>(
+          value: _selectedLocale,
+          decoration: InputDecoration(
+            labelText: 'Preferred Language',
+            prefixIcon: const Icon(Icons.language),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          items: [
+            for (final locale in [
+              SupportedLocale.en,
+              SupportedLocale.es,
+              SupportedLocale.fr,
+              SupportedLocale.ar,
+              SupportedLocale.pt,
+              SupportedLocale.de,
+              SupportedLocale.zhCN,
+              SupportedLocale.hi,
+              SupportedLocale.ja,
+              SupportedLocale.ko,
+            ])
+              DropdownMenuItem(
+                value: locale,
+                child: Text('${localeFlags[locale]} ${locale.nativeName}'),
+              ),
+          ],
+          onChanged: (locale) {
+            if (locale != null) setState(() => _selectedLocale = locale);
+          },
         ),
         const SizedBox(height: 8),
 
