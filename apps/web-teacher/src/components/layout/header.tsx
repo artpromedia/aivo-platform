@@ -10,11 +10,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { LanguageSwitcher } from '@aivo/i18n';
 import { useAuth } from '../shared/providers';
 
+import {
+  useNotifications,
+  useUnreadCount,
+  useMarkNotificationsRead,
+  getNotificationRoute,
+  type Notification,
+} from '@/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -24,6 +32,7 @@ interface HeaderProps {
 
 export function Header({ title, className }: HeaderProps) {
   const { userName, userInitials, userRole, userEmail } = useAuth();
+  const { unreadCount } = useUnreadCount();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
@@ -124,9 +133,11 @@ export function Header({ title, className }: HeaderProps) {
                 d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
               />
             </svg>
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-              5
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
 
           {showNotifications && (
@@ -242,78 +253,121 @@ interface UserMenuDropdownProps extends DropdownProps {
   userEmail: string;
 }
 
+function formatTimeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? 's' : ''} ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+}
+
 function NotificationsDropdown({ onClose }: DropdownProps) {
-  const notifications = [
-    {
-      id: '1',
-      type: 'submission',
-      title: 'New submission',
-      message: 'Alex Smith submitted "Math Quiz 5"',
-      time: '2 min ago',
-      unread: true,
-    },
-    {
-      id: '2',
-      type: 'message',
-      title: 'New message',
-      message: 'Parent Sarah Johnson sent you a message',
-      time: '15 min ago',
-      unread: true,
-    },
-    {
-      id: '3',
-      type: 'reminder',
-      title: 'Grading reminder',
-      message: '5 assignments need grading by tomorrow',
-      time: '1 hour ago',
-      unread: true,
-    },
-    {
-      id: '4',
-      type: 'alert',
-      title: 'Student alert',
-      message: 'Michael Davis has 3 missing assignments',
-      time: '2 hours ago',
-      unread: false,
-    },
-    {
-      id: '5',
-      type: 'system',
-      title: 'Report ready',
-      message: 'Your class progress report is ready',
-      time: '3 hours ago',
-      unread: false,
-    },
-  ];
+  const router = useRouter();
+  const { notifications, isLoading, error, refetch } = useNotifications();
+  const markRead = useMarkNotificationsRead();
+
+  const unreadIds = notifications
+    .filter((n: Notification) => !n.isRead)
+    .map((n: Notification) => n.id);
+
+  const handleMarkAllRead = () => {
+    if (unreadIds.length > 0) {
+      markRead.mutate(unreadIds);
+    }
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    // Mark as read when clicked
+    if (!notification.isRead) {
+      markRead.mutate([notification.id]);
+    }
+    const url =
+      notification.actionUrl ||
+      getNotificationRoute(notification.type, notification.actionData);
+    onClose();
+    router.push(url);
+  };
 
   return (
     <div className="absolute right-0 mt-2 w-80 rounded-lg border border-border bg-surface shadow-lg">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h3 className="font-medium text-text">Notifications</h3>
-        <button className="text-sm text-primary-600 hover:text-primary-700">Mark all read</button>
+        <button
+          onClick={handleMarkAllRead}
+          disabled={unreadIds.length === 0 || markRead.isPending}
+          className="text-sm text-primary-600 hover:text-primary-700 disabled:opacity-50"
+        >
+          Mark all read
+        </button>
       </div>
       <div className="max-h-96 overflow-y-auto">
-        {notifications.map((notification) => (
-          <div
-            key={notification.id}
-            className={cn(
-              'flex gap-3 border-b border-border px-4 py-3 hover:bg-surface-muted',
-              notification.unread && 'bg-primary-50/50'
-            )}
-          >
-            <div
-              className={cn(
-                'mt-1 h-2 w-2 rounded-full',
-                notification.unread ? 'bg-primary-600' : 'bg-transparent'
-              )}
-            />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-text">{notification.title}</p>
-              <p className="text-sm text-muted">{notification.message}</p>
-              <p className="mt-1 text-xs text-muted/70">{notification.time}</p>
-            </div>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <svg
+              className="h-6 w-6 animate-spin text-primary-600"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
           </div>
-        ))}
+        )}
+
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="px-4 py-6 text-center">
+            <p className="text-sm text-muted">Failed to load notifications</p>
+            <button
+              onClick={() => void refetch()}
+              className="mt-2 text-sm text-primary-600 hover:text-primary-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !error && notifications.length === 0 && (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm text-muted">No notifications yet</p>
+          </div>
+        )}
+
+        {/* Notification list */}
+        {!isLoading &&
+          !error &&
+          notifications.map((notification: Notification) => (
+            <button
+              key={notification.id}
+              type="button"
+              onClick={() => handleNotificationClick(notification)}
+              className={cn(
+                'flex w-full gap-3 border-b border-border px-4 py-3 text-left hover:bg-surface-muted',
+                !notification.isRead && 'bg-primary-50/50'
+              )}
+            >
+              <div
+                className={cn(
+                  'mt-1 h-2 w-2 shrink-0 rounded-full',
+                  !notification.isRead ? 'bg-primary-600' : 'bg-transparent'
+                )}
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text truncate">{notification.title}</p>
+                <p className="text-sm text-muted line-clamp-2">{notification.body}</p>
+                <p className="mt-1 text-xs text-muted/70">
+                  {formatTimeAgo(notification.createdAt)}
+                </p>
+              </div>
+            </button>
+          ))}
       </div>
       <div className="border-t border-border p-3">
         <Link

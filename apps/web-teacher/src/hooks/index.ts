@@ -51,3 +51,13 @@ export {
 
 // Dashboard hooks
 export { useDashboard, type UseDashboardOptions, type UseDashboardReturn } from './use-dashboard';
+
+// Notification hooks
+export {
+  useNotifications,
+  useUnreadCount,
+  useMarkNotificationsRead,
+  useNotificationNavigate,
+  getNotificationRoute,
+  type Notification,
+} from './use-notifications';
