@@ -48,8 +48,13 @@ const routeLabels: Record<string, string> = {
   'ai-generate': 'AI Generator',
   'ai-create': 'AI Creator',
   'ai-assist': 'AI Assistant',
+  'ai-transparency': 'AI Transparency',
+  'ai-conversations': 'AI Conversations',
   progress: 'Progress',
   accommodations: 'Accommodations',
+  behavior: 'Behavior Log',
+  sessions: 'Sessions',
+  live: 'Live Session',
 };
 
 export function Breadcrumb({ items, className }: BreadcrumbProps) {

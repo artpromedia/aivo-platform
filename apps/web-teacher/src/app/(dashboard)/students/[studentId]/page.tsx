@@ -205,6 +205,16 @@ export default function StudentDetailPage() {
                 icon="📈"
                 label="Grade Calculator"
               />
+              <ActionButton
+                href={`/students/${student.id}/ai-conversations`}
+                icon="🤖"
+                label="AI Conversations"
+              />
+              <ActionButton
+                href={`/students/${student.id}/behavior`}
+                icon="📋"
+                label="Behavior Log"
+              />
             </div>
           </div>
         </div>
