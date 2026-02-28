@@ -61,3 +61,16 @@ export {
   getNotificationRoute,
   type Notification,
 } from './use-notifications';
+
+// Teacher settings hooks
+export {
+  useTeacherProfile,
+  useUpdateTeacherProfile,
+  useGradingSettings,
+  useUpdateGradingSettings,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+  type TeacherProfile,
+  type GradingSettings,
+  type NotificationPreferences,
+} from './use-teacher-settings';
