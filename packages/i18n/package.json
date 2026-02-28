@@ -64,11 +64,16 @@
       "require": "./dist/server.js",
       "types": "./dist/server.d.ts"
     },
-    "./rtl.css": "./src/rtl.css"
+    "./rtl.css": "./src/rtl.css",
+    "./tutor-locale-configs": {
+      "import": "./dist/tutor-locale-configs.mjs",
+      "require": "./dist/tutor-locale-configs.js",
+      "types": "./dist/tutor-locale-configs.d.ts"
+    }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts --format cjs,esm --dts --external next",
-    "dev": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts --format cjs,esm --dts --watch --external next",
+    "build": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts src/tutor-locale-configs.ts --format cjs,esm --dts --external next",
+    "dev": "tsup src/index.ts src/react/index.ts src/rtl/index.ts src/core/index.ts src/formatters/index.ts src/styles/index.ts src/config.ts src/components/index.ts src/locales/index.ts src/middleware.ts src/server.ts src/tutor-locale-configs.ts --format cjs,esm --dts --watch --external next",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/",

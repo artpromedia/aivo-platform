@@ -33,7 +33,8 @@ enum SupportedLocale {
   pl('pl', 'Polski', 'Polish', TextDirection.ltr),
   nl('nl', 'Nederlands', 'Dutch', TextDirection.ltr),
   it('it', 'Italiano', 'Italian', TextDirection.ltr),
-  th('th', 'ไทย', 'Thai', TextDirection.ltr);
+  th('th', 'ไทย', 'Thai', TextDirection.ltr),
+  sw('sw', 'Kiswahili', 'Swahili', TextDirection.ltr);
 
   const SupportedLocale(this.code, this.nativeName, this.englishName, this.direction);
 
@@ -91,6 +92,14 @@ enum TranslationNamespace {
   assessment,
   settings,
   errors,
+  tutor,
+  parent,
+  learner,
+  marketing,
+  notifications,
+  dashboard,
+  analytics,
+  validation,
 }
 
 /// Locale metadata

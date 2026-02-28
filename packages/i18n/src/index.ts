@@ -33,6 +33,9 @@ export * from './rtl';
 // RTL and style utilities
 export * from './styles';
 
+// Tutor locale configs (shared across ai-orchestrator + tutor-svc)
+export * from './tutor-locale-configs';
+
 // i18n configuration (UI locales, display metadata, helpers)
 // Note: getLocaleDirection is excluded to avoid conflict with ./core
 export {

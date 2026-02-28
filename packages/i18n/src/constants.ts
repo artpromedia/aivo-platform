@@ -576,6 +576,27 @@ export const LOCALE_METADATA: Record<SupportedLocale, LocaleMetadata> = {
     firstDayOfWeek: 0,
     pluralRules: ['other'],
   },
+
+  // Swahili
+  sw: {
+    code: 'sw',
+    name: 'Kiswahili',
+    englishName: 'Swahili',
+    direction: 'ltr',
+    numberSystem: 'latn',
+    calendar: 'gregorian',
+    dateFormat: {
+      short: 'dd/MM/yyyy',
+      medium: 'd MMM yyyy',
+      long: 'd MMMM yyyy',
+    },
+    timeFormat: {
+      short: 'HH:mm',
+      medium: 'HH:mm:ss',
+    },
+    firstDayOfWeek: 1,
+    pluralRules: ['one', 'other'],
+  },
 };
 
 /**
@@ -633,6 +654,7 @@ export const LOCALE_CURRENCIES: Record<SupportedLocale, string> = {
   nl: 'EUR',
   it: 'EUR',
   th: 'THB',
+  sw: 'KES',
 };
 
 /**
@@ -666,4 +688,5 @@ export const LOCALE_FLAGS: Record<SupportedLocale, string> = {
   nl: '🇳🇱',
   it: '🇮🇹',
   th: '🇹🇭',
+  sw: '🇰🇪',
 };

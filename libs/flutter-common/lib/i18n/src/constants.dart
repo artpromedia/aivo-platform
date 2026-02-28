@@ -225,6 +225,7 @@ const Map<SupportedLocale, String> localeCurrencies = {
   SupportedLocale.nl: 'EUR',
   SupportedLocale.it: 'EUR',
   SupportedLocale.th: 'THB',
+  SupportedLocale.sw: 'KES',
 };
 
 /// Flag emojis by locale
@@ -256,4 +257,5 @@ const Map<SupportedLocale, String> localeFlags = {
   SupportedLocale.nl: '🇳🇱',
   SupportedLocale.it: '🇮🇹',
   SupportedLocale.th: '🇹🇭',
+  SupportedLocale.sw: '🇰🇪',
 };

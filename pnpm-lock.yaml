@@ -2201,6 +2201,9 @@ importers:
 
   services/ai-orchestrator:
     dependencies:
+      '@aivo/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@aivo/ts-observability':
         specifier: workspace:*
         version: link:../../libs/ts-observability
@@ -6669,6 +6672,9 @@ importers:
 
   services/tutor-svc:
     dependencies:
+      '@aivo/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@aivo/ts-api-utils':
         specifier: workspace:*
         version: link:../../packages/ts-api-utils

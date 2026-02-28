@@ -32,7 +32,8 @@ export type SupportedLocale =
   | 'pl'
   | 'nl'
   | 'it'
-  | 'th';
+  | 'th'
+  | 'sw';
 
 /**
  * RTL locales
@@ -98,7 +99,11 @@ export type TranslationNamespace =
   | 'settings'
   | 'errors'
   | 'validation'
-  | 'notifications';
+  | 'notifications'
+  | 'marketing'
+  | 'tutor'
+  | 'parent'
+  | 'learner';
 
 /**
  * Translation resource structure
