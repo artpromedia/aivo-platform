@@ -5,9 +5,11 @@ import { cn } from '@aivo/ui-web';
 import { Search, Bell, Flame, Sparkles, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { NotificationPanel } from './notification-panel';
+import { SearchOverlay } from './search-overlay';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useNotifications } from '@/lib/hooks/use-learner-api';
 
 interface LearnerTopbarProps {
@@ -31,9 +33,21 @@ const mobileNavItems = [
 export function LearnerTopbar({ userName, streakDays = 0, totalXp = 0, avatarUrl }: LearnerTopbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery.trim(), 300);
   const pathname = usePathname();
   const { data: notifData } = useNotifications();
   const unreadCount = notifData?.unreadCount ?? 0;
+
+  const closeSearch = useCallback(() => {
+    setShowSearch(false);
+  }, []);
+
+  const handleNavigate = useCallback(() => {
+    setShowSearch(false);
+    setSearchQuery('');
+  }, []);
 
   const initials = userName
     ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -51,13 +65,28 @@ export function LearnerTopbar({ userName, streakDays = 0, totalXp = 0, avatarUrl
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="hidden sm:flex items-center bg-gray-50 rounded-xl px-3 py-2 w-64 lg:w-80">
-            <Search className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search courses, lessons..."
-              className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-full"
-            />
+          <div className="relative hidden sm:flex flex-col w-64 lg:w-80">
+            <div className="flex items-center bg-gray-50 rounded-xl px-3 py-2">
+              <Search className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) setShowSearch(true);
+                }}
+                onFocus={() => { if (searchQuery.trim()) setShowSearch(true); }}
+                placeholder="Search courses, lessons..."
+                className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-full"
+              />
+            </div>
+            {showSearch && debouncedQuery.length > 0 && (
+              <SearchOverlay
+                query={debouncedQuery}
+                onClose={closeSearch}
+                onNavigate={handleNavigate}
+              />
+            )}
           </div>
         </div>
 
