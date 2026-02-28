@@ -50,12 +50,6 @@ env:
   DEPLOY_HOST: ${{ secrets.HETZNER_APP1_HOST }}
   DEPLOY_USER: deploy
 
-permissions:
-  contents: write
-  packages: write
-  security-events: write
-  deployments: write
-
 jobs:
   # ══════════════════════════════════════════════════════════════════════════
   # STAGE 1: CI — Lint, TypeCheck, Test, Build (unchanged from GCP pipeline)
@@ -63,6 +57,8 @@ jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       sha_short: ${{ steps.version.outputs.sha_short }}
@@ -149,6 +145,10 @@ jobs:
     name: Docker — ${{ matrix.service }}
     runs-on: ubuntu-latest
     needs: ci
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -244,6 +244,10 @@ jobs:
     name: Docker (Python) — ${{ matrix.service }}
     runs-on: ubuntu-latest
     needs: ci
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -338,6 +342,10 @@ jobs:
     name: Docker (Web) — ${{ matrix.app }}
     runs-on: ubuntu-latest
     needs: ci
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -477,6 +485,9 @@ jobs:
     name: Docker — backup-agent
     runs-on: ubuntu-latest
     needs: ci
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -518,6 +529,9 @@ jobs:
     name: Deploy to Hetzner Staging
     runs-on: [self-hosted, hetzner, staging]
     needs: [ci, docker, docker-python, docker-web, docker-backup]
+    permissions:
+      contents: read
+      deployments: write
     # Deploy runs if CI passes and at least docker-web succeeds.
     # Backend/Python images already exist on staging from prior deploys.
     if: |

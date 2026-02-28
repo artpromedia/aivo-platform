@@ -1,6 +1,7 @@
 'use client';
 
 import { Volume2, VolumeX, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { UILocale } from '@aivo/i18n/config';
 
 import type { TutorSession } from '../../lib/hooks/use-tutor-session';
@@ -46,6 +47,7 @@ export function TutorSessionHeader({
   localeInfo,
   onLocaleChange,
 }: TutorSessionHeaderProps) {
+  const { t } = useTranslation('tutor');
   const gradient = SUBJECT_GRADIENTS[session.subject] ?? 'from-indigo-600 to-purple-600';
 
   return (
@@ -75,7 +77,7 @@ export function TutorSessionHeader({
             className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}
           />
           <span className="text-xs opacity-70">
-            {isConnected ? 'Connected' : 'Offline'}
+            {isConnected ? t('header.connected') : t('header.offline')}
           </span>
         </div>
 
@@ -91,7 +93,7 @@ export function TutorSessionHeader({
         <button
           onClick={onToggleVoice}
           className="rounded-lg bg-white/20 p-2 transition hover:bg-white/30"
-          aria-label={voiceEnabled ? 'Disable voice' : 'Enable voice'}
+          aria-label={voiceEnabled ? t('header.disableVoice') : t('header.enableVoice')}
           title={voiceEnabled ? 'Voice on' : 'Voice off'}
         >
           {voiceEnabled ? (
@@ -104,7 +106,7 @@ export function TutorSessionHeader({
         <button
           onClick={onEndSession}
           className="rounded-lg bg-white/20 p-2 transition hover:bg-white/30"
-          aria-label="End session"
+          aria-label={t('session.endSession')}
         >
           <X className="h-4 w-4" />
         </button>

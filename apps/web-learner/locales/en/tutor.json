@@ -1,0 +1,36 @@
+{
+  "session": {
+    "complete": "Session Complete!",
+    "greatJob": "Great job! You had {count} messages in this session.",
+    "startNew": "Start New Session",
+    "loading": "Setting up your tutor...",
+    "loadingSession": "Loading session...",
+    "endSession": "End Session"
+  },
+  "select": {
+    "chooseTutor": "Choose a Tutor",
+    "chooseAnother": "Choose Another Tutor",
+    "comingSoon": "{subject} Tutor Coming Soon",
+    "notAvailable": "The {subject} tutor is not yet available. Try another subject!"
+  },
+  "header": {
+    "connected": "Connected",
+    "offline": "Offline",
+    "enableVoice": "Enable voice",
+    "disableVoice": "Disable voice"
+  },
+  "language": {
+    "pickerTitle": "Tutor Language",
+    "changeLabel": "Change tutor language",
+    "selectLabel": "Select tutor language",
+    "textOnlyBanner": "{name} will respond in {language} as text. Voice support coming soon!"
+  },
+  "input": {
+    "placeholder": "Ask {name} anything...",
+    "send": "Send"
+  },
+  "chat": {
+    "typing": "{name} is thinking...",
+    "you": "You"
+  }
+}

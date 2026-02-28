@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Brain, Send, Sparkles, ArrowRight, Calculator, BookOpen, PenTool, Globe, Code, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import type { UILocale } from '@aivo/i18n/config';
 import { useFeatureFlag, isTutorSubjectEnabled, ParityFeature } from '@aivo/feature-flags';
@@ -54,6 +55,7 @@ const SUGGESTED_QUESTIONS: Record<string, Array<{ icon: typeof Calculator; text:
 export default function TutorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation('tutor');
   const [input, setInput] = useState('');
   const [currentEmotion, setCurrentEmotion] = useState('NEUTRAL');
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -91,15 +93,15 @@ export default function TutorPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <Lock className="mx-auto h-12 w-12 text-gray-300" />
-        <h2 className="mt-4 text-xl font-bold text-gray-900">{subject} Tutor Coming Soon</h2>
+        <h2 className="mt-4 text-xl font-bold text-gray-900">{t('select.comingSoon', { subject })}</h2>
         <p className="mt-2 text-gray-600">
-          The {subject.toLowerCase()} tutor is not yet available. Try another subject!
+          {t('select.notAvailable', { subject: subject.toLowerCase() })}
         </p>
         <button
           onClick={() => router.push('/tutor')}
           className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
         >
-          Choose Another Tutor
+          {t('select.chooseAnother')}
         </button>
       </div>
     );
@@ -122,7 +124,7 @@ export default function TutorPage() {
   const { voiceEnabled, toggleVoice } = useVoicePreference();
 
   // Stable audio callback ref
-  const onAudioReadyRef = useRef<(audioUrl: string, visemes: VisemeEvent[]) => void>();
+  const onAudioReadyRef = useRef<((audioUrl: string, visemes: VisemeEvent[]) => void) | undefined>(undefined);
   onAudioReadyRef.current = (audioUrl: string, visemes: VisemeEvent[]) => {
     if (voiceEnabled) {
       playWithLipSync(audioUrl, visemes);
@@ -297,7 +299,7 @@ export default function TutorPage() {
             onClick={() => router.push('/tutor/select')}
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700"
           >
-            Choose a Tutor <ArrowRight className="h-4 w-4" />
+            {t('select.chooseTutor')} <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -310,7 +312,7 @@ export default function TutorPage() {
       <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
-          <p className="text-gray-500">Setting up your tutor...</p>
+          <p className="text-gray-500">{t('session.loading')}</p>
         </div>
       </div>
     );
@@ -330,7 +332,7 @@ export default function TutorPage() {
         mouthOpenAmount={mouthOpenAmount}
         isConnected={isConnected || useHttpFallback}
         voiceEnabled={voiceEnabled_flag && voiceEnabled}
-        onToggleVoice={voiceEnabled_flag ? toggleVoice : undefined}
+        onToggleVoice={voiceEnabled_flag ? toggleVoice : () => {}}
         onEndSession={handleEndSession}
         locale={sessionLocale}
         localeInfo={localeInfo}
@@ -358,15 +360,15 @@ export default function TutorPage() {
       {session.status === 'COMPLETED' && (
         <div className="border-t border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50 p-6 text-center">
           <div className="text-3xl mb-2">🎉</div>
-          <h3 className="text-lg font-bold text-gray-900">Session Complete!</h3>
+          <h3 className="text-lg font-bold text-gray-900">{t('session.complete')}</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Great job! You had {messages.length} messages in this session.
+            {t('session.greatJob', { count: messages.length })}
           </p>
           <button
             onClick={() => router.push('/tutor')}
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
           >
-            Start New Session
+            {t('session.startNew')}
           </button>
         </div>
       )}
@@ -404,7 +406,7 @@ export default function TutorPage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={`Ask ${session.persona.name} anything...`}
+              placeholder={t('input.placeholder', { name: session.persona.name })}
               className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
               disabled={isSending}
               dir={localeInfo?.isRTL ? 'rtl' : 'auto'}
@@ -414,7 +416,7 @@ export default function TutorPage() {
               disabled={!input.trim() || isSending}
               className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
             >
-              Send <Send className="h-4 w-4" />
+              {t('input.send')} <Send className="h-4 w-4" />
             </button>
           </form>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Globe, Volume2, VolumeX, ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   UI_LOCALES,
   LOCALE_DISPLAY,
@@ -47,6 +48,7 @@ export function TutorLanguageIndicator({
   onLocaleChange,
   personaName,
 }: TutorLanguageIndicatorProps) {
+  const { t } = useTranslation('tutor');
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +85,7 @@ export function TutorLanguageIndicator({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-1.5 text-xs font-medium transition hover:bg-white/30"
-        aria-label="Change tutor language"
+        aria-label={t('language.changeLabel')}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -102,7 +104,7 @@ export function TutorLanguageIndicator({
       {/* Voice unavailable banner (below trigger, outside dropdown) */}
       {voiceEnabled && !voiceAvailable && personaName && !isOpen && (
         <div className="absolute left-0 top-full z-40 mt-1 w-64 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800 shadow-md border border-amber-200">
-          {personaName} will respond in {display.nativeName} as text. Voice support coming soon!
+          {t('language.textOnlyBanner', { name: personaName, language: display.nativeName })}
         </div>
       )}
 
@@ -110,12 +112,12 @@ export function TutorLanguageIndicator({
       {isOpen && (
         <div
           role="listbox"
-          aria-label="Select tutor language"
+          aria-label={t('language.selectLabel')}
           className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-600 dark:bg-gray-800 rtl:left-0 rtl:right-auto rtl:origin-top-left"
         >
           <div className="px-3 py-2 border-b border-gray-100">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Tutor Language
+              {t('language.pickerTitle')}
             </p>
           </div>
           <div className="max-h-60 overflow-y-auto py-1">

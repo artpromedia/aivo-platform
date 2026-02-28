@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
+
 interface TutorTypingIndicatorProps {
   personaName: string;
   /** When true, show text-only indicator instead of bouncing dots. */
@@ -10,12 +12,14 @@ export function TutorTypingIndicator({
   personaName,
   reducedMotion = false,
 }: TutorTypingIndicatorProps) {
+  const { t } = useTranslation('tutor');
+
   return (
     <div className="flex items-start gap-3" role="status" aria-live="polite">
       <div className="max-w-[75%] rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">
-            {personaName} is thinking
+            {t('chat.typing', { name: personaName })}
             {reducedMotion ? '…' : ''}
           </span>
           {!reducedMotion && (
