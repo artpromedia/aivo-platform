@@ -8,6 +8,7 @@
 'use client';
 
 import type { NotificationSettings as ApiNotificationSettings } from '@aivo/ts-types';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Settings,
@@ -25,6 +26,10 @@ import {
   AlertCircle,
   Download,
   KeyRound,
+  Lock,
+  LogOut,
+  CreditCard,
+  Save,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -35,8 +40,11 @@ import {
   useUpdateNotificationSettings,
   useUpdateAppSettings,
   useParentProfile,
+  queryKeys,
 } from '@/hooks';
 import { isDevMode } from '@/lib/api';
+import { changePassword, signOut } from '@/lib/api/auth.api';
+import { parentApi } from '@/lib/api/parent.api';
 
 // Local interface for screen time (kept for backward compatibility in this component)
 interface LocalScreenTimeSettings {
@@ -557,12 +565,440 @@ function ScreenTimeSettingsPanel({
 }
 
 // Account Settings Panel
+type AccountSubSection = 'overview' | 'edit-profile' | 'change-password' | 'linked-children';
+
 function AccountSettings({ onBack }: { onBack: () => void }) {
-  // Change PIN dialog state
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Profile data
   const { data: profile } = useParentProfile();
+
+  // Sub-section routing
+  const [subSection, setSubSection] = useState<AccountSubSection>('overview');
+
+  // Change PIN dialog state
   const [changePinOpen, setChangePinOpen] = useState(false);
   const [changePinLearnerId, setChangePinLearnerId] = useState<string | null>(null);
   const [changePinLearnerName, setChangePinLearnerName] = useState('');
+
+  // Edit Profile form state
+  const [profileForm, setProfileForm] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    language: '',
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    null
+  );
+
+  // Sync profile data into form when it loads
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        firstName: profile.firstName ?? '',
+        lastName: profile.lastName ?? '',
+        phone: profile.phone ?? '',
+        language: profile.language ?? '',
+      });
+    }
+  }, [profile]);
+
+  // Change Password form state
+  const [pwForm, setPwForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Sign Out state
+  const [signingOut, setSigningOut] = useState(false);
+
+  // ---------- Handlers ----------
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    setProfileMsg(null);
+    try {
+      await parentApi.updateProfile({
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        phone: profileForm.phone || undefined,
+        language: profileForm.language || undefined,
+      });
+      // Invalidate profile queries so the UI refreshes
+      void queryClient.invalidateQueries({ queryKey: queryKeys.parentProfile });
+      setProfileMsg({ type: 'success', text: 'Profile updated successfully.' });
+      setTimeout(() => {
+        setProfileMsg(null);
+      }, 3000);
+    } catch (err) {
+      setProfileMsg({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to update profile.',
+      });
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwMsg({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+    if (pwForm.newPassword.length < 8) {
+      setPwMsg({ type: 'error', text: 'Password must be at least 8 characters.' });
+      return;
+    }
+    setPwSaving(true);
+    setPwMsg(null);
+    try {
+      const result = await changePassword({
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      });
+      setPwMsg({ type: 'success', text: result.message });
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => {
+        setPwMsg(null);
+      }, 3000);
+    } catch (err) {
+      setPwMsg({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to change password.',
+      });
+    } finally {
+      setPwSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.push('/login');
+    } catch {
+      setSigningOut(false);
+    }
+  };
+
+  // ---------- Sub-panels ----------
+
+  if (subSection === 'edit-profile') {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => {
+            setSubSection('overview');
+          }}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Account
+        </button>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-indigo-600" />
+            Edit Profile
+          </h2>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input
+                type="text"
+                value={profileForm.firstName}
+                onChange={(e) => {
+                  setProfileForm((prev) => ({ ...prev, firstName: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input
+                type="text"
+                value={profileForm.lastName}
+                onChange={(e) => {
+                  setProfileForm((prev) => ({ ...prev, lastName: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input
+                type="tel"
+                value={profileForm.phone}
+                onChange={(e) => {
+                  setProfileForm((prev) => ({ ...prev, phone: e.target.value }));
+                }}
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Language</label>
+              <select
+                value={profileForm.language}
+                onChange={(e) => {
+                  setProfileForm((prev) => ({ ...prev, language: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              >
+                <option value="">Select language</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="pt">Português</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
+            </div>
+
+            {/* Email is read-only */}
+            {profile?.email && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={profile.email}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                />
+                <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+              </div>
+            )}
+
+            {profileMsg && (
+              <div
+                className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                  profileMsg.type === 'success'
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-red-50 text-red-700'
+                }`}
+              >
+                {profileMsg.type === 'success' ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" />
+                )}
+                {profileMsg.text}
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveProfile}
+              disabled={profileSaving}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {profileSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {profileSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (subSection === 'change-password') {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => {
+            setSubSection('overview');
+          }}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Account
+        </button>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Lock className="w-5 h-5 text-indigo-600" />
+            Change Password
+          </h2>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Current Password
+              </label>
+              <input
+                type="password"
+                value={pwForm.currentPassword}
+                onChange={(e) => {
+                  setPwForm((prev) => ({ ...prev, currentPassword: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <input
+                type="password"
+                value={pwForm.newPassword}
+                onChange={(e) => {
+                  setPwForm((prev) => ({ ...prev, newPassword: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                value={pwForm.confirmPassword}
+                onChange={(e) => {
+                  setPwForm((prev) => ({ ...prev, confirmPassword: e.target.value }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              />
+            </div>
+
+            {pwMsg && (
+              <div
+                className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
+                  pwMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}
+              >
+                {pwMsg.type === 'success' ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <AlertCircle className="w-4 h-4" />
+                )}
+                {pwMsg.text}
+              </div>
+            )}
+
+            <button
+              onClick={handleChangePassword}
+              disabled={
+                pwSaving ||
+                !pwForm.currentPassword ||
+                !pwForm.newPassword ||
+                !pwForm.confirmPassword
+              }
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {pwSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
+              {pwSaving ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (subSection === 'linked-children') {
+    const students = profile?.students ?? [];
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => {
+            setSubSection('overview');
+          }}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Account
+        </button>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-teal-600" />
+            Linked Children
+          </h2>
+
+          {students.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+              <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium">No linked children</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Children will appear here once linked to your account.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {students.map((student) => (
+                <div
+                  key={student.id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-sm">
+                      {(student.firstName || student.name || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {student.name ||
+                          `${student.firstName} ${student.lastName}`.trim() ||
+                          'Unnamed'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {student.grade ? `Grade ${student.grade}` : 'Grade not set'}
+                        {student.schoolName ? ` · ${student.schoolName}` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setChangePinLearnerId(student.id);
+                      setChangePinLearnerName(
+                        student.name || `${student.firstName} ${student.lastName}`
+                      );
+                      setChangePinOpen(true);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Change Login PIN
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Change PIN Dialog */}
+        {changePinLearnerId && (
+          <ChangePinDialog
+            open={changePinOpen}
+            onOpenChange={setChangePinOpen}
+            learnerId={changePinLearnerId}
+            learnerName={changePinLearnerName}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ---------- Overview (default) ----------
 
   return (
     <>
@@ -582,26 +1018,50 @@ function AccountSettings({ onBack }: { onBack: () => void }) {
           </h2>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Edit Profile</p>
-                <p className="text-sm text-gray-500">Update your name and contact info</p>
+            <button
+              onClick={() => {
+                setSubSection('edit-profile');
+              }}
+              className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <User className="w-4 h-4 text-indigo-500" />
+                <div>
+                  <p className="font-medium text-gray-900">Edit Profile</p>
+                  <p className="text-sm text-gray-500">Update your name and contact info</p>
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
 
-            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Change Password</p>
-                <p className="text-sm text-gray-500">Update your account password</p>
+            <button
+              onClick={() => {
+                setSubSection('change-password');
+              }}
+              className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Lock className="w-4 h-4 text-indigo-500" />
+                <div>
+                  <p className="font-medium text-gray-900">Change Password</p>
+                  <p className="text-sm text-gray-500">Update your account password</p>
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
 
-            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Linked Children</p>
-                <p className="text-sm text-gray-500">Manage connected student accounts</p>
+            <button
+              onClick={() => {
+                setSubSection('linked-children');
+              }}
+              className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-4 h-4 text-teal-500" />
+                <div>
+                  <p className="font-medium text-gray-900">Linked Children</p>
+                  <p className="text-sm text-gray-500">Manage connected student accounts</p>
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
@@ -632,18 +1092,35 @@ function AccountSettings({ onBack }: { onBack: () => void }) {
               </button>
             ))}
 
-            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-              <div>
-                <p className="font-medium text-gray-900">Subscription</p>
-                <p className="text-sm text-gray-500">View and manage your plan</p>
+            <button
+              onClick={() => {
+                router.push('/billing');
+              }}
+              className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <CreditCard className="w-4 h-4 text-indigo-500" />
+                <div>
+                  <p className="font-medium text-gray-900">Subscription</p>
+                  <p className="text-sm text-gray-500">View and manage your plan</p>
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </button>
           </div>
 
           <div className="mt-6">
-            <button className="w-full p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-medium hover:bg-red-100 transition-colors">
-              Sign Out
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex items-center justify-center gap-2 w-full p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+            >
+              {signingOut ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              {signingOut ? 'Signing out...' : 'Sign Out'}
             </button>
           </div>
         </div>
