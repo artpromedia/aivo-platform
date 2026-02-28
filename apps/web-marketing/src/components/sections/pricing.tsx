@@ -1,7 +1,22 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Star, Shield, Clock, Users, ClipboardList, ChevronDown } from 'lucide-react';
+import {
+  Check,
+  X,
+  Star,
+  Shield,
+  Clock,
+  Users,
+  ClipboardList,
+  ChevronDown,
+  Calculator,
+  BookOpen,
+  FlaskConical,
+  Brain,
+  MessageCircle,
+} from 'lucide-react';
+import Link from 'next/link';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,7 +43,14 @@ interface PricingTier {
 
 const pricingMeta = [
   { monthlyPrice: 0, annualPrice: 0, ctaVariant: 'outline' as const, planId: 'free' },
-  { monthlyPrice: 29.99, annualPrice: 24.99, originalPrice: 39.99, popular: true, ctaVariant: 'coral' as const, planId: 'pro' },
+  {
+    monthlyPrice: 29.99,
+    annualPrice: 24.99,
+    originalPrice: 39.99,
+    popular: true,
+    ctaVariant: 'coral' as const,
+    planId: 'pro',
+  },
   { monthlyPrice: 49.99, annualPrice: 41.99, ctaVariant: 'default' as const, planId: 'premium' },
 ];
 
@@ -46,14 +68,19 @@ export function Pricing() {
     description: t(`pricing.${key}.description`),
     discount: key === 'pro' ? t('pricing.pro.discount') : undefined,
     features: t(`pricing.${key}.features`, { returnObjects: true }) as string[],
-    notIncluded: key === 'free' ? (t('pricing.free.notIncluded', { returnObjects: true }) as string[]) : undefined,
+    notIncluded:
+      key === 'free'
+        ? (t('pricing.free.notIncluded', { returnObjects: true }) as string[])
+        : undefined,
     cta: t(`pricing.${key}.cta`),
   }));
 
-  const trustBadges = (t('pricing.trustBadges', { returnObjects: true }) as string[]).map((label, i) => ({
-    icon: trustBadgeIcons[i],
-    label,
-  }));
+  const trustBadges = (t('pricing.trustBadges', { returnObjects: true }) as string[]).map(
+    (label, i) => ({
+      icon: trustBadgeIcons[i],
+      label,
+    })
+  );
 
   const faqs = t('pricing.faqs', { returnObjects: true }) as { question: string; answer: string }[];
 
@@ -63,7 +90,8 @@ export function Pricing() {
         badge={t('pricing.badge')}
         title={
           <>
-            {t('pricing.titlePrefix')}<span className="text-gradient-primary">{t('pricing.titleHighlight')}</span>
+            {t('pricing.titlePrefix')}
+            <span className="text-gradient-primary">{t('pricing.titleHighlight')}</span>
           </>
         }
         description={t('pricing.description')}
@@ -197,6 +225,51 @@ export function Pricing() {
         })}
       </div>
 
+      {/* AI Tutors Add-on Callout */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="max-w-3xl mx-auto mb-16"
+      >
+        <div className="bg-gradient-to-r from-theme-primary-50 to-indigo-50 rounded-3xl p-8 border border-theme-primary-200 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex items-center -space-x-3 shrink-0">
+            {[
+              { icon: Calculator, gradient: 'from-purple-500 to-indigo-600', name: 'nova' },
+              { icon: BookOpen, gradient: 'from-emerald-500 to-teal-600', name: 'sage' },
+              { icon: FlaskConical, gradient: 'from-orange-500 to-amber-600', name: 'spark' },
+              { icon: Brain, gradient: 'from-blue-500 to-blue-600', name: 'chrono' },
+              { icon: MessageCircle, gradient: 'from-cyan-500 to-teal-600', name: 'pixel' },
+            ].map(({ icon: TutorIcon, gradient, name }) => (
+              <div
+                key={name}
+                className={cn(
+                  'w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br ring-2 ring-white shadow-md',
+                  gradient
+                )}
+              >
+                <TutorIcon className="w-5 h-5 text-white" />
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <Badge variant="primary" className="mb-2">
+              {t('pricing.tutorAddon.badge')}
+            </Badge>
+            <h3 className="font-display text-lg font-bold text-gray-900 mb-1">
+              {t('pricing.tutorAddon.heading')}
+            </h3>
+            <p className="text-sm text-gray-600">{t('pricing.tutorAddon.description')}</p>
+          </div>
+          <Link
+            href="/tutors"
+            className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-theme-primary-600 hover:bg-theme-primary-700 text-white text-sm font-semibold rounded-full shadow-sm hover:shadow-md transition-all shrink-0"
+          >
+            {t('pricing.tutorAddon.cta')}
+          </Link>
+        </div>
+      </motion.div>
+
       {/* Trust Badges */}
       <div className="flex flex-wrap items-center justify-center gap-6 mb-16">
         {trustBadges.map(({ icon: Icon, label }) => (
@@ -302,9 +375,7 @@ export function Pricing() {
           </div>
           <div className="text-left">
             <div className="font-semibold text-gray-900">{t('pricing.moneyBack.heading')}</div>
-            <div className="text-sm text-gray-600">
-              {t('pricing.moneyBack.description')}
-            </div>
+            <div className="text-sm text-gray-600">{t('pricing.moneyBack.description')}</div>
           </div>
         </div>
       </motion.div>

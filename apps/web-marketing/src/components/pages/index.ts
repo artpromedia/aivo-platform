@@ -8,3 +8,4 @@ export * from './demo-page';
 export * from './how-it-works-page';
 export * from './partners-page';
 export * from './pricing-page';
+export * from './tutors-page';
