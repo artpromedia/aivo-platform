@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show IconData, Icons;
 
 import 'iep_goal.dart';
 
@@ -2200,6 +2201,165 @@ enum RecommendationCategory {
   accessibility,
   motivation,
 }
+
+// ============================================================================
+// Skill Matrix Models
+// ============================================================================
+
+/// A single cell in the skill mastery matrix.
+@immutable
+class SkillMatrixCell {
+  const SkillMatrixCell({
+    required this.studentId,
+    required this.studentName,
+    required this.skillId,
+    required this.skillName,
+    required this.masteryPercent,
+    this.recentActivities = 0,
+    this.lastAssessedAt,
+  });
+
+  final String studentId;
+  final String studentName;
+  final String skillId;
+  final String skillName;
+  final double masteryPercent;
+  final int recentActivities;
+  final DateTime? lastAssessedAt;
+
+  factory SkillMatrixCell.fromJson(Map<String, dynamic> json) {
+    return SkillMatrixCell(
+      studentId: json['studentId'] as String,
+      studentName: json['studentName'] as String? ?? '',
+      skillId: json['skillId'] as String,
+      skillName: json['skillName'] as String? ?? '',
+      masteryPercent: (json['masteryPercent'] as num?)?.toDouble() ?? 0,
+      recentActivities: json['recentActivities'] as int? ?? 0,
+      lastAssessedAt: json['lastAssessedAt'] != null
+          ? DateTime.tryParse(json['lastAssessedAt'] as String)
+          : null,
+    );
+  }
+}
+
+/// Skill mastery matrix for a class.
+@immutable
+class SkillMatrix {
+  const SkillMatrix({
+    required this.classId,
+    required this.skills,
+    required this.students,
+    required this.cells,
+  });
+
+  final String classId;
+  final List<String> skills;
+  final List<({String id, String name})> students;
+  final List<SkillMatrixCell> cells;
+
+  /// Get mastery for a specific student-skill pair.
+  double getMastery(String studentId, String skillName) {
+    final cell = cells.firstWhere(
+      (c) => c.studentId == studentId && c.skillName == skillName,
+      orElse: () => SkillMatrixCell(
+        studentId: studentId,
+        studentName: '',
+        skillId: '',
+        skillName: skillName,
+        masteryPercent: 0,
+      ),
+    );
+    return cell.masteryPercent;
+  }
+
+  factory SkillMatrix.fromJson(Map<String, dynamic> json) {
+    final studentsJson = json['students'] as List<dynamic>? ?? [];
+    final cellsJson = json['cells'] as List<dynamic>? ?? [];
+
+    return SkillMatrix(
+      classId: json['classId'] as String? ?? '',
+      skills: (json['skills'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      students: studentsJson
+          .map((s) => (
+                id: s['id'] as String,
+                name: s['name'] as String,
+              ))
+          .toList(),
+      cells: cellsJson
+          .map((c) => SkillMatrixCell.fromJson(c as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// Report type enumeration.
+enum ReportType {
+  progress('Progress Report', Icons.trending_up),
+  classSummary('Class Summary', Icons.groups),
+  missingAssignments('Missing Assignments', Icons.assignment_late),
+  iepProgress('IEP Progress', Icons.accessibility_new),
+  standardsMastery('Standards Mastery', Icons.star),
+  parentReportCard('Parent Report Card', Icons.family_restroom);
+
+  const ReportType(this.label, this.icon);
+  final String label;
+  final IconData icon;
+}
+
+/// Generated report metadata.
+@immutable
+class GeneratedReport {
+  const GeneratedReport({
+    required this.id,
+    required this.title,
+    required this.reportType,
+    required this.generatedAt,
+    this.classId,
+    this.className,
+    this.studentId,
+    this.studentName,
+    this.downloadUrl,
+    this.status = ReportStatus.completed,
+  });
+
+  final String id;
+  final String title;
+  final ReportType reportType;
+  final DateTime generatedAt;
+  final String? classId;
+  final String? className;
+  final String? studentId;
+  final String? studentName;
+  final String? downloadUrl;
+  final ReportStatus status;
+
+  factory GeneratedReport.fromJson(Map<String, dynamic> json) {
+    return GeneratedReport(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      reportType: ReportType.values.firstWhere(
+        (r) => r.name == json['reportType'],
+        orElse: () => ReportType.progress,
+      ),
+      generatedAt: DateTime.parse(json['generatedAt'] as String),
+      classId: json['classId'] as String?,
+      className: json['className'] as String?,
+      studentId: json['studentId'] as String?,
+      studentName: json['studentName'] as String?,
+      downloadUrl: json['downloadUrl'] as String?,
+      status: ReportStatus.values.firstWhere(
+        (s) => s.name == json['status'],
+        orElse: () => ReportStatus.completed,
+      ),
+    );
+  }
+}
+
+/// Report generation status.
+enum ReportStatus { pending, generating, completed, failed }
 
 // ============================================================================
 // Analytics Dashboard Models (Sprint 8)

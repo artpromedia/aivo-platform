@@ -42,6 +42,11 @@ import 'screens/calendar/calendar_screen.dart';
 import 'screens/messages/messages_screen.dart';
 import 'screens/messages/conversation_screen.dart';
 import 'screens/messages/compose_message_screen.dart';
+import 'screens/analytics/class_analytics_screen.dart';
+import 'screens/analytics/skill_matrix_screen.dart';
+import 'screens/reports/reports_screen.dart';
+import 'screens/reports/report_config_screen.dart';
+import 'models/analytics.dart';
 import 'behavior_tracking/behavior_tracking_screen.dart';
 import 'theme/teacher_theme.dart';
 
@@ -488,6 +493,49 @@ final _routerProvider = Provider<GoRouter>((ref) {
             studentId: studentId,
             studentName: studentName,
           );
+        },
+      ),
+      // Class Analytics route
+      GoRoute(
+        path: '/analytics/:classId',
+        builder: (context, state) {
+          final classId = state.pathParameters['classId']!;
+          final className = state.uri.queryParameters['name'] ?? 'Class';
+          return ClassAnalyticsScreen(
+            classId: classId,
+            className: className,
+          );
+        },
+      ),
+      // Skill Matrix route
+      GoRoute(
+        path: '/analytics/:classId/skills',
+        builder: (context, state) {
+          final classId = state.pathParameters['classId']!;
+          final className = state.uri.queryParameters['name'] ?? 'Class';
+          return SkillMatrixScreen(
+            classId: classId,
+            className: className,
+          );
+        },
+      ),
+      // Reports route
+      GoRoute(
+        path: '/reports',
+        builder: (context, state) => const ReportsScreen(),
+      ),
+      // Report generation route
+      GoRoute(
+        path: '/reports/generate',
+        builder: (context, state) {
+          final typeParam = state.uri.queryParameters['type'];
+          ReportType? initialType;
+          if (typeParam != null) {
+            initialType = ReportType.values
+                .where((t) => t.name == typeParam)
+                .firstOrNull;
+          }
+          return ReportConfigScreen(initialType: initialType);
         },
       ),
     ],

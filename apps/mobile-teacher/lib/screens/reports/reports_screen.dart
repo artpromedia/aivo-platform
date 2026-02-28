@@ -51,6 +51,22 @@ class ReportsScreen extends ConsumerWidget {
             color: AivoBrand.warning,
             onTap: () => context.push('/reports/sessions'),
           ),
+          const SizedBox(height: 12),
+          _ReportCard(
+            icon: Icons.assignment_late,
+            title: 'Missing Assignments',
+            description: 'Track overdue and missing student work',
+            color: Colors.orange,
+            onTap: () => context.push('/reports/generate?type=missingAssignments'),
+          ),
+          const SizedBox(height: 12),
+          _ReportCard(
+            icon: Icons.star,
+            title: 'Standards Mastery',
+            description: 'Student progress against learning standards',
+            color: Colors.teal,
+            onTap: () => context.push('/reports/generate?type=standardsMastery'),
+          ),
         ],
       ),
     );

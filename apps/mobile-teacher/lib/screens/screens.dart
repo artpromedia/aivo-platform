@@ -25,6 +25,12 @@ export 'messages/compose_message_screen.dart';
 // Reports
 export 'reports/reports_screen.dart';
 export 'reports/iep_reports_screen.dart';
+export 'reports/report_config_screen.dart';
+
+// Analytics
+export 'analytics/analytics_dashboard_screen.dart';
+export 'analytics/class_analytics_screen.dart';
+export 'analytics/skill_matrix_screen.dart';
 
 // Settings
 export 'settings/settings_screen.dart';
