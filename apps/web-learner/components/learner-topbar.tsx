@@ -28,6 +28,8 @@ const mobileNavItems = [
   { label: 'AI Tutor', href: '/tutor' },
   { label: 'Games', href: '/games' },
   { label: 'Homework Helper', href: '/homework' },
+  { label: 'Calming Space', href: '/calm' },
+  { label: 'My Tools', href: '/executive-function' },
   { label: 'Settings', href: '/settings' },
 ];
 

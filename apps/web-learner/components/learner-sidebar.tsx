@@ -10,6 +10,8 @@ import {
   Brain,
   Gamepad2,
   PenTool,
+  Heart,
+  Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,6 +27,8 @@ const navItems = [
   { id: 'tutor', label: 'AI Tutor', icon: Brain, href: '/tutor' },
   { id: 'games', label: 'Games', icon: Gamepad2, href: '/games' },
   { id: 'homework', label: 'Homework Helper', icon: PenTool, href: '/homework' },
+  { id: 'calm', label: 'Calming Space', icon: Heart, href: '/calm' },
+  { id: 'tools', label: 'My Tools', icon: Wrench, href: '/executive-function' },
 ];
 
 const bottomItems = [
