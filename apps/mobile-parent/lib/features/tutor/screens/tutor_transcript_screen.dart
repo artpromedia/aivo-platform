@@ -93,7 +93,6 @@ class _TranscriptBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final session = transcript.session;
     final messages = transcript.messages;
 

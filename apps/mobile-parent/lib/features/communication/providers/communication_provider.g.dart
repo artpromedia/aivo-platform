@@ -1248,7 +1248,7 @@ class _CommunicationDashboardProviderElement
 }
 
 String _$transcriptsNotifierHash() =>
-    r'f5e19cdbc2373dfe035575feae5b4ea904b335b5';
+    r'9471437ef467f62aa23957db87222ae07c923966';
 
 abstract class _$TranscriptsNotifier
     extends BuildlessAutoDisposeAsyncNotifier<List<HomeworkTranscript>> {
@@ -1409,7 +1409,7 @@ class _TranscriptsNotifierProviderElement
 }
 
 String _$teacherNotesNotifierHash() =>
-    r'2f34d0364f9f04d8bea9bfa3daa980ef90c2bc35';
+    r'f050a0d98ab5b67251057af9d47c2b8745fcad69';
 
 abstract class _$TeacherNotesNotifier
     extends BuildlessAutoDisposeAsyncNotifier<List<TeacherNote>> {
@@ -1568,7 +1568,7 @@ class _TeacherNotesNotifierProviderElement
   String get childId => (origin as TeacherNotesNotifierProvider).childId;
 }
 
-String _$reportsNotifierHash() => r'a2a12cbcd34700aa735878e2d366b75a64923ce9';
+String _$reportsNotifierHash() => r'6ab6b35d4c44a5a2b58e7654943f47e5519a1a0a';
 
 abstract class _$ReportsNotifier
     extends BuildlessAutoDisposeAsyncNotifier<List<ProgressReport>> {

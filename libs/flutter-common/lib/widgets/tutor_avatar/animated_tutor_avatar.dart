@@ -31,7 +31,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart';
+import 'package:rive/rive.dart' hide LinearGradient;
 
 import 'tutor_avatar_state.dart';
 import 'tutor_persona_asset.dart';
@@ -138,7 +138,6 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
   SMITrigger? _trigEncourage;
   SMITrigger? _trigThink;
   SMITrigger? _trigWave;
-  SMITrigger? _blinkTrigger;
   SMINumber? _mouthOpenInput;
   SMIBool? _isListeningInput;
 
@@ -266,7 +265,6 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
         _trigEncourage = controller.getTriggerInput(TutorTriggerNames.trigEncourage);
         _trigThink = controller.getTriggerInput(TutorTriggerNames.trigThink);
         _trigWave = controller.getTriggerInput(TutorTriggerNames.trigWave);
-        _blinkTrigger = controller.getTriggerInput(TutorTriggerNames.blinkTrigger);
         _mouthOpenInput = controller.getNumberInput(TutorTriggerNames.mouthOpen);
         _isListeningInput = controller.getBoolInput(TutorTriggerNames.isListening);
       } else {
@@ -303,7 +301,6 @@ class _AnimatedTutorAvatarState extends State<AnimatedTutorAvatar>
     _trigEncourage = null;
     _trigThink = null;
     _trigWave = null;
-    _blinkTrigger = null;
     _mouthOpenInput = null;
     _isListeningInput = null;
     _artboard = null;

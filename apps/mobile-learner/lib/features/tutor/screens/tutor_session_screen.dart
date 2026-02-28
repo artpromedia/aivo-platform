@@ -215,7 +215,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                 Icon(Icons.lock_outline_rounded, size: 64, color: theme.disabledColor),
                 const SizedBox(height: 16),
                 Text(
-                  '${widget.persona.subject.displayName} Tutor Coming Soon',
+                  '${widget.persona.subject.label} Tutor Coming Soon',
                   style: theme.textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),

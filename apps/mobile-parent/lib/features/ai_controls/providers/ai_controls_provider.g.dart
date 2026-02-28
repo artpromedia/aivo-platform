@@ -1238,7 +1238,7 @@ class _ApprovalQueueNotifierProviderElement
 }
 
 String _$restrictionsNotifierHash() =>
-    r'e445ba5f135b5d60fe9d6003937ffe885cd36ca4';
+    r'e18d1e0906c5ef4cf2326699f443887d7976dbd9';
 
 abstract class _$RestrictionsNotifier
     extends BuildlessAutoDisposeAsyncNotifier<List<AIRestriction>> {

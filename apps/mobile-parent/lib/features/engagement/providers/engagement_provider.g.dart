@@ -1831,7 +1831,7 @@ class _WeeklyReportProviderElement
   String get childId => (origin as WeeklyReportProvider).childId;
 }
 
-String _$streakNotifierHash() => r'62d99015e80b0aca0b427ea8512dca85d1877d44';
+String _$streakNotifierHash() => r'36de9a179dd96c561bec184d50d5d29f68773e27';
 
 abstract class _$StreakNotifier
     extends BuildlessAutoDisposeAsyncNotifier<LearningStreak> {
@@ -1990,7 +1990,7 @@ class _StreakNotifierProviderElement
 }
 
 String _$screenTimeSettingsNotifierHash() =>
-    r'b93b86d971b27514a637cf13f2b98541449d3401';
+    r'fca2671bc596b33799b4827732e0e4e33ce56613';
 
 abstract class _$ScreenTimeSettingsNotifier
     extends BuildlessAutoDisposeAsyncNotifier<ScreenTimeSettings> {

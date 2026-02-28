@@ -2,6 +2,8 @@
   "extends": "../../tsconfig.compat.json",
   "compilerOptions": {
     "ignoreDeprecations": "5.0",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,

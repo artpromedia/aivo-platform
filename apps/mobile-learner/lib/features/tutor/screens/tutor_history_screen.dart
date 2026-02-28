@@ -12,7 +12,6 @@ import 'package:intl/intl.dart';
 
 import '../models/tutor_models.dart';
 import '../providers/tutor_session_provider.dart';
-import '../services/tutor_api_service.dart';
 import '../widgets/tutor_chat_bubble.dart';
 
 /// Screen showing the learner's past tutoring session history.

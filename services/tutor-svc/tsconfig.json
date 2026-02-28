@@ -4,6 +4,7 @@
     "ignoreDeprecations": "5.0",
     "moduleResolution": "bundler",
     "module": "ESNext",
+    "strictNullChecks": true,
     "baseUrl": "../..",
     "paths": {
       "@aivo/ts-rbac": ["libs/ts-rbac/dist/index.d.ts"]
