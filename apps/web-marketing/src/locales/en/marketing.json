@@ -350,10 +350,25 @@
       }
     ],
     "stats": {
-      "students": { "value": "150", "label": "Pilot Students", "suffix": "+" },
-      "duration": { "value": "3", "label": "Month Pilot", "suffix": "mo" },
-      "iep": { "value": "100", "label": "IEP Aligned", "suffix": "%" },
-      "curriculum": { "value": "K-12", "label": "Full Curriculum" }
+      "students": {
+        "value": "150",
+        "label": "Pilot Students",
+        "suffix": "+"
+      },
+      "duration": {
+        "value": "3",
+        "label": "Month Pilot",
+        "suffix": "mo"
+      },
+      "iep": {
+        "value": "100",
+        "label": "IEP Aligned",
+        "suffix": "%"
+      },
+      "curriculum": {
+        "value": "K-12",
+        "label": "Full Curriculum"
+      }
     },
     "previousTestimonial": "Previous testimonial",
     "nextTestimonial": "Next testimonial",
@@ -521,10 +536,22 @@
     "pilotHeading": "Proven Results",
     "pilotDescription": "Our 3-month pilot program demonstrated measurable improvements in learning outcomes.",
     "pilotStats": [
-      { "value": "150+", "label": "Students Served" },
-      { "value": "4.9/5", "label": "Parent Satisfaction" },
-      { "value": "87%", "label": "Improved Engagement" },
-      { "value": "3 mo", "label": "Time to Results" }
+      {
+        "value": "150+",
+        "label": "Students Served"
+      },
+      {
+        "value": "4.9/5",
+        "label": "Parent Satisfaction"
+      },
+      {
+        "value": "87%",
+        "label": "Improved Engagement"
+      },
+      {
+        "value": "3 mo",
+        "label": "Time to Results"
+      }
     ],
     "pilotTestimonial": {
       "quote": "The transformation we've seen in our students is remarkable. AIVO understands that every learner is unique, and the results speak for themselves.",
@@ -565,32 +592,51 @@
         "pro": "Unlimited",
         "premium": "Unlimited"
       },
-      "subjectAreas": { "label": "Subject Areas", "free": "2", "pro": "All", "premium": "All" },
+      "subjectAreas": {
+        "label": "Subject Areas",
+        "free": "2",
+        "pro": "All",
+        "premium": "All"
+      },
       "progressReports": {
         "label": "Progress Reports",
         "free": "Basic",
         "pro": "Detailed",
         "premium": "Advanced + Export"
       },
-      "iepIntegration": { "label": "IEP Integration" },
-      "parentDashboard": { "label": "Parent Dashboard" },
+      "iepIntegration": {
+        "label": "IEP Integration"
+      },
+      "parentDashboard": {
+        "label": "Parent Dashboard"
+      },
       "learnerProfiles": {
         "label": "Learner Profiles",
         "free": "1",
         "pro": "1",
         "premium": "Up to 5"
       },
-      "learningStyleAssessment": { "label": "Learning Style Assessment" },
-      "customLearningPaths": { "label": "Custom Learning Paths" },
-      "teacherTools": { "label": "Teacher Tools" },
-      "dedicatedSuccessManager": { "label": "Dedicated Success Manager" },
+      "learningStyleAssessment": {
+        "label": "Learning Style Assessment"
+      },
+      "customLearningPaths": {
+        "label": "Custom Learning Paths"
+      },
+      "teacherTools": {
+        "label": "Teacher Tools"
+      },
+      "dedicatedSuccessManager": {
+        "label": "Dedicated Success Manager"
+      },
       "support": {
         "label": "Support",
         "free": "Community",
         "pro": "Priority Email",
         "premium": "24/7 Priority"
       },
-      "earlyFeatureAccess": { "label": "Early Feature Access" }
+      "earlyFeatureAccess": {
+        "label": "Early Feature Access"
+      }
     },
     "trustBadges": [
       "FERPA & COPPA Compliant",
@@ -671,10 +717,22 @@
     "heroCtaPrimary": "View Open Positions",
     "heroCtaSecondary": "Learn About Us",
     "heroStats": [
-      { "value": "25+", "label": "Team Members" },
-      { "value": "100%", "label": "Remote-First" },
-      { "value": "150+", "label": "Students Served" },
-      { "value": "$5M", "label": "Raised" }
+      {
+        "value": "25+",
+        "label": "Team Members"
+      },
+      {
+        "value": "100%",
+        "label": "Remote-First"
+      },
+      {
+        "value": "150+",
+        "label": "Students Served"
+      },
+      {
+        "value": "$5M",
+        "label": "Raised"
+      }
     ],
     "valuesHeading": "Our Values",
     "valuesDescription": "These principles guide how we work, make decisions, and treat each other.",
@@ -699,11 +757,26 @@
     "benefitsHeading": "Benefits & Perks",
     "benefitsDescription": "We take care of our team so they can focus on what matters.",
     "benefits": [
-      { "title": "Competitive Salary", "description": "Top-tier compensation with equity" },
-      { "title": "Remote-First", "description": "Work from anywhere in the US" },
-      { "title": "Equipment Budget", "description": "$2,500 for your home office" },
-      { "title": "Learning Budget", "description": "$1,500/year for courses & conferences" },
-      { "title": "Unlimited PTO", "description": "Take the time you need" },
+      {
+        "title": "Competitive Salary",
+        "description": "Top-tier compensation with equity"
+      },
+      {
+        "title": "Remote-First",
+        "description": "Work from anywhere in the US"
+      },
+      {
+        "title": "Equipment Budget",
+        "description": "$2,500 for your home office"
+      },
+      {
+        "title": "Learning Budget",
+        "description": "$1,500/year for courses & conferences"
+      },
+      {
+        "title": "Unlimited PTO",
+        "description": "Take the time you need"
+      },
       {
         "title": "Health & Wellness",
         "description": "Full medical, dental, vision + mental health"
@@ -817,7 +890,10 @@
         "title": "Email",
         "values": ["hello@aivolearning.com", "support@aivolearning.com"]
       },
-      "phone": { "title": "Phone", "values": ["1-800-AIVO-EDU", "(800) 248-6338"] },
+      "phone": {
+        "title": "Phone",
+        "values": ["1-800-AIVO-EDU", "(800) 248-6338"]
+      },
       "address": {
         "title": "Address",
         "values": ["123 Education Street", "Learning City, CA 94105"]
@@ -874,10 +950,22 @@
     "quickLinks": {
       "heading": "Looking for Something Specific?",
       "items": [
-        { "title": "Help Center", "description": "Browse our FAQ" },
-        { "title": "For Schools", "description": "Enterprise solutions" },
-        { "title": "Partnerships", "description": "Work with us" },
-        { "title": "Press Inquiries", "description": "Media contact" }
+        {
+          "title": "Help Center",
+          "description": "Browse our FAQ"
+        },
+        {
+          "title": "For Schools",
+          "description": "Enterprise solutions"
+        },
+        {
+          "title": "Partnerships",
+          "description": "Work with us"
+        },
+        {
+          "title": "Press Inquiries",
+          "description": "Media contact"
+        }
       ],
       "pressEmail": "press@aivolearning.com"
     }
@@ -1007,10 +1095,22 @@
       "iepBadge": "IEP"
     },
     "stats": [
-      { "value": "50%", "label": "Less Planning Time" },
-      { "value": "3x", "label": "More 1:1 Time" },
-      { "value": "94%", "label": "Teacher Satisfaction" },
-      { "value": "100%", "label": "IEP Alignment" }
+      {
+        "value": "50%",
+        "label": "Less Planning Time"
+      },
+      {
+        "value": "3x",
+        "label": "More 1:1 Time"
+      },
+      {
+        "value": "94%",
+        "label": "Teacher Satisfaction"
+      },
+      {
+        "value": "100%",
+        "label": "IEP Alignment"
+      }
     ],
     "benefitsBadge": "Why Teachers Choose AIVO",
     "benefitsHeading": "More Teaching, Less Paperwork",
@@ -1094,13 +1194,19 @@
     "effective": "Effective:",
     "effectiveDate": "December 19, 2025",
     "sections": {
-      "agreementToTerms": { "title": "1. Agreement to Terms" },
-      "descriptionOfService": { "title": "2. Description of Service" },
+      "agreementToTerms": {
+        "title": "1. Agreement to Terms"
+      },
+      "descriptionOfService": {
+        "title": "2. Description of Service"
+      },
       "userAccounts": {
         "title": "3. User Accounts",
         "subs": ["Account Creation", "Accounts for Minors", "Account Termination"]
       },
-      "acceptableUse": { "title": "4. Acceptable Use" },
+      "acceptableUse": {
+        "title": "4. Acceptable Use"
+      },
       "intellectualProperty": {
         "title": "5. Intellectual Property",
         "subs": ["Our Content", "Your Content", "Permitted Use"]
@@ -1109,10 +1215,18 @@
         "title": "6. Subscription and Payment",
         "subs": ["Pricing", "Billing", "Cancellation", "Free Trials", "Refunds"]
       },
-      "educationalDisclaimer": { "title": "7. Educational Content Disclaimer" },
-      "limitationOfLiability": { "title": "8. Limitation of Liability" },
-      "disclaimerOfWarranties": { "title": "9. Disclaimer of Warranties" },
-      "indemnification": { "title": "10. Indemnification" },
+      "educationalDisclaimer": {
+        "title": "7. Educational Content Disclaimer"
+      },
+      "limitationOfLiability": {
+        "title": "8. Limitation of Liability"
+      },
+      "disclaimerOfWarranties": {
+        "title": "9. Disclaimer of Warranties"
+      },
+      "indemnification": {
+        "title": "10. Indemnification"
+      },
       "termination": {
         "title": "11. Termination",
         "subs": ["By You", "By Us", "Effect of Termination"]
@@ -1121,11 +1235,21 @@
         "title": "12. Dispute Resolution",
         "subs": ["Informal Resolution", "Arbitration", "Class Action Waiver", "Exceptions"]
       },
-      "changesToTerms": { "title": "13. Changes to Terms" },
-      "governingLaw": { "title": "14. Governing Law" },
-      "severability": { "title": "15. Severability" },
-      "entireAgreement": { "title": "16. Entire Agreement" },
-      "contactInformation": { "title": "17. Contact Information" }
+      "changesToTerms": {
+        "title": "13. Changes to Terms"
+      },
+      "governingLaw": {
+        "title": "14. Governing Law"
+      },
+      "severability": {
+        "title": "15. Severability"
+      },
+      "entireAgreement": {
+        "title": "16. Entire Agreement"
+      },
+      "contactInformation": {
+        "title": "17. Contact Information"
+      }
     },
     "contactBlock": {
       "department": "Legal Department",
@@ -1133,7 +1257,174 @@
       "emailLabel": "Email:",
       "email": "legal@aivolearning.com"
     },
-    "backToHome": "← Back to Home"
+    "backToHome": "← Back to Home",
+    "body": {
+      "agreementToTerms": {
+        "p1": "By accessing or using the AIVO Learning platform (the \"Service\"), you agree to be bound by these Terms of Service (\"Terms\"). If you disagree with any part of these terms, you may not access the Service.",
+        "p2": "These Terms apply to all visitors, users, and others who access or use the Service, including students, parents, guardians, teachers, and administrators."
+      },
+      "descriptionOfService": {
+        "p1": "AIVO Learning provides an AI-powered educational platform designed to support neurodiverse learners. Our Service includes:",
+        "items": [
+          "Personalized AI tutoring and learning paths",
+          "Interactive educational content and activities",
+          "Progress tracking and reporting tools",
+          "IEP goal management features",
+          "Parent and teacher dashboards",
+          "Communication and collaboration tools"
+        ],
+        "p2": "We reserve the right to modify, suspend, or discontinue any aspect of the Service at any time without prior notice."
+      },
+      "userAccounts": {
+        "accountCreation": {
+          "intro": "To use certain features of the Service, you must create an account. You agree to:",
+          "items": [
+            "Provide accurate and complete information",
+            "Maintain the security of your account credentials",
+            "Promptly update any changes to your information",
+            "Accept responsibility for all activity under your account"
+          ]
+        },
+        "accountsForMinors": {
+          "p1": "For users under 18 years of age, a parent or guardian must create and manage the account. For users under 13, we require verifiable parental consent in compliance with COPPA."
+        },
+        "accountTermination": {
+          "p1": "You may terminate your account at any time by contacting us or using the account settings. We may terminate or suspend your account if you violate these Terms."
+        }
+      },
+      "acceptableUse": {
+        "intro": "You agree NOT to use the Service to:",
+        "items": [
+          "Violate any applicable laws or regulations",
+          "Infringe on the rights of others",
+          "Share your account credentials with others",
+          "Attempt unauthorized access to any part of the Service",
+          "Upload harmful, offensive, or inappropriate content",
+          "Interfere with the proper operation of the Service",
+          "Use automated systems to access the Service without permission",
+          "Collect data about other users without consent",
+          "Engage in any activity that could harm minors"
+        ],
+        "p2": "We reserve the right to remove any content and terminate accounts that violate these guidelines."
+      },
+      "intellectualProperty": {
+        "ourContent": {
+          "p1": "The Service and its original content, features, and functionality are owned by AIVO Learning and are protected by copyright, trademark, and other intellectual property laws."
+        },
+        "yourContent": {
+          "p1": "You retain ownership of any content you submit to the Service. By submitting content, you grant us a license to use, store, and process that content for the purpose of providing the Service."
+        },
+        "permittedUse": {
+          "p1": "You are granted a limited, non-exclusive, non-transferable license to access and use the Service for personal, educational purposes only."
+        }
+      },
+      "subscriptionAndPayment": {
+        "pricing": {
+          "p1": "Some features of the Service require a paid subscription. Prices are listed on our website and may change with notice."
+        },
+        "billing": {
+          "p1": "Subscriptions are billed in advance on a monthly or annual basis. Payment is due at the beginning of each billing cycle."
+        },
+        "cancellation": {
+          "p1": "You may cancel your subscription at any time. Cancellation takes effect at the end of the current billing period. No refunds are provided for partial periods."
+        },
+        "freeTrials": {
+          "p1": "We may offer free trials. If you do not cancel before the trial ends, you will be automatically charged for the subscription."
+        },
+        "refunds": {
+          "p1": "We offer a 30-day money-back guarantee for first-time subscribers. Refund requests after this period are handled on a case-by-case basis. Contact support@aivolearning.com for assistance."
+        }
+      },
+      "educationalDisclaimer": {
+        "p1": "The Service is intended to supplement, not replace, formal education. We make no guarantees regarding:",
+        "items": [
+          "Specific educational outcomes or improvements",
+          "Alignment with every curriculum or educational standard",
+          "Suitability for every learning difference or need"
+        ],
+        "p2": "Parents, guardians, and educators should use their judgment to determine if the Service is appropriate for individual learners. The Service should not be used as a substitute for professional educational, medical, or therapeutic advice."
+      },
+      "limitationOfLiability": {
+        "p1": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, AIVO LEARNING SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:",
+        "items": [
+          "Loss of profits, data, or other intangible losses",
+          "Damages resulting from unauthorized access to your account",
+          "Damages resulting from errors or interruptions in service",
+          "Damages resulting from third-party content or conduct"
+        ],
+        "p2": "OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM."
+      },
+      "disclaimerOfWarranties": {
+        "p1": "THE SERVICE IS PROVIDED \"AS IS\" AND \"AS AVAILABLE\" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO:",
+        "items": [
+          "Implied warranties of merchantability",
+          "Fitness for a particular purpose",
+          "Non-infringement",
+          "Accuracy or completeness of content"
+        ],
+        "p2": "We do not warrant that the Service will be uninterrupted, secure, or error-free."
+      },
+      "indemnification": {
+        "p1": "You agree to defend, indemnify, and hold harmless AIVO Learning, its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including attorney fees) arising from:",
+        "items": [
+          "Your use of the Service",
+          "Your violation of these Terms",
+          "Your violation of any third-party rights",
+          "Content you submit to the Service"
+        ]
+      },
+      "termination": {
+        "byYou": {
+          "p1": "You may terminate your account and stop using the Service at any time. Contact us or use the account settings to close your account."
+        },
+        "byUs": {
+          "p1": "We may suspend or terminate your access to the Service immediately, without prior notice, if:",
+          "items": [
+            "You breach these Terms",
+            "We are required to do so by law",
+            "We discontinue the Service"
+          ]
+        },
+        "effectOfTermination": {
+          "p1": "Upon termination, your right to use the Service ceases immediately. We may delete your data in accordance with our Privacy Policy. Provisions that by their nature should survive termination will remain in effect."
+        }
+      },
+      "disputeResolution": {
+        "informalResolution": {
+          "p1": "Before filing a formal dispute, you agree to contact us at legal@aivolearning.com to attempt informal resolution. We will work in good faith to resolve the issue within 30 days."
+        },
+        "arbitration": {
+          "p1": "Any dispute not resolved informally shall be resolved by binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall take place in California, and the decision shall be final and binding."
+        },
+        "classActionWaiver": {
+          "p1": "You agree that any dispute resolution will be conducted only on an individual basis and not as a class action or representative proceeding."
+        },
+        "exceptions": {
+          "p1": "This arbitration agreement does not apply to claims that may be brought in small claims court or to claims for injunctive relief."
+        }
+      },
+      "changesToTerms": {
+        "p1": "We reserve the right to modify these Terms at any time. When we make changes:",
+        "items": [
+          "We will update the \"Last updated\" date at the top",
+          "For material changes, we will provide notice via email or prominent notice on the Service",
+          "Continued use after changes constitutes acceptance of the new Terms"
+        ],
+        "p2": "If you do not agree to the modified Terms, you must stop using the Service."
+      },
+      "governingLaw": {
+        "p1": "These Terms shall be governed by and construed in accordance with the laws of the State of California, United States, without regard to its conflict of law provisions."
+      },
+      "severability": {
+        "p1": "If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force and effect."
+      },
+      "entireAgreement": {
+        "p1": "These Terms, together with our Privacy Policy and any other agreements expressly incorporated by reference, constitute the entire agreement between you and AIVO Learning regarding the Service."
+      },
+      "contactInformation": {
+        "p1": "If you have questions about these Terms, please contact us:"
+      }
+    }
   },
   "privacy": {
     "metaTitle": "Privacy Policy | AIVO Learning",
@@ -1167,7 +1458,199 @@
       "emailLabel": "Email:",
       "email": "privacy@aivolearning.com"
     },
-    "backToHome": "← Back to Home"
+    "backToHome": "← Back to Home",
+    "body": {
+      "introduction": {
+        "p1": "AIVO Learning, Inc. (\"AIVO,\" \"we,\" \"us,\" or \"our\") is committed to protecting the privacy of all users of our educational platform, including students, parents, guardians, and educators.",
+        "p2": "This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website, mobile applications, and services (collectively, the \"Platform\").",
+        "callout": "AIVO is fully compliant with FERPA and COPPA regulations."
+      },
+      "accountInformation": {
+        "intro": "When you create an account, we collect:",
+        "items": [
+          "Name and email address",
+          "Role (parent, student, teacher, administrator)",
+          "Password (stored securely using encryption)",
+          "Profile information you choose to provide"
+        ]
+      },
+      "learningData": {
+        "intro": "To provide personalized learning experiences, we collect:",
+        "items": [
+          "Learning activities and progress",
+          "Assessment results and performance data",
+          "Interactions with AI tutoring features",
+          "Learning preferences and accommodations",
+          "IEP goals (when provided by parents or educators)"
+        ]
+      },
+      "technicalData": {
+        "intro": "We automatically collect certain technical information:",
+        "items": [
+          "Device type, operating system, and browser",
+          "IP address and general location",
+          "Usage patterns and session duration",
+          "Error logs for troubleshooting"
+        ]
+      },
+      "childrensPrivacy": {
+        "p1": "AIVO takes children's privacy very seriously. We comply fully with the Children's Online Privacy Protection Act (COPPA)."
+      },
+      "parentalConsent": {
+        "p1": "For users under 13 years of age, we require verifiable parental consent before collecting personal information. Parents or guardians must create and manage accounts for children under 13."
+      },
+      "informationFromChildren": {
+        "p1": "We collect only the minimum information necessary to provide our educational services to children. This includes:",
+        "items": [
+          "First name (or nickname)",
+          "Learning activities and progress",
+          "Preferences for accessibility and accommodations"
+        ]
+      },
+      "parentalRights": {
+        "intro": "Parents and guardians have the right to:",
+        "items": [
+          "Review their child's personal information",
+          "Request deletion of their child's data",
+          "Refuse further collection of their child's information",
+          "Withdraw consent at any time"
+        ]
+      },
+      "howWeUse": {
+        "intro": "We use the information we collect to:",
+        "items": [
+          "Provide personalized learning experiences",
+          "Track educational progress and generate reports",
+          "Improve our AI algorithms and content",
+          "Communicate important updates and information",
+          "Ensure platform security and prevent abuse",
+          "Comply with legal obligations",
+          "Provide customer support"
+        ],
+        "doNotIntro": "We do not:",
+        "doNotItems": [
+          "Sell your personal information to third parties",
+          "Use student data for advertising purposes",
+          "Share data with advertisers or data brokers"
+        ]
+      },
+      "dataSecurity": {
+        "intro": "We implement industry-standard security measures to protect your information:",
+        "items": [
+          {
+            "label": "Encryption:",
+            "text": "All data is encrypted in transit (TLS 1.3) and at rest (AES-256)"
+          },
+          {
+            "label": "Access Controls:",
+            "text": "Strict role-based access controls limit who can access data"
+          },
+          {
+            "label": "Regular Audits:",
+            "text": "We conduct regular security audits and penetration testing"
+          },
+          {
+            "label": "Employee Training:",
+            "text": "All employees receive privacy and security training"
+          },
+          {
+            "label": "Incident Response:",
+            "text": "We have procedures to detect and respond to data breaches"
+          }
+        ]
+      },
+      "ferpaCompliance": {
+        "p1": "For educational institutions using AIVO, we comply with the Family Educational Rights and Privacy Act (FERPA).",
+        "items": [
+          "We act as a \"school official\" with legitimate educational interest",
+          "We use student data only for authorized educational purposes",
+          "We maintain appropriate security for education records",
+          "We do not disclose student information without proper authorization"
+        ],
+        "p2": "Schools using AIVO can enter into agreements that ensure FERPA compliance. Contact us at privacy@aivolearning.com for more information."
+      },
+      "yourRights": {
+        "intro": "You have the right to:",
+        "items": [
+          {
+            "label": "Access:",
+            "text": "Request a copy of your personal data"
+          },
+          {
+            "label": "Correction:",
+            "text": "Request correction of inaccurate information"
+          },
+          {
+            "label": "Deletion:",
+            "text": "Request deletion of your data (subject to legal requirements)"
+          },
+          {
+            "label": "Export:",
+            "text": "Request your data in a portable format"
+          },
+          {
+            "label": "Opt-out:",
+            "text": "Unsubscribe from marketing communications"
+          }
+        ],
+        "p2": "To exercise these rights, contact us at privacy@aivolearning.com."
+      },
+      "dataRetention": {
+        "intro": "We retain your information for as long as your account is active or as needed to provide our services. Specifically:",
+        "items": [
+          {
+            "label": "Active accounts:",
+            "text": "Data is retained while the account is active"
+          },
+          {
+            "label": "Inactive accounts:",
+            "text": "Data is retained for 2 years after last activity"
+          },
+          {
+            "label": "Deleted accounts:",
+            "text": "Data is permanently deleted within 30 days of deletion request"
+          },
+          {
+            "label": "Legal holds:",
+            "text": "Some data may be retained longer if required by law"
+          }
+        ]
+      },
+      "thirdPartyServices": {
+        "intro": "We use trusted third-party services to operate our Platform. These include:",
+        "items": [
+          {
+            "label": "Cloud hosting:",
+            "text": "For secure data storage"
+          },
+          {
+            "label": "Analytics:",
+            "text": "To understand how our Platform is used (anonymized)"
+          },
+          {
+            "label": "Payment processing:",
+            "text": "To handle subscription payments securely"
+          },
+          {
+            "label": "Customer support:",
+            "text": "To provide help desk services"
+          }
+        ],
+        "p2": "All third-party providers are contractually bound to protect your data and use it only for the purposes we specify."
+      },
+      "changesToPolicy": {
+        "p1": "We may update this Privacy Policy from time to time. We will notify you of any material changes by:",
+        "items": [
+          "Posting the new policy on this page",
+          "Updating the \"Last updated\" date",
+          "Sending an email notification for significant changes"
+        ],
+        "p2": "Your continued use of the Platform after changes constitutes acceptance of the updated policy."
+      },
+      "contactUs": {
+        "p1": "If you have questions about this Privacy Policy or our data practices, please contact us:"
+      }
+    }
   },
   "cookies": {
     "metaTitle": "Cookie Policy | AIVO Learning",

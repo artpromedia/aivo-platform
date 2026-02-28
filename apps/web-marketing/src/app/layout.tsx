@@ -108,6 +108,14 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   alternates: {
     canonical: 'https://aivolearning.com',
+    languages: {
+      'x-default': 'https://aivolearning.com',
+      en: 'https://aivolearning.com',
+      es: 'https://aivolearning.com/es',
+      fr: 'https://aivolearning.com/fr',
+      ar: 'https://aivolearning.com/ar',
+      pt: 'https://aivolearning.com/pt',
+    },
   },
 };
 
@@ -142,9 +150,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className="min-h-screen bg-white text-gray-900 font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>
-            <I18nProvider locale={locale}>
-              {children}
-            </I18nProvider>
+            <I18nProvider locale={locale}>{children}</I18nProvider>
           </AuthProvider>
         </ThemeProvider>
 
