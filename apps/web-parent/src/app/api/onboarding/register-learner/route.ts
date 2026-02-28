@@ -1,13 +1,14 @@
-import type { NextRequest} from 'next/server';
-import { NextResponse } from 'next/server';
 import * as crypto from 'node:crypto';
+
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // Parent service URL (has access to the profiles database)
 const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
 
 /**
  * Onboarding API - Register Learner
- * 
+ *
  * Creates a learner profile in the database with a PIN for login.
  * Works in both development and production modes.
  */
@@ -26,10 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Validate PIN format before forwarding
     if (typeof pin !== 'string' || !/^\d{6}$/.test(pin)) {
-      return NextResponse.json(
-        { message: 'PIN must be exactly 6 digits' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'PIN must be exactly 6 digits' }, { status: 400 });
     }
 
     // Try to call parent-svc to create the profile
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
             id: data.learnerId || data.learner?.id,
             firstName,
             lastName: lastName || '',
-            pin: data.learnerPin || data.learner?.pin,
+            pin: '******', // Plaintext PIN no longer returned (PIN-05)
             gradeLevel,
           },
           curriculumInfo: {
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
         };
         return NextResponse.json(normalized);
       }
-      
+
       // If parent-svc returns an error, log and continue with direct DB insert
       const errorText = await response.text();
       console.log('[Register Learner] Parent service error, using direct DB:', errorText);
@@ -79,7 +77,7 @@ export async function POST(request: NextRequest) {
     // This ensures profiles are always created in the database
     const learnerId = `learner_${Date.now()}`;
     const pinHash = crypto.createHash('sha256').update(pin).digest('hex');
-    
+
     // Call parent-svc internal endpoint to create profile directly
     try {
       const internalResponse = await fetch(`${PARENT_SVC_URL}/api/v1/internal/create-profile`, {
@@ -91,13 +89,13 @@ export async function POST(request: NextRequest) {
           familyName: lastName || '',
           grade: gradeLevel,
           dateOfBirth: dateOfBirth || null,
-          pin,
+          // pin: — plaintext no longer sent (PIN-05)
           pinHash,
           baselineStatus: 'not_started',
           status: 'active',
         }),
       });
-      
+
       if (internalResponse.ok) {
         console.log(`[Register Learner] Profile created in DB: ${learnerId}`);
       }
@@ -115,7 +113,7 @@ export async function POST(request: NextRequest) {
       zipCode: location?.zipCode || null,
       classCode: classCode || `AIVO${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       joinedClassCode: classCode || null,
-      pin,
+      pin: '******', // Plaintext PIN no longer included (PIN-05)
       createdAt: new Date().toISOString(),
     };
 

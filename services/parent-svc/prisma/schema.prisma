@@ -376,8 +376,8 @@ model Profile {
   photoUrl        String?
   dateOfBirth     DateTime?
   grade           String?
-  pin             String?   @unique // 6-digit PIN for consumer/home learner login
-  pinHash         String?   // Hashed PIN for security
+  pin             String?           // DEPRECATED: nulled by migration, do not use
+  pinHash         String?   @unique // SHA-256 hash of 6-digit PIN (login + uniqueness)
   baselineStatus  String    @default("not_started") // not_started, in_progress, completed
   status          String    @default("active")
   createdAt       DateTime  @default(now())

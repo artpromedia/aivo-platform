@@ -52,7 +52,7 @@ export interface RegisterLearnerInput {
 
 export interface RegisterLearnerResult {
   learnerId: string;
-  learnerPin: string;
+  learnerPin: string; // DEPRECATED: always '******' — plaintext PIN no longer returned
   location: LocationInput;
   district?: DistrictInfo;
   curriculumStandards: string[];

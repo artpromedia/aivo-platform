@@ -270,10 +270,10 @@ export class OnboardingService {
     const crypto = await import('node:crypto');
     const pinHash = crypto.createHash('sha256').update(learnerPin).digest('hex');
 
-    // Check PIN uniqueness among active profiles
+    // Check PIN uniqueness among active profiles (via hash only)
     const existingPin = await this.prisma.profile.findFirst({
       where: {
-        OR: [{ pin: learnerPin }, { pinHash }],
+        pinHash,
         status: 'active',
       },
     });
@@ -290,7 +290,7 @@ export class OnboardingService {
         familyName: input.lastName || '',
         dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : null,
         grade: input.gradeLevel || null,
-        pin: learnerPin,
+        // pin: learnerPin — plaintext no longer stored (PIN-05)
         pinHash,
         baselineStatus: 'not_started',
         status: 'active',
@@ -352,7 +352,7 @@ export class OnboardingService {
 
     return {
       learnerId: learner.id,
-      learnerPin,
+      learnerPin: '******', // Plaintext PIN no longer returned (PIN-05)
       location: input.location,
       district,
       curriculumStandards: locationResult.curriculum.curriculumStandards,

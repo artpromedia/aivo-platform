@@ -18,8 +18,8 @@ interface CreateProfileInput {
   familyName: string;
   grade?: string;
   dateOfBirth?: string | null;
-  pin: string;
-  pinHash: string;
+  pin?: string; // DEPRECATED: accepted for backward compat, not stored
+  pinHash: string; // Required: SHA-256 hash of 6-digit PIN
   baselineStatus?: string;
   status?: string;
 }
@@ -32,20 +32,16 @@ export async function internalRoutes(app: FastifyInstance) {
   app.post('/create-profile', async (request: FastifyRequest, reply: FastifyReply) => {
     const input = request.body as CreateProfileInput;
 
-    if (!input.id || !input.givenName || !input.pin) {
-      throw new BadRequestException('Missing required fields: id, givenName, pin');
+    if (!input.id || !input.givenName || !input.pinHash) {
+      throw new BadRequestException('Missing required fields: id, givenName, pinHash');
     }
 
-    if (!/^\d{6}$/.test(input.pin)) {
-      throw new BadRequestException('PIN must be exactly 6 digits');
-    }
-
-    const pinHash = input.pinHash || crypto.createHash('sha256').update(input.pin).digest('hex');
+    const pinHash = input.pinHash;
 
     try {
       const existing = await prisma.profile.findFirst({
         where: {
-          OR: [{ id: input.id }, { pin: input.pin }],
+          OR: [{ id: input.id }, { pinHash }],
         },
       });
 
@@ -56,7 +52,6 @@ export async function internalRoutes(app: FastifyInstance) {
             id: existing.id,
             givenName: existing.givenName,
             familyName: existing.familyName,
-            pin: input.pin,
             baselineStatus: existing.baselineStatus,
           },
           message: 'Profile already exists',
@@ -70,7 +65,7 @@ export async function internalRoutes(app: FastifyInstance) {
           familyName: input.familyName || '',
           grade: input.grade || null,
           dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : null,
-          pin: input.pin,
+          // pin: — plaintext no longer stored (PIN-05)
           pinHash,
           baselineStatus: input.baselineStatus || 'not_started',
           status: input.status || 'active',
@@ -86,7 +81,6 @@ export async function internalRoutes(app: FastifyInstance) {
           id: profile.id,
           givenName: profile.givenName,
           familyName: profile.familyName,
-          pin: input.pin,
           baselineStatus: profile.baselineStatus,
         },
         message: 'Profile created successfully',

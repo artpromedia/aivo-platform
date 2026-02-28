@@ -103,7 +103,7 @@ export async function learnerPinRoutes(app: FastifyInstance) {
       // Check PIN uniqueness among active profiles (excluding this learner)
       const existingPin = await prisma.profile.findFirst({
         where: {
-          OR: [{ pin: newPin }, { pinHash }],
+          pinHash,
           status: 'active',
           id: { not: learnerId },
         },
@@ -113,10 +113,10 @@ export async function learnerPinRoutes(app: FastifyInstance) {
         throw new BadRequestException('This PIN is already in use — please choose a different one');
       }
 
-      // Update the learner's PIN
+      // Update the learner's PIN (hash only — plaintext not stored)
       await prisma.profile.update({
         where: { id: learnerId },
-        data: { pin: newPin, pinHash },
+        data: { pin: null, pinHash },
       });
 
       return { success: true, message: 'Learner PIN updated successfully' };
@@ -136,7 +136,7 @@ export async function learnerPinRoutes(app: FastifyInstance) {
       const learner = await verifyParentOwnership(parentId, learnerId);
 
       return {
-        hasPin: !!(learner.pin || learner.pinHash),
+        hasPin: !!learner.pinHash,
       };
     }
   );

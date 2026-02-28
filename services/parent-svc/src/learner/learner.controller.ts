@@ -56,7 +56,7 @@ export async function learnerRoutes(app: FastifyInstance) {
       >`
         SELECT id, "givenName", "familyName", "photoUrl", "baselineStatus", status 
         FROM profiles 
-        WHERE (pin = ${pin} OR "pinHash" = ${pinHash}) AND status = 'active'
+        WHERE "pinHash" = ${pinHash} AND status = 'active'
         LIMIT 1
       `;
       learner = learners[0];
