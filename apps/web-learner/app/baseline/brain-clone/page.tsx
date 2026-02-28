@@ -32,6 +32,7 @@ export default function BrainClonePage() {
   const [isParentPresent, setIsParentPresent] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
 
   // Animation canvas ref
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -206,10 +207,10 @@ export default function BrainClonePage() {
     if (!consentGiven) return;
 
     setIsActivating(true);
+    setActivationError(null);
 
     try {
-      // Call API to finalize brain creation
-      await fetch('/api/baseline/activate-brain', {
+      const response = await fetch('/api/baseline/activate-brain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -218,12 +219,21 @@ export default function BrainClonePage() {
         }),
       });
 
-      // Navigate to dashboard
-      router.push('/baseline/complete');
+      if (!response.ok) {
+        throw new Error('Brain activation failed');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        router.push('/baseline/complete');
+      } else {
+        setActivationError('Something went wrong. Please try again.');
+        setIsActivating(false);
+      }
     } catch (error) {
       console.error('Failed to activate brain:', error);
-      // Still proceed to dashboard
-      router.push('/baseline/complete');
+      setActivationError('Could not activate your learning brain. Please try again or ask a parent for help.');
+      setIsActivating(false);
     }
   };
 
@@ -422,6 +432,19 @@ export default function BrainClonePage() {
             </>
           )}
         </button>
+
+        {/* Error message with retry */}
+        {activationError && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-center">
+            <p className="text-red-700 text-sm mb-2">{activationError}</p>
+            <button
+              onClick={handleActivateBrain}
+              className="text-red-600 hover:text-red-800 text-sm font-medium underline"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

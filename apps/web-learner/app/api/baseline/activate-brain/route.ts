@@ -114,12 +114,13 @@ export async function POST(request: NextRequest) {
       console.log('Learner model service not available');
     }
 
-    // Fallback response for dev/demo
+    // Fallback response for dev/demo — mark as partial success
     return NextResponse.json({
       success: true,
       brainId: `brain-${Date.now()}`,
       message: 'Learning brain activated (offline mode)',
       activatedAt: new Date().toISOString(),
+      warning: 'Brain created in offline mode — some services were unavailable',
     });
 
   } catch (error) {
