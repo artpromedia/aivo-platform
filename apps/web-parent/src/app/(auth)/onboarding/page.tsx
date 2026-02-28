@@ -10,6 +10,8 @@ interface LearnerForm {
   gradeLevel: string;
   zipCode: string;
   classCode: string;
+  pin: string;
+  confirmPin: string;
 }
 
 /**
@@ -1677,7 +1679,10 @@ export default function OnboardingPage() {
     gradeLevel: '',
     zipCode: '',
     classCode: '',
+    pin: '',
+    confirmPin: '',
   });
+  const [pinError, setPinError] = useState<string | null>(null);
 
   const handleLearnerChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -1721,6 +1726,30 @@ export default function OnboardingPage() {
       return;
     }
 
+    // ── PIN validation ──────────────────────────────────────────────
+    setPinError(null);
+
+    if (!learnerForm.pin || learnerForm.pin.length !== 6) {
+      setPinError('Please enter a 6-digit PIN for your child');
+      return;
+    }
+    if (!/^\d{6}$/.test(learnerForm.pin)) {
+      setPinError('PIN must contain only digits');
+      return;
+    }
+    if (learnerForm.pin !== learnerForm.confirmPin) {
+      setPinError('PINs do not match. Please re-enter.');
+      return;
+    }
+    const WEAK_PINS = ['000000','111111','222222','333333','444444',
+      '555555','666666','777777','888888','999999',
+      '123456','654321','012345','123123','112233'];
+    if (WEAK_PINS.includes(learnerForm.pin)) {
+      setPinError('This PIN is too easy to guess. Choose something more unique.');
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────
+
     // Validate class code if provided
     if (learnerForm.classCode) {
       const isValidCode = await validateClassCode(learnerForm.classCode);
@@ -1749,13 +1778,21 @@ export default function OnboardingPage() {
             zipCode: learnerForm.zipCode,
           },
           classCode: learnerForm.classCode || undefined,
+          pin: learnerForm.pin,
         }),
       });
 
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to add learner');
+        const errorMsg = data.message || 'Failed to add learner';
+        // Route PIN-specific errors to the pinError state
+        if (errorMsg.toLowerCase().includes('pin')) {
+          setPinError(errorMsg);
+        } else {
+          throw new Error(errorMsg);
+        }
+        return;
       }
 
       // Store the learner's PIN and ID for display
@@ -2002,6 +2039,79 @@ export default function OnboardingPage() {
             )}
             <p className="mt-1 text-xs text-gray-500">
               If your child&apos;s teacher provided a class code, enter it here to join their class.
+            </p>
+          </div>
+
+          {/* Learner Login PIN */}
+          <div className="space-y-3 rounded-lg border-2 border-violet-200 bg-violet-50 p-4">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <h3 className="font-semibold text-gray-900">
+                Create {learnerForm.firstName || "your child"}&apos;s Login PIN
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Choose a 6-digit PIN your child will use to log into the learner app. Pick something they can remember!
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-1">
+                  PIN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="pin"
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  autoComplete="off"
+                  placeholder="Enter 6 digits"
+                  value={learnerForm.pin}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setLearnerForm((prev) => ({ ...prev, pin: val }));
+                    setPinError(null);
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-lg tracking-widest font-mono focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="confirmPin" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm PIN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="confirmPin"
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  autoComplete="off"
+                  placeholder="Re-enter PIN"
+                  value={learnerForm.confirmPin}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setLearnerForm((prev) => ({ ...prev, confirmPin: val }));
+                    setPinError(null);
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-lg tracking-widest font-mono focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+
+            {pinError && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {pinError}
+              </p>
+            )}
+
+            <p className="text-xs text-gray-500">
+              💡 Tip: Avoid simple PINs like 123456. Choose something your child can remember but others can&apos;t easily guess.
             </p>
           </div>
 

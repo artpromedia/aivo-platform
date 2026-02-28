@@ -14,12 +14,20 @@ const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { firstName, lastName, dateOfBirth, gradeLevel, location, classCode } = body;
+    const { firstName, lastName, dateOfBirth, gradeLevel, location, classCode, pin } = body;
 
     // Validate required fields
-    if (!firstName || !gradeLevel) {
+    if (!firstName || !gradeLevel || !pin) {
       return NextResponse.json(
-        { message: 'First name and grade level are required' },
+        { message: 'First name, grade level, and PIN are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate PIN format before forwarding
+    if (typeof pin !== 'string' || !/^\d{6}$/.test(pin)) {
+      return NextResponse.json(
+        { message: 'PIN must be exactly 6 digits' },
         { status: 400 }
       );
     }
@@ -70,7 +78,6 @@ export async function POST(request: NextRequest) {
     // Direct database insert as fallback (for dev or when parent-svc onboarding isn't ready)
     // This ensures profiles are always created in the database
     const learnerId = `learner_${Date.now()}`;
-    const pin = Math.floor(100000 + Math.random() * 900000).toString();
     const pinHash = crypto.createHash('sha256').update(pin).digest('hex');
     
     // Call parent-svc internal endpoint to create profile directly
