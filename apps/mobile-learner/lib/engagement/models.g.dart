@@ -6,9 +6,8 @@ part of 'models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$EngagementProfileImpl _$$EngagementProfileImplFromJson(
-        Map<String, dynamic> json) =>
-    _$EngagementProfileImpl(
+_EngagementProfile _$EngagementProfileFromJson(Map<String, dynamic> json) =>
+    _EngagementProfile(
       id: json['id'] as String,
       tenantId: json['tenantId'] as String,
       learnerId: json['learnerId'] as String,
@@ -36,8 +35,7 @@ _$EngagementProfileImpl _$$EngagementProfileImplFromJson(
       progressPercent: (json['progressPercent'] as num).toInt(),
     );
 
-Map<String, dynamic> _$$EngagementProfileImplToJson(
-        _$EngagementProfileImpl instance) =>
+Map<String, dynamic> _$EngagementProfileToJson(_EngagementProfile instance) =>
     <String, dynamic>{
       'id': instance.id,
       'tenantId': instance.tenantId,
@@ -71,7 +69,7 @@ const _$RewardStyleEnumMap = {
   RewardStyle.minimal: 'MINIMAL',
 };
 
-_$BadgeImpl _$$BadgeImplFromJson(Map<String, dynamic> json) => _$BadgeImpl(
+_Badge _$BadgeFromJson(Map<String, dynamic> json) => _Badge(
       code: json['code'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
@@ -80,8 +78,7 @@ _$BadgeImpl _$$BadgeImplFromJson(Map<String, dynamic> json) => _$BadgeImpl(
       isSecret: json['isSecret'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$$BadgeImplToJson(_$BadgeImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$BadgeToJson(_Badge instance) => <String, dynamic>{
       'code': instance.code,
       'name': instance.name,
       'description': instance.description,
@@ -99,8 +96,8 @@ const _$BadgeCategoryEnumMap = {
   BadgeCategory.milestone: 'MILESTONE',
 };
 
-_$LearnerBadgeImpl _$$LearnerBadgeImplFromJson(Map<String, dynamic> json) =>
-    _$LearnerBadgeImpl(
+_LearnerBadge _$LearnerBadgeFromJson(Map<String, dynamic> json) =>
+    _LearnerBadge(
       id: json['id'] as String,
       badgeCode: json['badgeCode'] as String,
       badgeName: json['badgeName'] as String,
@@ -115,7 +112,7 @@ _$LearnerBadgeImpl _$$LearnerBadgeImplFromJson(Map<String, dynamic> json) =>
       note: json['note'] as String?,
     );
 
-Map<String, dynamic> _$$LearnerBadgeImplToJson(_$LearnerBadgeImpl instance) =>
+Map<String, dynamic> _$LearnerBadgeToJson(_LearnerBadge instance) =>
     <String, dynamic>{
       'id': instance.id,
       'badgeCode': instance.badgeCode,
@@ -129,8 +126,8 @@ Map<String, dynamic> _$$LearnerBadgeImplToJson(_$LearnerBadgeImpl instance) =>
       'note': instance.note,
     };
 
-_$BadgeProgressImpl _$$BadgeProgressImplFromJson(Map<String, dynamic> json) =>
-    _$BadgeProgressImpl(
+_BadgeProgress _$BadgeProgressFromJson(Map<String, dynamic> json) =>
+    _BadgeProgress(
       badgeCode: json['badgeCode'] as String,
       badgeName: json['badgeName'] as String,
       badgeDescription: json['badgeDescription'] as String,
@@ -142,7 +139,7 @@ _$BadgeProgressImpl _$$BadgeProgressImplFromJson(Map<String, dynamic> json) =>
       earned: json['earned'] as bool,
     );
 
-Map<String, dynamic> _$$BadgeProgressImplToJson(_$BadgeProgressImpl instance) =>
+Map<String, dynamic> _$BadgeProgressToJson(_BadgeProgress instance) =>
     <String, dynamic>{
       'badgeCode': instance.badgeCode,
       'badgeName': instance.badgeName,
@@ -155,7 +152,7 @@ Map<String, dynamic> _$$BadgeProgressImplToJson(_$BadgeProgressImpl instance) =>
       'earned': instance.earned,
     };
 
-_$KudosImpl _$$KudosImplFromJson(Map<String, dynamic> json) => _$KudosImpl(
+_Kudos _$KudosFromJson(Map<String, dynamic> json) => _Kudos(
       id: json['id'] as String,
       tenantId: json['tenantId'] as String,
       learnerId: json['learnerId'] as String,
@@ -174,8 +171,7 @@ _$KudosImpl _$$KudosImplFromJson(Map<String, dynamic> json) => _$KudosImpl(
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
 
-Map<String, dynamic> _$$KudosImplToJson(_$KudosImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$KudosToJson(_Kudos instance) => <String, dynamic>{
       'id': instance.id,
       'tenantId': instance.tenantId,
       'learnerId': instance.learnerId,
@@ -192,9 +188,9 @@ Map<String, dynamic> _$$KudosImplToJson(_$KudosImpl instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
     };
 
-_$EngagementEventResultImpl _$$EngagementEventResultImplFromJson(
+_EngagementEventResult _$EngagementEventResultFromJson(
         Map<String, dynamic> json) =>
-    _$EngagementEventResultImpl(
+    _EngagementEventResult(
       xpAwarded: (json['xpAwarded'] as num).toInt(),
       newLevel: (json['newLevel'] as num).toInt(),
       newXpTotal: (json['newXpTotal'] as num).toInt(),
@@ -209,8 +205,8 @@ _$EngagementEventResultImpl _$$EngagementEventResultImplFromJson(
           const [],
     );
 
-Map<String, dynamic> _$$EngagementEventResultImplToJson(
-        _$EngagementEventResultImpl instance) =>
+Map<String, dynamic> _$EngagementEventResultToJson(
+        _EngagementEventResult instance) =>
     <String, dynamic>{
       'xpAwarded': instance.xpAwarded,
       'newLevel': instance.newLevel,
@@ -223,23 +219,21 @@ Map<String, dynamic> _$$EngagementEventResultImplToJson(
       'awardedBadges': instance.awardedBadges,
     };
 
-_$BadgeAwardImpl _$$BadgeAwardImplFromJson(Map<String, dynamic> json) =>
-    _$BadgeAwardImpl(
+_BadgeAward _$BadgeAwardFromJson(Map<String, dynamic> json) => _BadgeAward(
       code: json['code'] as String,
       name: json['name'] as String,
       isNew: json['isNew'] as bool,
     );
 
-Map<String, dynamic> _$$BadgeAwardImplToJson(_$BadgeAwardImpl instance) =>
+Map<String, dynamic> _$BadgeAwardToJson(_BadgeAward instance) =>
     <String, dynamic>{
       'code': instance.code,
       'name': instance.name,
       'isNew': instance.isNew,
     };
 
-_$EffectiveSettingsImpl _$$EffectiveSettingsImplFromJson(
-        Map<String, dynamic> json) =>
-    _$EffectiveSettingsImpl(
+_EffectiveSettings _$EffectiveSettingsFromJson(Map<String, dynamic> json) =>
+    _EffectiveSettings(
       xpEnabled: json['xpEnabled'] as bool,
       streaksEnabled: json['streaksEnabled'] as bool,
       badgesEnabled: json['badgesEnabled'] as bool,
@@ -256,8 +250,7 @@ _$EffectiveSettingsImpl _$$EffectiveSettingsImplFromJson(
       showXp: json['showXp'] as bool,
     );
 
-Map<String, dynamic> _$$EffectiveSettingsImplToJson(
-        _$EffectiveSettingsImpl instance) =>
+Map<String, dynamic> _$EffectiveSettingsToJson(_EffectiveSettings instance) =>
     <String, dynamic>{
       'xpEnabled': instance.xpEnabled,
       'streaksEnabled': instance.streaksEnabled,

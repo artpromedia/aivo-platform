@@ -53,6 +53,7 @@ import 'features/progress/progress_screen.dart';
 import 'features/goals/goals_screen.dart';
 import 'features/tutor/screens/tutor_home_screen.dart';
 import 'features/tutor/screens/tutor_history_screen.dart';
+import 'screens/achievements_screen.dart';
 import 'learner/theme_loader.dart';
 import 'services/learner_notification_service.dart';
 
@@ -283,6 +284,14 @@ final _routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
           return TutorHistoryScreen(learnerId: learnerId);
+        },
+      ),
+      // Achievements route
+      GoRoute(
+        path: '/achievements',
+        builder: (context, state) {
+          final learnerId = state.extra as String? ?? pinState.learnerId ?? '';
+          return AchievementsScreen(learnerId: learnerId);
         },
       ),
       if (_enableDesignSystemGallery)
