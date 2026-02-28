@@ -222,7 +222,7 @@ export interface SuppressionEntry {
 // LOCALE TYPES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export type SupportedLocale = 'en' | 'es' | 'fr' | 'de' | 'pt' | 'zh' | 'ja' | 'ko';
+export type SupportedLocale = 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ar' | 'zh' | 'ja' | 'ko';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VALIDATION TYPES
