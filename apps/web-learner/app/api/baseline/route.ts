@@ -13,7 +13,7 @@ interface LegacyBaselineAnswers {
 // New comprehensive format
 interface ComprehensiveBaselineAnswers {
   learningStyleAnswers: Record<string, string | string[]>;
-  domainAnswers: Record<string, { answer: number | string; latencyMs: number }>;
+  domainAnswers: Record<string, { answer: number | string; latencyMs: number; correctAnswer?: number; domain?: string }>;
   completedAt: string;
 }
 
@@ -163,13 +163,13 @@ export async function POST(request: NextRequest) {
  * Calculate domain scores from domain answers
  */
 function calculateDomainScores(
-  domainAnswers: Record<string, { answer: number | string; latencyMs: number }>
+  domainAnswers: Record<string, { answer: number | string; latencyMs: number; correctAnswer?: number; domain?: string }>
 ): DomainScore[] {
-  const domainMap = new Map<string, { count: number; totalLatency: number }>();
+  const domainMap = new Map<string, { count: number; correct: number; totalLatency: number }>();
 
   for (const [questionId, answerData] of Object.entries(domainAnswers)) {
-    // Extract domain from question ID (e.g., "math-1" -> "MATH")
-    const domainPrefix = questionId.split('-')[0]?.toUpperCase() || 'UNKNOWN';
+    // Use domain from enriched data, or extract from question ID as fallback
+    const domainPrefix = answerData.domain || questionId.split('-')[0]?.toUpperCase() || 'UNKNOWN';
     let domain = domainPrefix;
     if (domainPrefix === 'CW') {
       domain = 'CREATIVE_WRITING';
@@ -179,9 +179,13 @@ function calculateDomainScores(
       domain = 'SPELLING';
     }
 
-    const existing = domainMap.get(domain) || { count: 0, totalLatency: 0 };
+    const existing = domainMap.get(domain) || { count: 0, correct: 0, totalLatency: 0 };
+    const isCorrect = answerData.correctAnswer !== undefined
+      ? answerData.answer === answerData.correctAnswer
+      : false;
     domainMap.set(domain, {
       count: existing.count + 1,
+      correct: existing.correct + (isCorrect ? 1 : 0),
       totalLatency: existing.totalLatency + answerData.latencyMs,
     });
   }
@@ -189,7 +193,7 @@ function calculateDomainScores(
   return Array.from(domainMap.entries()).map(([domain, data]) => ({
     domain,
     questionsAnswered: data.count,
-    correctAnswers: Math.floor(data.count * 0.7), // Placeholder - actual scoring done by AI
+    correctAnswers: data.correct,
     averageLatency: Math.round(data.totalLatency / data.count),
   }));
 }

@@ -78,6 +78,7 @@ export interface AssessmentQuestion {
   questionType: 'MULTIPLE_CHOICE' | 'OPEN_ENDED';
   questionText: string;
   options?: string[];
+  correctAnswer?: number; // index of correct option (from AI generation)
   difficulty: number; // 1-5 scale
   questionNumber: number; // 1-5 within domain
 }

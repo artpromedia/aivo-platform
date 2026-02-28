@@ -1256,13 +1256,39 @@ export default function BaselineAssessmentPage() {
     setIsSubmitting(true);
 
     try {
+      // Build enriched domain answers with correct answer data for real scoring
+      const enrichedDomainAnswers: Record<string, {
+        answer: number | string;
+        latencyMs: number;
+        correctAnswer?: number;
+        domain: string;
+      }> = {};
+
+      for (const [questionId, answerData] of Object.entries(domainAnswers)) {
+        let correctAnswer: number | undefined;
+        let domain = '';
+        for (const pd of preparedDomains) {
+          const found = pd.questions.find(q => q.id === questionId);
+          if (found) {
+            correctAnswer = found.correctAnswer;
+            domain = found.domain;
+            break;
+          }
+        }
+        enrichedDomainAnswers[questionId] = {
+          ...answerData,
+          correctAnswer,
+          domain,
+        };
+      }
+
       // Submit both learning style answers and domain answers
       const response = await fetch('/api/baseline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           learningStyleAnswers: lsAnswers,
-          domainAnswers,
+          domainAnswers: enrichedDomainAnswers,
           completedAt: new Date().toISOString(),
         }),
       });
