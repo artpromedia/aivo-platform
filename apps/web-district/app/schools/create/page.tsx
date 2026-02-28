@@ -106,7 +106,11 @@ export default function CreateSchoolPage() {
       )}
 
       <Card title="School details" subtitle={`Theme: ${themeId}`}>
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 p-1">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="space-y-4 p-1"
+          data-testid="create-school-form"
+        >
           {/* Name */}
           <div className="space-y-1">
             <label htmlFor="name" className="block text-sm font-medium text-text">
@@ -117,6 +121,7 @@ export default function CreateSchoolPage() {
               name="name"
               type="text"
               required
+              data-testid="school-name-input"
               placeholder="e.g. Lincoln Elementary School"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
@@ -131,6 +136,7 @@ export default function CreateSchoolPage() {
               id="code"
               name="code"
               type="text"
+              data-testid="school-code-input"
               placeholder="e.g. LINCOLN-001"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
@@ -145,6 +151,7 @@ export default function CreateSchoolPage() {
               id="address"
               name="address"
               type="text"
+              data-testid="school-address-input"
               placeholder="e.g. 100 Main Street, Springfield"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
@@ -159,6 +166,7 @@ export default function CreateSchoolPage() {
               id="principalEmail"
               name="principalEmail"
               type="email"
+              data-testid="school-principal-input"
               placeholder="e.g. principal@school.edu"
               className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />

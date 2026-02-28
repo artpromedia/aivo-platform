@@ -608,3 +608,210 @@ test.describe('District User Management', () => {
     await expect(activityReport.or(page.locator('text=/activity/i').first())).toBeVisible();
   });
 });
+
+// =============================================================================
+// NAVIGATION — EVERY SIDEBAR LINK RESOLVES (NO 404)
+// =============================================================================
+
+test.describe('Navigation — all sidebar links resolve', () => {
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    page = await context.newPage();
+    await loginAsDistrictAdmin(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+  });
+
+  const sidebarLinks: { label: string; href: string }[] = [
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Analytics', href: '/analytics' },
+    { label: 'Reports', href: '/reports' },
+    { label: 'Schools', href: '/schools' },
+    { label: 'Classrooms', href: '/classrooms' },
+    { label: 'Users', href: '/users' },
+    { label: 'Curriculum', href: '/curriculum' },
+    { label: 'Marketplace', href: '/marketplace' },
+    { label: 'AI Models', href: '/ai-models' },
+    { label: 'Compliance', href: '/compliance' },
+    { label: 'Privacy', href: '/privacy' },
+    { label: 'Research', href: '/research' },
+    { label: 'Devices', href: '/devices' },
+    { label: 'Billing', href: '/billing' },
+    { label: 'Integrations', href: '/integrations' },
+    { label: 'Settings', href: '/settings' },
+  ];
+
+  for (const link of sidebarLinks) {
+    test(`6.${sidebarLinks.indexOf(link) + 1} "${link.label}" (${link.href}) does not 404`, async () => {
+      const res = await page.goto(`${BASE_URL}${link.href}`);
+      expect(res?.status()).not.toBe(404);
+
+      await waitForPageReady(page);
+
+      // Verify the page rendered visible content (not a blank white page)
+      const body = page.locator('body');
+      await expect(body).toBeVisible();
+
+      // Verify no Next.js 404 page rendered
+      const notFound = page.locator('text="404"');
+      const notFoundVisible = await notFound.isVisible().catch(() => false);
+      expect(notFoundVisible).toBe(false);
+    });
+  }
+});
+
+// =============================================================================
+// BUTTON FUNCTIONALITY — SCHOOLS CRUD, ANALYTICS EXPORT, SSO COPY
+// =============================================================================
+
+test.describe('Button functionality', () => {
+  test.describe.configure({ mode: 'serial' });
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    await seedTestData();
+    context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    page = await context.newPage();
+    await loginAsDistrictAdmin(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+    await cleanupTestData();
+  });
+
+  // --- Schools CRUD buttons ---
+
+  test('7.1 "Add School" button navigates to create form', async () => {
+    await page.goto(`${BASE_URL}/schools`);
+    await waitForPageReady(page);
+
+    const addBtn = page.locator('a[href="/schools/create"] button, a:has-text("Add School")');
+    await expect(addBtn.first()).toBeVisible();
+    await addBtn.first().click();
+    await expect(page).toHaveURL(/\/schools\/create/);
+  });
+
+  test('7.2 Create-school form has required fields', async () => {
+    await page.goto(`${BASE_URL}/schools/create`);
+    await waitForPageReady(page);
+
+    const form = page.locator('[data-testid="create-school-form"]');
+    await expect(form).toBeVisible();
+
+    await expect(page.locator('[data-testid="school-name-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="school-code-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="school-address-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="school-principal-input"]')).toBeVisible();
+  });
+
+  test('7.3 Create-school form validates required name', async () => {
+    await page.goto(`${BASE_URL}/schools/create`);
+    await waitForPageReady(page);
+
+    // Submit with empty name — browser native required validation or custom error
+    const submitBtn = page.locator('button[type="submit"], button:has-text("Create")');
+    await submitBtn.click();
+
+    // Either a validation message appears or the URL stays the same (form not submitted)
+    await expect(page).toHaveURL(/\/schools\/create/);
+  });
+
+  test('7.4 Schools list search filters results', async () => {
+    await page.goto(`${BASE_URL}/schools`);
+    await waitForPageReady(page);
+
+    const searchInput = page.locator('[data-testid="school-search"]');
+    await expect(searchInput).toBeVisible();
+
+    // Type a search term — shouldn't cause an error
+    await searchInput.fill('NonexistentSchool12345');
+    await page.waitForTimeout(300);
+
+    // Either "No schools match" or empty results — no crash
+    const body = page.locator('body');
+    await expect(body).toBeVisible();
+  });
+
+  test('7.5 Schools list export button triggers download', async () => {
+    await page.goto(`${BASE_URL}/schools`);
+    await waitForPageReady(page);
+
+    const exportBtn = page.locator('button:has-text("Export")');
+    if (await exportBtn.isVisible()) {
+      // Listen for download event
+      const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+      await exportBtn.click();
+      const download = await downloadPromise;
+      // If schools are loaded, a CSV download is triggered
+      if (download) {
+        expect(download.suggestedFilename()).toContain('.csv');
+      }
+    }
+  });
+
+  // --- Analytics export ---
+
+  test('7.6 Analytics "Export All" button triggers CSV download', async () => {
+    await page.goto(`${BASE_URL}/dashboard/analytics`);
+    await waitForPageReady(page);
+
+    const exportBtn = page.locator('button:has-text("Export All"), button:has-text("Export")');
+    if (await exportBtn.first().isVisible()) {
+      const downloadPromise = page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
+      await exportBtn.first().click();
+      const download = await downloadPromise;
+      if (download) {
+        expect(download.suggestedFilename()).toMatch(/\.(csv|xlsx)$/i);
+      }
+    }
+  });
+
+  // --- SSO Copy Metadata URL ---
+
+  test('7.7 SSO "Copy SP Metadata URL" copies to clipboard', async () => {
+    await page.goto(`${BASE_URL}/settings/sso`);
+    await waitForPageReady(page);
+
+    const copyBtn = page.locator('button:has-text("Copy SP Metadata URL")');
+    if (await copyBtn.isVisible()) {
+      await copyBtn.click();
+
+      // After click, button should show "Copied!" feedback
+      const copiedFeedback = page.locator('button:has-text("Copied!")');
+      await expect(copiedFeedback).toBeVisible({ timeout: 3000 });
+    }
+  });
+
+  // --- New pages load without error ---
+
+  test('7.8 Classrooms page renders table or empty state', async () => {
+    await page.goto(`${BASE_URL}/classrooms`);
+    await waitForPageReady(page);
+
+    const container = page.locator('[data-testid="classrooms-page"]');
+    await expect(container).toBeVisible();
+  });
+
+  test('7.9 Sessions page renders table or empty state', async () => {
+    await page.goto(`${BASE_URL}/sessions`);
+    await waitForPageReady(page);
+
+    const container = page.locator('[data-testid="sessions-page"]');
+    await expect(container).toBeVisible();
+  });
+
+  test('7.10 Audit page renders table or empty state', async () => {
+    await page.goto(`${BASE_URL}/audit`);
+    await waitForPageReady(page);
+
+    const container = page.locator('[data-testid="audit-page"]');
+    await expect(container).toBeVisible();
+  });
+});

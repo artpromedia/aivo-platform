@@ -96,6 +96,7 @@ export default function SchoolsPage() {
         <input
           type="text"
           placeholder="Search schools..."
+          data-testid="school-search"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
