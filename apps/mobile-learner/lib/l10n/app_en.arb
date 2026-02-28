@@ -1,281 +1,592 @@
 {
   "@@locale": "en",
-  "@@last_modified": "2026-01-20",
-
-  "appTitle": "Aivo Learner",
-  "@appTitle": {
-    "description": "The title of the application"
-  },
-
-  "welcomeBack": "Welcome back, {name}!",
-  "@welcomeBack": {
-    "description": "Welcome message with learner's name",
+  "@@last_modified": "2026-02-28T11:23:03.744Z",
+  "commonLoading": "Loading...",
+  "commonSave": "Save",
+  "commonCancel": "Cancel",
+  "commonDelete": "Delete",
+  "commonEdit": "Edit",
+  "commonCreate": "Create",
+  "commonSearch": "Search",
+  "commonFilter": "Filter",
+  "commonExport": "Export",
+  "commonImport": "Import",
+  "commonBack": "Back",
+  "commonNext": "Next",
+  "commonPrevious": "Previous",
+  "commonSubmit": "Submit",
+  "commonConfirm": "Confirm",
+  "commonClose": "Close",
+  "commonYes": "Yes",
+  "commonNo": "No",
+  "commonOk": "OK",
+  "commonError": "Error",
+  "commonSuccess": "Success",
+  "commonWarning": "Warning",
+  "commonInfo": "Info",
+  "commonRequired": "Required",
+  "commonOptional": "Optional",
+  "commonNoResults": "No results found",
+  "commonShowMore": "Show more",
+  "commonShowLess": "Show less",
+  "commonSelectAll": "Select all",
+  "commonDeselectAll": "Deselect all",
+  "commonRetry": "Retry",
+  "commonRefresh": "Refresh",
+  "commonLanguage": "Language",
+  "commonSettings": "Settings",
+  "commonProfile": "Profile",
+  "commonLogout": "Log out",
+  "commonLogin": "Log in",
+  "commonSignUp": "Sign up",
+  "authLoginTitle": "Welcome back",
+  "authLoginSubtitle": "Sign in to your account",
+  "authEmail": "Email address",
+  "authPassword": "Password",
+  "authForgotPassword": "Forgot password?",
+  "authResetPassword": "Reset password",
+  "authNewPassword": "New password",
+  "authConfirmPassword": "Confirm password",
+  "authRememberMe": "Remember me",
+  "authSsoLogin": "Sign in with SSO",
+  "authNoAccount": "Don't have an account?",
+  "authHasAccount": "Already have an account?",
+  "authInvalidCredentials": "Invalid email or password",
+  "authAccountLocked": "Account locked. Please try again later.",
+  "authSessionExpired": "Your session has expired. Please sign in again.",
+  "authMfaRequired": "Enter your verification code",
+  "authMfaCode": "Verification code",
+  "navDashboard": "Dashboard",
+  "navStudents": "Students",
+  "navClasses": "Classes",
+  "navAssessments": "Assessments",
+  "navContent": "Content",
+  "navReports": "Reports",
+  "navAnalytics": "Analytics",
+  "navMessages": "Messages",
+  "navNotifications": "Notifications",
+  "navSettings": "Settings",
+  "navHelp": "Help",
+  "navBilling": "Billing",
+  "navIntegrations": "Integrations",
+  "navUsers": "Users",
+  "navRoles": "Roles",
+  "dashboardWelcome": "Welcome, {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
     "placeholders": {
       "name": {
-        "type": "String",
-        "example": "Alex"
+        "type": "String"
       }
     }
   },
-
-  "todaysPlan": "Today's Plan",
-  "@todaysPlan": {
-    "description": "Title for today's learning plan"
-  },
-
-  "activitiesRemaining": "{count, plural, =0{All done!} =1{1 activity remaining} other{{count} activities remaining}}",
-  "@activitiesRemaining": {
-    "description": "Number of activities remaining today",
+  "dashboardOverview": "Overview",
+  "dashboardRecentActivity": "Recent Activity",
+  "dashboardQuickActions": "Quick Actions",
+  "dashboardActiveStudents": "Active Students",
+  "dashboardSessionsToday": "Sessions Today",
+  "dashboardAverageProgress": "Average Progress",
+  "dashboardAlertsRequiringAttention": "Alerts Requiring Attention",
+  "studentsTitle": "Students",
+  "studentsAddStudent": "Add Student",
+  "studentsImportStudents": "Import Students",
+  "studentsExportRoster": "Export Roster",
+  "studentsFirstName": "First Name",
+  "studentsLastName": "Last Name",
+  "studentsGrade": "Grade",
+  "studentsProgress": "Progress",
+  "studentsLastActive": "Last Active",
+  "studentsStatus": "Status",
+  "studentsActive": "Active",
+  "studentsInactive": "Inactive",
+  "studentsEnrolled": "Enrolled",
+  "studentsNoStudents": "No students found",
+  "assessmentsTitle": "Assessments",
+  "assessmentsCreateAssessment": "Create Assessment",
+  "assessmentsAssignAssessment": "Assign Assessment",
+  "assessmentsDueDate": "Due Date",
+  "assessmentsSubmissions": "Submissions",
+  "assessmentsAverageScore": "Average Score",
+  "assessmentsCompletion": "Completion",
+  "assessmentsInProgress": "In Progress",
+  "assessmentsCompleted": "Completed",
+  "assessmentsNotStarted": "Not Started",
+  "assessmentsGraded": "Graded",
+  "assessmentsPending": "Pending",
+  "billingTitle": "Billing & Subscription",
+  "billingCurrentPlan": "Current Plan",
+  "billingUsage": "Usage",
+  "billingInvoices": "Invoices",
+  "billingPaymentMethod": "Payment Method",
+  "billingChangePlan": "Change Plan",
+  "billingCancelSubscription": "Cancel Subscription",
+  "billingNextInvoice": "Next Invoice",
+  "billingBillingPeriod": "Billing Period",
+  "billingActiveSeats": "Active Seats",
+  "billingApiCalls": "API Calls",
+  "billingAiInteractions": "AI Interactions",
+  "billingStorage": "Storage Used",
+  "settingsTitle": "Settings",
+  "settingsGeneral": "General",
+  "settingsOrganization": "Organization",
+  "settingsBranding": "Branding",
+  "settingsSso": "Single Sign-On",
+  "settingsSecurity": "Security",
+  "settingsNotifications": "Notifications",
+  "settingsPrivacy": "Privacy",
+  "settingsDataResidency": "Data Residency",
+  "settingsLanguage": "Language & Region",
+  "settingsLanguagePreference": "Language Preference",
+  "settingsTimezone": "Timezone",
+  "settingsDateFormat": "Date Format",
+  "settingsSelectLanguage": "Select your preferred language",
+  "settingsLanguageChanged": "Language updated successfully",
+  "errorsGeneric": "Something went wrong. Please try again.",
+  "errorsNotFound": "Page not found",
+  "errorsUnauthorized": "You don't have permission to access this page",
+  "errorsForbidden": "Access denied",
+  "errorsServerError": "Server error. Our team has been notified.",
+  "errorsNetworkError": "Network error. Please check your connection.",
+  "errorsRateLimited": "Too many requests. Please wait and try again.",
+  "errorsValidationFailed": "Please check your input and try again.",
+  "onboardingWelcome": "Welcome to {platformName}!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
     "placeholders": {
-      "count": {
-        "type": "int",
-        "format": "compact"
+      "platformName": {
+        "type": "String"
       }
     }
   },
-
-  "startLearning": "Start Learning",
-  "@startLearning": {
-    "description": "Button to start learning session"
-  },
-
-  "continueLearning": "Continue Learning",
-  "@continueLearning": {
-    "description": "Button to continue learning session"
-  },
-
-  "sessionComplete": "Session Complete!",
-  "@sessionComplete": {
-    "description": "Title when session is finished"
-  },
-
-  "greatJob": "Great job!",
-  "@greatJob": {
-    "description": "Congratulatory message"
-  },
-
-  "xpEarned": "+{amount} XP",
-  "@xpEarned": {
-    "description": "XP points earned",
+  "onboardingLetsGetStarted": "Let's get your organization set up",
+  "onboardingStep": "Step {current} of {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
       }
     }
   },
-
-  "coinsEarned": "+{amount} coins",
-  "@coinsEarned": {
-    "description": "Coins earned",
+  "onboardingSkipStep": "Skip this step",
+  "onboardingCompleteSetup": "Complete Setup",
+  "onboardingOrganizationInfo": "Organization Information",
+  "onboardingBrandingSetup": "Customize Your Branding",
+  "onboardingSsoSetup": "Configure Single Sign-On",
+  "onboardingImportStudents": "Import Your Students",
+  "onboardingInviteStaff": "Invite Your Team",
+  "onboardingConfigureLearning": "Configure Learning Settings",
+  "onboardingReviewAndLaunch": "Review & Launch",
+  "accessibilitySkipToContent": "Skip to main content",
+  "accessibilityOpenMenu": "Open menu",
+  "accessibilityCloseMenu": "Close menu",
+  "accessibilityToggleTheme": "Toggle dark mode",
+  "accessibilityLanguageSwitcher": "Change language",
+  "accessibilityNewNotifications": "{count, plural, one {# new notification} other {# new notifications}}",
+  "tutorTitle": "AI Tutors",
+  "tutorSubtitle": "Expert tutoring in every subject",
+  "tutorStartSession": "Start Session",
+  "tutorEndSession": "End Session",
+  "tutorResumeSession": "Resume Session",
+  "tutorVoiceOn": "Voice On",
+  "tutorVoiceOff": "Voice Off",
+  "tutorVoiceUnavailable": "Voice not available in {language}",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "streakDays": "{count, plural, =1{1 day streak} other{{count} day streak}}",
-  "@streakDays": {
-    "description": "Learning streak in days",
+  "tutorVoiceUnavailableDetail": "Voice is available in English, Spanish, French, Portuguese, Arabic, and more.",
+  "tutorVoiceFallbackNotice": "Using {fallbackLanguage} voice. {nativeLanguage} voice coming soon!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
       }
     }
   },
-
-  "progress": "Progress",
-  "@progress": {
-    "description": "Progress section title"
+  "tutorTextOnlyBanner": "{name} will respond in {language} as text. Voice support coming soon!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   },
-
-  "goals": "Goals",
-  "@goals": {
-    "description": "Goals section title"
+  "tutorThinking": "{name} is thinking…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "rewards": "Rewards",
-  "@rewards": {
-    "description": "Rewards section title"
+  "tutorListening": "{name} is listening…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "settings": "Settings",
-  "@settings": {
-    "description": "Settings section title"
+  "tutorSessionWith": "Session with {name}",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "profile": "Profile",
-  "@profile": {
-    "description": "Profile section title"
+  "tutorSessionDuration": "Session duration: {minutes} minutes",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
   },
-
-  "focusMode": "Focus Mode",
-  "@focusMode": {
-    "description": "Focus mode feature"
+  "tutorMessagesExchanged": "{count, plural, one {# message} other {# messages}} exchanged",
+  "tutorSelectSubject": "Choose a subject to start tutoring",
+  "tutorNoSessions": "No tutoring sessions yet",
+  "tutorHistory": "Session History",
+  "tutorSummary": "Session Summary",
+  "tutorNewSession": "Start New Session",
+  "tutorXpEarned": "{xp} XP earned",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
   },
-
-  "needABreak": "Need a break?",
-  "@needABreak": {
-    "description": "Question for break suggestion"
+  "tutorChangeLanguage": "Change tutor language",
+  "tutorLanguageChanged": "{name} will now respond in {language}",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   },
-
-  "takeBreak": "Take a Break",
-  "@takeBreak": {
-    "description": "Button to take a break"
-  },
-
-  "skipBreak": "Keep Going",
-  "@skipBreak": {
-    "description": "Button to skip break"
-  },
-
-  "homeworkHelp": "Homework Help",
-  "@homeworkHelp": {
-    "description": "Homework helper feature"
-  },
-
-  "scanProblem": "Scan Problem",
-  "@scanProblem": {
-    "description": "Button to scan homework problem"
-  },
-
-  "typeProblem": "Type Problem",
-  "@typeProblem": {
-    "description": "Button to type homework problem"
-  },
-
-  "brainTraining": "Brain Training",
-  "@brainTraining": {
-    "description": "Brain training games section"
-  },
-
-  "playGames": "Play Games",
-  "@playGames": {
-    "description": "Button to play educational games"
-  },
-
-  "offline": "Offline",
-  "@offline": {
-    "description": "Offline mode indicator"
-  },
-
-  "offlineMessage": "You're offline. Some features may not be available.",
-  "@offlineMessage": {
-    "description": "Message shown when offline"
-  },
-
-  "syncing": "Syncing...",
-  "@syncing": {
-    "description": "Syncing status message"
-  },
-
-  "syncComplete": "Sync complete",
-  "@syncComplete": {
-    "description": "Sync completed message"
-  },
-
-  "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": {
-    "description": "Generic error message"
-  },
-
-  "retry": "Retry",
-  "@retry": {
-    "description": "Retry button text"
-  },
-
-  "cancel": "Cancel",
-  "@cancel": {
-    "description": "Cancel button text"
-  },
-
+  "tutorSubjectsMATH": "Mathematics",
+  "tutorSubjectsELA": "Reading & Writing",
+  "tutorSubjectsSCIENCE": "Science",
+  "tutorSubjectsHISTORY": "History & Social Studies",
+  "tutorSubjectsCODING": "Coding & Computer Science",
+  "tutorPersonasNova": "Nova the Space Explorer",
+  "tutorPersonasSage": "Sage the Storyteller",
+  "tutorPersonasSpark": "Spark the Scientist",
+  "tutorPersonasChrono": "Chrono the Time Traveler",
+  "tutorPersonasPixel": "Pixel the Robot",
+  "goBack": "Go Back",
+  "skip": "Skip",
   "done": "Done",
-  "@done": {
-    "description": "Done button text"
+  "exit": "Exit",
+  "continueButton": "Continue",
+  "notReally": "Not really",
+  "skipForNow": "Skip for now",
+  "startOver": "Start Over",
+  "switchLearner": "Switch Learner",
+  "backToToday": "Back to Today",
+  "viewAllBadges": "View All Badges",
+  "somethingWentWrong": "Something went wrong",
+  "instructions": "Instructions",
+  "homeworkHelper": "Homework Helper",
+  "homeworkKeepWorking": "Keep Working",
+  "tutorEndSessionTitle": "End Session?",
+  "tutorEndSessionConfirmation": "Are you sure you want to end this session?",
+  "tutorComingSoon": "AI Tutors coming soon!",
+  "tutorNotAvailable": "AI Tutors not available",
+  "subjectTutorComingSoon": "{subject} tutor coming soon!",
+  "@subjectTutorComingSoon": {
+    "description": "Shown when a subject tutor is not yet available",
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
   },
-
-  "next": "Next",
-  "@next": {
-    "description": "Next button text"
+  "subjectTutorNotAvailable": "This tutor is not available",
+  "tutorStartingSession": "Starting session...",
+  "tutorSayHelloPrompt": "Say hello to start your session!",
+  "tutorSessionComplete": "Session Complete!",
+  "tutorSessionSummary": "You answered {count} questions in {duration} minutes",
+  "@tutorSessionSummary": {
+    "description": "Summary line at end of tutor session",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
   },
-
-  "back": "Back",
-  "@back": {
-    "description": "Back button text"
-  },
-
-  "submit": "Submit",
-  "@submit": {
-    "description": "Submit button text"
-  },
-
-  "loading": "Loading...",
-  "@loading": {
-    "description": "Loading indicator text"
-  },
-
-  "minutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
-  "@minutes": {
-    "description": "Duration in minutes",
+  "tutorReturnToTutors": "Return to Tutors",
+  "tutorQuestionsAsked": "Questions: {count}",
+  "@tutorQuestionsAsked": {
+    "description": "Analytics chip for questions asked",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-
-  "accuracyPercent": "{percent}% accuracy",
-  "@accuracyPercent": {
-    "description": "Accuracy percentage",
+  "tutorCorrectAnswers": "Correct: {count}",
+  "@tutorCorrectAnswers": {
+    "description": "Analytics chip for correct answers",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tutorEngagementScore": "Engagement: {percent}%",
+  "@tutorEngagementScore": {
+    "description": "Analytics chip for engagement score",
     "placeholders": {
       "percent": {
         "type": "int"
       }
     }
   },
-
-  "subject_math": "Math",
-  "@subject_math": {
-    "description": "Math subject name"
+  "tutorLanguage": "Language",
+  "sessionComplete": "Session Complete",
+  "sessionCompleteLevelUp": "Level Up!",
+  "sessionCompleteGreatJob": "Great Job!",
+  "sessionCompleteReachedLevel": "You reached Level {level}!",
+  "@sessionCompleteReachedLevel": {
+    "description": "Celebration message for reaching a new level",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
   },
-
-  "subject_ela": "English",
-  "@subject_ela": {
-    "description": "English Language Arts subject name"
+  "sessionCompleteStreak": "{days}-day streak!",
+  "@sessionCompleteStreak": {
+    "description": "Streak counter on session complete",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
-
-  "subject_science": "Science",
-  "@subject_science": {
-    "description": "Science subject name"
+  "sessionCompleteFinished": "Session Finished",
+  "sessionCompleteXpAwarded": "+{xp} XP",
+  "@sessionCompleteXpAwarded": {
+    "description": "XP awarded label",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
   },
-
-  "subject_socialStudies": "Social Studies",
-  "@subject_socialStudies": {
-    "description": "Social Studies subject name"
+  "sessionCompleteLevelTransition": "Level {from} → Level {to}",
+  "@sessionCompleteLevelTransition": {
+    "description": "Level transition indicator",
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
   },
-
-  "accessibilitySettings": "Accessibility Settings",
-  "@accessibilitySettings": {
-    "description": "Accessibility settings title"
+  "sessionCompleteNewBadgesEarned": "{count, plural, one{# New Badge Earned!} other{# New Badges Earned!}}",
+  "@sessionCompleteNewBadgesEarned": {
+    "description": "Badge count on session complete",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
-  "textSize": "Text Size",
-  "@textSize": {
-    "description": "Text size setting"
+  "baselineCompleteTitle": "Baseline Complete!",
+  "baselineCompleteSubtitle": "Great work finishing your baseline assessment",
+  "baselineCompleteMessage": "Your results are being analyzed to create a personalized learning plan just for you.",
+  "baselineCompleteEmailNotice": "Your parent/guardian will receive an email with your results.",
+  "baselineCompleteNextSteps": "Next Steps",
+  "focusBreakWasThisHelpful": "Was this helpful?",
+  "focusBreakFeedbackTitleK5": "Yay! You did it! 🌟",
+  "focusBreakFeedbackTitleG68": "Nice work!",
+  "focusBreakFeedbackTitleG912": "Well done.",
+  "focusBreakFeedbackMessageK5": "You're a super star! Ready to keep going?",
+  "focusBreakFeedbackMessageG68": "Taking breaks helps you learn better. Ready to continue?",
+  "focusBreakFeedbackMessageG912": "Research shows short breaks improve focus and retention.",
+  "focusBreakIntroK5": "Let's take a fun break! 🎉",
+  "focusBreakIntroG68": "Time for a short focus break.",
+  "focusBreakIntroG912": "Take a moment to reset your focus.",
+  "focusBreakSecondsLeftK5": "Almost done! Keep going! 🌈",
+  "focusBreakTimerDoneK5": "All done! Great job! ⭐",
+  "focusBreakTimerRemainingG68": "Focus break in progress...",
+  "focusBreakTimerDoneG68": "Break complete. Ready to continue?",
+  "focusBreakTimerRemainingG912": "Break in progress...",
+  "focusBreakTimerDoneG912": "Break complete.",
+  "focusBreakContinueK5": "Let's Go! 🚀",
+  "focusBreakContinueG68": "Continue",
+  "focusBreakContinueG912": "Resume",
+  "homeworkPleaseEnterAnswer": "Please enter your answer",
+  "homeworkCompletionTitleK5": "You Did It! 🎉",
+  "homeworkCompletionTitleG68": "Assignment Complete!",
+  "homeworkCompletionTitleG912": "Assignment Submitted",
+  "homeworkCompletionMessageK5": "You're a homework hero! Great job! 🌟",
+  "homeworkCompletionMessageG68": "Great work completing your assignment!",
+  "homeworkCompletionMessageG912": "Your assignment has been completed successfully.",
+  "homeworkUnableToLoadSteps": "Unable to load homework steps.",
+  "homeworkStepOfTotal": "Step {current} of {total}",
+  "@homeworkStepOfTotal": {
+    "description": "Step progress indicator",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
-
-  "highContrast": "High Contrast",
-  "@highContrast": {
-    "description": "High contrast mode setting"
+  "homeworkYourQuestion": "Your Question",
+  "homeworkLetsThink": "Let's think about this...",
+  "homeworkHideHint": "Hide Hint",
+  "homeworkNeedAHint": "Need a Hint?",
+  "homeworkAnswerHintK5": "Try your best! You can do it! 💪",
+  "homeworkAnswerHintG68": "Think about what you've learned and try again.",
+  "homeworkAnswerHintG912": "Review your notes and consider the key concepts.",
+  "homeworkSubmitAnswer": "Submit Answer",
+  "homeworkExitTitle": "Exit Homework?",
+  "homeworkExitMessage": "Your progress will be saved. You can continue later.",
+  "focusActivities": "Focus Activities",
+  "focusRecommendedForYou": "Recommended For You",
+  "focusAllActivities": "All Activities",
+  "focusRecommended": "Recommended",
+  "focusActivityCalmBreathing": "Calm Breathing",
+  "focusActivityCalmBreathingDesc": "Slow, deep breaths to help you relax and focus.",
+  "focusActivityFocusBreath": "Focus Breath",
+  "focusActivityFocusBreathDesc": "Rhythmic breathing to sharpen your concentration.",
+  "focusActivityBodyScan": "Body Scan",
+  "focusActivityBodyScanDesc": "Notice how each part of your body feels.",
+  "focusActivityQuickStretch": "Quick Stretch",
+  "focusActivityQuickStretchDesc": "Simple stretches to release tension and re-energize.",
+  "focusActivity5Senses": "5 Senses",
+  "focusActivity5SensesDesc": "Ground yourself by noticing what you see, hear, feel, smell, and taste.",
+  "focusActivitySoundJourney": "Sound Journey",
+  "focusActivitySoundJourneyDesc": "Close your eyes and listen to calming sounds.",
+  "focusCategoryBreathing": "Breathing",
+  "focusCategoryMindfulness": "Mindfulness",
+  "focusCategoryMovement": "Movement",
+  "focusCategoryGrounding": "Grounding",
+  "focusActivityCompleted": "Completed: {title}",
+  "@focusActivityCompleted": {
+    "description": "Snackbar message when activity is completed",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
-
-  "readAloud": "Read Aloud",
-  "@readAloud": {
-    "description": "Read aloud / TTS setting"
+  "focusActivityEnded": "Activity ended",
+  "focusInstructionBreathing1": "Breathe in slowly through your nose for 4 counts.",
+  "focusInstructionBreathing2": "Hold your breath gently for 4 counts.",
+  "focusInstructionBreathing3": "Breathe out slowly through your mouth for 6 counts.",
+  "focusInstructionBreathing4": "Repeat. Let each breath make you calmer.",
+  "focusInstructionMindfulness1": "Close your eyes or soften your gaze.",
+  "focusInstructionMindfulness2": "Notice any sounds around you without judging them.",
+  "focusInstructionMindfulness3": "Feel the weight of your body in your seat.",
+  "focusInstructionMindfulness4": "When your mind wanders, gently bring it back.",
+  "focusInstructionMovement1": "Roll your shoulders back slowly 5 times.",
+  "focusInstructionMovement2": "Stretch your arms up high and hold for 10 seconds.",
+  "focusInstructionMovement3": "Gently twist your upper body left, then right.",
+  "focusInstructionMovement4": "Shake out your hands and wiggle your fingers.",
+  "focusInstructionGrounding1": "Name 5 things you can see right now.",
+  "focusInstructionGrounding2": "Name 4 things you can touch.",
+  "focusInstructionGrounding3": "Name 3 things you can hear.",
+  "focusInstructionGrounding4": "Take a deep breath and notice how you feel.",
+  "focusInstructionDefault1": "Take a moment to pause and breathe.",
+  "focusInstructionDefault2": "Notice how your body feels right now.",
+  "focusInstructionDefault3": "When you're ready, continue with your learning.",
+  "lifeSkillsCouldNotStartSession": "Could not start session: {error}",
+  "@lifeSkillsCouldNotStartSession": {
+    "description": "Error when life skills session fails to start",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
-  "reducedMotion": "Reduced Motion",
-  "@reducedMotion": {
-    "description": "Reduced motion setting"
-  }
+  "lifeSkillsAiHelp": "AI Help",
+  "lifeSkillsGreatJob": "Great job! 🎉",
+  "lifeSkillsStepTitle": "Step {stepNumber}: {instruction}",
+  "@lifeSkillsStepTitle": {
+    "description": "Step title with number and instruction",
+    "placeholders": {
+      "stepNumber": {
+        "type": "int"
+      },
+      "instruction": {
+        "type": "String"
+      }
+    }
+  },
+  "lifeSkillsWhatToDo": "What to do:",
+  "lifeSkillsTryThis": "Try this: {promptLevel}",
+  "@lifeSkillsTryThis": {
+    "description": "Prompt level hint",
+    "placeholders": {
+      "promptLevel": {
+        "type": "String"
+      }
+    }
+  },
+  "lifeSkillsTeachingTip": "Teaching Tip",
+  "lifeSkillsPreviousStep": "Previous Step",
+  "lifeSkillsNeedHelp": "Need Help",
+  "lifeSkillsComplete": "Complete",
+  "lifeSkillsIDidIt": "I Did It!",
+  "lifeSkillsUnableToLoadVideo": "Unable to load video",
+  "lifeSkillsAmazingWork": "Amazing Work! 🌟",
+  "lifeSkillsYouCompleted": "You completed {skillName}!",
+  "@lifeSkillsYouCompleted": {
+    "description": "Skill completion message",
+    "placeholders": {
+      "skillName": {
+        "type": "String"
+      }
+    }
+  },
+  "lifeSkillsKeepPracticing": "Keep practicing to build this skill.",
+  "a11yBackButton": "Back",
+  "a11yCloseButton": "Close",
+  "a11yMenuButton": "Menu",
+  "a11ySettingsButton": "Settings",
+  "a11yLoadingContent": "Loading content",
+  "a11yErrorOccurred": "An error occurred",
+  "a11yRetryAction": "Retry",
+  "a11ySessionPaused": "Session paused",
+  "a11yOfflineMode": "Offline mode",
+  "a11ySyncInProgress": "Syncing data"
 }

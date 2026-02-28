@@ -109,7 +109,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Semantics(
-              label: A11yLabels.errorIcon,
+              label: A11yLabels.errorIcon(context),
               child: const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             ),
             const SizedBox(height: 16),
@@ -118,7 +118,7 @@ class _TodayPlanScreenState extends ConsumerState<TodayPlanScreen> {
             Text(error, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 24),
             Semantics(
-              label: A11yLabels.retryButton,
+              label: A11yLabels.retryButton(context),
               button: true,
               child: FilledButton.icon(
                 onPressed: () {

@@ -53,7 +53,7 @@ function getTargets(): string[] {
 function flatten(
   obj: Record<string, unknown>,
   prefix = '',
-  result: Record<string, string> = {},
+  result: Record<string, string> = {}
 ): Record<string, string> {
   for (const [key, value] of Object.entries(obj)) {
     const newKey = prefix ? `${prefix}${capitalize(key)}` : key;
@@ -109,6 +109,28 @@ function jsonToArb(locale: string, jsonContent: Record<string, unknown>): string
   return JSON.stringify(arb, null, 2) + '\n';
 }
 
+// ── Merge: preserve manually-added ARB keys ─────────────────
+// Keys in the existing ARB that are NOT produced by the JSON source
+// are preserved so that app-specific entries survive regeneration.
+function mergeArb(generated: string, existingPath: string): string {
+  if (!fs.existsSync(existingPath)) return generated;
+
+  const existing: Record<string, unknown> = JSON.parse(fs.readFileSync(existingPath, 'utf-8'));
+  const gen: Record<string, unknown> = JSON.parse(generated);
+
+  // Collect keys produced by generate (including @-metadata)
+  const genKeys = new Set(Object.keys(gen));
+
+  // Preserve any key from existing that is NOT in the generated set
+  for (const [key, value] of Object.entries(existing)) {
+    if (!genKeys.has(key)) {
+      gen[key] = value;
+    }
+  }
+
+  return JSON.stringify(gen, null, 2) + '\n';
+}
+
 // ── Main ─────────────────────────────────────────────────────
 function main() {
   const targets = getTargets();
@@ -120,7 +142,9 @@ function main() {
     process.exit(1);
   }
 
-  console.log(`Found ${localeFiles.length} locale(s): ${localeFiles.map((f) => f.replace('.json', '')).join(', ')}`);
+  console.log(
+    `Found ${localeFiles.length} locale(s): ${localeFiles.map((f) => f.replace('.json', '')).join(', ')}`
+  );
 
   for (const target of targets) {
     // Ensure output dir exists
@@ -129,9 +153,11 @@ function main() {
     for (const file of localeFiles) {
       const locale = file.replace('.json', '');
       const json = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, file), 'utf-8'));
-      const arb = jsonToArb(locale, json);
+      const generated = jsonToArb(locale, json);
       const outFile = path.join(target, `app_${locale}.arb`);
-      fs.writeFileSync(outFile, arb, 'utf-8');
+      // Merge: generated keys take precedence, but manually-added keys are kept
+      const merged = mergeArb(generated, outFile);
+      fs.writeFileSync(outFile, merged, 'utf-8');
     }
 
     console.log(`  ✓ ${path.relative(ROOT, target)}: ${localeFiles.length} ARB file(s)`);

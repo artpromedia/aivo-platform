@@ -1,0 +1,304 @@
+{
+  "@@locale": "zh",
+  "@@last_modified": "2026-02-28T11:23:03.754Z",
+  "commonLoading": "加载中...",
+  "commonSave": "保存",
+  "commonCancel": "取消",
+  "commonDelete": "删除",
+  "commonEdit": "编辑",
+  "commonCreate": "创建",
+  "commonSearch": "搜索",
+  "commonFilter": "筛选",
+  "commonExport": "导出",
+  "commonImport": "导入",
+  "commonBack": "返回",
+  "commonNext": "下一步",
+  "commonPrevious": "上一步",
+  "commonSubmit": "提交",
+  "commonConfirm": "确认",
+  "commonClose": "关闭",
+  "commonYes": "是",
+  "commonNo": "否",
+  "commonOk": "确定",
+  "commonError": "错误",
+  "commonSuccess": "成功",
+  "commonWarning": "警告",
+  "commonInfo": "信息",
+  "commonRequired": "必填",
+  "commonOptional": "选填",
+  "commonNoResults": "未找到结果",
+  "commonShowMore": "显示更多",
+  "commonShowLess": "显示更少",
+  "commonSelectAll": "全选",
+  "commonDeselectAll": "取消全选",
+  "commonRetry": "重试",
+  "commonRefresh": "刷新",
+  "commonLanguage": "语言",
+  "commonSettings": "设置",
+  "commonProfile": "个人资料",
+  "commonLogout": "退出登录",
+  "commonLogin": "登录",
+  "commonSignUp": "注册",
+  "authLoginTitle": "欢迎回来",
+  "authLoginSubtitle": "登录您的账户",
+  "authEmail": "电子邮件",
+  "authPassword": "密码",
+  "authForgotPassword": "忘记密码？",
+  "authResetPassword": "重置密码",
+  "authNewPassword": "新密码",
+  "authConfirmPassword": "确认密码",
+  "authRememberMe": "记住我",
+  "authSsoLogin": "SSO 登录",
+  "authNoAccount": "没有账户？",
+  "authHasAccount": "已有账户？",
+  "authInvalidCredentials": "邮箱或密码无效",
+  "authAccountLocked": "账户已锁定。请稍后再试。",
+  "authSessionExpired": "会话已过期。请重新登录。",
+  "authMfaRequired": "请输入验证码",
+  "authMfaCode": "验证码",
+  "navDashboard": "仪表盘",
+  "navStudents": "学生",
+  "navClasses": "班级",
+  "navAssessments": "评估",
+  "navContent": "内容",
+  "navReports": "报告",
+  "navAnalytics": "分析",
+  "navMessages": "消息",
+  "navNotifications": "通知",
+  "navSettings": "设置",
+  "navHelp": "帮助",
+  "navBilling": "账单",
+  "navIntegrations": "集成",
+  "navUsers": "用户",
+  "navRoles": "角色",
+  "dashboardWelcome": "欢迎，{name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardOverview": "概览",
+  "dashboardRecentActivity": "最近活动",
+  "dashboardQuickActions": "快捷操作",
+  "dashboardActiveStudents": "活跃学生",
+  "dashboardSessionsToday": "今日课程",
+  "dashboardAverageProgress": "平均进度",
+  "dashboardAlertsRequiringAttention": "需要关注的提醒",
+  "studentsTitle": "学生",
+  "studentsAddStudent": "添加学生",
+  "studentsImportStudents": "导入学生",
+  "studentsExportRoster": "导出名册",
+  "studentsFirstName": "名",
+  "studentsLastName": "姓",
+  "studentsGrade": "年级",
+  "studentsProgress": "进度",
+  "studentsLastActive": "上次活跃",
+  "studentsStatus": "状态",
+  "studentsActive": "活跃",
+  "studentsInactive": "不活跃",
+  "studentsEnrolled": "已注册",
+  "studentsNoStudents": "未找到学生",
+  "assessmentsTitle": "评估",
+  "assessmentsCreateAssessment": "创建评估",
+  "assessmentsAssignAssessment": "分配评估",
+  "assessmentsDueDate": "截止日期",
+  "assessmentsSubmissions": "提交",
+  "assessmentsAverageScore": "平均分",
+  "assessmentsCompletion": "完成率",
+  "assessmentsInProgress": "进行中",
+  "assessmentsCompleted": "已完成",
+  "assessmentsNotStarted": "未开始",
+  "assessmentsGraded": "已评分",
+  "assessmentsPending": "待定",
+  "billingTitle": "账单和订阅",
+  "billingCurrentPlan": "当前方案",
+  "billingUsage": "使用量",
+  "billingInvoices": "发票",
+  "billingPaymentMethod": "付款方式",
+  "billingChangePlan": "更改方案",
+  "billingCancelSubscription": "取消订阅",
+  "billingNextInvoice": "下次账单",
+  "billingBillingPeriod": "账单周期",
+  "billingActiveSeats": "活跃席位",
+  "billingApiCalls": "API 调用次数",
+  "billingAiInteractions": "AI 交互次数",
+  "billingStorage": "已用存储",
+  "settingsTitle": "设置",
+  "settingsGeneral": "通用",
+  "settingsOrganization": "组织",
+  "settingsBranding": "品牌",
+  "settingsSso": "单点登录",
+  "settingsSecurity": "安全",
+  "settingsNotifications": "通知",
+  "settingsPrivacy": "隐私",
+  "settingsDataResidency": "数据驻留",
+  "settingsLanguage": "语言和地区",
+  "settingsLanguagePreference": "语言偏好",
+  "settingsTimezone": "时区",
+  "settingsDateFormat": "日期格式",
+  "settingsSelectLanguage": "选择您的首选语言",
+  "settingsLanguageChanged": "语言已成功更新",
+  "errorsGeneric": "出了点问题。请重试。",
+  "errorsNotFound": "页面未找到",
+  "errorsUnauthorized": "您没有权限访问此页面",
+  "errorsForbidden": "访问被拒绝",
+  "errorsServerError": "服务器错误。我们的团队已被通知。",
+  "errorsNetworkError": "网络错误。请检查您的连接。",
+  "errorsRateLimited": "请求过多。请稍后重试。",
+  "errorsValidationFailed": "请检查您的输入并重试。",
+  "onboardingWelcome": "欢迎使用 {platformName}！",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
+    "placeholders": {
+      "platformName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLetsGetStarted": "让我们设置您的组织",
+  "onboardingStep": "第 {current} 步，共 {total} 步",
+  "@onboardingStep": {
+    "description": "onboardingStep",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingSkipStep": "跳过此步骤",
+  "onboardingCompleteSetup": "完成设置",
+  "onboardingOrganizationInfo": "组织信息",
+  "onboardingBrandingSetup": "自定义品牌形象",
+  "onboardingSsoSetup": "设置单点登录",
+  "onboardingImportStudents": "导入学生",
+  "onboardingInviteStaff": "邀请您的团队",
+  "onboardingConfigureLearning": "配置学习设定",
+  "onboardingReviewAndLaunch": "审核并启动",
+  "accessibilitySkipToContent": "跳转到主要内容",
+  "accessibilityOpenMenu": "打开菜单",
+  "accessibilityCloseMenu": "关闭菜单",
+  "accessibilityToggleTheme": "切换暗色模式",
+  "accessibilityLanguageSwitcher": "更改语言",
+  "accessibilityNewNotifications": "{count, plural, other {# 条新通知}}",
+  "tutorTitle": "AI导师",
+  "tutorSubtitle": "每个科目的专家辅导",
+  "tutorStartSession": "开始课程",
+  "tutorEndSession": "结束课程",
+  "tutorResumeSession": "继续课程",
+  "tutorVoiceOn": "语音开启",
+  "tutorVoiceOff": "语音关闭",
+  "tutorVoiceUnavailable": "{language}不支持语音",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorVoiceUnavailableDetail": "语音支持英语、西班牙语、法语、葡萄牙语、阿拉伯语等。",
+  "tutorVoiceFallbackNotice": "正在使用{fallbackLanguage}语音。{nativeLanguage}语音即将推出！",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
+    "placeholders": {
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorTextOnlyBanner": "{name}将以{language}文本形式回复。语音支持即将推出！",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorThinking": "{name}正在思考…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorListening": "{name}正在聆听…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionWith": "与{name}的课程",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionDuration": "课程时长：{minutes}分钟",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorMessagesExchanged": "{count, plural, other {交换了#条消息}}",
+  "tutorSelectSubject": "选择一个科目开始辅导",
+  "tutorNoSessions": "还没有辅导课程",
+  "tutorHistory": "课程历史",
+  "tutorSummary": "课程摘要",
+  "tutorNewSession": "开始新课程",
+  "tutorXpEarned": "获得{xp} XP",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorChangeLanguage": "更改导师语言",
+  "tutorLanguageChanged": "{name}现在将以{language}回复",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSubjectsMATH": "数学",
+  "tutorSubjectsELA": "阅读与写作",
+  "tutorSubjectsSCIENCE": "科学",
+  "tutorSubjectsHISTORY": "历史与社会研究",
+  "tutorSubjectsCODING": "编程与计算机科学",
+  "tutorPersonasNova": "Nova 太空探险家",
+  "tutorPersonasSage": "Sage 讲故事的人",
+  "tutorPersonasSpark": "Spark 科学家",
+  "tutorPersonasChrono": "Chrono 时间旅行者",
+  "tutorPersonasPixel": "Pixel 机器人"
+}

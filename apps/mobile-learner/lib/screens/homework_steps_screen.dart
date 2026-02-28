@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../homework/homework_controller.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Screen displaying homework scaffolding steps with interactive Q&A.
 /// Shows step prompt, optional hint, text input, and progress indicator.
@@ -53,7 +54,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
     final answer = _answerController.text.trim();
     if (answer.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your answer')),
+        SnackBar(content: Text(AppLocalizations.of(context).homeworkPleaseEnterAnswer)),
       );
       return;
     }
@@ -101,7 +102,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
               Navigator.of(context).pop();
               context.go('/plan');
             },
-            child: const Text('Done'),
+            child: Text(AppLocalizations.of(context).done),
           ),
         ],
       ),
@@ -112,18 +113,20 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
   }
 
   String _completionTitleForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'Great Job! 🎉',
-      AivoGradeBand.g6_8 => 'Excellent Work!',
-      AivoGradeBand.g9_12 => 'Problem Solved!',
+      AivoGradeBand.k5 => l10n.homeworkCompletionTitleK5,
+      AivoGradeBand.g6_8 => l10n.homeworkCompletionTitleG68,
+      AivoGradeBand.g9_12 => l10n.homeworkCompletionTitleG912,
     };
   }
 
   String _completionMessageForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'You figured it out all by yourself! I\'m so proud of you!',
-      AivoGradeBand.g6_8 => 'You worked through each step and solved the problem. Nice work!',
-      AivoGradeBand.g9_12 => 'You\'ve successfully worked through the problem step by step. Well done!',
+      AivoGradeBand.k5 => l10n.homeworkCompletionMessageK5,
+      AivoGradeBand.g6_8 => l10n.homeworkCompletionMessageG68,
+      AivoGradeBand.g9_12 => l10n.homeworkCompletionMessageG912,
     };
   }
 
@@ -138,20 +141,20 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
     // No session or no steps - error state
     if (state.session == null || currentStep == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Homework Helper')),
+        appBar: AppBar(title: Text(AppLocalizations.of(context).homeworkHelper)),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
               const SizedBox(height: 16),
-              Text('Something went wrong', style: theme.textTheme.titleLarge),
+              Text(AppLocalizations.of(context).somethingWentWrong, style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
-              Text(state.error ?? 'Unable to load homework steps'),
+              Text(state.error ?? AppLocalizations.of(context).homeworkUnableToLoadSteps),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => context.go('/homework/intro', extra: widget.learnerId),
-                child: const Text('Start Over'),
+                child: Text(AppLocalizations.of(context).startOver),
               ),
             ],
           ),
@@ -161,7 +164,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Homework Helper'),
+        title: Text(AppLocalizations.of(context).homeworkHelper),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => _showExitConfirmation(),
@@ -246,7 +249,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'Step ${state.currentStepIndex + 1} of ${state.totalSteps}',
+            AppLocalizations.of(context).homeworkStepOfTotal(state.currentStepIndex + 1, state.totalSteps),
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onPrimaryContainer,
               fontWeight: FontWeight.w600,
@@ -274,7 +277,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Your Question',
+                  AppLocalizations.of(context).homeworkYourQuestion,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -317,7 +320,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Let\'s think...',
+                  AppLocalizations.of(context).homeworkLetsThink,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -387,7 +390,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  showHint ? 'Hide hint' : 'Need a hint?',
+                  showHint ? AppLocalizations.of(context).homeworkHideHint : AppLocalizations.of(context).homeworkNeedAHint,
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.tertiary,
                   ),
@@ -437,10 +440,11 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
   }
 
   Widget _buildAnswerInput(ThemeData theme, AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     final hintText = switch (gradeBand) {
-      AivoGradeBand.k5 => 'Write your answer here...',
-      AivoGradeBand.g6_8 => 'Type your response...',
-      AivoGradeBand.g9_12 => 'Enter your answer or work...',
+      AivoGradeBand.k5 => l10n.homeworkAnswerHintK5,
+      AivoGradeBand.g6_8 => l10n.homeworkAnswerHintG68,
+      AivoGradeBand.g9_12 => l10n.homeworkAnswerHintG912,
     };
 
     return TextField(
@@ -473,7 +477,7 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
                   valueColor: AlwaysStoppedAnimation(theme.colorScheme.onPrimary),
                 ),
               )
-            : const Text('Submit Answer'),
+            : Text(AppLocalizations.of(context).homeworkSubmitAnswer),
       ),
     );
   }
@@ -482,19 +486,19 @@ class _HomeworkStepsScreenState extends ConsumerState<HomeworkStepsScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit Homework Helper?'),
-        content: const Text('Your progress will be saved, but you\'ll need to continue from where you left off.'),
+        title: Text(AppLocalizations.of(context).homeworkExitTitle),
+        content: Text(AppLocalizations.of(context).homeworkExitMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Keep Working'),
+            child: Text(AppLocalizations.of(context).homeworkKeepWorking),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
               context.go('/plan');
             },
-            child: const Text('Exit'),
+            child: Text(AppLocalizations.of(context).exit),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_common/theme/theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/focus_games/game_player.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Focus Games Screen
 ///
@@ -84,13 +85,40 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
     },
   ];
 
+  String _localizedTitle(Map<String, dynamic> activity) {
+    final l10n = AppLocalizations.of(context);
+    return switch (activity['id']) {
+      'breathing-calm' => l10n.focusActivityCalmBreathing,
+      'breathing-focus' => l10n.focusActivityFocusBreath,
+      'mindfulness-body' => l10n.focusActivityBodyScan,
+      'movement-stretch' => l10n.focusActivityQuickStretch,
+      'grounding-5senses' => l10n.focusActivity5Senses,
+      'mindfulness-sounds' => l10n.focusActivitySoundJourney,
+      _ => activity['title'] as String,
+    };
+  }
+
+  String _localizedDescription(Map<String, dynamic> activity) {
+    final l10n = AppLocalizations.of(context);
+    return switch (activity['id']) {
+      'breathing-calm' => l10n.focusActivityCalmBreathingDesc,
+      'breathing-focus' => l10n.focusActivityFocusBreathDesc,
+      'mindfulness-body' => l10n.focusActivityBodyScanDesc,
+      'movement-stretch' => l10n.focusActivityQuickStretchDesc,
+      'grounding-5senses' => l10n.focusActivity5SensesDesc,
+      'mindfulness-sounds' => l10n.focusActivitySoundJourneyDesc,
+      _ => activity['description'] as String,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final recommended = _activities.where((a) => a['isRecommended'] == true).toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Focus Activities'),
+        title: Text(l10n.focusActivities),
       ),
       body: SafeArea(
         child: ListView(
@@ -103,7 +131,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Recommended for You',
+                    l10n.focusRecommendedForYou,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -116,17 +144,17 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
             ],
             // All activities
             Text(
-              'All Activities',
+              l10n.focusAllActivities,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 12),
             // Activity type sections
-            _buildActivitySection('Breathing', 'breathing', Icons.air),
-            _buildActivitySection('Mindfulness', 'mindfulness', Icons.self_improvement),
-            _buildActivitySection('Movement', 'movement', Icons.directions_run),
-            _buildActivitySection('Grounding', 'grounding', Icons.nature),
+            _buildActivitySection(l10n.focusCategoryBreathing, 'breathing', Icons.air),
+            _buildActivitySection(l10n.focusCategoryMindfulness, 'mindfulness', Icons.self_improvement),
+            _buildActivitySection(l10n.focusCategoryMovement, 'movement', Icons.directions_run),
+            _buildActivitySection(l10n.focusCategoryGrounding, 'grounding', Icons.nature),
           ],
         ),
       ),
@@ -208,7 +236,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              activity['title'],
+                              _localizedTitle(activity),
                               style: TextStyle(
                                 fontSize: isLarge ? 18 : 16,
                                 fontWeight: FontWeight.bold,
@@ -218,7 +246,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                             if (isLarge) ...[
                               const SizedBox(height: 4),
                               Text(
-                                activity['description'],
+                                _localizedDescription(activity),
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.white.withOpacity(0.9),
@@ -274,7 +302,7 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Recommended',
+                            AppLocalizations.of(context).focusRecommended,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -297,8 +325,8 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
     // Create a MiniGame from the activity data
     final miniGame = MiniGame(
       id: activity['id'] as String,
-      title: activity['title'] as String,
-      description: activity['description'] as String,
+      title: _localizedTitle(activity),
+      description: _localizedDescription(activity),
       category: _mapActivityTypeToCategory(activity['type'] as String),
       durationSeconds: activity['duration'] as int,
       instructions: _getInstructionsForType(activity['type'] as String),
@@ -316,8 +344,8 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
                 SnackBar(
                   content: Text(
                     completed
-                        ? 'Great job! You completed ${activity['title']}!'
-                        : 'Activity ended. Take a moment to relax.',
+                        ? AppLocalizations.of(context).focusActivityCompleted(_localizedTitle(activity))
+                        : AppLocalizations.of(context).focusActivityEnded,
                   ),
                 ),
               );
@@ -350,40 +378,41 @@ class _FocusGamesScreenState extends ConsumerState<FocusGamesScreen> {
   }
 
   List<String> _getInstructionsForType(String type) {
+    final l10n = AppLocalizations.of(context);
     switch (type) {
       case 'breathing':
         return [
-          'Find a comfortable position',
-          'Follow the visual guide for breathing',
-          'Breathe in when the circle expands',
-          'Breathe out when the circle shrinks',
+          l10n.focusInstructionBreathing1,
+          l10n.focusInstructionBreathing2,
+          l10n.focusInstructionBreathing3,
+          l10n.focusInstructionBreathing4,
         ];
       case 'mindfulness':
         return [
-          'Find a quiet, comfortable spot',
-          'Close your eyes if you feel comfortable',
-          'Focus on the guidance provided',
-          'Let go of any distracting thoughts',
+          l10n.focusInstructionMindfulness1,
+          l10n.focusInstructionMindfulness2,
+          l10n.focusInstructionMindfulness3,
+          l10n.focusInstructionMindfulness4,
         ];
       case 'movement':
         return [
-          'Stand up and find some space',
-          'Follow the movement prompts',
-          'Move at your own pace',
-          'Stretch gently and safely',
+          l10n.focusInstructionMovement1,
+          l10n.focusInstructionMovement2,
+          l10n.focusInstructionMovement3,
+          l10n.focusInstructionMovement4,
         ];
       case 'grounding':
         return [
-          'Take a moment to pause',
-          'Use your senses to connect with the present',
-          'Notice what you can see, hear, and feel',
-          'Stay calm and focused',
+          l10n.focusInstructionGrounding1,
+          l10n.focusInstructionGrounding2,
+          l10n.focusInstructionGrounding3,
+          l10n.focusInstructionGrounding4,
         ];
       default:
         return [
-          'Follow the on-screen guidance',
-          'Take your time',
-          'Focus on feeling calm and centered',
+          l10n.focusInstructionDefault1,
+          l10n.focusInstructionDefault2,
+          l10n.focusInstructionDefault3,
         ];
     }
   }

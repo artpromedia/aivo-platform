@@ -18,6 +18,7 @@ import '../providers/tutor_voice_preference_provider.dart';
 import '../widgets/animated_tutor_avatar.dart';
 import '../widgets/tutor_chat_bubble.dart';
 import '../widgets/tutor_input_bar.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 /// RTL locale codes used for text direction.
 const _rtlLocales = {'ar', 'ar-SA', 'he'};
@@ -102,18 +103,18 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     final shouldEnd = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('End session?'),
-        content: const Text(
-          'Are you sure you want to end this tutoring session?',
+        title: Text(AppLocalizations.of(context).tutorEndSessionTitle),
+        content: Text(
+          AppLocalizations.of(context).tutorEndSessionConfirmation,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('End Session'),
+            child: Text(AppLocalizations.of(context).tutorEndSession),
           ),
         ],
       ),
@@ -173,7 +174,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     // Feature flag: master tutor toggle
     if (!ParityFeature.tutorEnabled.isEnabled) {
       return Scaffold(
-        appBar: AppBar(title: const Text('AI Tutors')),
+        appBar: AppBar(title: Text(AppLocalizations.of(context).tutorTitle)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -182,17 +183,17 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               children: [
                 Icon(Icons.lock_outline_rounded, size: 64, color: theme.disabledColor),
                 const SizedBox(height: 16),
-                Text('AI Tutors Coming Soon', style: theme.textTheme.titleLarge),
+                Text(AppLocalizations.of(context).tutorComingSoon, style: theme.textTheme.titleLarge),
                 const SizedBox(height: 8),
                 Text(
-                  'AI tutoring is not yet available for your account. Stay tuned!',
+                  AppLocalizations.of(context).tutorNotAvailable,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Go Back'),
+                  child: Text(AppLocalizations.of(context).goBack),
                 ),
               ],
             ),
@@ -215,20 +216,20 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                 Icon(Icons.lock_outline_rounded, size: 64, color: theme.disabledColor),
                 const SizedBox(height: 16),
                 Text(
-                  '${widget.persona.subject.label} Tutor Coming Soon',
+                  AppLocalizations.of(context).subjectTutorComingSoon(widget.persona.subject.label),
                   style: theme.textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'This subject tutor is not yet available. Try another subject!',
+                  AppLocalizations.of(context).subjectTutorNotAvailable,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Go Back'),
+                  child: Text(AppLocalizations.of(context).goBack),
                 ),
               ],
             ),
@@ -295,7 +296,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                       ? Icons.volume_up_rounded
                       : Icons.volume_off_rounded,
                 ),
-                tooltip: voicePref.voiceEnabled ? 'Voice on' : 'Voice off',
+                tooltip: voicePref.voiceEnabled ? AppLocalizations.of(context).tutorVoiceOn : AppLocalizations.of(context).tutorVoiceOff,
                 onPressed: () {
                   ref.read(tutorVoicePreferenceProvider.notifier).toggle();
                   if (voicePref.voiceEnabled) {
@@ -305,7 +306,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               ),
             IconButton(
               icon: const Icon(Icons.stop_circle_outlined),
-              tooltip: 'End Session',
+              tooltip: AppLocalizations.of(context).tutorEndSession,
               onPressed: _handleEndSession,
             ),
           ],
@@ -326,13 +327,13 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
     switch (sessionState) {
       case TutorSessionIdle():
       case TutorSessionLoading():
-        return const Center(
+        return Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Starting session...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(AppLocalizations.of(context).tutorStartingSession),
             ],
           ),
         );
@@ -351,7 +352,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Something went wrong',
+                  AppLocalizations.of(context).somethingWentWrong,
                   style: theme.textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
@@ -363,7 +364,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Go Back'),
+                  child: Text(AppLocalizations.of(context).goBack),
                 ),
               ],
             ),
@@ -472,7 +473,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Say hello to start your tutoring session!',
+            AppLocalizations.of(context).tutorSayHelloPrompt,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -543,15 +544,14 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Session Complete!',
+                AppLocalizations.of(context).tutorSessionComplete,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                '${sessionState.messages.length} messages '
-                '- ${sessionState.session.formattedDuration}',
+                AppLocalizations.of(context).tutorSessionSummary(sessionState.messages.length, sessionState.session.formattedDuration),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -591,7 +591,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Return to Tutors'),
+                child: Text(AppLocalizations.of(context).tutorReturnToTutors),
               ),
             ),
           ),
@@ -606,20 +606,20 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
       children: [
         _AnalyticChip(
           icon: Icons.help_outline_rounded,
-          label: '${analytics.questionsAsked} questions',
+          label: AppLocalizations.of(context).tutorQuestionsAsked(analytics.questionsAsked),
           theme: theme,
         ),
         const SizedBox(width: 12),
         _AnalyticChip(
           icon: Icons.check_circle_outline_rounded,
-          label: '${analytics.correctAnswers} correct',
+          label: AppLocalizations.of(context).tutorCorrectAnswers(analytics.correctAnswers),
           theme: theme,
         ),
         if (analytics.engagementScore > 0) ...[
           const SizedBox(width: 12),
           _AnalyticChip(
             icon: Icons.star_outline_rounded,
-            label: '${(analytics.engagementScore * 100).toInt()}% engaged',
+            label: AppLocalizations.of(context).tutorEngagementScore((analytics.engagementScore * 100).toInt()),
             theme: theme,
           ),
         ],
@@ -953,7 +953,7 @@ class _LanguagePickerSheet extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Tutor Language',
+                    AppLocalizations.of(context).tutorLanguage,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),

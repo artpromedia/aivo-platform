@@ -7,6 +7,7 @@ import 'package:flutter_common/flutter_common.dart';
 
 import '../focus/focus_controller.dart';
 import '../focus/focus_service.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Screen displaying a regulation/focus break activity.
 /// Shows title, instructions, countdown timer, and completion button.
@@ -101,6 +102,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   Future<void> _showFeedbackDialog() async {
     final gradeBand = ref.read(gradeBandProvider);
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return showDialog<void>(
       context: context,
@@ -121,7 +123,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Was this helpful?',
+              l10n.focusBreakWasThisHelpful,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -132,13 +134,13 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
               children: [
                 _FeedbackButton(
                   emoji: '👍',
-                  label: 'Yes',
+                  label: l10n.commonYes,
                   onTap: () => Navigator.of(context).pop(),
                 ),
                 const SizedBox(width: 24),
                 _FeedbackButton(
                   emoji: '👎',
-                  label: 'Not really',
+                  label: l10n.notReally,
                   onTap: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -148,7 +150,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Skip'),
+            child: Text(l10n.skip),
           ),
         ],
       ),
@@ -156,18 +158,20 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   }
 
   String _feedbackTitleForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'Great Job! 🌟',
-      AivoGradeBand.g6_8 => 'Nice Work!',
-      AivoGradeBand.g9_12 => 'Break Complete',
+      AivoGradeBand.k5 => l10n.focusBreakFeedbackTitleK5,
+      AivoGradeBand.g6_8 => l10n.focusBreakFeedbackTitleG68,
+      AivoGradeBand.g9_12 => l10n.focusBreakFeedbackTitleG912,
     };
   }
 
   String _feedbackMessageForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'You did it! Taking breaks helps our brains stay happy.',
-      AivoGradeBand.g6_8 => 'Taking a moment to reset can help you focus better.',
-      AivoGradeBand.g9_12 => 'Regular breaks support sustained attention and learning.',
+      AivoGradeBand.k5 => l10n.focusBreakFeedbackMessageK5,
+      AivoGradeBand.g6_8 => l10n.focusBreakFeedbackMessageG68,
+      AivoGradeBand.g9_12 => l10n.focusBreakFeedbackMessageG912,
     };
   }
 
@@ -195,7 +199,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
                 child: TextButton(
                   onPressed: _isCompleting ? null : () => _completeBreak(completedFully: false),
                   child: Text(
-                    'Skip for now',
+                    AppLocalizations.of(context).skipForNow,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -299,10 +303,11 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   }
 
   String _introMessageForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'Let\'s take a little break together! 💙',
-      AivoGradeBand.g6_8 => 'Taking a quick break can help you think more clearly.',
-      AivoGradeBand.g9_12 => 'A brief pause can help restore focus and reduce mental fatigue.',
+      AivoGradeBand.k5 => l10n.focusBreakIntroK5,
+      AivoGradeBand.g6_8 => l10n.focusBreakIntroG68,
+      AivoGradeBand.g9_12 => l10n.focusBreakIntroG912,
     };
   }
 
@@ -327,7 +332,7 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                'Instructions',
+                AppLocalizations.of(context).instructions,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.primary,
@@ -373,19 +378,21 @@ class _FocusBreakScreenState extends ConsumerState<FocusBreakScreen>
   }
 
   String _timerLabelForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     final seconds = _secondsRemaining;
     return switch (gradeBand) {
-      AivoGradeBand.k5 => seconds > 0 ? 'seconds left' : 'All done!',
-      AivoGradeBand.g6_8 => seconds > 0 ? 'remaining' : 'Complete!',
-      AivoGradeBand.g9_12 => seconds > 0 ? 'remaining' : 'Complete',
+      AivoGradeBand.k5 => seconds > 0 ? l10n.focusBreakSecondsLeftK5 : l10n.focusBreakTimerDoneK5,
+      AivoGradeBand.g6_8 => seconds > 0 ? l10n.focusBreakTimerRemainingG68 : l10n.focusBreakTimerDoneG68,
+      AivoGradeBand.g9_12 => seconds > 0 ? l10n.focusBreakTimerRemainingG912 : l10n.focusBreakTimerDoneG912,
     };
   }
 
   String _continueButtonTextForGrade(AivoGradeBand gradeBand) {
+    final l10n = AppLocalizations.of(context);
     return switch (gradeBand) {
-      AivoGradeBand.k5 => 'I\'m ready to keep going! 🚀',
-      AivoGradeBand.g6_8 => 'I\'m ready to continue',
-      AivoGradeBand.g9_12 => 'Continue',
+      AivoGradeBand.k5 => l10n.focusBreakContinueK5,
+      AivoGradeBand.g6_8 => l10n.focusBreakContinueG68,
+      AivoGradeBand.g9_12 => l10n.focusBreakContinueG912,
     };
   }
 }

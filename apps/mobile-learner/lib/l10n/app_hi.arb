@@ -1,281 +1,304 @@
 {
   "@@locale": "hi",
-  "@@last_modified": "2026-01-20",
-
-  "appTitle": "Aivo शिक्षार्थी",
-  "@appTitle": {
-    "description": "The title of the application"
-  },
-
-  "welcomeBack": "वापसी पर स्वागत है, {name}!",
-  "@welcomeBack": {
-    "description": "Welcome message with learner's name",
+  "@@last_modified": "2026-02-28T11:23:03.749Z",
+  "commonLoading": "लोड हो रहा है...",
+  "commonSave": "सहेजें",
+  "commonCancel": "रद्द करें",
+  "commonDelete": "हटाएं",
+  "commonEdit": "संपादित करें",
+  "commonCreate": "बनाएं",
+  "commonSearch": "खोजें",
+  "commonFilter": "फ़िल्टर",
+  "commonExport": "निर्यात करें",
+  "commonImport": "आयात करें",
+  "commonBack": "वापस",
+  "commonNext": "अगला",
+  "commonPrevious": "पिछला",
+  "commonSubmit": "जमा करें",
+  "commonConfirm": "पुष्टि करें",
+  "commonClose": "बंद करें",
+  "commonYes": "हाँ",
+  "commonNo": "नहीं",
+  "commonOk": "ठीक है",
+  "commonError": "त्रुटि",
+  "commonSuccess": "सफल",
+  "commonWarning": "चेतावनी",
+  "commonInfo": "जानकारी",
+  "commonRequired": "आवश्यक",
+  "commonOptional": "वैकल्पिक",
+  "commonNoResults": "कोई परिणाम नहीं मिला",
+  "commonShowMore": "और दिखाएं",
+  "commonShowLess": "कम दिखाएं",
+  "commonSelectAll": "सभी चुनें",
+  "commonDeselectAll": "सभी अचयनित करें",
+  "commonRetry": "पुनः प्रयास करें",
+  "commonRefresh": "रिफ़्रेश करें",
+  "commonLanguage": "भाषा",
+  "commonSettings": "सेटिंग्स",
+  "commonProfile": "प्रोफ़ाइल",
+  "commonLogout": "लॉग आउट",
+  "commonLogin": "लॉग इन",
+  "commonSignUp": "साइन अप",
+  "authLoginTitle": "पुनः स्वागत है",
+  "authLoginSubtitle": "अपने खाते में साइन इन करें",
+  "authEmail": "ईमेल",
+  "authPassword": "पासवर्ड",
+  "authForgotPassword": "पासवर्ड भूल गए?",
+  "authResetPassword": "पासवर्ड रीसेट करें",
+  "authNewPassword": "नया पासवर्ड",
+  "authConfirmPassword": "पासवर्ड की पुष्टि करें",
+  "authRememberMe": "मुझे याद रखें",
+  "authSsoLogin": "SSO से लॉगिन करें",
+  "authNoAccount": "खाता नहीं है?",
+  "authHasAccount": "पहले से खाता है?",
+  "authInvalidCredentials": "अमान्य ईमेल या पासवर्ड",
+  "authAccountLocked": "खाता लॉक है। कृपया बाद में पुनः प्रयास करें।",
+  "authSessionExpired": "सत्र समाप्त हो गया है। कृपया पुनः लॉगिन करें।",
+  "authMfaRequired": "सत्यापन कोड दर्ज करें",
+  "authMfaCode": "सत्यापन कोड",
+  "navDashboard": "डैशबोर्ड",
+  "navStudents": "छात्र",
+  "navClasses": "कक्षाएं",
+  "navAssessments": "मूल्यांकन",
+  "navContent": "सामग्री",
+  "navReports": "रिपोर्ट",
+  "navAnalytics": "विश्लेषण",
+  "navMessages": "संदेश",
+  "navNotifications": "सूचनाएं",
+  "navSettings": "सेटिंग्स",
+  "navHelp": "सहायता",
+  "navBilling": "बिलिंग",
+  "navIntegrations": "एकीकरण",
+  "navUsers": "उपयोगकर्ता",
+  "navRoles": "भूमिकाएं",
+  "dashboardWelcome": "स्वागत है, {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
     "placeholders": {
       "name": {
-        "type": "String",
-        "example": "अलेक्स"
+        "type": "String"
       }
     }
   },
-
-  "todaysPlan": "आज की योजना",
-  "@todaysPlan": {
-    "description": "Title for today's learning plan"
-  },
-
-  "activitiesRemaining": "{count, plural, =0{सब हो गया!} =1{1 गतिविधि बाकी} other{{count} गतिविधियां बाकी}}",
-  "@activitiesRemaining": {
-    "description": "Number of activities remaining today",
+  "dashboardOverview": "अवलोकन",
+  "dashboardRecentActivity": "हालिया गतिविधि",
+  "dashboardQuickActions": "त्वरित कार्रवाइयां",
+  "dashboardActiveStudents": "सक्रिय छात्र",
+  "dashboardSessionsToday": "आज के सत्र",
+  "dashboardAverageProgress": "औसत प्रगति",
+  "dashboardAlertsRequiringAttention": "ध्यान देने योग्य अलर्ट",
+  "studentsTitle": "छात्र",
+  "studentsAddStudent": "छात्र जोड़ें",
+  "studentsImportStudents": "छात्र आयात करें",
+  "studentsExportRoster": "सूची निर्यात करें",
+  "studentsFirstName": "पहला नाम",
+  "studentsLastName": "उपनाम",
+  "studentsGrade": "कक्षा",
+  "studentsProgress": "प्रगति",
+  "studentsLastActive": "अंतिम सक्रिय",
+  "studentsStatus": "स्थिति",
+  "studentsActive": "सक्रिय",
+  "studentsInactive": "निष्क्रिय",
+  "studentsEnrolled": "नामांकित",
+  "studentsNoStudents": "कोई छात्र नहीं मिला",
+  "assessmentsTitle": "मूल्यांकन",
+  "assessmentsCreateAssessment": "मूल्यांकन बनाएं",
+  "assessmentsAssignAssessment": "मूल्यांकन सौंपें",
+  "assessmentsDueDate": "नियत तिथि",
+  "assessmentsSubmissions": "प्रस्तुतियां",
+  "assessmentsAverageScore": "औसत अंक",
+  "assessmentsCompletion": "पूर्णता",
+  "assessmentsInProgress": "प्रगति में",
+  "assessmentsCompleted": "पूर्ण",
+  "assessmentsNotStarted": "शुरू नहीं हुआ",
+  "assessmentsGraded": "अंकित",
+  "assessmentsPending": "लंबित",
+  "billingTitle": "बिलिंग और सदस्यता",
+  "billingCurrentPlan": "वर्तमान योजना",
+  "billingUsage": "उपयोग",
+  "billingInvoices": "चालान",
+  "billingPaymentMethod": "भुगतान विधि",
+  "billingChangePlan": "योजना बदलें",
+  "billingCancelSubscription": "सदस्यता रद्द करें",
+  "billingNextInvoice": "अगला चालान",
+  "billingBillingPeriod": "बिलिंग अवधि",
+  "billingActiveSeats": "सक्रिय सीटें",
+  "billingApiCalls": "API कॉल",
+  "billingAiInteractions": "AI इंटरैक्शन",
+  "billingStorage": "उपयोग किया गया संग्रहण",
+  "settingsTitle": "सेटिंग्स",
+  "settingsGeneral": "सामान्य",
+  "settingsOrganization": "संगठन",
+  "settingsBranding": "ब्रांडिंग",
+  "settingsSso": "सिंगल साइन-ऑन",
+  "settingsSecurity": "सुरक्षा",
+  "settingsNotifications": "सूचनाएं",
+  "settingsPrivacy": "गोपनीयता",
+  "settingsDataResidency": "डेटा निवास स्थान",
+  "settingsLanguage": "भाषा और क्षेत्र",
+  "settingsLanguagePreference": "भाषा प्राथमिकता",
+  "settingsTimezone": "समय क्षेत्र",
+  "settingsDateFormat": "दिनांक प्रारूप",
+  "settingsSelectLanguage": "अपनी पसंदीदा भाषा चुनें",
+  "settingsLanguageChanged": "भाषा सफलतापूर्वक अपडेट की गई",
+  "errorsGeneric": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
+  "errorsNotFound": "पृष्ठ नहीं मिला",
+  "errorsUnauthorized": "आपको इस पृष्ठ तक पहुंचने की अनुमति नहीं है",
+  "errorsForbidden": "पहुंच अस्वीकृत",
+  "errorsServerError": "सर्वर त्रुटि। हमारी टीम को सूचित कर दिया गया है।",
+  "errorsNetworkError": "नेटवर्क त्रुटि। अपना कनेक्शन जांचें।",
+  "errorsRateLimited": "बहुत अधिक अनुरोध। कृपया प्रतीक्षा करें और पुनः प्रयास करें।",
+  "errorsValidationFailed": "कृपया अपना इनपुट जांचें और पुनः प्रयास करें।",
+  "onboardingWelcome": "{platformName} में आपका स्वागत है!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
     "placeholders": {
-      "count": {
-        "type": "int",
-        "format": "compact"
+      "platformName": {
+        "type": "String"
       }
     }
   },
-
-  "startLearning": "सीखना शुरू करें",
-  "@startLearning": {
-    "description": "Button to start learning session"
-  },
-
-  "continueLearning": "सीखना जारी रखें",
-  "@continueLearning": {
-    "description": "Button to continue learning session"
-  },
-
-  "sessionComplete": "सत्र पूर्ण!",
-  "@sessionComplete": {
-    "description": "Title when session is finished"
-  },
-
-  "greatJob": "बहुत बढ़िया!",
-  "@greatJob": {
-    "description": "Congratulatory message"
-  },
-
-  "xpEarned": "+{amount} XP",
-  "@xpEarned": {
-    "description": "XP points earned",
+  "onboardingLetsGetStarted": "आइए आपके संगठन को सेट करें",
+  "onboardingStep": "चरण {current} / {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
       }
     }
   },
-
-  "coinsEarned": "+{amount} सिक्के",
-  "@coinsEarned": {
-    "description": "Coins earned",
+  "onboardingSkipStep": "यह चरण छोड़ें",
+  "onboardingCompleteSetup": "सेटअप पूरा करें",
+  "onboardingOrganizationInfo": "संगठन की जानकारी",
+  "onboardingBrandingSetup": "अपनी ब्रांडिंग अनुकूलित करें",
+  "onboardingSsoSetup": "सिंगल साइन-ऑन सेट करें",
+  "onboardingImportStudents": "अपने छात्रों को आयात करें",
+  "onboardingInviteStaff": "अपनी टीम को आमंत्रित करें",
+  "onboardingConfigureLearning": "सीखने की सेटिंग्स कॉन्फ़िगर करें",
+  "onboardingReviewAndLaunch": "समीक्षा करें और लॉन्च करें",
+  "accessibilitySkipToContent": "मुख्य सामग्री पर जाएं",
+  "accessibilityOpenMenu": "मेनू खोलें",
+  "accessibilityCloseMenu": "मेनू बंद करें",
+  "accessibilityToggleTheme": "डार्क मोड टॉगल करें",
+  "accessibilityLanguageSwitcher": "भाषा बदलें",
+  "accessibilityNewNotifications": "{count, plural, one {# नई सूचना} other {# नई सूचनाएं}}",
+  "tutorTitle": "AI ट्यूटर",
+  "tutorSubtitle": "हर विषय में विशेषज्ञ ट्यूटरिंग",
+  "tutorStartSession": "सत्र शुरू करें",
+  "tutorEndSession": "सत्र समाप्त करें",
+  "tutorResumeSession": "सत्र फिर से शुरू करें",
+  "tutorVoiceOn": "आवाज़ चालू",
+  "tutorVoiceOff": "आवाज़ बंद",
+  "tutorVoiceUnavailable": "{language} में आवाज़ उपलब्ध नहीं है",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "streakDays": "{count, plural, =1{1 दिन की स्ट्रीक} other{{count} दिन की स्ट्रीक}}",
-  "@streakDays": {
-    "description": "Learning streak in days",
+  "tutorVoiceUnavailableDetail": "आवाज़ अंग्रेजी, स्पेनिश, फ्रेंच, पुर्तगाली, अरबी और अन्य भाषाओं में उपलब्ध है।",
+  "tutorVoiceFallbackNotice": "{fallbackLanguage} आवाज़ का उपयोग कर रहे हैं। {nativeLanguage} आवाज़ जल्द आ रही है!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
       }
     }
   },
-
-  "progress": "प्रगति",
-  "@progress": {
-    "description": "Progress section title"
-  },
-
-  "goals": "लक्ष्य",
-  "@goals": {
-    "description": "Goals section title"
-  },
-
-  "rewards": "पुरस्कार",
-  "@rewards": {
-    "description": "Rewards section title"
-  },
-
-  "settings": "सेटिंग्स",
-  "@settings": {
-    "description": "Settings section title"
-  },
-
-  "profile": "प्रोफ़ाइल",
-  "@profile": {
-    "description": "Profile section title"
-  },
-
-  "focusMode": "फोकस मोड",
-  "@focusMode": {
-    "description": "Focus mode feature"
-  },
-
-  "needABreak": "ब्रेक चाहिए?",
-  "@needABreak": {
-    "description": "Question for break suggestion"
-  },
-
-  "takeBreak": "ब्रेक लें",
-  "@takeBreak": {
-    "description": "Button to take a break"
-  },
-
-  "skipBreak": "जारी रखें",
-  "@skipBreak": {
-    "description": "Button to skip break"
-  },
-
-  "homeworkHelp": "होमवर्क सहायता",
-  "@homeworkHelp": {
-    "description": "Homework helper feature"
-  },
-
-  "scanProblem": "समस्या स्कैन करें",
-  "@scanProblem": {
-    "description": "Button to scan homework problem"
-  },
-
-  "typeProblem": "समस्या टाइप करें",
-  "@typeProblem": {
-    "description": "Button to type homework problem"
-  },
-
-  "brainTraining": "मस्तिष्क प्रशिक्षण",
-  "@brainTraining": {
-    "description": "Brain training games section"
-  },
-
-  "playGames": "खेलें",
-  "@playGames": {
-    "description": "Button to play educational games"
-  },
-
-  "offline": "ऑफ़लाइन",
-  "@offline": {
-    "description": "Offline mode indicator"
-  },
-
-  "offlineMessage": "आप ऑफ़लाइन हैं। कुछ सुविधाएं उपलब्ध नहीं हो सकती हैं।",
-  "@offlineMessage": {
-    "description": "Message shown when offline"
-  },
-
-  "syncing": "सिंक हो रहा है...",
-  "@syncing": {
-    "description": "Syncing status message"
-  },
-
-  "syncComplete": "सिंक पूर्ण",
-  "@syncComplete": {
-    "description": "Sync completed message"
-  },
-
-  "errorGeneric": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।",
-  "@errorGeneric": {
-    "description": "Generic error message"
-  },
-
-  "retry": "पुनः प्रयास करें",
-  "@retry": {
-    "description": "Retry button text"
-  },
-
-  "cancel": "रद्द करें",
-  "@cancel": {
-    "description": "Cancel button text"
-  },
-
-  "done": "हो गया",
-  "@done": {
-    "description": "Done button text"
-  },
-
-  "next": "अगला",
-  "@next": {
-    "description": "Next button text"
-  },
-
-  "back": "पीछे",
-  "@back": {
-    "description": "Back button text"
-  },
-
-  "submit": "जमा करें",
-  "@submit": {
-    "description": "Submit button text"
-  },
-
-  "loading": "लोड हो रहा है...",
-  "@loading": {
-    "description": "Loading indicator text"
-  },
-
-  "minutes": "{count, plural, =1{1 मिनट} other{{count} मिनट}}",
-  "@minutes": {
-    "description": "Duration in minutes",
+  "tutorTextOnlyBanner": "{name} {language} में टेक्स्ट के रूप में जवाब देगा। वॉइस सपोर्ट जल्द आ रहा है!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "accuracyPercent": "{percent}% सटीकता",
-  "@accuracyPercent": {
-    "description": "Accuracy percentage",
+  "tutorThinking": "{name} सोच रहा है…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
     "placeholders": {
-      "percent": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-
-  "subject_math": "गणित",
-  "@subject_math": {
-    "description": "Math subject name"
+  "tutorListening": "{name} सुन रहा है…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_ela": "हिंदी",
-  "@subject_ela": {
-    "description": "Hindi Language Arts subject name"
+  "tutorSessionWith": "{name} के साथ सत्र",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_science": "विज्ञान",
-  "@subject_science": {
-    "description": "Science subject name"
+  "tutorSessionDuration": "सत्र अवधि: {minutes} मिनट",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_socialStudies": "सामाजिक अध्ययन",
-  "@subject_socialStudies": {
-    "description": "Social Studies subject name"
+  "tutorMessagesExchanged": "{count, plural, one {# संदेश} other {# संदेश}} का आदान-प्रदान",
+  "tutorSelectSubject": "ट्यूटरिंग शुरू करने के लिए एक विषय चुनें",
+  "tutorNoSessions": "अभी तक कोई ट्यूटरिंग सत्र नहीं",
+  "tutorHistory": "सत्र इतिहास",
+  "tutorSummary": "सत्र सारांश",
+  "tutorNewSession": "नया सत्र शुरू करें",
+  "tutorXpEarned": "{xp} XP अर्जित",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
   },
-
-  "accessibilitySettings": "एक्सेसिबिलिटी सेटिंग्स",
-  "@accessibilitySettings": {
-    "description": "Accessibility settings title"
+  "tutorChangeLanguage": "ट्यूटर भाषा बदलें",
+  "tutorLanguageChanged": "{name} अब {language} में जवाब देगा",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   },
-
-  "textSize": "टेक्स्ट साइज़",
-  "@textSize": {
-    "description": "Text size setting"
-  },
-
-  "highContrast": "हाई कंट्रास्ट",
-  "@highContrast": {
-    "description": "High contrast mode setting"
-  },
-
-  "readAloud": "ज़ोर से पढ़ें",
-  "@readAloud": {
-    "description": "Read aloud / TTS setting"
-  },
-
-  "reducedMotion": "कम गति",
-  "@reducedMotion": {
-    "description": "Reduced motion setting"
-  }
+  "tutorSubjectsMATH": "गणित",
+  "tutorSubjectsELA": "पठन और लेखन",
+  "tutorSubjectsSCIENCE": "विज्ञान",
+  "tutorSubjectsHISTORY": "इतिहास और सामाजिक अध्ययन",
+  "tutorSubjectsCODING": "कोडिंग और कंप्यूटर विज्ञान",
+  "tutorPersonasNova": "Nova अंतरिक्ष अन्वेषक",
+  "tutorPersonasSage": "Sage कहानीकार",
+  "tutorPersonasSpark": "Spark वैज्ञानिक",
+  "tutorPersonasChrono": "Chrono समय यात्री",
+  "tutorPersonasPixel": "Pixel रोबोट"
 }

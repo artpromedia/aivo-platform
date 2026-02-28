@@ -1,0 +1,304 @@
+{
+  "@@locale": "ko",
+  "@@last_modified": "2026-02-28T11:23:03.752Z",
+  "commonLoading": "로딩 중...",
+  "commonSave": "저장",
+  "commonCancel": "취소",
+  "commonDelete": "삭제",
+  "commonEdit": "편집",
+  "commonCreate": "생성",
+  "commonSearch": "검색",
+  "commonFilter": "필터",
+  "commonExport": "내보내기",
+  "commonImport": "가져오기",
+  "commonBack": "뒤로",
+  "commonNext": "다음",
+  "commonPrevious": "이전",
+  "commonSubmit": "제출",
+  "commonConfirm": "확인",
+  "commonClose": "닫기",
+  "commonYes": "예",
+  "commonNo": "아니요",
+  "commonOk": "확인",
+  "commonError": "오류",
+  "commonSuccess": "성공",
+  "commonWarning": "경고",
+  "commonInfo": "정보",
+  "commonRequired": "필수",
+  "commonOptional": "선택",
+  "commonNoResults": "결과를 찾을 수 없습니다",
+  "commonShowMore": "더 보기",
+  "commonShowLess": "접기",
+  "commonSelectAll": "모두 선택",
+  "commonDeselectAll": "모두 해제",
+  "commonRetry": "다시 시도",
+  "commonRefresh": "새로고침",
+  "commonLanguage": "언어",
+  "commonSettings": "설정",
+  "commonProfile": "프로필",
+  "commonLogout": "로그아웃",
+  "commonLogin": "로그인",
+  "commonSignUp": "회원가입",
+  "authLoginTitle": "다시 오신 것을 환영합니다",
+  "authLoginSubtitle": "계정에 로그인하세요",
+  "authEmail": "이메일",
+  "authPassword": "비밀번호",
+  "authForgotPassword": "비밀번호를 잊으셨나요?",
+  "authResetPassword": "비밀번호 재설정",
+  "authNewPassword": "새 비밀번호",
+  "authConfirmPassword": "비밀번호 확인",
+  "authRememberMe": "로그인 유지",
+  "authSsoLogin": "SSO 로그인",
+  "authNoAccount": "계정이 없으신가요?",
+  "authHasAccount": "이미 계정이 있으신가요?",
+  "authInvalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다",
+  "authAccountLocked": "계정이 잠겼습니다. 나중에 다시 시도해 주세요.",
+  "authSessionExpired": "세션이 만료되었습니다. 다시 로그인해 주세요.",
+  "authMfaRequired": "인증 코드를 입력해 주세요",
+  "authMfaCode": "인증 코드",
+  "navDashboard": "대시보드",
+  "navStudents": "학생",
+  "navClasses": "수업",
+  "navAssessments": "평가",
+  "navContent": "콘텐츠",
+  "navReports": "보고서",
+  "navAnalytics": "분석",
+  "navMessages": "메시지",
+  "navNotifications": "알림",
+  "navSettings": "설정",
+  "navHelp": "도움말",
+  "navBilling": "결제",
+  "navIntegrations": "통합",
+  "navUsers": "사용자",
+  "navRoles": "역할",
+  "dashboardWelcome": "환영합니다, {name}님",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardOverview": "개요",
+  "dashboardRecentActivity": "최근 활동",
+  "dashboardQuickActions": "빠른 작업",
+  "dashboardActiveStudents": "활성 학생",
+  "dashboardSessionsToday": "오늘의 세션",
+  "dashboardAverageProgress": "평균 진행률",
+  "dashboardAlertsRequiringAttention": "주의가 필요한 알림",
+  "studentsTitle": "학생",
+  "studentsAddStudent": "학생 추가",
+  "studentsImportStudents": "학생 가져오기",
+  "studentsExportRoster": "명부 내보내기",
+  "studentsFirstName": "이름",
+  "studentsLastName": "성",
+  "studentsGrade": "학년",
+  "studentsProgress": "진행률",
+  "studentsLastActive": "마지막 활동",
+  "studentsStatus": "상태",
+  "studentsActive": "활성",
+  "studentsInactive": "비활성",
+  "studentsEnrolled": "등록됨",
+  "studentsNoStudents": "학생을 찾을 수 없습니다",
+  "assessmentsTitle": "평가",
+  "assessmentsCreateAssessment": "평가 생성",
+  "assessmentsAssignAssessment": "평가 배정",
+  "assessmentsDueDate": "마감일",
+  "assessmentsSubmissions": "제출",
+  "assessmentsAverageScore": "평균 점수",
+  "assessmentsCompletion": "완료율",
+  "assessmentsInProgress": "진행 중",
+  "assessmentsCompleted": "완료",
+  "assessmentsNotStarted": "시작되지 않음",
+  "assessmentsGraded": "채점됨",
+  "assessmentsPending": "대기 중",
+  "billingTitle": "결제 및 구독",
+  "billingCurrentPlan": "현재 플랜",
+  "billingUsage": "사용량",
+  "billingInvoices": "인보이스",
+  "billingPaymentMethod": "결제 방법",
+  "billingChangePlan": "플랜 변경",
+  "billingCancelSubscription": "구독 취소",
+  "billingNextInvoice": "다음 청구서",
+  "billingBillingPeriod": "결제 기간",
+  "billingActiveSeats": "활성 좌석",
+  "billingApiCalls": "API 호출 수",
+  "billingAiInteractions": "AI 상호작용 수",
+  "billingStorage": "사용 스토리지",
+  "settingsTitle": "설정",
+  "settingsGeneral": "일반",
+  "settingsOrganization": "조직",
+  "settingsBranding": "브랜드",
+  "settingsSso": "싱글 사인온",
+  "settingsSecurity": "보안",
+  "settingsNotifications": "알림",
+  "settingsPrivacy": "개인정보",
+  "settingsDataResidency": "데이터 저장 위치",
+  "settingsLanguage": "언어 및 지역",
+  "settingsLanguagePreference": "언어 설정",
+  "settingsTimezone": "시간대",
+  "settingsDateFormat": "날짜 형식",
+  "settingsSelectLanguage": "선호하는 언어를 선택하세요",
+  "settingsLanguageChanged": "언어가 성공적으로 업데이트되었습니다",
+  "errorsGeneric": "문제가 발생했습니다. 다시 시도해 주세요.",
+  "errorsNotFound": "페이지를 찾을 수 없습니다",
+  "errorsUnauthorized": "이 페이지에 접근할 권한이 없습니다",
+  "errorsForbidden": "접근이 거부되었습니다",
+  "errorsServerError": "서버 오류입니다. 팀에 알림이 전달되었습니다.",
+  "errorsNetworkError": "네트워크 오류입니다. 연결을 확인해 주세요.",
+  "errorsRateLimited": "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  "errorsValidationFailed": "입력을 확인한 후 다시 시도해 주세요.",
+  "onboardingWelcome": "{platformName}에 오신 것을 환영합니다!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
+    "placeholders": {
+      "platformName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLetsGetStarted": "조직을 설정해 봅시다",
+  "onboardingStep": "{total}단계 중 {current}단계",
+  "@onboardingStep": {
+    "description": "onboardingStep",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingSkipStep": "이 단계 건너뛰기",
+  "onboardingCompleteSetup": "설정 완료",
+  "onboardingOrganizationInfo": "조직 정보",
+  "onboardingBrandingSetup": "브랜드 커스터마이징",
+  "onboardingSsoSetup": "싱글 사인온 설정",
+  "onboardingImportStudents": "학생 가져오기",
+  "onboardingInviteStaff": "팀 초대",
+  "onboardingConfigureLearning": "학습 설정 구성",
+  "onboardingReviewAndLaunch": "검토 후 시작",
+  "accessibilitySkipToContent": "메인 콘텐츠로 건너뛰기",
+  "accessibilityOpenMenu": "메뉴 열기",
+  "accessibilityCloseMenu": "메뉴 닫기",
+  "accessibilityToggleTheme": "다크 모드 전환",
+  "accessibilityLanguageSwitcher": "언어 변경",
+  "accessibilityNewNotifications": "{count, plural, other {새 알림 #개}}",
+  "tutorTitle": "AI 튜터",
+  "tutorSubtitle": "모든 과목의 전문 튜터링",
+  "tutorStartSession": "세션 시작",
+  "tutorEndSession": "세션 종료",
+  "tutorResumeSession": "세션 재개",
+  "tutorVoiceOn": "음성 켜기",
+  "tutorVoiceOff": "음성 끄기",
+  "tutorVoiceUnavailable": "{language}에서 음성을 사용할 수 없습니다",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorVoiceUnavailableDetail": "음성은 영어, 스페인어, 프랑스어, 포르투갈어, 아랍어 등에서 사용할 수 있습니다.",
+  "tutorVoiceFallbackNotice": "{fallbackLanguage} 음성을 사용 중입니다. {nativeLanguage} 음성은 곧 제공됩니다!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
+    "placeholders": {
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorTextOnlyBanner": "{name}이(가) {language}로 텍스트로 응답합니다. 음성 지원이 곧 제공됩니다!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorThinking": "{name}이(가) 생각하고 있습니다…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorListening": "{name}이(가) 듣고 있습니다…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionWith": "{name}과(와)의 세션",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionDuration": "세션 시간: {minutes}분",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorMessagesExchanged": "{count, plural, other {메시지 #개}} 교환됨",
+  "tutorSelectSubject": "튜터링을 시작할 과목을 선택하세요",
+  "tutorNoSessions": "아직 튜터링 세션이 없습니다",
+  "tutorHistory": "세션 기록",
+  "tutorSummary": "세션 요약",
+  "tutorNewSession": "새 세션 시작",
+  "tutorXpEarned": "{xp} XP 획득",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorChangeLanguage": "튜터 언어 변경",
+  "tutorLanguageChanged": "{name}이(가) 이제 {language}로 응답합니다",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSubjectsMATH": "수학",
+  "tutorSubjectsELA": "독해 & 작문",
+  "tutorSubjectsSCIENCE": "과학",
+  "tutorSubjectsHISTORY": "역사 & 사회",
+  "tutorSubjectsCODING": "코딩 & 컴퓨터 과학",
+  "tutorPersonasNova": "Nova 우주 탐험가",
+  "tutorPersonasSage": "Sage 이야기꾼",
+  "tutorPersonasSpark": "Spark 과학자",
+  "tutorPersonasChrono": "Chrono 시간여행자",
+  "tutorPersonasPixel": "Pixel 로봇"
+}

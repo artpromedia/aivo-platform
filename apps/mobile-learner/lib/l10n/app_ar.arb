@@ -1,281 +1,304 @@
 {
   "@@locale": "ar",
-  "@@last_modified": "2026-01-20",
-
-  "appTitle": "أيفو المتعلم",
-  "@appTitle": {
-    "description": "The title of the application"
-  },
-
-  "welcomeBack": "مرحباً بعودتك، {name}!",
-  "@welcomeBack": {
-    "description": "Welcome message with learner's name",
+  "@@last_modified": "2026-02-28T11:23:03.739Z",
+  "commonLoading": "جارٍ التحميل...",
+  "commonSave": "حفظ",
+  "commonCancel": "إلغاء",
+  "commonDelete": "حذف",
+  "commonEdit": "تعديل",
+  "commonCreate": "إنشاء",
+  "commonSearch": "بحث",
+  "commonFilter": "تصفية",
+  "commonExport": "تصدير",
+  "commonImport": "استيراد",
+  "commonBack": "رجوع",
+  "commonNext": "التالي",
+  "commonPrevious": "السابق",
+  "commonSubmit": "إرسال",
+  "commonConfirm": "تأكيد",
+  "commonClose": "إغلاق",
+  "commonYes": "نعم",
+  "commonNo": "لا",
+  "commonOk": "موافق",
+  "commonError": "خطأ",
+  "commonSuccess": "نجاح",
+  "commonWarning": "تحذير",
+  "commonInfo": "معلومات",
+  "commonRequired": "مطلوب",
+  "commonOptional": "اختياري",
+  "commonNoResults": "لم يتم العثور على نتائج",
+  "commonShowMore": "عرض المزيد",
+  "commonShowLess": "عرض أقل",
+  "commonSelectAll": "تحديد الكل",
+  "commonDeselectAll": "إلغاء تحديد الكل",
+  "commonRetry": "إعادة المحاولة",
+  "commonRefresh": "تحديث",
+  "commonLanguage": "اللغة",
+  "commonSettings": "الإعدادات",
+  "commonProfile": "الملف الشخصي",
+  "commonLogout": "تسجيل الخروج",
+  "commonLogin": "تسجيل الدخول",
+  "commonSignUp": "إنشاء حساب",
+  "authLoginTitle": "مرحباً بعودتك",
+  "authLoginSubtitle": "سجّل الدخول إلى حسابك",
+  "authEmail": "البريد الإلكتروني",
+  "authPassword": "كلمة المرور",
+  "authForgotPassword": "هل نسيت كلمة المرور؟",
+  "authResetPassword": "إعادة تعيين كلمة المرور",
+  "authNewPassword": "كلمة مرور جديدة",
+  "authConfirmPassword": "تأكيد كلمة المرور",
+  "authRememberMe": "تذكرني",
+  "authSsoLogin": "تسجيل الدخول عبر SSO",
+  "authNoAccount": "ليس لديك حساب؟",
+  "authHasAccount": "لديك حساب بالفعل؟",
+  "authInvalidCredentials": "بريد إلكتروني أو كلمة مرور غير صالحة",
+  "authAccountLocked": "الحساب مقفل. يرجى المحاولة لاحقاً.",
+  "authSessionExpired": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
+  "authMfaRequired": "أدخل رمز التحقق",
+  "authMfaCode": "رمز التحقق",
+  "navDashboard": "لوحة التحكم",
+  "navStudents": "الطلاب",
+  "navClasses": "الفصول",
+  "navAssessments": "التقييمات",
+  "navContent": "المحتوى",
+  "navReports": "التقارير",
+  "navAnalytics": "التحليلات",
+  "navMessages": "الرسائل",
+  "navNotifications": "الإشعارات",
+  "navSettings": "الإعدادات",
+  "navHelp": "المساعدة",
+  "navBilling": "الفوترة",
+  "navIntegrations": "التكاملات",
+  "navUsers": "المستخدمون",
+  "navRoles": "الأدوار",
+  "dashboardWelcome": "مرحباً، {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
     "placeholders": {
       "name": {
-        "type": "String",
-        "example": "أليكس"
+        "type": "String"
       }
     }
   },
-
-  "todaysPlan": "خطة اليوم",
-  "@todaysPlan": {
-    "description": "Title for today's learning plan"
-  },
-
-  "activitiesRemaining": "{count, plural, =0{انتهيت من كل شيء!} =1{نشاط واحد متبقي} =2{نشاطان متبقيان} few{{count} أنشطة متبقية} many{{count} نشاطاً متبقياً} other{{count} نشاط متبقي}}",
-  "@activitiesRemaining": {
-    "description": "Number of activities remaining today",
+  "dashboardOverview": "نظرة عامة",
+  "dashboardRecentActivity": "النشاط الأخير",
+  "dashboardQuickActions": "إجراءات سريعة",
+  "dashboardActiveStudents": "الطلاب النشطون",
+  "dashboardSessionsToday": "جلسات اليوم",
+  "dashboardAverageProgress": "التقدم المتوسط",
+  "dashboardAlertsRequiringAttention": "تنبيهات تحتاج انتباه",
+  "studentsTitle": "الطلاب",
+  "studentsAddStudent": "إضافة طالب",
+  "studentsImportStudents": "استيراد طلاب",
+  "studentsExportRoster": "تصدير القائمة",
+  "studentsFirstName": "الاسم الأول",
+  "studentsLastName": "اسم العائلة",
+  "studentsGrade": "الصف",
+  "studentsProgress": "التقدم",
+  "studentsLastActive": "آخر نشاط",
+  "studentsStatus": "الحالة",
+  "studentsActive": "نشط",
+  "studentsInactive": "غير نشط",
+  "studentsEnrolled": "مسجل",
+  "studentsNoStudents": "لم يتم العثور على طلاب",
+  "assessmentsTitle": "التقييمات",
+  "assessmentsCreateAssessment": "إنشاء تقييم",
+  "assessmentsAssignAssessment": "تعيين تقييم",
+  "assessmentsDueDate": "تاريخ الاستحقاق",
+  "assessmentsSubmissions": "التسليمات",
+  "assessmentsAverageScore": "متوسط الدرجات",
+  "assessmentsCompletion": "الإنجاز",
+  "assessmentsInProgress": "قيد التنفيذ",
+  "assessmentsCompleted": "مكتمل",
+  "assessmentsNotStarted": "لم يبدأ",
+  "assessmentsGraded": "مُقيَّم",
+  "assessmentsPending": "معلق",
+  "billingTitle": "الفوترة والاشتراك",
+  "billingCurrentPlan": "الخطة الحالية",
+  "billingUsage": "الاستخدام",
+  "billingInvoices": "الفواتير",
+  "billingPaymentMethod": "طريقة الدفع",
+  "billingChangePlan": "تغيير الخطة",
+  "billingCancelSubscription": "إلغاء الاشتراك",
+  "billingNextInvoice": "الفاتورة التالية",
+  "billingBillingPeriod": "فترة الفوترة",
+  "billingActiveSeats": "التراخيص النشطة",
+  "billingApiCalls": "طلبات API",
+  "billingAiInteractions": "تفاعلات الذكاء الاصطناعي",
+  "billingStorage": "التخزين المستخدم",
+  "settingsTitle": "الإعدادات",
+  "settingsGeneral": "عام",
+  "settingsOrganization": "المؤسسة",
+  "settingsBranding": "الهوية البصرية",
+  "settingsSso": "تسجيل الدخول الموحد",
+  "settingsSecurity": "الأمان",
+  "settingsNotifications": "الإشعارات",
+  "settingsPrivacy": "الخصوصية",
+  "settingsDataResidency": "موقع البيانات",
+  "settingsLanguage": "اللغة والمنطقة",
+  "settingsLanguagePreference": "تفضيل اللغة",
+  "settingsTimezone": "المنطقة الزمنية",
+  "settingsDateFormat": "تنسيق التاريخ",
+  "settingsSelectLanguage": "اختر لغتك المفضلة",
+  "settingsLanguageChanged": "تم تحديث اللغة بنجاح",
+  "errorsGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "errorsNotFound": "الصفحة غير موجودة",
+  "errorsUnauthorized": "ليس لديك إذن للوصول إلى هذه الصفحة",
+  "errorsForbidden": "تم رفض الوصول",
+  "errorsServerError": "خطأ في الخادم. تم إخطار فريقنا.",
+  "errorsNetworkError": "خطأ في الشبكة. تحقق من اتصالك.",
+  "errorsRateLimited": "طلبات كثيرة جداً. انتظر وحاول مرة أخرى.",
+  "errorsValidationFailed": "يرجى التحقق من بياناتك والمحاولة مرة أخرى.",
+  "onboardingWelcome": "مرحباً بك في {platformName}!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
     "placeholders": {
-      "count": {
-        "type": "int",
-        "format": "compact"
+      "platformName": {
+        "type": "String"
       }
     }
   },
-
-  "startLearning": "ابدأ التعلم",
-  "@startLearning": {
-    "description": "Button to start learning session"
-  },
-
-  "continueLearning": "تابع التعلم",
-  "@continueLearning": {
-    "description": "Button to continue learning session"
-  },
-
-  "sessionComplete": "اكتملت الجلسة!",
-  "@sessionComplete": {
-    "description": "Title when session is finished"
-  },
-
-  "greatJob": "عمل رائع!",
-  "@greatJob": {
-    "description": "Congratulatory message"
-  },
-
-  "xpEarned": "+{amount} نقطة خبرة",
-  "@xpEarned": {
-    "description": "XP points earned",
+  "onboardingLetsGetStarted": "لنقم بإعداد مؤسستك",
+  "onboardingStep": "الخطوة {current} من {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
       }
     }
   },
-
-  "coinsEarned": "+{amount} عملة",
-  "@coinsEarned": {
-    "description": "Coins earned",
+  "onboardingSkipStep": "تخطي هذه الخطوة",
+  "onboardingCompleteSetup": "إكمال الإعداد",
+  "onboardingOrganizationInfo": "معلومات المؤسسة",
+  "onboardingBrandingSetup": "تخصيص هويتك البصرية",
+  "onboardingSsoSetup": "إعداد تسجيل الدخول الموحد",
+  "onboardingImportStudents": "استيراد طلابك",
+  "onboardingInviteStaff": "دعوة فريقك",
+  "onboardingConfigureLearning": "إعداد التعلم",
+  "onboardingReviewAndLaunch": "مراجعة وإطلاق",
+  "accessibilitySkipToContent": "انتقل إلى المحتوى الرئيسي",
+  "accessibilityOpenMenu": "فتح القائمة",
+  "accessibilityCloseMenu": "إغلاق القائمة",
+  "accessibilityToggleTheme": "تبديل الوضع الداكن",
+  "accessibilityLanguageSwitcher": "تغيير اللغة",
+  "accessibilityNewNotifications": "{count, plural, one {إشعار جديد #} other {# إشعارات جديدة}}",
+  "tutorTitle": "المعلمون الأذكياء",
+  "tutorSubtitle": "تعليم متخصص في كل مادة",
+  "tutorStartSession": "بدء الجلسة",
+  "tutorEndSession": "إنهاء الجلسة",
+  "tutorResumeSession": "استئناف الجلسة",
+  "tutorVoiceOn": "الصوت مفعّل",
+  "tutorVoiceOff": "الصوت مُعطّل",
+  "tutorVoiceUnavailable": "الصوت غير متاح بـ{language}",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "streakDays": "{count, plural, =1{سلسلة يوم واحد} =2{سلسلة يومين} few{سلسلة {count} أيام} many{سلسلة {count} يوماً} other{سلسلة {count} يوم}}",
-  "@streakDays": {
-    "description": "Learning streak in days",
+  "tutorVoiceUnavailableDetail": "الصوت متاح بالإنجليزية والإسبانية والفرنسية والبرتغالية والعربية والمزيد.",
+  "tutorVoiceFallbackNotice": "استخدام صوت {fallbackLanguage}. صوت {nativeLanguage} قريباً!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
       }
     }
   },
-
-  "progress": "التقدم",
-  "@progress": {
-    "description": "Progress section title"
-  },
-
-  "goals": "الأهداف",
-  "@goals": {
-    "description": "Goals section title"
-  },
-
-  "rewards": "المكافآت",
-  "@rewards": {
-    "description": "Rewards section title"
-  },
-
-  "settings": "الإعدادات",
-  "@settings": {
-    "description": "Settings section title"
-  },
-
-  "profile": "الملف الشخصي",
-  "@profile": {
-    "description": "Profile section title"
-  },
-
-  "focusMode": "وضع التركيز",
-  "@focusMode": {
-    "description": "Focus mode feature"
-  },
-
-  "needABreak": "هل تحتاج استراحة؟",
-  "@needABreak": {
-    "description": "Question for break suggestion"
-  },
-
-  "takeBreak": "خذ استراحة",
-  "@takeBreak": {
-    "description": "Button to take a break"
-  },
-
-  "skipBreak": "استمر",
-  "@skipBreak": {
-    "description": "Button to skip break"
-  },
-
-  "homeworkHelp": "مساعدة في الواجبات",
-  "@homeworkHelp": {
-    "description": "Homework helper feature"
-  },
-
-  "scanProblem": "مسح المسألة",
-  "@scanProblem": {
-    "description": "Button to scan homework problem"
-  },
-
-  "typeProblem": "كتابة المسألة",
-  "@typeProblem": {
-    "description": "Button to type homework problem"
-  },
-
-  "brainTraining": "تمارين ذهنية",
-  "@brainTraining": {
-    "description": "Brain training games section"
-  },
-
-  "playGames": "العب",
-  "@playGames": {
-    "description": "Button to play educational games"
-  },
-
-  "offline": "غير متصل",
-  "@offline": {
-    "description": "Offline mode indicator"
-  },
-
-  "offlineMessage": "أنت غير متصل بالإنترنت. بعض الميزات قد لا تكون متاحة.",
-  "@offlineMessage": {
-    "description": "Message shown when offline"
-  },
-
-  "syncing": "جاري المزامنة...",
-  "@syncing": {
-    "description": "Syncing status message"
-  },
-
-  "syncComplete": "اكتملت المزامنة",
-  "@syncComplete": {
-    "description": "Sync completed message"
-  },
-
-  "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-  "@errorGeneric": {
-    "description": "Generic error message"
-  },
-
-  "retry": "إعادة المحاولة",
-  "@retry": {
-    "description": "Retry button text"
-  },
-
-  "cancel": "إلغاء",
-  "@cancel": {
-    "description": "Cancel button text"
-  },
-
-  "done": "تم",
-  "@done": {
-    "description": "Done button text"
-  },
-
-  "next": "التالي",
-  "@next": {
-    "description": "Next button text"
-  },
-
-  "back": "رجوع",
-  "@back": {
-    "description": "Back button text"
-  },
-
-  "submit": "إرسال",
-  "@submit": {
-    "description": "Submit button text"
-  },
-
-  "loading": "جاري التحميل...",
-  "@loading": {
-    "description": "Loading indicator text"
-  },
-
-  "minutes": "{count, plural, =1{دقيقة واحدة} =2{دقيقتان} few{{count} دقائق} many{{count} دقيقة} other{{count} دقيقة}}",
-  "@minutes": {
-    "description": "Duration in minutes",
+  "tutorTextOnlyBanner": "{name} سيرد بـ{language} كنص. دعم الصوت قريباً!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "accuracyPercent": "دقة {percent}%",
-  "@accuracyPercent": {
-    "description": "Accuracy percentage",
+  "tutorThinking": "{name} يفكر…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
     "placeholders": {
-      "percent": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-
-  "subject_math": "الرياضيات",
-  "@subject_math": {
-    "description": "Math subject name"
+  "tutorListening": "{name} يستمع…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_ela": "اللغة العربية",
-  "@subject_ela": {
-    "description": "Arabic Language Arts subject name"
+  "tutorSessionWith": "جلسة مع {name}",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_science": "العلوم",
-  "@subject_science": {
-    "description": "Science subject name"
+  "tutorSessionDuration": "مدة الجلسة: {minutes} دقائق",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_socialStudies": "الدراسات الاجتماعية",
-  "@subject_socialStudies": {
-    "description": "Social Studies subject name"
+  "tutorMessagesExchanged": "{count, plural, one {رسالة واحدة} other {# رسائل}} تم تبادلها",
+  "tutorSelectSubject": "اختر مادة لبدء الدراسة",
+  "tutorNoSessions": "لا توجد جلسات تعليمية بعد",
+  "tutorHistory": "سجل الجلسات",
+  "tutorSummary": "ملخص الجلسة",
+  "tutorNewSession": "جلسة جديدة",
+  "tutorXpEarned": "{xp} نقطة خبرة مكتسبة",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
   },
-
-  "accessibilitySettings": "إعدادات إمكانية الوصول",
-  "@accessibilitySettings": {
-    "description": "Accessibility settings title"
+  "tutorChangeLanguage": "تغيير لغة المعلم",
+  "tutorLanguageChanged": "{name} سيرد الآن بـ{language}",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   },
-
-  "textSize": "حجم النص",
-  "@textSize": {
-    "description": "Text size setting"
-  },
-
-  "highContrast": "تباين عالي",
-  "@highContrast": {
-    "description": "High contrast mode setting"
-  },
-
-  "readAloud": "القراءة بصوت عالٍ",
-  "@readAloud": {
-    "description": "Read aloud / TTS setting"
-  },
-
-  "reducedMotion": "تقليل الحركة",
-  "@reducedMotion": {
-    "description": "Reduced motion setting"
-  }
+  "tutorSubjectsMATH": "الرياضيات",
+  "tutorSubjectsELA": "القراءة والكتابة",
+  "tutorSubjectsSCIENCE": "العلوم",
+  "tutorSubjectsHISTORY": "التاريخ والدراسات الاجتماعية",
+  "tutorSubjectsCODING": "البرمجة وعلوم الحاسوب",
+  "tutorPersonasNova": "نوفا مستكشفة الفضاء",
+  "tutorPersonasSage": "سيج راوية القصص",
+  "tutorPersonasSpark": "سبارك العالمة",
+  "tutorPersonasChrono": "كرونو المسافر عبر الزمن",
+  "tutorPersonasPixel": "بيكسل الروبوت"
 }

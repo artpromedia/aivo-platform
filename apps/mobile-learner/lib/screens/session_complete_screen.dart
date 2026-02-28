@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_common/flutter_common.dart';
 
 import '../engagement/models.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../widgets/engagement_widgets.dart';
 
 /// Session complete celebration screen with XP, streaks, and badges
@@ -70,14 +71,14 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
 
   @override
   Widget build(BuildContext context) {
-    final strings = LocalStrings.en;
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: Text(strings.sessionComplete),
+        title: Text(l10n.sessionComplete),
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
@@ -117,6 +118,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
   }
 
   Widget _buildCelebration(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return AnimatedBuilder(
@@ -135,7 +137,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  widget.leveledUp ? 'Level Up! 🎉' : 'Great Job!',
+                  widget.leveledUp ? l10n.sessionCompleteLevelUp : l10n.sessionCompleteGreatJob,
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -157,16 +159,18 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
   }
 
   String _getCelebrationMessage() {
+    final l10n = AppLocalizations.of(context);
     if (widget.leveledUp) {
-      return 'You reached Level ${widget.newLevel}!';
+      return l10n.sessionCompleteReachedLevel(widget.newLevel!);
     }
     if (widget.streakUpdated && widget.streakDays != null) {
-      return 'You\'re on a ${widget.streakDays}-day streak!';
+      return l10n.sessionCompleteStreak(widget.streakDays!);
     }
-    return 'You finished your session.';
+    return l10n.sessionCompleteFinished;
   }
 
   Widget _buildXpSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Padding(
@@ -187,7 +191,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
             ),
             const SizedBox(width: 8),
             Text(
-              '+${widget.xpAwarded} XP',
+              l10n.sessionCompleteXpAwarded(widget.xpAwarded!),
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
@@ -200,6 +204,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
   }
 
   Widget _buildLevelUpSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Padding(
@@ -221,7 +226,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
             const Text('🎊', style: TextStyle(fontSize: 32)),
             const SizedBox(height: 8),
             Text(
-              'Level ${widget.previousLevel} → Level ${widget.newLevel}',
+              l10n.sessionCompleteLevelTransition(widget.previousLevel!, widget.newLevel!),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -244,6 +249,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
   }
 
   Widget _buildBadgesSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Padding(
@@ -251,7 +257,7 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
       child: Column(
         children: [
           Text(
-            'New Badge${widget.awardedBadges.length > 1 ? 's' : ''} Earned!',
+            l10n.sessionCompleteNewBadgesEarned(widget.awardedBadges.length),
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -290,17 +296,18 @@ class _SessionCompleteScreenState extends ConsumerState<SessionCompleteScreen>
   }
 
   Widget _buildActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         FilledButton.icon(
           onPressed: () => context.go('/plan'),
           icon: const Icon(Icons.home),
-          label: const Text('Back to Today'),
+          label: Text(l10n.backToToday),
         ),
         const SizedBox(height: 12),
         TextButton(
           onPressed: () => context.go('/progress'),
-          child: const Text('View All Badges'),
+          child: Text(l10n.viewAllBadges),
         ),
       ],
     );

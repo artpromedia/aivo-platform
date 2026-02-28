@@ -3,23 +3,26 @@
 /// Provides semantic labels for UI elements that aren't self-describing.
 library;
 
+import 'package:flutter/widgets.dart';
+import '../l10n/generated/app_localizations.dart';
+
 /// Labels for common UI patterns
 abstract class A11yLabels {
   // Navigation
-  static const String backButton = 'Go back';
-  static const String closeButton = 'Close';
-  static const String menuButton = 'Open menu';
+  static String backButton(BuildContext context) => AppLocalizations.of(context).a11yBackButton;
+  static String closeButton(BuildContext context) => AppLocalizations.of(context).a11yCloseButton;
+  static String menuButton(BuildContext context) => AppLocalizations.of(context).a11yMenuButton;
   static const String refreshButton = 'Refresh content';
-  static const String settingsButton = 'Open settings';
+  static String settingsButton(BuildContext context) => AppLocalizations.of(context).a11ySettingsButton;
 
   // Loading states
-  static const String loading = 'Loading';
+  static String loading(BuildContext context) => AppLocalizations.of(context).a11yLoadingContent;
   static const String loadingActivities = 'Loading activities';
   static const String loadingProgress = 'Loading your progress';
 
   // Error states
-  static const String errorIcon = 'Error';
-  static const String retryButton = 'Try again';
+  static String errorIcon(BuildContext context) => AppLocalizations.of(context).a11yErrorOccurred;
+  static String retryButton(BuildContext context) => AppLocalizations.of(context).a11yRetryAction;
 
   // Activity types
   static String activityCard(String title, String type, int minutes) =>
@@ -249,7 +252,7 @@ abstract class A11yLabels {
 
   static const String sessionStarting = 'Session starting';
   static const String sessionInProgress = 'Session in progress';
-  static const String sessionPaused = 'Session paused';
+  static String sessionPaused(BuildContext context) => AppLocalizations.of(context).a11ySessionPaused;
   static const String sessionResuming = 'Session resuming';
   static const String sessionEnding = 'Session ending';
 
@@ -261,9 +264,9 @@ abstract class A11yLabels {
 
   // === Offline Status ===
 
-  static const String offlineMode = 'You are offline. Some features may be limited.';
+  static String offlineMode(BuildContext context) => AppLocalizations.of(context).a11yOfflineMode;
   static const String onlineMode = 'Connected to the internet';
-  static const String syncingData = 'Syncing your progress';
+  static String syncingData(BuildContext context) => AppLocalizations.of(context).a11ySyncInProgress;
   static const String syncComplete = 'Sync complete';
   static String pendingSync(int count) =>
       count == 1 ? '1 item waiting to sync' : '$count items waiting to sync';
@@ -319,7 +322,7 @@ abstract class A11yLabels {
 
   // === Error Messages ===
 
-  static const String errorOccurred = 'An error occurred';
+  static String errorOccurred(BuildContext context) => AppLocalizations.of(context).a11yErrorOccurred;
   static const String errorLoadingContent = 'Could not load content';
   static const String errorSubmitting = 'Could not submit your response';
   static const String errorConnecting = 'Could not connect to the server';

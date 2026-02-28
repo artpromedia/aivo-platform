@@ -280,7 +280,7 @@ class AccessibleLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: label ?? A11yLabels.loading,
+      label: label ?? A11yLabels.loading(context),
       child: ExcludeSemantics(child: child),
     );
   }

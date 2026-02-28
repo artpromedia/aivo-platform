@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../baseline/baseline_controller.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Celebration screen shown after completing the baseline assessment.
 /// Shows a friendly congratulations message and option to continue.
@@ -12,6 +13,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -70,7 +72,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
 
               // Title
               Text(
-                'Great Job!',
+                l10n.baselineCompleteTitle,
                 style: theme.textTheme.displaySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
@@ -80,7 +82,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
 
               // Subtitle
               Text(
-                'You finished all the questions!',
+                l10n.baselineCompleteSubtitle,
                 style: theme.textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
@@ -99,8 +101,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'We\'re learning about how you think and learn best. '
-                        'Your grown-up will see the results soon.',
+                        l10n.baselineCompleteMessage,
                         style: theme.textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -125,7 +126,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'We sent your grown-up an email with a link to download the Parent app!',
+                          l10n.baselineCompleteEmailNotice,
                           style: theme.textTheme.bodyMedium,
                         ),
                       ),
@@ -146,7 +147,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Your grown-up will review the results and then your learning adventure can begin!',
+                      l10n.baselineCompleteNextSteps,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -164,7 +165,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
                   context.go('/plan');
                 },
                 icon: const Icon(Icons.celebration),
-                label: const Text('Continue'),
+                label: Text(l10n.continueButton),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 64),
                   textStyle: theme.textTheme.titleMedium?.copyWith(
@@ -180,7 +181,7 @@ class BaselineCompleteScreen extends ConsumerWidget {
                   ref.read(learnerBaselineControllerProvider.notifier).reset();
                   context.go('/pin');
                 },
-                child: const Text('Switch Learner'),
+                child: Text(l10n.switchLearner),
               ),
             ],
           ),

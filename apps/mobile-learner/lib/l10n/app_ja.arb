@@ -1,0 +1,304 @@
+{
+  "@@locale": "ja",
+  "@@last_modified": "2026-02-28T11:23:03.750Z",
+  "commonLoading": "読み込み中...",
+  "commonSave": "保存",
+  "commonCancel": "キャンセル",
+  "commonDelete": "削除",
+  "commonEdit": "編集",
+  "commonCreate": "作成",
+  "commonSearch": "検索",
+  "commonFilter": "フィルター",
+  "commonExport": "エクスポート",
+  "commonImport": "インポート",
+  "commonBack": "戻る",
+  "commonNext": "次へ",
+  "commonPrevious": "前へ",
+  "commonSubmit": "送信",
+  "commonConfirm": "確認",
+  "commonClose": "閉じる",
+  "commonYes": "はい",
+  "commonNo": "いいえ",
+  "commonOk": "OK",
+  "commonError": "エラー",
+  "commonSuccess": "成功",
+  "commonWarning": "警告",
+  "commonInfo": "情報",
+  "commonRequired": "必須",
+  "commonOptional": "任意",
+  "commonNoResults": "結果が見つかりません",
+  "commonShowMore": "もっと見る",
+  "commonShowLess": "閉じる",
+  "commonSelectAll": "すべて選択",
+  "commonDeselectAll": "すべて解除",
+  "commonRetry": "再試行",
+  "commonRefresh": "更新",
+  "commonLanguage": "言語",
+  "commonSettings": "設定",
+  "commonProfile": "プロフィール",
+  "commonLogout": "ログアウト",
+  "commonLogin": "ログイン",
+  "commonSignUp": "サインアップ",
+  "authLoginTitle": "おかえりなさい",
+  "authLoginSubtitle": "アカウントにサインイン",
+  "authEmail": "メールアドレス",
+  "authPassword": "パスワード",
+  "authForgotPassword": "パスワードをお忘れですか？",
+  "authResetPassword": "パスワードをリセット",
+  "authNewPassword": "新しいパスワード",
+  "authConfirmPassword": "パスワードを確認",
+  "authRememberMe": "ログイン状態を保持",
+  "authSsoLogin": "SSOでログイン",
+  "authNoAccount": "アカウントをお持ちでないですか？",
+  "authHasAccount": "すでにアカウントをお持ちですか？",
+  "authInvalidCredentials": "メールアドレスまたはパスワードが無効です",
+  "authAccountLocked": "アカウントがロックされています。後でもう一度お試しください。",
+  "authSessionExpired": "セッションが期限切れです。もう一度ログインしてください。",
+  "authMfaRequired": "認証コードを入力してください",
+  "authMfaCode": "認証コード",
+  "navDashboard": "ダッシュボード",
+  "navStudents": "生徒",
+  "navClasses": "クラス",
+  "navAssessments": "評価",
+  "navContent": "コンテンツ",
+  "navReports": "レポート",
+  "navAnalytics": "分析",
+  "navMessages": "メッセージ",
+  "navNotifications": "通知",
+  "navSettings": "設定",
+  "navHelp": "ヘルプ",
+  "navBilling": "請求",
+  "navIntegrations": "連携",
+  "navUsers": "ユーザー",
+  "navRoles": "ロール",
+  "dashboardWelcome": "ようこそ、{name}さん",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardOverview": "概要",
+  "dashboardRecentActivity": "最近のアクティビティ",
+  "dashboardQuickActions": "クイックアクション",
+  "dashboardActiveStudents": "アクティブな生徒",
+  "dashboardSessionsToday": "今日のセッション",
+  "dashboardAverageProgress": "平均進捗",
+  "dashboardAlertsRequiringAttention": "注意が必要なアラート",
+  "studentsTitle": "生徒",
+  "studentsAddStudent": "生徒を追加",
+  "studentsImportStudents": "生徒をインポート",
+  "studentsExportRoster": "名簿をエクスポート",
+  "studentsFirstName": "名",
+  "studentsLastName": "姓",
+  "studentsGrade": "学年",
+  "studentsProgress": "進捗",
+  "studentsLastActive": "最終アクティブ",
+  "studentsStatus": "ステータス",
+  "studentsActive": "アクティブ",
+  "studentsInactive": "非アクティブ",
+  "studentsEnrolled": "登録済み",
+  "studentsNoStudents": "生徒が見つかりません",
+  "assessmentsTitle": "評価",
+  "assessmentsCreateAssessment": "評価を作成",
+  "assessmentsAssignAssessment": "評価を割り当て",
+  "assessmentsDueDate": "期限",
+  "assessmentsSubmissions": "提出",
+  "assessmentsAverageScore": "平均スコア",
+  "assessmentsCompletion": "完了率",
+  "assessmentsInProgress": "進行中",
+  "assessmentsCompleted": "完了",
+  "assessmentsNotStarted": "未開始",
+  "assessmentsGraded": "採点済み",
+  "assessmentsPending": "保留中",
+  "billingTitle": "請求とサブスクリプション",
+  "billingCurrentPlan": "現在のプラン",
+  "billingUsage": "使用状況",
+  "billingInvoices": "請求書",
+  "billingPaymentMethod": "お支払い方法",
+  "billingChangePlan": "プランを変更",
+  "billingCancelSubscription": "サブスクリプションをキャンセル",
+  "billingNextInvoice": "次回の請求",
+  "billingBillingPeriod": "請求期間",
+  "billingActiveSeats": "アクティブ席数",
+  "billingApiCalls": "API呼び出し回数",
+  "billingAiInteractions": "AI対話回数",
+  "billingStorage": "使用済みストレージ",
+  "settingsTitle": "設定",
+  "settingsGeneral": "一般",
+  "settingsOrganization": "組織",
+  "settingsBranding": "ブランド",
+  "settingsSso": "シングルサインオン",
+  "settingsSecurity": "セキュリティ",
+  "settingsNotifications": "通知",
+  "settingsPrivacy": "プライバシー",
+  "settingsDataResidency": "データ保管場所",
+  "settingsLanguage": "言語と地域",
+  "settingsLanguagePreference": "言語設定",
+  "settingsTimezone": "タイムゾーン",
+  "settingsDateFormat": "日付形式",
+  "settingsSelectLanguage": "ご希望の言語を選択してください",
+  "settingsLanguageChanged": "言語が正常に更新されました",
+  "errorsGeneric": "問題が発生しました。もう一度お試しください。",
+  "errorsNotFound": "ページが見つかりません",
+  "errorsUnauthorized": "このページにアクセスする権限がありません",
+  "errorsForbidden": "アクセスが拒否されました",
+  "errorsServerError": "サーバーエラーが発生しました。チームに通知されました。",
+  "errorsNetworkError": "ネットワークエラーです。接続を確認してください。",
+  "errorsRateLimited": "リクエストが多すぎます。しばらくお待ちください。",
+  "errorsValidationFailed": "入力を確認してもう一度お試しください。",
+  "onboardingWelcome": "{platformName}へようこそ！",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
+    "placeholders": {
+      "platformName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLetsGetStarted": "組織をセットアップしましょう",
+  "onboardingStep": "ステップ {current} / {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingSkipStep": "このステップをスキップ",
+  "onboardingCompleteSetup": "セットアップを完了",
+  "onboardingOrganizationInfo": "組織情報",
+  "onboardingBrandingSetup": "ブランドをカスタマイズ",
+  "onboardingSsoSetup": "シングルサインオンを設定",
+  "onboardingImportStudents": "生徒をインポート",
+  "onboardingInviteStaff": "チームを招待",
+  "onboardingConfigureLearning": "学習設定を構成",
+  "onboardingReviewAndLaunch": "確認して開始",
+  "accessibilitySkipToContent": "メインコンテンツへスキップ",
+  "accessibilityOpenMenu": "メニューを開く",
+  "accessibilityCloseMenu": "メニューを閉じる",
+  "accessibilityToggleTheme": "ダークモードを切り替え",
+  "accessibilityLanguageSwitcher": "言語を変更",
+  "accessibilityNewNotifications": "{count, plural, other {#件の新しい通知}}",
+  "tutorTitle": "AIチューター",
+  "tutorSubtitle": "あらゆる教科のエキスパートチュータリング",
+  "tutorStartSession": "セッションを開始",
+  "tutorEndSession": "セッションを終了",
+  "tutorResumeSession": "セッションを再開",
+  "tutorVoiceOn": "音声オン",
+  "tutorVoiceOff": "音声オフ",
+  "tutorVoiceUnavailable": "{language}では音声が利用できません",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorVoiceUnavailableDetail": "音声は英語、スペイン語、フランス語、ポルトガル語、アラビア語などで利用可能です。",
+  "tutorVoiceFallbackNotice": "{fallbackLanguage}の音声を使用中。{nativeLanguage}の音声は近日公開！",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
+    "placeholders": {
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorTextOnlyBanner": "{name}は{language}でテキストとして応答します。音声サポートは近日公開！",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorThinking": "{name}が考えています…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorListening": "{name}が聞いています…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionWith": "{name}とのセッション",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionDuration": "セッション時間: {minutes}分",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorMessagesExchanged": "{count, plural, other {#件のメッセージ}}を交換",
+  "tutorSelectSubject": "チュータリングを始める教科を選んでください",
+  "tutorNoSessions": "まだチュータリングセッションはありません",
+  "tutorHistory": "セッション履歴",
+  "tutorSummary": "セッション概要",
+  "tutorNewSession": "新しいセッションを開始",
+  "tutorXpEarned": "{xp} XP獲得",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorChangeLanguage": "チューターの言語を変更",
+  "tutorLanguageChanged": "{name}は{language}で応答するようになりました",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSubjectsMATH": "算数",
+  "tutorSubjectsELA": "読解＆作文",
+  "tutorSubjectsSCIENCE": "理科",
+  "tutorSubjectsHISTORY": "歴史＆社会科",
+  "tutorSubjectsCODING": "プログラミング＆コンピュータサイエンス",
+  "tutorPersonasNova": "Nova 宇宙探検家",
+  "tutorPersonasSage": "Sage 語り部",
+  "tutorPersonasSpark": "Spark 科学者",
+  "tutorPersonasChrono": "Chrono タイムトラベラー",
+  "tutorPersonasPixel": "Pixel ロボット"
+}

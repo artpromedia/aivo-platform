@@ -10,6 +10,7 @@ import 'package:video_player/video_player.dart';
 import 'life_skills_models.dart';
 import 'life_skills_service.dart';
 import 'widgets/widgets.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Step by Step View - interactive step-by-step teaching view
 class StepByStepView extends StatefulWidget {
@@ -87,7 +88,7 @@ class _StepByStepViewState extends State<StepByStepView>
 
       await _loadGuidance();
     } catch (e) {
-      _showError('Could not start session: $e');
+      _showError(AppLocalizations.of(context).lifeSkillsCouldNotStartSession(e.toString()));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -211,7 +212,7 @@ class _StepByStepViewState extends State<StepByStepView>
           IconButton(
             icon: Icon(_showAIGuidance ? Icons.lightbulb : Icons.lightbulb_outline),
             onPressed: () => setState(() => _showAIGuidance = !_showAIGuidance),
-            tooltip: 'AI Help',
+            tooltip: AppLocalizations.of(context).lifeSkillsAiHelp,
           ),
         ],
         bottom: PreferredSize(
@@ -266,7 +267,7 @@ class _StepByStepViewState extends State<StepByStepView>
                 if (_showCelebration)
                   CelebrationOverlay(
                     animation: _celebrationController,
-                    message: 'Great job! 🎉',
+                    message: AppLocalizations.of(context).lifeSkillsGreatJob,
                   ),
 
                 // Loading overlay
@@ -288,7 +289,7 @@ class _StepByStepViewState extends State<StepByStepView>
         children: [
           // Step title
           Text(
-            'Step ${_currentStepIndex + 1}: ${_currentStep.instruction}',
+            AppLocalizations.of(context).lifeSkillsStepTitle(_currentStepIndex + 1, _currentStep.instruction),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -340,7 +341,7 @@ class _StepByStepViewState extends State<StepByStepView>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'What to do',
+                        AppLocalizations.of(context).lifeSkillsWhatToDo,
                         style: theme.textTheme.titleMedium,
                       ),
                     ],
@@ -373,7 +374,7 @@ class _StepByStepViewState extends State<StepByStepView>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Try this (${_currentPromptLevel.displayName})',
+                          AppLocalizations.of(context).lifeSkillsTryThis(_currentPromptLevel.displayName),
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
@@ -397,7 +398,7 @@ class _StepByStepViewState extends State<StepByStepView>
             const SizedBox(height: 16),
             ExpansionTile(
               leading: const Icon(Icons.school_outlined),
-              title: const Text('Teaching Tip'),
+              title: Text(AppLocalizations.of(context).lifeSkillsTeachingTip),
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -432,7 +433,7 @@ class _StepByStepViewState extends State<StepByStepView>
               IconButton.outlined(
                 onPressed: () => _goToStep(_currentStepIndex - 1),
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Previous step',
+                tooltip: AppLocalizations.of(context).lifeSkillsPreviousStep,
               ),
             
             const Spacer(),
@@ -441,7 +442,7 @@ class _StepByStepViewState extends State<StepByStepView>
             OutlinedButton.icon(
               onPressed: _isLoading ? null : () => _recordAttempt(false),
               icon: const Icon(Icons.refresh),
-              label: const Text('Need Help'),
+              label: Text(AppLocalizations.of(context).lifeSkillsNeedHelp),
             ),
             const SizedBox(width: 12),
 
@@ -449,7 +450,7 @@ class _StepByStepViewState extends State<StepByStepView>
             FilledButton.icon(
               onPressed: _isLoading ? null : () => _recordAttempt(true),
               icon: const Icon(Icons.check),
-              label: Text(_isLastStep ? 'Complete!' : 'I Did It!'),
+              label: Text(_isLastStep ? AppLocalizations.of(context).lifeSkillsComplete : AppLocalizations.of(context).lifeSkillsIDidIt),
             ),
           ],
         ),
@@ -655,9 +656,9 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
             children: [
               const Icon(Icons.error_outline, size: 48, color: Colors.white54),
               const SizedBox(height: 8),
-              const Text(
-                'Unable to load video',
-                style: TextStyle(color: Colors.white54),
+              Text(
+                AppLocalizations.of(context).lifeSkillsUnableToLoadVideo,
+                style: const TextStyle(color: Colors.white54),
               ),
               const SizedBox(height: 12),
               ElevatedButton.icon(
@@ -666,7 +667,7 @@ class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
                   _initializeVideoPlayer();
                 },
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(AppLocalizations.of(context).commonRetry),
               ),
             ],
           ),
@@ -767,20 +768,20 @@ class SkillCompleteDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Amazing Work!',
+              AppLocalizations.of(context).lifeSkillsAmazingWork,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'You completed "${skill.name}"!',
+              AppLocalizations.of(context).lifeSkillsYouCompleted(skill.name),
               style: theme.textTheme.bodyLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Keep practicing to become even better!',
+              AppLocalizations.of(context).lifeSkillsKeepPracticing,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
               ),
@@ -789,7 +790,7 @@ class SkillCompleteDialog extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: onContinue,
-              child: const Text('Continue'),
+              child: Text(AppLocalizations.of(context).continueButton),
             ),
           ],
         ),

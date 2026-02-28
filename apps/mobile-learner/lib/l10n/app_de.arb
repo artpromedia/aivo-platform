@@ -1,0 +1,304 @@
+{
+  "@@locale": "de",
+  "@@last_modified": "2026-02-28T11:23:03.742Z",
+  "commonLoading": "Laden...",
+  "commonSave": "Speichern",
+  "commonCancel": "Abbrechen",
+  "commonDelete": "Löschen",
+  "commonEdit": "Bearbeiten",
+  "commonCreate": "Erstellen",
+  "commonSearch": "Suchen",
+  "commonFilter": "Filtern",
+  "commonExport": "Exportieren",
+  "commonImport": "Importieren",
+  "commonBack": "Zurück",
+  "commonNext": "Weiter",
+  "commonPrevious": "Zurück",
+  "commonSubmit": "Absenden",
+  "commonConfirm": "Bestätigen",
+  "commonClose": "Schließen",
+  "commonYes": "Ja",
+  "commonNo": "Nein",
+  "commonOk": "OK",
+  "commonError": "Fehler",
+  "commonSuccess": "Erfolg",
+  "commonWarning": "Warnung",
+  "commonInfo": "Info",
+  "commonRequired": "Erforderlich",
+  "commonOptional": "Optional",
+  "commonNoResults": "Keine Ergebnisse gefunden",
+  "commonShowMore": "Mehr anzeigen",
+  "commonShowLess": "Weniger anzeigen",
+  "commonSelectAll": "Alle auswählen",
+  "commonDeselectAll": "Alle abwählen",
+  "commonRetry": "Erneut versuchen",
+  "commonRefresh": "Aktualisieren",
+  "commonLanguage": "Sprache",
+  "commonSettings": "Einstellungen",
+  "commonProfile": "Profil",
+  "commonLogout": "Abmelden",
+  "commonLogin": "Anmelden",
+  "commonSignUp": "Registrieren",
+  "authLoginTitle": "Willkommen zurück",
+  "authLoginSubtitle": "Melden Sie sich in Ihrem Konto an",
+  "authEmail": "E-Mail-Adresse",
+  "authPassword": "Passwort",
+  "authForgotPassword": "Passwort vergessen?",
+  "authResetPassword": "Passwort zurücksetzen",
+  "authNewPassword": "Neues Passwort",
+  "authConfirmPassword": "Passwort bestätigen",
+  "authRememberMe": "Angemeldet bleiben",
+  "authSsoLogin": "Mit SSO anmelden",
+  "authNoAccount": "Noch kein Konto?",
+  "authHasAccount": "Bereits ein Konto?",
+  "authInvalidCredentials": "Ungültige E-Mail oder Passwort",
+  "authAccountLocked": "Konto gesperrt. Bitte versuchen Sie es später erneut.",
+  "authSessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+  "authMfaRequired": "Geben Sie Ihren Bestätigungscode ein",
+  "authMfaCode": "Bestätigungscode",
+  "navDashboard": "Dashboard",
+  "navStudents": "Schüler",
+  "navClasses": "Klassen",
+  "navAssessments": "Bewertungen",
+  "navContent": "Inhalte",
+  "navReports": "Berichte",
+  "navAnalytics": "Analysen",
+  "navMessages": "Nachrichten",
+  "navNotifications": "Benachrichtigungen",
+  "navSettings": "Einstellungen",
+  "navHelp": "Hilfe",
+  "navBilling": "Abrechnung",
+  "navIntegrations": "Integrationen",
+  "navUsers": "Benutzer",
+  "navRoles": "Rollen",
+  "dashboardWelcome": "Willkommen, {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardOverview": "Übersicht",
+  "dashboardRecentActivity": "Letzte Aktivität",
+  "dashboardQuickActions": "Schnellaktionen",
+  "dashboardActiveStudents": "Aktive Schüler",
+  "dashboardSessionsToday": "Sitzungen Heute",
+  "dashboardAverageProgress": "Durchschnittlicher Fortschritt",
+  "dashboardAlertsRequiringAttention": "Warnungen die Aufmerksamkeit Erfordern",
+  "studentsTitle": "Schüler",
+  "studentsAddStudent": "Schüler Hinzufügen",
+  "studentsImportStudents": "Schüler Importieren",
+  "studentsExportRoster": "Liste Exportieren",
+  "studentsFirstName": "Vorname",
+  "studentsLastName": "Nachname",
+  "studentsGrade": "Klasse",
+  "studentsProgress": "Fortschritt",
+  "studentsLastActive": "Zuletzt Aktiv",
+  "studentsStatus": "Status",
+  "studentsActive": "Aktiv",
+  "studentsInactive": "Inaktiv",
+  "studentsEnrolled": "Eingeschrieben",
+  "studentsNoStudents": "Keine Schüler gefunden",
+  "assessmentsTitle": "Bewertungen",
+  "assessmentsCreateAssessment": "Bewertung Erstellen",
+  "assessmentsAssignAssessment": "Bewertung Zuweisen",
+  "assessmentsDueDate": "Fälligkeitsdatum",
+  "assessmentsSubmissions": "Abgaben",
+  "assessmentsAverageScore": "Durchschnittsnote",
+  "assessmentsCompletion": "Abschluss",
+  "assessmentsInProgress": "In Bearbeitung",
+  "assessmentsCompleted": "Abgeschlossen",
+  "assessmentsNotStarted": "Nicht Begonnen",
+  "assessmentsGraded": "Benotet",
+  "assessmentsPending": "Ausstehend",
+  "billingTitle": "Abrechnung & Abonnement",
+  "billingCurrentPlan": "Aktueller Plan",
+  "billingUsage": "Nutzung",
+  "billingInvoices": "Rechnungen",
+  "billingPaymentMethod": "Zahlungsmethode",
+  "billingChangePlan": "Plan Ändern",
+  "billingCancelSubscription": "Abonnement Kündigen",
+  "billingNextInvoice": "Nächste Rechnung",
+  "billingBillingPeriod": "Abrechnungszeitraum",
+  "billingActiveSeats": "Aktive Lizenzen",
+  "billingApiCalls": "API-Aufrufe",
+  "billingAiInteractions": "KI-Interaktionen",
+  "billingStorage": "Genutzter Speicher",
+  "settingsTitle": "Einstellungen",
+  "settingsGeneral": "Allgemein",
+  "settingsOrganization": "Organisation",
+  "settingsBranding": "Markengestaltung",
+  "settingsSso": "Einmalanmeldung",
+  "settingsSecurity": "Sicherheit",
+  "settingsNotifications": "Benachrichtigungen",
+  "settingsPrivacy": "Datenschutz",
+  "settingsDataResidency": "Datenspeicherort",
+  "settingsLanguage": "Sprache & Region",
+  "settingsLanguagePreference": "Spracheinstellung",
+  "settingsTimezone": "Zeitzone",
+  "settingsDateFormat": "Datumsformat",
+  "settingsSelectLanguage": "Wählen Sie Ihre bevorzugte Sprache",
+  "settingsLanguageChanged": "Sprache erfolgreich aktualisiert",
+  "errorsGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+  "errorsNotFound": "Seite nicht gefunden",
+  "errorsUnauthorized": "Sie haben keine Berechtigung auf diese Seite zuzugreifen",
+  "errorsForbidden": "Zugriff verweigert",
+  "errorsServerError": "Serverfehler. Unser Team wurde benachrichtigt.",
+  "errorsNetworkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+  "errorsRateLimited": "Zu viele Anfragen. Bitte warten Sie und versuchen Sie es erneut.",
+  "errorsValidationFailed": "Bitte überprüfen Sie Ihre Eingabe und versuchen Sie es erneut.",
+  "onboardingWelcome": "Willkommen bei {platformName}!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
+    "placeholders": {
+      "platformName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLetsGetStarted": "Richten wir Ihre Organisation ein",
+  "onboardingStep": "Schritt {current} von {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingSkipStep": "Diesen Schritt überspringen",
+  "onboardingCompleteSetup": "Einrichtung Abschließen",
+  "onboardingOrganizationInfo": "Organisationsinformationen",
+  "onboardingBrandingSetup": "Marke Anpassen",
+  "onboardingSsoSetup": "Einmalanmeldung Konfigurieren",
+  "onboardingImportStudents": "Schüler Importieren",
+  "onboardingInviteStaff": "Team Einladen",
+  "onboardingConfigureLearning": "Lerneinstellungen Konfigurieren",
+  "onboardingReviewAndLaunch": "Überprüfen & Starten",
+  "accessibilitySkipToContent": "Zum Hauptinhalt springen",
+  "accessibilityOpenMenu": "Menü öffnen",
+  "accessibilityCloseMenu": "Menü schließen",
+  "accessibilityToggleTheme": "Dunkelmodus umschalten",
+  "accessibilityLanguageSwitcher": "Sprache ändern",
+  "accessibilityNewNotifications": "{count, plural, one {# neue Benachrichtigung} other {# neue Benachrichtigungen}}",
+  "tutorTitle": "KI-Tutoren",
+  "tutorSubtitle": "Experten-Nachhilfe in jedem Fach",
+  "tutorStartSession": "Sitzung starten",
+  "tutorEndSession": "Sitzung beenden",
+  "tutorResumeSession": "Sitzung fortsetzen",
+  "tutorVoiceOn": "Sprache ein",
+  "tutorVoiceOff": "Sprache aus",
+  "tutorVoiceUnavailable": "Sprache nicht verfügbar auf {language}",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorVoiceUnavailableDetail": "Sprache ist verfügbar auf Englisch, Spanisch, Französisch, Portugiesisch, Arabisch und mehr.",
+  "tutorVoiceFallbackNotice": "Verwende {fallbackLanguage}-Stimme. {nativeLanguage}-Stimme kommt bald!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
+    "placeholders": {
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorTextOnlyBanner": "{name} antwortet auf {language} als Text. Sprachunterstützung kommt bald!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorThinking": "{name} denkt nach…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorListening": "{name} hört zu…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionWith": "Sitzung mit {name}",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionDuration": "Sitzungsdauer: {minutes} Minuten",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorMessagesExchanged": "{count, plural, one {# Nachricht} other {# Nachrichten}} ausgetauscht",
+  "tutorSelectSubject": "Wähle ein Fach, um mit der Nachhilfe zu beginnen",
+  "tutorNoSessions": "Noch keine Nachhilfesitzungen",
+  "tutorHistory": "Sitzungsverlauf",
+  "tutorSummary": "Sitzungszusammenfassung",
+  "tutorNewSession": "Neue Sitzung starten",
+  "tutorXpEarned": "{xp} XP verdient",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorChangeLanguage": "Tutor-Sprache ändern",
+  "tutorLanguageChanged": "{name} antwortet jetzt auf {language}",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSubjectsMATH": "Mathematik",
+  "tutorSubjectsELA": "Lesen & Schreiben",
+  "tutorSubjectsSCIENCE": "Naturwissenschaften",
+  "tutorSubjectsHISTORY": "Geschichte & Sozialkunde",
+  "tutorSubjectsCODING": "Programmieren & Informatik",
+  "tutorPersonasNova": "Nova die Weltraumforscherin",
+  "tutorPersonasSage": "Sage die Geschichtenerzählerin",
+  "tutorPersonasSpark": "Spark die Wissenschaftlerin",
+  "tutorPersonasChrono": "Chrono der Zeitreisende",
+  "tutorPersonasPixel": "Pixel der Roboter"
+}

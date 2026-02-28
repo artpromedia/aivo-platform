@@ -1,53 +1,304 @@
 {
   "@@locale": "es",
-  "@@last_modified": "2026-01-20",
-
-  "appTitle": "Aivo Estudiante",
-  "welcomeBack": "Bienvenido, {name}!",
-  "todaysPlan": "Plan de Hoy",
-  "activitiesRemaining": "{count, plural, =0{Todo completado!} =1{1 actividad restante} other{{count} actividades restantes}}",
-  "startLearning": "Comenzar a Aprender",
-  "continueLearning": "Continuar Aprendiendo",
-  "sessionComplete": "Sesion Completada!",
-  "greatJob": "Excelente trabajo!",
-  "xpEarned": "+{amount} XP",
-  "coinsEarned": "+{amount} monedas",
-  "streakDays": "{count, plural, =1{1 dia de racha} other{{count} dias de racha}}",
-  "progress": "Progreso",
-  "goals": "Metas",
-  "rewards": "Recompensas",
-  "settings": "Configuracion",
-  "profile": "Perfil",
-  "focusMode": "Modo de Enfoque",
-  "needABreak": "Necesitas un descanso?",
-  "takeBreak": "Tomar un Descanso",
-  "skipBreak": "Continuar",
-  "homeworkHelp": "Ayuda con la Tarea",
-  "scanProblem": "Escanear Problema",
-  "typeProblem": "Escribir Problema",
-  "brainTraining": "Entrenamiento Mental",
-  "playGames": "Jugar",
-  "offline": "Sin Conexion",
-  "offlineMessage": "Estas sin conexion. Algunas funciones pueden no estar disponibles.",
-  "syncing": "Sincronizando...",
-  "syncComplete": "Sincronizacion completada",
-  "errorGeneric": "Algo salio mal. Por favor intenta de nuevo.",
-  "retry": "Reintentar",
-  "cancel": "Cancelar",
-  "done": "Listo",
-  "next": "Siguiente",
-  "back": "Atras",
-  "submit": "Enviar",
-  "loading": "Cargando...",
-  "minutes": "{count, plural, =1{1 minuto} other{{count} minutos}}",
-  "accuracyPercent": "{percent}% de precision",
-  "subject_math": "Matematicas",
-  "subject_ela": "Ingles",
-  "subject_science": "Ciencias",
-  "subject_socialStudies": "Estudios Sociales",
-  "accessibilitySettings": "Configuracion de Accesibilidad",
-  "textSize": "Tamano del Texto",
-  "highContrast": "Alto Contraste",
-  "readAloud": "Leer en Voz Alta",
-  "reducedMotion": "Movimiento Reducido"
+  "@@last_modified": "2026-02-28T11:23:03.746Z",
+  "commonLoading": "Cargando...",
+  "commonSave": "Guardar",
+  "commonCancel": "Cancelar",
+  "commonDelete": "Eliminar",
+  "commonEdit": "Editar",
+  "commonCreate": "Crear",
+  "commonSearch": "Buscar",
+  "commonFilter": "Filtrar",
+  "commonExport": "Exportar",
+  "commonImport": "Importar",
+  "commonBack": "Atrás",
+  "commonNext": "Siguiente",
+  "commonPrevious": "Anterior",
+  "commonSubmit": "Enviar",
+  "commonConfirm": "Confirmar",
+  "commonClose": "Cerrar",
+  "commonYes": "Sí",
+  "commonNo": "No",
+  "commonOk": "Aceptar",
+  "commonError": "Error",
+  "commonSuccess": "Éxito",
+  "commonWarning": "Advertencia",
+  "commonInfo": "Información",
+  "commonRequired": "Obligatorio",
+  "commonOptional": "Opcional",
+  "commonNoResults": "No se encontraron resultados",
+  "commonShowMore": "Mostrar más",
+  "commonShowLess": "Mostrar menos",
+  "commonSelectAll": "Seleccionar todo",
+  "commonDeselectAll": "Deseleccionar todo",
+  "commonRetry": "Reintentar",
+  "commonRefresh": "Actualizar",
+  "commonLanguage": "Idioma",
+  "commonSettings": "Configuración",
+  "commonProfile": "Perfil",
+  "commonLogout": "Cerrar sesión",
+  "commonLogin": "Iniciar sesión",
+  "commonSignUp": "Registrarse",
+  "authLoginTitle": "Bienvenido de nuevo",
+  "authLoginSubtitle": "Inicia sesión en tu cuenta",
+  "authEmail": "Correo electrónico",
+  "authPassword": "Contraseña",
+  "authForgotPassword": "¿Olvidaste tu contraseña?",
+  "authResetPassword": "Restablecer contraseña",
+  "authNewPassword": "Nueva contraseña",
+  "authConfirmPassword": "Confirmar contraseña",
+  "authRememberMe": "Recordarme",
+  "authSsoLogin": "Iniciar sesión con SSO",
+  "authNoAccount": "¿No tienes una cuenta?",
+  "authHasAccount": "¿Ya tienes una cuenta?",
+  "authInvalidCredentials": "Correo o contraseña inválidos",
+  "authAccountLocked": "Cuenta bloqueada. Intenta de nuevo más tarde.",
+  "authSessionExpired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
+  "authMfaRequired": "Ingresa tu código de verificación",
+  "authMfaCode": "Código de verificación",
+  "navDashboard": "Panel",
+  "navStudents": "Estudiantes",
+  "navClasses": "Clases",
+  "navAssessments": "Evaluaciones",
+  "navContent": "Contenido",
+  "navReports": "Informes",
+  "navAnalytics": "Analíticas",
+  "navMessages": "Mensajes",
+  "navNotifications": "Notificaciones",
+  "navSettings": "Configuración",
+  "navHelp": "Ayuda",
+  "navBilling": "Facturación",
+  "navIntegrations": "Integraciones",
+  "navUsers": "Usuarios",
+  "navRoles": "Roles",
+  "dashboardWelcome": "Bienvenido, {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardOverview": "Resumen",
+  "dashboardRecentActivity": "Actividad Reciente",
+  "dashboardQuickActions": "Acciones Rápidas",
+  "dashboardActiveStudents": "Estudiantes Activos",
+  "dashboardSessionsToday": "Sesiones Hoy",
+  "dashboardAverageProgress": "Progreso Promedio",
+  "dashboardAlertsRequiringAttention": "Alertas que Requieren Atención",
+  "studentsTitle": "Estudiantes",
+  "studentsAddStudent": "Agregar Estudiante",
+  "studentsImportStudents": "Importar Estudiantes",
+  "studentsExportRoster": "Exportar Lista",
+  "studentsFirstName": "Nombre",
+  "studentsLastName": "Apellido",
+  "studentsGrade": "Grado",
+  "studentsProgress": "Progreso",
+  "studentsLastActive": "Última Actividad",
+  "studentsStatus": "Estado",
+  "studentsActive": "Activo",
+  "studentsInactive": "Inactivo",
+  "studentsEnrolled": "Inscrito",
+  "studentsNoStudents": "No se encontraron estudiantes",
+  "assessmentsTitle": "Evaluaciones",
+  "assessmentsCreateAssessment": "Crear Evaluación",
+  "assessmentsAssignAssessment": "Asignar Evaluación",
+  "assessmentsDueDate": "Fecha de Entrega",
+  "assessmentsSubmissions": "Entregas",
+  "assessmentsAverageScore": "Puntaje Promedio",
+  "assessmentsCompletion": "Completado",
+  "assessmentsInProgress": "En Progreso",
+  "assessmentsCompleted": "Completado",
+  "assessmentsNotStarted": "No Iniciado",
+  "assessmentsGraded": "Calificado",
+  "assessmentsPending": "Pendiente",
+  "billingTitle": "Facturación y Suscripción",
+  "billingCurrentPlan": "Plan Actual",
+  "billingUsage": "Uso",
+  "billingInvoices": "Facturas",
+  "billingPaymentMethod": "Método de Pago",
+  "billingChangePlan": "Cambiar Plan",
+  "billingCancelSubscription": "Cancelar Suscripción",
+  "billingNextInvoice": "Próxima Factura",
+  "billingBillingPeriod": "Período de Facturación",
+  "billingActiveSeats": "Licencias Activas",
+  "billingApiCalls": "Llamadas API",
+  "billingAiInteractions": "Interacciones IA",
+  "billingStorage": "Almacenamiento Usado",
+  "settingsTitle": "Configuración",
+  "settingsGeneral": "General",
+  "settingsOrganization": "Organización",
+  "settingsBranding": "Marca",
+  "settingsSso": "Inicio de Sesión Único",
+  "settingsSecurity": "Seguridad",
+  "settingsNotifications": "Notificaciones",
+  "settingsPrivacy": "Privacidad",
+  "settingsDataResidency": "Residencia de Datos",
+  "settingsLanguage": "Idioma y Región",
+  "settingsLanguagePreference": "Preferencia de Idioma",
+  "settingsTimezone": "Zona Horaria",
+  "settingsDateFormat": "Formato de Fecha",
+  "settingsSelectLanguage": "Selecciona tu idioma preferido",
+  "settingsLanguageChanged": "Idioma actualizado correctamente",
+  "errorsGeneric": "Algo salió mal. Por favor, inténtalo de nuevo.",
+  "errorsNotFound": "Página no encontrada",
+  "errorsUnauthorized": "No tienes permiso para acceder a esta página",
+  "errorsForbidden": "Acceso denegado",
+  "errorsServerError": "Error del servidor. Nuestro equipo ha sido notificado.",
+  "errorsNetworkError": "Error de red. Verifica tu conexión.",
+  "errorsRateLimited": "Demasiadas solicitudes. Espera e inténtalo de nuevo.",
+  "errorsValidationFailed": "Revisa tus datos e inténtalo de nuevo.",
+  "onboardingWelcome": "¡Bienvenido a {platformName}!",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
+    "placeholders": {
+      "platformName": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingLetsGetStarted": "Configuremos tu organización",
+  "onboardingStep": "Paso {current} de {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingSkipStep": "Omitir este paso",
+  "onboardingCompleteSetup": "Completar Configuración",
+  "onboardingOrganizationInfo": "Información de la Organización",
+  "onboardingBrandingSetup": "Personaliza tu Marca",
+  "onboardingSsoSetup": "Configura Inicio de Sesión Único",
+  "onboardingImportStudents": "Importa tus Estudiantes",
+  "onboardingInviteStaff": "Invita a tu Equipo",
+  "onboardingConfigureLearning": "Configura el Aprendizaje",
+  "onboardingReviewAndLaunch": "Revisar y Lanzar",
+  "accessibilitySkipToContent": "Saltar al contenido principal",
+  "accessibilityOpenMenu": "Abrir menú",
+  "accessibilityCloseMenu": "Cerrar menú",
+  "accessibilityToggleTheme": "Cambiar modo oscuro",
+  "accessibilityLanguageSwitcher": "Cambiar idioma",
+  "accessibilityNewNotifications": "{count, plural, one {# nueva notificación} other {# nuevas notificaciones}}",
+  "tutorTitle": "Tutores IA",
+  "tutorSubtitle": "Tutoría experta en cada materia",
+  "tutorStartSession": "Iniciar Sesión",
+  "tutorEndSession": "Terminar Sesión",
+  "tutorResumeSession": "Reanudar Sesión",
+  "tutorVoiceOn": "Voz Activada",
+  "tutorVoiceOff": "Voz Desactivada",
+  "tutorVoiceUnavailable": "Voz no disponible en {language}",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorVoiceUnavailableDetail": "La voz está disponible en inglés, español, francés, portugués, árabe y más.",
+  "tutorVoiceFallbackNotice": "Usando voz en {fallbackLanguage}. ¡La voz en {nativeLanguage} estará disponible pronto!",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
+    "placeholders": {
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorTextOnlyBanner": "{name} responderá en {language} como texto. ¡Soporte de voz próximamente!",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorThinking": "{name} está pensando…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorListening": "{name} está escuchando…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionWith": "Sesión con {name}",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSessionDuration": "Duración de la sesión: {minutes} minutos",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorMessagesExchanged": "{count, plural, one {# mensaje} other {# mensajes}} intercambiados",
+  "tutorSelectSubject": "Elige una materia para comenzar la tutoría",
+  "tutorNoSessions": "Aún no hay sesiones de tutoría",
+  "tutorHistory": "Historial de Sesiones",
+  "tutorSummary": "Resumen de Sesión",
+  "tutorNewSession": "Nueva Sesión",
+  "tutorXpEarned": "{xp} XP ganados",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorChangeLanguage": "Cambiar idioma del tutor",
+  "tutorLanguageChanged": "{name} ahora responderá en {language}",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "tutorSubjectsMATH": "Matemáticas",
+  "tutorSubjectsELA": "Lectura y Escritura",
+  "tutorSubjectsSCIENCE": "Ciencias",
+  "tutorSubjectsHISTORY": "Historia y Estudios Sociales",
+  "tutorSubjectsCODING": "Programación e Informática",
+  "tutorPersonasNova": "Nova la Exploradora Espacial",
+  "tutorPersonasSage": "Sage la Cuentacuentos",
+  "tutorPersonasSpark": "Spark la Científica",
+  "tutorPersonasChrono": "Chrono el Viajero del Tiempo",
+  "tutorPersonasPixel": "Pixel el Robot"
 }

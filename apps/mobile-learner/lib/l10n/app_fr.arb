@@ -1,281 +1,304 @@
 {
   "@@locale": "fr",
-  "@@last_modified": "2026-01-20",
-
-  "appTitle": "Aivo Apprenant",
-  "@appTitle": {
-    "description": "The title of the application"
-  },
-
-  "welcomeBack": "Content de te revoir, {name} !",
-  "@welcomeBack": {
-    "description": "Welcome message with learner's name",
+  "@@last_modified": "2026-02-28T11:23:03.747Z",
+  "commonLoading": "Chargement...",
+  "commonSave": "Enregistrer",
+  "commonCancel": "Annuler",
+  "commonDelete": "Supprimer",
+  "commonEdit": "Modifier",
+  "commonCreate": "Créer",
+  "commonSearch": "Rechercher",
+  "commonFilter": "Filtrer",
+  "commonExport": "Exporter",
+  "commonImport": "Importer",
+  "commonBack": "Retour",
+  "commonNext": "Suivant",
+  "commonPrevious": "Précédent",
+  "commonSubmit": "Soumettre",
+  "commonConfirm": "Confirmer",
+  "commonClose": "Fermer",
+  "commonYes": "Oui",
+  "commonNo": "Non",
+  "commonOk": "OK",
+  "commonError": "Erreur",
+  "commonSuccess": "Succès",
+  "commonWarning": "Avertissement",
+  "commonInfo": "Info",
+  "commonRequired": "Obligatoire",
+  "commonOptional": "Optionnel",
+  "commonNoResults": "Aucun résultat trouvé",
+  "commonShowMore": "Afficher plus",
+  "commonShowLess": "Afficher moins",
+  "commonSelectAll": "Tout sélectionner",
+  "commonDeselectAll": "Tout désélectionner",
+  "commonRetry": "Réessayer",
+  "commonRefresh": "Actualiser",
+  "commonLanguage": "Langue",
+  "commonSettings": "Paramètres",
+  "commonProfile": "Profil",
+  "commonLogout": "Se déconnecter",
+  "commonLogin": "Se connecter",
+  "commonSignUp": "S'inscrire",
+  "authLoginTitle": "Bienvenue",
+  "authLoginSubtitle": "Connectez-vous à votre compte",
+  "authEmail": "Adresse e-mail",
+  "authPassword": "Mot de passe",
+  "authForgotPassword": "Mot de passe oublié ?",
+  "authResetPassword": "Réinitialiser le mot de passe",
+  "authNewPassword": "Nouveau mot de passe",
+  "authConfirmPassword": "Confirmer le mot de passe",
+  "authRememberMe": "Se souvenir de moi",
+  "authSsoLogin": "Se connecter avec SSO",
+  "authNoAccount": "Vous n'avez pas de compte ?",
+  "authHasAccount": "Vous avez déjà un compte ?",
+  "authInvalidCredentials": "E-mail ou mot de passe invalide",
+  "authAccountLocked": "Compte verrouillé. Veuillez réessayer plus tard.",
+  "authSessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+  "authMfaRequired": "Entrez votre code de vérification",
+  "authMfaCode": "Code de vérification",
+  "navDashboard": "Tableau de bord",
+  "navStudents": "Élèves",
+  "navClasses": "Classes",
+  "navAssessments": "Évaluations",
+  "navContent": "Contenu",
+  "navReports": "Rapports",
+  "navAnalytics": "Analytiques",
+  "navMessages": "Messages",
+  "navNotifications": "Notifications",
+  "navSettings": "Paramètres",
+  "navHelp": "Aide",
+  "navBilling": "Facturation",
+  "navIntegrations": "Intégrations",
+  "navUsers": "Utilisateurs",
+  "navRoles": "Rôles",
+  "dashboardWelcome": "Bienvenue, {name}",
+  "@dashboardWelcome": {
+    "description": "dashboardWelcome",
     "placeholders": {
       "name": {
-        "type": "String",
-        "example": "Alex"
+        "type": "String"
       }
     }
   },
-
-  "todaysPlan": "Plan du jour",
-  "@todaysPlan": {
-    "description": "Title for today's learning plan"
-  },
-
-  "activitiesRemaining": "{count, plural, =0{Tout est fait !} =1{1 activité restante} other{{count} activités restantes}}",
-  "@activitiesRemaining": {
-    "description": "Number of activities remaining today",
+  "dashboardOverview": "Aperçu",
+  "dashboardRecentActivity": "Activité Récente",
+  "dashboardQuickActions": "Actions Rapides",
+  "dashboardActiveStudents": "Élèves Actifs",
+  "dashboardSessionsToday": "Sessions Aujourd'hui",
+  "dashboardAverageProgress": "Progrès Moyen",
+  "dashboardAlertsRequiringAttention": "Alertes Nécessitant Attention",
+  "studentsTitle": "Élèves",
+  "studentsAddStudent": "Ajouter un Élève",
+  "studentsImportStudents": "Importer des Élèves",
+  "studentsExportRoster": "Exporter la Liste",
+  "studentsFirstName": "Prénom",
+  "studentsLastName": "Nom",
+  "studentsGrade": "Niveau",
+  "studentsProgress": "Progrès",
+  "studentsLastActive": "Dernière Activité",
+  "studentsStatus": "Statut",
+  "studentsActive": "Actif",
+  "studentsInactive": "Inactif",
+  "studentsEnrolled": "Inscrit",
+  "studentsNoStudents": "Aucun élève trouvé",
+  "assessmentsTitle": "Évaluations",
+  "assessmentsCreateAssessment": "Créer une Évaluation",
+  "assessmentsAssignAssessment": "Assigner une Évaluation",
+  "assessmentsDueDate": "Date Limite",
+  "assessmentsSubmissions": "Soumissions",
+  "assessmentsAverageScore": "Score Moyen",
+  "assessmentsCompletion": "Achèvement",
+  "assessmentsInProgress": "En Cours",
+  "assessmentsCompleted": "Terminé",
+  "assessmentsNotStarted": "Non Commencé",
+  "assessmentsGraded": "Noté",
+  "assessmentsPending": "En Attente",
+  "billingTitle": "Facturation et Abonnement",
+  "billingCurrentPlan": "Plan Actuel",
+  "billingUsage": "Utilisation",
+  "billingInvoices": "Factures",
+  "billingPaymentMethod": "Moyen de Paiement",
+  "billingChangePlan": "Changer de Plan",
+  "billingCancelSubscription": "Annuler l'Abonnement",
+  "billingNextInvoice": "Prochaine Facture",
+  "billingBillingPeriod": "Période de Facturation",
+  "billingActiveSeats": "Licences Actives",
+  "billingApiCalls": "Appels API",
+  "billingAiInteractions": "Interactions IA",
+  "billingStorage": "Stockage Utilisé",
+  "settingsTitle": "Paramètres",
+  "settingsGeneral": "Général",
+  "settingsOrganization": "Organisation",
+  "settingsBranding": "Image de Marque",
+  "settingsSso": "Authentification Unique",
+  "settingsSecurity": "Sécurité",
+  "settingsNotifications": "Notifications",
+  "settingsPrivacy": "Confidentialité",
+  "settingsDataResidency": "Résidence des Données",
+  "settingsLanguage": "Langue et Région",
+  "settingsLanguagePreference": "Préférence de Langue",
+  "settingsTimezone": "Fuseau Horaire",
+  "settingsDateFormat": "Format de Date",
+  "settingsSelectLanguage": "Sélectionnez votre langue préférée",
+  "settingsLanguageChanged": "Langue mise à jour avec succès",
+  "errorsGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+  "errorsNotFound": "Page non trouvée",
+  "errorsUnauthorized": "Vous n'avez pas la permission d'accéder à cette page",
+  "errorsForbidden": "Accès refusé",
+  "errorsServerError": "Erreur du serveur. Notre équipe a été notifiée.",
+  "errorsNetworkError": "Erreur réseau. Vérifiez votre connexion.",
+  "errorsRateLimited": "Trop de requêtes. Veuillez patienter et réessayer.",
+  "errorsValidationFailed": "Veuillez vérifier vos données et réessayer.",
+  "onboardingWelcome": "Bienvenue sur {platformName} !",
+  "@onboardingWelcome": {
+    "description": "onboardingWelcome",
     "placeholders": {
-      "count": {
-        "type": "int",
-        "format": "compact"
+      "platformName": {
+        "type": "String"
       }
     }
   },
-
-  "startLearning": "Commencer à apprendre",
-  "@startLearning": {
-    "description": "Button to start learning session"
-  },
-
-  "continueLearning": "Continuer à apprendre",
-  "@continueLearning": {
-    "description": "Button to continue learning session"
-  },
-
-  "sessionComplete": "Session terminée !",
-  "@sessionComplete": {
-    "description": "Title when session is finished"
-  },
-
-  "greatJob": "Excellent travail !",
-  "@greatJob": {
-    "description": "Congratulatory message"
-  },
-
-  "xpEarned": "+{amount} XP",
-  "@xpEarned": {
-    "description": "XP points earned",
+  "onboardingLetsGetStarted": "Configurons votre organisation",
+  "onboardingStep": "Étape {current} sur {total}",
+  "@onboardingStep": {
+    "description": "onboardingStep",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
       }
     }
   },
-
-  "coinsEarned": "+{amount} pièces",
-  "@coinsEarned": {
-    "description": "Coins earned",
+  "onboardingSkipStep": "Passer cette étape",
+  "onboardingCompleteSetup": "Terminer la Configuration",
+  "onboardingOrganizationInfo": "Informations sur l'Organisation",
+  "onboardingBrandingSetup": "Personnalisez Votre Image",
+  "onboardingSsoSetup": "Configurer l'Authentification Unique",
+  "onboardingImportStudents": "Importez Vos Élèves",
+  "onboardingInviteStaff": "Invitez Votre Équipe",
+  "onboardingConfigureLearning": "Configurer les Paramètres d'Apprentissage",
+  "onboardingReviewAndLaunch": "Vérifier et Lancer",
+  "accessibilitySkipToContent": "Aller au contenu principal",
+  "accessibilityOpenMenu": "Ouvrir le menu",
+  "accessibilityCloseMenu": "Fermer le menu",
+  "accessibilityToggleTheme": "Basculer le mode sombre",
+  "accessibilityLanguageSwitcher": "Changer de langue",
+  "accessibilityNewNotifications": "{count, plural, one {# nouvelle notification} other {# nouvelles notifications}}",
+  "tutorTitle": "Tuteurs IA",
+  "tutorSubtitle": "Tutorat expert dans chaque matière",
+  "tutorStartSession": "Commencer la Session",
+  "tutorEndSession": "Terminer la Session",
+  "tutorResumeSession": "Reprendre la Session",
+  "tutorVoiceOn": "Voix Activée",
+  "tutorVoiceOff": "Voix Désactivée",
+  "tutorVoiceUnavailable": "Voix non disponible en {language}",
+  "@tutorVoiceUnavailable": {
+    "description": "tutorVoiceUnavailable",
     "placeholders": {
-      "amount": {
-        "type": "int"
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "streakDays": "{count, plural, =1{Série de 1 jour} other{Série de {count} jours}}",
-  "@streakDays": {
-    "description": "Learning streak in days",
+  "tutorVoiceUnavailableDetail": "La voix est disponible en anglais, espagnol, français, portugais, arabe et plus.",
+  "tutorVoiceFallbackNotice": "Utilisation de la voix en {fallbackLanguage}. La voix en {nativeLanguage} arrive bientôt !",
+  "@tutorVoiceFallbackNotice": {
+    "description": "tutorVoiceFallbackNotice",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "fallbackLanguage": {
+        "type": "String"
+      },
+      "nativeLanguage": {
+        "type": "String"
       }
     }
   },
-
-  "progress": "Progression",
-  "@progress": {
-    "description": "Progress section title"
-  },
-
-  "goals": "Objectifs",
-  "@goals": {
-    "description": "Goals section title"
-  },
-
-  "rewards": "Récompenses",
-  "@rewards": {
-    "description": "Rewards section title"
-  },
-
-  "settings": "Paramètres",
-  "@settings": {
-    "description": "Settings section title"
-  },
-
-  "profile": "Profil",
-  "@profile": {
-    "description": "Profile section title"
-  },
-
-  "focusMode": "Mode concentration",
-  "@focusMode": {
-    "description": "Focus mode feature"
-  },
-
-  "needABreak": "Besoin d'une pause ?",
-  "@needABreak": {
-    "description": "Question for break suggestion"
-  },
-
-  "takeBreak": "Faire une pause",
-  "@takeBreak": {
-    "description": "Button to take a break"
-  },
-
-  "skipBreak": "Continuer",
-  "@skipBreak": {
-    "description": "Button to skip break"
-  },
-
-  "homeworkHelp": "Aide aux devoirs",
-  "@homeworkHelp": {
-    "description": "Homework helper feature"
-  },
-
-  "scanProblem": "Scanner le problème",
-  "@scanProblem": {
-    "description": "Button to scan homework problem"
-  },
-
-  "typeProblem": "Taper le problème",
-  "@typeProblem": {
-    "description": "Button to type homework problem"
-  },
-
-  "brainTraining": "Entraînement cérébral",
-  "@brainTraining": {
-    "description": "Brain training games section"
-  },
-
-  "playGames": "Jouer",
-  "@playGames": {
-    "description": "Button to play educational games"
-  },
-
-  "offline": "Hors ligne",
-  "@offline": {
-    "description": "Offline mode indicator"
-  },
-
-  "offlineMessage": "Vous êtes hors ligne. Certaines fonctionnalités peuvent ne pas être disponibles.",
-  "@offlineMessage": {
-    "description": "Message shown when offline"
-  },
-
-  "syncing": "Synchronisation...",
-  "@syncing": {
-    "description": "Syncing status message"
-  },
-
-  "syncComplete": "Synchronisation terminée",
-  "@syncComplete": {
-    "description": "Sync completed message"
-  },
-
-  "errorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
-  "@errorGeneric": {
-    "description": "Generic error message"
-  },
-
-  "retry": "Réessayer",
-  "@retry": {
-    "description": "Retry button text"
-  },
-
-  "cancel": "Annuler",
-  "@cancel": {
-    "description": "Cancel button text"
-  },
-
-  "done": "Terminé",
-  "@done": {
-    "description": "Done button text"
-  },
-
-  "next": "Suivant",
-  "@next": {
-    "description": "Next button text"
-  },
-
-  "back": "Retour",
-  "@back": {
-    "description": "Back button text"
-  },
-
-  "submit": "Soumettre",
-  "@submit": {
-    "description": "Submit button text"
-  },
-
-  "loading": "Chargement...",
-  "@loading": {
-    "description": "Loading indicator text"
-  },
-
-  "minutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
-  "@minutes": {
-    "description": "Duration in minutes",
+  "tutorTextOnlyBanner": "{name} répondra en {language} sous forme de texte. Support vocal bientôt !",
+  "@tutorTextOnlyBanner": {
+    "description": "tutorTextOnlyBanner",
     "placeholders": {
-      "count": {
-        "type": "int"
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
       }
     }
   },
-
-  "accuracyPercent": "{percent}% de précision",
-  "@accuracyPercent": {
-    "description": "Accuracy percentage",
+  "tutorThinking": "{name} réfléchit…",
+  "@tutorThinking": {
+    "description": "tutorThinking",
     "placeholders": {
-      "percent": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-
-  "subject_math": "Mathématiques",
-  "@subject_math": {
-    "description": "Math subject name"
+  "tutorListening": "{name} écoute…",
+  "@tutorListening": {
+    "description": "tutorListening",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_ela": "Français",
-  "@subject_ela": {
-    "description": "French Language Arts subject name"
+  "tutorSessionWith": "Session avec {name}",
+  "@tutorSessionWith": {
+    "description": "tutorSessionWith",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_science": "Sciences",
-  "@subject_science": {
-    "description": "Science subject name"
+  "tutorSessionDuration": "Durée de la session : {minutes} minutes",
+  "@tutorSessionDuration": {
+    "description": "tutorSessionDuration",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
   },
-
-  "subject_socialStudies": "Histoire-Géographie",
-  "@subject_socialStudies": {
-    "description": "Social Studies subject name"
+  "tutorMessagesExchanged": "{count, plural, one {# message} other {# messages}} échangés",
+  "tutorSelectSubject": "Choisissez une matière pour commencer le tutorat",
+  "tutorNoSessions": "Aucune session de tutorat pour le moment",
+  "tutorHistory": "Historique des Sessions",
+  "tutorSummary": "Résumé de Session",
+  "tutorNewSession": "Nouvelle Session",
+  "tutorXpEarned": "{xp} XP gagnés",
+  "@tutorXpEarned": {
+    "description": "tutorXpEarned",
+    "placeholders": {
+      "xp": {
+        "type": "String"
+      }
+    }
   },
-
-  "accessibilitySettings": "Paramètres d'accessibilité",
-  "@accessibilitySettings": {
-    "description": "Accessibility settings title"
+  "tutorChangeLanguage": "Changer la langue du tuteur",
+  "tutorLanguageChanged": "{name} répondra maintenant en {language}",
+  "@tutorLanguageChanged": {
+    "description": "tutorLanguageChanged",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   },
-
-  "textSize": "Taille du texte",
-  "@textSize": {
-    "description": "Text size setting"
-  },
-
-  "highContrast": "Contraste élevé",
-  "@highContrast": {
-    "description": "High contrast mode setting"
-  },
-
-  "readAloud": "Lecture à voix haute",
-  "@readAloud": {
-    "description": "Read aloud / TTS setting"
-  },
-
-  "reducedMotion": "Mouvements réduits",
-  "@reducedMotion": {
-    "description": "Reduced motion setting"
-  }
+  "tutorSubjectsMATH": "Mathématiques",
+  "tutorSubjectsELA": "Lecture et Écriture",
+  "tutorSubjectsSCIENCE": "Sciences",
+  "tutorSubjectsHISTORY": "Histoire et Sciences Sociales",
+  "tutorSubjectsCODING": "Programmation et Informatique",
+  "tutorPersonasNova": "Nova l'Exploratrice Spatiale",
+  "tutorPersonasSage": "Sage la Conteuse",
+  "tutorPersonasSpark": "Spark la Scientifique",
+  "tutorPersonasChrono": "Chrono le Voyageur du Temps",
+  "tutorPersonasPixel": "Pixel le Robot"
 }
