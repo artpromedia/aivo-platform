@@ -33,6 +33,8 @@ interface HeaderProps {
 export function Header({ title, className }: HeaderProps) {
   const { userName, userInitials, userRole, userEmail } = useAuth();
   const { unreadCount } = useUnreadCount();
+  const router = useRouter();
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
@@ -55,11 +57,22 @@ export function Header({ title, className }: HeaderProps) {
     };
   }, []);
 
+  // ⌘K / Ctrl+K keyboard shortcut — focus search input
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigate to search results page with query
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -92,6 +105,7 @@ export function Header({ title, className }: HeaderProps) {
             />
           </svg>
           <input
+            ref={searchInputRef}
             type="search"
             value={searchQuery}
             onChange={(e) => {
