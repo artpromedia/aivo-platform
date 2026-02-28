@@ -54,6 +54,8 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
   bool _isLookingUpDomain = false;
   TenantSsoInfo? _tenantSsoInfo;
   SupportedLocale _selectedLocale = SupportedLocale.en;
+  bool _isResendingVerification = false;
+  String? _resendMessage;
 
   @override
   void dispose() {
@@ -75,6 +77,33 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
     if (success && mounted) {
       localeManager.changeLocale(_selectedLocale);
       context.go('/classes');
+    }
+  }
+
+  Future<void> _resendVerification() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+
+    setState(() {
+      _isResendingVerification = true;
+      _resendMessage = null;
+    });
+
+    try {
+      final apiClient = AivoApiClient.instance;
+      await apiClient.post('/auth/resend-verification', data: {'email': email});
+
+      if (!mounted) return;
+      setState(() {
+        _isResendingVerification = false;
+        _resendMessage = 'Verification email sent! Check your inbox.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isResendingVerification = false;
+        _resendMessage = 'Failed to resend. Please try again later.';
+      });
     }
   }
 
@@ -380,6 +409,85 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
                       style: TextStyle(
                         color: colorScheme.onErrorContainer,
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Email verification required banner
+        if (authState.isEmailUnverified) ...[
+          Semantics(
+            liveRegion: true,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.mark_email_unread_outlined,
+                        color: Colors.amber.shade800,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Email verification required',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please verify your email address before signing in. Check your inbox for a verification link.',
+                    style: TextStyle(
+                      color: Colors.amber.shade800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (_resendMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        _resendMessage!,
+                        style: TextStyle(
+                          color: _resendMessage!.contains('sent')
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  TextButton.icon(
+                    onPressed: _isResendingVerification ? null : _resendVerification,
+                    icon: _isResendingVerification
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send, size: 16),
+                    label: Text(
+                      _isResendingVerification
+                          ? 'Sending...'
+                          : 'Resend verification email',
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.amber.shade900,
                     ),
                   ),
                 ],

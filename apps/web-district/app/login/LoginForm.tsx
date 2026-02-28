@@ -20,6 +20,8 @@ export function LoginForm() {
   const [ssoProviders, setSsoProviders] = useState<SsoProvider[]>([]);
   const [ssoLoading, setSsoLoading] = useState<string | null>(null);
   const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   // Check for SSO error in URL params
   useEffect(() => {
@@ -50,6 +52,8 @@ export function LoginForm() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setEmailNotVerified(false);
+    setResendStatus('idle');
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -57,7 +61,12 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string; canResend?: boolean };
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          setEmailNotVerified(true);
+          setLoading(false);
+          return;
+        }
         setError(data.error ?? 'Login failed');
         setLoading(false);
         return;
@@ -136,6 +145,25 @@ export function LoginForm() {
   };
 
   const hasSsoProviders = ssoProviders.length > 0;
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending');
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        setResendStatus('error');
+        return;
+      }
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -218,6 +246,28 @@ export function LoginForm() {
               required
             />
           </div>
+          {emailNotVerified && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-medium text-amber-800">Email verification required</p>
+              <p className="mt-1 text-sm text-amber-700">
+                Please verify your email address before signing in. Check your inbox for a verification link.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendStatus === 'sending' || resendStatus === 'sent'}
+                className="mt-2 text-sm font-medium text-amber-700 underline hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resendStatus === 'sending'
+                  ? 'Sending...'
+                  : resendStatus === 'sent'
+                    ? 'Verification email sent ✓'
+                    : resendStatus === 'error'
+                      ? 'Failed to send — try again'
+                      : 'Resend verification email'}
+              </button>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"

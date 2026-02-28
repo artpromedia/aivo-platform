@@ -26,6 +26,8 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +39,8 @@ function LoginForm() {
     }
 
     setIsLoading(true);
+    setEmailNotVerified(false);
+    setResendStatus('idle');
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -45,9 +49,14 @@ function LoginForm() {
         body: JSON.stringify({ email, password, rememberMe }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as { error?: string; code?: string; canResend?: boolean };
 
       if (!res.ok) {
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          setEmailNotVerified(true);
+          setError(null);
+          return;
+        }
         throw new Error(data.error ?? 'Invalid email or password.');
       }
 
@@ -65,6 +74,25 @@ function LoginForm() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const callbackUrl = `${window.location.origin}/api/auth/callback`;
     window.location.href = `${apiUrl}/auth/sso/google?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+  };
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending');
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        setResendStatus('error');
+        return;
+      }
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
   };
 
   return (
@@ -91,6 +119,37 @@ function LoginForm() {
           {/* Error */}
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          )}
+
+          {/* Email Not Verified Banner */}
+          {emailNotVerified && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-800">Email verification required</p>
+                  <p className="mt-1 text-sm text-amber-700">
+                    Please verify your email address before signing in. Check your inbox for a verification link.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendStatus === 'sending' || resendStatus === 'sent'}
+                    className="mt-2 text-sm font-medium text-amber-700 underline hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {resendStatus === 'sending'
+                      ? 'Sending...'
+                      : resendStatus === 'sent'
+                        ? 'Verification email sent ✓'
+                        : resendStatus === 'error'
+                          ? 'Failed to send — try again'
+                          : 'Resend verification email'}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Google SSO */}

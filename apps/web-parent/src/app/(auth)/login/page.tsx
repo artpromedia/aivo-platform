@@ -23,6 +23,8 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -31,6 +33,25 @@ function LoginContent() {
       [name]: type === 'checkbox' ? checked : value,
     }));
     setError(null);
+  };
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending');
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      if (!res.ok) {
+        setResendStatus('error');
+        return;
+      }
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +64,8 @@ function LoginContent() {
     }
 
     setIsLoading(true);
+    setEmailNotVerified(false);
+    setResendStatus('idle');
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -58,7 +81,12 @@ function LoginContent() {
       });
 
       if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
+        const data = (await response.json()) as { error?: string; code?: string; canResend?: boolean };
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          setEmailNotVerified(true);
+          setError(null);
+          return;
+        }
         throw new Error(data.error ?? 'Invalid email or password');
       }
 
@@ -160,6 +188,37 @@ function LoginContent() {
 
       {/* Error Message */}
       {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+      {/* Email Not Verified Banner */}
+      {emailNotVerified && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">Email verification required</p>
+              <p className="mt-1 text-sm text-amber-700">
+                Please verify your email address before signing in. Check your inbox for a verification link.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendStatus === 'sending' || resendStatus === 'sent'}
+                className="mt-2 text-sm font-medium text-amber-700 underline hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resendStatus === 'sending'
+                  ? 'Sending...'
+                  : resendStatus === 'sent'
+                    ? 'Verification email sent ✓'
+                    : resendStatus === 'error'
+                      ? 'Failed to send — try again'
+                      : 'Resend verification email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">

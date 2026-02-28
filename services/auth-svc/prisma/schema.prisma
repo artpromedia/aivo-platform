@@ -313,6 +313,9 @@ model PasswordHistory {
 }
 
 /// Email verification tokens
+/// @deprecated AUTH-05: Firebase now handles email verification natively.
+/// This table is retained for 90-day audit trail only. Do NOT insert new rows.
+/// Scheduled for removal after April 2026.
 model EmailVerificationToken {
   id              String    @id @default(uuid()) @db.Uuid
   userId          String    @db.Uuid
@@ -320,6 +323,7 @@ model EmailVerificationToken {
   email           String    // Email being verified
   expiresAt       DateTime
   verifiedAt      DateTime? // Set when verified
+  deprecatedAt    DateTime? @default(now()) // AUTH-05: marks all rows as deprecated
   
   createdAt       DateTime  @default(now())
   

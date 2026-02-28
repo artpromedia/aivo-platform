@@ -259,6 +259,17 @@ export const verifyEmailRateLimiter = createRateLimiter({
 });
 
 /**
+ * Rate limiter for resend verification email endpoint
+ * 3 requests per hour per IP (prevent abuse)
+ */
+export const resendVerificationRateLimiter = createRateLimiter({
+  max: 3,
+  windowMs: 60 * 60 * 1000, // 1 hour
+  keyPrefix: 'auth:resend-verification',
+  message: 'Too many resend requests. Please wait before trying again.',
+});
+
+/**
  * Rate limiter for token refresh endpoint
  * 30 requests per minute per IP (higher limit for legitimate use)
  */

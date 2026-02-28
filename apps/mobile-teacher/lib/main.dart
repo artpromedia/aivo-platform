@@ -55,6 +55,7 @@ class TeacherAuthState {
   const TeacherAuthState({
     this.isAuthenticated = false,
     this.isLoading = false,
+    this.isEmailUnverified = false,
     this.teacherId,
     this.teacherName,
     this.error,
@@ -62,6 +63,7 @@ class TeacherAuthState {
 
   final bool isAuthenticated;
   final bool isLoading;
+  final bool isEmailUnverified;
   final String? teacherId;
   final String? teacherName;
   final String? error;
@@ -69,6 +71,7 @@ class TeacherAuthState {
   TeacherAuthState copyWith({
     bool? isAuthenticated,
     bool? isLoading,
+    bool? isEmailUnverified,
     String? teacherId,
     String? teacherName,
     String? error,
@@ -76,6 +79,7 @@ class TeacherAuthState {
     return TeacherAuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       isLoading: isLoading ?? this.isLoading,
+      isEmailUnverified: isEmailUnverified ?? this.isEmailUnverified,
       teacherId: teacherId ?? this.teacherId,
       teacherName: teacherName ?? this.teacherName,
       error: error,
@@ -165,8 +169,18 @@ class TeacherAuthNotifier extends StateNotifier<TeacherAuthState> {
 
       return true;
     } catch (e) {
+      // Check for email-not-verified (403 with EMAIL_NOT_VERIFIED error)
+      if (e is ForbiddenException && e.message == 'EMAIL_NOT_VERIFIED') {
+        state = state.copyWith(
+          isLoading: false,
+          isEmailUnverified: true,
+          error: null,
+        );
+        return false;
+      }
       state = state.copyWith(
         isLoading: false,
+        isEmailUnverified: false,
         error: e is ApiException ? e.message : 'Login failed',
       );
       return false;

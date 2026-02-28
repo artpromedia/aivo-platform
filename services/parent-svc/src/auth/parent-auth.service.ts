@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 
 import { config } from '../config.js';
 import type { CryptoService } from '../crypto/crypto.service.js';
-import { UnauthorizedException, BadRequestException } from '../errors.js';
+import { UnauthorizedException, BadRequestException, ForbiddenException } from '../errors.js';
 import type { FirebaseService } from '../firebase/firebase.service.js';
 import type { NotificationService } from '../notification/notification.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
@@ -64,6 +64,11 @@ export class ParentAuthService {
     const validPassword = await this.crypto.verifyPassword(password, parent.passwordHash);
     if (!validPassword) {
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Enforce email verification (AUTH-05)
+    if (!parent.emailVerified) {
+      throw new ForbiddenException('EMAIL_NOT_VERIFIED');
     }
 
     // Update last login

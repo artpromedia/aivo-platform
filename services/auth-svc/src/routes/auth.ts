@@ -100,6 +100,15 @@ export async function registerAuthRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: 'Invalid credentials' });
     }
 
+    // Enforce email verification (AUTH-05)
+    if (!user.emailVerified) {
+      return reply.status(403).send({
+        error: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email before logging in.',
+        canResend: true,
+      });
+    }
+
     const roles = user.roles.map((r: { role: string }) => r.role as Role);
     const accessToken = await signAccessToken({ sub: user.id, tenant_id: user.tenantId, roles });
     const refreshToken = await signRefreshToken({ sub: user.id, tenant_id: user.tenantId, roles });

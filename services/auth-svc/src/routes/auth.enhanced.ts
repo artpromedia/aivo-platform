@@ -188,6 +188,13 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
       if (error.message === 'Invalid credentials') {
         return reply.status(401).send({ error: 'Invalid credentials' });
       }
+      if (error.message === 'EMAIL_NOT_VERIFIED') {
+        return reply.status(403).send({
+          error: 'EMAIL_NOT_VERIFIED',
+          message: 'Please verify your email before logging in.',
+          canResend: true,
+        });
+      }
       if (error.message.includes('disabled') || error.message.includes('locked')) {
         return reply.status(403).send({ error: error.message });
       }

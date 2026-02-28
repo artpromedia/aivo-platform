@@ -14,9 +14,20 @@ export async function authRoutes(app: FastifyInstance) {
   /**
    * Login with email and password
    */
-  app.post('/login', async (request: FastifyRequest) => {
+  app.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
     const { email, password } = request.body as { email: string; password: string };
-    return authService.login(email, password);
+    try {
+      return await authService.login(email, password);
+    } catch (error: any) {
+      if (error.message === 'EMAIL_NOT_VERIFIED') {
+        return reply.status(403).send({
+          error: 'EMAIL_NOT_VERIFIED',
+          message: 'Please verify your email before logging in.',
+          canResend: true,
+        });
+      }
+      throw error;
+    }
   });
 
   /**

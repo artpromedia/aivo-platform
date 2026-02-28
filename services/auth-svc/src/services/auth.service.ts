@@ -307,6 +307,30 @@ export class AuthService {
     // Clear failed attempts on successful login
     await this.clearFailedLogins(email, user.tenantId);
 
+    // Enforce email verification (AUTH-05)
+    if (!user.emailVerified) {
+      // Check Firebase status in case they verified via link but our DB is stale
+      if (user.firebaseUid) {
+        const firebase = getFirebaseAuth();
+        if (firebase?.isConfigured()) {
+          const verified = await firebase.isEmailVerified(user.firebaseUid);
+          if (verified) {
+            await this.prisma.user.update({
+              where: { id: user.id },
+              data: { emailVerified: true },
+            });
+            // Continue with login — email is now verified
+          } else {
+            throw new Error('EMAIL_NOT_VERIFIED');
+          }
+        } else {
+          throw new Error('EMAIL_NOT_VERIFIED');
+        }
+      } else {
+        throw new Error('EMAIL_NOT_VERIFIED');
+      }
+    }
+
     // PRD: Enforce MFA for admin roles
     const roles = user.roles.map((r: UserRole) => r.role);
     const requiresMfa = roles.some((role: string) => MFA_REQUIRED_ROLES.has(role));

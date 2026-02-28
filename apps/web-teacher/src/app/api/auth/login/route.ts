@@ -37,9 +37,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+      const errorData = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+        canResend?: boolean;
+      };
       return NextResponse.json(
-        { error: errorData.message ?? 'Invalid email or password' },
+        {
+          error: errorData.message ?? 'Invalid email or password',
+          code: errorData.error,
+          canResend: errorData.canResend,
+        },
         { status: response.status }
       );
     }

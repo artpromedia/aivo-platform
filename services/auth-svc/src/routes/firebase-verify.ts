@@ -12,6 +12,7 @@
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
+import { resendVerificationRateLimiter } from '../lib/rate-limit.js';
 import { prisma } from '../prisma.js';
 import { createAuthService } from '../services/auth.service.js';
 
@@ -26,9 +27,13 @@ const verifyCallbackBody = z.object({
 
 const resendVerificationBody = z.object({
   /** User ID to resend verification for */
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
+  /** Email address to resend verification for (alternative to userId) */
+  email: z.string().email().optional(),
   /** Preferred locale for the email */
   locale: z.string().max(10).optional(),
+}).refine(data => data.userId || data.email, {
+  message: 'Either userId or email is required',
 });
 
 // ============================================================================
@@ -80,6 +85,7 @@ export async function registerFirebaseVerifyRoutes(
   // --------------------------------------------------------------------------
   fastify.post(
     '/resend-verification',
+    { preHandler: resendVerificationRateLimiter },
     async (request, reply) => {
       const parsed = resendVerificationBody.safeParse(request.body);
       if (!parsed.success) {
@@ -90,8 +96,25 @@ export async function registerFirebaseVerifyRoutes(
       }
 
       try {
+        let userId = parsed.data.userId;
+
+        // If email provided instead of userId, look up the user
+        if (!userId && parsed.data.email) {
+          const user = await prisma.user.findFirst({
+            where: { email: parsed.data.email },
+            select: { id: true },
+          });
+          if (!user) {
+            // Don't reveal whether the email exists
+            return reply
+              .status(200)
+              .send({ message: 'If the email is registered, a verification email has been sent.' });
+          }
+          userId = user.id;
+        }
+
         await authService.resendEmailVerification(
-          parsed.data.userId,
+          userId!,
           parsed.data.locale
         );
         return reply
@@ -101,7 +124,10 @@ export async function registerFirebaseVerifyRoutes(
         const msg = error.message || 'Failed to send verification';
 
         if (msg === 'User not found') {
-          return reply.status(404).send({ error: msg });
+          // Don't reveal whether the user exists
+          return reply
+            .status(200)
+            .send({ message: 'If the email is registered, a verification email has been sent.' });
         }
         if (msg === 'Email already verified') {
           return reply.status(409).send({ error: msg });

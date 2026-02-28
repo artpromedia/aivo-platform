@@ -35,11 +35,17 @@ export async function POST(request: NextRequest) {
       refreshToken?: string;
       user?: Record<string, unknown>;
       message?: string;
+      error?: string;
+      canResend?: boolean;
     };
 
     if (!upstream.ok || !data.accessToken) {
       return NextResponse.json(
-        { error: data.message ?? 'Invalid email or password.' },
+        {
+          error: data.message ?? 'Invalid email or password.',
+          code: data.error,
+          canResend: data.canResend,
+        },
         { status: upstream.status }
       );
     }

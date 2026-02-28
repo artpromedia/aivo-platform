@@ -27,8 +27,19 @@ export async function POST(req: NextRequest) {
   });
 
   if (!resp.ok) {
-    const message = await resp.text();
-    return NextResponse.json({ error: message || 'Invalid credentials' }, { status: resp.status });
+    const errorData = await resp.json().catch(() => ({})) as {
+      message?: string;
+      error?: string;
+      canResend?: boolean;
+    };
+    return NextResponse.json(
+      {
+        error: errorData.message || errorData.error || 'Invalid credentials',
+        code: errorData.error,
+        canResend: errorData.canResend,
+      },
+      { status: resp.status }
+    );
   }
 
   const data = await resp.json();
