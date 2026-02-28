@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+import { GameBreak } from '@aivo/ui/components'; // cspell:disable-line
+
 import { type AssessmentDomain, type AssessmentQuestion } from './types';
 
 const STORAGE_KEY = 'aivo_baseline_progress';
@@ -1705,64 +1707,23 @@ export default function BaselineAssessmentPage() {
     );
   };
 
-  const renderGameBreak = () => (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <div className="max-w-xl w-full text-center">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border-2 border-indigo-100">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg animate-bounce">
-            <span className="text-7xl">{currentBreak.emoji}</span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            {currentBreak.title}
-          </h2>
-          <p className="text-xl text-gray-600 mb-6">{currentBreak.instruction}</p>
+  const renderGameBreak = () => {
+    const remainingDomains = enabledDomains.length - currentDomainIndex - 1;
+    const breakMessage = `🎉 ${isSimplified ? 'Yay!' : 'You completed'} ${currentDomainConfig?.name}! ${remainingDomains} more to go!`;
 
-          {/* Countdown circle */}
-          <div className="relative w-24 h-24 mx-auto mb-6">
-            <svg className="w-24 h-24 transform -rotate-90">
-              <circle
-                cx="48"
-                cy="48"
-                r="40"
-                stroke="#e5e7eb"
-                strokeWidth="8"
-                fill="none"
-              />
-              <circle
-                cx="48"
-                cy="48"
-                r="40"
-                stroke="#4F46E5"
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={251.2}
-                strokeDashoffset={251.2 * (1 - breakCountdown / currentBreak.duration)}
-                className="transition-all duration-1000"
-              />
-            </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indigo-600">
-              {breakCountdown}
-            </span>
-          </div>
-
-          <button
-            onClick={skipBreak}
-            className="text-gray-500 hover:text-indigo-600 text-sm"
-          >
-            Skip break →
-          </button>
-        </div>
-
-        {/* Celebration message */}
-        <div className="mt-6 bg-indigo-50 rounded-2xl p-4">
-          <p className={`text-indigo-700 font-medium ${isAlternate ? 'text-lg' : ''}`}>
-            🎉 {isSimplified ? 'Yay!' : 'You completed'} {currentDomainConfig?.name}!{' '}
-            {enabledDomains.length - currentDomainIndex - 1} more to go!
-          </p>
+    return (
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="max-w-xl w-full">
+          <GameBreak
+            activity={currentBreak}
+            countdown={breakCountdown}
+            message={breakMessage}
+            onSkip={skipBreak}
+          />
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderCompleting = () => (
     <div className="flex-1 flex items-center justify-center p-4">
