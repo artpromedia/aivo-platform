@@ -38,6 +38,12 @@ export 'gradebook/grade_submission_screen.dart';
 export 'assignments/assignment_list_screen.dart';
 export 'assignments/assignment_detail_screen.dart';
 
+// Calendar
+export 'calendar/calendar_screen.dart';
+
+// Home Shell
+export 'home_shell.dart';
+
 // Assessments
 export 'assessments/assessments.dart';
 

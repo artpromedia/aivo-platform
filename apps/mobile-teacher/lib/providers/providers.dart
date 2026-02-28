@@ -7,6 +7,7 @@ export 'ai_transparency_provider.dart';
 export 'analytics_provider.dart';
 export 'assessment_provider.dart';
 export 'assignments_provider.dart';
+export 'calendar_provider.dart';
 export 'classes_provider.dart';
 export 'core_providers.dart';
 export 'gamification_provider.dart';

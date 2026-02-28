@@ -12,6 +12,7 @@ export 'sync_operation.dart';
 export 'teacher_profile.dart';
 export 'analytics.dart' hide EngagementHeatmap;
 export 'assignment.dart';
+export 'calendar_event.dart';
 export 'grade.dart';
 export 'integration.dart' hide CourseMapping;
 export 'ai_transparency.dart';

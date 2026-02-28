@@ -35,6 +35,13 @@ import 'screens/sessions/live_session_screen.dart';
 import 'screens/monitoring/class_monitoring_screen.dart';
 import 'screens/monitoring/ai_transparency_dashboard_screen.dart';
 import 'screens/monitoring/student_ai_conversations_screen.dart';
+import 'screens/home_shell.dart';
+import 'screens/assignments/assignment_list_screen.dart';
+import 'screens/assignments/assignment_detail_screen.dart';
+import 'screens/calendar/calendar_screen.dart';
+import 'screens/messages/messages_screen.dart';
+import 'screens/messages/conversation_screen.dart';
+import 'screens/messages/compose_message_screen.dart';
 import 'behavior_tracking/behavior_tracking_screen.dart';
 import 'theme/teacher_theme.dart';
 
@@ -346,9 +353,43 @@ final _routerProvider = Provider<GoRouter>((ref) {
         path: '/login',
         builder: (context, state) => const TeacherLoginScreen(),
       ),
+      // Home shell with bottom navigation (Classes / Assignments / Calendar / Messages)
       GoRoute(
         path: '/classes',
-        builder: (context, state) => const ClassesScreen(),
+        builder: (context, state) => const HomeShell(initialTab: 0),
+      ),
+      GoRoute(
+        path: '/assignments',
+        builder: (context, state) => const HomeShell(initialTab: 1),
+      ),
+      GoRoute(
+        path: '/assignments/:assignmentId',
+        builder: (context, state) {
+          final assignmentId = state.pathParameters['assignmentId']!;
+          return AssignmentDetailScreen(assignmentId: assignmentId);
+        },
+      ),
+      GoRoute(
+        path: '/calendar',
+        builder: (context, state) => const HomeShell(initialTab: 2),
+      ),
+      GoRoute(
+        path: '/messages',
+        builder: (context, state) => const HomeShell(initialTab: 3),
+      ),
+      GoRoute(
+        path: '/messages/compose',
+        builder: (context, state) {
+          final studentId = state.uri.queryParameters['studentId'];
+          return ComposeMessageScreen(studentId: studentId);
+        },
+      ),
+      GoRoute(
+        path: '/messages/:conversationId',
+        builder: (context, state) {
+          final conversationId = state.pathParameters['conversationId']!;
+          return ConversationScreen(conversationId: conversationId);
+        },
       ),
       GoRoute(
         path: '/class/:classId',
