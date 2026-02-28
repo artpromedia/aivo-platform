@@ -325,6 +325,20 @@ export function useActivateContract() {
 // RENEWALS HOOKS
 // ══════════════════════════════════════════════════════════════════════════════
 
+export function useRenewal(id: string) {
+  const accessToken = useAccessToken();
+
+  return useQuery({
+    queryKey: billingQueryKeys.renewalDetail(id),
+    queryFn: async () => {
+      const response = await fetch(`/api/billing/renewals/${id}`);
+      if (!response.ok) throw new Error('Failed to fetch renewal');
+      return response.json() as Promise<Renewal>;
+    },
+    enabled: !!accessToken && !!id,
+  });
+}
+
 export function useRenewals(filters?: RenewalFilters) {
   const accessToken = useAccessToken();
 

@@ -42,7 +42,7 @@ const actions: QuickAction[] = [
   {
     label: 'Compliance Report',
     description: 'Generate SOC 2 report',
-    href: '/compliance/reports',
+    href: '/compliance',
     icon: <DocumentIcon />,
     color: 'bg-purple-50 text-purple-600 hover:bg-purple-100',
   },
