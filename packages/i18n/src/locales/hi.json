@@ -178,5 +178,45 @@
     "toggleTheme": "डार्क मोड टॉगल करें",
     "languageSwitcher": "भाषा बदलें",
     "newNotifications": "{count, plural, one {# नई सूचना} other {# नई सूचनाएं}}"
+  },
+  "tutor": {
+    "title": "AI ट्यूटर",
+    "subtitle": "हर विषय में विशेषज्ञ ट्यूटरिंग",
+    "startSession": "सत्र शुरू करें",
+    "endSession": "सत्र समाप्त करें",
+    "resumeSession": "सत्र फिर से शुरू करें",
+    "voiceOn": "आवाज़ चालू",
+    "voiceOff": "आवाज़ बंद",
+    "voiceUnavailable": "{language} में आवाज़ उपलब्ध नहीं है",
+    "voiceUnavailableDetail": "आवाज़ अंग्रेजी, स्पेनिश, फ्रेंच, पुर्तगाली, अरबी और अन्य भाषाओं में उपलब्ध है।",
+    "voiceFallbackNotice": "{fallbackLanguage} आवाज़ का उपयोग कर रहे हैं। {nativeLanguage} आवाज़ जल्द आ रही है!",
+    "textOnlyBanner": "{name} {language} में टेक्स्ट के रूप में जवाब देगा। वॉइस सपोर्ट जल्द आ रहा है!",
+    "thinking": "{name} सोच रहा है…",
+    "listening": "{name} सुन रहा है…",
+    "sessionWith": "{name} के साथ सत्र",
+    "sessionDuration": "सत्र अवधि: {minutes} मिनट",
+    "messagesExchanged": "{count, plural, one {# संदेश} other {# संदेश}} का आदान-प्रदान",
+    "selectSubject": "ट्यूटरिंग शुरू करने के लिए एक विषय चुनें",
+    "noSessions": "अभी तक कोई ट्यूटरिंग सत्र नहीं",
+    "history": "सत्र इतिहास",
+    "summary": "सत्र सारांश",
+    "newSession": "नया सत्र शुरू करें",
+    "xpEarned": "{xp} XP अर्जित",
+    "changeLanguage": "ट्यूटर भाषा बदलें",
+    "languageChanged": "{name} अब {language} में जवाब देगा",
+    "subjects": {
+      "MATH": "गणित",
+      "ELA": "पठन और लेखन",
+      "SCIENCE": "विज्ञान",
+      "HISTORY": "इतिहास और सामाजिक अध्ययन",
+      "CODING": "कोडिंग और कंप्यूटर विज्ञान"
+    },
+    "personas": {
+      "nova": "Nova अंतरिक्ष अन्वेषक",
+      "sage": "Sage कहानीकार",
+      "spark": "Spark वैज्ञानिक",
+      "chrono": "Chrono समय यात्री",
+      "pixel": "Pixel रोबोट"
+    }
   }
 }

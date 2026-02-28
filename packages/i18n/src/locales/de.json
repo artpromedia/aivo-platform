@@ -178,5 +178,45 @@
     "toggleTheme": "Dunkelmodus umschalten",
     "languageSwitcher": "Sprache ändern",
     "newNotifications": "{count, plural, one {# neue Benachrichtigung} other {# neue Benachrichtigungen}}"
+  },
+  "tutor": {
+    "title": "KI-Tutoren",
+    "subtitle": "Experten-Nachhilfe in jedem Fach",
+    "startSession": "Sitzung starten",
+    "endSession": "Sitzung beenden",
+    "resumeSession": "Sitzung fortsetzen",
+    "voiceOn": "Sprache ein",
+    "voiceOff": "Sprache aus",
+    "voiceUnavailable": "Sprache nicht verfügbar auf {language}",
+    "voiceUnavailableDetail": "Sprache ist verfügbar auf Englisch, Spanisch, Französisch, Portugiesisch, Arabisch und mehr.",
+    "voiceFallbackNotice": "Verwende {fallbackLanguage}-Stimme. {nativeLanguage}-Stimme kommt bald!",
+    "textOnlyBanner": "{name} antwortet auf {language} als Text. Sprachunterstützung kommt bald!",
+    "thinking": "{name} denkt nach…",
+    "listening": "{name} hört zu…",
+    "sessionWith": "Sitzung mit {name}",
+    "sessionDuration": "Sitzungsdauer: {minutes} Minuten",
+    "messagesExchanged": "{count, plural, one {# Nachricht} other {# Nachrichten}} ausgetauscht",
+    "selectSubject": "Wähle ein Fach, um mit der Nachhilfe zu beginnen",
+    "noSessions": "Noch keine Nachhilfesitzungen",
+    "history": "Sitzungsverlauf",
+    "summary": "Sitzungszusammenfassung",
+    "newSession": "Neue Sitzung starten",
+    "xpEarned": "{xp} XP verdient",
+    "changeLanguage": "Tutor-Sprache ändern",
+    "languageChanged": "{name} antwortet jetzt auf {language}",
+    "subjects": {
+      "MATH": "Mathematik",
+      "ELA": "Lesen & Schreiben",
+      "SCIENCE": "Naturwissenschaften",
+      "HISTORY": "Geschichte & Sozialkunde",
+      "CODING": "Programmieren & Informatik"
+    },
+    "personas": {
+      "nova": "Nova die Weltraumforscherin",
+      "sage": "Sage die Geschichtenerzählerin",
+      "spark": "Spark die Wissenschaftlerin",
+      "chrono": "Chrono der Zeitreisende",
+      "pixel": "Pixel der Roboter"
+    }
   }
 }

@@ -178,5 +178,45 @@
     "toggleTheme": "ダークモードを切り替え",
     "languageSwitcher": "言語を変更",
     "newNotifications": "{count, plural, other {#件の新しい通知}}"
+  },
+  "tutor": {
+    "title": "AIチューター",
+    "subtitle": "あらゆる教科のエキスパートチュータリング",
+    "startSession": "セッションを開始",
+    "endSession": "セッションを終了",
+    "resumeSession": "セッションを再開",
+    "voiceOn": "音声オン",
+    "voiceOff": "音声オフ",
+    "voiceUnavailable": "{language}では音声が利用できません",
+    "voiceUnavailableDetail": "音声は英語、スペイン語、フランス語、ポルトガル語、アラビア語などで利用可能です。",
+    "voiceFallbackNotice": "{fallbackLanguage}の音声を使用中。{nativeLanguage}の音声は近日公開！",
+    "textOnlyBanner": "{name}は{language}でテキストとして応答します。音声サポートは近日公開！",
+    "thinking": "{name}が考えています…",
+    "listening": "{name}が聞いています…",
+    "sessionWith": "{name}とのセッション",
+    "sessionDuration": "セッション時間: {minutes}分",
+    "messagesExchanged": "{count, plural, other {#件のメッセージ}}を交換",
+    "selectSubject": "チュータリングを始める教科を選んでください",
+    "noSessions": "まだチュータリングセッションはありません",
+    "history": "セッション履歴",
+    "summary": "セッション概要",
+    "newSession": "新しいセッションを開始",
+    "xpEarned": "{xp} XP獲得",
+    "changeLanguage": "チューターの言語を変更",
+    "languageChanged": "{name}は{language}で応答するようになりました",
+    "subjects": {
+      "MATH": "算数",
+      "ELA": "読解＆作文",
+      "SCIENCE": "理科",
+      "HISTORY": "歴史＆社会科",
+      "CODING": "プログラミング＆コンピュータサイエンス"
+    },
+    "personas": {
+      "nova": "Nova 宇宙探検家",
+      "sage": "Sage 語り部",
+      "spark": "Spark 科学者",
+      "chrono": "Chrono タイムトラベラー",
+      "pixel": "Pixel ロボット"
+    }
   }
 }

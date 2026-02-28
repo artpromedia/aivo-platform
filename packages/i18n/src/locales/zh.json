@@ -178,5 +178,45 @@
     "toggleTheme": "切换暗色模式",
     "languageSwitcher": "更改语言",
     "newNotifications": "{count, plural, other {# 条新通知}}"
+  },
+  "tutor": {
+    "title": "AI导师",
+    "subtitle": "每个科目的专家辅导",
+    "startSession": "开始课程",
+    "endSession": "结束课程",
+    "resumeSession": "继续课程",
+    "voiceOn": "语音开启",
+    "voiceOff": "语音关闭",
+    "voiceUnavailable": "{language}不支持语音",
+    "voiceUnavailableDetail": "语音支持英语、西班牙语、法语、葡萄牙语、阿拉伯语等。",
+    "voiceFallbackNotice": "正在使用{fallbackLanguage}语音。{nativeLanguage}语音即将推出！",
+    "textOnlyBanner": "{name}将以{language}文本形式回复。语音支持即将推出！",
+    "thinking": "{name}正在思考…",
+    "listening": "{name}正在聆听…",
+    "sessionWith": "与{name}的课程",
+    "sessionDuration": "课程时长：{minutes}分钟",
+    "messagesExchanged": "{count, plural, other {交换了#条消息}}",
+    "selectSubject": "选择一个科目开始辅导",
+    "noSessions": "还没有辅导课程",
+    "history": "课程历史",
+    "summary": "课程摘要",
+    "newSession": "开始新课程",
+    "xpEarned": "获得{xp} XP",
+    "changeLanguage": "更改导师语言",
+    "languageChanged": "{name}现在将以{language}回复",
+    "subjects": {
+      "MATH": "数学",
+      "ELA": "阅读与写作",
+      "SCIENCE": "科学",
+      "HISTORY": "历史与社会研究",
+      "CODING": "编程与计算机科学"
+    },
+    "personas": {
+      "nova": "Nova 太空探险家",
+      "sage": "Sage 讲故事的人",
+      "spark": "Spark 科学家",
+      "chrono": "Chrono 时间旅行者",
+      "pixel": "Pixel 机器人"
+    }
   }
 }

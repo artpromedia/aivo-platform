@@ -178,5 +178,45 @@
     "toggleTheme": "다크 모드 전환",
     "languageSwitcher": "언어 변경",
     "newNotifications": "{count, plural, other {새 알림 #개}}"
+  },
+  "tutor": {
+    "title": "AI 튜터",
+    "subtitle": "모든 과목의 전문 튜터링",
+    "startSession": "세션 시작",
+    "endSession": "세션 종료",
+    "resumeSession": "세션 재개",
+    "voiceOn": "음성 켜기",
+    "voiceOff": "음성 끄기",
+    "voiceUnavailable": "{language}에서 음성을 사용할 수 없습니다",
+    "voiceUnavailableDetail": "음성은 영어, 스페인어, 프랑스어, 포르투갈어, 아랍어 등에서 사용할 수 있습니다.",
+    "voiceFallbackNotice": "{fallbackLanguage} 음성을 사용 중입니다. {nativeLanguage} 음성은 곧 제공됩니다!",
+    "textOnlyBanner": "{name}이(가) {language}로 텍스트로 응답합니다. 음성 지원이 곧 제공됩니다!",
+    "thinking": "{name}이(가) 생각하고 있습니다…",
+    "listening": "{name}이(가) 듣고 있습니다…",
+    "sessionWith": "{name}과(와)의 세션",
+    "sessionDuration": "세션 시간: {minutes}분",
+    "messagesExchanged": "{count, plural, other {메시지 #개}} 교환됨",
+    "selectSubject": "튜터링을 시작할 과목을 선택하세요",
+    "noSessions": "아직 튜터링 세션이 없습니다",
+    "history": "세션 기록",
+    "summary": "세션 요약",
+    "newSession": "새 세션 시작",
+    "xpEarned": "{xp} XP 획득",
+    "changeLanguage": "튜터 언어 변경",
+    "languageChanged": "{name}이(가) 이제 {language}로 응답합니다",
+    "subjects": {
+      "MATH": "수학",
+      "ELA": "독해 & 작문",
+      "SCIENCE": "과학",
+      "HISTORY": "역사 & 사회",
+      "CODING": "코딩 & 컴퓨터 과학"
+    },
+    "personas": {
+      "nova": "Nova 우주 탐험가",
+      "sage": "Sage 이야기꾼",
+      "spark": "Spark 과학자",
+      "chrono": "Chrono 시간여행자",
+      "pixel": "Pixel 로봇"
+    }
   }
 }
