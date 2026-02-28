@@ -1,6 +1,8 @@
 export { useIdleDetection } from './use-idle-detection'
 export { useConnectivity } from './use-connectivity'
 export type { ConnectivityState } from './use-connectivity'
+export { useOnboardingGuard } from './use-onboarding-guard'
+export type { OnboardingGuardState } from './use-onboarding-guard'
 export { useTutorAudio } from './use-tutor-audio'
 export type { VisemeEvent, TutorAudioState } from './use-tutor-audio'
 export { useVoicePreference } from './use-voice-preference'
