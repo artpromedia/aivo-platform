@@ -262,3 +262,15 @@ export interface AssessmentsData {
   completed: Assessment[];
   firstName: string;
 }
+
+// ────────────────────────────────────────────────────────────
+// Settings
+// ────────────────────────────────────────────────────────────
+
+export interface LearnerSettings {
+  soundsEnabled: boolean;
+  streakRemindersEnabled: boolean;
+  achievementsEnabled: boolean;
+  remindersEnabled: boolean;
+  encouragementEnabled: boolean;
+}

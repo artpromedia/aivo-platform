@@ -12,6 +12,7 @@ import type {
   DashboardData,
   GamesData,
   GoalsData,
+  LearnerSettings,
   ProfileData,
   ProgressData,
 } from './types';
@@ -116,4 +117,21 @@ export function fetchGoals(): Promise<GoalsData> {
 
 export function fetchAssessments(): Promise<AssessmentsData> {
   return apiFetch<AssessmentsData>('/api/learner/assessments');
+}
+
+// ────────────────────────────────────────────────────────────
+// Settings
+// ────────────────────────────────────────────────────────────
+
+export function fetchSettings(): Promise<LearnerSettings> {
+  return apiFetch<LearnerSettings>('/api/learner/settings');
+}
+
+export function updateSettings(
+  settings: Partial<LearnerSettings>,
+): Promise<LearnerSettings> {
+  return apiFetch<LearnerSettings>('/api/learner/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
 }
