@@ -106,13 +106,6 @@ export default function AnalyticsPage() {
     a.remove();
   }, []);
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    // Simulate export
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsExporting(false);
-  };
-
   return (
     <section className="space-y-6">
       {/* Header */}
@@ -145,7 +138,7 @@ export default function AnalyticsPage() {
             </select>
           </div>
           <button
-            onClick={handleExport}
+            onClick={handleExportAnalytics}
             disabled={isExporting}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >

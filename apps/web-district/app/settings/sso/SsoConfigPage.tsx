@@ -16,6 +16,43 @@ const Upload = ({ className }: { className?: string }) => <span className={class
 const X = ({ className }: { className?: string }) => <span className={className}>✕</span>;
 
 // ============================================================================
+// COPY METADATA URL BUTTON
+// ============================================================================
+
+function CopyMetadataUrlButton({ tenantId }: { tenantId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    const url = `${window.location.origin}/api/auth/saml/metadata/${tenantId}`;
+    void navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    });
+  }, [tenantId]);
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50"
+    >
+      {copied ? (
+        <>
+          <Check className="h-4 w-4" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <Copy className="h-4 w-4" />
+          Copy SP Metadata URL
+        </>
+      )}
+    </button>
+  );
+}
+
+// ============================================================================
 // TYPES
 // ============================================================================
 
@@ -619,10 +656,7 @@ export function SsoConfigPage({ tenantId }: SsoConfigPageProps) {
                 <p className="text-xs text-blue-700 mb-3">
                   Download this metadata to configure Aivo as a service provider in your IdP.
                 </p>
-                <button className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50">
-                  <Copy className="h-4 w-4" />
-                  Copy SP Metadata URL
-                </button>
+                <CopyMetadataUrlButton tenantId={tenantId} />
               </div>
             </div>
           </div>
