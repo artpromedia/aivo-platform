@@ -13,7 +13,6 @@ import {
   uploadAudio,
 } from '../services/tts.service.js';
 import { getVoiceConfig } from '../services/voice-config.service.js';
-import type { JwtUser } from '../types/index.js';
 
 const SendMessageSchema = z.object({
   content: z.string().min(1).max(4000),
@@ -41,8 +40,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
     ) => {
       const { sessionId } = request.params;
       const { content, voiceEnabled } = SendMessageSchema.parse(request.body);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -164,7 +163,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
           emotionTag,
           avatarState: voiceEnabled && visemeData ? 'talking' : avatarState,
           audioUrl: audioUrl ?? null,
-          visemeData: visemeData ?? undefined,
+          visemeData: (visemeData as Parameters<typeof prisma.tutorMessage.create>[0]['data']['visemeData']) ?? undefined,
           tokensUsed,
           latencyMs,
         },
@@ -227,8 +226,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
     ) => {
       const { sessionId } = request.params;
       const query = ListMessagesSchema.parse(request.query);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });

@@ -1,12 +1,7 @@
-export interface JwtUser {
-  sub: string;
-  tenantId?: string | undefined;
-  tenant_id?: string | undefined;
-  role: string;
-}
+import type { AuthContext } from '@aivo/ts-rbac';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: JwtUser | undefined;
-  }
-}
+/**
+ * JwtUser is an alias for AuthContext from @aivo/ts-rbac.
+ * Properties: userId, tenantId, roles.
+ */
+export type JwtUser = AuthContext;

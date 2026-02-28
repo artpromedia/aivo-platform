@@ -64,7 +64,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
         user?.tenantId ??
         user?.tenant_id;
       const userId =
-        (request.headers['x-user-id'] as string) ?? user?.sub;
+        (request.headers['x-user-id'] as string) ?? user?.userId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -270,7 +270,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
             role: TutorMessageRole.ASSISTANT,
             content: fullResponseText,
             audioUrl: audioUrl ?? null,
-            visemeData: visemeData.length > 0 ? visemeData : undefined,
+            visemeData: visemeData.length > 0 ? (visemeData as Parameters<typeof prisma.tutorMessage.create>[0]['data']['visemeData']) : undefined,
             emotionTag,
             avatarState: audioUrl ? 'talking' : avatarState,
             tokensUsed: totalTokens,

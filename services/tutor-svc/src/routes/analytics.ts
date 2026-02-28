@@ -2,7 +2,6 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
-import type { JwtUser } from '../types/index.js';
 
 const SUBJECT_COLORS: Record<string, string> = {
   MATH: '#3B82F6',
@@ -35,8 +34,8 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     '/summary',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof SummaryQuerySchema> }>, reply: FastifyReply) => {
       const query = SummaryQuerySchema.parse(request.query);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -191,8 +190,8 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     '/sessions',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof SessionsQuerySchema> }>, reply: FastifyReply) => {
       const query = SessionsQuerySchema.parse(request.query);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -260,8 +259,8 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     '/sessions/:sessionId/transcript',
     async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
       const { sessionId } = request.params;
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -329,8 +328,8 @@ export async function analyticsRoutes(fastify: FastifyInstance) {
     async (request: FastifyRequest<{ Querystring: { learnerId: string; days?: string } }>, reply: FastifyReply) => {
       const learnerId = request.query.learnerId;
       const days = parseInt(request.query.days ?? '30', 10) || 30;
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });

@@ -4,7 +4,7 @@
  * Tests for tutor access control via billing-svc integration.
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MOCKS

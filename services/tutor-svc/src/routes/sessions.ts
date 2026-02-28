@@ -5,7 +5,6 @@ import { sessionService, fetchLearnerProfile } from '../services/session.service
 import { entitlementService } from '../services/entitlement.service.js';
 import { personaService } from '../services/persona.service.js';
 import { prisma } from '../prisma.js';
-import type { JwtUser } from '../types/index.js';
 import { resolveLocaleConfig } from '../services/locale.service.js';
 import { getVoiceConfig } from '../services/voice-config.service.js';
 import { trackSessionStarted, trackSessionEnded } from '../services/analytics.service.js';
@@ -37,8 +36,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     '/',
     async (request: FastifyRequest<{ Body: z.infer<typeof CreateSessionSchema> }>, reply: FastifyReply) => {
       const body = CreateSessionSchema.parse(request.body);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -87,7 +86,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
       const { session, openingMessage, emotionTag, avatarState } = await sessionService.create({
         tenantId,
         learnerId: body.learnerId,
-        parentUserId: user.sub,
+        parentUserId: user.userId,
         personaId: persona.id,
         subject: body.subject,
         topic: body.topic,
@@ -158,8 +157,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     '/',
     async (request: FastifyRequest<{ Querystring: z.infer<typeof ListSessionsSchema> }>, reply: FastifyReply) => {
       const query = ListSessionsSchema.parse(request.query);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -167,7 +166,7 @@ export async function sessionRoutes(fastify: FastifyInstance) {
 
       const { sessions, total } = await sessionService.listByLearner({
         tenantId,
-        learnerId: query.learnerId ?? user.sub,
+        learnerId: query.learnerId ?? user.userId,
         status: query.status,
         limit: query.limit,
         offset: query.offset,
@@ -206,8 +205,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     '/:sessionId',
     async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
       const { sessionId } = request.params;
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -280,8 +279,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     ) => {
       const { sessionId } = request.params;
       const body = z.object({ locale: z.string().min(2).max(10) }).parse(request.body);
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });
@@ -355,8 +354,8 @@ export async function sessionRoutes(fastify: FastifyInstance) {
     '/:sessionId/end',
     async (request: FastifyRequest<{ Params: { sessionId: string } }>, reply: FastifyReply) => {
       const { sessionId } = request.params;
-      const user = request.user as JwtUser;
-      const tenantId = user?.tenantId ?? user?.tenant_id;
+      const user = request.user!;
+      const tenantId = user?.tenantId;
 
       if (!tenantId) {
         return reply.status(401).send({ error: 'Tenant ID required' });

@@ -155,7 +155,7 @@ export const AnimatedTutorAvatar = memo(function AnimatedTutorAvatar({
       sizePx={sizePx}
     />
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Rive-backed avatar (loaded lazily)

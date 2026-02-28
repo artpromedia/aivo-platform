@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aivo/auth-web": "workspace:*",
+    "@aivo/feature-flags": "workspace:*",
     "@aivo/i18n": "workspace:*",
     "@aivo/theme-provider": "workspace:*",
     "@aivo/ts-types": "workspace:*",
