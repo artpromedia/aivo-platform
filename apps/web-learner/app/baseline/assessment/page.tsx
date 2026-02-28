@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameBreak } from '@aivo/ui/components'; // cspell:disable-line
 
 import { type AssessmentDomain, type AssessmentQuestion } from './types';
+import { useSpeech } from './useSpeech';
 
 const STORAGE_KEY = 'aivo_baseline_progress';
 
@@ -396,6 +397,10 @@ export default function BaselineAssessmentPage() {
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const savedProgressRef = useRef<Record<string, unknown> | null>(null);
   const prepareAssessmentRef = useRef<() => Promise<void>>();
+
+  // Audio narration (ALTERNATE assessment type)
+  const isAudioEnabled = config.accommodations.audioNarration;
+  const { speak, stop: stopSpeech } = useSpeech(isAudioEnabled);
 
   // Pre-generated questions (loaded during 'preparing' phase)
   const [preparedDomains, setPreparedDomains] = useState<PreparedDomain[]>([]);
@@ -1111,6 +1116,22 @@ export default function BaselineAssessmentPage() {
   const currentLsQuestion = LEARNING_STYLE_QUESTIONS[lsIndex];
   const isLastLsQuestion = lsIndex === LEARNING_STYLE_QUESTIONS.length - 1;
 
+  // ── Audio narration: read learning-style question aloud ──
+  useEffect(() => {
+    if (phase === 'learning_style' && isAudioEnabled && currentLsQuestion) {
+      speak(currentLsQuestion.question);
+    }
+    return () => stopSpeech();
+  }, [phase, lsIndex, isAudioEnabled, currentLsQuestion, speak, stopSpeech]);
+
+  // ── Audio narration: read domain question aloud ──
+  useEffect(() => {
+    if (phase === 'domain_questions' && isAudioEnabled && domainQuestions[currentQuestionInDomain]) {
+      speak(domainQuestions[currentQuestionInDomain].questionText);
+    }
+    return () => stopSpeech();
+  }, [phase, currentQuestionInDomain, isAudioEnabled, domainQuestions, speak, stopSpeech]);
+
   useEffect(() => {
     if (phase === 'learning_style' && currentLsQuestion?.type === 'multi_select') {
       const existing = lsAnswers[currentLsQuestion.id];
@@ -1339,6 +1360,16 @@ export default function BaselineAssessmentPage() {
             <h2 className="text-2xl font-bold text-gray-900">
               {currentLsQuestion.question}
             </h2>
+            {isAudioEnabled && (
+              <button
+                onClick={() => speak(currentLsQuestion.question)}
+                className="mt-2 inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 text-sm font-medium transition-colors"
+                aria-label="Read question aloud"
+                type="button"
+              >
+                🔊 Read again
+              </button>
+            )}
             {currentLsQuestion.type === 'multi_select' && (
               <p className="text-sm text-gray-500 mt-2">
                 Pick as many as you want! 👆
@@ -1638,12 +1669,25 @@ export default function BaselineAssessmentPage() {
 
             {/* Question */}
             <h2
-              className={`font-bold text-gray-900 text-center mb-6 
+              className={`font-bold text-gray-900 text-center mb-4 
               ${isAlternate ? 'text-2xl leading-relaxed' : isSimplified ? 'text-xl' : 'text-xl'}`}
               style={{ fontSize: `${1.25 * config.uiConfig.fontSizeMultiplier}rem` }}
             >
               {currentQ.questionText}
             </h2>
+            {isAudioEnabled && (
+              <div className="text-center mb-6">
+                <button
+                  onClick={() => speak(currentQ.questionText)}
+                  className="inline-flex items-center gap-1 text-indigo-500 hover:text-indigo-700 text-sm font-medium transition-colors"
+                  aria-label="Read question aloud"
+                  type="button"
+                >
+                  🔊 Read again
+                </button>
+              </div>
+            )}
+            {!isAudioEnabled && <div className="mb-2" />}
 
             {/* Options - adapted for assessment type */}
             <div className={`grid gap-3 ${isAlternate ? 'gap-4' : ''}`}>
