@@ -24,11 +24,18 @@ import {
   Loader2,
   AlertCircle,
   Download,
+  KeyRound,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { useParentSettings, useUpdateNotificationSettings, useUpdateAppSettings } from '@/hooks';
+import { ChangePinDialog } from '@/components/learner/ChangePinDialog';
+import {
+  useParentSettings,
+  useUpdateNotificationSettings,
+  useUpdateAppSettings,
+  useParentProfile,
+} from '@/hooks';
 import { isDevMode } from '@/lib/api';
 
 // Local interface for screen time (kept for backward compatibility in this component)
@@ -475,11 +482,16 @@ function PrivacySettingsPanel({ onBack }: { onBack: () => void }) {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            {isExporting ? 'Preparing ZIP Package...' : exportDone ? 'Downloaded ✓' : 'Download Data (ZIP)'}
+            {isExporting
+              ? 'Preparing ZIP Package...'
+              : exportDone
+                ? 'Downloaded ✓'
+                : 'Download Data (ZIP)'}
           </button>
           {exportDone && (
             <p className="mt-2 text-sm text-green-700">
-              ✓ Download complete. A confirmation email has been sent to your registered email address.
+              ✓ Download complete. A confirmation email has been sent to your registered email
+              address.
             </p>
           )}
         </div>
@@ -546,63 +558,107 @@ function ScreenTimeSettingsPanel({
 
 // Account Settings Panel
 function AccountSettings({ onBack }: { onBack: () => void }) {
+  // Change PIN dialog state
+  const { data: profile } = useParentProfile();
+  const [changePinOpen, setChangePinOpen] = useState(false);
+  const [changePinLearnerId, setChangePinLearnerId] = useState<string | null>(null);
+  const [changePinLearnerName, setChangePinLearnerName] = useState('');
+
   return (
-    <div className="space-y-6">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Settings
-      </button>
+    <>
+      <div className="space-y-6">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Settings
+        </button>
 
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <User className="w-5 h-5 text-indigo-600" />
-          Account Settings
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <User className="w-5 h-5 text-indigo-600" />
+            Account Settings
+          </h2>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-          <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Edit Profile</p>
-              <p className="text-sm text-gray-500">Update your name and contact info</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Edit Profile</p>
+                <p className="text-sm text-gray-500">Update your name and contact info</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-          <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Change Password</p>
-              <p className="text-sm text-gray-500">Update your account password</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
+            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Change Password</p>
+                <p className="text-sm text-gray-500">Update your account password</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-          <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Linked Children</p>
-              <p className="text-sm text-gray-500">Manage connected student accounts</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
+            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Linked Children</p>
+                <p className="text-sm text-gray-500">Manage connected student accounts</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
 
-          <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">Subscription</p>
-              <p className="text-sm text-gray-500">View and manage your plan</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
+            {/* Change Login PIN — one button per linked child */}
+            {profile?.students?.map((student) => (
+              <button
+                key={student.id}
+                className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+                onClick={() => {
+                  setChangePinLearnerId(student.id);
+                  setChangePinLearnerName(
+                    student.name || `${student.firstName} ${student.lastName}`
+                  );
+                  setChangePinOpen(true);
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <KeyRound className="w-4 h-4 text-indigo-500" />
+                  <div>
+                    <p className="font-medium text-gray-900">Change Login PIN</p>
+                    <p className="text-sm text-gray-500">
+                      Update {student.firstName || student.name}&apos;s 6-digit login PIN
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            ))}
 
-        <div className="mt-6">
-          <button className="w-full p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-medium hover:bg-red-100 transition-colors">
-            Sign Out
-          </button>
+            <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Subscription</p>
+                <p className="text-sm text-gray-500">View and manage your plan</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          <div className="mt-6">
+            <button className="w-full p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-medium hover:bg-red-100 transition-colors">
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Change PIN Dialog */}
+      {changePinLearnerId && (
+        <ChangePinDialog
+          open={changePinOpen}
+          onOpenChange={setChangePinOpen}
+          learnerId={changePinLearnerId}
+          learnerName={changePinLearnerName}
+        />
+      )}
+    </>
   );
 }
 

@@ -33,6 +33,7 @@ import { homeworkRoutes } from './homework/homework.controller.js';
 import { HomeworkService } from './homework/homework.service.js';
 import { I18nService } from './i18n/i18n.service.js';
 import { internalRoutes } from './internal/internal.controller.js';
+import { learnerPinRoutes } from './learner/learner-pin.controller.js';
 import { learnerRoutes } from './learner/learner.controller.js';
 import { messagingRoutes } from './messaging/messaging.controller.js';
 import { MessagingService } from './messaging/messaging.service.js';
@@ -217,6 +218,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await apiApp.register(authRoutes, { prefix: '/auth' });
       await apiApp.register(onboardingRoutes, { prefix: '/onboarding' });
       await apiApp.register(learnerRoutes, { prefix: '/learner' });
+      await apiApp.register(learnerPinRoutes, { prefix: '/learner' });
       await apiApp.register(internalRoutes, { prefix: '/internal' });
 
       // ── Caregiver public & protected routes ───────────────────────────────
