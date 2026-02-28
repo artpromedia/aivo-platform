@@ -4,17 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { Confetti } from '../../../components/Confetti';
+
 export default function BaselineCompletePage() {
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
-    // Set window size for confetti
-    setWindowSize({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-
     // Stop confetti after 5 seconds
     const timer = setTimeout(() => {
       setShowConfetti(false);
@@ -38,42 +33,8 @@ export default function BaselineCompletePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-indigo-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Confetti celebration - simplified without library */}
-      {showConfetti && windowSize.width > 0 && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
-          {/* Animated confetti pieces */}
-          <div
-            className="absolute top-0 left-1/4 text-4xl animate-bounce"
-            style={{ animationDelay: '0s' }}
-          >
-            🎉
-          </div>
-          <div
-            className="absolute top-0 left-1/2 text-4xl animate-bounce"
-            style={{ animationDelay: '0.2s' }}
-          >
-            🎊
-          </div>
-          <div
-            className="absolute top-0 left-3/4 text-4xl animate-bounce"
-            style={{ animationDelay: '0.4s' }}
-          >
-            🎉
-          </div>
-          <div
-            className="absolute top-10 left-1/3 text-3xl animate-bounce"
-            style={{ animationDelay: '0.1s' }}
-          >
-            ⭐
-          </div>
-          <div
-            className="absolute top-10 left-2/3 text-3xl animate-bounce"
-            style={{ animationDelay: '0.3s' }}
-          >
-            ✨
-          </div>
-        </div>
-      )}
+      {/* Confetti celebration */}
+      {showConfetti && <Confetti />}
 
       <div className="max-w-xl w-full relative z-10">
         {/* Success header */}
