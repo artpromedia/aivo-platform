@@ -400,6 +400,7 @@ export default function BaselineAssessmentPage() {
   const [preparationProgress, setPreparationProgress] = useState(0);
   const [preparationStatus, setPreparationStatus] = useState<string>('Connecting to AI...');
   const [isPrepared, setIsPrepared] = useState(false);
+  const [preparationWarning, setPreparationWarning] = useState<string | null>(null);
 
   // ════════════════════════════════════════════════════════════════════════════
   // PROGRESS PERSISTENCE (localStorage)
@@ -535,7 +536,7 @@ export default function BaselineAssessmentPage() {
         if (prepareResponse.ok) {
           const prepareData = await prepareResponse.json();
 
-          if (prepareData.success && prepareData.domains) {
+          if (prepareData.success && prepareData.domains && prepareData.domains.length > 0) {
             // Update config with assessment type from profile
             if (prepareData.profile?.assessmentType) {
               setConfig((prev) => ({
@@ -572,7 +573,17 @@ export default function BaselineAssessmentPage() {
             console.log(
               `[Assessment] Pre-generated ${prepareData.totalQuestions} questions in ${prepareData.generationTimeMs}ms`
             );
+
+            // Check if any domains used stub/fallback source
+            const stubDomains = prepareData.domains.filter((d: { source: string }) => d.source !== 'ai');
+            if (stubDomains.length > 0) {
+              setPreparationWarning("Some questions are practice questions. Don't worry — they still help us learn about you!");
+            }
+          } else {
+            setPreparationWarning("We're using practice questions today. They still help us learn about you!");
           }
+        } else {
+          setPreparationWarning("We're using practice questions today. They still help us learn about you!");
         }
 
         setPreparationProgress(100);
@@ -584,6 +595,7 @@ export default function BaselineAssessmentPage() {
         console.log('Preparation error, using defaults:', error);
         setPreparationProgress(100);
         setPreparationStatus('Ready!');
+        setPreparationWarning("We're using practice questions today. They still help us learn about you!");
       } finally {
         setIsConfigLoaded(true);
         setPhase('learning_style');
@@ -1851,6 +1863,22 @@ export default function BaselineAssessmentPage() {
           </div>
         </div>
       </div>
+
+      {/* Preparation warning banner */}
+      {preparationWarning && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2">
+          <div className="max-w-2xl mx-auto flex items-center gap-2 text-amber-700 text-sm">
+            <span>💡</span>
+            <span>{preparationWarning}</span>
+            <button
+              onClick={() => setPreparationWarning(null)}
+              className="ml-auto text-amber-500 hover:text-amber-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Phase content */}
       {phase === 'loading' && (
