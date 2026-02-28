@@ -6,23 +6,28 @@ import { Suspense } from 'react';
 import { LibraryFilters } from './library-filters';
 import { LibraryGrid } from './library-grid';
 import { LibrarySearch } from './library-search';
+import { LibraryTabsWrapper } from './library-tabs-wrapper';
 
 /**
- * Teacher Marketplace Library Page
+ * Teacher Library Page
  *
- * Shows content packs and tools that are installed and approved
- * by the district/school admin. Teachers can add these to their classrooms.
+ * Two-tab layout:
+ *  1. Marketplace — district-approved content packs & tools
+ *  2. My Resources — teacher-uploaded lesson plans, templates, media etc.
+ *
+ * The "My Resources" tab uses React Query hooks (useLibraryResources)
+ * against /api/library/resources → content-svc.
  */
-export default function MarketplaceLibraryPage() {
+export default function LibraryPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Heading kicker="Marketplace" className="text-headline font-semibold">
+          <Heading kicker="Resource Hub" className="text-headline font-semibold">
             My Library
           </Heading>
           <p className="mt-1 text-muted">
-            Content and tools approved by your district. Add them to your classrooms.
+            District content, tools, and your personal teaching resources.
           </p>
         </div>
       </div>
@@ -32,25 +37,29 @@ export default function MarketplaceLibraryPage() {
         <LibrarySearch />
       </div>
 
-      {/* Filters & Grid */}
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <aside className="w-full shrink-0 lg:w-64">
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted">
-              Filters
-            </h2>
-            <Suspense fallback={<FiltersSkeleton />}>
-              <LibraryFilters />
-            </Suspense>
-          </div>
-        </aside>
+      {/* Tab Switcher: Marketplace / My Resources */}
+      <LibraryTabsWrapper
+        marketplaceContent={
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <aside className="w-full shrink-0 lg:w-64">
+              <div className="rounded-lg border border-border bg-surface p-4">
+                <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted">
+                  Filters
+                </h2>
+                <Suspense fallback={<FiltersSkeleton />}>
+                  <LibraryFilters />
+                </Suspense>
+              </div>
+            </aside>
 
-        <main className="flex-1">
-          <Suspense fallback={<GridSkeleton />}>
-            <LibraryGrid />
-          </Suspense>
-        </main>
-      </div>
+            <main className="flex-1">
+              <Suspense fallback={<GridSkeleton />}>
+                <LibraryGrid />
+              </Suspense>
+            </main>
+          </div>
+        }
+      />
     </section>
   );
 }
