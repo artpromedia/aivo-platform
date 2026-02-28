@@ -200,7 +200,7 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const AppLocalizationsDelegate();
 
   @override
-  bool isSupported(Locale locale) => ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ko', 'ar', 'hi', 'id', 'vi', 'ru', 'tr', 'it'].contains(locale.languageCode);
 
   @override
   Future<AppLocalizations> load(Locale locale) async {
@@ -209,6 +209,16 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
         return AppLocalizationsEs();
       case 'fr':
         return AppLocalizationsFr();
+      case 'id':
+        return AppLocalizationsId();
+      case 'vi':
+        return AppLocalizationsVi();
+      case 'ru':
+        return AppLocalizationsRu();
+      case 'tr':
+        return AppLocalizationsTr();
+      case 'it':
+        return AppLocalizationsIt();
       default:
         return AppLocalizationsEn();
     }
@@ -404,4 +414,474 @@ class AppLocalizationsFr extends AppLocalizations {
   @override String get progressOverTime => 'Progrès dans le temps';
   @override String get subjectBreakdown => 'Par matière';
   @override String get teacherNotes => 'Notes de l\'enseignant';
+}
+
+// Indonesian
+class AppLocalizationsId extends AppLocalizations {
+  @override String get navDashboard => 'Dasbor';
+  @override String get navMessages => 'Pesan';
+  @override String get navReports => 'Laporan';
+  @override String get navSettings => 'Pengaturan';
+
+  @override String get dashboardTitle => 'Dasbor';
+  @override String welcomeBack(String name) => 'Selamat datang kembali, $name!';
+  @override String get downloadReport => 'Unduh Laporan';
+  @override String get timeSpent => 'Waktu Belajar';
+  @override String get minutes => 'mnt';
+  @override String get activeDays => 'Hari Aktif';
+  @override String get avgScore => 'Skor Rata-rata';
+  @override String get subjects => 'Mata Pelajaran';
+  @override String get recentActivity => 'Aktivitas Terbaru';
+  @override String get viewAll => 'Lihat Semua';
+
+  @override String get messagesTitle => 'Pesan';
+  @override String get newMessage => 'Pesan Baru';
+  @override String get noMessages => 'Belum ada pesan';
+  @override String get startConversation => 'Mulai percakapan dengan guru anak Anda';
+  @override String get selectChild => 'Pilih Anak';
+  @override String get selectTeacher => 'Pilih Guru';
+  @override String get subject => 'Subjek';
+  @override String get message => 'Pesan';
+  @override String get send => 'Kirim';
+  @override String get cancel => 'Batal';
+  @override String get typeMessage => 'Ketik pesan...';
+  @override String get reportConversation => 'Laporkan Percakapan';
+  @override String get reportConversationConfirm => 'Apakah Anda yakin ingin melaporkan percakapan ini?';
+  @override String get reportMessage => 'Laporkan Pesan';
+  @override String get reportMessageConfirm => 'Apakah Anda yakin ingin melaporkan pesan ini?';
+  @override String get report => 'Laporkan';
+  @override String get reportSubmitted => 'Laporan terkirim';
+
+  @override String get consentTitle => 'Privasi & Persetujuan';
+  @override String get privacyNotice => 'Pemberitahuan Privasi';
+  @override String get coppaFerpaCompliance => 'Kami mematuhi peraturan COPPA dan FERPA untuk melindungi data anak Anda.';
+  @override String get dataCollection => 'Pengumpulan Data';
+  @override String get dataCollectionDesc => 'Kontrol cara kami mengumpulkan dan menggunakan data pembelajaran';
+  @override String get learningAnalytics => 'Analitik Pembelajaran';
+  @override String get learningAnalyticsDesc => 'Pantau kemajuan dan personalisasi pengalaman belajar';
+  @override String get progressSharing => 'Berbagi Kemajuan';
+  @override String get progressSharingDesc => 'Bagikan laporan kemajuan dengan guru';
+  @override String get communications => 'Komunikasi';
+  @override String get communicationsDesc => 'Kelola preferensi notifikasi';
+  @override String get emailNotifications => 'Notifikasi Email';
+  @override String get emailNotificationsDesc => 'Terima pembaruan melalui email';
+  @override String get pushNotifications => 'Notifikasi Push';
+  @override String get pushNotificationsDesc => 'Terima notifikasi instan';
+  @override String get weeklyDigest => 'Ringkasan Mingguan';
+  @override String get weeklyDigestDesc => 'Ringkasan mingguan kemajuan anak Anda';
+  @override String get aiFeatures => 'Fitur AI';
+  @override String get aiFeaturesDesc => 'Kontrol fitur berbasis AI';
+  @override String get aiPersonalization => 'Personalisasi AI';
+  @override String get aiPersonalizationDesc => 'Gunakan AI untuk mempersonalisasi jalur pembelajaran';
+  @override String get voiceInput => 'Input Suara';
+  @override String get voiceInputDesc => 'Izinkan perintah suara dan dikte';
+  @override String get requestDataExport => 'Minta Ekspor Data';
+  @override String get requestDataDeletion => 'Minta Penghapusan Data';
+  @override String get dataDeletionWarning => 'Ini akan menghapus semua data secara permanen. Tindakan ini tidak dapat dibatalkan.';
+  @override String get dataDeletionRequested => 'Permintaan penghapusan terkirim';
+  @override String get requestDeletion => 'Minta Penghapusan';
+
+  @override String get settingsTitle => 'Pengaturan';
+  @override String get profile => 'Profil';
+  @override String get language => 'Bahasa';
+  @override String get appLanguage => 'Bahasa Aplikasi';
+  @override String get notifications => 'Notifikasi';
+  @override String get privacy => 'Privasi';
+  @override String get manageConsent => 'Kelola Persetujuan';
+  @override String get changePassword => 'Ubah Kata Sandi';
+  @override String get appearance => 'Tampilan';
+  @override String get theme => 'Tema';
+  @override String get themeSystem => 'Sistem';
+  @override String get themeLight => 'Terang';
+  @override String get themeDark => 'Gelap';
+  @override String get about => 'Tentang';
+  @override String get version => 'Versi';
+  @override String get termsOfService => 'Ketentuan Layanan';
+  @override String get privacyPolicy => 'Kebijakan Privasi';
+  @override String get logout => 'Keluar';
+
+  @override String get reportsTitle => 'Laporan Kemajuan';
+  @override String get downloadPdf => 'Unduh PDF';
+  @override String get week => 'Minggu';
+  @override String get month => 'Bulan';
+  @override String get semester => 'Semester';
+  @override String get progressOverTime => 'Kemajuan Seiring Waktu';
+  @override String get subjectBreakdown => 'Rincian Mata Pelajaran';
+  @override String get teacherNotes => 'Catatan Guru';
+}
+
+// Vietnamese
+class AppLocalizationsVi extends AppLocalizations {
+  @override String get navDashboard => 'Bảng điều khiển';
+  @override String get navMessages => 'Tin nhắn';
+  @override String get navReports => 'Báo cáo';
+  @override String get navSettings => 'Cài đặt';
+
+  @override String get dashboardTitle => 'Bảng điều khiển';
+  @override String welcomeBack(String name) => 'Chào mừng trở lại, $name!';
+  @override String get downloadReport => 'Tải báo cáo';
+  @override String get timeSpent => 'Thời gian học';
+  @override String get minutes => 'phút';
+  @override String get activeDays => 'Ngày hoạt động';
+  @override String get avgScore => 'Điểm TB';
+  @override String get subjects => 'Môn học';
+  @override String get recentActivity => 'Hoạt động gần đây';
+  @override String get viewAll => 'Xem tất cả';
+
+  @override String get messagesTitle => 'Tin nhắn';
+  @override String get newMessage => 'Tin nhắn mới';
+  @override String get noMessages => 'Chưa có tin nhắn';
+  @override String get startConversation => 'Bắt đầu cuộc trò chuyện với giáo viên của con bạn';
+  @override String get selectChild => 'Chọn con';
+  @override String get selectTeacher => 'Chọn giáo viên';
+  @override String get subject => 'Chủ đề';
+  @override String get message => 'Tin nhắn';
+  @override String get send => 'Gửi';
+  @override String get cancel => 'Hủy';
+  @override String get typeMessage => 'Nhập tin nhắn...';
+  @override String get reportConversation => 'Báo cáo cuộc trò chuyện';
+  @override String get reportConversationConfirm => 'Bạn có chắc chắn muốn báo cáo cuộc trò chuyện này không?';
+  @override String get reportMessage => 'Báo cáo tin nhắn';
+  @override String get reportMessageConfirm => 'Bạn có chắc chắn muốn báo cáo tin nhắn này không?';
+  @override String get report => 'Báo cáo';
+  @override String get reportSubmitted => 'Đã gửi báo cáo';
+
+  @override String get consentTitle => 'Quyền riêng tư & Đồng ý';
+  @override String get privacyNotice => 'Thông báo quyền riêng tư';
+  @override String get coppaFerpaCompliance => 'Chúng tôi tuân thủ quy định COPPA và FERPA để bảo vệ dữ liệu của con bạn.';
+  @override String get dataCollection => 'Thu thập dữ liệu';
+  @override String get dataCollectionDesc => 'Kiểm soát cách chúng tôi thu thập và sử dụng dữ liệu học tập';
+  @override String get learningAnalytics => 'Phân tích học tập';
+  @override String get learningAnalyticsDesc => 'Theo dõi tiến trình và cá nhân hóa trải nghiệm học tập';
+  @override String get progressSharing => 'Chia sẻ tiến trình';
+  @override String get progressSharingDesc => 'Chia sẻ báo cáo tiến trình với giáo viên';
+  @override String get communications => 'Liên lạc';
+  @override String get communicationsDesc => 'Quản lý tùy chọn thông báo';
+  @override String get emailNotifications => 'Thông báo email';
+  @override String get emailNotificationsDesc => 'Nhận cập nhật qua email';
+  @override String get pushNotifications => 'Thông báo đẩy';
+  @override String get pushNotificationsDesc => 'Nhận thông báo tức thì';
+  @override String get weeklyDigest => 'Tóm tắt hàng tuần';
+  @override String get weeklyDigestDesc => 'Tóm tắt tiến trình hàng tuần của con bạn';
+  @override String get aiFeatures => 'Tính năng AI';
+  @override String get aiFeaturesDesc => 'Kiểm soát các tính năng AI';
+  @override String get aiPersonalization => 'Cá nhân hóa AI';
+  @override String get aiPersonalizationDesc => 'Sử dụng AI để cá nhân hóa lộ trình học tập';
+  @override String get voiceInput => 'Nhập giọng nói';
+  @override String get voiceInputDesc => 'Cho phép lệnh giọng nói và đọc chính tả';
+  @override String get requestDataExport => 'Yêu cầu xuất dữ liệu';
+  @override String get requestDataDeletion => 'Yêu cầu xóa dữ liệu';
+  @override String get dataDeletionWarning => 'Thao tác này sẽ xóa vĩnh viễn tất cả dữ liệu. Không thể hoàn tác.';
+  @override String get dataDeletionRequested => 'Đã gửi yêu cầu xóa';
+  @override String get requestDeletion => 'Yêu cầu xóa';
+
+  @override String get settingsTitle => 'Cài đặt';
+  @override String get profile => 'Hồ sơ';
+  @override String get language => 'Ngôn ngữ';
+  @override String get appLanguage => 'Ngôn ngữ ứng dụng';
+  @override String get notifications => 'Thông báo';
+  @override String get privacy => 'Quyền riêng tư';
+  @override String get manageConsent => 'Quản lý đồng ý';
+  @override String get changePassword => 'Đổi mật khẩu';
+  @override String get appearance => 'Giao diện';
+  @override String get theme => 'Chủ đề';
+  @override String get themeSystem => 'Hệ thống';
+  @override String get themeLight => 'Sáng';
+  @override String get themeDark => 'Tối';
+  @override String get about => 'Giới thiệu';
+  @override String get version => 'Phiên bản';
+  @override String get termsOfService => 'Điều khoản dịch vụ';
+  @override String get privacyPolicy => 'Chính sách quyền riêng tư';
+  @override String get logout => 'Đăng xuất';
+
+  @override String get reportsTitle => 'Báo cáo tiến trình';
+  @override String get downloadPdf => 'Tải PDF';
+  @override String get week => 'Tuần';
+  @override String get month => 'Tháng';
+  @override String get semester => 'Học kỳ';
+  @override String get progressOverTime => 'Tiến trình theo thời gian';
+  @override String get subjectBreakdown => 'Phân tích theo môn học';
+  @override String get teacherNotes => 'Ghi chú của giáo viên';
+}
+
+// Russian
+class AppLocalizationsRu extends AppLocalizations {
+  @override String get navDashboard => 'Главная';
+  @override String get navMessages => 'Сообщения';
+  @override String get navReports => 'Отчёты';
+  @override String get navSettings => 'Настройки';
+
+  @override String get dashboardTitle => 'Главная';
+  @override String welcomeBack(String name) => 'С возвращением, $name!';
+  @override String get downloadReport => 'Скачать отчёт';
+  @override String get timeSpent => 'Время занятий';
+  @override String get minutes => 'мин';
+  @override String get activeDays => 'Активные дни';
+  @override String get avgScore => 'Средний балл';
+  @override String get subjects => 'Предметы';
+  @override String get recentActivity => 'Последняя активность';
+  @override String get viewAll => 'Смотреть все';
+
+  @override String get messagesTitle => 'Сообщения';
+  @override String get newMessage => 'Новое сообщение';
+  @override String get noMessages => 'Сообщений пока нет';
+  @override String get startConversation => 'Начните переписку с учителем вашего ребёнка';
+  @override String get selectChild => 'Выбрать ребёнка';
+  @override String get selectTeacher => 'Выбрать учителя';
+  @override String get subject => 'Тема';
+  @override String get message => 'Сообщение';
+  @override String get send => 'Отправить';
+  @override String get cancel => 'Отмена';
+  @override String get typeMessage => 'Введите сообщение...';
+  @override String get reportConversation => 'Пожаловаться на переписку';
+  @override String get reportConversationConfirm => 'Вы уверены, что хотите пожаловаться на эту переписку?';
+  @override String get reportMessage => 'Пожаловаться на сообщение';
+  @override String get reportMessageConfirm => 'Вы уверены, что хотите пожаловаться на это сообщение?';
+  @override String get report => 'Пожаловаться';
+  @override String get reportSubmitted => 'Жалоба отправлена';
+
+  @override String get consentTitle => 'Конфиденциальность и согласие';
+  @override String get privacyNotice => 'Уведомление о конфиденциальности';
+  @override String get coppaFerpaCompliance => 'Мы соблюдаем требования COPPA и FERPA для защиты данных вашего ребёнка.';
+  @override String get dataCollection => 'Сбор данных';
+  @override String get dataCollectionDesc => 'Управляйте сбором и использованием учебных данных';
+  @override String get learningAnalytics => 'Аналитика обучения';
+  @override String get learningAnalyticsDesc => 'Отслеживание прогресса и персонализация обучения';
+  @override String get progressSharing => 'Обмен результатами';
+  @override String get progressSharingDesc => 'Делиться отчётами о прогрессе с учителями';
+  @override String get communications => 'Коммуникации';
+  @override String get communicationsDesc => 'Управление настройками уведомлений';
+  @override String get emailNotifications => 'Уведомления по email';
+  @override String get emailNotificationsDesc => 'Получать обновления по электронной почте';
+  @override String get pushNotifications => 'Push-уведомления';
+  @override String get pushNotificationsDesc => 'Получать мгновенные уведомления';
+  @override String get weeklyDigest => 'Еженедельный отчёт';
+  @override String get weeklyDigestDesc => 'Еженедельная сводка успеваемости вашего ребёнка';
+  @override String get aiFeatures => 'Функции ИИ';
+  @override String get aiFeaturesDesc => 'Управление функциями на основе ИИ';
+  @override String get aiPersonalization => 'Персонализация ИИ';
+  @override String get aiPersonalizationDesc => 'Использовать ИИ для персонализации учебного пути';
+  @override String get voiceInput => 'Голосовой ввод';
+  @override String get voiceInputDesc => 'Разрешить голосовые команды и диктовку';
+  @override String get requestDataExport => 'Запросить экспорт данных';
+  @override String get requestDataDeletion => 'Запросить удаление данных';
+  @override String get dataDeletionWarning => 'Все данные будут удалены безвозвратно. Это действие нельзя отменить.';
+  @override String get dataDeletionRequested => 'Запрос на удаление отправлен';
+  @override String get requestDeletion => 'Запросить удаление';
+
+  @override String get settingsTitle => 'Настройки';
+  @override String get profile => 'Профиль';
+  @override String get language => 'Язык';
+  @override String get appLanguage => 'Язык приложения';
+  @override String get notifications => 'Уведомления';
+  @override String get privacy => 'Конфиденциальность';
+  @override String get manageConsent => 'Управление согласием';
+  @override String get changePassword => 'Изменить пароль';
+  @override String get appearance => 'Оформление';
+  @override String get theme => 'Тема';
+  @override String get themeSystem => 'Системная';
+  @override String get themeLight => 'Светлая';
+  @override String get themeDark => 'Тёмная';
+  @override String get about => 'О приложении';
+  @override String get version => 'Версия';
+  @override String get termsOfService => 'Условия использования';
+  @override String get privacyPolicy => 'Политика конфиденциальности';
+  @override String get logout => 'Выйти';
+
+  @override String get reportsTitle => 'Отчёты об успеваемости';
+  @override String get downloadPdf => 'Скачать PDF';
+  @override String get week => 'Неделя';
+  @override String get month => 'Месяц';
+  @override String get semester => 'Семестр';
+  @override String get progressOverTime => 'Динамика прогресса';
+  @override String get subjectBreakdown => 'По предметам';
+  @override String get teacherNotes => 'Заметки учителя';
+}
+
+// Turkish
+class AppLocalizationsTr extends AppLocalizations {
+  @override String get navDashboard => 'Ana Sayfa';
+  @override String get navMessages => 'Mesajlar';
+  @override String get navReports => 'Raporlar';
+  @override String get navSettings => 'Ayarlar';
+
+  @override String get dashboardTitle => 'Ana Sayfa';
+  @override String welcomeBack(String name) => 'Tekrar hoş geldiniz, $name!';
+  @override String get downloadReport => 'Raporu İndir';
+  @override String get timeSpent => 'Harcanan Süre';
+  @override String get minutes => 'dk';
+  @override String get activeDays => 'Aktif Günler';
+  @override String get avgScore => 'Ort. Puan';
+  @override String get subjects => 'Dersler';
+  @override String get recentActivity => 'Son Etkinlik';
+  @override String get viewAll => 'Tümünü Gör';
+
+  @override String get messagesTitle => 'Mesajlar';
+  @override String get newMessage => 'Yeni Mesaj';
+  @override String get noMessages => 'Henüz mesaj yok';
+  @override String get startConversation => 'Çocuğunuzun öğretmeniyle bir görüşme başlatın';
+  @override String get selectChild => 'Çocuk Seç';
+  @override String get selectTeacher => 'Öğretmen Seç';
+  @override String get subject => 'Konu';
+  @override String get message => 'Mesaj';
+  @override String get send => 'Gönder';
+  @override String get cancel => 'İptal';
+  @override String get typeMessage => 'Bir mesaj yazın...';
+  @override String get reportConversation => 'Görüşmeyi Bildir';
+  @override String get reportConversationConfirm => 'Bu görüşmeyi bildirmek istediğinizden emin misiniz?';
+  @override String get reportMessage => 'Mesajı Bildir';
+  @override String get reportMessageConfirm => 'Bu mesajı bildirmek istediğinizden emin misiniz?';
+  @override String get report => 'Bildir';
+  @override String get reportSubmitted => 'Bildirim gönderildi';
+
+  @override String get consentTitle => 'Gizlilik ve Onay';
+  @override String get privacyNotice => 'Gizlilik Bildirimi';
+  @override String get coppaFerpaCompliance => 'Çocuğunuzun verilerini korumak için COPPA ve FERPA düzenlemelerine uyuyoruz.';
+  @override String get dataCollection => 'Veri Toplama';
+  @override String get dataCollectionDesc => 'Öğrenme verilerinin toplanma ve kullanılma şeklini kontrol edin';
+  @override String get learningAnalytics => 'Öğrenme Analitiği';
+  @override String get learningAnalyticsDesc => 'İlerlemeyi takip edin ve öğrenme deneyimini kişiselleştirin';
+  @override String get progressSharing => 'İlerleme Paylaşımı';
+  @override String get progressSharingDesc => 'İlerleme raporlarını öğretmenlerle paylaşın';
+  @override String get communications => 'İletişim';
+  @override String get communicationsDesc => 'Bildirim tercihlerini yönetin';
+  @override String get emailNotifications => 'E-posta Bildirimleri';
+  @override String get emailNotificationsDesc => 'E-posta ile güncellemeler alın';
+  @override String get pushNotifications => 'Anlık Bildirimler';
+  @override String get pushNotificationsDesc => 'Anlık bildirimler alın';
+  @override String get weeklyDigest => 'Haftalık Özet';
+  @override String get weeklyDigestDesc => 'Çocuğunuzun haftalık ilerleme özeti';
+  @override String get aiFeatures => 'Yapay Zeka Özellikleri';
+  @override String get aiFeaturesDesc => 'Yapay zeka destekli özellikleri kontrol edin';
+  @override String get aiPersonalization => 'Yapay Zeka Kişiselleştirme';
+  @override String get aiPersonalizationDesc => 'Öğrenme yolunu kişiselleştirmek için yapay zeka kullanın';
+  @override String get voiceInput => 'Sesli Giriş';
+  @override String get voiceInputDesc => 'Sesli komutlara ve dikte etmeye izin verin';
+  @override String get requestDataExport => 'Veri Dışa Aktarımı Talep Et';
+  @override String get requestDataDeletion => 'Veri Silme Talep Et';
+  @override String get dataDeletionWarning => 'Tüm veriler kalıcı olarak silinecektir. Bu işlem geri alınamaz.';
+  @override String get dataDeletionRequested => 'Silme talebi gönderildi';
+  @override String get requestDeletion => 'Silme Talep Et';
+
+  @override String get settingsTitle => 'Ayarlar';
+  @override String get profile => 'Profil';
+  @override String get language => 'Dil';
+  @override String get appLanguage => 'Uygulama Dili';
+  @override String get notifications => 'Bildirimler';
+  @override String get privacy => 'Gizlilik';
+  @override String get manageConsent => 'Onayı Yönet';
+  @override String get changePassword => 'Şifreyi Değiştir';
+  @override String get appearance => 'Görünüm';
+  @override String get theme => 'Tema';
+  @override String get themeSystem => 'Sistem';
+  @override String get themeLight => 'Açık';
+  @override String get themeDark => 'Koyu';
+  @override String get about => 'Hakkında';
+  @override String get version => 'Sürüm';
+  @override String get termsOfService => 'Hizmet Şartları';
+  @override String get privacyPolicy => 'Gizlilik Politikası';
+  @override String get logout => 'Çıkış Yap';
+
+  @override String get reportsTitle => 'İlerleme Raporları';
+  @override String get downloadPdf => 'PDF İndir';
+  @override String get week => 'Hafta';
+  @override String get month => 'Ay';
+  @override String get semester => 'Dönem';
+  @override String get progressOverTime => 'Zamana Göre İlerleme';
+  @override String get subjectBreakdown => 'Ders Bazında Dağılım';
+  @override String get teacherNotes => 'Öğretmen Notları';
+}
+
+// Italian
+class AppLocalizationsIt extends AppLocalizations {
+  @override String get navDashboard => 'Pannello';
+  @override String get navMessages => 'Messaggi';
+  @override String get navReports => 'Report';
+  @override String get navSettings => 'Impostazioni';
+
+  @override String get dashboardTitle => 'Pannello';
+  @override String welcomeBack(String name) => 'Bentornato, $name!';
+  @override String get downloadReport => 'Scarica Report';
+  @override String get timeSpent => 'Tempo dedicato';
+  @override String get minutes => 'min';
+  @override String get activeDays => 'Giorni attivi';
+  @override String get avgScore => 'Media voti';
+  @override String get subjects => 'Materie';
+  @override String get recentActivity => 'Attività recente';
+  @override String get viewAll => 'Vedi tutto';
+
+  @override String get messagesTitle => 'Messaggi';
+  @override String get newMessage => 'Nuovo messaggio';
+  @override String get noMessages => 'Nessun messaggio';
+  @override String get startConversation => 'Inizia una conversazione con l\'insegnante di tuo figlio';
+  @override String get selectChild => 'Seleziona figlio';
+  @override String get selectTeacher => 'Seleziona insegnante';
+  @override String get subject => 'Oggetto';
+  @override String get message => 'Messaggio';
+  @override String get send => 'Invia';
+  @override String get cancel => 'Annulla';
+  @override String get typeMessage => 'Scrivi un messaggio...';
+  @override String get reportConversation => 'Segnala conversazione';
+  @override String get reportConversationConfirm => 'Sei sicuro di voler segnalare questa conversazione?';
+  @override String get reportMessage => 'Segnala messaggio';
+  @override String get reportMessageConfirm => 'Sei sicuro di voler segnalare questo messaggio?';
+  @override String get report => 'Segnala';
+  @override String get reportSubmitted => 'Segnalazione inviata';
+
+  @override String get consentTitle => 'Privacy e consenso';
+  @override String get privacyNotice => 'Informativa sulla privacy';
+  @override String get coppaFerpaCompliance => 'Rispettiamo le normative COPPA e FERPA per proteggere i dati di tuo figlio.';
+  @override String get dataCollection => 'Raccolta dati';
+  @override String get dataCollectionDesc => 'Controlla come raccogliamo e utilizziamo i dati di apprendimento';
+  @override String get learningAnalytics => 'Analisi dell\'apprendimento';
+  @override String get learningAnalyticsDesc => 'Monitora i progressi e personalizza l\'esperienza di apprendimento';
+  @override String get progressSharing => 'Condivisione progressi';
+  @override String get progressSharingDesc => 'Condividi i report sui progressi con gli insegnanti';
+  @override String get communications => 'Comunicazioni';
+  @override String get communicationsDesc => 'Gestisci le preferenze di notifica';
+  @override String get emailNotifications => 'Notifiche email';
+  @override String get emailNotificationsDesc => 'Ricevi aggiornamenti via email';
+  @override String get pushNotifications => 'Notifiche push';
+  @override String get pushNotificationsDesc => 'Ricevi notifiche istantanee';
+  @override String get weeklyDigest => 'Riepilogo settimanale';
+  @override String get weeklyDigestDesc => 'Riepilogo settimanale dei progressi di tuo figlio';
+  @override String get aiFeatures => 'Funzionalità IA';
+  @override String get aiFeaturesDesc => 'Controlla le funzionalità basate sull\'IA';
+  @override String get aiPersonalization => 'Personalizzazione IA';
+  @override String get aiPersonalizationDesc => 'Usa l\'IA per personalizzare il percorso di apprendimento';
+  @override String get voiceInput => 'Input vocale';
+  @override String get voiceInputDesc => 'Consenti comandi vocali e dettatura';
+  @override String get requestDataExport => 'Richiedi esportazione dati';
+  @override String get requestDataDeletion => 'Richiedi cancellazione dati';
+  @override String get dataDeletionWarning => 'Tutti i dati verranno eliminati definitivamente. Questa azione non può essere annullata.';
+  @override String get dataDeletionRequested => 'Richiesta di cancellazione inviata';
+  @override String get requestDeletion => 'Richiedi cancellazione';
+
+  @override String get settingsTitle => 'Impostazioni';
+  @override String get profile => 'Profilo';
+  @override String get language => 'Lingua';
+  @override String get appLanguage => 'Lingua dell\'app';
+  @override String get notifications => 'Notifiche';
+  @override String get privacy => 'Privacy';
+  @override String get manageConsent => 'Gestisci consenso';
+  @override String get changePassword => 'Cambia password';
+  @override String get appearance => 'Aspetto';
+  @override String get theme => 'Tema';
+  @override String get themeSystem => 'Sistema';
+  @override String get themeLight => 'Chiaro';
+  @override String get themeDark => 'Scuro';
+  @override String get about => 'Informazioni';
+  @override String get version => 'Versione';
+  @override String get termsOfService => 'Termini di servizio';
+  @override String get privacyPolicy => 'Informativa sulla privacy';
+  @override String get logout => 'Esci';
+
+  @override String get reportsTitle => 'Report sui progressi';
+  @override String get downloadPdf => 'Scarica PDF';
+  @override String get week => 'Settimana';
+  @override String get month => 'Mese';
+  @override String get semester => 'Semestre';
+  @override String get progressOverTime => 'Progressi nel tempo';
+  @override String get subjectBreakdown => 'Dettaglio per materia';
+  @override String get teacherNotes => 'Note dell\'insegnante';
 }

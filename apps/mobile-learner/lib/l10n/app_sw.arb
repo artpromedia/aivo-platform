@@ -1,12 +1,10 @@
 {
   "@@locale": "sw",
   "@@last_modified": "2026-01-20",
-
   "appTitle": "Aivo Mwanafunzi",
   "@appTitle": {
     "description": "The title of the application"
   },
-
   "welcomeBack": "Karibu tena, {name}!",
   "@welcomeBack": {
     "description": "Welcome message with learner's name",
@@ -17,12 +15,10 @@
       }
     }
   },
-
   "todaysPlan": "Mpango wa Leo",
   "@todaysPlan": {
     "description": "Title for today's learning plan"
   },
-
   "activitiesRemaining": "{count, plural, =0{Umemaliza yote!} =1{Shughuli 1 imebaki} other{Shughuli {count} zimebaki}}",
   "@activitiesRemaining": {
     "description": "Number of activities remaining today",
@@ -33,27 +29,22 @@
       }
     }
   },
-
   "startLearning": "Anza Kujifunza",
   "@startLearning": {
     "description": "Button to start learning session"
   },
-
   "continueLearning": "Endelea Kujifunza",
   "@continueLearning": {
     "description": "Button to continue learning session"
   },
-
   "sessionComplete": "Kipindi Kimekamilika!",
   "@sessionComplete": {
     "description": "Title when session is finished"
   },
-
   "greatJob": "Kazi nzuri!",
   "@greatJob": {
     "description": "Congratulatory message"
   },
-
   "xpEarned": "+{amount} XP",
   "@xpEarned": {
     "description": "XP points earned",
@@ -63,7 +54,6 @@
       }
     }
   },
-
   "coinsEarned": "+{amount} sarafu",
   "@coinsEarned": {
     "description": "Coins earned",
@@ -73,7 +63,6 @@
       }
     }
   },
-
   "streakDays": "{count, plural, =1{Mfuatano wa siku 1} other{Mfuatano wa siku {count}}}",
   "@streakDays": {
     "description": "Learning streak in days",
@@ -83,137 +72,110 @@
       }
     }
   },
-
   "progress": "Maendeleo",
   "@progress": {
     "description": "Progress section title"
   },
-
   "goals": "Malengo",
   "@goals": {
     "description": "Goals section title"
   },
-
   "rewards": "Zawadi",
   "@rewards": {
     "description": "Rewards section title"
   },
-
   "settings": "Mipangilio",
   "@settings": {
     "description": "Settings section title"
   },
-
   "profile": "Wasifu",
   "@profile": {
     "description": "Profile section title"
   },
-
   "focusMode": "Hali ya Umakini",
   "@focusMode": {
     "description": "Focus mode feature"
   },
-
   "needABreak": "Unahitaji mapumziko?",
   "@needABreak": {
     "description": "Question for break suggestion"
   },
-
   "takeBreak": "Pumzika",
   "@takeBreak": {
     "description": "Button to take a break"
   },
-
   "skipBreak": "Endelea",
   "@skipBreak": {
     "description": "Button to skip break"
   },
-
   "homeworkHelp": "Msaada wa Kazi ya Nyumbani",
   "@homeworkHelp": {
     "description": "Homework helper feature"
   },
-
   "scanProblem": "Changanua Tatizo",
   "@scanProblem": {
     "description": "Button to scan homework problem"
   },
-
   "typeProblem": "Andika Tatizo",
   "@typeProblem": {
     "description": "Button to type homework problem"
   },
-
   "brainTraining": "Mazoezi ya Ubongo",
   "@brainTraining": {
     "description": "Brain training games section"
   },
-
   "playGames": "Cheza Michezo",
   "@playGames": {
     "description": "Button to play educational games"
   },
-
   "offline": "Nje ya Mtandao",
   "@offline": {
     "description": "Offline mode indicator"
   },
-
   "offlineMessage": "Uko nje ya mtandao. Baadhi ya vipengele haviwezi kupatikana.",
   "@offlineMessage": {
     "description": "Message shown when offline"
   },
-
   "syncing": "Inasawazisha...",
   "@syncing": {
     "description": "Syncing status message"
   },
-
   "syncComplete": "Usawazishaji umekamilika",
   "@syncComplete": {
     "description": "Sync completed message"
   },
-
   "errorGeneric": "Kuna tatizo limetokea. Tafadhali jaribu tena.",
   "@errorGeneric": {
     "description": "Generic error message"
   },
-
   "retry": "Jaribu Tena",
   "@retry": {
     "description": "Retry button text"
   },
-
   "cancel": "Ghairi",
   "@cancel": {
     "description": "Cancel button text"
   },
-
   "done": "Imekamilika",
   "@done": {
     "description": "Done button text"
   },
-
   "next": "Ifuatayo",
   "@next": {
     "description": "Next button text"
   },
-
   "back": "Nyuma",
   "@back": {
     "description": "Back button text"
   },
-
   "submit": "Wasilisha",
   "@submit": {
     "description": "Submit button text"
   },
-
   "loading": "Inapakia...",
   "@loading": {
     "description": "Loading indicator text"
   },
-
   "minutes": "{count, plural, =1{Dakika 1} other{Dakika {count}}}",
   "@minutes": {
     "description": "Duration in minutes",
@@ -223,7 +185,6 @@
       }
     }
   },
-
   "accuracyPercent": "Usahihi wa {percent}%",
   "@accuracyPercent": {
     "description": "Accuracy percentage",
@@ -233,49 +194,378 @@
       }
     }
   },
-
   "subject_math": "Hisabati",
   "@subject_math": {
     "description": "Math subject name"
   },
-
   "subject_ela": "Kiswahili",
   "@subject_ela": {
     "description": "Swahili Language Arts subject name"
   },
-
   "subject_science": "Sayansi",
   "@subject_science": {
     "description": "Science subject name"
   },
-
   "subject_socialStudies": "Maarifa ya Jamii",
   "@subject_socialStudies": {
     "description": "Social Studies subject name"
   },
-
   "accessibilitySettings": "Mipangilio ya Upatikanaji",
   "@accessibilitySettings": {
     "description": "Accessibility settings title"
   },
-
   "textSize": "Ukubwa wa Maandishi",
   "@textSize": {
     "description": "Text size setting"
   },
-
   "highContrast": "Utofautishaji wa Juu",
   "@highContrast": {
     "description": "High contrast mode setting"
   },
-
   "readAloud": "Soma Kwa Sauti",
   "@readAloud": {
     "description": "Read aloud / TTS setting"
   },
-
   "reducedMotion": "Mwendo Uliopunguzwa",
   "@reducedMotion": {
     "description": "Reduced motion setting"
-  }
+  },
+  "commonLoading": "Inapakia...",
+  "commonSave": "Hifadhi",
+  "commonCancel": "Ghairi",
+  "commonDelete": "Futa",
+  "commonEdit": "Hariri",
+  "commonCreate": "Unda",
+  "commonSearch": "Tafuta",
+  "commonFilter": "Chuja",
+  "commonExport": "Hamisha Nje",
+  "commonImport": "Ingiza",
+  "commonBack": "Rudi",
+  "commonNext": "Mbele",
+  "commonPrevious": "Nyuma",
+  "commonSubmit": "Wasilisha",
+  "commonConfirm": "Thibitisha",
+  "commonClose": "Funga",
+  "commonYes": "Ndiyo",
+  "commonNo": "Hapana",
+  "commonOk": "Sawa",
+  "commonError": "Hitilafu",
+  "commonSuccess": "Imefanikiwa",
+  "commonWarning": "Onyo",
+  "commonInfo": "Taarifa",
+  "commonRequired": "Inahitajika",
+  "commonOptional": "Si lazima",
+  "commonNoResults": "Hakuna matokeo",
+  "commonShowMore": "Onyesha zaidi",
+  "commonShowLess": "Onyesha kidogo",
+  "commonSelectAll": "Chagua zote",
+  "commonDeselectAll": "Ondoa chaguo zote",
+  "commonRetry": "Jaribu tena",
+  "commonRefresh": "Onyesha upya",
+  "commonLanguage": "Lugha",
+  "commonSettings": "Mipangilio",
+  "commonProfile": "Wasifu",
+  "commonLogout": "Ondoka",
+  "commonLogin": "Ingia",
+  "commonSignUp": "Jisajili",
+  "authLoginTitle": "Karibu tena",
+  "authLoginSubtitle": "Ingia kwenye akaunti yako",
+  "authEmail": "Barua pepe",
+  "authPassword": "Nenosiri",
+  "authForgotPassword": "Umesahau nenosiri?",
+  "authResetPassword": "Weka nenosiri upya",
+  "authNewPassword": "Nenosiri jipya",
+  "authConfirmPassword": "Thibitisha nenosiri",
+  "authRememberMe": "Nikumbuke",
+  "authSsoLogin": "Ingia kwa SSO",
+  "authNoAccount": "Huna akaunti?",
+  "authHasAccount": "Una akaunti tayari?",
+  "authInvalidCredentials": "Barua pepe au nenosiri si sahihi",
+  "authAccountLocked": "Akaunti imefungwa. Tafadhali jaribu tena baadaye.",
+  "authSessionExpired": "Kipindi chako kimeisha. Tafadhali ingia tena.",
+  "authMfaRequired": "Weka msimbo wako wa uthibitisho",
+  "authMfaCode": "Msimbo wa uthibitisho",
+  "navDashboard": "Dashibodi",
+  "navStudents": "Wanafunzi",
+  "navClasses": "Madarasa",
+  "navAssessments": "Tathmini",
+  "navContent": "Maudhui",
+  "navReports": "Ripoti",
+  "navAnalytics": "Uchambuzi",
+  "navMessages": "Ujumbe",
+  "navNotifications": "Arifa",
+  "navSettings": "Mipangilio",
+  "navHelp": "Msaada",
+  "navBilling": "Malipo",
+  "navIntegrations": "Muunganisho",
+  "navUsers": "Watumiaji",
+  "navRoles": "Majukumu",
+  "dashboardWelcome": "Karibu, {name}",
+  "dashboardOverview": "Muhtasari",
+  "dashboardRecentActivity": "Shughuli za Hivi Karibuni",
+  "dashboardQuickActions": "Vitendo vya Haraka",
+  "dashboardActiveStudents": "Wanafunzi Hai",
+  "dashboardSessionsToday": "Vipindi vya Leo",
+  "dashboardAverageProgress": "Maendeleo ya Wastani",
+  "dashboardAlertsRequiringAttention": "Tahadhari Zinazohitaji Uangalifu",
+  "studentsTitle": "Wanafunzi",
+  "studentsAddStudent": "Ongeza Mwanafunzi",
+  "studentsImportStudents": "Ingiza Wanafunzi",
+  "studentsExportRoster": "Hamisha Orodha",
+  "studentsFirstName": "Jina la Kwanza",
+  "studentsLastName": "Jina la Mwisho",
+  "studentsGrade": "Daraja",
+  "studentsProgress": "Maendeleo",
+  "studentsLastActive": "Mara ya Mwisho",
+  "studentsStatus": "Hali",
+  "studentsActive": "Hai",
+  "studentsInactive": "Siyo Hai",
+  "studentsEnrolled": "Amesajiliwa",
+  "studentsNoStudents": "Hakuna wanafunzi waliopatikana",
+  "assessmentsTitle": "Tathmini",
+  "assessmentsCreateAssessment": "Unda Tathmini",
+  "assessmentsAssignAssessment": "Gawa Tathmini",
+  "assessmentsDueDate": "Tarehe ya Mwisho",
+  "assessmentsSubmissions": "Mawasilisho",
+  "assessmentsAverageScore": "Alama ya Wastani",
+  "assessmentsCompletion": "Kukamilika",
+  "assessmentsInProgress": "Inaendelea",
+  "assessmentsCompleted": "Imekamilika",
+  "assessmentsNotStarted": "Haijaanza",
+  "assessmentsGraded": "Imewekwa Alama",
+  "assessmentsPending": "Inasubiri",
+  "billingTitle": "Malipo na Usajili",
+  "billingCurrentPlan": "Mpango wa Sasa",
+  "billingUsage": "Matumizi",
+  "billingInvoices": "Ankara",
+  "billingPaymentMethod": "Njia ya Malipo",
+  "billingChangePlan": "Badilisha Mpango",
+  "billingCancelSubscription": "Sitisha Usajili",
+  "billingNextInvoice": "Ankara Inayofuata",
+  "billingBillingPeriod": "Kipindi cha Malipo",
+  "billingActiveSeats": "Viti Vilivyo Hai",
+  "billingApiCalls": "Simu za API",
+  "billingAiInteractions": "Mwingiliano wa AI",
+  "billingStorage": "Hifadhi Iliyotumika",
+  "settingsTitle": "Mipangilio",
+  "settingsGeneral": "Jumla",
+  "settingsOrganization": "Shirika",
+  "settingsBranding": "Nembo",
+  "settingsSso": "Kuingia kwa Mara Moja",
+  "settingsSecurity": "Usalama",
+  "settingsNotifications": "Arifa",
+  "settingsPrivacy": "Faragha",
+  "settingsDataResidency": "Makazi ya Data",
+  "settingsLanguage": "Lugha na Eneo",
+  "settingsLanguagePreference": "Lugha Unayopendelea",
+  "settingsTimezone": "Saa za Eneo",
+  "settingsDateFormat": "Muundo wa Tarehe",
+  "settingsSelectLanguage": "Chagua lugha unayopendelea",
+  "settingsLanguageChanged": "Lugha imesasishwa",
+  "errorsGeneric": "Kuna hitilafu. Tafadhali jaribu tena.",
+  "errorsNotFound": "Ukurasa haujapatikana",
+  "errorsUnauthorized": "Huna ruhusa ya kufikia ukurasa huu",
+  "errorsForbidden": "Ufikiaji umekataliwa",
+  "errorsServerError": "Hitilafu ya seva. Timu yetu imearifiwa.",
+  "errorsNetworkError": "Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.",
+  "errorsRateLimited": "Maombi mengi mno. Tafadhali subiri na ujaribu tena.",
+  "errorsValidationFailed": "Tafadhali kagua maingizo yako na ujaribu tena.",
+  "onboardingWelcome": "Karibu kwenye {platformName}!",
+  "onboardingLetsGetStarted": "Hebu tuweke shirika lako tayari",
+  "onboardingStep": "Hatua {current} ya {total}",
+  "onboardingSkipStep": "Ruka hatua hii",
+  "onboardingCompleteSetup": "Kamilisha Usanidi",
+  "onboardingOrganizationInfo": "Taarifa za Shirika",
+  "onboardingBrandingSetup": "Binafsisha Nembo Yako",
+  "onboardingSsoSetup": "Sanidi Kuingia kwa Mara Moja",
+  "onboardingImportStudents": "Ingiza Wanafunzi Wako",
+  "onboardingInviteStaff": "Alika Timu Yako",
+  "onboardingConfigureLearning": "Sanidi Mipangilio ya Kujifunza",
+  "onboardingReviewAndLaunch": "Kagua na Uzindue",
+  "accessibilitySkipToContent": "Ruka hadi maudhui kuu",
+  "accessibilityOpenMenu": "Fungua menyu",
+  "accessibilityCloseMenu": "Funga menyu",
+  "accessibilityToggleTheme": "Badilisha mandhari meusi",
+  "accessibilityLanguageSwitcher": "Badilisha lugha",
+  "accessibilityNewNotifications": "{count, plural, one{arifa # mpya} other{arifa # mpya}}",
+  "tutorTitle": "Wakufunzi wa AI",
+  "tutorSubtitle": "Ufundishaji bora katika kila somo",
+  "tutorStartSession": "Anza Kipindi",
+  "tutorEndSession": "Maliza Kipindi",
+  "tutorResumeSession": "Endelea na Kipindi",
+  "tutorVoiceOn": "Sauti Imewashwa",
+  "tutorVoiceOff": "Sauti Imezimwa",
+  "tutorVoiceUnavailable": "Sauti haipatikani kwa {language}",
+  "tutorVoiceUnavailableDetail": "Sauti inapatikana kwa Kiingereza, Kihispania, Kifaransa, Kireno, Kiarabu, na zaidi.",
+  "tutorVoiceFallbackNotice": "Inatumia sauti ya {fallbackLanguage}. Sauti ya {nativeLanguage} inakuja hivi karibuni!",
+  "tutorTextOnlyBanner": "{name} atajibu kwa {language} kama maandishi. Msaada wa sauti unakuja hivi karibuni!",
+  "tutorThinking": "{name} anafikiria…",
+  "tutorListening": "{name} anasikiliza…",
+  "tutorSessionWith": "Kipindi na {name}",
+  "tutorSessionDuration": "Muda wa kipindi: dakika {minutes}",
+  "tutorMessagesExchanged": "{count, plural, one{ujumbe # umebadilishwa} other{ujumbe # zimebadilishwa}}",
+  "tutorSelectSubject": "Chagua somo kuanza kufundishwa",
+  "tutorNoSessions": "Hakuna vipindi vya ufundishaji bado",
+  "tutorHistory": "Historia ya Vipindi",
+  "tutorSummary": "Muhtasari wa Kipindi",
+  "tutorNewSession": "Anza Kipindi Kipya",
+  "tutorXpEarned": "XP {xp} zimepatikana",
+  "tutorChangeLanguage": "Badilisha lugha ya mkufunzi",
+  "tutorLanguageChanged": "{name} sasa atajibu kwa {language}",
+  "tutorSubjectsMATH": "Hisabati",
+  "tutorSubjectsELA": "Kusoma na Kuandika",
+  "tutorSubjectsSCIENCE": "Sayansi",
+  "tutorSubjectsHISTORY": "Historia na Maarifa ya Jamii",
+  "tutorSubjectsCODING": "Programu na Sayansi ya Kompyuta",
+  "tutorPersonasNova": "Nova Mchunguzi wa Anga",
+  "tutorPersonasSage": "Sage Msimulizi wa Hadithi",
+  "tutorPersonasSpark": "Spark Mwanasayansi",
+  "tutorPersonasChrono": "Chrono Msafiri wa Wakati",
+  "tutorPersonasPixel": "Pixel Roboti",
+  "goBack": "Rudi",
+  "skip": "Ruka",
+  "exit": "Ondoka",
+  "continueButton": "Endelea",
+  "notReally": "Si sana",
+  "skipForNow": "Ruka kwa sasa",
+  "startOver": "Anza Upya",
+  "switchLearner": "Badilisha Mwanafunzi",
+  "backToToday": "Rudi Leo",
+  "viewAllBadges": "Tazama Beji Zote",
+  "somethingWentWrong": "Kuna kitu kimeenda vibaya",
+  "instructions": "Maelekezo",
+  "homeworkHelper": "Msaidizi wa Kazi",
+  "homeworkKeepWorking": "Endelea Kufanya Kazi",
+  "tutorEndSessionTitle": "Maliza Kipindi?",
+  "tutorEndSessionConfirmation": "Una uhakika unataka kumaliza kipindi hiki?",
+  "tutorComingSoon": "Wakufunzi wa AI wanakuja hivi karibuni!",
+  "tutorNotAvailable": "Wakufunzi wa AI hawapatikani",
+  "subjectTutorComingSoon": "Mkufunzi wa {subject} anakuja hivi karibuni!",
+  "subjectTutorNotAvailable": "Mkufunzi huyu hapatikani",
+  "tutorStartingSession": "Kuanza kipindi...",
+  "tutorSayHelloPrompt": "Sema habari kuanza kipindi chako!",
+  "tutorSessionComplete": "Kipindi Kimekamilika!",
+  "tutorSessionSummary": "Umejibu maswali {count} kwa dakika {duration}",
+  "tutorReturnToTutors": "Rudi kwa Wakufunzi",
+  "tutorQuestionsAsked": "Maswali: {count}",
+  "tutorCorrectAnswers": "Sahihi: {count}",
+  "tutorEngagementScore": "Ushiriki: {percent}%",
+  "tutorLanguage": "Lugha",
+  "sessionCompleteLevelUp": "Ngazi Mpya!",
+  "sessionCompleteGreatJob": "Umefanya Vizuri!",
+  "sessionCompleteReachedLevel": "Umefika Ngazi {level}!",
+  "sessionCompleteStreak": "Siku {days} mfululizo!",
+  "sessionCompleteFinished": "Kipindi Kimemalizika",
+  "sessionCompleteXpAwarded": "+{xp} XP",
+  "sessionCompleteLevelTransition": "Ngazi {from} → Ngazi {to}",
+  "sessionCompleteNewBadgesEarned": "{count, plural, one{Beji # Mpya Imepatikana!} other{Beji # Mpya Zimepatikana!}}",
+  "baselineCompleteTitle": "Tathmini ya Msingi Imekamilika!",
+  "baselineCompleteSubtitle": "Umefanya vizuri kumaliza tathmini yako ya msingi",
+  "baselineCompleteMessage": "Matokeo yako yanachambuliwa kuunda mpango wa kujifunza uliobinafsishwa kwa ajili yako.",
+  "baselineCompleteEmailNotice": "Mzazi au mlezi wako atapokea barua pepe na matokeo yako.",
+  "baselineCompleteNextSteps": "Hatua Zifuatazo",
+  "focusBreakWasThisHelpful": "Je, hii imesaidia?",
+  "focusBreakFeedbackTitleK5": "Hongera! Umefanikiwa! 🌟",
+  "focusBreakFeedbackTitleG68": "Umefanya vizuri!",
+  "focusBreakFeedbackTitleG912": "Vizuri sana.",
+  "focusBreakFeedbackMessageK5": "Wewe ni nyota! Tuko tayari kuendelea?",
+  "focusBreakFeedbackMessageG68": "Kupumzika kunakusaidia kujifunza vizuri. Tayari kuendelea?",
+  "focusBreakFeedbackMessageG912": "Utafiti unaonyesha mapumziko mafupi yanaboresha umakini na kumbukumbu.",
+  "focusBreakIntroK5": "Hebu tupumzike kwa furaha! 🎉",
+  "focusBreakIntroG68": "Wakati wa mapumziko mafupi ya umakini.",
+  "focusBreakIntroG912": "Chukua muda kupumzisha akili yako.",
+  "focusBreakSecondsLeftK5": "Karibu kumaliza! Endelea! 🌈",
+  "focusBreakTimerDoneK5": "Tumemaliza! Hongera! ⭐",
+  "focusBreakTimerRemainingG68": "Mapumziko ya umakini yanaendelea...",
+  "focusBreakTimerDoneG68": "Mapumziko yamekwisha. Tayari kuendelea?",
+  "focusBreakTimerRemainingG912": "Mapumziko yanaendelea...",
+  "focusBreakTimerDoneG912": "Mapumziko yamekwisha.",
+  "focusBreakContinueK5": "Twende! 🚀",
+  "focusBreakContinueG68": "Endelea",
+  "focusBreakContinueG912": "Endelea Tena",
+  "homeworkPleaseEnterAnswer": "Tafadhali weka jibu lako",
+  "homeworkCompletionTitleK5": "Umefanikiwa! 🎉",
+  "homeworkCompletionTitleG68": "Kazi Imekamilika!",
+  "homeworkCompletionTitleG912": "Kazi Imewasilishwa",
+  "homeworkCompletionMessageK5": "Wewe ni shujaa wa kazi! Hongera! 🌟",
+  "homeworkCompletionMessageG68": "Umefanya kazi nzuri kukamilisha kazi yako!",
+  "homeworkCompletionMessageG912": "Kazi yako imekamilika kwa mafanikio.",
+  "homeworkUnableToLoadSteps": "Haiwezekani kupakia hatua za kazi.",
+  "homeworkStepOfTotal": "Hatua {current} ya {total}",
+  "homeworkYourQuestion": "Swali Lako",
+  "homeworkLetsThink": "Hebu tufikirii...",
+  "homeworkHideHint": "Ficha Kidokezo",
+  "homeworkNeedAHint": "Unahitaji Kidokezo?",
+  "homeworkAnswerHintK5": "Jaribu kwa bidii! Unaweza! 💪",
+  "homeworkAnswerHintG68": "Fikiria kuhusu uliyojifunza na ujaribu tena.",
+  "homeworkAnswerHintG912": "Kagua maelezo yako na uzingatie dhana muhimu.",
+  "homeworkSubmitAnswer": "Wasilisha Jibu",
+  "homeworkExitTitle": "Ondoka Kwenye Kazi?",
+  "homeworkExitMessage": "Maendeleo yako yatahifadhiwa. Unaweza kuendelea baadaye.",
+  "focusActivities": "Shughuli za Umakini",
+  "focusRecommendedForYou": "Zinazopendekezwa Kwako",
+  "focusAllActivities": "Shughuli Zote",
+  "focusRecommended": "Zinazopendekezwa",
+  "focusActivityCalmBreathing": "Kupumua kwa Utulivu",
+  "focusActivityCalmBreathingDesc": "Pumua polepole na kwa kina ili kupumzika na kuzingatia.",
+  "focusActivityFocusBreath": "Pumua kwa Umakini",
+  "focusActivityFocusBreathDesc": "Pumua kwa mdundo ili kuongeza umakini wako.",
+  "focusActivityBodyScan": "Kagua Mwili",
+  "focusActivityBodyScanDesc": "Gundua jinsi kila sehemu ya mwili wako inavyojisikia.",
+  "focusActivityQuickStretch": "Nyosha Haraka",
+  "focusActivityQuickStretchDesc": "Nyosha rahisi ili kupunguza mvutano na kupata nguvu mpya.",
+  "focusActivity5Senses": "Hisi 5",
+  "focusActivity5SensesDesc": "Tua kwa kugundua unachokiona, kusikia, kuhisi, na kunusa.",
+  "focusActivitySoundJourney": "Safari ya Sauti",
+  "focusActivitySoundJourneyDesc": "Funga macho na usikilize sauti za kutuliza.",
+  "focusCategoryBreathing": "Kupumua",
+  "focusCategoryMindfulness": "Uangalifu",
+  "focusCategoryMovement": "Harakati",
+  "focusCategoryGrounding": "Kutua",
+  "focusActivityCompleted": "Imekamilika: {title}",
+  "focusActivityEnded": "Shughuli imemalizika",
+  "focusInstructionBreathing1": "Vuta pumzi polepole kupitia pua yako kwa kuhesabu 4.",
+  "focusInstructionBreathing2": "Shika pumzi kwa upole kwa kuhesabu 4.",
+  "focusInstructionBreathing3": "Toa pumzi polepole kupitia mdomo wako kwa kuhesabu 6.",
+  "focusInstructionBreathing4": "Rudia. Kila pumzi inakufanya utulie zaidi.",
+  "focusInstructionMindfulness1": "Funga macho yako au legeza mtazamo wako.",
+  "focusInstructionMindfulness2": "Gundua sauti zinazokuzunguka bila kuzihukumu.",
+  "focusInstructionMindfulness3": "Hisi uzito wa mwili wako ukiwa umeketi.",
+  "focusInstructionMindfulness4": "Akili yako ikitangatanga, irudishe kwa upole.",
+  "focusInstructionMovement1": "Zungusha mabega yako nyuma polepole mara 5.",
+  "focusInstructionMovement2": "Nyosha mikono yako juu na shikilia kwa sekunde 10.",
+  "focusInstructionMovement3": "Geuka kwa upole mwili wako wa juu kushoto, kisha kulia.",
+  "focusInstructionMovement4": "Tikisa mikono yako na utikise vidole vyako.",
+  "focusInstructionGrounding1": "Taja vitu 5 unavyoviona sasa hivi.",
+  "focusInstructionGrounding2": "Taja vitu 4 unavyoweza kugusa.",
+  "focusInstructionGrounding3": "Taja vitu 3 unavyoweza kusikia.",
+  "focusInstructionGrounding4": "Pumua kwa kina na ugundue jinsi unavyojisikia.",
+  "focusInstructionDefault1": "Chukua muda kupumzika na kupumua.",
+  "focusInstructionDefault2": "Gundua jinsi mwili wako unavyojisikia sasa hivi.",
+  "focusInstructionDefault3": "Ukiwa tayari, endelea kujifunza.",
+  "lifeSkillsCouldNotStartSession": "Haikuweza kuanza kipindi: {error}",
+  "lifeSkillsAiHelp": "Msaada wa AI",
+  "lifeSkillsGreatJob": "Hongera! 🎉",
+  "lifeSkillsStepTitle": "Hatua {stepNumber}: {instruction}",
+  "lifeSkillsWhatToDo": "Nini cha kufanya:",
+  "lifeSkillsTryThis": "Jaribu hii: {promptLevel}",
+  "lifeSkillsTeachingTip": "Kidokezo cha Kufundisha",
+  "lifeSkillsPreviousStep": "Hatua ya Awali",
+  "lifeSkillsNeedHelp": "Nahitaji Msaada",
+  "lifeSkillsComplete": "Kamilisha",
+  "lifeSkillsIDidIt": "Nimefanikiwa!",
+  "lifeSkillsUnableToLoadVideo": "Haiwezekani kupakia video",
+  "lifeSkillsAmazingWork": "Kazi Nzuri Sana! 🌟",
+  "lifeSkillsYouCompleted": "Umekamilisha {skillName}!",
+  "lifeSkillsKeepPracticing": "Endelea kufanya mazoezi kujenga ustadi huu.",
+  "a11yBackButton": "Rudi",
+  "a11yCloseButton": "Funga",
+  "a11yMenuButton": "Menyu",
+  "a11ySettingsButton": "Mipangilio",
+  "a11yLoadingContent": "Maudhui yanapakia",
+  "a11yErrorOccurred": "Hitilafu imetokea",
+  "a11yRetryAction": "Jaribu tena",
+  "a11ySessionPaused": "Kipindi kimesimamishwa",
+  "a11yOfflineMode": "Hali ya nje ya mtandao",
+  "a11ySyncInProgress": "Inasawazisha data"
 }
