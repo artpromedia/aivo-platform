@@ -8,6 +8,14 @@ import { type AssessmentDomain, type AssessmentQuestion } from './types';
 
 const STORAGE_KEY = 'aivo_baseline_progress';
 
+// Static map so Tailwind can see the full class names at build time
+const GRID_COLS_MAP: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ASSESSMENT CONFIGURATION TYPES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1411,9 +1419,7 @@ export default function BaselineAssessmentPage() {
 
           {/* Show domain icons based on enabled domains from config */}
           <div
-            className={`grid gap-3 mb-8 ${
-              enabledDomains.length <= 4 ? 'grid-cols-' + enabledDomains.length : 'grid-cols-4'
-            }`}
+            className={`grid gap-3 mb-8 ${GRID_COLS_MAP[Math.min(enabledDomains.length, 4)] || 'grid-cols-4'}`}
           >
             {enabledDomains.slice(0, 4).map((domain) => (
               <div key={domain.domain} className="text-center">
@@ -1432,7 +1438,7 @@ export default function BaselineAssessmentPage() {
           </div>
           {enabledDomains.length > 4 && (
             <div
-              className={`grid gap-3 mb-8 max-w-xs mx-auto grid-cols-${Math.min(enabledDomains.length - 4, 3)}`}
+              className={`grid gap-3 mb-8 max-w-xs mx-auto ${GRID_COLS_MAP[Math.min(enabledDomains.length - 4, 3)] || 'grid-cols-3'}`}
             >
               {enabledDomains.slice(4).map((domain) => (
                 <div key={domain.domain} className="text-center">
