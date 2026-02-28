@@ -38,8 +38,12 @@ interface PasswordResetEmailParams {
 
 interface EmailVerificationEmailParams {
   email: string;
-  verificationToken: string;
+  /** Custom token (legacy path) */
+  verificationToken?: string;
+  /** Firebase-generated verification link (preferred) */
+  verificationLink?: string;
   userName?: string;
+  locale?: string;
 }
 
 // ============================================================================
@@ -88,10 +92,15 @@ class NotifyClient {
   }
 
   /**
-   * Send an email verification email
+   * Send an email verification email.
+   *
+   * When a Firebase-generated verificationLink is provided it is used
+   * directly.  Otherwise a custom token URL is built from verificationToken.
    */
   async sendEmailVerificationEmail(params: EmailVerificationEmailParams): Promise<EmailResponse> {
-    const verificationUrl = `${config.webAppUrl}/auth/verify-email?token=${encodeURIComponent(params.verificationToken)}`;
+    const verificationUrl = params.verificationLink
+      ? params.verificationLink
+      : `${config.webAppUrl}/auth/verify-email?token=${encodeURIComponent(params.verificationToken ?? '')}`;
 
     return this.sendTemplatedEmail({
       templateName: 'transactional/email-verification',
@@ -103,6 +112,7 @@ class NotifyClient {
         supportUrl: `${config.webAppUrl}/support`,
         brandColor: '#6366f1',
       },
+      locale: params.locale,
       category: 'transactional',
       tags: ['email-verification'],
     });

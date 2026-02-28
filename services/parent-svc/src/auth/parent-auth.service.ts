@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import type { CryptoService } from '../crypto/crypto.service.js';
 import { UnauthorizedException, BadRequestException } from '../errors.js';
+import type { FirebaseService } from '../firebase/firebase.service.js';
 import type { NotificationService } from '../notification/notification.service.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 
@@ -40,7 +41,8 @@ export class ParentAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
-    private readonly notification: NotificationService
+    private readonly notification: NotificationService,
+    private readonly firebase?: FirebaseService
   ) {}
 
   /**
@@ -152,16 +154,79 @@ export class ParentAuthService {
     });
 
     // Send verification email
-    const verificationToken = await this.createEmailVerificationToken(parent.id);
-    await this.notification.sendEmail({
-      to: parent.email,
-      template: 'verify-email',
-      language,
-      data: {
-        firstName: givenName,
-        verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
-      },
-    });
+    if (this.firebase?.isConfigured()) {
+      // Firebase path — generate verification link via Admin SDK
+      try {
+        const fbUser = await this.firebase.createAuthUser(
+          parent.email,
+          password
+        );
+
+        if (fbUser) {
+          const continueUrl =
+            `${config.appUrl}/verify-email-callback`;
+          const link =
+            await this.firebase.generateEmailVerificationLink(
+              parent.email,
+              continueUrl
+            );
+
+          if (link) {
+            await this.notification.sendEmail({
+              to: parent.email,
+              template: 'verify-email',
+              language,
+              data: {
+                firstName: givenName,
+                verifyUrl: link,
+              },
+            });
+          } else {
+            // Fallback to custom token
+            const verificationToken =
+              await this.createEmailVerificationToken(parent.id);
+            await this.notification.sendEmail({
+              to: parent.email,
+              template: 'verify-email',
+              language,
+              data: {
+                firstName: givenName,
+                verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          { error: err instanceof Error ? err.message : err },
+          'Firebase verification failed, using custom token'
+        );
+        const verificationToken =
+          await this.createEmailVerificationToken(parent.id);
+        await this.notification.sendEmail({
+          to: parent.email,
+          template: 'verify-email',
+          language,
+          data: {
+            firstName: givenName,
+            verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
+          },
+        });
+      }
+    } else {
+      // Custom token path (no Firebase)
+      const verificationToken =
+        await this.createEmailVerificationToken(parent.id);
+      await this.notification.sendEmail({
+        to: parent.email,
+        template: 'verify-email',
+        language,
+        data: {
+          firstName: givenName,
+          verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
+        },
+      });
+    }
 
     // Send welcome email
     await this.notification.sendEmail({
@@ -260,6 +325,43 @@ export class ParentAuthService {
     ]);
 
     logger.info({ parentId: verification.parentId }, 'Parent email verified');
+  }
+
+  /**
+   * Verify email via Firebase Auth status check.
+   * Called after parent clicks the Firebase verification link.
+   */
+  async verifyEmailViaFirebase(email: string): Promise<void> {
+    if (!this.firebase?.isConfigured()) {
+      throw new BadRequestException('Firebase Auth is not configured');
+    }
+
+    const parent = await this.prisma.parent.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!parent) {
+      throw new BadRequestException('Parent not found');
+    }
+
+    if (parent.emailVerified) {
+      return; // Already verified
+    }
+
+    // Look up Firebase user and check status
+    const fbUser = await this.firebase.getUserByEmail(parent.email);
+    if (!fbUser || !fbUser.emailVerified) {
+      throw new BadRequestException(
+        'Email has not been verified in Firebase'
+      );
+    }
+
+    await this.prisma.parent.update({
+      where: { id: parent.id },
+      data: { emailVerified: true },
+    });
+
+    logger.info({ parentId: parent.id }, 'Parent email verified via Firebase');
   }
 
   /**

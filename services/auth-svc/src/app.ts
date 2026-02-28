@@ -8,6 +8,7 @@ import { cookiePlugin } from './plugins/cookie.plugin.js';
 import { csrfPlugin } from './plugins/csrf.plugin.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerDemoRoutes } from './routes/demo.js';
+import { registerFirebaseVerifyRoutes } from './routes/firebase-verify.js';
 import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
 import { registerScimAdminRoutes } from './routes/scim-admin.routes.js';
@@ -64,6 +65,8 @@ export function createApp() {
   void app.register(authMiddleware as any);
 
   void app.register(registerAuthRoutes as any, { prefix: '/auth' });
+
+  void app.register(registerFirebaseVerifyRoutes as any, { prefix: '/auth' });
 
   void app.register(registerSsoRoutes as any, { prefix: '/auth' });
 

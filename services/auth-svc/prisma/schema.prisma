@@ -40,6 +40,7 @@ model User {
   phone             String?
   passwordHash      String
   externalId        String?    // IdP subject/nameId for federated users
+  firebaseUid       String?    @unique  // Firebase Auth UID for email verification
   status            UserStatus @default(ACTIVE)
   emailVerified     Boolean    @default(false)
   acceptedMarketing Boolean    @default(false)

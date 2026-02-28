@@ -80,6 +80,11 @@ export const config = {
     return key || 'dev-only-mfa-key-not-for-production';
   })(),
 
+  // Firebase Configuration (email verification via Firebase Admin SDK)
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
+  firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY || '',
+  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
+
   // Service URLs
   notifyServiceUrl: process.env.NOTIFY_SERVICE_URL || 'http://notify-svc:4040',
 

@@ -1,7 +1,8 @@
 /**
  * Firebase Admin SDK Service
  *
- * Provides Firebase Cloud Messaging (FCM) for push notifications.
+ * Provides Firebase Cloud Messaging (FCM) for push notifications
+ * and Firebase Auth for email verification link generation.
  */
 
 import { logger } from '@aivo/ts-observability';
@@ -20,10 +21,30 @@ interface FirebaseMessaging {
     responses: { success: boolean; error?: { code?: string } }[];
   }>;
 }
+interface FirebaseAuthUser {
+  uid: string;
+  email?: string;
+  emailVerified: boolean;
+  disabled: boolean;
+}
+interface FirebaseAuth {
+  createUser(properties: {
+    email: string;
+    password?: string;
+    emailVerified?: boolean;
+  }): Promise<FirebaseAuthUser>;
+  getUserByEmail(email: string): Promise<FirebaseAuthUser>;
+  getUser(uid: string): Promise<FirebaseAuthUser>;
+  generateEmailVerificationLink(
+    email: string,
+    actionCodeSettings?: { url: string }
+  ): Promise<string>;
+}
 interface FirebaseAdminSDK {
   initializeApp(options: { credential: unknown }): unknown;
   credential: FirebaseCredential;
   messaging(): FirebaseMessaging;
+  auth(): FirebaseAuth;
 }
 
 // Firebase admin SDK is loaded dynamically to allow optional dependency
@@ -218,6 +239,93 @@ export class FirebaseService {
       const message = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to send multicast push notification: ${message}`);
       return { successCount: 0, failureCount: tokens.length, invalidTokens: [] };
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Firebase Auth — Email Verification
+  // --------------------------------------------------------------------------
+
+  /**
+   * Create a Firebase Auth user for email verification tracking.
+   * Returns the UID or null if Firebase is not configured.
+   */
+  async createAuthUser(
+    email: string,
+    password?: string
+  ): Promise<{ uid: string } | null> {
+    if (!this.isConfigured() || !admin) {
+      return null;
+    }
+
+    try {
+      const user = await admin.auth().createUser({
+        email,
+        password,
+        emailVerified: false,
+      });
+      return { uid: user.uid };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to create Firebase Auth user: ${msg}`);
+      return null;
+    }
+  }
+
+  /**
+   * Generate a Firebase email verification link.
+   */
+  async generateEmailVerificationLink(
+    email: string,
+    continueUrl?: string
+  ): Promise<string | null> {
+    if (!this.isConfigured() || !admin) {
+      return null;
+    }
+
+    try {
+      const settings = continueUrl ? { url: continueUrl } : undefined;
+      return await admin
+        .auth()
+        .generateEmailVerificationLink(email, settings);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to generate verification link: ${msg}`);
+      return null;
+    }
+  }
+
+  /**
+   * Look up a Firebase user by email.
+   */
+  async getUserByEmail(
+    email: string
+  ): Promise<{ uid: string; emailVerified: boolean } | null> {
+    if (!this.isConfigured() || !admin) {
+      return null;
+    }
+
+    try {
+      const user = await admin.auth().getUserByEmail(email);
+      return { uid: user.uid, emailVerified: user.emailVerified };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Check whether a Firebase user's email is verified.
+   */
+  async isEmailVerified(uid: string): Promise<boolean> {
+    if (!this.isConfigured() || !admin) {
+      return false;
+    }
+
+    try {
+      const user = await admin.auth().getUser(uid);
+      return user.emailVerified;
+    } catch {
+      return false;
     }
   }
 }

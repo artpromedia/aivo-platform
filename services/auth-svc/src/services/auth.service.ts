@@ -14,6 +14,7 @@ import type { User, Session, UserRole, Prisma } from '../prisma.js';
 import type { PrismaClient } from '../../generated/prisma-client/index.js';
 import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
+import { getFirebaseAuth } from '../lib/firebase.js';
 import { notifyClient } from '../lib/notify-client.js';
 import { COMMON_PASSWORDS } from '../data/common-passwords.js';
 
@@ -36,6 +37,7 @@ export interface RegisterInput {
   role?: string;
   firstName?: string;
   lastName?: string;
+  locale?: string;
   deviceInfo?: DeviceInfo;
 }
 
@@ -154,7 +156,7 @@ export class AuthService {
   // --------------------------------------------------------------------------
 
   async register(input: RegisterInput): Promise<AuthResult> {
-    const { email, password, phone, tenantId, role = 'LEARNER' } = input;
+    const { email, password, phone, tenantId, role = 'LEARNER', locale } = input;
 
     // Validate password
     validatePasswordStrength(password);
@@ -171,6 +173,23 @@ export class AuthService {
     // Hash password
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
+    // Try to create Firebase Auth user for email verification
+    const firebase = getFirebaseAuth();
+    let firebaseUid: string | null = null;
+
+    if (firebase?.isConfigured()) {
+      try {
+        const fbUser = await firebase.createUser(email, password);
+        firebaseUid = fbUser?.uid ?? null;
+      } catch (err) {
+        // Non-fatal — fall back to custom token verification
+        console.warn(
+          '[auth-svc] Firebase user creation failed, using custom token:',
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
     // Create user with role
     const user = await this.prisma.user.create({
       data: {
@@ -178,6 +197,7 @@ export class AuthService {
         passwordHash,
         phone: phone || null,
         tenantId,
+        firebaseUid,
         status: 'ACTIVE',
         emailVerified: false,
         roles: {
@@ -196,8 +216,37 @@ export class AuthService {
       'account_creation'
     );
 
-    // Create email verification token
-    await this.createEmailVerificationToken(user.id, email);
+    // Send email verification
+    if (firebaseUid && firebase?.isConfigured()) {
+      // Firebase path — generate verification link via Admin SDK
+      try {
+        const continueUrl =
+          `${config.webAppUrl}/auth/verify-email-callback`;
+        const link = await firebase.generateEmailVerificationLink(
+          email,
+          continueUrl
+        );
+
+        if (link) {
+          await notifyClient.sendEmailVerificationEmail({
+            email,
+            verificationLink: link,
+            userName: input.firstName,
+            locale,
+          });
+        }
+      } catch (err) {
+        console.warn(
+          '[auth-svc] Firebase verification link failed:',
+          err instanceof Error ? err.message : err
+        );
+        // Fallback to custom token
+        await this.createEmailVerificationToken(user.id, email);
+      }
+    } else {
+      // Custom token path (no Firebase)
+      await this.createEmailVerificationToken(user.id, email);
+    }
 
     // Create session and tokens
     const session = await this.createSession(user.id, tenantId, input.deviceInfo);
@@ -445,6 +494,101 @@ export class AuthService {
         data: { verifiedAt: new Date() },
       }),
     ]);
+  }
+
+  /**
+   * Verify email via Firebase Auth status check.
+   * Called from the verify-callback route after the user clicks
+   * the Firebase verification link.
+   */
+  async verifyEmailViaFirebase(email: string): Promise<void> {
+    const firebase = getFirebaseAuth();
+    if (!firebase?.isConfigured()) {
+      throw new Error('Firebase Auth is not configured');
+    }
+
+    // Look up the user in our database
+    const user = await this.prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.emailVerified) {
+      return; // Already verified
+    }
+
+    if (!user.firebaseUid) {
+      throw new Error('No Firebase UID associated with this user');
+    }
+
+    // Check Firebase Auth verification status
+    const verified = await firebase.isEmailVerified(user.firebaseUid);
+    if (!verified) {
+      throw new Error('Email has not been verified in Firebase');
+    }
+
+    // Update our database
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+  }
+
+  /**
+   * Resend the email verification link/token.
+   */
+  async resendEmailVerification(
+    userId: string,
+    locale?: string
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.emailVerified) {
+      throw new Error('Email already verified');
+    }
+
+    const firebase = getFirebaseAuth();
+
+    if (user.firebaseUid && firebase?.isConfigured()) {
+      // Firebase path
+      const continueUrl =
+        `${config.webAppUrl}/auth/verify-email-callback`;
+      const link = await firebase.generateEmailVerificationLink(
+        user.email,
+        continueUrl
+      );
+
+      if (link) {
+        await notifyClient.sendEmailVerificationEmail({
+          email: user.email,
+          verificationLink: link,
+          userName: user.firstName ?? undefined,
+          locale,
+        });
+        return;
+      }
+    }
+
+    // Custom token fallback
+    const token = await this.createEmailVerificationToken(
+      user.id,
+      user.email
+    );
+
+    await notifyClient.sendEmailVerificationEmail({
+      email: user.email,
+      verificationToken: token,
+      userName: user.firstName ?? undefined,
+    });
   }
 
   // --------------------------------------------------------------------------

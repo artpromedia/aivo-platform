@@ -25,6 +25,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aivo/firebase-auth": "workspace:*",
     "@aivo/seed-data": "workspace:*",
     "@aivo/ts-api-utils": "workspace:*",
     "@aivo/ts-data-access": "workspace:*",
@@ -37,6 +38,7 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "firebase-admin": "^12.7.0",
     "fastify-plugin": "^5.0.1",
     "ioredis": "^5.9.0",
     "jose": "^5.9.2",

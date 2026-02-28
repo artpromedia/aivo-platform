@@ -28,6 +28,7 @@ const registerSchema = z.object({
   phone: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  locale: z.string().max(10).optional(),
   tenantId: z.string().optional(),
   role: z.enum(['LEARNER', 'PARENT', 'TEACHER', 'ADMIN']).optional(),
 });
@@ -141,6 +142,7 @@ export async function registerEnhancedAuthRoutes(fastify: FastifyInstance) {
         phone: parsed.data.phone,
         firstName: parsed.data.firstName,
         lastName: parsed.data.lastName,
+        locale: parsed.data.locale,
         role: parsed.data.role,
         tenantId: parsed.data.tenantId || config.consumerTenantId,
         deviceInfo,

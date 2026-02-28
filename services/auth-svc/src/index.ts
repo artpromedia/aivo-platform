@@ -1,5 +1,6 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
+import { initializeFirebaseAuth } from './lib/firebase.js';
 import { connectDatabase, disconnectDatabase } from './prisma.js';
 
 const hasDatabaseUrl = !!process.env.DATABASE_URL;
@@ -11,6 +12,9 @@ async function main() {
   if (hasDatabaseUrl) {
     await connectDatabase();
   }
+
+  // Initialize Firebase Auth (non-blocking — falls back to custom tokens)
+  await initializeFirebaseAuth();
 
   // Graceful shutdown handler
   const shutdown = async (signal: string) => {
