@@ -274,3 +274,28 @@ export interface LearnerSettings {
   remindersEnabled: boolean;
   encouragementEnabled: boolean;
 }
+
+// ────────────────────────────────────────────────────────────
+// Notifications
+// ────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'achievement_earned'
+  | 'streak_reminder'
+  | 'goal_completed'
+  | 'new_lesson_available';
+
+export interface LearnerNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  emoji: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsData {
+  notifications: LearnerNotification[];
+  unreadCount: number;
+}

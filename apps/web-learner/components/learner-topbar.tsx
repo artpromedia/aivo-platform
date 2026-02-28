@@ -1,12 +1,14 @@
 'use client';
 
 import { LanguageSwitcher } from '@aivo/i18n';
+import { cn } from '@aivo/ui-web';
 import { Search, Bell, Flame, Sparkles, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
-import { cn } from '@aivo/ui-web';
+import { NotificationPanel } from './notification-panel';
+import { useNotifications } from '@/lib/hooks/use-learner-api';
 
 interface LearnerTopbarProps {
   userName?: string;
@@ -28,7 +30,10 @@ const mobileNavItems = [
 
 export function LearnerTopbar({ userName, streakDays = 0, totalXp = 0, avatarUrl }: LearnerTopbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
+  const { data: notifData } = useNotifications();
+  const unreadCount = notifData?.unreadCount ?? 0;
 
   const initials = userName
     ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -74,10 +79,22 @@ export function LearnerTopbar({ userName, streakDays = 0, totalXp = 0, avatarUrl
           <LanguageSwitcher variant="compact" />
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            {showNotifications && (
+              <NotificationPanel onClose={() => setShowNotifications(false)} />
+            )}
+          </div>
 
           {/* Avatar */}
           <Link href="/profile" className="flex items-center gap-2">

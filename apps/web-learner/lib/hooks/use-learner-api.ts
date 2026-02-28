@@ -7,7 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { LearnerSettings } from '../types';
+import type { LearnerSettings, NotificationsData } from '../types';
 
 import {
   fetchAssessments,
@@ -15,9 +15,11 @@ import {
   fetchDashboard,
   fetchGames,
   fetchGoals,
+  fetchNotifications,
   fetchProfile,
   fetchProgress,
   fetchSettings,
+  markNotificationsRead,
   updateAvatar,
   updateSettings,
 } from '../api-client';
@@ -33,6 +35,7 @@ export const queryKeys = {
   goals: ['learner', 'goals'] as const,
   assessments: ['learner', 'assessments'] as const,
   settings: ['learner', 'settings'] as const,
+  notifications: ['learner', 'notifications'] as const,
 };
 
 // ── Dashboard ──────────────────────────────────────────────
@@ -139,6 +142,46 @@ export function useUpdateSettings() {
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.settings });
+    },
+  });
+}
+
+// ── Notifications ───────────────────────────────────────────
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: queryKeys.notifications,
+    queryFn: fetchNotifications,
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarkNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationIds: string[]) => markNotificationsRead(notificationIds),
+    onMutate: async (ids) => {
+      await qc.cancelQueries({ queryKey: queryKeys.notifications });
+      const previous = qc.getQueryData<NotificationsData>(queryKeys.notifications);
+      if (previous) {
+        const idSet = new Set(ids);
+        const updated = previous.notifications.map((n) =>
+          idSet.has(n.id) ? { ...n, read: true } : n,
+        );
+        qc.setQueryData<NotificationsData>(queryKeys.notifications, {
+          notifications: updated,
+          unreadCount: updated.filter((n) => !n.read).length,
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(queryKeys.notifications, context.previous);
+      }
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.notifications });
     },
   });
 }

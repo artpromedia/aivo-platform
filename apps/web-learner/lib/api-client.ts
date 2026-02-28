@@ -13,6 +13,7 @@ import type {
   GamesData,
   GoalsData,
   LearnerSettings,
+  NotificationsData,
   ProfileData,
   ProgressData,
 } from './types';
@@ -133,5 +134,22 @@ export function updateSettings(
   return apiFetch<LearnerSettings>('/api/learner/settings', {
     method: 'PUT',
     body: JSON.stringify(settings),
+  });
+}
+
+// ────────────────────────────────────────────────────────────
+// Notifications
+// ────────────────────────────────────────────────────────────
+
+export function fetchNotifications(): Promise<NotificationsData> {
+  return apiFetch<NotificationsData>('/api/learner/notifications');
+}
+
+export function markNotificationsRead(
+  notificationIds: string[],
+): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>('/api/learner/notifications', {
+    method: 'POST',
+    body: JSON.stringify({ notificationIds }),
   });
 }
