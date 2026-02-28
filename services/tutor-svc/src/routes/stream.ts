@@ -61,8 +61,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
       const user = request.user;
       const tenantId =
         (request.headers['x-tenant-id'] as string) ??
-        user?.tenantId ??
-        user?.tenant_id;
+        user?.tenantId;
       const userId =
         (request.headers['x-user-id'] as string) ?? user?.userId;
 
