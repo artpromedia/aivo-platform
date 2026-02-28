@@ -1662,10 +1662,8 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<'intro' | 'learner' | 'assessment' | 'results' | 'complete'>('intro');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [learnerPin, setLearnerPin] = useState<string | null>(null);
   const [learnerId, setLearnerId] = useState<string | null>(null);
   const [assessmentResults, setAssessmentResults] = useState<AssessmentResultData | null>(null);
-  const [pinCopied, setPinCopied] = useState(false);
   const [classCodeError, setClassCodeError] = useState<string | null>(null);
   const [curriculumInfo, setCurriculumInfo] = useState<{
     curriculumStandards: string[];
@@ -1795,10 +1793,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Store the learner's PIN and ID for display
-      if (data.learner?.pin) {
-        setLearnerPin(data.learner.pin);
-      }
+      // Store the learner ID for display
       if (data.learner?.id) {
         setLearnerId(data.learner.id);
       }
@@ -2205,14 +2200,6 @@ export default function OnboardingPage() {
     );
   }
 
-  const handleCopyPin = async () => {
-    if (learnerPin) {
-      await navigator.clipboard.writeText(learnerPin);
-      setPinCopied(true);
-      setTimeout(() => { setPinCopied(false); }, 2000);
-    }
-  };
-
   const webLearnerUrl = typeof window !== 'undefined' 
     ? `${window.location.protocol}//${window.location.hostname}:3000/join`
     : 'http://localhost:3000/join';
@@ -2232,37 +2219,21 @@ export default function OnboardingPage() {
         </p>
       </div>
 
-      {/* PIN Code Display */}
-      {learnerPin && (
-        <div className="mb-6 rounded-lg border-2 border-violet-200 bg-violet-50 p-6">
-          <h3 className="mb-2 text-center font-semibold text-gray-900">
-            {learnerForm.firstName}&apos;s Login Code
+      {/* PIN Confirmation */}
+      <div className="mb-6 rounded-lg border-2 border-green-200 bg-green-50 p-6">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="text-center font-semibold text-gray-900">
+            Login PIN Set Successfully
           </h3>
-          <div className="flex items-center justify-center gap-3">
-            <div className="rounded-lg bg-white px-6 py-3 font-mono text-3xl font-bold tracking-widest text-violet-700 shadow-sm">
-              {learnerPin}
-            </div>
-            <button
-              onClick={handleCopyPin}
-              className="rounded-lg bg-violet-600 p-3 text-white transition hover:bg-violet-700"
-              title="Copy code"
-            >
-              {pinCopied ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              )}
-            </button>
-          </div>
-          <p className="mt-3 text-center text-sm text-gray-500">
-            Use this code to log in on any device
-          </p>
         </div>
-      )}
+        <p className="text-center text-sm text-gray-600">
+          {learnerForm.firstName} can log into the learner app using the 6-digit PIN you created.
+          You can change it anytime from your parent dashboard settings.
+        </p>
+      </div>
 
       {/* Curriculum Standards Detected */}
       {curriculumInfo && curriculumInfo.curriculumStandards.length > 0 && (

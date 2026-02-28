@@ -327,7 +327,6 @@ export class OnboardingService {
         tenantId: process.env.CONSUMER_TENANT_ID || 'consumer',
         learnerId: learner.id,
         learnerName: input.firstName,
-        learnerPin,
         parentId: parent.id,
         parentEmail: parent.email,
         parentPhone: parent.phone || undefined,
@@ -368,7 +367,6 @@ export class OnboardingService {
     tenantId: string;
     learnerId: string;
     learnerName: string;
-    learnerPin: string;
     parentId: string;
     parentEmail: string;
     parentPhone?: string;
