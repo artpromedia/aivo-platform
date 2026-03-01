@@ -23,6 +23,7 @@ export const AI_AGENT_TYPES = [
   'LESSON_PLANNER',
   'PROGRESS',
   'SAFETY',
+  'IEP_GOAL',
   'OTHER',
 ] as const;
 
@@ -334,6 +335,15 @@ export interface TenantAiConfig {
 
   /** Whether PII redaction is enabled */
   enablePiiRedaction: boolean;
+
+  /** Daily cost budget in USD (0 = unlimited). Used for cost-aware routing. */
+  dailyCostBudgetUsd?: number | undefined;
+
+  /** Threshold (0–1) at which cost-based downshift activates (default 0.8). */
+  costDownshiftThreshold?: number | undefined;
+
+  /** When true, use context-aware optimal model selection instead of static mapping. */
+  enableSmartRouting?: boolean | undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
