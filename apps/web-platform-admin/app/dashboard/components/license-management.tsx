@@ -10,6 +10,7 @@
 import * as React from 'react';
 import { useLicenseSummary, useLicenses, useRevenueMetrics } from '@/hooks/use-admin-data';
 import type { TenantLicense as APILicense, LicenseFilters, LicenseStatus, LicensePlan } from '@/lib/api/licenses.api';
+import { useHasWriteAccess } from '../../providers';
 
 interface DisplayLicense {
   id: string;
@@ -53,6 +54,7 @@ const statusColors: Record<LicenseStatus, string> = {
 
 export function LicenseManagement() {
   const [filter, setFilter] = React.useState<LicenseStatus | 'all'>('all');
+  const canWrite = useHasWriteAccess();
 
   // Fetch real data from API
   const { data: summaryData, isLoading: summaryLoading, error: summaryError } = useLicenseSummary();
@@ -129,9 +131,11 @@ export function LicenseManagement() {
               <p className="text-sm text-gray-500">Platform-wide seat allocation</p>
             </div>
           </div>
-          <button className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors">
-            + Add License
-          </button>
+          {canWrite && (
+            <button className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 transition-colors">
+              + Add License
+            </button>
+          )}
         </div>
       </div>
 

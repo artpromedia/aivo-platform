@@ -100,3 +100,12 @@ function NetworkStatusWrapper({ children }: { children: ReactNode }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+/**
+ * Returns true if the current user has write access (PLATFORM_ADMIN only).
+ * Use this to conditionally hide mutating buttons from SUPPORT users.
+ */
+export function useHasWriteAccess(): boolean {
+  const { roles } = useAuth();
+  return roles.includes('PLATFORM_ADMIN' as Role);
+}

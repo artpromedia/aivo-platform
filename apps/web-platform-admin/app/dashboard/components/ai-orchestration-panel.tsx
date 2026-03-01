@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAIProviders, useOrchestrationSummary, useSwitchPrimaryProvider } from '@/hooks/use-admin-data';
 import type { AIProvider as APIProvider } from '@/lib/api/orchestration.api';
+import { useHasWriteAccess } from '../../providers';
 
 interface DisplayProvider {
   id: string;
@@ -55,6 +56,7 @@ function toDisplayProvider(provider: APIProvider): DisplayProvider {
 
 export function AIOrchestrationPanel() {
   const confirm = useConfirm();
+  const canWrite = useHasWriteAccess();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -165,14 +167,16 @@ export function AIOrchestrationPanel() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-lg transition-colors ${
-                showSettings ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            {canWrite && (
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showSettings ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            )}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}

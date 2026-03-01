@@ -9,12 +9,16 @@
 import Link from 'next/link';
 import * as React from 'react';
 
+import { useHasWriteAccess } from '../../providers';
+
 interface QuickAction {
   label: string;
   description: string;
   href: string;
   icon: React.ReactNode;
   color: string;
+  /** If true, only shown to users with write access (PLATFORM_ADMIN) */
+  writeOnly?: boolean;
 }
 
 const actions: QuickAction[] = [
@@ -24,6 +28,7 @@ const actions: QuickAction[] = [
     href: '/tenants/new',
     icon: <PlusIcon />,
     color: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+    writeOnly: true,
   },
   {
     label: 'Run Ed-Fi Export',
@@ -31,6 +36,7 @@ const actions: QuickAction[] = [
     href: '/integrations/edfi',
     icon: <UploadIcon />,
     color: 'bg-green-50 text-green-600 hover:bg-green-100',
+    writeOnly: true,
   },
   {
     label: 'View Incidents',
@@ -56,6 +62,9 @@ const actions: QuickAction[] = [
 ];
 
 export function QuickActions() {
+  const canWrite = useHasWriteAccess();
+  const visibleActions = canWrite ? actions : actions.filter((a) => !a.writeOnly);
+
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
       <div className="border-b border-gray-200 p-4">
@@ -63,7 +72,7 @@ export function QuickActions() {
       </div>
 
       <div className="divide-y divide-gray-100">
-        {actions.map((action) => (
+        {visibleActions.map((action) => (
           <Link
             key={action.label}
             href={action.href}

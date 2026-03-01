@@ -10,6 +10,7 @@
 import * as React from 'react';
 import { useAIModels, useModelSummary } from '@/hooks/use-admin-data';
 import type { AIModel as APIModel, ModelSummaryMetrics, ModelType, ModelStatus } from '@/lib/api/models.api';
+import { useHasWriteAccess } from '../../providers';
 
 // Map API types to display types
 type DisplayModelType = 'tutor' | 'assessment' | 'iep' | 'content' | 'translation' | 'embedding' | 'speech';
@@ -73,6 +74,7 @@ function toDisplayModel(model: APIModel): DisplayModel {
 
 export function AIModelManagement() {
   const [selectedType, setSelectedType] = React.useState<string | null>(null);
+  const canWrite = useHasWriteAccess();
 
   // Fetch real data from API
   const { data: modelsData, isLoading: modelsLoading, error: modelsError, refetch: refetchModels } = useAIModels(
@@ -128,12 +130,16 @@ export function AIModelManagement() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-              Clone Model
-            </button>
-            <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-              + Deploy New
-            </button>
+            {canWrite && (
+              <>
+                <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                  Clone Model
+                </button>
+                <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                  + Deploy New
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
