@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { createTenant, listTenants } from '../../../lib/api';
-import { getAuthSession } from '../../../lib/auth';
+import { requirePlatformAdmin } from '../../../lib/auth';
 import type { CreateTenantInput } from '../../../lib/types';
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthSession();
-  if (!auth) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const auth = await requirePlatformAdmin();
+  if (auth === 'forbidden') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await getAuthSession();
-  if (!auth) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const auth = await requirePlatformAdmin();
+  if (auth === 'forbidden') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
