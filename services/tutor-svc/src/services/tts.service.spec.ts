@@ -1,8 +1,8 @@
 /**
  * TTS Service Unit Tests
  *
- * Tests for text-to-speech synthesis, viseme mapping, SSML generation,
- * and audio upload functionality.
+ * Tests for text-to-speech synthesis, viseme mapping, emotion mapping,
+ * and multi-provider TTS via accessibility-ai-svc with Piper fallback.
  */
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
 vi.mock('../config.js', () => ({
   config: {
+    accessibilityAiSvcUrl: 'http://localhost:8080',
     ttsServiceUrl: 'http://localhost:5100',
     ttsEnabled: true,
     audioBucket: 'aivo-tutor-audio',
@@ -44,6 +45,7 @@ vi.mock('./phoneme-viseme-map.js', () => ({
 import {
   estimateVisemesFromText,
   synthesizeSpeech,
+  mapTutorEmotionToTts,
   type TutorVoiceConfig,
 } from './tts.service.js';
 import { getCachedTts, cacheTtsResult } from './tts-cache.service.js';
@@ -141,8 +143,70 @@ describe('estimateVisemesFromText', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// TESTS: mapTutorEmotionToTts
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('mapTutorEmotionToTts', () => {
+  it('maps encouraging → encouraging', () => {
+    expect(mapTutorEmotionToTts('encouraging')).toBe('encouraging');
+  });
+
+  it('maps celebrating → excited', () => {
+    expect(mapTutorEmotionToTts('celebrating')).toBe('excited');
+  });
+
+  it('maps empathetic → empathetic', () => {
+    expect(mapTutorEmotionToTts('empathetic')).toBe('empathetic');
+  });
+
+  it('maps curious → neutral', () => {
+    expect(mapTutorEmotionToTts('curious')).toBe('neutral');
+  });
+
+  it('maps thinking → calm', () => {
+    expect(mapTutorEmotionToTts('thinking')).toBe('calm');
+  });
+
+  it('maps cheerful → excited', () => {
+    expect(mapTutorEmotionToTts('cheerful')).toBe('excited');
+  });
+
+  it('maps neutral → neutral', () => {
+    expect(mapTutorEmotionToTts('neutral')).toBe('neutral');
+  });
+
+  it('maps unknown emotions → neutral', () => {
+    expect(mapTutorEmotionToTts('angry')).toBe('neutral');
+    expect(mapTutorEmotionToTts('')).toBe('neutral');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // TESTS: synthesizeSpeech
 // ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Helper: create a mock Response mimicking accessibility-ai-svc /api/v2/tts/synthesize.
+ * Returns raw audio bytes with metadata in headers.
+ */
+function mockMultiProviderResponse(
+  audioContent: string = 'mock_audio_bytes',
+  provider: string = 'dia_local',
+  duration: number = 1.2,
+): Response {
+  const body = new TextEncoder().encode(audioContent);
+  return new Response(body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'audio/wav',
+      'X-Duration': String(duration),
+      'X-Sample-Rate': '22050',
+      'X-Voice-ID': 'en_US-amy-medium',
+      'X-Provider': provider,
+      'X-Text-Length': '5',
+    },
+  });
+}
 
 describe('synthesizeSpeech', () => {
   beforeEach(() => {
@@ -150,31 +214,36 @@ describe('synthesizeSpeech', () => {
     (getCachedTts as Mock).mockResolvedValue(null);
   });
 
-  it('calls Piper engine and returns audio with visemes', async () => {
+  it('calls multi-provider TTS and returns audio with scaled visemes', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          audio_base64: 'bW9ja19hdWRpbw==',
-          duration_ms: 1200,
-          sample_rate: 22050,
-          phonemes: [
-            { offset_ms: 0, phoneme: 'h', duration_ms: 80 },
-            { offset_ms: 80, phoneme: 'ɪ', duration_ms: 60 },
-          ],
-          format: 'mp3',
-          voice_used: 'en_US-amy-medium',
-          latency_ms: 150,
-        }),
-        { status: 200 },
-      ),
+      mockMultiProviderResponse('mock_wav_audio', 'kokoro_local', 1.5),
     );
 
     const result = await synthesizeSpeech('Hello', defaultVoiceConfig, 'en-US');
 
-    expect(result.audioBase64).toBe('bW9ja19hdWRpbw==');
-    expect(result.durationMs).toBe(1200);
+    expect(result.audioBase64).toBeTruthy();
+    expect(result.durationMs).toBe(1500);
     expect(result.visemes.length).toBeGreaterThan(0);
     expect(result.text).toBe('Hello');
+    expect(result.provider).toBe('kokoro_local');
+
+    // Should have called accessibility-ai-svc, not Piper
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/api/v2/tts/synthesize',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('passes emotion through to multi-provider call', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      mockMultiProviderResponse('audio', 'dia_local'),
+    );
+
+    await synthesizeSpeech('Great job!', defaultVoiceConfig, 'en-US', 'celebrating');
+
+    const fetchCall = (globalThis.fetch as Mock).mock.calls[0];
+    // Emotion is mapped but request body should still be valid
+    expect(fetchCall[0]).toBe('http://localhost:8080/api/v2/tts/synthesize');
   });
 
   it('returns cached result if available', async () => {
@@ -189,18 +258,36 @@ describe('synthesizeSpeech', () => {
     const result = await synthesizeSpeech('Great job!', defaultVoiceConfig, 'en-US');
 
     expect(result).toEqual(cachedResult);
-    // Should not call Piper
+    // Should not call any TTS provider
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('caches result after successful synthesis', async () => {
+  it('caches result after successful multi-provider synthesis', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      mockMultiProviderResponse('audio_data', 'dia_local', 0.8),
+    );
+
+    await synthesizeSpeech('Test', defaultVoiceConfig, 'en-US');
+
+    expect(cacheTtsResult).toHaveBeenCalled();
+  });
+
+  it('falls back to Piper when multi-provider fails', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+
+    // First call (multi-provider) fails
+    fetchMock.mockRejectedValueOnce(new Error('accessibility-ai-svc unreachable'));
+
+    // Second call (Piper) succeeds
+    fetchMock.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          audio_base64: 'bW9jaw==',
-          duration_ms: 800,
+          audio_base64: 'cGlwZXJfYXVkaW8=',
+          duration_ms: 1000,
           sample_rate: 22050,
-          phonemes: [],
+          phonemes: [
+            { offset_ms: 0, phoneme: 'h', duration_ms: 80 },
+          ],
           format: 'mp3',
           voice_used: 'en_US-amy-medium',
           latency_ms: 100,
@@ -209,13 +296,16 @@ describe('synthesizeSpeech', () => {
       ),
     );
 
-    await synthesizeSpeech('Test', defaultVoiceConfig, 'en-US');
+    const result = await synthesizeSpeech('Hello', defaultVoiceConfig, 'en-US');
 
-    expect(cacheTtsResult).toHaveBeenCalled();
+    expect(result.audioBase64).toBe('cGlwZXJfYXVkaW8=');
+    expect(result.durationMs).toBe(1000);
+    expect(result.provider).toBe('piper');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('falls back to estimated visemes when Piper fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Piper unreachable'));
+  it('falls back to estimated visemes when both providers fail', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('All TTS unreachable'));
 
     const result = await synthesizeSpeech('Hello', defaultVoiceConfig, 'en-US');
 
@@ -225,9 +315,17 @@ describe('synthesizeSpeech', () => {
     expect(result.text).toBe('Hello');
   });
 
-  it('falls back when Piper returns non-200', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+  it('falls back when multi-provider returns non-200', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+
+    // Multi-provider returns 500
+    fetchMock.mockResolvedValueOnce(
       new Response('Internal Server Error', { status: 500 }),
+    );
+
+    // Piper also returns 500
+    fetchMock.mockResolvedValueOnce(
+      new Response('Piper Error', { status: 500 }),
     );
 
     const result = await synthesizeSpeech('Hello', defaultVoiceConfig, 'en-US');
@@ -238,23 +336,34 @@ describe('synthesizeSpeech', () => {
 
   it('works with different locales', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          audio_base64: 'ZXNfYXVkaW8=',
-          duration_ms: 1000,
-          sample_rate: 22050,
-          phonemes: [],
-          format: 'mp3',
-          voice_used: 'es_ES-carla-medium',
-          latency_ms: 120,
-        }),
-        { status: 200 },
-      ),
+      mockMultiProviderResponse('es_audio', 'kokoro_local', 1.0),
     );
 
     const esVoiceConfig = { ...defaultVoiceConfig, ttsVoiceId: 'es_ES-carla-medium', locale: 'es' };
     const result = await synthesizeSpeech('Hola', esVoiceConfig, 'es');
 
-    expect(result.audioBase64).toBe('ZXNfYXVkaW8=');
+    expect(result.audioBase64).toBeTruthy();
+    expect(result.provider).toBe('kokoro_local');
+
+    // Check that language was extracted from locale
+    const fetchCall = (globalThis.fetch as Mock).mock.calls[0];
+    const body = JSON.parse(fetchCall[1].body);
+    expect(body.language).toBe('es');
+  });
+
+  it('includes emotion in cache key for different emotions', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      mockMultiProviderResponse('audio', 'dia_local'),
+    );
+
+    await synthesizeSpeech('Hello', defaultVoiceConfig, 'en-US', 'celebrating');
+
+    // Cache key should include emotion mapping
+    expect(getCachedTts).toHaveBeenCalledWith(
+      'Hello',
+      expect.stringContaining('excited'), // celebrating → excited
+      'en-US',
+      1.0,
+    );
   });
 });

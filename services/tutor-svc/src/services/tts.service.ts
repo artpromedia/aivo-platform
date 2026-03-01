@@ -28,6 +28,8 @@ export interface TtsSpeechResult {
   visemes: VisemeEvent[];
   /** The original text that was synthesized. */
   text: string;
+  /** Provider that generated the audio (e.g. 'dia_local', 'kokoro_local', 'openai_api', 'piper'). */
+  provider?: string;
 }
 
 export interface TutorVoiceConfig {
@@ -40,7 +42,41 @@ export interface TutorVoiceConfig {
 }
 
 // =============================================================================
-// Piper TTS engine types (response from /synthesize)
+// Emotion mapping: detectEmotion() output → TTS provider emotion params
+// =============================================================================
+
+/**
+ * Maps tutor emotion tags (from detectEmotion()) to TTS-friendly emotion
+ * descriptors understood by Dia / Kokoro / OpenAI TTS.
+ */
+const TUTOR_EMOTION_TO_TTS: Record<string, string> = {
+  encouraging: 'encouraging',
+  celebrating: 'excited',
+  empathetic: 'empathetic',
+  curious: 'neutral',
+  thinking: 'calm',
+  cheerful: 'excited',
+  neutral: 'neutral',
+};
+
+export function mapTutorEmotionToTts(emotion: string): string {
+  return TUTOR_EMOTION_TO_TTS[emotion] ?? 'neutral';
+}
+
+// =============================================================================
+// Accessibility-AI-Svc TTS types (response from /api/v2/tts/synthesize)
+// =============================================================================
+
+interface AccessibilityTtsHeaders {
+  duration: number;
+  sampleRate: number;
+  voiceId: string;
+  provider: string;
+  textLength: number;
+}
+
+// =============================================================================
+// Piper TTS engine types (legacy fallback — response from /synthesize)
 // =============================================================================
 
 interface PiperPhonemeEvent {
@@ -60,14 +96,91 @@ interface PiperSynthesizeResponse {
 }
 
 // =============================================================================
-// Piper TTS synthesis (internal HTTP call)
+// Multi-provider TTS synthesis (via accessibility-ai-svc)
+// =============================================================================
+
+/**
+ * Synthesize speech via the accessibility-ai-svc MultiProviderTTS.
+ *
+ * Calls /api/v2/tts/synthesize which supports automatic failover
+ * across Dia, Kokoro, OpenAI, Google, Azure, ElevenLabs, Amazon Polly.
+ *
+ * The v2 endpoint returns raw WAV audio with metadata in headers.
+ */
+async function synthesizeWithMultiProvider(
+  text: string,
+  voiceConfig: TutorVoiceConfig,
+  locale: string,
+  emotion: string = 'neutral',
+): Promise<TtsSpeechResult> {
+  const baseUrl = config.accessibilityAiSvcUrl;
+
+  const response = await fetch(`${baseUrl}/api/v2/tts/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      voice: voiceConfig.ttsVoiceId,
+      speed: voiceConfig.speakingRate,
+      language: locale.split('-')[0] || 'en',
+    }),
+    signal: AbortSignal.timeout(20_000),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => 'unknown');
+    throw new Error(`accessibility-ai-svc TTS returned ${response.status}: ${body}`);
+  }
+
+  // Parse metadata from response headers
+  const headers: AccessibilityTtsHeaders = {
+    duration: parseFloat(response.headers.get('X-Duration') || '0'),
+    sampleRate: parseInt(response.headers.get('X-Sample-Rate') || '22050', 10),
+    voiceId: response.headers.get('X-Voice-ID') || voiceConfig.ttsVoiceId,
+    provider: response.headers.get('X-Provider') || 'unknown',
+    textLength: parseInt(response.headers.get('X-Text-Length') || '0', 10),
+  };
+
+  // Read audio bytes and convert to base64
+  const audioBuffer = await response.arrayBuffer();
+  const audioBase64 = Buffer.from(audioBuffer).toString('base64');
+
+  const durationMs = Math.round(headers.duration * 1000);
+
+  // Multi-provider response is raw audio — no phoneme data
+  // Use text-based viseme estimation synced to the actual audio duration
+  const { visemes } = estimateVisemesFromText(text, voiceConfig.speakingRate);
+
+  // Scale viseme timeline to match actual audio duration
+  const estimatedDuration = visemes.length > 0
+    ? visemes[visemes.length - 1]!.offsetMs + visemes[visemes.length - 1]!.durationMs
+    : durationMs;
+
+  const scaleFactor = estimatedDuration > 0 ? durationMs / estimatedDuration : 1;
+  const scaledVisemes = visemes.map(v => ({
+    ...v,
+    offsetMs: Math.round(v.offsetMs * scaleFactor),
+    durationMs: Math.round(v.durationMs * scaleFactor),
+  }));
+
+  return {
+    audioBase64,
+    durationMs,
+    visemes: scaledVisemes,
+    text,
+    provider: headers.provider,
+  };
+}
+
+// =============================================================================
+// Piper TTS synthesis (legacy fallback — internal HTTP call)
 // =============================================================================
 
 /**
  * Synthesize speech using the self-hosted Piper TTS engine.
  *
- * Calls the internal tts-engine service and maps IPA phonemes
- * to viseme events for avatar lip-sync.
+ * Used as fallback when the accessibility-ai-svc is unreachable.
+ * Maps IPA phonemes to viseme events for avatar lip-sync.
  */
 async function synthesizeWithPiper(
   text: string,
@@ -107,6 +220,7 @@ async function synthesizeWithPiper(
     durationMs: data.duration_ms,
     visemes,
     text,
+    provider: 'piper',
   };
 }
 
@@ -300,33 +414,51 @@ export async function uploadAudio(
  * Synthesize speech for tutor response text.
  *
  * Strategy:
- * 1. If TTS is enabled and the Piper engine is reachable → full synthesis
- *    with IPA phoneme-based viseme events.
- * 2. Otherwise → text-based estimated visemes (no audio generated;
+ * 1. Try multi-provider TTS via accessibility-ai-svc (Dia, Kokoro, OpenAI, etc.)
+ * 2. Fallback to legacy Piper TTS engine if accessibility-ai-svc is unreachable
+ * 3. Final fallback → text-based estimated visemes (no audio generated;
  *    the client drives avatar animation from estimates alone).
  */
 export async function synthesizeSpeech(
   text: string,
   voiceConfig: TutorVoiceConfig,
   locale: string,
+  emotion: string = 'neutral',
 ): Promise<TtsSpeechResult> {
-  if (config.ttsEnabled && config.ttsServiceUrl) {
-    // Check Redis cache first (short common phrases)
-    const cached = await getCachedTts(
+  if (!config.ttsEnabled) {
+    // TTS disabled — estimated visemes only (no audio)
+    const { visemes, durationMs } = estimateVisemesFromText(
       text,
-      voiceConfig.ttsVoiceId,
-      locale,
       voiceConfig.speakingRate,
     );
-    if (cached) return cached;
+    return { audioBase64: '', durationMs, visemes, text };
+  }
 
+  // Check Redis cache first (short common phrases)
+  const ttsEmotion = mapTutorEmotionToTts(emotion);
+  const cacheKey = `${voiceConfig.ttsVoiceId}:${ttsEmotion}`;
+  const cached = await getCachedTts(
+    text,
+    cacheKey,
+    locale,
+    voiceConfig.speakingRate,
+  );
+  if (cached) return cached;
+
+  // ── Try multi-provider TTS (accessibility-ai-svc) ───────────
+  if (config.accessibilityAiSvcUrl) {
     try {
-      const result = await synthesizeWithPiper(text, voiceConfig, locale);
+      const result = await synthesizeWithMultiProvider(
+        text,
+        voiceConfig,
+        locale,
+        ttsEmotion,
+      );
 
       // Cache the result for future requests (fire-and-forget)
       cacheTtsResult(
         text,
-        voiceConfig.ttsVoiceId,
+        cacheKey,
         locale,
         voiceConfig.speakingRate,
         result,
@@ -334,11 +466,31 @@ export async function synthesizeSpeech(
 
       return result;
     } catch (error) {
-      console.warn('Piper TTS failed, falling back to estimated visemes:', error);
+      console.warn('Multi-provider TTS failed, trying Piper fallback:', error);
     }
   }
 
-  // Fallback — estimated visemes from text (no audio)
+  // ── Fallback to legacy Piper TTS ────────────────────────────
+  if (config.ttsServiceUrl) {
+    try {
+      const result = await synthesizeWithPiper(text, voiceConfig, locale);
+
+      // Cache Piper result too
+      cacheTtsResult(
+        text,
+        cacheKey,
+        locale,
+        voiceConfig.speakingRate,
+        result,
+      ).catch(() => {});
+
+      return result;
+    } catch (error) {
+      console.warn('Piper TTS also failed, falling back to estimated visemes:', error);
+    }
+  }
+
+  // ── Final fallback — estimated visemes from text (no audio) ──
   const { visemes, durationMs } = estimateVisemesFromText(
     text,
     voiceConfig.speakingRate,

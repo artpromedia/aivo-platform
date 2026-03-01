@@ -203,7 +203,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
           durationMs: 800,
         });
 
-        // ── Synthesize audio via Piper TTS (only if voice available) ─
+        // ── Synthesize audio via multi-provider TTS ────────────────
         let audioUrl: string | null = null;
         let visemeData: Array<{
           offsetMs: number;
@@ -218,10 +218,10 @@ export async function streamRoutes(fastify: FastifyInstance) {
         } | null = null;
 
         const sessionLocaleConfig = resolveLocaleConfig(session.locale);
-        const voiceAvailable = sessionLocaleConfig.piperVoiceAvailable;
+        // Multi-provider TTS supports all locales; Piper check is only for legacy fallback
+        const voiceAvailable = sessionLocaleConfig.piperVoiceAvailable || !!config.accessibilityAiSvcUrl;
 
         if (config.ttsEnabled && voiceAvailable) {
-          // Locale has a Piper voice — proceed with synthesis
           try {
             const voiceConfig = await getVoiceConfig(
               session.personaId,
@@ -240,6 +240,7 @@ export async function streamRoutes(fastify: FastifyInstance) {
                 fullResponseText,
                 voiceConfig,
                 voiceConfig.locale ?? requestedLocale,
+                emotionTag,
               );
 
               if (speechResult.audioBase64) {
@@ -255,10 +256,9 @@ export async function streamRoutes(fastify: FastifyInstance) {
             request.log.warn({ err: ttsError, sessionId }, 'TTS synthesis failed');
           }
         } else if (config.ttsEnabled && !voiceAvailable) {
-          // Locale has no Piper voice — log but don't error
           request.log.info(
             { sessionId, locale: session.locale },
-            'TTS skipped: no Piper voice available for locale',
+            'TTS skipped: no voice provider available for locale',
           );
         }
 

@@ -133,6 +133,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
               aiContent,
               voiceConfig,
               session.locale,
+              emotionTag,
             );
 
             // Upload audio to S3/R2 if we have real audio data

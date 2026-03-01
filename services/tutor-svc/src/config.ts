@@ -34,7 +34,9 @@ export const config = {
   learnerModelUrl: process.env.LEARNER_MODEL_URL || 'http://localhost:4015',
   billingSvcUrl: process.env.BILLING_SVC_URL || 'http://localhost:3150',
   realtimeSvcUrl: process.env.REALTIME_SVC_URL || 'http://localhost:4030',
-  // Piper TTS engine (self-hosted)
+  // Accessibility-AI-Svc multi-provider TTS (Dia, Kokoro, OpenAI, etc.)
+  accessibilityAiSvcUrl: process.env.ACCESSIBILITY_AI_SVC_URL || 'http://accessibility-ai-svc:8080',
+  // Legacy Piper TTS engine (fallback only)
   ttsServiceUrl: process.env.TTS_SERVICE_URL || 'http://localhost:5100',
   ttsEnabled: process.env.TTS_ENABLED !== 'false',
   // Audio storage (S3 / MinIO)
