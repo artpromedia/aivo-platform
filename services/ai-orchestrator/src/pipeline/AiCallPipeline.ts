@@ -272,6 +272,7 @@ export async function runAiCall(
       ...providerResult.metadata,
       configVersion: config.version,
       configId: config.id,
+      modelName: config.modelName,
       tenantId: context.tenantId,
       agentType: context.agentType,
     },

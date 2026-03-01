@@ -1,6 +1,51 @@
 import { createHash } from 'node:crypto';
 
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { describe, expect, it, beforeAll, afterAll, vi } from 'vitest';
+
+// ── Mock external dependencies to avoid real connections ─────────────────────
+
+// Mock Redis to prevent real connections and hook timeouts
+vi.mock('ioredis', () => {
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      on: vi.fn().mockReturnThis(),
+      quit: vi.fn().mockResolvedValue('OK'),
+      disconnect: vi.fn(),
+      incr: vi.fn().mockResolvedValue(1),
+      expire: vi.fn().mockResolvedValue(1),
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue('OK'),
+      del: vi.fn().mockResolvedValue(1),
+      subscribe: vi.fn(),
+      publish: vi.fn().mockResolvedValue(1),
+      status: 'ready',
+    })),
+  };
+});
+
+// Mock LLM adapter to avoid real provider calls (Ollama, OpenAI, etc.)
+// Echo the prompt as content so safety evaluation can detect unsafe input
+vi.mock('../src/providers/llm-adapter.js', () => ({
+  generateCompletion: vi.fn().mockImplementation(async (request: { prompt: string }) => ({
+    content: request.prompt,
+    provider: 'mock',
+    model: 'mock-model',
+    usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+    latencyMs: 1,
+    usedFallback: false,
+    finishReason: 'stop',
+  })),
+  LLMProviderError: class LLMProviderError extends Error {
+    errors: Error[];
+    attemptedProviders: string[];
+    constructor(message: string, errors: Error[], attemptedProviders: string[]) {
+      super(message);
+      this.name = 'LLMProviderError';
+      this.errors = errors;
+      this.attemptedProviders = attemptedProviders;
+    }
+  },
+}));
 
 import { createApp } from '../src/app.js';
 import { config } from '../src/config.js';

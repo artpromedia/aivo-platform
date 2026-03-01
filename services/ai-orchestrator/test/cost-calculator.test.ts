@@ -6,7 +6,9 @@ vi.mock('../src/providers/metrics-helper.js', () => ({
   recordHistogram: vi.fn(),
 }));
 
-const mockGetProviderRegistry = vi.fn();
+const { mockGetProviderRegistry } = vi.hoisted(() => ({
+  mockGetProviderRegistry: vi.fn(),
+}));
 vi.mock('../src/providers/registry.js', () => ({
   getProviderRegistry: mockGetProviderRegistry,
 }));
@@ -76,6 +78,7 @@ describe('CostCalculator', () => {
         return undefined;
       }),
       getAllModels: vi.fn().mockReturnValue([makeModel(), makeCheapModel()]),
+      getModelsMatchingRequirements: vi.fn().mockReturnValue([makeCheapModel()]),
     });
     calc = new CostCalculator();
   });
@@ -139,11 +142,7 @@ describe('CostCalculator', () => {
     it('should select the cheapest model from candidates', () => {
       const expensive = makeModel();
       const cheap = makeCheapModel();
-      const cheapest = calc.selectCheapestModel(
-        [expensive, cheap] as any[],
-        500,
-        200,
-      );
+      const cheapest = calc.selectCheapestModel([expensive, cheap] as any[], 500, 200);
       expect(cheapest).toBeDefined();
       expect((cheapest as any)?.name).toBe('gpt-3.5-turbo');
     });
