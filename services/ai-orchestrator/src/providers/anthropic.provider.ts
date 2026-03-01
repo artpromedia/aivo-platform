@@ -29,16 +29,19 @@ export class AnthropicProvider implements LLMProviderInterface {
   private rateLimiter: RateLimiter;
   private cache: LLMCache;
 
-  // Model routing based on task complexity
+  // Model routing based on task complexity (2026 model generation)
   private readonly modelTiers = {
-    simple: 'claude-3-haiku-20240307',
-    standard: 'claude-3-5-sonnet-20241022',
-    complex: 'claude-3-5-sonnet-20241022',
-    safety: 'claude-3-5-sonnet-20241022',
+    simple: process.env.ANTHROPIC_MODEL_SIMPLE ?? 'claude-sonnet-4-6-20260201',
+    standard: process.env.ANTHROPIC_MODEL_STANDARD ?? 'claude-sonnet-4-6-20260201',
+    complex: process.env.ANTHROPIC_MODEL_COMPLEX ?? 'claude-opus-4-6-20260201',
+    safety: process.env.ANTHROPIC_MODEL_SAFETY ?? 'claude-sonnet-4-6-20260201',
   };
 
-  // Pricing per 1M tokens (as of late 2024)
+  // Pricing per 1M tokens (2026 generation)
   private readonly pricing: Record<string, { input: number; output: number }> = {
+    'claude-opus-4-6-20260201': { input: 15.0, output: 75.0 },
+    'claude-sonnet-4-6-20260201': { input: 3.0, output: 15.0 },
+    // Legacy models (kept for backward compatibility)
     'claude-3-5-sonnet-20241022': { input: 3.0, output: 15.0 },
     'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
     'claude-3-opus-20240229': { input: 15.0, output: 75.0 },
@@ -63,7 +66,7 @@ export class AnthropicProvider implements LLMProviderInterface {
     try {
       // Simple health check with minimal tokens
       await this.client.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-6-20260201',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Hi' }],
       });
@@ -243,7 +246,7 @@ export class AnthropicProvider implements LLMProviderInterface {
   }
 
   private calculateCost(result: LLMCompletionResult): number {
-    const modelPricing = this.pricing[result.model] ?? this.pricing['claude-3-5-sonnet-20241022'];
+    const modelPricing = this.pricing[result.model] ?? this.pricing['claude-sonnet-4-6-20260201'];
     const inputCost = (result.usage.promptTokens / 1_000_000) * modelPricing.input;
     const outputCost = (result.usage.completionTokens / 1_000_000) * modelPricing.output;
     return inputCost + outputCost;

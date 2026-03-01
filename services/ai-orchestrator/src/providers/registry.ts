@@ -21,7 +21,7 @@ export type ProviderType =
   | 'huggingface'
   | 'custom';
 
-export type ModelStatus = 'available' | 'degraded' | 'unavailable' | 'unknown';
+export type ModelStatus = 'available' | 'degraded' | 'unavailable' | 'deprecated' | 'unknown';
 
 export interface ProviderCapabilities {
   chat: boolean;
@@ -382,6 +382,7 @@ export class ProviderRegistry {
       available: 0,
       degraded: 0,
       unavailable: 0,
+      deprecated: 0,
       unknown: 0,
     };
 

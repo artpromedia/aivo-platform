@@ -2,10 +2,11 @@
  * OpenAI Provider Adapter
  *
  * Adapter implementation for OpenAI's API supporting:
- * - GPT-4, GPT-4-Turbo, GPT-4o, GPT-3.5-Turbo models
+ * - GPT-5.2-instant, GPT-5.2-pro, GPT-5.3-codex (2026 generation)
+ * - Legacy: GPT-4o, GPT-4-Turbo, GPT-3.5-Turbo (disabled)
  * - Function calling / tool use
  * - JSON mode
- * - Vision capabilities (GPT-4V)
+ * - Vision capabilities
  * - Streaming responses
  */
 
@@ -42,6 +43,89 @@ export interface OpenAIAdapterConfig extends BaseAdapterConfig {
 // ============================================================================
 
 const OPENAI_MODELS: AIModel[] = [
+  // ── 2026 Generation (active) ──────────────────────────────────────────
+  {
+    id: 'gpt-5.2-instant',
+    providerId: 'openai',
+    name: 'gpt-5.2-instant',
+    displayName: 'GPT-5.2 Instant',
+    contextWindow: 400000,
+    maxOutputTokens: 32768,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.00015,
+      outputPer1kTokens: 0.0006,
+      currency: 'USD',
+    },
+    priority: 1,
+    isEnabled: true,
+    status: 'available',
+    tags: ['fast', 'affordable', 'multimodal'],
+  },
+  {
+    id: 'gpt-5.2-pro',
+    providerId: 'openai',
+    name: 'gpt-5.2-pro',
+    displayName: 'GPT-5.2 Pro',
+    contextWindow: 400000,
+    maxOutputTokens: 32768,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.0025,
+      outputPer1kTokens: 0.01,
+      currency: 'USD',
+    },
+    priority: 2,
+    isEnabled: true,
+    status: 'available',
+    tags: ['multimodal', 'flagship'],
+  },
+  {
+    id: 'gpt-5.3-codex',
+    providerId: 'openai',
+    name: 'gpt-5.3-codex',
+    displayName: 'GPT-5.3 Codex',
+    contextWindow: 400000,
+    maxOutputTokens: 65536,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.005,
+      outputPer1kTokens: 0.02,
+      currency: 'USD',
+    },
+    priority: 3,
+    isEnabled: true,
+    status: 'available',
+    tags: ['code', 'complex-reasoning', 'multimodal'],
+  },
+  // ── Legacy Models (disabled) ──────────────────────────────────────────
   {
     id: 'gpt-4o',
     providerId: 'openai',
@@ -64,10 +148,10 @@ const OPENAI_MODELS: AIModel[] = [
       outputPer1kTokens: 0.01,
       currency: 'USD',
     },
-    priority: 1,
-    isEnabled: true,
-    status: 'available',
-    tags: ['multimodal', 'flagship'],
+    priority: 10,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'multimodal'],
   },
   {
     id: 'gpt-4o-mini',
@@ -91,10 +175,10 @@ const OPENAI_MODELS: AIModel[] = [
       outputPer1kTokens: 0.0006,
       currency: 'USD',
     },
-    priority: 2,
-    isEnabled: true,
-    status: 'available',
-    tags: ['fast', 'affordable'],
+    priority: 11,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'fast', 'affordable'],
   },
   {
     id: 'gpt-4-turbo',
@@ -118,10 +202,10 @@ const OPENAI_MODELS: AIModel[] = [
       outputPer1kTokens: 0.03,
       currency: 'USD',
     },
-    priority: 3,
-    isEnabled: true,
-    status: 'available',
-    tags: ['vision', 'large-context'],
+    priority: 12,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'vision', 'large-context'],
   },
   {
     id: 'gpt-4',
@@ -145,10 +229,10 @@ const OPENAI_MODELS: AIModel[] = [
       outputPer1kTokens: 0.06,
       currency: 'USD',
     },
-    priority: 10,
-    isEnabled: true,
-    status: 'available',
-    tags: ['stable'],
+    priority: 13,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'stable'],
   },
   {
     id: 'gpt-3.5-turbo',
@@ -173,9 +257,9 @@ const OPENAI_MODELS: AIModel[] = [
       currency: 'USD',
     },
     priority: 20,
-    isEnabled: true,
-    status: 'available',
-    tags: ['fast', 'affordable', 'legacy'],
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'fast', 'affordable'],
   },
   {
     id: 'text-embedding-3-small',
@@ -288,7 +372,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const startTime = Date.now();
-    const model = request.model ?? this.config.defaultModel ?? 'gpt-4o';
+    const model = request.model ?? this.config.defaultModel ?? 'gpt-5.2-pro';
 
     try {
       const openaiRequest = this.transformRequest(request);
@@ -307,7 +391,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
   }
 
   async *chatStream(request: ChatRequest): AsyncIterable<ChatChunk> {
-    const model = request.model ?? this.config.defaultModel ?? 'gpt-4o';
+    const model = request.model ?? this.config.defaultModel ?? 'gpt-5.2-pro';
 
     try {
       const openaiRequest = this.transformRequest({ ...request, stream: true });
@@ -453,7 +537,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
     });
 
     const params: OpenAI.Chat.ChatCompletionCreateParams = {
-      model: request.model ?? this.config.defaultModel ?? 'gpt-4o',
+      model: request.model ?? this.config.defaultModel ?? 'gpt-5.2-pro',
       messages,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 1000,

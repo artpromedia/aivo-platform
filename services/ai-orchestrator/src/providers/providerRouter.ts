@@ -37,40 +37,40 @@ import { MockLLMProvider } from './MockLLMProvider.js';
  */
 const DEFAULT_MODEL_MAPPING: Record<AiProvider, Record<AiAgentType, string>> = {
   OPENAI: {
-    BASELINE: 'gpt-4o-mini',
-    TUTOR: 'gpt-4o',
-    HOMEWORK_HELPER: 'gpt-4o',
-    FOCUS: 'gpt-4o-mini',
-    INSIGHTS: 'gpt-4o',
-    VIRTUAL_BRAIN: 'gpt-4o',
-    LESSON_PLANNER: 'gpt-4o',
-    PROGRESS: 'gpt-4o-mini',
-    SAFETY: 'gpt-4o-mini',
-    OTHER: 'gpt-4o-mini',
+    BASELINE: 'gpt-5.2-instant',
+    TUTOR: 'gpt-5.2-pro',
+    HOMEWORK_HELPER: 'gpt-5.2-pro',
+    FOCUS: 'gpt-5.2-instant',
+    INSIGHTS: 'gpt-5.2-pro',
+    VIRTUAL_BRAIN: 'gpt-5.3-codex',
+    LESSON_PLANNER: 'gpt-5.2-pro',
+    PROGRESS: 'gpt-5.2-instant',
+    SAFETY: 'gpt-5.2-instant',
+    OTHER: 'gpt-5.2-instant',
   },
   ANTHROPIC: {
-    BASELINE: 'claude-3-haiku-20240307',
-    TUTOR: 'claude-3-5-sonnet-20241022',
-    HOMEWORK_HELPER: 'claude-3-5-sonnet-20241022',
-    FOCUS: 'claude-3-haiku-20240307',
-    INSIGHTS: 'claude-3-5-sonnet-20241022',
-    VIRTUAL_BRAIN: 'claude-3-5-sonnet-20241022',
-    LESSON_PLANNER: 'claude-3-5-sonnet-20241022',
-    PROGRESS: 'claude-3-haiku-20240307',
-    SAFETY: 'claude-3-haiku-20240307',
-    OTHER: 'claude-3-haiku-20240307',
+    BASELINE: 'claude-sonnet-4-6-20260201',
+    TUTOR: 'claude-sonnet-4-6-20260201',
+    HOMEWORK_HELPER: 'claude-sonnet-4-6-20260201',
+    FOCUS: 'claude-sonnet-4-6-20260201',
+    INSIGHTS: 'claude-opus-4-6-20260201',
+    VIRTUAL_BRAIN: 'claude-opus-4-6-20260201',
+    LESSON_PLANNER: 'claude-sonnet-4-6-20260201',
+    PROGRESS: 'claude-sonnet-4-6-20260201',
+    SAFETY: 'claude-sonnet-4-6-20260201',
+    OTHER: 'claude-sonnet-4-6-20260201',
   },
   GEMINI: {
-    BASELINE: 'gemini-1.5-flash',
-    TUTOR: 'gemini-1.5-pro',
-    HOMEWORK_HELPER: 'gemini-1.5-pro',
-    FOCUS: 'gemini-1.5-flash',
-    INSIGHTS: 'gemini-1.5-pro',
-    VIRTUAL_BRAIN: 'gemini-1.5-pro',
-    LESSON_PLANNER: 'gemini-1.5-pro',
-    PROGRESS: 'gemini-1.5-flash',
-    SAFETY: 'gemini-1.5-flash',
-    OTHER: 'gemini-1.5-flash',
+    BASELINE: 'gemini-3.1-flash',
+    TUTOR: 'gemini-3.1-pro',
+    HOMEWORK_HELPER: 'gemini-3.1-pro',
+    FOCUS: 'gemini-3.1-flash',
+    INSIGHTS: 'gemini-3.1-pro',
+    VIRTUAL_BRAIN: 'gemini-3.1-pro',
+    LESSON_PLANNER: 'gemini-3.1-pro',
+    PROGRESS: 'gemini-3.1-flash',
+    SAFETY: 'gemini-3.1-flash',
+    OTHER: 'gemini-3.1-flash',
   },
   MOCK: {
     BASELINE: 'mock-model',
@@ -89,7 +89,7 @@ const DEFAULT_MODEL_MAPPING: Record<AiProvider, Record<AiAgentType, string>> = {
 /**
  * Default provider priority order.
  */
-const DEFAULT_PROVIDER_PRIORITY: AiProvider[] = ['OPENAI', 'ANTHROPIC', 'GEMINI'];
+const DEFAULT_PROVIDER_PRIORITY: AiProvider[] = ['GEMINI', 'OPENAI', 'ANTHROPIC'];
 
 /**
  * Default tenant AI configuration.
@@ -106,16 +106,26 @@ const DEFAULT_TENANT_CONFIG: TenantAiConfig = {
  * Cost per 1K tokens by provider and model (in USD).
  */
 const COST_PER_1K_TOKENS: Record<string, { input: number; output: number }> = {
-  // OpenAI
+  // OpenAI (2026 generation)
+  'OPENAI:gpt-5.2-instant': { input: 0.00015, output: 0.0006 },
+  'OPENAI:gpt-5.2-pro': { input: 0.0025, output: 0.01 },
+  'OPENAI:gpt-5.3-codex': { input: 0.005, output: 0.02 },
+  // OpenAI (legacy)
   'OPENAI:gpt-4o': { input: 0.0025, output: 0.01 },
   'OPENAI:gpt-4o-mini': { input: 0.00015, output: 0.0006 },
   'OPENAI:gpt-4-turbo': { input: 0.01, output: 0.03 },
 
-  // Anthropic
+  // Anthropic (2026 generation)
+  'ANTHROPIC:claude-opus-4-6-20260201': { input: 0.015, output: 0.075 },
+  'ANTHROPIC:claude-sonnet-4-6-20260201': { input: 0.003, output: 0.015 },
+  // Anthropic (legacy)
   'ANTHROPIC:claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 },
   'ANTHROPIC:claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 },
 
-  // Gemini
+  // Gemini (2026 generation)
+  'GEMINI:gemini-3.1-pro': { input: 0.00125, output: 0.005 },
+  'GEMINI:gemini-3.1-flash': { input: 0.000075, output: 0.0003 },
+  // Gemini (legacy)
   'GEMINI:gemini-1.5-pro': { input: 0.00125, output: 0.005 },
   'GEMINI:gemini-1.5-flash': { input: 0.000075, output: 0.0003 },
 

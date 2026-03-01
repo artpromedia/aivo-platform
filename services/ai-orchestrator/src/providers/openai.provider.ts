@@ -29,16 +29,20 @@ export class OpenAIProvider implements LLMProviderInterface {
   private rateLimiter: RateLimiter;
   private cache: LLMCache;
 
-  // Model routing based on task complexity
+  // Model routing based on task complexity (2026 model generation)
   private readonly modelTiers = {
-    simple: 'gpt-4o-mini', // Fast, cheap - simple Q&A
-    standard: 'gpt-4o', // Balanced - most tutoring
-    complex: 'gpt-4-turbo', // Complex reasoning
-    safety: 'gpt-4o', // Content moderation
+    simple: 'gpt-5.2-instant', // Fast, cheap - simple Q&A
+    standard: 'gpt-5.2-pro', // Balanced - most tutoring
+    complex: 'gpt-5.3-codex', // Complex reasoning & code
+    safety: 'gpt-5.2-instant', // Content moderation
   };
 
-  // Pricing per 1M tokens (as of late 2024)
+  // Pricing per 1M tokens (2026 generation)
   private readonly pricing: Record<string, { input: number; output: number }> = {
+    'gpt-5.2-instant': { input: 0.15, output: 0.6 },
+    'gpt-5.2-pro': { input: 2.5, output: 10.0 },
+    'gpt-5.3-codex': { input: 5.0, output: 20.0 },
+    // Legacy models (kept for backward compatibility)
     'gpt-4o': { input: 2.5, output: 10.0 },
     'gpt-4o-mini': { input: 0.15, output: 0.6 },
     'gpt-4-turbo': { input: 10.0, output: 30.0 },
@@ -260,7 +264,7 @@ export class OpenAIProvider implements LLMProviderInterface {
   }
 
   private calculateCost(result: LLMCompletionResult): number {
-    const modelPricing = this.pricing[result.model] ?? this.pricing['gpt-4o'];
+    const modelPricing = this.pricing[result.model] ?? this.pricing['gpt-5.2-pro'];
     const inputCost = (result.usage.promptTokens / 1_000_000) * modelPricing.input;
     const outputCost = (result.usage.completionTokens / 1_000_000) * modelPricing.output;
     return inputCost + outputCost;

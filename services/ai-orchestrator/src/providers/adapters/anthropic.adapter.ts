@@ -2,10 +2,11 @@
  * Anthropic Provider Adapter
  *
  * Adapter implementation for Anthropic's Claude API supporting:
- * - Claude 3.5 Sonnet, Claude 3 Opus, Haiku models
+ * - Claude Opus 4.6, Claude Sonnet 4.6 (2026 generation)
+ * - Legacy: Claude 3.5 Sonnet, Claude 3 Opus, Haiku (disabled)
  * - Tool use / function calling
  * - Vision capabilities
- * - Long context handling (200K tokens)
+ * - Long context handling (up to 1M tokens)
  * - Streaming responses
  */
 
@@ -44,6 +45,62 @@ export interface AnthropicAdapterConfig extends BaseAdapterConfig {
 // ============================================================================
 
 const ANTHROPIC_MODELS: AIModel[] = [
+  // ── 2026 Generation (active) ──────────────────────────────────────────
+  {
+    id: 'claude-opus-4-6-20260201',
+    providerId: 'anthropic',
+    name: 'claude-opus-4-6-20260201',
+    displayName: 'Claude Opus 4.6',
+    contextWindow: 1000000,
+    maxOutputTokens: 32768,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.015,
+      outputPer1kTokens: 0.075,
+      currency: 'USD',
+    },
+    priority: 1,
+    isEnabled: true,
+    status: 'available',
+    tags: ['flagship', 'complex-reasoning', 'vision', '1m-context'],
+  },
+  {
+    id: 'claude-sonnet-4-6-20260201',
+    providerId: 'anthropic',
+    name: 'claude-sonnet-4-6-20260201',
+    displayName: 'Claude Sonnet 4.6',
+    contextWindow: 680000,
+    maxOutputTokens: 16384,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.003,
+      outputPer1kTokens: 0.015,
+      currency: 'USD',
+    },
+    priority: 2,
+    isEnabled: true,
+    status: 'available',
+    tags: ['fast', 'balanced', 'vision'],
+  },
+  // ── Legacy Models (disabled) ──────────────────────────────────────────
   {
     id: 'claude-3-5-sonnet-20241022',
     providerId: 'anthropic',
@@ -66,10 +123,10 @@ const ANTHROPIC_MODELS: AIModel[] = [
       outputPer1kTokens: 0.015,
       currency: 'USD',
     },
-    priority: 1,
-    isEnabled: true,
-    status: 'available',
-    tags: ['flagship', 'fast', 'vision'],
+    priority: 10,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'vision'],
   },
   {
     id: 'claude-3-opus-20240229',
@@ -93,10 +150,10 @@ const ANTHROPIC_MODELS: AIModel[] = [
       outputPer1kTokens: 0.075,
       currency: 'USD',
     },
-    priority: 2,
-    isEnabled: true,
-    status: 'available',
-    tags: ['powerful', 'complex-reasoning', 'vision'],
+    priority: 11,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'complex-reasoning', 'vision'],
   },
   {
     id: 'claude-3-sonnet-20240229',
@@ -120,10 +177,10 @@ const ANTHROPIC_MODELS: AIModel[] = [
       outputPer1kTokens: 0.015,
       currency: 'USD',
     },
-    priority: 5,
-    isEnabled: true,
-    status: 'available',
-    tags: ['balanced', 'vision'],
+    priority: 12,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'vision'],
   },
   {
     id: 'claude-3-haiku-20240307',
@@ -147,10 +204,10 @@ const ANTHROPIC_MODELS: AIModel[] = [
       outputPer1kTokens: 0.00125,
       currency: 'USD',
     },
-    priority: 3,
-    isEnabled: true,
-    status: 'available',
-    tags: ['fast', 'affordable', 'vision'],
+    priority: 13,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'fast', 'affordable', 'vision'],
   },
 ];
 
@@ -175,7 +232,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
     try {
       // Simple health check with minimal tokens
       await this.client.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-6-20260201',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Hi' }],
       });
@@ -194,7 +251,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
     const startTime = Date.now();
     try {
       await this.client.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: 'claude-sonnet-4-6-20260201',
         max_tokens: 10,
         messages: [{ role: 'user', content: 'Hi' }],
       });
@@ -215,7 +272,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const startTime = Date.now();
-    const model = request.model ?? this.config.defaultModel ?? 'claude-3-5-sonnet-20241022';
+    const model = request.model ?? this.config.defaultModel ?? 'claude-sonnet-4-6-20260201';
 
     try {
       const anthropicRequest = this.transformRequest(request);
@@ -239,7 +296,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
   }
 
   async *chatStream(request: ChatRequest): AsyncIterable<ChatChunk> {
-    const model = request.model ?? this.config.defaultModel ?? 'claude-3-5-sonnet-20241022';
+    const model = request.model ?? this.config.defaultModel ?? 'claude-sonnet-4-6-20260201';
 
     try {
       const anthropicRequest = this.transformRequest(request);
@@ -380,7 +437,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
       });
 
     const params: Anthropic.MessageCreateParams = {
-      model: request.model ?? this.config.defaultModel ?? 'claude-3-5-sonnet-20241022',
+      model: request.model ?? this.config.defaultModel ?? 'claude-sonnet-4-6-20260201',
       max_tokens: request.maxTokens ?? 1000,
       messages: conversationMessages,
       temperature: request.temperature ?? 0.7,

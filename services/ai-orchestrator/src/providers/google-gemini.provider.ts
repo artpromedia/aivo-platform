@@ -38,20 +38,22 @@ export class GoogleGeminiProvider implements LLMProviderInterface {
   private rateLimiter: RateLimiter;
   private cache: LLMCache;
 
-  // Model routing based on task complexity
+  // Model routing based on task complexity (2026 model generation)
   private readonly modelTiers = {
-    simple: 'gemini-1.5-flash', // Fast, cheap - simple Q&A
-    standard: 'gemini-1.5-pro', // Balanced - most tutoring
-    complex: 'gemini-1.5-pro', // Complex reasoning
-    safety: 'gemini-1.5-pro', // Content moderation
+    simple: 'gemini-3.1-flash', // Fast, cheap - simple Q&A
+    standard: 'gemini-3.1-pro', // Balanced - most tutoring
+    complex: 'gemini-3.1-pro', // Complex reasoning
+    safety: 'gemini-3.1-pro', // Content moderation
   };
 
-  // Pricing per 1M tokens (as of late 2024)
-  // Note: Gemini has different pricing for prompts ≤128K and >128K tokens
+  // Pricing per 1M tokens (2026 generation)
   private readonly pricing: Record<string, { input: number; output: number }> = {
+    'gemini-3.1-pro': { input: 1.25, output: 5.0 },
+    'gemini-3.1-flash': { input: 0.075, output: 0.3 },
+    // Legacy models (kept for backward compatibility)
     'gemini-1.5-pro': { input: 1.25, output: 5.0 },
     'gemini-1.5-flash': { input: 0.075, output: 0.3 },
-    'gemini-2.0-flash-exp': { input: 0.0, output: 0.0 }, // Free during preview
+    'gemini-2.0-flash-exp': { input: 0.0, output: 0.0 },
   };
 
   // Safety settings for K-12 education - block all harmful content
@@ -87,7 +89,7 @@ export class GoogleGeminiProvider implements LLMProviderInterface {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const model = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-3.1-flash' });
       await model.generateContent('Hi');
       return true;
     } catch (error) {
@@ -234,7 +236,7 @@ export class GoogleGeminiProvider implements LLMProviderInterface {
 
   async countTokens(text: string): Promise<number> {
     try {
-      const model = this.client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.client.getGenerativeModel({ model: 'gemini-3.1-flash' });
       const result = await model.countTokens(text);
       return result.totalTokens;
     } catch {
@@ -325,7 +327,7 @@ export class GoogleGeminiProvider implements LLMProviderInterface {
   }
 
   private calculateCost(result: LLMCompletionResult): number {
-    const modelPricing = this.pricing[result.model] ?? this.pricing['gemini-1.5-pro'];
+    const modelPricing = this.pricing[result.model] ?? this.pricing['gemini-3.1-pro'];
     const inputCost = (result.usage.promptTokens / 1_000_000) * modelPricing.input;
     const outputCost = (result.usage.completionTokens / 1_000_000) * modelPricing.output;
     return inputCost + outputCost;

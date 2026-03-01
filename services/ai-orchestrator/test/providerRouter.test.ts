@@ -32,8 +32,8 @@ describe('Provider Router: Selection', () => {
     const request = createRequest({ agentType: 'HOMEWORK_HELPER' });
     const selection = router.selectProvider(request);
 
-    // Should use default provider (OPENAI)
-    expect(selection.provider).toBe('OPENAI');
+    // Should use default provider (GEMINI)
+    expect(selection.provider).toBe('GEMINI');
     expect(selection.model).toBeDefined();
   });
 
@@ -56,7 +56,7 @@ describe('Provider Router: Selection', () => {
 
     router.setTenantConfig('tenant-123', {
       modelOverrides: {
-        HOMEWORK_HELPER: { provider: 'GEMINI', model: 'gemini-1.5-pro' },
+        HOMEWORK_HELPER: { provider: 'GEMINI', model: 'gemini-3.1-pro' },
       },
     });
 
@@ -64,7 +64,7 @@ describe('Provider Router: Selection', () => {
     const selection = router.selectProvider(request);
 
     expect(selection.provider).toBe('GEMINI');
-    expect(selection.model).toBe('gemini-1.5-pro');
+    expect(selection.model).toBe('gemini-3.1-pro');
   });
 
   it('respects allowed providers restriction', () => {
@@ -182,12 +182,12 @@ describe('Provider Router: Tenant Config', () => {
 // ────────────────────────────────────────────────────────────────────────────
 
 describe('Provider Router: Cost Estimation', () => {
-  it('calculates cost for OpenAI gpt-4o-mini', () => {
+  it('calculates cost for OpenAI gpt-5.2-instant', () => {
     const router = new ProviderRouter();
 
-    const costCents = router.estimateCost('OPENAI', 'gpt-4o-mini', 1000, 1000);
+    const costCents = router.estimateCost('OPENAI', 'gpt-5.2-instant', 1000, 1000);
 
-    // gpt-4o-mini: $0.00015/1K input, $0.0006/1K output
+    // gpt-5.2-instant: $0.00015/1K input, $0.0006/1K output
     // 1K input = $0.00015 = 0.015 cents
     // 1K output = $0.0006 = 0.06 cents
     // Total = 0.075 cents, rounded to 0
@@ -198,7 +198,7 @@ describe('Provider Router: Cost Estimation', () => {
   it('calculates cost for Anthropic claude models', () => {
     const router = new ProviderRouter();
 
-    const costCents = router.estimateCost('ANTHROPIC', 'claude-3-5-sonnet-20241022', 1000, 1000);
+    const costCents = router.estimateCost('ANTHROPIC', 'claude-sonnet-4-6-20260201', 1000, 1000);
 
     expect(costCents).toBeGreaterThan(0);
   });
@@ -206,7 +206,7 @@ describe('Provider Router: Cost Estimation', () => {
   it('calculates cost for Gemini models', () => {
     const router = new ProviderRouter();
 
-    const costCents = router.estimateCost('GEMINI', 'gemini-1.5-pro', 1000, 1000);
+    const costCents = router.estimateCost('GEMINI', 'gemini-3.1-pro', 1000, 1000);
 
     expect(costCents).toBeGreaterThan(0);
   });

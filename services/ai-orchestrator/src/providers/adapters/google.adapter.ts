@@ -2,7 +2,8 @@
  * Google Gemini Provider Adapter
  *
  * Adapter implementation for Google's Gemini API supporting:
- * - Gemini Pro, Gemini Ultra, Gemini Flash models
+ * - Gemini 3.1 Pro, Gemini 3.1 Flash (2026 generation)
+ * - Legacy: Gemini 1.5 Pro, Flash (disabled)
  * - Multi-modal support (text, images, video)
  * - Function calling
  * - Streaming responses
@@ -51,6 +52,62 @@ export interface GoogleAdapterConfig extends BaseAdapterConfig {
 // ============================================================================
 
 const GOOGLE_MODELS: AIModel[] = [
+  // ── 2026 Generation (active) ──────────────────────────────────────────
+  {
+    id: 'gemini-3.1-pro',
+    providerId: 'google',
+    name: 'gemini-3.1-pro',
+    displayName: 'Gemini 3.1 Pro',
+    contextWindow: 1000000,
+    maxOutputTokens: 32768,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.00125,
+      outputPer1kTokens: 0.005,
+      currency: 'USD',
+    },
+    priority: 1,
+    isEnabled: true,
+    status: 'available',
+    tags: ['multimodal', 'long-context', 'flagship', '1m-context'],
+  },
+  {
+    id: 'gemini-3.1-flash',
+    providerId: 'google',
+    name: 'gemini-3.1-flash',
+    displayName: 'Gemini 3.1 Flash',
+    contextWindow: 1000000,
+    maxOutputTokens: 16384,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.000075,
+      outputPer1kTokens: 0.0003,
+      currency: 'USD',
+    },
+    priority: 2,
+    isEnabled: true,
+    status: 'available',
+    tags: ['fast', 'affordable', 'multimodal', '1m-context'],
+  },
+  // ── Legacy Models (disabled) ──────────────────────────────────────────
   {
     id: 'gemini-1.5-pro',
     providerId: 'google',
@@ -73,10 +130,10 @@ const GOOGLE_MODELS: AIModel[] = [
       outputPer1kTokens: 0.005,
       currency: 'USD',
     },
-    priority: 1,
-    isEnabled: true,
-    status: 'available',
-    tags: ['multimodal', 'long-context', 'flagship'],
+    priority: 10,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'multimodal', 'long-context'],
   },
   {
     id: 'gemini-1.5-flash',
@@ -100,10 +157,10 @@ const GOOGLE_MODELS: AIModel[] = [
       outputPer1kTokens: 0.0003,
       currency: 'USD',
     },
-    priority: 2,
-    isEnabled: true,
-    status: 'available',
-    tags: ['fast', 'affordable', 'multimodal'],
+    priority: 11,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'fast', 'affordable', 'multimodal'],
   },
   {
     id: 'gemini-1.5-flash-8b',
@@ -127,10 +184,10 @@ const GOOGLE_MODELS: AIModel[] = [
       outputPer1kTokens: 0.00015,
       currency: 'USD',
     },
-    priority: 3,
-    isEnabled: true,
-    status: 'available',
-    tags: ['fastest', 'most-affordable'],
+    priority: 12,
+    isEnabled: false,
+    status: 'deprecated',
+    tags: ['legacy', 'fastest', 'most-affordable'],
   },
   {
     id: 'gemini-pro',
@@ -154,9 +211,9 @@ const GOOGLE_MODELS: AIModel[] = [
       outputPer1kTokens: 0.0015,
       currency: 'USD',
     },
-    priority: 10,
-    isEnabled: true,
-    status: 'available',
+    priority: 13,
+    isEnabled: false,
+    status: 'deprecated',
     tags: ['legacy'],
   },
   {
@@ -203,7 +260,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
   async isHealthy(): Promise<boolean> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-3.1-flash' });
       await model.generateContent('Hi');
       return true;
     } catch {
@@ -219,7 +276,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
   }> {
     const startTime = Date.now();
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-3.1-flash' });
       await model.generateContent('Hi');
       return {
         healthy: true,
@@ -238,7 +295,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const startTime = Date.now();
-    const modelName = request.model ?? this.config.defaultModel ?? 'gemini-1.5-pro';
+    const modelName = request.model ?? this.config.defaultModel ?? 'gemini-3.1-pro';
 
     try {
       const model = this.getModel(modelName, request);
@@ -282,7 +339,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
   }
 
   async *chatStream(request: ChatRequest): AsyncIterable<ChatChunk> {
-    const modelName = request.model ?? this.config.defaultModel ?? 'gemini-1.5-pro';
+    const modelName = request.model ?? this.config.defaultModel ?? 'gemini-3.1-pro';
 
     try {
       const model = this.getModel(modelName, request);
@@ -366,7 +423,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
   async countTokens(text: string, modelName?: string): Promise<number> {
     try {
       const model = this.genAI.getGenerativeModel({
-        model: modelName ?? 'gemini-1.5-pro',
+        model: modelName ?? 'gemini-3.1-pro',
       });
       const result = await model.countTokens(text);
       return result.totalTokens;
