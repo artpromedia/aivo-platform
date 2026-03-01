@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation';
 
-import { getAuthSession } from '../../lib/auth';
+import { requirePlatformAdmin } from '../../lib/auth';
 import { ComplianceDashboardClient } from './compliance-dashboard-client';
 
 export default async function CompliancePage() {
-  const session = await getAuthSession();
-  if (!session) {
-    redirect('/login');
+  const auth = await requirePlatformAdmin();
+  if (auth === 'forbidden') {
+    redirect('/dashboard?error=forbidden');
   }
 
-  return <ComplianceDashboardClient accessToken={session.accessToken} />;
+  return <ComplianceDashboardClient accessToken={auth.accessToken} />;
 }
