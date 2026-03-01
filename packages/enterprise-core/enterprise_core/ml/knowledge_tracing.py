@@ -605,6 +605,252 @@ class BayesianKnowledgeTracer:
 
         return params
 
+    # ── Multi-sequence Baum-Welch EM ────────────────────────────────
+
+    def fit_parameters_em(
+        self,
+        response_sequences: List[List[Response]],
+        max_iterations: int = 100,
+        convergence_threshold: float = 1e-4,
+        initial_params: Optional[BKTParameters] = None,
+    ) -> BKTParameters:
+        """
+        Fit BKT parameters using multi-sequence Baum-Welch EM.
+
+        Implements a full forward-backward (Baum-Welch) algorithm over
+        multiple independent response sequences.  This is the standard
+        approach for learning HMM parameters from data and produces
+        better estimates than the simplified single-sequence EM in
+        ``_em_parameter_estimation``.
+
+        States:
+            0 = Not-Known (~K),  1 = Known (K)
+
+        Transition matrix (BKT assumption: knowledge is absorbing):
+            P(K→K)   = 1
+            P(~K→K)  = p_learn
+            P(~K→~K) = 1 - p_learn
+
+        Emission matrix:
+            P(Correct | K)  = 1 - p_slip
+            P(Correct | ~K) = p_guess
+
+        Args:
+            response_sequences: List of independent response sequences.
+                Each inner list is one student's ordered responses for
+                a single skill.
+            max_iterations: Maximum EM iterations (default 100).
+            convergence_threshold: Stop when log-likelihood improvement
+                is smaller than this value.
+            initial_params: Starting parameters (uses default_params
+                when *None*).
+
+        Returns:
+            Fitted ``BKTParameters`` with the highest-likelihood
+            parameter set found during optimisation.
+
+        Raises:
+            ValueError: If *response_sequences* is empty or contains
+                only empty sub-sequences.
+        """
+        # Validate input
+        sequences = [s for s in response_sequences if len(s) > 0]
+        if not sequences:
+            raise ValueError("At least one non-empty response sequence is required")
+
+        params = initial_params or BKTParameters(
+            p_init=self.default_params.p_init,
+            p_learn=self.default_params.p_learn,
+            p_guess=self.default_params.p_guess,
+            p_slip=self.default_params.p_slip,
+        )
+
+        prev_ll = float("-inf")
+
+        for _iteration in range(max_iterations):
+            # Accumulators for sufficient statistics
+            gamma_init_know = 0.0  # Σ γ_1(K)
+            gamma_init_total = 0.0  # number of sequences
+
+            trans_from_not_know = 0.0  # Σ expected transitions from ~K
+            trans_not_know_to_know = 0.0  # Σ expected ~K→K transitions
+
+            emit_know_correct = 0.0  # Σ γ(K) when correct
+            emit_know_total = 0.0  # Σ γ(K)
+            emit_not_know_correct = 0.0  # Σ γ(~K) when correct
+            emit_not_know_total = 0.0  # Σ γ(~K)
+
+            total_ll = 0.0
+
+            for seq in sequences:
+                observations = [r.correct for r in seq]
+                T = len(observations)
+
+                alpha = self._forward(observations, params)  # (T, 2)
+                beta = self._backward(observations, params)  # (T, 2)
+
+                # Per-timestep log-likelihood (for convergence check)
+                seq_ll = float(np.sum(np.log(np.maximum(
+                    alpha.sum(axis=1), 1e-300
+                ))))
+                # More precise: use alpha at last step
+                seq_ll = float(np.log(max(alpha[-1].sum(), 1e-300)))
+
+                # Compute γ(t, s) = P(state_t = s | O, λ)
+                gamma = alpha * beta  # (T, 2)
+                gamma_sums = gamma.sum(axis=1, keepdims=True)
+                gamma_sums = np.maximum(gamma_sums, 1e-300)
+                gamma = gamma / gamma_sums  # normalise
+
+                # Initial state
+                gamma_init_know += gamma[0, 1]
+                gamma_init_total += 1.0
+
+                # Emission statistics
+                for t in range(T):
+                    emit_know_total += gamma[t, 1]
+                    emit_not_know_total += gamma[t, 0]
+                    if observations[t]:
+                        emit_know_correct += gamma[t, 1]
+                        emit_not_know_correct += gamma[t, 0]
+
+                # Transition statistics:  ξ(t, i, j)
+                # Build transition matrix
+                A = np.array([
+                    [1.0 - params.p_learn, params.p_learn],  # from ~K
+                    [0.0, 1.0],                              # from K (absorbing)
+                ])
+
+                for t in range(T - 1):
+                    obs_next = observations[t + 1]
+                    # Emission prob for next observation
+                    b_next = np.array([
+                        params.p_guess if obs_next else (1.0 - params.p_guess),
+                        (1.0 - params.p_slip) if obs_next else params.p_slip,
+                    ])
+                    # ξ(t, i, j) = α(t,i) * A(i,j) * b(j, o_{t+1}) * β(t+1,j)
+                    xi_numerator = np.outer(alpha[t], b_next * beta[t + 1]) * A
+                    xi_denom = max(xi_numerator.sum(), 1e-300)
+                    xi = xi_numerator / xi_denom
+
+                    # Accumulate ~K → K transitions
+                    trans_from_not_know += xi[0, 0] + xi[0, 1]
+                    trans_not_know_to_know += xi[0, 1]
+
+                total_ll += seq_ll
+
+            # ── M-step: re-estimate parameters ──
+            new_p_init = gamma_init_know / max(gamma_init_total, 1e-300)
+            new_p_learn = trans_not_know_to_know / max(trans_from_not_know, 1e-300)
+
+            # Emission re-estimation
+            new_p_guess = emit_not_know_correct / max(emit_not_know_total, 1e-300)
+            new_p_slip = 1.0 - (emit_know_correct / max(emit_know_total, 1e-300))
+
+            # Clamp to valid ranges
+            params = BKTParameters(
+                p_init=float(np.clip(new_p_init, 0.01, 0.99)),
+                p_learn=float(np.clip(new_p_learn, 0.001, 0.99)),
+                p_guess=float(np.clip(new_p_guess, 0.0, 0.5)),
+                p_slip=float(np.clip(new_p_slip, 0.0, 0.5)),
+            )
+
+            # Convergence check
+            if abs(total_ll - prev_ll) < convergence_threshold:
+                break
+            prev_ll = total_ll
+
+        return params
+
+    def _forward(
+        self,
+        observations: List[bool],
+        params: BKTParameters,
+    ) -> np.ndarray:
+        """
+        Forward pass of the forward-backward algorithm.
+
+        Computes α(t, s) = P(o_1, …, o_t, state_t = s | λ) for the
+        two-state BKT HMM.
+
+        States: 0 = ~K (not-known), 1 = K (known).
+
+        Args:
+            observations: List of boolean correct/incorrect observations.
+            params: Current BKT parameters.
+
+        Returns:
+            numpy array of shape ``(T, 2)`` with forward probabilities.
+        """
+        T = len(observations)
+        alpha = np.zeros((T, 2))
+
+        # Transition matrix
+        A = np.array([
+            [1.0 - params.p_learn, params.p_learn],  # from ~K
+            [0.0, 1.0],                               # from K
+        ])
+
+        # Initial state + first emission
+        pi = np.array([1.0 - params.p_init, params.p_init])
+        b0 = self._emission_prob(observations[0], params)
+        alpha[0] = pi * b0
+
+        for t in range(1, T):
+            b_t = self._emission_prob(observations[t], params)
+            alpha[t] = (alpha[t - 1] @ A) * b_t
+
+        return alpha
+
+    def _backward(
+        self,
+        observations: List[bool],
+        params: BKTParameters,
+    ) -> np.ndarray:
+        """
+        Backward pass of the forward-backward algorithm.
+
+        Computes β(t, s) = P(o_{t+1}, …, o_T | state_t = s, λ) for
+        the two-state BKT HMM.
+
+        Args:
+            observations: List of boolean correct/incorrect observations.
+            params: Current BKT parameters.
+
+        Returns:
+            numpy array of shape ``(T, 2)`` with backward probabilities.
+        """
+        T = len(observations)
+        beta = np.zeros((T, 2))
+
+        # Transition matrix
+        A = np.array([
+            [1.0 - params.p_learn, params.p_learn],  # from ~K
+            [0.0, 1.0],                               # from K
+        ])
+
+        # Initialise: β(T) = 1
+        beta[T - 1] = 1.0
+
+        for t in range(T - 2, -1, -1):
+            b_next = self._emission_prob(observations[t + 1], params)
+            beta[t] = A @ (b_next * beta[t + 1])
+
+        return beta
+
+    @staticmethod
+    def _emission_prob(correct: bool, params: BKTParameters) -> np.ndarray:
+        """
+        Emission probability vector for a single observation.
+
+        Returns:
+            Array ``[P(obs | ~K), P(obs | K)]``.
+        """
+        if correct:
+            return np.array([params.p_guess, 1.0 - params.p_slip])
+        else:
+            return np.array([1.0 - params.p_guess, params.p_slip])
+
     def _calculate_log_likelihood(
         self, history: List[Response], params: BKTParameters
     ) -> float:

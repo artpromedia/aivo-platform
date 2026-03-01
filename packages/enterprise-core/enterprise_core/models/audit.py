@@ -179,8 +179,10 @@ class AuditEvent(Base, TimestampMixin):
         comment="Tenant ID for multi-tenancy",
     )
 
-    # Additional metadata
-    metadata: Mapped[Optional[dict[str, Any]]] = mapped_column(
+    # Additional metadata (attribute renamed to avoid clash with
+    # DeclarativeBase.metadata; DB column is still "metadata")
+    event_metadata: Mapped[Optional[dict[str, Any]]] = mapped_column(
+        "metadata",
         JSON,
         nullable=True,
         comment="Additional context-specific metadata",
@@ -262,7 +264,7 @@ class AuditEvent(Base, TimestampMixin):
             "request_id": self.request_id,
             "session_id": self.session_id,
             "tenant_id": str(self.tenant_id) if self.tenant_id else None,
-            "metadata": self.metadata,
+            "metadata": self.event_metadata,
             "previous_hash": previous_hash,
         }
 
@@ -347,7 +349,7 @@ class AuditEvent(Base, TimestampMixin):
             request_id=request_id,
             session_id=session_id,
             tenant_id=tenant_id,
-            metadata=metadata,
+            event_metadata=metadata,
             previous_hash=previous_hash,
             retention_until=retention_until,
             compliance_flags=compliance_flags,

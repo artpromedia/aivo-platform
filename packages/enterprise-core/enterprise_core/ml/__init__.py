@@ -27,6 +27,14 @@ from enterprise_core.ml.adaptive_learning import (
     AdaptiveLearningOrchestrator,
 )
 
+from enterprise_core.ml.registry import (
+    ModelFramework,
+    ModelRegistry,
+    ModelStage,
+    ModelVersionRecord,
+    ModelVersionSchema,
+)
+
 __all__ = [
     # BKT
     "BKTParameters",
@@ -38,4 +46,10 @@ __all__ = [
     "LearnerMetrics",
     "LearningRecommendation",
     "AdaptiveLearningOrchestrator",
+    # Model Registry
+    "ModelFramework",
+    "ModelRegistry",
+    "ModelStage",
+    "ModelVersionRecord",
+    "ModelVersionSchema",
 ]
