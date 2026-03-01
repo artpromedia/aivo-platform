@@ -1,15 +1,15 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
-import MathSpeedGame from "../../../components/games/math-speed-game";
-import WordScrambleGame from "../../../components/games/word-scramble-game";
-import PatternMatchGame from "../../../components/games/pattern-match-game";
-import MemoryCardsGame from "../../../components/games/memory-cards-game";
-import SortingGame from "../../../components/games/sorting-game";
-import ColorMixingGame from "../../../components/games/color-mixing-game";
-import MazeRunnerGame from "../../../components/games/maze-runner-game";
-import RhymeTimeGame from "../../../components/games/rhyme-time-game";
-import BreathingExerciseGame from "../../../components/games/breathing-exercise-game";
+import MathSpeedGame from "../../../../components/games/math-speed-game";
+import WordScrambleGame from "../../../../components/games/word-scramble-game";
+import PatternMatchGame from "../../../../components/games/pattern-match-game";
+import MemoryCardsGame from "../../../../components/games/memory-cards-game";
+import SortingGame from "../../../../components/games/sorting-game";
+import ColorMixingGame from "../../../../components/games/color-mixing-game";
+import MazeRunnerGame from "../../../../components/games/maze-runner-game";
+import RhymeTimeGame from "../../../../components/games/rhyme-time-game";
+import BreathingExerciseGame from "../../../../components/games/breathing-exercise-game";
 
 const GAME_COMPONENTS: Record<string, React.ComponentType<any>> = {
   "math-speed": MathSpeedGame,

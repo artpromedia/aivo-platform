@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { requirePlatformAdmin } from '../../../lib/auth';
+import { requirePlatformAdmin } from '../../lib/auth';
 
 export default async function IntegrationsLayout({ children }: { children: ReactNode }) {
   const auth = await requirePlatformAdmin();
