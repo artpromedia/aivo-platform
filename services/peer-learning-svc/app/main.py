@@ -6,12 +6,16 @@ Complete peer learning platform with:
 - Peer assessment with rubrics
 - Safety features including content moderation and minor protection
 - WebSocket support for live collaboration
+- S13: Outcome-aware scoring, neurodivergent facilitation, teacher dashboard
 """
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
+import httpx
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Query, Path
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -58,6 +62,17 @@ rubric_manager: Optional[RubricManager] = None
 
 # In-memory candidate pool for demonstration
 candidate_pool: List[Dict] = []
+
+# S13: Match persistence (in-memory)
+active_matches: Dict[str, Dict[str, Any]] = {}   # match_id → match record
+match_history: List[Dict[str, Any]] = []          # ordered list
+excluded_pairs: set = set()                       # frozenset(a,b) of bad combos
+
+# S13: Classroom groups (in-memory, keyed by class_id)
+classroom_groups: Dict[str, List[Dict[str, Any]]] = {}
+
+# S13: Learner-model-svc URL
+LEARNER_MODEL_SVC_URL = os.getenv("LEARNER_MODEL_SVC_URL", "http://learner-model-svc:4015")
 
 
 @asynccontextmanager
@@ -274,6 +289,42 @@ class DiscussionFacilitationRequest(BaseModel):
 class CandidatePoolRequest(BaseModel):
     """Request to update the candidate pool."""
     candidates: List[LearnerProfile]
+
+
+# S13 request models --------------------------------------------------------
+
+class ScoreWithOutcomesRequest(BaseModel):
+    """Request for outcome-aware collaboration scoring."""
+    group_id: str
+    messages: List[Dict[str, Any]]
+    topic: Optional[str] = None
+    member_ids: Optional[List[str]] = None
+    pre_mastery: Optional[Dict[str, float]] = Field(
+        default=None, description="Mastery per member before the session"
+    )
+    post_mastery: Optional[Dict[str, float]] = Field(
+        default=None, description="Mastery per member after the session"
+    )
+
+
+class InclusiveFacilitationRequest(BaseModel):
+    """Request for neurodivergent-inclusive facilitation."""
+    group_id: str
+    topic: str
+    messages: List[Dict[str, Any]]
+    member_profiles: Optional[Dict[str, Dict[str, Any]]] = Field(
+        default=None,
+        description='E.g. {"user_1": {"neurodivergent_needs": ["adhd"]}}'
+    )
+
+
+class ClassroomFormGroupsRequest(BaseModel):
+    """Request to form groups for a classroom."""
+    learner_ids: List[str]
+    topic: str
+    group_size: int = Field(default=4, ge=2, le=10)
+    optimization_goal: str = Field(default="balanced")
+    learner_profiles: Optional[List[LearnerProfile]] = None
 
 
 # ============================================================================
@@ -1588,6 +1639,298 @@ async def validate_groups(
     except Exception as e:
         logger.error("Error in group validation: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=f"Validation error: {str(e)}")
+
+
+# ============================================================================
+# S13: Outcome-aware collaboration scoring
+# ============================================================================
+
+@app.post("/api/v1/peer-learning/score-collaboration")
+async def score_collaboration_with_outcomes(
+    request: ScoreWithOutcomesRequest,
+) -> Dict[str, Any]:
+    """Score collaboration quality including outcome improvement.
+
+    When *pre_mastery* and *post_mastery* are provided the response
+    includes an ``outcome_improvement`` dimension.  Without them the
+    standard 4-dimension score is returned with ``outcome_improvement``
+    at the neutral default of 0.5.
+    """
+    if collaboration_scorer is None:
+        raise HTTPException(status_code=503, detail="Collaboration scorer not initialized")
+
+    try:
+        interaction_data = {
+            "messages": request.messages,
+            "topic": request.topic,
+            "member_ids": request.member_ids,
+        }
+
+        score = collaboration_scorer.score_with_outcomes(
+            interaction_data,
+            pre_mastery=request.pre_mastery,
+            post_mastery=request.post_mastery,
+        )
+
+        engagement = collaboration_scorer.compute_engagement(
+            request.messages,
+            request.member_ids or [],
+        )
+
+        return {
+            "status": "success",
+            "group_id": request.group_id,
+            "scores": {
+                "overall": score.overall,
+                "participation_balance": score.participation_balance,
+                "knowledge_sharing": score.knowledge_sharing,
+                "supportiveness": score.supportiveness,
+                "task_focus": score.task_focus,
+                "outcome_improvement": score.outcome_improvement,
+            },
+            "recommendations": score.recommendations,
+            "engagement": [
+                {
+                    "member_id": e.member_id,
+                    "message_count": e.message_count,
+                    "avg_message_length": e.avg_message_length,
+                    "response_rate": e.response_rate,
+                    "engagement_level": e.engagement_level,
+                }
+                for e in engagement
+            ],
+            "message_count": len(request.messages),
+        }
+    except Exception as e:
+        logger.error("Error in outcome-aware scoring: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Scoring error: {str(e)}")
+
+
+# ============================================================================
+# S13: Neurodivergent-inclusive facilitation
+# ============================================================================
+
+@app.post("/api/v1/peer-learning/facilitate")
+async def inclusive_facilitate(
+    request: InclusiveFacilitationRequest,
+) -> Dict[str, Any]:
+    """Facilitate discussion with neurodivergent-aware turn-taking."""
+    if discussion_facilitator is None:
+        raise HTTPException(status_code=503, detail="Facilitator not initialized")
+
+    try:
+        actions = discussion_facilitator.suggest_inclusive_actions(
+            messages=request.messages,
+            topic=request.topic,
+            member_profiles=request.member_profiles,
+        )
+
+        return {
+            "status": "success",
+            "group_id": request.group_id,
+            "actions": [
+                {
+                    "action_type": a.action_type,
+                    "target": a.target,
+                    "message": a.message,
+                    "priority": a.priority,
+                }
+                for a in actions
+            ],
+            "action_count": len(actions),
+        }
+    except Exception as e:
+        logger.error("Error in inclusive facilitation: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Facilitation error: {str(e)}")
+
+
+# ============================================================================
+# S13: Match persistence helpers
+# ============================================================================
+
+async def _fetch_learner_mastery(learner_id: str) -> Optional[Dict[str, float]]:
+    """Fetch mastery data from learner-model-svc (best-effort)."""
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            res = await client.get(
+                f"{LEARNER_MODEL_SVC_URL}/api/v1/learners/{learner_id}/mastery"
+            )
+            if res.status_code == 200:
+                data = res.json()
+                return data.get("mastery", data.get("data", {}).get("mastery"))
+    except Exception as exc:
+        logger.warning("learner-model-svc unreachable for %s: %s", learner_id, exc)
+    return None
+
+
+def _persist_match(match_record: Dict[str, Any]) -> str:
+    """Store a match in the in-memory persistence layer."""
+    match_id = match_record.get("match_id") or str(uuid4())
+    match_record["match_id"] = match_id
+    match_record["created_at"] = datetime.now(timezone.utc).isoformat()
+    active_matches[match_id] = match_record
+    match_history.append(match_record)
+    return match_id
+
+
+@app.post("/api/v1/peer-learning/match")
+async def peer_learning_match(
+    learner_id: str = Query(..., description="Learner to match"),
+    match_type: str = Query("study_partner", description="study_partner | peer_tutor | discussion_partner"),
+    topic: Optional[str] = Query(None),
+) -> Dict[str, Any]:
+    """Match a learner with a peer, persisting the result.
+
+    Optionally enriches the learner's profile from learner-model-svc
+    before performing the match.
+    """
+    if peer_matcher is None:
+        raise HTTPException(status_code=503, detail="Peer matcher not initialized")
+
+    try:
+        # Build profile, optionally enriched with real mastery data
+        mastery = await _fetch_learner_mastery(learner_id)
+
+        profile = {
+            "learner_id": learner_id,
+            "knowledge_state": mastery or {},
+            "preferences": {"match_type": match_type},
+        }
+
+        # Add topic preference if supplied
+        if topic:
+            profile["preferences"]["topic"] = topic
+
+        # Filter out excluded peers
+        pool = [
+            c for c in candidate_pool
+            if frozenset([learner_id, c.get("learner_id", "")]) not in excluded_pairs
+        ]
+
+        match = peer_matcher.find_match(profile, pool)
+
+        if match is None:
+            return {"status": "no_match", "learner_id": learner_id, "message": "No compatible peer found"}
+
+        # Persist
+        match_record = {
+            "learner_id": learner_id,
+            "matched_peer_id": match.matched_peer_id,
+            "compatibility_score": match.compatibility_score,
+            "match_reasons": match.match_reasons,
+            "match_type": match_type,
+            "topic": topic,
+        }
+        match_id = _persist_match(match_record)
+
+        return {
+            "status": "success",
+            "match_id": match_id,
+            "learner_id": learner_id,
+            "matched_peer_id": match.matched_peer_id,
+            "compatibility_score": match.compatibility_score,
+            "match_reasons": match.match_reasons,
+        }
+    except Exception as e:
+        logger.error("Error in peer-learning match: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Matching error: {str(e)}")
+
+
+@app.get("/api/v1/peer-learning/matches/{learner_id}")
+async def get_match_history(
+    learner_id: str = Path(...),
+    limit: int = Query(20, ge=1, le=100),
+) -> Dict[str, Any]:
+    """Return match history for a learner."""
+    records = [
+        m for m in reversed(match_history)
+        if m.get("learner_id") == learner_id or m.get("matched_peer_id") == learner_id
+    ][:limit]
+    return {"status": "success", "learner_id": learner_id, "matches": records}
+
+
+# ============================================================================
+# S13: Teacher dashboard — Classroom group management
+# ============================================================================
+
+@app.post("/api/v1/peer-learning/classrooms/{class_id}/form-groups")
+async def form_classroom_groups(
+    class_id: str,
+    request: ClassroomFormGroupsRequest,
+) -> Dict[str, Any]:
+    """Form peer-learning groups for a classroom.
+
+    The teacher supplies learner IDs (and optional profiles).
+    Groups are formed and persisted under the class.
+    """
+    if group_former is None:
+        raise HTTPException(status_code=503, detail="Group former not initialized")
+
+    try:
+        # Build profiles from request or candidate pool
+        if request.learner_profiles:
+            profiles = [p.model_dump() for p in request.learner_profiles]
+        else:
+            # Try to enrich from learner-model-svc
+            profiles = []
+            for lid in request.learner_ids:
+                mastery = await _fetch_learner_mastery(lid)
+                profiles.append({
+                    "learner_id": lid,
+                    "knowledge_state": mastery or {},
+                })
+
+        groups = group_former.form(
+            profiles,
+            group_size=request.group_size,
+            strategy=request.optimization_goal,
+        )
+
+        # Persist under classroom
+        group_records = []
+        for g in groups:
+            record = {
+                "group_id": g.group_id,
+                "class_id": class_id,
+                "member_ids": g.member_ids,
+                "balance_score": g.balance_score,
+                "predicted_effectiveness": g.predicted_effectiveness,
+                "member_roles": getattr(g, "member_roles", {}),
+                "topic": request.topic,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            group_records.append(record)
+
+        classroom_groups[class_id] = group_records
+
+        logger.info(
+            "Formed %d groups for classroom %s with %d learners",
+            len(group_records), class_id, len(request.learner_ids),
+        )
+
+        return {
+            "status": "success",
+            "class_id": class_id,
+            "groups": group_records,
+            "group_count": len(group_records),
+        }
+    except Exception as e:
+        logger.error("Error forming classroom groups: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Group formation error: {str(e)}")
+
+
+@app.get("/api/v1/peer-learning/classrooms/{class_id}/groups")
+async def list_classroom_groups(
+    class_id: str = Path(...),
+) -> Dict[str, Any]:
+    """List groups for a classroom."""
+    groups = classroom_groups.get(class_id, [])
+    return {
+        "status": "success",
+        "class_id": class_id,
+        "groups": groups,
+        "group_count": len(groups),
+    }
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -23,6 +23,8 @@ class CollaborationScore:
     knowledge_sharing: float
     supportiveness: float
     task_focus: float
+    outcome_improvement: float = 0.0
+    recommendations: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -692,3 +694,93 @@ class CollaborationScorer:
             )
 
         return None
+
+    # -----------------------------------------------------------------
+    # S13: Outcome-improvement scoring
+    # -----------------------------------------------------------------
+
+    def score_with_outcomes(
+        self,
+        interaction_data: Dict,
+        pre_mastery: Optional[Dict[str, float]] = None,
+        post_mastery: Optional[Dict[str, float]] = None,
+    ) -> CollaborationScore:
+        """Score collaboration quality including pre/post mastery gains.
+
+        Args:
+            interaction_data: messages, topic, member_ids
+            pre_mastery:  {member_id: mastery_0_to_1} before the session
+            post_mastery: {member_id: mastery_0_to_1} after the session
+
+        Returns:
+            CollaborationScore with outcome_improvement populated.
+        """
+        base = self.score(interaction_data)
+        outcome = self._compute_outcome_improvement(pre_mastery, post_mastery)
+
+        # Re-weight overall to include outcome dimension
+        overall = (
+            0.20 * base.participation_balance
+            + 0.25 * base.knowledge_sharing
+            + 0.20 * base.supportiveness
+            + 0.15 * base.task_focus
+            + 0.20 * outcome
+        )
+
+        recommendations = self._generate_recommendations(base, outcome)
+
+        return CollaborationScore(
+            overall=overall,
+            participation_balance=base.participation_balance,
+            knowledge_sharing=base.knowledge_sharing,
+            supportiveness=base.supportiveness,
+            task_focus=base.task_focus,
+            outcome_improvement=outcome,
+            recommendations=recommendations,
+        )
+
+    def _compute_outcome_improvement(
+        self,
+        pre_mastery: Optional[Dict[str, float]],
+        post_mastery: Optional[Dict[str, float]],
+    ) -> float:
+        """Compute normalised outcome improvement from mastery deltas."""
+        if not pre_mastery or not post_mastery:
+            return 0.5  # neutral when data unavailable
+
+        gains: List[float] = []
+        for member in pre_mastery:
+            pre = pre_mastery.get(member, 0.0)
+            post = post_mastery.get(member, pre)
+            gains.append(max(0.0, post - pre))
+
+        if not gains:
+            return 0.5
+
+        avg_gain = float(np.mean(gains))
+        # Ceiling-effect aware: a 0.15 avg gain ≈ 1.0 score
+        score = min(1.0, avg_gain / 0.15)
+
+        logger.info("Outcome improvement: avg_gain=%.3f score=%.2f", avg_gain, score)
+        return score
+
+    @staticmethod
+    def _generate_recommendations(
+        base: 'CollaborationScore',
+        outcome: float,
+    ) -> List[str]:
+        """Return actionable suggestions based on dimension scores."""
+        recs: List[str] = []
+        if base.participation_balance < 0.4:
+            recs.append("Assign rotating speaker roles to balance participation.")
+        if base.knowledge_sharing < 0.4:
+            recs.append("Use think-pair-share to encourage knowledge exchange.")
+        if base.supportiveness < 0.4:
+            recs.append("Model supportive language and recognise peer contributions.")
+        if base.task_focus < 0.4:
+            recs.append("Set a visible timer and agenda to keep discussion on track.")
+        if outcome < 0.3:
+            recs.append("Review learning objectives — mastery gains were low.")
+        if not recs:
+            recs.append("Collaboration is strong across all dimensions — keep it up!")
+        return recs

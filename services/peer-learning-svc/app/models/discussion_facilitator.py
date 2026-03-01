@@ -647,3 +647,170 @@ class DiscussionFacilitator:
                             return words[i + 1]
 
         return "that concept"
+
+    # -----------------------------------------------------------------
+    # S13: Neurodivergent-inclusive turn-taking
+    # -----------------------------------------------------------------
+
+    # Strategy presets per neurodivergent profile
+    NEURODIVERGENT_STRATEGIES: Dict[str, Dict] = {
+        "adhd": {
+            "turn_style": "structured_timer",
+            "turn_duration_sec": 60,
+            "allow_written_response": True,
+            "visual_timer": True,
+            "break_interval_messages": 8,
+            "prompts": [
+                "Take a moment to collect your thoughts — you'll have {duration}s to share.",
+                "Before we move on, jot down one key idea you'd like to contribute.",
+                "Let's do a quick round-robin so everyone gets a turn.",
+            ],
+        },
+        "asd": {
+            "turn_style": "round_robin",
+            "turn_duration_sec": 90,
+            "allow_written_response": True,
+            "visual_timer": True,
+            "break_interval_messages": 10,
+            "prompts": [
+                "We'll go in order — {name}, you're next.",
+                "You can type your response if you'd prefer.",
+                "Here's the specific question for this round: {question}",
+            ],
+        },
+        "dyslexia": {
+            "turn_style": "flexible",
+            "turn_duration_sec": 120,
+            "allow_written_response": True,
+            "visual_timer": False,
+            "break_interval_messages": 12,
+            "prompts": [
+                "Take your time — there's no rush.",
+                "You can use voice or text, whichever is easier.",
+                "Would a summary of the key points so far be helpful?",
+            ],
+        },
+        "default": {
+            "turn_style": "flexible",
+            "turn_duration_sec": 90,
+            "allow_written_response": True,
+            "visual_timer": False,
+            "break_interval_messages": 15,
+            "prompts": [
+                "Let's make sure everyone has a chance to share.",
+                "Feel free to type or speak — whatever works best for you.",
+            ],
+        },
+    }
+
+    def suggest_inclusive_actions(
+        self,
+        messages: List[Dict],
+        topic: str,
+        member_profiles: Optional[Dict[str, Dict]] = None,
+    ) -> List[FacilitationAction]:
+        """Suggest facilitation actions with neurodivergent-aware turn-taking.
+
+        Args:
+            messages:        conversation messages so far
+            topic:           the discussion topic
+            member_profiles: optional {member_id: {"neurodivergent_needs": ["adhd", ...]}}
+
+        Returns:
+            List of FacilitationActions that layer inclusive strategies
+            on top of the standard facilitation logic.
+        """
+        # Start with standard actions
+        actions = self.suggest_actions(messages, topic)
+
+        if not member_profiles:
+            return actions
+
+        # Determine the most accommodating strategy needed
+        strategy = self._resolve_inclusive_strategy(member_profiles)
+
+        # Insert structured-turn prompt when turn count crosses break interval
+        if messages and len(messages) % strategy["break_interval_messages"] == 0:
+            prompt = np.random.choice(strategy["prompts"]).format(
+                duration=strategy["turn_duration_sec"],
+                name="everyone",
+                question=f"What's one thing about {topic} you'd like to explore further?",
+            )
+            actions.insert(0, FacilitationAction(
+                action_type="inclusive_turn",
+                target=None,
+                message=prompt,
+                priority=1,
+            ))
+
+        # Offer written-response alternative for any member who needs it
+        if strategy["allow_written_response"]:
+            participation = self._analyze_participation(messages)
+            quiet = self._identify_quiet_members(participation)
+            needs_written = [
+                m for m in quiet
+                if self._member_needs(member_profiles.get(m, {}), "allow_written_response")
+            ]
+            for member in needs_written[:2]:
+                actions.append(FacilitationAction(
+                    action_type="written_option",
+                    target=member,
+                    message=(
+                        f"{member}, feel free to type your thoughts in the chat "
+                        "if that's more comfortable."
+                    ),
+                    priority=2,
+                ))
+
+        # Visual-timer hint (UI layer should respond to this)
+        if strategy["visual_timer"]:
+            actions.append(FacilitationAction(
+                action_type="visual_timer",
+                target=None,
+                message=f"timer:{strategy['turn_duration_sec']}",
+                priority=3,
+            ))
+
+        actions.sort(key=lambda a: a.priority)
+        return actions
+
+    def _resolve_inclusive_strategy(
+        self,
+        member_profiles: Dict[str, Dict],
+    ) -> Dict:
+        """Pick the most accommodating strategy across all members."""
+        needs: Set[str] = set()
+        for profile in member_profiles.values():
+            for need in profile.get("neurodivergent_needs", []):
+                needs.add(need.lower())
+
+        if not needs:
+            return self.NEURODIVERGENT_STRATEGIES["default"]
+
+        # Priority order: asd > adhd > dyslexia > default
+        for key in ("asd", "adhd", "dyslexia"):
+            if key in needs:
+                strategy = dict(self.NEURODIVERGENT_STRATEGIES[key])
+                # Merge: use longest duration, shortest break interval
+                for other_key in needs:
+                    other = self.NEURODIVERGENT_STRATEGIES.get(other_key, {})
+                    strategy["turn_duration_sec"] = max(
+                        strategy.get("turn_duration_sec", 90),
+                        other.get("turn_duration_sec", 90),
+                    )
+                    strategy["break_interval_messages"] = min(
+                        strategy.get("break_interval_messages", 15),
+                        other.get("break_interval_messages", 15),
+                    )
+                return strategy
+
+        return self.NEURODIVERGENT_STRATEGIES["default"]
+
+    @staticmethod
+    def _member_needs(profile: Dict, capability: str) -> bool:
+        """Check whether a member's neurodivergent profile requires *capability*."""
+        needs = profile.get("neurodivergent_needs", [])
+        if not needs:
+            return False
+        # Any listed need implies the capability is helpful
+        return True

@@ -59,7 +59,7 @@ export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
       'AI-powered personalized tutoring is coming soon. Standard tutoring is available.',
   },
   [StubService.PEER_LEARNING]: {
-    enabled: false,
+    enabled: true,
     serviceUrl: 'http://peer-learning-svc:8000',
     displayName: 'Peer Learning & Collaboration',
     expectedDate: '2026-Q2',
