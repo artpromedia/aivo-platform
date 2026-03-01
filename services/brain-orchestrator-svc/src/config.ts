@@ -57,6 +57,7 @@ export const config = {
     rlTutoring: process.env.RL_TUTORING_SVC_URL || 'http://localhost:8000',
     cognitiveLoad: process.env.COGNITIVE_LOAD_SVC_URL || 'http://localhost:8000',
     peerLearning: process.env.PEER_LEARNING_SVC_URL || 'http://localhost:8000',
+    accessibilityAi: process.env.ACCESSIBILITY_AI_SVC_URL || 'http://localhost:8000',
   },
 
   natsUrl: process.env.NATS_URL || 'nats://localhost:4222',

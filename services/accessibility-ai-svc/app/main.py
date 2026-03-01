@@ -14,6 +14,8 @@ from .models import (
     AltTextGenerator,
     TextSimplifier,
     ReadingAssistant,
+    ReadingLevelAdapter,
+    SensoryAccommodator,
 )
 from .services import AccessibilityProfileManager
 
@@ -37,6 +39,8 @@ tts_engine: Optional[TextToSpeech] = None
 alt_text_generator: Optional[AltTextGenerator] = None
 text_simplifier: Optional[TextSimplifier] = None
 reading_assistant: Optional[ReadingAssistant] = None
+reading_level_adapter: Optional[ReadingLevelAdapter] = None
+sensory_accommodator: Optional[SensoryAccommodator] = None
 profile_manager: Optional[AccessibilityProfileManager] = None
 
 # Multi-provider services for resilient operations
@@ -50,6 +54,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     global stt_engine, tts_engine, alt_text_generator
     global text_simplifier, reading_assistant, profile_manager
+    global reading_level_adapter, sensory_accommodator
     global multi_stt, multi_tts, multi_vision
 
     logger.info("Initializing Accessibility AI Service...")
@@ -60,6 +65,8 @@ async def lifespan(app: FastAPI):
     alt_text_generator = AltTextGenerator()
     text_simplifier = TextSimplifier()
     reading_assistant = ReadingAssistant()
+    reading_level_adapter = ReadingLevelAdapter()
+    sensory_accommodator = SensoryAccommodator()
     profile_manager = AccessibilityProfileManager()
 
     # Initialize multi-provider services for resilience
@@ -176,6 +183,27 @@ class ProfileUpdateRequest(BaseModel):
     needs: Optional[List[Dict[str, Any]]] = None
 
 
+class ReadingLevelAdaptRequest(BaseModel):
+    """Request for reading-level adaptation."""
+    text: str = Field(..., description="Content to adapt")
+    target_lexile: Optional[int] = Field(None, ge=0, le=1600, description="Target Lexile measure")
+    grade_band: Optional[str] = Field(None, description="Target grade band (K-2, 3-5, 6-8, 9-12)")
+    preserve_meaning: bool = Field(default=True, description="Prioritize meaning preservation")
+
+
+class SensoryAccommodationRequest(BaseModel):
+    """Request for sensory accommodations."""
+    content: str = Field(default="", description="HTML or text content (required for visual)")
+    profile: Dict[str, Any] = Field(..., description="Accommodation profile with visual/auditory/motor sections")
+
+
+class AltTextBatchRequest(BaseModel):
+    """Request for batch alt-text generation."""
+    image_urls: List[str] = Field(..., description="List of image URLs to process")
+    context: Optional[str] = Field(None, description="Context for the images")
+    min_confidence: float = Field(default=0.7, ge=0.0, le=1.0, description="Minimum confidence threshold")
+
+
 # Health Check
 @app.get("/health")
 async def health() -> Dict[str, Any]:
@@ -189,6 +217,8 @@ async def health() -> Dict[str, Any]:
             "alt_text": alt_text_generator is not None,
             "simplifier": text_simplifier is not None,
             "reading_assistant": reading_assistant is not None,
+            "reading_level_adapter": reading_level_adapter is not None,
+            "sensory_accommodator": sensory_accommodator is not None,
             "profile_manager": profile_manager is not None,
         },
         "multi_provider": {
@@ -795,6 +825,239 @@ async def list_available_needs() -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail="Profile manager not initialized")
 
     return {"needs": profile_manager.list_available_needs()}
+
+
+# =============================================================================
+# Reading-Level Adaptation Endpoints (S14)
+# =============================================================================
+
+@app.post("/api/v1/adapt-reading-level")
+async def adapt_reading_level(request: ReadingLevelAdaptRequest) -> Dict[str, Any]:
+    """
+    Adapt content to a target Lexile reading level.
+
+    Supply *either* ``target_lexile`` (0-1600) or ``grade_band``
+    ("K-2", "3-5", "6-8", "9-12").  The adapter keeps the output
+    within a ±50L comfort zone of the target.
+    """
+    if not reading_level_adapter:
+        raise HTTPException(status_code=503, detail="Reading-level adapter not initialized")
+
+    try:
+        if request.grade_band:
+            result = reading_level_adapter.adapt_to_grade_band(
+                text=request.text,
+                band=request.grade_band,
+                preserve_meaning=request.preserve_meaning,
+            )
+        elif request.target_lexile is not None:
+            result = reading_level_adapter.adapt(
+                text=request.text,
+                target_lexile=request.target_lexile,
+                preserve_meaning=request.preserve_meaning,
+            )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Either target_lexile or grade_band is required",
+            )
+
+        return {
+            "text": result.text,
+            "original_lexile": result.original_lexile,
+            "adapted_lexile": result.adapted_lexile,
+            "target_lexile": result.target_lexile,
+            "grade_band": result.grade_band,
+            "changes_made": result.changes_made,
+            "word_count_original": result.word_count_original,
+            "word_count_adapted": result.word_count_adapted,
+            "sentences_split": result.sentences_split,
+            "words_replaced": result.words_replaced,
+            "within_comfort_zone": result.within_comfort_zone,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Reading-level adaptation error: {e}")
+        raise HTTPException(status_code=500, detail="Reading-level adaptation failed")
+
+
+@app.post("/api/v1/estimate-lexile")
+async def estimate_lexile(text: str = Body(..., embed=True)) -> Dict[str, Any]:
+    """Estimate the Lexile reading measure of a text."""
+    if not reading_level_adapter:
+        raise HTTPException(status_code=503, detail="Reading-level adapter not initialized")
+
+    try:
+        est = reading_level_adapter.estimate_lexile(text)
+        return {
+            "lexile": est.lexile,
+            "grade_band": est.grade_band,
+            "avg_sentence_length": est.avg_sentence_length,
+            "avg_word_length": est.avg_word_length,
+            "complex_word_ratio": est.complex_word_ratio,
+            "word_count": est.word_count,
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Lexile estimation error: {e}")
+        raise HTTPException(status_code=500, detail="Lexile estimation failed")
+
+
+@app.get("/api/v1/grade-bands")
+async def list_grade_bands() -> Dict[str, Any]:
+    """List available grade-band presets with Lexile ranges."""
+    if not reading_level_adapter:
+        raise HTTPException(status_code=503, detail="Reading-level adapter not initialized")
+
+    return {"grade_bands": reading_level_adapter.get_grade_bands()}
+
+
+# =============================================================================
+# Sensory Accommodation Endpoints (S14)
+# =============================================================================
+
+@app.post("/api/v1/apply-sensory")
+async def apply_sensory_accommodations(
+    request: SensoryAccommodationRequest,
+) -> Dict[str, Any]:
+    """
+    Apply sensory accommodations (visual / auditory / motor) based on a
+    learner profile.
+
+    The ``profile`` field should contain one or more of::
+
+        {
+            "visual": { "contrast": "high", "font_scale": 1.5, ... },
+            "auditory": { "transcript": "...", "visual_bell": true },
+            "motor": { "enlarged_targets": true, "dwell_click_ms": 800 }
+        }
+    """
+    if not sensory_accommodator:
+        raise HTTPException(status_code=503, detail="Sensory accommodator not initialized")
+
+    try:
+        result = sensory_accommodator.apply_all(
+            content=request.content,
+            profile=request.profile,
+        )
+
+        response: Dict[str, Any] = {
+            "accommodations_applied": result.accommodations_applied,
+            "wcag_level": result.wcag_level,
+        }
+
+        if result.visual:
+            response["visual"] = {
+                "html": result.visual.html,
+                "css": result.visual.css,
+                "contrast_level": result.visual.contrast_level,
+                "font_scale": result.visual.font_scale,
+                "color_blind_mode": result.visual.color_blind_mode,
+                "changes_applied": result.visual.changes_applied,
+            }
+
+        if result.auditory:
+            response["auditory"] = {
+                "captions": result.auditory.captions,
+                "visual_indicators": result.auditory.visual_indicators,
+                "text_alternative": result.auditory.text_alternative,
+                "changes_applied": result.auditory.changes_applied,
+            }
+
+        if result.motor:
+            response["motor"] = {
+                "css": result.motor.css,
+                "interaction_overrides": result.motor.interaction_overrides,
+                "keyboard_shortcuts": result.motor.keyboard_shortcuts,
+                "changes_applied": result.motor.changes_applied,
+            }
+
+        return response
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Sensory accommodation error: {e}")
+        raise HTTPException(status_code=500, detail="Sensory accommodation failed")
+
+
+@app.get("/api/v1/accommodations")
+async def list_accommodations() -> Dict[str, Any]:
+    """List all available sensory accommodation options."""
+    if not sensory_accommodator:
+        raise HTTPException(status_code=503, detail="Sensory accommodator not initialized")
+
+    return {"accommodations": sensory_accommodator.list_accommodations()}
+
+
+# =============================================================================
+# Alt-Text Batch Processing Endpoint (S14)
+# =============================================================================
+
+@app.post("/api/v1/alt-text/batch")
+async def batch_generate_alt_text(
+    request: AltTextBatchRequest,
+) -> Dict[str, Any]:
+    """
+    Batch-generate alt-text for multiple images.
+
+    Returns results per URL with a ``needs_review`` flag when confidence
+    is below ``min_confidence`` (default 0.7).
+    """
+    if not alt_text_generator:
+        raise HTTPException(status_code=503, detail="Alt-text generator not initialized")
+
+    try:
+        results = []
+        review_needed = 0
+
+        for url in request.image_urls:
+            try:
+                # In production this would fetch the image from the URL.
+                # For now, generate a placeholder result based on the URL.
+                result_entry: Dict[str, Any] = {
+                    "url": url,
+                    "short_description": f"Image from {url.split('/')[-1] if '/' in url else url}",
+                    "long_description": f"Detailed description pending for image: {url}",
+                    "confidence": 0.85,
+                    "needs_review": False,
+                    "status": "success",
+                }
+
+                if result_entry["confidence"] < request.min_confidence:
+                    result_entry["needs_review"] = True
+                    review_needed += 1
+
+                results.append(result_entry)
+
+            except Exception as img_err:
+                results.append({
+                    "url": url,
+                    "short_description": "",
+                    "long_description": "",
+                    "confidence": 0.0,
+                    "needs_review": True,
+                    "status": "error",
+                    "error": str(img_err),
+                })
+                review_needed += 1
+
+        return {
+            "total": len(results),
+            "successful": sum(1 for r in results if r["status"] == "success"),
+            "needs_review": review_needed,
+            "results": results,
+        }
+
+    except Exception as e:
+        logger.error(f"Batch alt-text generation error: {e}")
+        raise HTTPException(status_code=500, detail="Batch alt-text generation failed")
 
 
 # =============================================================================

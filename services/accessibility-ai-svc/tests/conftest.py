@@ -151,6 +151,114 @@ class PaceResult:
 
 
 @dataclass
+class LexileEstimateMock:
+    """Mock Lexile estimate result."""
+    lexile: int = 650
+    grade_band: str = "3-5"
+    avg_sentence_length: float = 12.5
+    avg_word_length: float = 4.8
+    complex_word_ratio: float = 0.15
+    word_count: int = 50
+
+
+@dataclass
+class AdaptedContentMock:
+    """Mock adapted content result."""
+    text: str = "The cat sat on the mat."
+    original_lexile: int = 800
+    adapted_lexile: int = 520
+    target_lexile: int = 500
+    grade_band: str = "6-8"
+    changes_made: List[str] = None
+    word_count_original: int = 15
+    word_count_adapted: int = 12
+    sentences_split: int = 1
+    words_replaced: int = 3
+    within_comfort_zone: bool = True
+
+    def __post_init__(self):
+        if self.changes_made is None:
+            self.changes_made = ["Replaced complex words", "Split long sentence"]
+
+
+@dataclass
+class VisualAccommodationMock:
+    """Mock visual accommodation result."""
+    html: str = "<p>Hello world</p>"
+    css: Dict[str, str] = None
+    contrast_level: str = "high"
+    font_scale: float = 1.5
+    color_blind_mode: Optional[str] = None
+    changes_applied: List[str] = None
+
+    def __post_init__(self):
+        if self.css is None:
+            self.css = {"font-size": "24px", "line-height": "1.5"}
+        if self.changes_applied is None:
+            self.changes_applied = ["Font scaled to 150%", "High contrast applied"]
+
+
+@dataclass
+class AuditoryAccommodationMock:
+    """Mock auditory accommodation result."""
+    captions: List[Dict] = None
+    visual_indicators: List[Dict[str, str]] = None
+    text_alternative: str = "Audio content transcribed"
+    changes_applied: List[str] = None
+
+    def __post_init__(self):
+        if self.captions is None:
+            self.captions = [{"index": 0, "start": 0.0, "end": 3.2, "text": "Hello world"}]
+        if self.visual_indicators is None:
+            self.visual_indicators = [{"type": "notification_bell", "label": "🔔 Alert"}]
+        if self.changes_applied is None:
+            self.changes_applied = ["Captions generated", "Visual bell enabled"]
+
+
+@dataclass
+class MotorAccommodationMock:
+    """Mock motor accommodation result."""
+    css: Dict[str, str] = None
+    interaction_overrides: Dict[str, Any] = None
+    keyboard_shortcuts: List[Dict[str, str]] = None
+    changes_applied: List[str] = None
+
+    def __post_init__(self):
+        if self.css is None:
+            self.css = {"--min-target-size": "44px", "cursor": "pointer"}
+        if self.interaction_overrides is None:
+            self.interaction_overrides = {"min_target_size_px": 44, "keyboard_nav_enabled": True}
+        if self.keyboard_shortcuts is None:
+            self.keyboard_shortcuts = [{"key": "Tab", "action": "Move to next element"}]
+        if self.changes_applied is None:
+            self.changes_applied = ["Touch targets enlarged", "Keyboard navigation enabled"]
+
+
+@dataclass
+class SensoryAccommodationResultMock:
+    """Mock combined sensory accommodation result."""
+    visual: Optional[VisualAccommodationMock] = None
+    auditory: Optional[AuditoryAccommodationMock] = None
+    motor: Optional[MotorAccommodationMock] = None
+    accommodations_applied: List[str] = None
+    wcag_level: str = "AA"
+
+    def __post_init__(self):
+        if self.visual is None:
+            self.visual = VisualAccommodationMock()
+        if self.auditory is None:
+            self.auditory = AuditoryAccommodationMock()
+        if self.motor is None:
+            self.motor = MotorAccommodationMock()
+        if self.accommodations_applied is None:
+            self.accommodations_applied = [
+                "Font scaled to 150%", "High contrast applied",
+                "Captions generated", "Visual bell enabled",
+                "Touch targets enlarged", "Keyboard navigation enabled",
+            ]
+
+
+@dataclass
 class AccessibilityProfile:
     """Mock accessibility profile."""
     learner_id: str
@@ -280,6 +388,35 @@ def mock_profile_manager():
 
 
 @pytest.fixture
+def mock_reading_level_adapter():
+    """Create mock reading-level adapter."""
+    adapter = MagicMock()
+    adapter.estimate_lexile.return_value = LexileEstimateMock()
+    adapter.adapt.return_value = AdaptedContentMock()
+    adapter.adapt_to_grade_band.return_value = AdaptedContentMock(grade_band="3-5")
+    adapter.get_grade_bands.return_value = {
+        "K-2": {"min": 0, "max": 300, "midpoint": 150, "description": "Kindergarten – 2nd grade"},
+        "3-5": {"min": 300, "max": 700, "midpoint": 500, "description": "3rd – 5th grade"},
+        "6-8": {"min": 700, "max": 1000, "midpoint": 850, "description": "6th – 8th grade"},
+        "9-12": {"min": 1000, "max": 1300, "midpoint": 1150, "description": "9th – 12th grade"},
+    }
+    return adapter
+
+
+@pytest.fixture
+def mock_sensory_accommodator():
+    """Create mock sensory accommodator."""
+    accommodator = MagicMock()
+    accommodator.apply_all.return_value = SensoryAccommodationResultMock()
+    accommodator.list_accommodations.return_value = {
+        "visual": [{"id": "high_contrast", "name": "High Contrast", "description": "WCAG AA"}],
+        "auditory": [{"id": "captions", "name": "Auto-Captions", "description": "Timed blocks"}],
+        "motor": [{"id": "enlarged_targets", "name": "Enlarged Touch Targets", "description": "44px min"}],
+    }
+    return accommodator
+
+
+@pytest.fixture
 def client(
     mock_stt_engine,
     mock_tts_engine,
@@ -287,6 +424,8 @@ def client(
     mock_text_simplifier,
     mock_reading_assistant,
     mock_profile_manager,
+    mock_reading_level_adapter,
+    mock_sensory_accommodator,
 ):
     """Create test client with mocked dependencies."""
     import app.main as main_module
@@ -301,6 +440,8 @@ def client(
     original_multi_stt = main_module.multi_stt
     original_multi_tts = main_module.multi_tts
     original_multi_vision = main_module.multi_vision
+    original_reading_level = main_module.reading_level_adapter
+    original_sensory = main_module.sensory_accommodator
     
     # Set mocks
     main_module.stt_engine = mock_stt_engine
@@ -312,6 +453,8 @@ def client(
     main_module.multi_stt = None
     main_module.multi_tts = None
     main_module.multi_vision = None
+    main_module.reading_level_adapter = mock_reading_level_adapter
+    main_module.sensory_accommodator = mock_sensory_accommodator
     
     try:
         yield TestClient(main_module.app)
@@ -326,6 +469,8 @@ def client(
         main_module.multi_stt = original_multi_stt
         main_module.multi_tts = original_multi_tts
         main_module.multi_vision = original_multi_vision
+        main_module.reading_level_adapter = original_reading_level
+        main_module.sensory_accommodator = original_sensory
 
 
 @pytest.fixture

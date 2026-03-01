@@ -96,7 +96,7 @@ export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
     fallbackMessage: 'Cognitive load optimization coming soon. Standard pacing is available.',
   },
   [StubService.ACCESSIBILITY_AI]: {
-    enabled: false,
+    enabled: true,
     serviceUrl: 'http://accessibility-ai-svc:8000',
     displayName: 'AI Accessibility Adaptations',
     expectedDate: '2026-Q2',

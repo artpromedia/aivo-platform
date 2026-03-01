@@ -9,6 +9,7 @@ import { cognitiveRoutes } from './routes/cognitive.routes.js';
 import { learningRoutes } from './routes/learning.routes.js';
 import { orchestrationRoutes } from './routes/orchestration.routes.js';
 import { peerRoutes } from './routes/peer.routes.js';
+import { accessibilityRoutes } from './routes/accessibility.routes.js';
 
 export function createApp(): FastifyInstance {
   const app = Fastify({
@@ -40,6 +41,7 @@ export function createApp(): FastifyInstance {
   app.register(cognitiveRoutes, { prefix: '/api/v1/brain' });
   app.register(learningRoutes, { prefix: '/api/v1/brain' });
   app.register(peerRoutes, { prefix: '/api/v1/brain' });
+  app.register(accessibilityRoutes, { prefix: '/api/v1/brain' });
 
   // Error handler
   app.setErrorHandler(async (error, _request, reply) => {
