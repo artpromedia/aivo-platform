@@ -103,7 +103,7 @@ export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
     fallbackMessage: 'AI accessibility features coming soon. Manual accommodations are available.',
   },
   [StubService.SPECIALIZED_SUPPORT]: {
-    enabled: false,
+    enabled: true,
     serviceUrl: 'http://specialized-support-svc:8000',
     displayName: 'Specialized Learning Support',
     expectedDate: '2026-Q2',

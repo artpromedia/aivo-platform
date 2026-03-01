@@ -22,6 +22,7 @@ from .adhd import (
 from .asd import ASDSupportService
 from .dyslexia import DyslexiaSupportService
 from .anxiety import AnxietySupportService
+from .models import IEPAnalyzer, DifferentiationEngine, AccommodationRecommender
 
 # Configure logging
 logging.basicConfig(
@@ -42,6 +43,9 @@ daily_planner: DailyPlannerService | None = None
 asd_service: ASDSupportService | None = None
 dyslexia_service: DyslexiaSupportService | None = None
 anxiety_service: AnxietySupportService | None = None
+iep_analyzer: IEPAnalyzer | None = None
+differentiation_engine: DifferentiationEngine | None = None
+accommodation_recommender: AccommodationRecommender | None = None
 
 
 @asynccontextmanager
@@ -49,6 +53,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     global adhd_service, ef_strategies, project_breakdown, daily_planner
     global asd_service, dyslexia_service, anxiety_service
+    global iep_analyzer, differentiation_engine, accommodation_recommender
 
     logger.info(f"Starting {settings.SERVICE_NAME} v{settings.VERSION}")
 
@@ -62,6 +67,11 @@ async def lifespan(app: FastAPI):
     asd_service = ASDSupportService()
     dyslexia_service = DyslexiaSupportService()
     anxiety_service = AnxietySupportService()
+
+    # Initialize cross-cutting models
+    iep_analyzer = IEPAnalyzer()
+    differentiation_engine = DifferentiationEngine()
+    accommodation_recommender = AccommodationRecommender()
 
     logger.info("All services initialized successfully")
 
@@ -116,6 +126,9 @@ async def readiness() -> Dict[str, Any]:
             "asd": asd_service is not None,
             "dyslexia": dyslexia_service is not None,
             "anxiety": anxiety_service is not None,
+            "iep_analyzer": iep_analyzer is not None,
+            "differentiation_engine": differentiation_engine is not None,
+            "accommodation_recommender": accommodation_recommender is not None,
         },
     }
 
@@ -575,6 +588,336 @@ async def reframe_anxious_thought(request: Request) -> Dict[str, Any]:
 
     response = await anxiety_service.get_support(request_obj)
     return {"reframed": response.content}
+
+
+# =============================================================================
+# IEP Analyzer Endpoints
+# =============================================================================
+
+
+@app.post("/api/v1/specialized-support/analyze-iep")
+async def analyze_iep_endpoint(request: Request) -> Dict[str, Any]:
+    """Analyse an IEP document for completeness and IDEA compliance."""
+    if not iep_analyzer:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    iep_document = body.get("iep_document", body)
+    result = iep_analyzer.analyze_iep(iep_document)
+
+    return {
+        "quality_score": result.quality_score,
+        "sections": [
+            {
+                "section": s.section,
+                "present": s.present,
+                "completeness": s.completeness,
+                "issues": s.issues,
+            }
+            for s in result.sections
+        ],
+        "goals": [
+            {
+                "goal_id": g.goal_id,
+                "measurability_score": g.measurability_score,
+                "has_condition": g.has_condition,
+                "has_behaviour": g.has_behaviour,
+                "has_criteria": g.has_criteria,
+                "has_timeframe": g.has_timeframe,
+                "issues": g.issues,
+                "suggestions": g.suggestions,
+            }
+            for g in result.goals
+        ],
+        "missing_accommodations": result.missing_accommodations,
+        "compliance_issues": result.compliance_issues,
+        "strengths": result.strengths,
+        "recommendations": result.recommendations,
+    }
+
+
+@app.post("/api/v1/specialized-support/iep-implications")
+async def iep_implications_endpoint(request: Request) -> Dict[str, Any]:
+    """Extract platform learning implications from IEP data."""
+    if not iep_analyzer:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    iep_data = body.get("iep_data", body)
+    result = iep_analyzer.extract_learning_implications(iep_data)
+
+    return {
+        "feature_toggles": [
+            {
+                "source": ft.source,
+                "feature": ft.feature,
+                "value": ft.value,
+                "description": ft.description,
+            }
+            for ft in result.feature_toggles
+        ],
+        "path_constraints": result.path_constraints,
+        "scheduling_rules": result.scheduling_rules,
+        "summary": result.summary,
+    }
+
+
+@app.post("/api/v1/specialized-support/iep-progress")
+async def iep_progress_endpoint(request: Request) -> Dict[str, Any]:
+    """Track IEP goal progress against mastery data."""
+    if not iep_analyzer:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    report = iep_analyzer.track_goal_progress(
+        iep_goals=body.get("iep_goals", []),
+        mastery_data=body.get("mastery_data", {}),
+        learner_id=body.get("learner_id", "unknown"),
+        report_period=body.get("report_period", "current"),
+    )
+
+    return {
+        "learner_id": report.learner_id,
+        "report_period": report.report_period,
+        "overall_progress_pct": report.overall_progress_pct,
+        "goals_on_track": report.goals_on_track,
+        "goals_at_risk": report.goals_at_risk,
+        "goals": [
+            {
+                "goal_id": g.goal_id,
+                "goal_text": g.goal_text,
+                "current_mastery": g.current_mastery,
+                "target_mastery": g.target_mastery,
+                "progress_pct": g.progress_pct,
+                "on_track": g.on_track,
+                "matched_skills": g.matched_skills,
+                "notes": g.notes,
+            }
+            for g in report.goals
+        ],
+        "recommendations": report.recommendations,
+    }
+
+
+# =============================================================================
+# Differentiation Engine Endpoints
+# =============================================================================
+
+
+@app.post("/api/v1/specialized-support/differentiate")
+async def differentiate_content_endpoint(request: Request) -> Dict[str, Any]:
+    """Generate differentiated content for a learner."""
+    if not differentiation_engine:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    result = differentiation_engine.differentiate_content(
+        content=body.get("content", {}),
+        learner_profile=body.get("learner_profile", {}),
+        iep_data=body.get("iep_data"),
+        strategy=body.get("strategy"),
+    )
+
+    response: Dict[str, Any] = {
+        "strategy_type": result.strategy_type,
+        "content_area": result.content_area,
+        "learner_summary": result.learner_summary,
+        "accommodations_applied": result.accommodations_applied,
+        "implementation_notes": result.implementation_notes,
+    }
+
+    if result.tiered_content:
+        response["tiered_content"] = [
+            {
+                "tier": t.tier,
+                "complexity_level": t.complexity_level,
+                "content_modifications": t.content_modifications,
+                "support_structures": t.support_structures,
+                "assessment_adjustments": t.assessment_adjustments,
+                "sample_activities": t.sample_activities,
+            }
+            for t in result.tiered_content
+        ]
+    if result.grouping_plan:
+        response["grouping_plan"] = {
+            "strategy": result.grouping_plan.strategy,
+            "rationale": result.grouping_plan.rationale,
+            "group_count": result.grouping_plan.group_count,
+            "rotation_interval_minutes": result.grouping_plan.rotation_interval_minutes,
+            "group_descriptions": result.grouping_plan.group_descriptions,
+        }
+    if result.compacting_plan:
+        response["compacting_plan"] = {
+            "pretest_skills": result.compacting_plan.pretest_skills,
+            "mastered_content": result.compacting_plan.mastered_content,
+            "skip_sections": result.compacting_plan.skip_sections,
+            "enrichment_activities": result.compacting_plan.enrichment_activities,
+            "acceleration_options": result.compacting_plan.acceleration_options,
+        }
+    if result.interest_centers:
+        response["interest_centers"] = [
+            {
+                "name": ic.name,
+                "description": ic.description,
+                "learning_objectives": ic.learning_objectives,
+                "activities": ic.activities,
+                "materials": ic.materials,
+                "duration_minutes": ic.duration_minutes,
+            }
+            for ic in result.interest_centers
+        ]
+    if result.scaffold_levels:
+        response["scaffold_levels"] = [
+            {
+                "level": sl.level,
+                "support_type": sl.support_type,
+                "description": sl.description,
+                "when_to_use": sl.when_to_use,
+                "fade_criteria": sl.fade_criteria,
+            }
+            for sl in result.scaffold_levels
+        ]
+    if result.multi_sensory_plan:
+        response["multi_sensory_plan"] = {
+            "visual_activities": result.multi_sensory_plan.visual_activities,
+            "auditory_activities": result.multi_sensory_plan.auditory_activities,
+            "kinesthetic_activities": result.multi_sensory_plan.kinesthetic_activities,
+            "combined_activities": result.multi_sensory_plan.combined_activities,
+        }
+
+    return response
+
+
+@app.post("/api/v1/specialized-support/suggest-differentiation")
+async def suggest_differentiation_endpoint(request: Request) -> Dict[str, Any]:
+    """Analyse class diversity and suggest differentiation strategies."""
+    if not differentiation_engine:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    result = differentiation_engine.suggest_differentiation(
+        lesson_plan=body.get("lesson_plan", {}),
+        class_profiles=body.get("class_profiles", []),
+    )
+
+    return {
+        "class_analysis": {
+            "total_students": result.class_analysis.total_students,
+            "skill_distribution": result.class_analysis.skill_distribution,
+            "iep_count": result.class_analysis.iep_count,
+            "ell_count": result.class_analysis.ell_count,
+            "gifted_count": result.class_analysis.gifted_count,
+            "disability_categories": result.class_analysis.disability_categories,
+            "diversity_score": result.class_analysis.diversity_score,
+            "primary_challenges": result.class_analysis.primary_challenges,
+        },
+        "suggestions": [
+            {
+                "strategy": s.strategy,
+                "priority": s.priority,
+                "rationale": s.rationale,
+                "estimated_prep_minutes": s.estimated_prep_minutes,
+                "evidence_base": s.evidence_base,
+                "implementation_guide": {
+                    "lesson_title": s.implementation_guide.lesson_title,
+                    "strategy_used": s.implementation_guide.strategy_used,
+                    "preparation_steps": s.implementation_guide.preparation_steps,
+                    "implementation_steps": s.implementation_guide.implementation_steps,
+                    "monitoring_checklist": s.implementation_guide.monitoring_checklist,
+                    "adjustment_triggers": s.implementation_guide.adjustment_triggers,
+                    "reflection_prompts": s.implementation_guide.reflection_prompts,
+                },
+            }
+            for s in result.suggestions
+        ],
+        "summary": result.summary,
+    }
+
+
+# =============================================================================
+# Accommodation Recommender Endpoints
+# =============================================================================
+
+
+@app.post("/api/v1/specialized-support/recommend-accommodations")
+async def recommend_accommodations_endpoint(request: Request) -> Dict[str, Any]:
+    """Recommend accommodations based on performance data."""
+    if not accommodation_recommender:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    result = accommodation_recommender.recommend_accommodations(
+        learner_profile=body.get("learner_profile", {}),
+        performance_data=body.get("performance_data", {}),
+        existing_accommodations=body.get("existing_accommodations"),
+        iep_accommodations=body.get("iep_accommodations"),
+    )
+
+    return {
+        "learner_id": result.learner_id,
+        "detected_patterns": [
+            {
+                "pattern_type": p.pattern_type,
+                "confidence": p.confidence,
+                "evidence": p.evidence,
+                "affected_skills": p.affected_skills,
+                "severity": p.severity,
+                "data_points": p.data_points,
+            }
+            for p in result.detected_patterns
+        ],
+        "iep_gaps": result.iep_gaps,
+        "new_suggestions": [
+            {
+                "name": s.name,
+                "category": s.category,
+                "rationale": s.rationale,
+                "triggered_by": s.triggered_by,
+                "priority": s.priority,
+                "implementation_notes": s.implementation_notes,
+            }
+            for s in result.new_suggestions
+        ],
+        "existing_to_review": result.existing_to_review,
+        "summary": result.summary,
+    }
+
+
+@app.post("/api/v1/specialized-support/evaluate-effectiveness")
+async def evaluate_effectiveness_endpoint(request: Request) -> Dict[str, Any]:
+    """Evaluate accommodation effectiveness."""
+    if not accommodation_recommender:
+        raise HTTPException(status_code=503, detail=ERROR_SERVICE_NOT_INITIALIZED)
+
+    body = await request.json()
+    result = accommodation_recommender.evaluate_accommodation_effectiveness(
+        learner_id=body.get("learner_id", "unknown"),
+        accommodation=body.get("accommodation", ""),
+        performance_before=body.get("performance_before", []),
+        performance_after=body.get("performance_after", []),
+        time_period=body.get("time_period", "current"),
+    )
+
+    return {
+        "learner_id": result.learner_id,
+        "accommodation_name": result.accommodation_name,
+        "time_period": result.time_period,
+        "rating": result.rating,
+        "metrics": {
+            "pre_mean": result.metrics.pre_mean,
+            "post_mean": result.metrics.post_mean,
+            "pre_std": result.metrics.pre_std,
+            "post_std": result.metrics.post_std,
+            "effect_size": result.metrics.effect_size,
+            "improvement_pct": result.metrics.improvement_pct,
+            "data_points_pre": result.metrics.data_points_pre,
+            "data_points_post": result.metrics.data_points_post,
+        },
+        "action": result.action,
+        "rationale": result.rationale,
+        "modification_suggestions": result.modification_suggestions,
+        "summary": result.summary,
+    }
 
 
 # =============================================================================
