@@ -51,7 +51,7 @@ export interface StubServiceConfig {
  */
 export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
   [StubService.RL_TUTORING]: {
-    enabled: false,
+    enabled: true,
     serviceUrl: 'http://rl-tutoring-svc:8000',
     displayName: 'Reinforcement Learning Tutoring',
     expectedDate: '2026-Q2',

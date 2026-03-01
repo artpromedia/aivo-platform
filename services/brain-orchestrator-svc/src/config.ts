@@ -54,6 +54,7 @@ export const config = {
     aiOrchestrator: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
     training: process.env.TRAINING_SVC_URL || 'http://localhost:4079',
     analytics: process.env.ANALYTICS_SVC_URL || 'http://localhost:4030',
+    rlTutoring: process.env.RL_TUTORING_SVC_URL || 'http://localhost:8000',
   },
 
   natsUrl: process.env.NATS_URL || 'nats://localhost:4222',

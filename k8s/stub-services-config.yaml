@@ -36,7 +36,7 @@ data:
   # ===========================================
   
   # P0 - Critical AI Services (Expected Q2 2026)
-  FEATURE_RL_TUTORING: "false"
+  FEATURE_RL_TUTORING: "true"
   FEATURE_PEER_LEARNING: "false"
   FEATURE_MULTIMODAL_ANALYTICS: "false"
   

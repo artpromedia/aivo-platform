@@ -184,3 +184,55 @@ class ExperienceBuffer:
     def is_ready(self, min_size: int = 100) -> bool:
         """Check if buffer has enough experiences for training."""
         return len(self._buffer) >= min_size
+
+    # ── persistence helpers (S11.1) ──────────────────────────────────────
+
+    async def save_to_store(self, redis_store: "Any", pg_store: "Any" = None) -> int:
+        """Flush current buffer to Redis (hot) and optionally move old
+        entries to PostgreSQL (cold).  Returns total persisted count."""
+        from datetime import datetime, timezone
+
+        all_exp = list(self._buffer)
+        if not all_exp:
+            return 0
+
+        persisted = 0
+
+        # Push all to Redis hot buffer
+        if redis_store and redis_store.available:
+            persisted = await redis_store.push_experiences(all_exp)
+
+        # Move entries > 24 h old into cold PG storage
+        if pg_store and pg_store.available and redis_store and redis_store.available:
+            from datetime import timedelta
+
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+            cold: list = []
+            hot: list = []
+            for exp in all_exp:
+                ts = exp.get("_ts")
+                if ts and datetime.fromisoformat(str(ts)) < cutoff:
+                    cold.append(exp)
+                else:
+                    hot.append(exp)
+            if cold:
+                await pg_store.store_experiences(cold)
+
+        logger.info("Buffer persisted: %d experiences", persisted)
+        return persisted
+
+    async def load_from_store(self, redis_store: "Any") -> int:
+        """Re-hydrate buffer from Redis on startup.  Returns loaded count."""
+        if not redis_store or not redis_store.available:
+            return 0
+        experiences = await redis_store.get_all_experiences()
+        for exp in experiences:
+            self.add(
+                state=exp.get("state", {}),
+                action=exp.get("action", 0),
+                reward=exp.get("reward", 0.0),
+                next_state=exp.get("next_state", {}),
+                done=exp.get("done", False),
+            )
+        logger.info("Buffer rehydrated: %d experiences from Redis", len(experiences))
+        return len(experiences)

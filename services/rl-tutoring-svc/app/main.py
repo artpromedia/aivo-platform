@@ -1,5 +1,8 @@
 """RL Tutoring Service - FastAPI Application"""
+import asyncio
 import logging
+import os
+import time
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
 
@@ -22,9 +25,24 @@ from app.services.session_manager import SessionManager
 from app.services.safety_monitor import SafetyMonitor
 from app.services.content_recommender import ContentRecommender, ContentItem
 from app.safety_middleware import ContentSafetyMiddleware
+from app.persistence import RedisStore, PgStore, CheckpointStore
+from app.hardening import (
+    ProductionHardeningMiddleware,
+    get_metrics_response,
+    observe_reward,
+    update_gauge_metrics,
+    rl_circuit_breaker,
+    assign_ab_group,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ── Configuration from env ───────────────────────────────────────────────
+POLICY_UPDATE_INTERVAL = int(os.getenv("RL_POLICY_UPDATE_INTERVAL", "900"))  # 15 min
+POLICY_UPDATE_MIN_BUFFER = int(os.getenv("RL_POLICY_UPDATE_MIN_BUFFER", "32"))
+POLICY_UPDATE_BATCH_SIZE = int(os.getenv("RL_POLICY_UPDATE_BATCH_SIZE", "32"))
+POLICY_UPDATE_EPOCHS = int(os.getenv("RL_POLICY_UPDATE_EPOCHS", "10"))
 
 # Global instances
 state_encoder: Optional[StateEncoder] = None
@@ -37,28 +55,77 @@ session_manager: Optional[SessionManager] = None
 safety_monitor: Optional[SafetyMonitor] = None
 content_recommender: Optional[ContentRecommender] = None
 
+# Persistence instances
+redis_store: Optional[RedisStore] = None
+pg_store: Optional[PgStore] = None
+checkpoint_store: Optional[CheckpointStore] = None
+
+# Background task handle
+_policy_update_task: Optional[asyncio.Task] = None
+
+
+async def _periodic_policy_update() -> None:
+    """Background loop: train policy every POLICY_UPDATE_INTERVAL seconds
+    when buffer has enough experiences, then checkpoint."""
+    while True:
+        await asyncio.sleep(POLICY_UPDATE_INTERVAL)
+        try:
+            if (
+                policy_learner is not None
+                and experience_buffer is not None
+                and len(experience_buffer) >= POLICY_UPDATE_MIN_BUFFER
+            ):
+                experiences = experience_buffer.sample(POLICY_UPDATE_BATCH_SIZE)
+                policy_learner.train(experiences, epochs=POLICY_UPDATE_EPOCHS)
+                logger.info(
+                    "Periodic policy update: steps=%d, buffer=%d",
+                    policy_learner.training_steps,
+                    len(experience_buffer),
+                )
+                # Auto-checkpoint after training
+                if checkpoint_store is not None:
+                    await checkpoint_store.maybe_save(policy_learner)
+        except Exception as exc:
+            logger.warning("Periodic policy update failed: %s", exc)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global state_encoder, action_selector, reward_model, policy_learner
     global experience_buffer, policy_evaluator
     global session_manager, safety_monitor, content_recommender
+    global redis_store, pg_store, checkpoint_store, _policy_update_task
 
     logger.info("Initializing RL Tutoring Service...")
 
-    # Initialize core RL components
+    # ── 1. Core RL components ────────────────────────────────────────────
     state_encoder = StateEncoder(state_dim=64)
     action_selector = ActionSelector()
     reward_model = RewardModel()
     policy_learner = PolicyLearner(
         algorithm="q_learning",
         state_dim=64,
-        action_dim=len(action_selector.ACTION_TYPES)
+        action_dim=len(action_selector.ACTION_TYPES),
     )
     experience_buffer = ExperienceBuffer(capacity=10000)
     policy_evaluator = PolicyEvaluator()
 
-    # Initialize student management components
+    # ── 2. Persistence layer (best-effort — service works without it) ────
+    redis_store = RedisStore()
+    pg_store = PgStore()
+    await redis_store.connect()
+    await pg_store.connect()
+    checkpoint_store = CheckpointStore(pg_store)
+
+    # Restore latest policy checkpoint
+    await checkpoint_store.load_latest(policy_learner)
+
+    # Rehydrate experience buffer from Redis
+    loaded = await experience_buffer.load_from_store(redis_store)
+    if loaded:
+        logger.info("Rehydrated %d experiences from Redis", loaded)
+
+    # ── 3. Student management ────────────────────────────────────────────
     session_manager = SessionManager()
     safety_monitor = SafetyMonitor(enable_logging=True)
     content_recommender = ContentRecommender(
@@ -70,11 +137,42 @@ async def lifespan(app: FastAPI):
     # Add some default content
     _initialize_default_content()
 
+    # ── 4. Start periodic background policy trainer ──────────────────────
+    _policy_update_task = asyncio.create_task(_periodic_policy_update())
+
     logger.info("All RL components initialized successfully")
 
     yield
 
+    # ── Shutdown ─────────────────────────────────────────────────────────
     logger.info("Shutting down RL Tutoring Service...")
+
+    # Cancel background task
+    if _policy_update_task is not None:
+        _policy_update_task.cancel()
+        try:
+            await _policy_update_task
+        except asyncio.CancelledError:
+            pass
+
+    # Persist buffer & checkpoint before exit
+    if experience_buffer is not None and redis_store is not None:
+        await experience_buffer.save_to_store(redis_store, pg_store)
+    if checkpoint_store is not None and policy_learner is not None:
+        await checkpoint_store.force_save(policy_learner)
+
+    # Flush safety audit log to PG
+    if safety_monitor is not None and pg_store is not None and pg_store.available:
+        entries = safety_monitor.get_audit_log(limit=10000)
+        if entries:
+            await pg_store.store_audit_entries(entries)
+            logger.info("Flushed %d audit entries to PostgreSQL", len(entries))
+
+    # Close stores
+    if redis_store is not None:
+        await redis_store.close()
+    if pg_store is not None:
+        await pg_store.close()
 
 
 def _initialize_default_content():
@@ -119,6 +217,9 @@ app.add_middleware(
     ContentSafetyMiddleware,
     enabled=True,
 )
+
+# Production hardening – rate limiting + Prometheus latency tracking (S11.4)
+app.add_middleware(ProductionHardeningMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -242,7 +343,11 @@ async def health() -> Dict[str, Any]:
             "session_manager": session_manager is not None,
             "safety_monitor": safety_monitor is not None,
             "content_recommender": content_recommender is not None,
-        }
+        },
+        "persistence": {
+            "redis": redis_store.available if redis_store else False,
+            "postgresql": pg_store.available if pg_store else False,
+        },
     }
 
 
@@ -263,6 +368,14 @@ async def health_ready() -> Dict[str, Any]:
         "status": "ready" if all_ready else "not_ready",
         "service": "rl-tutoring-svc"
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    if experience_buffer is not None and policy_learner is not None:
+        update_gauge_metrics(len(experience_buffer), policy_learner.training_steps)
+    return get_metrics_response()
 
 
 @app.post("/api/v1/action/select")
@@ -335,6 +448,9 @@ async def record_reward(reward: RewardSignal) -> Dict[str, Any]:
         next_state=next_state,
         done=reward.done,
     )
+
+    # Track reward distribution in Prometheus (S11.4)
+    observe_reward(reward_components.total)
 
     return {
         "status": "success",
@@ -796,6 +912,33 @@ async def get_recommendation_stats() -> Dict[str, Any]:
         "status": "success",
         "recommendation_stats": content_recommender.get_statistics(),
     }
+
+
+# ==================== Warm-Start Endpoint ====================
+
+@app.post("/api/v1/warm-start")
+async def trigger_warm_start(
+    num_curriculum: int = 500,
+    train_epochs: int = 20,
+) -> Dict[str, Any]:
+    """Trigger warm-start training from curriculum rules and optional BKT data."""
+    if policy_learner is None or experience_buffer is None:
+        raise HTTPException(status_code=503, detail="Service not initialized")
+
+    from app.services.warm_start import warm_start_policy
+
+    summary = warm_start_policy(
+        policy_learner=policy_learner,
+        experience_buffer=experience_buffer,
+        num_curriculum=num_curriculum,
+        train_epochs=train_epochs,
+    )
+
+    # Auto-checkpoint after warm-start
+    if checkpoint_store is not None:
+        await checkpoint_store.force_save(policy_learner)
+
+    return {"status": "success", **summary}
 
 
 if __name__ == "__main__":

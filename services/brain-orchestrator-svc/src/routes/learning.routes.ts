@@ -28,6 +28,80 @@ const STRUGGLING_THRESHOLD = 40; // below → trigger remediation re-optimisatio
 const MASTERED_THRESHOLD = 90; // above → skip mastered content re-optimisation
 
 async function learningRoutes(app: FastifyInstance) {
+  // ── RL feature-flag helper ──────────────────────────────────────────
+  const rlTutoringEnabled = (): boolean => {
+    const env = process.env.FEATURE_RL_TUTORING ?? process.env.FEATURE_RLTUTORING;
+    return env === 'true' || env === '1';
+  };
+
+  /**
+   * Suggest next tutoring action via RL Tutoring Service.
+   * POST /api/v1/brain/learners/:learnerId/suggest-action
+   *
+   * Falls back to a rule-based recommendation when the RL service
+   * is disabled or unreachable.
+   */
+  app.post(
+    '/learners/:learnerId/suggest-action',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { learnerId } = request.params;
+      const body = request.body as any;
+
+      if (!rlTutoringEnabled()) {
+        return {
+          success: true,
+          data: {
+            action_type: 'explanation',
+            difficulty: 0.5,
+            parameters: {},
+            source: 'rule-based',
+          },
+          message: 'RL tutoring disabled — returning rule-based action',
+        };
+      }
+
+      try {
+        const rlUrl = config.services.rlTutoring;
+        const masteryState = await masteryTracker.getMasterySummary(learnerId);
+
+        const res = await fetch(`${rlUrl}/api/v1/action/select`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            learner_id: learnerId,
+            knowledge_state: body.knowledge_state ?? {},
+            recent_performance: body.recent_performance ?? [],
+            engagement_level: body.engagement_level ?? 0.7,
+            time_in_session: body.time_in_session ?? 0,
+            current_content_id: body.current_content_id ?? null,
+            available_content: body.available_content ?? [],
+            previous_content_ids: body.previous_content_ids ?? [],
+            hints_given: body.hints_given ?? 0,
+          }),
+          signal: AbortSignal.timeout(3_000),
+        });
+
+        if (!res.ok) throw new Error(`rl-tutoring-svc responded ${res.status}`);
+        const json = (await res.json()) as any;
+        return { success: true, data: { ...json, source: 'rl-policy' } };
+      } catch (err) {
+        console.warn('[suggest-action] RL tutoring unavailable, falling back', {
+          error: (err as Error).message,
+        });
+        return {
+          success: true,
+          data: {
+            action_type: 'explanation',
+            difficulty: 0.5,
+            parameters: {},
+            source: 'rule-based-fallback',
+          },
+          message: 'RL service unavailable — returning rule-based action',
+        };
+      }
+    }
+  );
+
   /**
    * Get next recommended activity for a learner
    * GET /api/v1/brain/learners/:learnerId/next-activity
@@ -169,6 +243,15 @@ async function learningRoutes(app: FastifyInstance) {
       if (thresholdCrossings.length > 0) {
         void triggerPathReOptimization(learnerId, tenantId, thresholdCrossings).catch((err) =>
           console.warn('[complete-activity] Path re-optimisation failed', {
+            error: (err as Error).message,
+          })
+        );
+      }
+
+      // ── S11: Fire-and-forget RL reward signal ─────────────────────────
+      if (rlTutoringEnabled()) {
+        void fireRlRewardSignal(learnerId, activity, input, masteryUpdates).catch((err) =>
+          console.warn('[complete-activity] RL reward signal failed', {
             error: (err as Error).message,
           })
         );
@@ -705,6 +788,58 @@ async function triggerPathReOptimization(
   });
 
   console.info('[threshold-crossing] Path re-optimised', { learnerId, pathId: pathRecord.id });
+}
+
+/**
+ * S11: Fire-and-forget RL reward signal after activity completion.
+ *
+ * Sends outcome data to rl-tutoring-svc so the Q-learner can update
+ * its policy with real learning evidence.
+ */
+async function fireRlRewardSignal(
+  learnerId: string,
+  activity: { id: string; skillIds: string[] },
+  input: { activityId: string; result: { score?: number; timeSpent?: number; success?: boolean } },
+  masteryUpdates: any[]
+): Promise<void> {
+  const rlUrl = config.services.rlTutoring;
+
+  const averageMastery =
+    masteryUpdates.length > 0
+      ? masteryUpdates.reduce((sum, u) => sum + (u.masteryLevel ?? 50), 0) / masteryUpdates.length
+      : 50;
+
+  const knowledgeState: Record<string, number> = {};
+  for (const u of masteryUpdates) {
+    if (u.skillId) knowledgeState[u.skillId] = (u.masteryLevel ?? 50) / 100;
+  }
+
+  await fetch(`${rlUrl}/api/v1/reward/record`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learner_id: learnerId,
+      state: {
+        knowledge_state: knowledgeState,
+        recent_performance: [(input.result.score ?? 50) / 100],
+        engagement_level: 0.7,
+        time_in_session: input.result.timeSpent ?? 0,
+      },
+      action_taken: {
+        action_type: 'practice',
+        content_id: input.activityId,
+      },
+      outcome: {
+        correctness: input.result.success ? 1.0 : (input.result.score ?? 50) / 100,
+        time: input.result.timeSpent ?? 0,
+        engagement: 0.7,
+      },
+      done: false,
+    }),
+    signal: AbortSignal.timeout(3_000),
+  }).then((res) => {
+    if (!res.ok) console.warn('[rl-reward] rl-tutoring-svc responded', res.status);
+  });
 }
 
 export { learningRoutes };

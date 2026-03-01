@@ -17,3 +17,9 @@ pandas>=2.1.0
 structlog>=23.2.0
 httpx>=0.25.0
 redis>=5.0.0
+
+# Persistence (S11)
+asyncpg>=0.29.0
+
+# Observability (S11)
+prometheus-client>=0.19.0
