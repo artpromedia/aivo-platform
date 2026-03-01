@@ -1,0 +1,25 @@
+{
+  "name": "@aivo/api-contracts",
+  "version": "1.0.0",
+  "description": "Shared OpenAPI contracts and generated types for AIVO services",
+  "private": true,
+  "type": "module",
+  "main": "./generated/ai-inference.ts",
+  "exports": {
+    "./ai-inference": "./generated/ai-inference.ts"
+  },
+  "scripts": {
+    "generate:ts": "openapi-typescript schemas/ai-inference.openapi.yaml -o generated/ai-inference.ts",
+    "generate:py": "datamodel-codegen --input schemas/ai-inference.openapi.yaml --output generated/ai_inference.py --output-model-type pydantic_v2.BaseModel --target-python-version 3.11",
+    "generate": "pnpm generate:ts",
+    "validate": "node scripts/validate-spec.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.6.1",
+    "vitest": "^2.1.9",
+    "yaml": "^2.7.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

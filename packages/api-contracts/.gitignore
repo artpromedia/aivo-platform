@@ -1,0 +1,5 @@
+# Override root-level **/generated/ ignore — these files are
+# auto-generated from the OpenAPI spec and MUST be committed
+# so downstream consumers can import them directly.
+!generated/
+!generated/**

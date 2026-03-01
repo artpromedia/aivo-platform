@@ -1,0 +1,266 @@
+openapi: 3.1.0
+info:
+  title: AIVO AI Inference API
+  description: |
+    Canonical API contract for the AIVO AI Inference service.
+    Both the TypeScript ai-orchestrator and the Python ai-inference-svc
+    MUST conform to these schemas for request/response interop.
+  version: 2.0.0
+  contact:
+    name: AIVO Platform Team
+
+servers:
+  - url: http://localhost:4010
+    description: Local ai-inference-svc
+
+paths:
+  /api/v1/generate/generate:
+    post:
+      operationId: generate
+      summary: Generate AI text completion
+      description: |
+        Primary endpoint for AI text generation. Routes to the best available
+        provider (OpenAI, Anthropic, Gemini) with automatic failover.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Successful generation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: All providers unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/generate/hint:
+    post:
+      operationId: generateHint
+      summary: Generate a pedagogical hint
+      description: Generates a grade-appropriate hint for a given question.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HintRequest'
+      responses:
+        '200':
+          description: Hint generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HintResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/generate/health:
+    get:
+      operationId: healthCheck
+      summary: Service health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    # ─── Core Generation ─────────────────────────────────────────────
+
+    GenerateRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          description: The user prompt to generate a completion for
+          minLength: 1
+          maxLength: 32000
+        system_prompt:
+          type: string
+          description: Optional system prompt for context and instructions
+          maxLength: 16000
+        model:
+          $ref: '#/components/schemas/ModelId'
+        max_tokens:
+          type: integer
+          description: Maximum number of tokens to generate
+          minimum: 1
+          maximum: 8192
+          default: 1000
+        temperature:
+          type: number
+          description: Sampling temperature (higher = more creative)
+          minimum: 0
+          maximum: 2
+          default: 0.7
+        preferred_provider:
+          $ref: '#/components/schemas/ProviderId'
+
+    GenerateResponse:
+      type: object
+      required:
+        - content
+        - model
+        - provider
+        - tokens_used
+        - latency_ms
+      properties:
+        content:
+          type: string
+          description: Generated text content
+        model:
+          type: string
+          description: Model that produced the response
+        provider:
+          type: string
+          description: Provider that fulfilled the request
+        tokens_used:
+          type: integer
+          description: Total tokens consumed (input + output)
+          minimum: 0
+        latency_ms:
+          type: integer
+          description: End-to-end latency in milliseconds
+          minimum: 0
+
+    # ─── Hint Generation ─────────────────────────────────────────────
+
+    HintRequest:
+      type: object
+      required:
+        - question
+        - subject
+      properties:
+        question:
+          type: string
+          description: The question to generate a hint for
+          minLength: 1
+        subject:
+          type: string
+          description: Subject area (e.g. MATH, ELA, SCIENCE)
+        difficulty:
+          type: integer
+          description: Difficulty level (1 = easiest, 5 = hardest)
+          minimum: 1
+          maximum: 5
+          default: 3
+        learner_context:
+          type: object
+          description: Optional learner context (grade, history, preferences)
+          additionalProperties: true
+
+    HintResponse:
+      type: object
+      required:
+        - hint
+        - model
+        - provider
+      properties:
+        hint:
+          type: string
+          description: Generated pedagogical hint
+        model:
+          type: string
+        provider:
+          type: string
+        tokens_used:
+          type: integer
+          minimum: 0
+        latency_ms:
+          type: integer
+          minimum: 0
+
+    # ─── Shared Enums ────────────────────────────────────────────────
+
+    ModelId:
+      type: string
+      description: Supported AI model identifiers (2026 generation)
+      enum:
+        # OpenAI
+        - gpt-5.2-pro
+        - gpt-5.2-instant
+        - gpt-5.3-codex
+        # Anthropic
+        - claude-opus-4-6-20260201
+        - claude-sonnet-4-6-20260201
+        # Google Gemini
+        - gemini-3.1-pro
+        - gemini-3.1-flash
+
+    ProviderId:
+      type: string
+      description: Supported AI provider identifiers
+      enum:
+        - openai
+        - anthropic
+        - gemini
+
+    # ─── Error & Health ──────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Optional structured error details
+          additionalProperties: true
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - unhealthy
+        service:
+          type: string
+        version:
+          type: string
+        providers:
+          type: object
+          description: Per-provider health status
+          additionalProperties:
+            type: string
