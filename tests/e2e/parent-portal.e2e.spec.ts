@@ -443,11 +443,46 @@ test.describe('Payment/Billing Access', () => {
     if (await cancelBtn.isVisible()) {
       await cancelBtn.click();
 
-      const confirmDialog = page.locator('[data-testid="cancel-confirm"], .confirm-dialog');
-      await expect(confirmDialog.or(page.locator('text=/are you sure/i').first())).toBeVisible();
+      // Step 1: Reason selection
+      const reasonStep = page.locator('[data-testid="cancel-step-reason"]');
+      await expect(reasonStep.or(page.locator('text=/why are you cancel/i').first())).toBeVisible();
 
-      // Don't actually cancel - just verify the dialog appears
-      const closeBtn = page.locator('button:has-text("Close"), button:has-text("No")');
+      // Select a reason
+      const reasonOption = page.locator('[data-testid="cancel-reason-too_expensive"]');
+      if (await reasonOption.isVisible()) {
+        await reasonOption.click();
+      }
+
+      // Optionally fill feedback
+      const feedbackInput = page.locator('[data-testid="cancel-feedback"]');
+      if (await feedbackInput.isVisible()) {
+        await feedbackInput.fill('Testing cancel flow');
+      }
+
+      // Click Continue
+      const nextBtn = page.locator('[data-testid="cancel-next"]');
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+      }
+
+      // Step 2: Retention offers (may or may not appear)
+      const offersStep = page.locator('[data-testid="cancel-step-offers"]');
+      if (await offersStep.isVisible({ timeout: 2000 }).catch(() => false)) {
+        // Skip offers to proceed to confirmation
+        const skipBtn = page.locator('[data-testid="cancel-skip-offers"]');
+        if (await skipBtn.isVisible()) {
+          await skipBtn.click();
+        }
+      }
+
+      // Step 3: Confirm — verify the confirmation step is shown
+      const confirmStep = page.locator('[data-testid="cancel-step-confirm"]');
+      await expect(
+        confirmStep.or(page.locator('text=/confirm cancellation/i').first())
+      ).toBeVisible();
+
+      // Don't actually cancel — close the modal
+      const closeBtn = page.locator('button[aria-label="Close"]');
       if (await closeBtn.isVisible()) {
         await closeBtn.click();
       }

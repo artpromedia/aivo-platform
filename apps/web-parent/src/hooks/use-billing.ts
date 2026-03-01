@@ -40,6 +40,8 @@ export const billingQueryKeys = {
   planPreview: (planId: string) => [...billingQueryKeys.all, 'plan-preview', planId] as const,
   coupon: (code: string) => [...billingQueryKeys.all, 'coupon', code] as const,
   availableChildren: () => [...billingQueryKeys.all, 'available-children'] as const,
+  cancelPreview: () => [...billingQueryKeys.all, 'cancel-preview'] as const,
+  retentionOffers: () => [...billingQueryKeys.all, 'retention-offers'] as const,
 };
 
 // ============================================================================
@@ -416,5 +418,79 @@ export function useApplyCoupon() {
       void queryClient.invalidateQueries({ queryKey: billingQueryKeys.subscription() });
       void queryClient.invalidateQueries({ queryKey: billingQueryKeys.billingDetails() });
     },
+  });
+}
+
+// ============================================================================
+// Cancel-Survey Hooks
+// ============================================================================
+
+interface CancelPreview {
+  accessEndDate: string;
+  refundAmount: number;
+  currency: string;
+  prorated: boolean;
+}
+
+interface RetentionOffer {
+  id: string;
+  type: 'discount' | 'pause' | 'downgrade' | 'extend_trial';
+  title: string;
+  description: string;
+  discountPercent?: number;
+  durationMonths?: number;
+  pauseWeeks?: number;
+}
+
+/**
+ * Fetch cancel-preview data (credits, end-date, refund).
+ * Enabled on demand — call `refetch()` when the cancel modal opens.
+ */
+export function useCancelPreview() {
+  return useQuery({
+    queryKey: billingQueryKeys.cancelPreview(),
+    queryFn: () => apiClient.get<CancelPreview>('/billing/cancel-preview'),
+    enabled: false,
+    staleTime: STALE_TIMES.preview,
+  });
+}
+
+/**
+ * Fetch retention offers for the current user.
+ * Enabled on demand — call `refetch()` when the cancel modal opens.
+ */
+export function useRetentionOffers() {
+  return useQuery({
+    queryKey: billingQueryKeys.retentionOffers(),
+    queryFn: () => apiClient.get<RetentionOffer[]>('/billing/retention-offers'),
+    enabled: false,
+    staleTime: STALE_TIMES.preview,
+  });
+}
+
+/**
+ * Accept a retention offer (discount, pause, etc.)
+ */
+export function useAcceptRetentionOffer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (offerId: string) =>
+      apiClient.post<{ accepted: boolean }>('/billing/retention-offers/accept', { offerId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.subscription() });
+      void queryClient.invalidateQueries({ queryKey: billingQueryKeys.billingDetails() });
+    },
+  });
+}
+
+/**
+ * Submit cancellation feedback (reason + free-text) independently of the
+ * cancel mutation itself so it is recorded even on partial failures.
+ */
+export function useSubmitCancellationFeedback() {
+  return useMutation({
+    mutationFn: ({ reason, feedback }: { reason: string; feedback: string }) =>
+      apiClient.post('/billing/subscription/feedback', { reason, feedback }),
   });
 }

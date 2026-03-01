@@ -10,6 +10,7 @@ import {
   ManageSeats,
   BillingDetails,
   UpgradeOptions,
+  CancelSurveyModal,
 } from '@/components/billing';
 import {
   useSubscription,
@@ -19,6 +20,10 @@ import {
   useAvailableChildren,
   useCancelSubscription,
   useResumeSubscription,
+  useCancelPreview,
+  useRetentionOffers,
+  useAcceptRetentionOffer,
+  useSubmitCancellationFeedback,
   useManageSeats,
   useCreateCheckout,
   useCreateBillingPortal,
@@ -40,6 +45,7 @@ function BillingContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [showCancelSurvey, setShowCancelSurvey] = useState(false);
 
   // Data hooks
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
@@ -48,6 +54,12 @@ function BillingContent() {
   const { data: invoices = [], isLoading: invoicesLoading } = useInvoices();
   const { data: availableChildren = [] } = useAvailableChildren();
   const { data: validatedCoupon } = useCouponValidation(couponCode);
+
+  // Cancel-survey hooks
+  const { data: cancelPreview, refetch: fetchCancelPreview, isLoading: cancelPreviewLoading } = useCancelPreview();
+  const { data: retentionOffers = [], refetch: fetchRetentionOffers, isLoading: offersLoading } = useRetentionOffers();
+  const acceptRetentionOffer = useAcceptRetentionOffer();
+  const submitCancellationFeedback = useSubmitCancellationFeedback();
 
   // Mutation hooks
   const cancelSubscription = useCancelSubscription();
@@ -86,12 +98,32 @@ function BillingContent() {
   }, [successMessage, errorMessage]);
 
   // Handlers
-  const handleCancel = async () => {
+  const handleOpenCancelSurvey = async () => {
+    setShowCancelSurvey(true);
+    // Fire-and-forget fetches for the modal
+    void fetchCancelPreview();
+    void fetchRetentionOffers();
+  };
+
+  const handleConfirmCancel = async (reason: string, feedback: string) => {
     try {
-      await cancelSubscription.mutateAsync({});
+      // Record feedback first (fire-and-forget)
+      void submitCancellationFeedback.mutateAsync({ reason, feedback });
+      await cancelSubscription.mutateAsync({ reason, feedback });
+      setShowCancelSurvey(false);
       setSuccessMessage('Your subscription has been canceled. You will have access until the end of your billing period.');
     } catch {
       setErrorMessage('Failed to cancel subscription. Please try again.');
+    }
+  };
+
+  const handleAcceptOffer = async (offerId: string) => {
+    try {
+      await acceptRetentionOffer.mutateAsync(offerId);
+      setShowCancelSurvey(false);
+      setSuccessMessage('Offer accepted! Your subscription has been updated.');
+    } catch {
+      setErrorMessage('Failed to accept offer. Please try again.');
     }
   };
 
@@ -226,7 +258,7 @@ function BillingContent() {
             <div className="lg:col-span-2 space-y-8">
               <CurrentPlan
                 subscription={subscription || null}
-                onCancel={handleCancel}
+                onCancel={handleOpenCancelSurvey}
                 onResume={handleResume}
                 onChangePlan={() => {
                   const el = document.getElementById('plans-section');
@@ -275,6 +307,18 @@ function BillingContent() {
           </div>
         )}
       </div>
+
+      {/* Cancel Survey Modal */}
+      <CancelSurveyModal
+        isOpen={showCancelSurvey}
+        planName={subscription?.plan?.name || 'Premium'}
+        onClose={() => setShowCancelSurvey(false)}
+        onCancel={handleConfirmCancel}
+        onAcceptOffer={handleAcceptOffer}
+        retentionOffers={retentionOffers}
+        cancelPreview={cancelPreview ?? null}
+        isLoading={cancelPreviewLoading || offersLoading}
+      />
     </main>
   );
 }

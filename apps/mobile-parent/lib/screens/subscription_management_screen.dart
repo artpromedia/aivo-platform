@@ -316,46 +316,94 @@ class _SubscriptionManagementScreenState
     final isInTrial =
         subscriptionState.trialStatus == SubscriptionStatus.inTrial;
 
+    String? selectedReason;
+    String feedbackText = '';
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(
-          Icons.warning_amber_rounded,
-          color: Theme.of(context).colorScheme.error,
-          size: 48,
-        ),
-        title: Text(isInTrial ? 'Cancel Trial?' : 'Cancel Premium?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isInTrial
-                  ? 'Your trial will end immediately and you\'ll lose access to premium modules.'
-                  : 'Your premium subscription will end at the end of your current billing period.',
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Your children will still have access to Basic (ELA + Math).',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          icon: Icon(
+            Icons.warning_amber_rounded,
+            color: Theme.of(context).colorScheme.error,
+            size: 48,
+          ),
+          title: Text(isInTrial ? 'Cancel Trial?' : 'Cancel Premium?'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isInTrial
+                      ? 'Your trial will end immediately and you\'ll lose access to premium modules.'
+                      : 'Your premium subscription will end at the end of your current billing period.',
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Why are you canceling?',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedReason,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Select a reason',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
+                  items: const [
+                    DropdownMenuItem(value: 'too_expensive', child: Text('Too expensive')),
+                    DropdownMenuItem(value: 'missing_features', child: Text('Missing features')),
+                    DropdownMenuItem(value: 'switched_service', child: Text('Switched service')),
+                    DropdownMenuItem(value: 'unused', child: Text('Not using it enough')),
+                    DropdownMenuItem(value: 'customer_service', child: Text('Customer service')),
+                    DropdownMenuItem(value: 'too_complex', child: Text('Too complex')),
+                    DropdownMenuItem(value: 'low_quality', child: Text('Quality issues')),
+                    DropdownMenuItem(value: 'other', child: Text('Other')),
+                  ],
+                  onChanged: (value) {
+                    setDialogState(() => selectedReason = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Tell us more (optional)',
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                  maxLines: 3,
+                  onChanged: (value) => feedbackText = value,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your children will still have access to Basic (ELA + Math).',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Keep Premium'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: selectedReason != null
+                  ? () => Navigator.pop(context, true)
+                  : null,
+              child: Text(isInTrial ? 'Cancel Trial' : 'Cancel Premium'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep Premium'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(isInTrial ? 'Cancel Trial' : 'Cancel Premium'),
-          ),
-        ],
       ),
     );
 
@@ -364,7 +412,11 @@ class _SubscriptionManagementScreenState
 
       final success = await ref
           .read(subscriptionControllerProvider.notifier)
-          .cancelSubscription(immediately: isInTrial);
+          .cancelSubscription(
+            immediately: isInTrial,
+            reason: selectedReason,
+            feedback: feedbackText.isNotEmpty ? feedbackText : null,
+          );
 
       setState(() => _isProcessing = false);
 
