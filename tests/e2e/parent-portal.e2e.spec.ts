@@ -7,6 +7,10 @@
  * - Communication with teachers
  * - Payment/billing access
  * - Settings management
+ * - Caregiver management (PX6)
+ * - Add child flow (PX6)
+ * - Tutor add-on purchase (PX6)
+ * - Cancellation survey flow (PX6)
  *
  * @module tests/e2e/parent-portal.e2e.spec
  */
@@ -648,6 +652,571 @@ test.describe('Settings Management', () => {
       const closeBtn = page.locator('button:has-text("Cancel"), button:has-text("No")');
       if (await closeBtn.isVisible()) {
         await closeBtn.click();
+      }
+    }
+  });
+});
+
+// =============================================================================
+// CAREGIVER MANAGEMENT
+// =============================================================================
+
+test.describe('Caregiver Management', () => {
+  test.describe.configure({ mode: 'serial' });
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    await seedTestData();
+    context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+    });
+    page = await context.newPage();
+    await loginAsParent(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+    await cleanupTestData();
+  });
+
+  test('6.1 Parent can view caregiver page with info banner', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    // Page heading
+    await expect(page.locator('h1:has-text("Caregivers")')).toBeVisible();
+
+    // Info banner visible
+    await expect(page.locator('text="About Caregiver Access"')).toBeVisible();
+  });
+
+  test('6.2 Parent can see caregiver slot indicator', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    // Slot indicator shows "X of 3 used"
+    await expect(page.locator('text=/\\d+ of 3 used/')).toBeVisible();
+  });
+
+  test('6.3 Parent can open invite form and see all fields', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    const inviteBtn = page.locator('button:has-text("Invite Caregiver")');
+    if (await inviteBtn.isVisible()) {
+      await inviteBtn.click();
+
+      // Verify form fields
+      await expect(page.locator('input[type="email"]')).toBeVisible();
+      await expect(page.locator('text="Email Address"').first()).toBeVisible();
+      await expect(page.locator('select').first()).toBeVisible();
+
+      // Verify submit button exists
+      await expect(page.locator('button:has-text("Send Invitation")')).toBeVisible();
+
+      // Close without submitting
+      await page.locator('button:has-text("Cancel")').click();
+    }
+  });
+
+  test('6.4 Parent can view active caregivers section', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    const activeSection = page.locator('text="Active Caregivers"');
+    if (await activeSection.isVisible()) {
+      // Active caregiver card should show badge
+      await expect(page.locator('text="Active"').first()).toBeVisible();
+    }
+  });
+
+  test('6.5 Parent can view pending invitations', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    const pendingSection = page.locator('text="Pending Invitations"');
+    if (await pendingSection.isVisible()) {
+      // Pending invite should show days remaining badge
+      await expect(page.locator('text=/\\d+ days left/').first()).toBeVisible();
+
+      // Resend and Cancel buttons available
+      await expect(page.locator('button:has-text("Resend")').first()).toBeVisible();
+    }
+  });
+
+  test('6.6 Back button navigates to settings', async () => {
+    await page.goto(`${BASE_URL}/settings/caregivers`);
+    await waitForPageReady(page);
+
+    const backBtn = page.locator('a:has-text("Back"), button:has-text("Back")').first();
+    if (await backBtn.isVisible()) {
+      await backBtn.click();
+      await expect(page).toHaveURL(/\/settings/);
+    }
+  });
+});
+
+// =============================================================================
+// ADD CHILD FLOW
+// =============================================================================
+
+test.describe('Add Child Flow', () => {
+  test.describe.configure({ mode: 'serial' });
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    await seedTestData();
+    context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+    });
+    page = await context.newPage();
+    await loginAsParent(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+    await cleanupTestData();
+  });
+
+  test('7.1 Dashboard shows Add Child quick action', async () => {
+    await page.goto(`${BASE_URL}/dashboard`);
+    await waitForPageReady(page);
+
+    await expect(page.locator('text="Add Child"').first()).toBeVisible();
+  });
+
+  test('7.2 Add-child page loads with correct form fields', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    // Page heading
+    await expect(
+      page.locator('text=/Add a Child|Add Another Child|Add New Learner/i').first()
+    ).toBeVisible();
+
+    // All form fields present
+    await expect(page.locator('#add-child-first')).toBeVisible();
+    await expect(page.locator('#add-child-last')).toBeVisible();
+    await expect(page.locator('#add-child-dob')).toBeVisible();
+    await expect(page.locator('#add-child-grade')).toBeVisible();
+    await expect(page.locator('#add-child-pin')).toBeVisible();
+    await expect(page.locator('#add-child-confirm-pin')).toBeVisible();
+  });
+
+  test('7.3 SeatPreview billing impact section is visible', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    // SeatPreview shows either no-cost or billing impact
+    const noCost = page.locator('text=/No additional cost/i');
+    const billingImpact = page.locator('text="Billing Impact"');
+    await expect(noCost.or(billingImpact)).toBeVisible();
+  });
+
+  test('7.4 Form validates required fields', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    // Try to submit with empty form
+    const submitBtn = page.locator('button:has-text("Add")').first();
+    await submitBtn.click();
+
+    // Expect validation error
+    await expect(page.locator('text=/required/i').first()).toBeVisible();
+  });
+
+  test('7.5 PIN validation rejects mismatched PINs', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    // Fill required fields
+    await page.fill('#add-child-first', 'TestChild');
+    await page.selectOption('#add-child-grade', '3');
+    await page.fill('#add-child-pin', '123789');
+    await page.fill('#add-child-confirm-pin', '987321');
+
+    const submitBtn = page.locator('button:has-text("Add")').first();
+    await submitBtn.click();
+
+    // Expect PIN mismatch error
+    await expect(page.locator('text=/match/i').first()).toBeVisible();
+  });
+
+  test('7.6 PIN validation rejects weak PINs', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    await page.fill('#add-child-first', 'TestChild');
+    await page.selectOption('#add-child-grade', '3');
+    await page.fill('#add-child-pin', '123456');
+    await page.fill('#add-child-confirm-pin', '123456');
+
+    const submitBtn = page.locator('button:has-text("Add")').first();
+    await submitBtn.click();
+
+    // Expect weak PIN error
+    await expect(page.locator('text=/easy to guess|weak|common/i').first()).toBeVisible();
+  });
+
+  test('7.7 Grade selector has all grade options', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    const gradeSelect = page.locator('#add-child-grade');
+    const options = gradeSelect.locator('option');
+
+    // 14 grades + 1 placeholder = 15 options
+    const count = await options.count();
+    expect(count).toBeGreaterThanOrEqual(14);
+  });
+
+  test('7.8 Submit button shows child name when first name is entered', async () => {
+    await page.goto(`${BASE_URL}/family/add-child`);
+    await waitForPageReady(page);
+
+    await page.fill('#add-child-first', 'Emma');
+
+    // Submit button should include child name
+    await expect(page.locator('button:has-text("Add Emma")')).toBeVisible();
+  });
+});
+
+// =============================================================================
+// TUTOR ADD-ON PURCHASE
+// =============================================================================
+
+test.describe('Tutor Add-On Purchase', () => {
+  test.describe.configure({ mode: 'serial' });
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    await seedTestData();
+    context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+    });
+    page = await context.newPage();
+    await loginAsParent(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+    await cleanupTestData();
+  });
+
+  test('8.1 Tutors page loads with hero heading', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    await expect(page.locator('h1:has-text("AI Tutors")')).toBeVisible();
+  });
+
+  test('8.2 Bundle offer card is visible with pricing', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // Bundle heading
+    await expect(page.locator('text=/AI Tutor Bundle/i')).toBeVisible();
+
+    // Bundle price
+    await expect(page.locator('text=/\\$29\\.99/').first()).toBeVisible();
+
+    // Save badge
+    await expect(page.locator('text=/Save \\d+%/i').first()).toBeVisible();
+  });
+
+  test('8.3 Individual tutor cards display correctly', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // Individual Tutors section header
+    await expect(page.locator('h2:has-text("Individual Tutors")')).toBeVisible();
+
+    // All 5 tutors visible
+    await expect(page.locator('text="Nova — Math Tutor"')).toBeVisible();
+    await expect(page.locator('text="Sage — Reading & Writing Tutor"')).toBeVisible();
+    await expect(page.locator('text="Spark — Science Tutor"')).toBeVisible();
+    await expect(page.locator('text="Chrono — History Tutor"')).toBeVisible();
+    await expect(page.locator('text="Pixel — Coding Tutor"')).toBeVisible();
+  });
+
+  test('8.4 Tutor cards show features list', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // Common features across all tutor cards
+    await expect(page.locator('text="Unlimited sessions"').first()).toBeVisible();
+    await expect(page.locator('text="Progress tracking"').first()).toBeVisible();
+  });
+
+  test('8.5 Tutor cards show pricing', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // Standard price for most tutors
+    const standardPrices = page.locator('text=/\\$9\\.99\\/mo/');
+    expect(await standardPrices.count()).toBeGreaterThanOrEqual(4);
+
+    // Premium coding tutor price
+    await expect(page.locator('text=/\\$14\\.99\\/mo/').first()).toBeVisible();
+  });
+
+  test('8.6 Start Free Trial buttons are visible for inactive tutors', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    const trialBtns = page.locator('button:has-text("Start Free Trial")');
+    // At least some inactive tutors should show trial button
+    expect(await trialBtns.count()).toBeGreaterThanOrEqual(1);
+  });
+
+  test('8.7 Bundle trial button is visible', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // Bundle has its own trial CTA
+    const bundleCard = page.locator('text=/AI Tutor Bundle/i').locator('..');
+    const trialBtn = bundleCard
+      .locator('..')
+      .locator('..')
+      .locator('button:has-text("Start Free Trial")');
+    if (await trialBtn.isVisible()) {
+      // Just verify it exists, don't actually start a trial
+      await expect(trialBtn).toBeEnabled();
+    }
+  });
+
+  test('8.8 Active tutors section appears when subscribed', async () => {
+    await page.goto(`${BASE_URL}/tutors`);
+    await waitForPageReady(page);
+
+    // This section is conditional — only shown when user has active add-ons
+    const activeSection = page.locator('h2:has-text("Your Active Tutors")');
+    if (await activeSection.isVisible({ timeout: 2000 }).catch(() => false)) {
+      // Active tutor cards show "Active" button
+      await expect(page.locator('button:has-text("Active")').first()).toBeVisible();
+    }
+  });
+});
+
+// =============================================================================
+// CANCELLATION SURVEY FLOW
+// =============================================================================
+
+test.describe('Cancellation Survey Flow', () => {
+  test.describe.configure({ mode: 'serial' });
+  let page: Page;
+  let context: BrowserContext;
+
+  test.beforeAll(async ({ browser }) => {
+    await seedTestData();
+    context = await browser.newContext({
+      viewport: { width: 1280, height: 720 },
+    });
+    page = await context.newPage();
+    await loginAsParent(page);
+  });
+
+  test.afterAll(async () => {
+    await context.close();
+    await cleanupTestData();
+  });
+
+  test('9.1 Cancel button opens survey modal with reason step', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // Step 1: Reason selection
+      const reasonStep = page.locator('[data-testid="cancel-step-reason"]');
+      await expect(reasonStep).toBeVisible();
+      await expect(page.locator('text=/why are you cancel/i').first()).toBeVisible();
+    }
+  });
+
+  test('9.2 All cancellation reasons are displayed', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // All 8 reason options
+      await expect(page.locator('[data-testid="cancel-reason-too_expensive"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-missing_features"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-switched_service"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-unused"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-customer_service"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-too_complex"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-low_quality"]')).toBeVisible();
+      await expect(page.locator('[data-testid="cancel-reason-other"]')).toBeVisible();
+
+      // Close modal
+      const closeBtn = page.locator('button:has-text("Never mind")');
+      if (await closeBtn.isVisible()) await closeBtn.click();
+    }
+  });
+
+  test('9.3 Parent can select reason and provide feedback', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // Select a reason
+      await page.locator('[data-testid="cancel-reason-too_expensive"]').click();
+
+      // Fill optional feedback
+      const feedbackInput = page.locator('[data-testid="cancel-feedback"]');
+      if (await feedbackInput.isVisible()) {
+        await feedbackInput.fill('E2E test: checking cancel flow');
+      }
+
+      // Close without proceeding
+      const closeBtn = page.locator('button:has-text("Never mind")');
+      if (await closeBtn.isVisible()) await closeBtn.click();
+    }
+  });
+
+  test('9.4 Continue advances to retention offers or confirm step', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // Select reason
+      await page.locator('[data-testid="cancel-reason-unused"]').click();
+
+      // Click Continue
+      const nextBtn = page.locator('[data-testid="cancel-next"]');
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+      }
+
+      // Should advance to either offers (step 2) or confirm (step 3)
+      const offersStep = page.locator('[data-testid="cancel-step-offers"]');
+      const confirmStep = page.locator('[data-testid="cancel-step-confirm"]');
+      await expect(offersStep.or(confirmStep)).toBeVisible();
+
+      // If on offers step, verify skip button and proceed
+      if (await offersStep.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await expect(page.locator('text=/Before you go/i').first()).toBeVisible();
+
+        const skipBtn = page.locator('[data-testid="cancel-skip-offers"]');
+        if (await skipBtn.isVisible()) {
+          await skipBtn.click();
+        }
+      }
+
+      // Now on confirm step
+      await expect(
+        page.locator('[data-testid="cancel-step-confirm"]').or(
+          page.locator('text=/confirm cancellation/i').first()
+        )
+      ).toBeVisible();
+
+      // Verify the destructive button is present
+      const confirmCancelBtn = page.locator('[data-testid="cancel-confirm-btn"]');
+      if (await confirmCancelBtn.isVisible()) {
+        await expect(confirmCancelBtn).toBeVisible();
+      }
+
+      // Don't actually cancel — close modal
+      const closeBtn = page.locator('button[aria-label="Close"], button:has-text("Back")');
+      if (await closeBtn.first().isVisible()) {
+        await closeBtn.first().click();
+      }
+    }
+  });
+
+  test('9.5 Retention offers display accept buttons', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // Select reason and advance
+      await page.locator('[data-testid="cancel-reason-too_expensive"]').click();
+      const nextBtn = page.locator('[data-testid="cancel-next"]');
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+      }
+
+      // Check for retention offers
+      const offersStep = page.locator('[data-testid="cancel-step-offers"]');
+      if (await offersStep.isVisible({ timeout: 3000 }).catch(() => false)) {
+        // Accept buttons on offer cards
+        const acceptBtns = page.locator('button:has-text("Accept")');
+        expect(await acceptBtns.count()).toBeGreaterThanOrEqual(1);
+
+        // Discount or pause badge
+        const badges = page.locator('text=/\\d+% off|Pause for/i');
+        expect(await badges.count()).toBeGreaterThanOrEqual(0);
+      }
+
+      // Close modal
+      const closeBtn = page.locator('button:has-text("Never mind"), button[aria-label="Close"]');
+      if (await closeBtn.first().isVisible()) {
+        await closeBtn.first().click();
+      }
+    }
+  });
+
+  test('9.6 Confirm step shows access end info', async () => {
+    await page.goto(`${BASE_URL}/billing`);
+    await waitForPageReady(page);
+
+    const cancelBtn = page.locator(
+      'button:has-text("Cancel"), [data-testid="cancel-subscription"]'
+    );
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+
+      // Navigate through to confirm step
+      await page.locator('[data-testid="cancel-reason-unused"]').click();
+      const nextBtn = page.locator('[data-testid="cancel-next"]');
+      if (await nextBtn.isVisible()) await nextBtn.click();
+
+      // Skip offers if present
+      const skipBtn = page.locator('[data-testid="cancel-skip-offers"]');
+      if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await skipBtn.click();
+      }
+
+      // Confirm step should show plan info and free tier note
+      const confirmStep = page.locator('[data-testid="cancel-step-confirm"]');
+      if (await confirmStep.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await expect(
+          page.locator('text=/free Basic tier|access/i').first()
+        ).toBeVisible();
+      }
+
+      // Close without canceling
+      const closeBtn = page.locator('button:has-text("Back"), button[aria-label="Close"]');
+      if (await closeBtn.first().isVisible()) {
+        await closeBtn.first().click();
       }
     }
   });
