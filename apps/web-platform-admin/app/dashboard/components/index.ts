@@ -7,3 +7,4 @@ export { SystemHealth } from './system-health';
 export { IntegrationStatus } from './integration-status';
 export { RecentActivity } from './recent-activity';
 export { QuickActions } from './quick-actions';
+export { ModelVersionDashboard } from './model-version-dashboard';

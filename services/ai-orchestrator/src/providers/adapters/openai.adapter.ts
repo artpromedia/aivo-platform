@@ -13,6 +13,7 @@
 import OpenAI from 'openai';
 
 import type { AIModel, AIProvider, ModelStatus } from '../registry.js';
+
 import {
   BaseProviderAdapter,
   type BaseAdapterConfig,
@@ -62,8 +63,8 @@ const OPENAI_MODELS: AIModel[] = [
       jsonMode: true,
     },
     pricing: {
-      inputPer1kTokens: 0.00015,
-      outputPer1kTokens: 0.0006,
+      inputPer1kTokens: 0.0003,
+      outputPer1kTokens: 0.001,
       currency: 'USD',
     },
     priority: 1,
@@ -89,8 +90,8 @@ const OPENAI_MODELS: AIModel[] = [
       jsonMode: true,
     },
     pricing: {
-      inputPer1kTokens: 0.0025,
-      outputPer1kTokens: 0.01,
+      inputPer1kTokens: 0.005,
+      outputPer1kTokens: 0.015,
       currency: 'USD',
     },
     priority: 2,
@@ -116,14 +117,41 @@ const OPENAI_MODELS: AIModel[] = [
       jsonMode: true,
     },
     pricing: {
-      inputPer1kTokens: 0.005,
-      outputPer1kTokens: 0.02,
+      inputPer1kTokens: 0.006,
+      outputPer1kTokens: 0.018,
       currency: 'USD',
     },
     priority: 3,
     isEnabled: true,
     status: 'available',
     tags: ['code', 'complex-reasoning', 'multimodal'],
+  },
+  {
+    id: 'gpt-5.2-thinking',
+    providerId: 'openai',
+    name: 'gpt-5.2-thinking',
+    displayName: 'GPT-5.2 Thinking',
+    contextWindow: 400000,
+    maxOutputTokens: 65536,
+    capabilities: {
+      chat: true,
+      completion: true,
+      embedding: false,
+      imageGeneration: false,
+      imageAnalysis: true,
+      functionCalling: true,
+      streaming: true,
+      jsonMode: true,
+    },
+    pricing: {
+      inputPer1kTokens: 0.01,
+      outputPer1kTokens: 0.03,
+      currency: 'USD',
+    },
+    priority: 4,
+    isEnabled: true,
+    status: 'available',
+    tags: ['reasoning', 'chain-of-thought', 'multimodal'],
   },
   // ── Legacy Models (disabled) ──────────────────────────────────────────
   {
@@ -455,7 +483,9 @@ export class OpenAIAdapter extends BaseProviderAdapter {
   async countTokens(text: string, model?: string): Promise<number> {
     try {
       const { encoding_for_model } = await import('tiktoken');
-      const enc = encoding_for_model((model ?? 'gpt-4') as Parameters<typeof encoding_for_model>[0]);
+      const enc = encoding_for_model(
+        (model ?? 'gpt-4') as Parameters<typeof encoding_for_model>[0]
+      );
       const tokens = enc.encode(text);
       enc.free();
       return tokens.length;
@@ -597,7 +627,11 @@ export class OpenAIAdapter extends BaseProviderAdapter {
   private createTypedError(error: unknown): Error {
     // Handle OpenAI SDK errors by checking for status property
     if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status: number; message: string; headers?: Record<string, string> };
+      const apiError = error as {
+        status: number;
+        message: string;
+        headers?: Record<string, string>;
+      };
 
       if (apiError.status === 429) {
         const retryAfter = apiError.headers?.['retry-after'];
@@ -612,7 +646,10 @@ export class OpenAIAdapter extends BaseProviderAdapter {
       }
 
       if (apiError.status === 400) {
-        if (apiError.message.includes('context_length') || apiError.message.includes('maximum context')) {
+        if (
+          apiError.message.includes('context_length') ||
+          apiError.message.includes('maximum context')
+        ) {
           return new ContextLengthError(apiError.message);
         }
         if (apiError.message.includes('content_filter')) {

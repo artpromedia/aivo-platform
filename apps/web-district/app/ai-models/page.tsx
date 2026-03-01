@@ -17,43 +17,46 @@ import { ModelDetailModal } from './model-detail-modal';
 const MOCK_MODELS: TenantModelCard[] = [
   {
     id: '1',
-    modelKey: 'AIVO_TUTOR_V1',
-    provider: 'OPENAI',
-    displayName: 'Aivo Tutor',
-    description:
-      'An AI-powered tutoring assistant designed to help K-12 learners understand concepts through guided questions.',
+    modelKey: 'AIVO_TUTOR_V3',
+    provider: 'ANTHROPIC',
+    displayName: 'Aivo AI Tutor (Opus 4.6)',
+    description: 'Powered by Claude Opus 4.6 with 1M token context for deep Socratic tutoring.',
     intendedUseCases: `Best for:
-• Providing step-by-step explanations
-• Answering curriculum-aligned questions
-• Offering hints and guided practice`,
+• Socratic dialogue and guided discovery
+• Multi-step mathematical reasoning
+• Essay feedback with detailed explanations
+• Adaptive content based on learner profile`,
     limitations: `Not appropriate for:
-• Medical or professional advice
-• Grading or formal assessments
-• Replacing teacher judgment
+• Formal grading or high-stakes decisions
+• Medical or psychological diagnosis
+• Replacing qualified educators
 
 Important: AI tutoring supplements, not replaces, human instruction.`,
-    safetyConsiderations: 'Content filtered for age-appropriateness.',
+    safetyConsiderations:
+      'Content filtered for age-appropriateness. Guardrails prevent harmful topics.',
     inputTypes: 'Text',
     outputTypes: 'Text',
-    dataSourcesSummary: 'Curated educational content.',
-    lastReviewedAt: '2024-12-01T00:00:00Z',
+    dataSourcesSummary: 'Curated educational content aligned with Common Core standards.',
+    lastReviewedAt: '2026-02-15T00:00:00Z',
     lastReviewedBy: null,
-    metadataJson: { version: '1.0' },
+    metadataJson: { version: '3.0', baseModel: 'claude-opus-4-6-20260201' },
     createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-12-01T00:00:00Z',
+    updatedAt: '2026-02-15T00:00:00Z',
     featureKey: 'TUTORING',
     isActive: true,
   },
   {
     id: '2',
-    modelKey: 'AIVO_BASELINE_V1',
-    provider: 'OPENAI',
-    displayName: 'Aivo Baseline Assessment',
-    description: 'Analyzes learner responses during baseline assessments to determine starting skill levels.',
+    modelKey: 'AIVO_BASELINE_V2',
+    provider: 'ANTHROPIC',
+    displayName: 'Aivo Baseline Assessment (Sonnet 4.6)',
+    description:
+      'Uses Claude Sonnet 4.6 to analyze learner responses during baseline assessments and determine starting skill levels.',
     intendedUseCases: `Best for:
-• Analyzing written responses
-• Identifying knowledge gaps
-• Supporting initial placement`,
+• Analyzing written responses for skill demonstration
+• Identifying prerequisite knowledge gaps
+• Supporting initial placement decisions
+• Adaptive difficulty calibration`,
     limitations: `Not appropriate for:
 • Formal diagnostic assessment
 • Special education decisions
@@ -64,24 +67,26 @@ Important: Results are preliminary and should be validated by educators.`,
     inputTypes: 'Text',
     outputTypes: 'Text',
     dataSourcesSummary: 'Calibrated against educator-graded samples.',
-    lastReviewedAt: '2024-11-15T00:00:00Z',
+    lastReviewedAt: '2026-02-10T00:00:00Z',
     lastReviewedBy: null,
-    metadataJson: { version: '1.0' },
+    metadataJson: { version: '2.0', baseModel: 'claude-sonnet-4-6-20260201' },
     createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-11-15T00:00:00Z',
+    updatedAt: '2026-02-10T00:00:00Z',
     featureKey: 'BASELINE',
     isActive: true,
   },
   {
     id: '3',
-    modelKey: 'AIVO_FOCUS_V1',
-    provider: 'INTERNAL',
-    displayName: 'Aivo Focus Assistant',
-    description: 'Monitors learner engagement and suggests appropriate breaks to maintain optimal focus.',
+    modelKey: 'AIVO_FOCUS_V2',
+    provider: 'GEMINI',
+    displayName: 'Aivo Focus Assistant (Gemini 3.1 Flash)',
+    description:
+      'Powered by Gemini 3.1 Flash for real-time engagement monitoring and focus optimization.',
     intendedUseCases: `Best for:
-• Detecting disengagement
+• Detecting disengagement in real time
 • Suggesting timely breaks
-• Tracking attention patterns`,
+• Tracking attention patterns
+• Low-latency behavioral analysis`,
     limitations: `Not appropriate for:
 • Diagnosing attention disorders
 • Clinical ADHD assessment
@@ -92,11 +97,11 @@ Important: Focus patterns should not indicate learning disabilities.`,
     inputTypes: 'Behavioral signals',
     outputTypes: 'Suggestions',
     dataSourcesSummary: 'Anonymized engagement patterns.',
-    lastReviewedAt: '2024-12-05T00:00:00Z',
+    lastReviewedAt: '2026-02-12T00:00:00Z',
     lastReviewedBy: null,
-    metadataJson: { version: '1.0' },
+    metadataJson: { version: '2.0', baseModel: 'gemini-3.1-flash' },
     createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-12-05T00:00:00Z',
+    updatedAt: '2026-02-12T00:00:00Z',
     featureKey: 'FOCUS',
     isActive: true,
   },

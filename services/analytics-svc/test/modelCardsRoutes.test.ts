@@ -30,18 +30,19 @@ import { prisma } from '../src/prisma.js';
 const mockModelCards = [
   {
     id: '550e8400-e29b-41d4-a716-446655440001',
-    modelKey: 'AIVO_TUTOR_V1',
-    provider: 'OPENAI',
-    displayName: 'Aivo Tutor',
-    description: 'AI-powered tutoring assistant for K-12 learners',
+    modelKey: 'AIVO_TUTOR_V3',
+    provider: 'ANTHROPIC',
+    displayName: 'Aivo AI Tutor (Opus 4.6)',
+    description: 'Powered by Claude Opus 4.6 with 1M token context for deep Socratic tutoring',
     intendedUseCases: `Best for:
-• Providing step-by-step explanations of concepts
-• Answering curriculum-aligned questions
-• Offering hints and guided practice`,
+• Socratic dialogue and guided discovery
+• Multi-step mathematical reasoning
+• Essay feedback with detailed explanations
+• Adaptive content based on learner profile`,
     limitations: `Not appropriate for:
-• Medical, legal, or professional advice
-• Grading or formal assessment decisions
-• Replacing teacher judgment on student progress`,
+• Formal grading or high-stakes decisions
+• Medical or psychological diagnosis
+• Replacing qualified educators`,
     safetyConsiderations: `Safety measures in place:
 • Content filtered for age-appropriateness
 • Guardrails prevent discussion of harmful topics
@@ -51,25 +52,26 @@ Disclaimer: This is not a diagnostic tool.`,
     inputTypes: 'Text (student questions, responses, homework problems)',
     outputTypes: 'Text (explanations, hints, feedback, encouragement)',
     dataSourcesSummary: 'Trained on curated educational content aligned with Common Core.',
-    lastReviewedAt: new Date('2024-12-01'),
+    lastReviewedAt: new Date('2026-02-15'),
     lastReviewedBy: null,
     metadataJson: {
-      version: '1.0',
-      baseModel: 'gpt-4o-mini',
+      version: '3.0',
+      baseModel: 'claude-opus-4-6-20260201',
       features: ['tutoring', 'homework_help'],
     },
     createdAt: new Date('2024-10-01'),
-    updatedAt: new Date('2024-12-01'),
+    updatedAt: new Date('2026-02-15'),
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440002',
-    modelKey: 'AIVO_BASELINE_V1',
-    provider: 'OPENAI',
-    displayName: 'Aivo Baseline Assessment',
-    description: 'Analyzes learner responses during baseline assessments',
+    modelKey: 'AIVO_BASELINE_V2',
+    provider: 'ANTHROPIC',
+    displayName: 'Aivo Baseline Assessment (Sonnet 4.6)',
+    description: 'Uses Claude Sonnet 4.6 for baseline assessment analysis',
     intendedUseCases: `Best for:
 • Analyzing written responses for skill demonstration
-• Identifying prerequisite knowledge gaps`,
+• Identifying prerequisite knowledge gaps
+• Adaptive difficulty calibration`,
     limitations: `Not appropriate for:
 • Formal diagnostic assessment
 • High-stakes placement decisions`,
@@ -79,21 +81,22 @@ Disclaimer: This is not a diagnostic tool.`,
     inputTypes: 'Text (student responses, answer selections)',
     outputTypes: 'Text (skill assessments, confidence scores)',
     dataSourcesSummary: 'Calibrated against educator-graded response samples.',
-    lastReviewedAt: new Date('2024-11-15'),
+    lastReviewedAt: new Date('2026-02-10'),
     lastReviewedBy: null,
-    metadataJson: { version: '1.0', baseModel: 'gpt-4o' },
+    metadataJson: { version: '2.0', baseModel: 'claude-sonnet-4-6-20260201' },
     createdAt: new Date('2024-09-01'),
-    updatedAt: new Date('2024-11-15'),
+    updatedAt: new Date('2026-02-10'),
   },
   {
     id: '550e8400-e29b-41d4-a716-446655440003',
-    modelKey: 'AIVO_FOCUS_V1',
-    provider: 'INTERNAL',
-    displayName: 'Aivo Focus Assistant',
-    description: 'Rule-based system for engagement monitoring',
+    modelKey: 'AIVO_FOCUS_V2',
+    provider: 'GOOGLE',
+    displayName: 'Aivo Focus Assistant (Gemini 3.1 Flash)',
+    description: 'Powered by Gemini 3.1 Flash for real-time engagement monitoring',
     intendedUseCases: `Best for:
 • Detecting signs of learner disengagement
-• Suggesting timely breaks`,
+• Suggesting timely breaks
+• Low-latency behavioral analysis`,
     limitations: `Not appropriate for:
 • Diagnosing attention disorders
 • Clinical ADHD assessment`,
@@ -103,11 +106,11 @@ Disclaimer: This is not a diagnostic tool.`,
     inputTypes: 'Behavioral signals (response times, interaction patterns)',
     outputTypes: 'Suggestions (break recommendations, activity switches)',
     dataSourcesSummary: 'Trained on anonymized engagement patterns.',
-    lastReviewedAt: new Date('2024-12-05'),
+    lastReviewedAt: new Date('2026-02-12'),
     lastReviewedBy: null,
-    metadataJson: { version: '1.0', type: 'hybrid' },
+    metadataJson: { version: '2.0', baseModel: 'gemini-3.1-flash' },
     createdAt: new Date('2024-08-01'),
-    updatedAt: new Date('2024-12-05'),
+    updatedAt: new Date('2026-02-12'),
   },
 ];
 
@@ -250,13 +253,13 @@ describe('modelCardsRoutes', () => {
 
       expect(response.total).toBe(3);
       expect(response.modelCards).toHaveLength(3);
-      expect(response.modelCards[0].modelKey).toBe('AIVO_TUTOR_V1');
-      expect(response.modelCards[0].displayName).toBe('Aivo Tutor');
+      expect(response.modelCards[0].modelKey).toBe('AIVO_TUTOR_V3');
+      expect(response.modelCards[0].displayName).toBe('Aivo AI Tutor (Opus 4.6)');
     });
 
     it('should filter by provider when specified', async () => {
-      const openaiModels = mockModelCards
-        .filter((m) => m.provider === 'OPENAI')
+      const anthropicModels = mockModelCards
+        .filter((m) => m.provider === 'ANTHROPIC')
         .map((m) => ({
           id: m.id,
           modelKey: m.modelKey,
@@ -267,10 +270,10 @@ describe('modelCardsRoutes', () => {
           lastReviewedAt: m.lastReviewedAt,
         }));
 
-      mockFindMany.mockResolvedValueOnce(openaiModels);
+      mockFindMany.mockResolvedValueOnce(anthropicModels);
       mockCount.mockResolvedValueOnce(2);
 
-      const provider = 'OPENAI';
+      const provider = 'ANTHROPIC';
       const [modelCards, total] = await Promise.all([
         prisma.modelCard.findMany({
           where: { provider },
@@ -292,7 +295,7 @@ describe('modelCardsRoutes', () => {
 
       expect(total).toBe(2);
       expect(modelCards).toHaveLength(2);
-      expect((modelCards as ModelCardDbRow[]).every((m) => m.provider === 'OPENAI')).toBe(true);
+      expect((modelCards as ModelCardDbRow[]).every((m) => m.provider === 'ANTHROPIC')).toBe(true);
     });
 
     it('should support pagination with limit and offset', async () => {
@@ -330,7 +333,7 @@ describe('modelCardsRoutes', () => {
 
       expect(total).toBe(3);
       expect(modelCards).toHaveLength(1);
-      expect(modelCards[0].modelKey).toBe('AIVO_FOCUS_V1');
+      expect(modelCards[0].modelKey).toBe('AIVO_FOCUS_V2');
     });
   });
 
@@ -339,14 +342,14 @@ describe('modelCardsRoutes', () => {
       mockFindUnique.mockResolvedValueOnce(mockModelCards[0]);
 
       const modelCard = await prisma.modelCard.findUnique({
-        where: { modelKey: 'AIVO_TUTOR_V1' },
+        where: { modelKey: 'AIVO_TUTOR_V3' },
       });
 
       expect(modelCard).not.toBeNull();
-      expect(modelCard!.modelKey).toBe('AIVO_TUTOR_V1');
-      expect(modelCard!.displayName).toBe('Aivo Tutor');
-      expect(modelCard!.provider).toBe('OPENAI');
-      expect(modelCard!.description).toContain('AI-powered tutoring');
+      expect(modelCard!.modelKey).toBe('AIVO_TUTOR_V3');
+      expect(modelCard!.displayName).toBe('Aivo AI Tutor (Opus 4.6)');
+      expect(modelCard!.provider).toBe('ANTHROPIC');
+      expect(modelCard!.description).toContain('Claude Opus 4.6');
       expect(modelCard!.intendedUseCases).toContain('Best for:');
       expect(modelCard!.limitations).toContain('Not appropriate for:');
       expect(modelCard!.safetyConsiderations).toContain('Safety measures');
@@ -367,11 +370,11 @@ describe('modelCardsRoutes', () => {
       mockFindUnique.mockResolvedValueOnce(mockModelCards[0]);
 
       const modelCard = await prisma.modelCard.findUnique({
-        where: { modelKey: 'AIVO_TUTOR_V1' },
+        where: { modelKey: 'AIVO_TUTOR_V3' },
       });
 
-      expect(modelCard!.metadataJson).toHaveProperty('version', '1.0');
-      expect(modelCard!.metadataJson).toHaveProperty('baseModel', 'gpt-4o-mini');
+      expect(modelCard!.metadataJson).toHaveProperty('version', '3.0');
+      expect(modelCard!.metadataJson).toHaveProperty('baseModel', 'claude-opus-4-6-20260201');
       expect(modelCard!.metadataJson).toHaveProperty('features');
       expect((modelCard!.metadataJson as { features: string[] }).features).toContain('tutoring');
     });
@@ -397,9 +400,9 @@ describe('modelCardsRoutes', () => {
 
       expect(assignments).toHaveLength(2);
       expect(assignments[0].featureKey).toBe('TUTORING');
-      expect(assignments[0].modelCard.modelKey).toBe('AIVO_TUTOR_V1');
+      expect(assignments[0].modelCard.modelKey).toBe('AIVO_TUTOR_V3');
       expect(assignments[1].featureKey).toBe('BASELINE');
-      expect(assignments[1].modelCard.modelKey).toBe('AIVO_BASELINE_V1');
+      expect(assignments[1].modelCard.modelKey).toBe('AIVO_BASELINE_V2');
     });
 
     it('should return all models when tenant has no explicit assignments', async () => {
@@ -425,9 +428,9 @@ describe('modelCardsRoutes', () => {
 
         expect(allModels).toHaveLength(3);
         const modelKeys = (allModels as Array<{ modelKey: string }>).map((m) => m.modelKey);
-        expect(modelKeys).toContain('AIVO_TUTOR_V1');
-        expect(modelKeys).toContain('AIVO_BASELINE_V1');
-        expect(modelKeys).toContain('AIVO_FOCUS_V1');
+        expect(modelKeys).toContain('AIVO_TUTOR_V3');
+        expect(modelKeys).toContain('AIVO_BASELINE_V2');
+        expect(modelKeys).toContain('AIVO_FOCUS_V2');
       }
     });
 
@@ -436,9 +439,7 @@ describe('modelCardsRoutes', () => {
         { ...mockTenantAssignments[0], isActive: true },
         { ...mockTenantAssignments[1], isActive: false },
       ];
-      mockAssignmentFindMany.mockResolvedValueOnce(
-        mixedAssignments.filter((a) => a.isActive)
-      );
+      mockAssignmentFindMany.mockResolvedValueOnce(mixedAssignments.filter((a) => a.isActive));
 
       const tenantId = '770e8400-e29b-41d4-a716-446655440001';
       const assignments = await prisma.tenantModelAssignment.findMany({
@@ -452,7 +453,7 @@ describe('modelCardsRoutes', () => {
       });
 
       expect(assignments).toHaveLength(1);
-      expect(assignments[0].modelCard.modelKey).toBe('AIVO_TUTOR_V1');
+      expect(assignments[0].modelCard.modelKey).toBe('AIVO_TUTOR_V3');
     });
   });
 
@@ -476,7 +477,15 @@ describe('modelCardsRoutes', () => {
     });
 
     it('should have valid provider enum values', () => {
-      const validProviders = ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'INTERNAL', 'META', 'MISTRAL', 'COHERE'];
+      const validProviders = [
+        'OPENAI',
+        'ANTHROPIC',
+        'GOOGLE',
+        'INTERNAL',
+        'META',
+        'MISTRAL',
+        'COHERE',
+      ];
 
       for (const model of mockModelCards) {
         expect(validProviders).toContain(model.provider);

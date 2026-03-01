@@ -172,17 +172,17 @@ const DEFAULT_MODEL_MAPPING: Record<AiProvider, Record<AiAgentType, string>> = {
  * best fit for each educational task, overriding the default priority order.
  */
 const EDUCATION_OPTIMAL_PROVIDER: Record<AiAgentType, AiProvider> = {
-  TUTOR: 'ANTHROPIC',           // Opus 4.6 — Socratic reasoning
-  BASELINE: 'GEMINI',           // Flash — fast diagnostics
-  IEP_GOAL: 'ANTHROPIC',       // Opus 4.6 — high-stakes IEP goals
-  HOMEWORK_HELPER: 'OPENAI',   // GPT-5.2-pro — structured problems
-  FOCUS: 'GEMINI',             // Flash — sub-second for ADHD
-  INSIGHTS: 'ANTHROPIC',       // Opus 4.6 — deep learner analysis
-  VIRTUAL_BRAIN: 'OPENAI',     // GPT-5.3-Codex — knowledge graphs
+  TUTOR: 'ANTHROPIC', // Opus 4.6 — Socratic reasoning
+  BASELINE: 'GEMINI', // Flash — fast diagnostics
+  IEP_GOAL: 'ANTHROPIC', // Opus 4.6 — high-stakes IEP goals
+  HOMEWORK_HELPER: 'OPENAI', // GPT-5.2-pro — structured problems
+  FOCUS: 'GEMINI', // Flash — sub-second for ADHD
+  INSIGHTS: 'ANTHROPIC', // Opus 4.6 — deep learner analysis
+  VIRTUAL_BRAIN: 'OPENAI', // GPT-5.3-Codex — knowledge graphs
   LESSON_PLANNER: 'ANTHROPIC', // Opus 4.6 — curriculum design
-  PROGRESS: 'GEMINI',          // Flash — quick metric rolls
-  SAFETY: 'OPENAI',            // GPT-5.2-instant — fast screening
-  OTHER: 'GEMINI',             // Flash — default cheap
+  PROGRESS: 'GEMINI', // Flash — quick metric rolls
+  SAFETY: 'OPENAI', // GPT-5.2-instant — fast screening
+  OTHER: 'GEMINI', // Flash — default cheap
 };
 
 /**
@@ -193,7 +193,10 @@ const EDUCATION_OPTIMAL_PROVIDER: Record<AiAgentType, AiProvider> = {
  */
 const COST_DOWNSHIFT_MAP: Record<string, { provider: AiProvider; model: string }> = {
   // Opus → Sonnet (Anthropic)
-  'ANTHROPIC:claude-opus-4-6-20260201': { provider: 'ANTHROPIC', model: 'claude-sonnet-4-6-20260201' },
+  'ANTHROPIC:claude-opus-4-6-20260201': {
+    provider: 'ANTHROPIC',
+    model: 'claude-sonnet-4-6-20260201',
+  },
   // GPT-5.2-pro → GPT-5.2-instant (OpenAI)
   'OPENAI:gpt-5.2-pro': { provider: 'OPENAI', model: 'gpt-5.2-instant' },
   // GPT-5.3-codex → GPT-5.2-instant (OpenAI)
@@ -225,28 +228,26 @@ const DEFAULT_TENANT_CONFIG: TenantAiConfig = {
  * Cost per 1K tokens by provider and model (in USD).
  */
 const COST_PER_1K_TOKENS: Record<string, { input: number; output: number }> = {
-  // OpenAI (2026 generation)
-  'OPENAI:gpt-5.2-instant': { input: 0.00015, output: 0.0006 },
-  'OPENAI:gpt-5.2-pro': { input: 0.0025, output: 0.01 },
-  'OPENAI:gpt-5.3-codex': { input: 0.005, output: 0.02 },
-  // OpenAI (legacy)
-  'OPENAI:gpt-4o': { input: 0.0025, output: 0.01 },
-  'OPENAI:gpt-4o-mini': { input: 0.00015, output: 0.0006 },
-  'OPENAI:gpt-4-turbo': { input: 0.01, output: 0.03 },
+  // OpenAI (March 2026 pricing)
+  'OPENAI:gpt-5.2-pro': { input: 0.005, output: 0.015 },
+  'OPENAI:gpt-5.2-instant': { input: 0.0003, output: 0.001 },
+  'OPENAI:gpt-5.2-thinking': { input: 0.01, output: 0.03 },
+  'OPENAI:gpt-5.3-codex': { input: 0.006, output: 0.018 },
 
-  // Anthropic (2026 generation)
+  // Anthropic (March 2026 pricing)
   'ANTHROPIC:claude-opus-4-6-20260201': { input: 0.015, output: 0.075 },
   'ANTHROPIC:claude-sonnet-4-6-20260201': { input: 0.003, output: 0.015 },
-  // Anthropic (legacy)
-  'ANTHROPIC:claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 },
-  'ANTHROPIC:claude-3-haiku-20240307': { input: 0.00025, output: 0.00125 },
 
-  // Gemini (2026 generation)
+  // Gemini (March 2026 pricing)
   'GEMINI:gemini-3.1-pro': { input: 0.00125, output: 0.005 },
   'GEMINI:gemini-3.1-flash': { input: 0.000075, output: 0.0003 },
-  // Gemini (legacy)
-  'GEMINI:gemini-1.5-pro': { input: 0.00125, output: 0.005 },
-  'GEMINI:gemini-1.5-flash': { input: 0.000075, output: 0.0003 },
+
+  // Mistral
+  'MISTRAL:mistral-large-2': { input: 0.002, output: 0.006 },
+
+  // Legacy (keep for in-flight requests)
+  'OPENAI:gpt-4o': { input: 0.0025, output: 0.01 },
+  'ANTHROPIC:claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 },
 
   // Mock
   'MOCK:mock-model': { input: 0, output: 0 },
@@ -466,9 +467,8 @@ export class ProviderRouter extends EventEmitter {
         selectedProvider = optimalProvider;
       } else {
         // Fall through allowed providers in priority order
-        selectedProvider = config.providerPriority.find((p) =>
-          config.allowedProviders.includes(p)
-        ) ?? 'MOCK';
+        selectedProvider =
+          config.providerPriority.find((p) => config.allowedProviders.includes(p)) ?? 'MOCK';
       }
       selectedModel = DEFAULT_MODEL_MAPPING[selectedProvider][context.agentType];
       reason = `Education-optimized: ${context.agentType} → ${selectedProvider} (${selectedModel})`;
@@ -476,9 +476,8 @@ export class ProviderRouter extends EventEmitter {
     // ── Step 5: Static fallback ──
     else {
       contextSignals.push('static-mapping');
-      const fallbackProvider = config.providerPriority.find((p) =>
-        config.allowedProviders.includes(p)
-      ) ?? 'MOCK';
+      const fallbackProvider =
+        config.providerPriority.find((p) => config.allowedProviders.includes(p)) ?? 'MOCK';
       selectedProvider = fallbackProvider;
       selectedModel = DEFAULT_MODEL_MAPPING[selectedProvider][context.agentType];
       reason = `Static mapping: ${context.agentType} → ${selectedProvider}`;
@@ -490,7 +489,7 @@ export class ProviderRouter extends EventEmitter {
       config,
       selectedProvider,
       selectedModel,
-      contextSignals,
+      contextSignals
     );
 
     const result: ModelSelectionResult = {
@@ -504,13 +503,7 @@ export class ProviderRouter extends EventEmitter {
       originalProvider: budgetResult.downshifted ? selectedProvider : undefined,
     };
 
-    this.emitRoutingDecision(
-      tenantId,
-      context,
-      result,
-      budgetResult.utilization,
-      contextSignals,
-    );
+    this.emitRoutingDecision(tenantId, context, result, budgetResult.utilization, contextSignals);
 
     return result;
   }
@@ -552,7 +545,7 @@ export class ProviderRouter extends EventEmitter {
     config: TenantAiConfig,
     provider: AiProvider,
     model: string,
-    signals: string[],
+    signals: string[]
   ): { provider: AiProvider; model: string; downshifted: boolean; utilization: number } {
     const budget = config.dailyCostBudgetUsd ?? 0;
     if (budget <= 0) {
@@ -607,7 +600,7 @@ export class ProviderRouter extends EventEmitter {
     context: ModelSelectionContext,
     result: ModelSelectionResult,
     budgetUtilization: number,
-    contextSignals: string[],
+    contextSignals: string[]
   ): void {
     const log: RoutingDecisionLog = {
       timestamp: new Date().toISOString(),

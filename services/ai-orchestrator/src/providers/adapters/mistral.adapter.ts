@@ -9,6 +9,7 @@
  */
 
 import type { AIModel, AIProvider, ModelStatus } from '../registry.js';
+
 import {
   BaseProviderAdapter,
   type BaseAdapterConfig,
@@ -39,10 +40,10 @@ export interface MistralAdapterConfig extends BaseAdapterConfig {
 
 const MISTRAL_MODELS: AIModel[] = [
   {
-    id: 'mistral-large-latest',
+    id: 'mistral-large-2',
     providerId: 'mistral',
-    name: 'mistral-large-latest',
-    displayName: 'Mistral Large',
+    name: 'mistral-large-2',
+    displayName: 'Mistral Large 2',
     contextWindow: 128000,
     maxOutputTokens: 8192,
     capabilities: {
@@ -184,14 +185,14 @@ interface MistralMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
   name?: string;
-  tool_calls?: Array<{
+  tool_calls?: {
     id: string;
     type: 'function';
     function: {
       name: string;
       arguments: string;
     };
-  }>;
+  }[];
   tool_call_id?: string;
 }
 
@@ -214,22 +215,22 @@ interface MistralChatResponse {
   object: string;
   created: number;
   model: string;
-  choices: Array<{
+  choices: {
     index: number;
     message: {
       role: string;
       content: string;
-      tool_calls?: Array<{
+      tool_calls?: {
         id: string;
         type: 'function';
         function: {
           name: string;
           arguments: string;
         };
-      }>;
+      }[];
     };
     finish_reason: 'stop' | 'length' | 'tool_calls' | 'error';
-  }>;
+  }[];
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -242,22 +243,22 @@ interface MistralStreamChunk {
   object: string;
   created: number;
   model: string;
-  choices: Array<{
+  choices: {
     index: number;
     delta: {
       role?: string;
       content?: string;
-      tool_calls?: Array<{
+      tool_calls?: {
         id: string;
         type: 'function';
         function: {
           name: string;
           arguments: string;
         };
-      }>;
+      }[];
     };
     finish_reason?: 'stop' | 'length' | 'tool_calls';
-  }>;
+  }[];
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -268,11 +269,11 @@ interface MistralStreamChunk {
 interface MistralEmbeddingResponse {
   id: string;
   object: string;
-  data: Array<{
+  data: {
     object: string;
     embedding: number[];
     index: number;
-  }>;
+  }[];
   model: string;
   usage: {
     prompt_tokens: number;
@@ -636,10 +637,12 @@ export class MistralAdapter extends BaseProviderAdapter {
   }
 
   private createTypedError(error: unknown): Error {
-    if (error instanceof RateLimitError ||
-        error instanceof AuthenticationError ||
-        error instanceof ContextLengthError ||
-        error instanceof ServiceUnavailableError) {
+    if (
+      error instanceof RateLimitError ||
+      error instanceof AuthenticationError ||
+      error instanceof ContextLengthError ||
+      error instanceof ServiceUnavailableError
+    ) {
       return error;
     }
 

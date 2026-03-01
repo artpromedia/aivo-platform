@@ -13,57 +13,59 @@ import { describe, it, expect } from 'vitest';
 const mockModelCards = [
   {
     id: '1',
-    modelKey: 'AIVO_TUTOR_V1',
-    provider: 'OPENAI' as const,
-    displayName: 'Aivo Tutor',
-    description: 'AI-powered tutoring assistant for K-12 learners',
+    modelKey: 'AIVO_TUTOR_V3',
+    provider: 'ANTHROPIC' as const,
+    displayName: 'Aivo AI Tutor (Opus 4.6)',
+    description: 'Powered by Claude Opus 4.6 with 1M token context for deep Socratic tutoring',
     intendedUseCases: `Best for:
-• Providing step-by-step explanations of concepts
-• Answering curriculum-aligned questions
-• Offering hints and guided practice`,
-    lastReviewedAt: '2024-12-01T00:00:00Z',
+• Socratic dialogue and guided discovery
+• Multi-step mathematical reasoning
+• Essay feedback with detailed explanations
+• Adaptive content based on learner profile`,
+    lastReviewedAt: '2026-02-15T00:00:00Z',
   },
   {
     id: '2',
-    modelKey: 'AIVO_BASELINE_V1',
-    provider: 'OPENAI' as const,
-    displayName: 'Aivo Baseline Assessment',
-    description: 'Analyzes learner responses during baseline assessments',
+    modelKey: 'AIVO_BASELINE_V2',
+    provider: 'ANTHROPIC' as const,
+    displayName: 'Aivo Baseline Assessment (Sonnet 4.6)',
+    description: 'Uses Claude Sonnet 4.6 for baseline assessment analysis',
     intendedUseCases: `Best for:
 • Analyzing written responses for skill demonstration
-• Identifying prerequisite knowledge gaps`,
-    lastReviewedAt: '2024-11-15T00:00:00Z',
+• Identifying prerequisite knowledge gaps
+• Adaptive difficulty calibration`,
+    lastReviewedAt: '2026-02-10T00:00:00Z',
   },
   {
     id: '3',
-    modelKey: 'AIVO_FOCUS_V1',
-    provider: 'INTERNAL' as const,
-    displayName: 'Aivo Focus Assistant',
-    description: 'Rule-based system for engagement monitoring',
+    modelKey: 'AIVO_FOCUS_V2',
+    provider: 'GOOGLE' as const,
+    displayName: 'Aivo Focus Assistant (Gemini 3.1 Flash)',
+    description: 'Powered by Gemini 3.1 Flash for real-time engagement monitoring',
     intendedUseCases: `Best for:
 • Detecting signs of learner disengagement
-• Suggesting timely breaks`,
-    lastReviewedAt: '2024-12-05T00:00:00Z',
+• Suggesting timely breaks
+• Low-latency behavioral analysis`,
+    lastReviewedAt: '2026-02-12T00:00:00Z',
   },
 ];
 
 const mockFullModelCard = {
   id: '1',
-  modelKey: 'AIVO_TUTOR_V1',
-  provider: 'OPENAI' as const,
-  displayName: 'Aivo Tutor',
-  description:
-    'An AI-powered tutoring assistant designed to help K-12 learners understand concepts through guided questions and scaffolded explanations.',
+  modelKey: 'AIVO_TUTOR_V3',
+  provider: 'ANTHROPIC' as const,
+  displayName: 'Aivo AI Tutor (Opus 4.6)',
+  description: 'Powered by Claude Opus 4.6 with 1M token context for deep Socratic tutoring.',
   intendedUseCases: `Best for:
-• Providing step-by-step explanations of concepts
-• Answering curriculum-aligned questions
-• Offering hints and guided practice
-• Explaining mistakes in a supportive way
+• Socratic dialogue and guided discovery
+• Multi-step mathematical reasoning
+• Essay feedback with detailed explanations
+• Adaptive content based on learner profile
 • Adapting language to different grade levels`,
   limitations: `Not appropriate for:
-• Medical, legal, or professional advice
-• Grading or formal assessment decisions
-• Replacing teacher judgment on student progress
+• Formal grading or high-stakes decisions
+• Medical or psychological diagnosis
+• Replacing qualified educators
 • Handling sensitive student disclosures
 
 Important: AI tutoring is a supplement to, not a replacement for, human instruction.`,
@@ -77,11 +79,15 @@ Disclaimer: This is not a diagnostic tool and should not be used as a substitute
   outputTypes: 'Text (explanations, hints, feedback, encouragement)',
   dataSourcesSummary:
     'Trained on curated educational content aligned with Common Core and state standards.',
-  lastReviewedAt: '2024-12-01T00:00:00Z',
+  lastReviewedAt: '2026-02-15T00:00:00Z',
   lastReviewedBy: null,
-  metadataJson: { version: '1.0', baseModel: 'gpt-4o-mini', features: ['tutoring', 'homework_help'] },
+  metadataJson: {
+    version: '3.0',
+    baseModel: 'claude-opus-4-6-20260201',
+    features: ['tutoring', 'homework_help'],
+  },
   createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-12-01T00:00:00Z',
+  updatedAt: '2026-02-15T00:00:00Z',
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -156,16 +162,16 @@ describe('Model Cards List Page', () => {
       const bestFor = parseBestFor(mockFullModelCard.intendedUseCases);
 
       expect(bestFor).toHaveLength(5);
-      expect(bestFor[0]).toBe('Providing step-by-step explanations of concepts');
-      expect(bestFor[1]).toBe('Answering curriculum-aligned questions');
+      expect(bestFor[0]).toBe('Socratic dialogue and guided discovery');
+      expect(bestFor[1]).toBe('Multi-step mathematical reasoning');
     });
 
     it('should parse "Not appropriate for" items from limitations', () => {
       const notAppropriate = parseNotAppropriateFor(mockFullModelCard.limitations);
 
       expect(notAppropriate).toHaveLength(4);
-      expect(notAppropriate[0]).toBe('Medical, legal, or professional advice');
-      expect(notAppropriate[1]).toBe('Grading or formal assessment decisions');
+      expect(notAppropriate[0]).toBe('Formal grading or high-stakes decisions');
+      expect(notAppropriate[1]).toBe('Medical or psychological diagnosis');
     });
 
     it('should parse safety measures from safetyConsiderations', () => {
@@ -183,7 +189,7 @@ describe('Model Cards List Page', () => {
     });
 
     it('should format review date correctly', () => {
-      const formatted = formatReviewDate('2024-12-01T00:00:00Z');
+      const formatted = formatReviewDate('2024-12-15T12:00:00Z');
 
       expect(formatted).toContain('Dec');
       expect(formatted).toContain('2024');
@@ -239,7 +245,15 @@ describe('Model Cards List Page', () => {
     });
 
     it('should have valid provider values', () => {
-      const validProviders = ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'INTERNAL', 'META', 'MISTRAL', 'COHERE'];
+      const validProviders = [
+        'OPENAI',
+        'ANTHROPIC',
+        'GOOGLE',
+        'INTERNAL',
+        'META',
+        'MISTRAL',
+        'COHERE',
+      ];
 
       for (const model of mockModelCards) {
         expect(validProviders).toContain(model.provider);
@@ -281,12 +295,12 @@ describe('Model Detail Page', () => {
   describe('model metadata', () => {
     it('should include version in metadataJson', () => {
       expect(mockFullModelCard.metadataJson).toHaveProperty('version');
-      expect(mockFullModelCard.metadataJson.version).toBe('1.0');
+      expect(mockFullModelCard.metadataJson.version).toBe('3.0');
     });
 
     it('should include baseModel in metadataJson', () => {
       expect(mockFullModelCard.metadataJson).toHaveProperty('baseModel');
-      expect(mockFullModelCard.metadataJson.baseModel).toBe('gpt-4o-mini');
+      expect(mockFullModelCard.metadataJson.baseModel).toBe('claude-opus-4-6-20260201');
     });
 
     it('should include features list in metadataJson', () => {
@@ -356,7 +370,7 @@ describe('AI Transparency Content', () => {
   });
 
   it('should emphasize human oversight requirements', () => {
-    expect(mockFullModelCard.limitations).toContain('Replacing teacher judgment');
+    expect(mockFullModelCard.limitations).toContain('Replacing qualified educators');
     expect(mockFullModelCard.safetyConsiderations).toContain('Human review');
   });
 
