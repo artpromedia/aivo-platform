@@ -1,3 +1,4 @@
+/* cSpell:words gradebook */
 /**
  * Help & Support Page
  *
@@ -123,17 +124,17 @@ export default function HelpPage() {
         <h2 className="text-lg font-semibold text-gray-900">Frequently Asked Questions</h2>
         <div className="mt-4 divide-y rounded-xl border bg-white">
           {faqs.map((faq, i) => (
-            <div key={i}>
+            <div key={faq.question}>
               <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                onClick={() => {
+                  setOpenFaq(openFaq === i ? null : i);
+                }}
                 className="flex w-full items-center justify-between px-5 py-4 text-left"
               >
                 <span className="font-medium text-gray-900">{faq.question}</span>
                 <span className="ml-4 text-gray-400">{openFaq === i ? '−' : '+'}</span>
               </button>
-              {openFaq === i && (
-                <div className="px-5 pb-4 text-sm text-gray-600">{faq.answer}</div>
-              )}
+              {openFaq === i && <div className="px-5 pb-4 text-sm text-gray-600">{faq.answer}</div>}
             </div>
           ))}
         </div>
@@ -151,11 +152,11 @@ export default function HelpPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {keyboardShortcuts.map((s, i) => (
-                <tr key={i}>
+              {keyboardShortcuts.map((s) => (
+                <tr key={s.description}>
                   <td className="px-5 py-3">
-                    {s.keys.map((k, j) => (
-                      <React.Fragment key={j}>
+                    {s.keys.map((k) => (
+                      <React.Fragment key={k}>
                         {j > 0 && <span className="mx-1 text-gray-400">+</span>}
                         <kbd className="rounded border bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-700">
                           {k}

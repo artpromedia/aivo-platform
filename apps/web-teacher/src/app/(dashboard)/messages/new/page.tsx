@@ -34,7 +34,7 @@ export default function NewMessagePage() {
     if (preSelectedStudentId) setRecipientId(preSelectedStudentId);
   }, [preSelectedStudentId]);
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!body.trim()) {
       setError('Message body is required.');
@@ -57,16 +57,14 @@ export default function NewMessagePage() {
       if (recipientId) {
         const conversations = await fetchConversations(accessToken);
         // Conversation doesn't have a participants array — match by studentName or id
-        const existing = conversations.find(
-          (c) => c.id === recipientId,
-        );
+        const existing = conversations.find((c) => c.id === recipientId);
         conversationId = existing?.id;
       }
 
       // Build a rich first-message body with subject prefix when present
       const fullBody = subject ? `[${subject}] ${body}` : body;
 
-      await sendMessage(conversationId ?? recipientId ?? 'new', fullBody, accessToken);
+      await sendMessage(conversationId ?? recipientId, fullBody, accessToken);
       router.push('/messages');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
@@ -90,11 +88,13 @@ export default function NewMessagePage() {
           <label className="block text-sm font-medium text-gray-700">To</label>
           <select
             value={recipientId}
-            onChange={(e) => setRecipientId(e.target.value)}
+            onChange={(e) => {
+              setRecipientId(e.target.value);
+            }}
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
             <option value="">Select a recipient…</option>
-            {(students ?? []).map((s) => (
+            {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.firstName} {s.lastName}
               </option>
@@ -108,7 +108,9 @@ export default function NewMessagePage() {
           <input
             type="text"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value);
+            }}
             placeholder="Optional subject line"
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
@@ -121,7 +123,9 @@ export default function NewMessagePage() {
           </label>
           <textarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => {
+              setBody(e.target.value);
+            }}
             rows={6}
             placeholder="Write your message…"
             className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -140,7 +144,9 @@ export default function NewMessagePage() {
           </button>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              router.back();
+            }}
             className="rounded-lg border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancel

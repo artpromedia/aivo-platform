@@ -121,14 +121,30 @@ export default function NotificationsPage() {
       {/* ── toolbar ──────────────────────────────────────────────────── */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          <FilterChip active={filter === 'all'} onClick={() => setFilter('all')}>
+          <FilterChip
+            active={filter === 'all'}
+            onClick={() => {
+              setFilter('all');
+            }}
+          >
             All ({notifications.length})
           </FilterChip>
-          <FilterChip active={filter === 'unread'} onClick={() => setFilter('unread')}>
+          <FilterChip
+            active={filter === 'unread'}
+            onClick={() => {
+              setFilter('unread');
+            }}
+          >
             Unread ({notifications.filter((n) => !n.isRead).length})
           </FilterChip>
           {types.map((t) => (
-            <FilterChip key={t} active={filter === t} onClick={() => setFilter(t)}>
+            <FilterChip
+              key={t}
+              active={filter === t}
+              onClick={() => {
+                setFilter(t);
+              }}
+            >
               {TYPE_LABELS[t] ?? t}
             </FilterChip>
           ))}
@@ -154,7 +170,9 @@ export default function NotificationsPage() {
           {filtered.map((n) => (
             <button
               key={n.id}
-              onClick={() => handleClick(n)}
+              onClick={() => {
+                handleClick(n);
+              }}
               className={`flex w-full items-start gap-3 px-5 py-4 text-left transition hover:bg-gray-50 ${
                 !n.isRead ? 'bg-blue-50/40' : ''
               }`}
@@ -163,9 +181,7 @@ export default function NotificationsPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-900">{n.title}</span>
-                  {!n.isRead && (
-                    <span className="h-2 w-2 rounded-full bg-blue-600" />
-                  )}
+                  {!n.isRead && <span className="h-2 w-2 rounded-full bg-blue-600" />}
                 </div>
                 <p className="mt-0.5 text-sm text-gray-600 line-clamp-2">{n.body}</p>
                 <p className="mt-1 text-xs text-gray-400">{timeAgo(n.createdAt)}</p>
@@ -193,9 +209,7 @@ function FilterChip({
     <button
       onClick={onClick}
       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-        active
-          ? 'bg-blue-600 text-white'
-          : 'border bg-white text-gray-600 hover:bg-gray-50'
+        active ? 'bg-blue-600 text-white' : 'border bg-white text-gray-600 hover:bg-gray-50'
       }`}
     >
       {children}

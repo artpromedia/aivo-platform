@@ -52,7 +52,7 @@ export default function LiveSessionPage() {
     isConnected,
     acknowledgeAlert,
     sendIntervention,
-  } = useClassroomMonitor({ classroomId: classId ?? '', teacherId: 'current' });
+  } = useClassroomMonitor({ classroomId: classId, teacherId: 'current' });
 
   // REST API fallback state
   const [restSessions, setRestSessions] = React.useState<StudentSession[]>([]);
@@ -93,7 +93,7 @@ export default function LiveSessionPage() {
   }, [classId, accessToken]);
 
   React.useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
 
   // Auto-refresh every 30 seconds
@@ -115,13 +115,13 @@ export default function LiveSessionPage() {
   const displayStats: MonitoringStats | null = React.useMemo(() => {
     if (hasWsData && wsMetrics) {
       return {
-        totalActive: wsMetrics.activeStudents ?? wsMetrics.totalStudents ?? 0,
-        focusedCount: wsMetrics.focusDistribution?.focused ?? 0,
-        distractedCount: wsMetrics.focusDistribution?.struggling ?? 0,
-        idleCount: wsMetrics.focusDistribution?.idle ?? 0,
+        totalActive: wsMetrics.activeStudents,
+        focusedCount: wsMetrics.focusDistribution.focused,
+        distractedCount: wsMetrics.focusDistribution.struggling,
+        idleCount: wsMetrics.focusDistribution.idle,
         onBreakCount: 0,
-        needsHelpCount: wsMetrics.focusDistribution?.help_requested ?? 0,
-        avgProgress: wsMetrics.averageProgress ?? 0,
+        needsHelpCount: wsMetrics.focusDistribution.help_requested,
+        avgProgress: wsMetrics.averageProgress,
       };
     }
     return restStats;
@@ -226,13 +226,10 @@ export default function LiveSessionPage() {
           <div className="flex items-center gap-3">
             {/* Connection status */}
             <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
-              <div className={cn(
-                'h-2 w-2 rounded-full',
-                isConnected ? 'bg-green-500' : 'bg-red-500'
-              )} />
-              <span className="text-xs text-gray-600">
-                {isConnected ? 'Live' : 'Polling'}
-              </span>
+              <div
+                className={cn('h-2 w-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-red-500')}
+              />
+              <span className="text-xs text-gray-600">{isConnected ? 'Live' : 'Polling'}</span>
             </div>
 
             {/* Auto-refresh toggle */}
@@ -240,7 +237,9 @@ export default function LiveSessionPage() {
               <input
                 type="checkbox"
                 checked={autoRefresh}
-                onChange={(e) => setAutoRefresh(e.target.checked)}
+                onChange={(e) => {
+                  setAutoRefresh(e.target.checked);
+                }}
                 className="rounded border-gray-300"
               />
               <span className="text-xs text-gray-600">Auto-refresh</span>
@@ -268,10 +267,25 @@ export default function LiveSessionPage() {
       {displayStats && (
         <div className="mt-6 grid gap-4 sm:grid-cols-6">
           <StatCard label="Active" value={displayStats.totalActive} icon="👥" />
-          <StatCard label="Focused" value={displayStats.focusedCount} icon="🎯" color="text-green-600" />
-          <StatCard label="Distracted" value={displayStats.distractedCount} icon="⚠️" color="text-amber-600" />
+          <StatCard
+            label="Focused"
+            value={displayStats.focusedCount}
+            icon="🎯"
+            color="text-green-600"
+          />
+          <StatCard
+            label="Distracted"
+            value={displayStats.distractedCount}
+            icon="⚠️"
+            color="text-amber-600"
+          />
           <StatCard label="Idle" value={displayStats.idleCount} icon="⏸️" color="text-gray-500" />
-          <StatCard label="Need Help" value={displayStats.needsHelpCount} icon="🆘" color="text-red-600" />
+          <StatCard
+            label="Need Help"
+            value={displayStats.needsHelpCount}
+            icon="🆘"
+            color="text-red-600"
+          />
           <StatCard label="Avg Progress" value={`${displayStats.avgProgress}%`} icon="📊" />
         </div>
       )}
@@ -294,7 +308,7 @@ export default function LiveSessionPage() {
                   setNudgeStudentId(studentId);
                   setNudgeStudentName(student?.studentName ?? studentId);
                 } else {
-                  sendIntervention(studentId, type, message);
+                  void sendIntervention(studentId, type, message);
                 }
               }}
               onRefresh={loadData}
@@ -395,16 +409,18 @@ export default function LiveSessionPage() {
             <h3 className="font-semibold text-gray-900 mb-3">📊 Student Activities</h3>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {restSessions.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  No active sessions.
-                </p>
+                <p className="text-sm text-gray-500 text-center py-4">No active sessions.</p>
               ) : (
                 restSessions.map((session) => (
                   <div
                     key={session.id}
                     className="flex items-center gap-3 rounded-lg border p-3 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleStudentClick(session.studentId)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleStudentClick(session.studentId)}
+                    onClick={() => {
+                      handleStudentClick(session.studentId);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleStudentClick(session.studentId);
+                    }}
                     role="button"
                     tabIndex={0}
                   >
@@ -443,14 +459,16 @@ export default function LiveSessionPage() {
               <div className="flex flex-wrap gap-2">
                 {[
                   'Keep up the great work! 🌟',
-                  'Need any help? I\'m here for you.',
-                  'Try to stay focused — you\'ve got this!',
+                  "Need any help? I'm here for you.",
+                  "Try to stay focused — you've got this!",
                   'Take a short break if you need one.',
                 ].map((msg) => (
                   <button
                     key={msg}
                     type="button"
-                    onClick={() => setNudgeMessage(msg)}
+                    onClick={() => {
+                      setNudgeMessage(msg);
+                    }}
                     className={cn(
                       'rounded-lg border px-3 py-1.5 text-xs',
                       nudgeMessage === msg
@@ -468,14 +486,19 @@ export default function LiveSessionPage() {
                 rows={2}
                 placeholder="Or write a custom message..."
                 value={nudgeMessage}
-                onChange={(e) => setNudgeMessage(e.target.value)}
+                onChange={(e) => {
+                  setNudgeMessage(e.target.value);
+                }}
               />
             </div>
 
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setNudgeStudentId(null); setNudgeMessage(''); }}
+                onClick={() => {
+                  setNudgeStudentId(null);
+                  setNudgeMessage('');
+                }}
                 className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
               >
                 Cancel
@@ -529,7 +552,7 @@ function RestStudentsGrid({
     };
     const helpA = a.needsHelp ? -10 : 0;
     const helpB = b.needsHelp ? -10 : 0;
-    return (helpA + (priority[a.focusState] ?? 3)) - (helpB + (priority[b.focusState] ?? 3));
+    return helpA + (priority[a.focusState] ?? 3) - (helpB + (priority[b.focusState] ?? 3));
   });
 
   return (
@@ -547,8 +570,12 @@ function RestStudentsGrid({
               session.needsHelp && 'border-red-200 bg-red-50',
               session.focusState === 'distracted' && !session.needsHelp && 'border-amber-200'
             )}
-            onClick={() => onStudentClick(session.studentId)}
-            onKeyDown={(e) => e.key === 'Enter' && onStudentClick(session.studentId)}
+            onClick={() => {
+              onStudentClick(session.studentId);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onStudentClick(session.studentId);
+            }}
             role="button"
             tabIndex={0}
           >
@@ -598,7 +625,9 @@ function RestStudentsGrid({
               <Link
                 href={`/students/${session.studentId}/ai-conversations`}
                 className="rounded border px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               >
                 🤖 AI Log
               </Link>
@@ -631,9 +660,7 @@ function FocusIndicator({ state }: Readonly<{ state: string }>) {
     idle: 'bg-gray-400',
     break: 'bg-blue-400',
   };
-  return (
-    <div className={cn('h-3 w-3 rounded-full', colors[state] ?? 'bg-gray-400')} />
-  );
+  return <div className={cn('h-3 w-3 rounded-full', colors[state] ?? 'bg-gray-400')} />;
 }
 
 function StatCard({
@@ -653,9 +680,7 @@ function StatCard({
         <span>{icon}</span>
         <p className="text-xs text-gray-500">{label}</p>
       </div>
-      <p className={cn('mt-0.5 text-xl font-bold', color)}>
-        {value}
-      </p>
+      <p className={cn('mt-0.5 text-xl font-bold', color)}>{value}</p>
     </div>
   );
 }
@@ -663,7 +688,7 @@ function StatCard({
 function HelpRequestStatusBadge({ status }: Readonly<{ status: string }>) {
   const config: Record<string, { label: string; color: string }> = {
     pending: { label: 'Pending', color: 'bg-red-100 text-red-700' },
-    acknowledged: { label: 'Ack\'d', color: 'bg-yellow-100 text-yellow-700' },
+    acknowledged: { label: 'Acknowledged', color: 'bg-yellow-100 text-yellow-700' },
     resolved: { label: 'Resolved', color: 'bg-green-100 text-green-700' },
   };
   const c = config[status] ?? config.pending;

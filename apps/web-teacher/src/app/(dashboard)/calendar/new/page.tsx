@@ -58,7 +58,7 @@ export default function NewCalendarEventPage() {
   const [classId, setClassId] = React.useState('');
   const [recurrence, setRecurrence] = React.useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!title.trim() || !startDate) {
       setError('Title and start date are required.');
@@ -86,7 +86,10 @@ export default function NewCalendarEventPage() {
         location: location || undefined,
         classId: classId || undefined,
         recurrence: recurrence
-          ? { frequency: recurrence as 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly', interval: 1 }
+          ? {
+              frequency: recurrence as 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly',
+              interval: 1,
+            }
           : undefined,
       };
 
@@ -118,7 +121,9 @@ export default function NewCalendarEventPage() {
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+              }}
               placeholder="e.g. Parent Teacher Conference"
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               required
@@ -130,7 +135,9 @@ export default function NewCalendarEventPage() {
             <label className="block text-sm font-medium text-gray-700">Event Type</label>
             <select
               value={eventType}
-              onChange={(e) => setEventType(e.target.value as EventType)}
+              onChange={(e) => {
+                setEventType(e.target.value as EventType);
+              }}
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               {EVENT_TYPES.map((t) => (
@@ -146,11 +153,13 @@ export default function NewCalendarEventPage() {
             <label className="block text-sm font-medium text-gray-700">Class (optional)</label>
             <select
               value={classId}
-              onChange={(e) => setClassId(e.target.value)}
+              onChange={(e) => {
+                setClassId(e.target.value);
+              }}
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="">No class</option>
-              {(classes ?? []).map((c) => (
+              {classes.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -164,7 +173,9 @@ export default function NewCalendarEventPage() {
               id="allDay"
               type="checkbox"
               checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
+              onChange={(e) => {
+                setAllDay(e.target.checked);
+              }}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label htmlFor="allDay" className="text-sm font-medium text-gray-700">
@@ -196,7 +207,9 @@ export default function NewCalendarEventPage() {
               <input
                 type="time"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => {
+                  setStartTime(e.target.value);
+                }}
                 className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -208,7 +221,9 @@ export default function NewCalendarEventPage() {
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+              }}
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -220,7 +235,9 @@ export default function NewCalendarEventPage() {
               <input
                 type="time"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => {
+                  setEndTime(e.target.value);
+                }}
                 className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -232,7 +249,9 @@ export default function NewCalendarEventPage() {
             <input
               type="text"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => {
+                setLocation(e.target.value);
+              }}
               placeholder="Room 204, Library, Zoom link…"
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
@@ -243,7 +262,9 @@ export default function NewCalendarEventPage() {
             <label className="block text-sm font-medium text-gray-700">Repeat</label>
             <select
               value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value)}
+              onChange={(e) => {
+                setRecurrence(e.target.value);
+              }}
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               {RECURRENCE_OPTIONS.map((r) => (
@@ -259,7 +280,9 @@ export default function NewCalendarEventPage() {
             <label className="block text-sm font-medium text-gray-700">Description</label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+              }}
               rows={3}
               placeholder="Optional details…"
               className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -278,7 +301,9 @@ export default function NewCalendarEventPage() {
           </button>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              router.back();
+            }}
             className="rounded-lg border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancel

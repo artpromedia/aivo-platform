@@ -1,3 +1,4 @@
+/* cSpell:words Redactions */
 /**
  * AI Transparency Page (Container 09 — Page 1 of 4)
  *
@@ -67,8 +68,12 @@ export default function ClassAiTransparencyPage() {
     classesApi
       .getStudents(classId)
       .then(setStudents)
-      .catch(() => setStudents([]))
-      .finally(() => setStudentsLoading(false));
+      .catch(() => {
+        setStudents([]);
+      })
+      .finally(() => {
+        setStudentsLoading(false);
+      });
   }, [classId]);
 
   // Fetch AI transparency reports for all students
@@ -78,28 +83,46 @@ export default function ClassAiTransparencyPage() {
     const newReports = new Map<string, StudentAiSummary>();
 
     for (const s of students) {
-      const sid = s.student?.id ?? s.id ?? '';
-      const name = s.student?.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
-      newReports.set(sid, { studentId: sid, studentName: name, report: null, loading: true, error: null });
+      const sid = s.student.id;
+      const name = s.student.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      newReports.set(sid, {
+        studentId: sid,
+        studentName: name,
+        report: null,
+        loading: true,
+        error: null,
+      });
     }
     setReports(new Map(newReports));
 
     for (const s of students) {
-      const sid = s.student?.id ?? s.id ?? '';
-      const name = s.student?.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      const sid = s.student.id;
+      const name = s.student.name ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
 
       fetchStudentAiTransparency(sid, accessToken, { days: timeRange, limit: 10 })
         .then((report) => {
           setReports((prev) => {
             const next = new Map(prev);
-            next.set(sid, { studentId: sid, studentName: name, report, loading: false, error: null });
+            next.set(sid, {
+              studentId: sid,
+              studentName: name,
+              report,
+              loading: false,
+              error: null,
+            });
             return next;
           });
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           setReports((prev) => {
             const next = new Map(prev);
-            next.set(sid, { studentId: sid, studentName: name, report: null, loading: false, error: err.message });
+            next.set(sid, {
+              studentId: sid,
+              studentName: name,
+              report: null,
+              loading: false,
+              error: err instanceof Error ? err.message : String(err),
+            });
             return next;
           });
         });
@@ -117,8 +140,12 @@ export default function ClassAiTransparencyPage() {
       .then((result) => {
         setRecentDecisions(result?.decisions ?? []);
       })
-      .catch(() => setRecentDecisions([]))
-      .finally(() => setDecisionsLoading(false));
+      .catch(() => {
+        setRecentDecisions([]);
+      })
+      .finally(() => {
+        setDecisionsLoading(false);
+      });
   }, [selectedStudentId, accessToken, timeRange]);
 
   // Aggregate stats
@@ -160,7 +187,10 @@ export default function ClassAiTransparencyPage() {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
         <p className="text-red-600">{classError?.message ?? 'Class not found'}</p>
-        <Link href="/classes" className="mt-4 inline-block text-sm text-primary-600 hover:underline">
+        <Link
+          href="/classes"
+          className="mt-4 inline-block text-sm text-primary-600 hover:underline"
+        >
           ← Back to Classes
         </Link>
       </div>
@@ -176,7 +206,9 @@ export default function ClassAiTransparencyPage() {
           <div className="flex items-center gap-3">
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(Number(e.target.value))}
+              onChange={(e) => {
+                setTimeRange(Number(e.target.value));
+              }}
               className="rounded-lg border px-3 py-2 text-sm"
             >
               <option value={7}>Last 7 days</option>
@@ -195,7 +227,11 @@ export default function ClassAiTransparencyPage() {
 
       {/* Aggregate Stats */}
       <div className="mt-6 grid gap-4 sm:grid-cols-4">
-        <StatCard label="Total AI Interactions" value={aggregateStats.totalInteractions} icon="🤖" />
+        <StatCard
+          label="Total AI Interactions"
+          value={aggregateStats.totalInteractions}
+          icon="🤖"
+        />
         <StatCard label="Students Monitored" value={aggregateStats.studentsLoaded} icon="👥" />
         <StatCard
           label="Safety Filters Applied"
@@ -216,7 +252,9 @@ export default function ClassAiTransparencyPage() {
               <button
                 key={s.studentId}
                 type="button"
-                onClick={() => setSelectedStudentId(s.studentId === selectedStudentId ? null : s.studentId)}
+                onClick={() => {
+                  setSelectedStudentId(s.studentId === selectedStudentId ? null : s.studentId);
+                }}
                 className={cn(
                   'w-full rounded-xl border p-4 text-left transition-colors',
                   selectedStudentId === s.studentId
@@ -234,14 +272,14 @@ export default function ClassAiTransparencyPage() {
                   <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
                     <span>{s.report.totalInteractions} interactions</span>
                     <span>·</span>
-                    <span className={s.report.safetySummary.totalFiltered > 0 ? 'text-amber-600' : ''}>
+                    <span
+                      className={s.report.safetySummary.totalFiltered > 0 ? 'text-amber-600' : ''}
+                    >
                       {s.report.safetySummary.totalFiltered} filtered
                     </span>
                   </div>
                 )}
-                {s.error && (
-                  <p className="mt-1 text-xs text-red-500 truncate">{s.error}</p>
-                )}
+                {s.error && <p className="mt-1 text-xs text-red-500 truncate">{s.error}</p>}
               </button>
             ))}
             {reports.size === 0 && (
@@ -263,7 +301,9 @@ export default function ClassAiTransparencyPage() {
             <div className="rounded-xl border bg-white p-12 text-center text-gray-500">
               <p className="text-4xl mb-4">🔍</p>
               <p className="font-medium">Select a student</p>
-              <p className="text-sm mt-1">Click on a student to view their AI transparency report</p>
+              <p className="text-sm mt-1">
+                Click on a student to view their AI transparency report
+              </p>
             </div>
           )}
         </div>
@@ -280,7 +320,7 @@ function StudentReportPanel({
   summary,
   recentDecisions,
   decisionsLoading,
-  classId,
+  _classId,
 }: Readonly<{
   summary: StudentAiSummary | null;
   recentDecisions: ExplanationEvent[];
@@ -317,7 +357,7 @@ function StudentReportPanel({
   }
 
   const report = summary.report;
-  const mastery = formatMasteryLevel(report.averageFactors.masteryLevel ?? 0);
+  const mastery = formatMasteryLevel(report.averageFactors.masteryLevel);
 
   return (
     <div className="space-y-6">
@@ -327,7 +367,8 @@ function StudentReportPanel({
           <div>
             <h2 className="text-xl font-bold text-gray-900">{report.studentName}</h2>
             <p className="text-sm text-gray-500">
-              {report.totalInteractions} AI interactions · {report.period.from} to {report.period.to}
+              {report.totalInteractions} AI interactions · {report.period.from} to{' '}
+              {report.period.to}
             </p>
           </div>
           <Link
@@ -366,7 +407,10 @@ function StudentReportPanel({
         <h3 className="font-semibold text-gray-900 mb-3">Interaction Types</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           {Object.entries(report.interactionsByType).map(([type, count]) => (
-            <div key={type} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2">
+            <div
+              key={type}
+              className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2"
+            >
               <span className="text-sm text-gray-700 capitalize">{type.replace(/_/g, ' ')}</span>
               <span className="text-sm font-semibold text-gray-900">{count}</span>
             </div>
@@ -380,19 +424,26 @@ function StudentReportPanel({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex items-center justify-between rounded-lg border px-4 py-3">
             <span className="text-sm text-gray-600">Content Filtered</span>
-            <span className={cn(
-              'text-sm font-semibold',
-              report.safetySummary.totalFiltered > 0 ? 'text-amber-600' : 'text-green-600'
-            )}>
+            <span
+              className={cn(
+                'text-sm font-semibold',
+                report.safetySummary.totalFiltered > 0 ? 'text-amber-600' : 'text-green-600'
+              )}
+            >
               {report.safetySummary.totalFiltered}
             </span>
           </div>
           <div className="flex items-center justify-between rounded-lg border px-4 py-3">
             <span className="text-sm text-gray-600">PII Redacted</span>
-            <span className="text-sm font-semibold text-gray-900">{report.safetySummary.piiRedactionCount}</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {report.safetySummary.piiRedactionCount}
+            </span>
           </div>
           {Object.entries(report.safetySummary.safetyLevelCounts).map(([level, count]) => (
-            <div key={level} className="flex items-center justify-between rounded-lg border px-4 py-3">
+            <div
+              key={level}
+              className="flex items-center justify-between rounded-lg border px-4 py-3"
+            >
               <div>
                 <span className="text-sm text-gray-600">{level}</span>
                 <p className="text-xs text-gray-400">{getSafetyLevelDescription(level)}</p>
@@ -429,11 +480,11 @@ function StudentReportPanel({
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-gray-700">{d.summaryText}</p>
-                    {d.detailsJson?.reasons && d.detailsJson.reasons.length > 0 && (
+                    {d.detailsJson.reasons && d.detailsJson.reasons.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
-                        {d.detailsJson.reasons.slice(0, 3).map((r, idx) => (
+                        {d.detailsJson.reasons.slice(0, 3).map((r) => (
                           <span
-                            key={idx}
+                            key={r.code}
                             className="rounded bg-gray-50 px-2 py-0.5 text-xs text-gray-500"
                             title={r.description}
                           >
@@ -536,8 +587,14 @@ function SafetyLevelBadge({
     HIGH: 'bg-red-100 text-red-700',
   };
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', colors[level] ?? 'bg-gray-100 text-gray-600')}>
-      {level}{count != null ? ` (${count})` : ''}
+    <span
+      className={cn(
+        'rounded-full px-2 py-0.5 text-xs font-medium',
+        colors[level] ?? 'bg-gray-100 text-gray-600'
+      )}
+    >
+      {level}
+      {count != null ? ` (${count})` : ''}
     </span>
   );
 }

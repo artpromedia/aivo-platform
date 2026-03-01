@@ -1,3 +1,4 @@
+/* cSpell:words gradebook */
 /**
  * New Report (Generate) Page
  *
@@ -16,13 +17,55 @@ import type { ReportType, ReportParams } from '@/lib/types/report';
 
 /* ─── constants ───────────────────────────────────────────────────────── */
 
-const REPORT_TYPES: { value: ReportType; label: string; description: string; needsStudent: boolean; needsClass: boolean }[] = [
-  { value: 'progress', label: 'Progress Report', description: 'Individual student progress across all classes', needsStudent: true, needsClass: false },
-  { value: 'class_summary', label: 'Class Summary', description: 'Overview of class performance and metrics', needsStudent: false, needsClass: true },
-  { value: 'gradebook', label: 'Gradebook Export', description: 'Full gradebook data for a class', needsStudent: false, needsClass: true },
-  { value: 'iep_progress', label: 'IEP Progress', description: 'IEP goal progress report for a student', needsStudent: true, needsClass: false },
-  { value: 'standards_mastery', label: 'Standards Mastery', description: 'Standards alignment and mastery levels', needsStudent: false, needsClass: true },
-  { value: 'attendance', label: 'Attendance Report', description: 'Attendance records and patterns', needsStudent: false, needsClass: true },
+const REPORT_TYPES: {
+  value: ReportType;
+  label: string;
+  description: string;
+  needsStudent: boolean;
+  needsClass: boolean;
+}[] = [
+  {
+    value: 'progress',
+    label: 'Progress Report',
+    description: 'Individual student progress across all classes',
+    needsStudent: true,
+    needsClass: false,
+  },
+  {
+    value: 'class_summary',
+    label: 'Class Summary',
+    description: 'Overview of class performance and metrics',
+    needsStudent: false,
+    needsClass: true,
+  },
+  {
+    value: 'gradebook',
+    label: 'Gradebook Export',
+    description: 'Full gradebook data for a class',
+    needsStudent: false,
+    needsClass: true,
+  },
+  {
+    value: 'iep_progress',
+    label: 'IEP Progress',
+    description: 'IEP goal progress report for a student',
+    needsStudent: true,
+    needsClass: false,
+  },
+  {
+    value: 'standards_mastery',
+    label: 'Standards Mastery',
+    description: 'Standards alignment and mastery levels',
+    needsStudent: false,
+    needsClass: true,
+  },
+  {
+    value: 'attendance',
+    label: 'Attendance Report',
+    description: 'Attendance records and patterns',
+    needsStudent: false,
+    needsClass: true,
+  },
 ];
 
 /* ─── component ───────────────────────────────────────────────────────── */
@@ -46,9 +89,7 @@ export default function NewReportPage() {
 
   const canProceedStep1 = !!reportType;
   const canProceedStep2 =
-    selected &&
-    (!selected.needsClass || classId) &&
-    (!selected.needsStudent || studentId);
+    selected && (!selected.needsClass || classId) && (!selected.needsStudent || studentId);
 
   const handleGenerate = async () => {
     if (!reportType) return;
@@ -121,7 +162,9 @@ export default function NewReportPage() {
           {REPORT_TYPES.map((rt) => (
             <button
               key={rt.value}
-              onClick={() => setReportType(rt.value)}
+              onClick={() => {
+                setReportType(rt.value);
+              }}
               className={`rounded-xl border p-5 text-left transition hover:shadow-md ${
                 reportType === rt.value
                   ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
@@ -149,11 +192,13 @@ export default function NewReportPage() {
                 </label>
                 <select
                   value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
+                  onChange={(e) => {
+                    setClassId(e.target.value);
+                  }}
                   className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="">Select a class…</option>
-                  {(classes ?? []).map((c) => (
+                  {classes.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
@@ -169,11 +214,13 @@ export default function NewReportPage() {
                 </label>
                 <select
                   value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
+                  onChange={(e) => {
+                    setStudentId(e.target.value);
+                  }}
                   className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="">Select a student…</option>
-                  {(students ?? []).map((s) => (
+                  {students.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.firstName} {s.lastName}
                     </option>
@@ -195,7 +242,9 @@ export default function NewReportPage() {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                }}
                 className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -204,7 +253,9 @@ export default function NewReportPage() {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                }}
                 className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -212,7 +263,9 @@ export default function NewReportPage() {
               <label className="block text-sm font-medium text-gray-700">Format</label>
               <select
                 value={format}
-                onChange={(e) => setFormat(e.target.value as 'pdf' | 'html')}
+                onChange={(e) => {
+                  setFormat(e.target.value as 'pdf' | 'html');
+                }}
                 className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               >
                 <option value="pdf">PDF</option>
@@ -228,7 +281,9 @@ export default function NewReportPage() {
         {step > 1 && (
           <button
             type="button"
-            onClick={() => setStep(step - 1)}
+            onClick={() => {
+              setStep(step - 1);
+            }}
             className="rounded-lg border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Back
@@ -239,7 +294,9 @@ export default function NewReportPage() {
           <button
             type="button"
             disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-            onClick={() => setStep(step + 1)}
+            onClick={() => {
+              setStep(step + 1);
+            }}
             className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             Next
@@ -259,7 +316,9 @@ export default function NewReportPage() {
 
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => {
+            router.back();
+          }}
           className="rounded-lg border px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           Cancel

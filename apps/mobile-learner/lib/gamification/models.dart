@@ -51,7 +51,7 @@ enum GamificationCategory {
 
 /// Requirement for earning a badge
 @freezed
-class BadgeRequirement with _$BadgeRequirement {
+abstract class BadgeRequirement with _$BadgeRequirement {
   const factory BadgeRequirement({
     required String type,
     required int targetValue,
@@ -64,7 +64,7 @@ class BadgeRequirement with _$BadgeRequirement {
 
 /// A badge available in the gamification system
 @freezed
-class GamificationBadge with _$GamificationBadge {
+abstract class GamificationBadge with _$GamificationBadge {
   const factory GamificationBadge({
     required String id,
     required String name,
@@ -82,7 +82,7 @@ class GamificationBadge with _$GamificationBadge {
 
 /// A badge earned by a learner
 @freezed
-class EarnedBadge with _$EarnedBadge {
+abstract class EarnedBadge with _$EarnedBadge {
   const factory EarnedBadge({
     required String id,
     required GamificationBadge badge,
@@ -96,7 +96,7 @@ class EarnedBadge with _$EarnedBadge {
 
 /// Gamification profile for a learner
 @freezed
-class GamificationProfile with _$GamificationProfile {
+abstract class GamificationProfile with _$GamificationProfile {
   const factory GamificationProfile({
     required String learnerId,
     @Default(0) int totalPoints,
@@ -114,7 +114,7 @@ class GamificationProfile with _$GamificationProfile {
 
 /// Progress towards earning a specific badge
 @freezed
-class GamificationBadgeProgress with _$GamificationBadgeProgress {
+abstract class GamificationBadgeProgress with _$GamificationBadgeProgress {
   const factory GamificationBadgeProgress({
     required String badgeId,
     @Default(0) int progress,

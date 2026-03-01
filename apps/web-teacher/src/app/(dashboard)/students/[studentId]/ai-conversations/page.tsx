@@ -23,7 +23,6 @@ import {
   reportAiConcern,
   formatRelativeTime,
   getSafetyLevelDescription,
-  formatMasteryLevel,
   type AiInteractionSummary,
   type StudentAiTransparencyReport,
 } from '@/lib/api/ai-transparency';
@@ -36,7 +35,11 @@ import { cn } from '@/lib/utils';
 export default function StudentAiConversationsPage() {
   const params = useParams<{ studentId: string }>();
   const router = useRouter();
-  const { student: studentData, loading: studentLoading, error: studentError } = useStudent(params.studentId ?? '');
+  const {
+    student: studentData,
+    loading: studentLoading,
+    error: studentError,
+  } = useStudent(params.studentId);
   const { accessToken } = useAccessToken();
 
   const [report, setReport] = React.useState<StudentAiTransparencyReport | null>(null);
@@ -51,7 +54,9 @@ export default function StudentAiConversationsPage() {
   // Flag concern modal state
   const [flagModalOpen, setFlagModalOpen] = React.useState(false);
   const [flagInteractionId, setFlagInteractionId] = React.useState<string | null>(null);
-  const [flagType, setFlagType] = React.useState<'INAPPROPRIATE' | 'INCORRECT' | 'SAFETY' | 'OTHER'>('OTHER');
+  const [flagType, setFlagType] = React.useState<
+    'INAPPROPRIATE' | 'INCORRECT' | 'SAFETY' | 'OTHER'
+  >('OTHER');
   const [flagDescription, setFlagDescription] = React.useState('');
   const [flagSubmitting, setFlagSubmitting] = React.useState(false);
   const [flagSuccess, setFlagSuccess] = React.useState<string | null>(null);
@@ -63,9 +68,15 @@ export default function StudentAiConversationsPage() {
     setReportError(null);
 
     fetchStudentAiTransparency(params.studentId, accessToken, { days: timeRange, limit: 50 })
-      .then(setReport)
-      .catch((err) => setReportError(err.message))
-      .finally(() => setReportLoading(false));
+      .then((data) => {
+        setReport(data);
+      })
+      .catch((err: unknown) => {
+        setReportError(err instanceof Error ? err.message : 'Failed to load AI data');
+      })
+      .finally(() => {
+        setReportLoading(false);
+      });
   }, [params.studentId, accessToken, timeRange]);
 
   // Fetch expanded interaction detail
@@ -76,9 +87,15 @@ export default function StudentAiConversationsPage() {
     }
     setDetailLoading(true);
     fetchAiInteractionDetails(expandedId, accessToken)
-      .then(setExpandedDetail)
-      .catch(() => setExpandedDetail(null))
-      .finally(() => setDetailLoading(false));
+      .then((data) => {
+        setExpandedDetail(data);
+      })
+      .catch(() => {
+        setExpandedDetail(null);
+      })
+      .finally(() => {
+        setDetailLoading(false);
+      });
   }, [expandedId, accessToken]);
 
   // Get unique subjects for filter
@@ -100,7 +117,11 @@ export default function StudentAiConversationsPage() {
     if (!flagInteractionId || !accessToken || !flagDescription.trim()) return;
     setFlagSubmitting(true);
     try {
-      const result = await reportAiConcern(flagInteractionId, { type: flagType, description: flagDescription }, accessToken);
+      const result = await reportAiConcern(
+        flagInteractionId,
+        { type: flagType, description: flagDescription },
+        accessToken
+      );
       setFlagSuccess(`Report submitted (ID: ${result.reportId})`);
       setFlagDescription('');
       setTimeout(() => {
@@ -114,9 +135,7 @@ export default function StudentAiConversationsPage() {
     }
   };
 
-  const studentName = studentData
-    ? `${studentData.firstName} ${studentData.lastName}`
-    : 'Student';
+  const studentName = studentData ? `${studentData.firstName} ${studentData.lastName}` : 'Student';
 
   // Loading
   if (studentLoading) {
@@ -135,7 +154,12 @@ export default function StudentAiConversationsPage() {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
         <p className="text-red-600">{studentError?.message ?? 'Student not found'}</p>
-        <button onClick={() => router.back()} className="mt-4 text-sm text-primary-600 hover:underline">
+        <button
+          onClick={() => {
+            router.back();
+          }}
+          className="mt-4 text-sm text-primary-600 hover:underline"
+        >
           Go back
         </button>
       </div>
@@ -156,17 +180,23 @@ export default function StudentAiConversationsPage() {
           <div className="flex items-center gap-3">
             <select
               value={subjectFilter}
-              onChange={(e) => setSubjectFilter(e.target.value)}
+              onChange={(e) => {
+                setSubjectFilter(e.target.value);
+              }}
               className="rounded-lg border px-3 py-2 text-sm"
             >
               <option value="all">All Subjects</option>
               {subjects.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
             <select
               value={timeRange}
-              onChange={(e) => setTimeRange(Number(e.target.value))}
+              onChange={(e) => {
+                setTimeRange(Number(e.target.value));
+              }}
               className="rounded-lg border px-3 py-2 text-sm"
             >
               <option value={7}>Last 7 days</option>
@@ -188,8 +218,16 @@ export default function StudentAiConversationsPage() {
             icon="🛡️"
             alert={report.safetySummary.totalFiltered > 0}
           />
-          <StatCard label="Avg Mastery" value={`${Math.round(report.averageFactors.masteryLevel * 100)}%`} icon="📊" />
-          <StatCard label="Avg Focus" value={`${Math.round(report.averageFactors.focusScore * 100)}%`} icon="🎯" />
+          <StatCard
+            label="Avg Mastery"
+            value={`${Math.round(report.averageFactors.masteryLevel * 100)}%`}
+            icon="📊"
+          />
+          <StatCard
+            label="Avg Focus"
+            value={`${Math.round(report.averageFactors.focusScore * 100)}%`}
+            icon="🎯"
+          />
         </div>
       )}
 
@@ -233,7 +271,9 @@ export default function StudentAiConversationsPage() {
                 isExpanded={expandedId === interaction.id}
                 expandedDetail={expandedId === interaction.id ? expandedDetail : null}
                 detailLoading={expandedId === interaction.id && detailLoading}
-                onToggle={() => setExpandedId(expandedId === interaction.id ? null : interaction.id)}
+                onToggle={() => {
+                  setExpandedId(expandedId === interaction.id ? null : interaction.id);
+                }}
                 onFlag={(id) => {
                   setFlagInteractionId(id);
                   setFlagModalOpen(true);
@@ -258,7 +298,9 @@ export default function StudentAiConversationsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Concern Type</label>
                 <select
                   value={flagType}
-                  onChange={(e) => setFlagType(e.target.value as typeof flagType)}
+                  onChange={(e) => {
+                    setFlagType(e.target.value as typeof flagType);
+                  }}
                   className="w-full rounded-lg border px-3 py-2 text-sm"
                 >
                   <option value="INAPPROPRIATE">Inappropriate Content</option>
@@ -275,13 +317,20 @@ export default function StudentAiConversationsPage() {
                   rows={3}
                   placeholder="Describe your concern..."
                   value={flagDescription}
-                  onChange={(e) => setFlagDescription(e.target.value)}
+                  onChange={(e) => {
+                    setFlagDescription(e.target.value);
+                  }}
                 />
               </div>
             </div>
 
             {flagSuccess && (
-              <p className={cn('mt-3 text-sm', flagSuccess.includes('Failed') ? 'text-red-600' : 'text-green-600')}>
+              <p
+                className={cn(
+                  'mt-3 text-sm',
+                  flagSuccess.includes('Failed') ? 'text-red-600' : 'text-green-600'
+                )}
+              >
                 {flagSuccess}
               </p>
             )}
@@ -289,7 +338,10 @@ export default function StudentAiConversationsPage() {
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => { setFlagModalOpen(false); setFlagSuccess(null); }}
+                onClick={() => {
+                  setFlagModalOpen(false);
+                  setFlagSuccess(null);
+                }}
                 className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
               >
                 Cancel
@@ -333,17 +385,15 @@ function InteractionCard({
   const hasSafetyConcern = safetyLevel === 'MEDIUM' || safetyLevel === 'HIGH';
 
   return (
-    <div className={cn(
-      'rounded-xl border bg-white transition-all',
-      hasSafetyConcern && 'border-amber-200',
-      isExpanded && 'ring-1 ring-primary-200'
-    )}>
+    <div
+      className={cn(
+        'rounded-xl border bg-white transition-all',
+        hasSafetyConcern && 'border-amber-200',
+        isExpanded && 'ring-1 ring-primary-200'
+      )}
+    >
       {/* Header — always visible */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full p-4 text-left"
-      >
+      <button type="button" onClick={onToggle} className="w-full p-4 text-left">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -363,7 +413,9 @@ function InteractionCard({
             <p className="mt-1 text-sm text-gray-600 line-clamp-2">{interaction.topic}</p>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="text-xs text-gray-400">{formatRelativeTime(interaction.timestamp)}</span>
+            <span className="text-xs text-gray-400">
+              {formatRelativeTime(interaction.timestamp)}
+            </span>
             <span className="text-lg">{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
@@ -381,45 +433,69 @@ function InteractionCard({
             <div className="pt-4 space-y-4">
               {/* Explanation */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">AI Explanation</h4>
-                <p className="text-sm text-gray-700">{expandedDetail?.explanation ?? interaction.explanation}</p>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                  AI Explanation
+                </h4>
+                <p className="text-sm text-gray-700">
+                  {expandedDetail?.explanation ?? interaction.explanation}
+                </p>
               </div>
 
               {/* Decision Factors */}
               <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Decision Factors</h4>
+                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                  Decision Factors
+                </h4>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {interaction.decisionFactors.masteryLevel != null && (
-                    <FactorPill label="Mastery" value={`${Math.round(interaction.decisionFactors.masteryLevel * 100)}%`} />
+                    <FactorPill
+                      label="Mastery"
+                      value={`${Math.round(interaction.decisionFactors.masteryLevel * 100)}%`}
+                    />
                   )}
                   {interaction.decisionFactors.recentAccuracy != null && (
-                    <FactorPill label="Accuracy" value={`${Math.round(interaction.decisionFactors.recentAccuracy * 100)}%`} />
+                    <FactorPill
+                      label="Accuracy"
+                      value={`${Math.round(interaction.decisionFactors.recentAccuracy * 100)}%`}
+                    />
                   )}
                   {interaction.decisionFactors.focusScore != null && (
-                    <FactorPill label="Focus" value={`${Math.round(interaction.decisionFactors.focusScore * 100)}%`} />
+                    <FactorPill
+                      label="Focus"
+                      value={`${Math.round(interaction.decisionFactors.focusScore * 100)}%`}
+                    />
                   )}
                   {interaction.decisionFactors.attemptCount != null && (
-                    <FactorPill label="Attempts" value={String(interaction.decisionFactors.attemptCount)} />
+                    <FactorPill
+                      label="Attempts"
+                      value={String(interaction.decisionFactors.attemptCount)}
+                    />
                   )}
                   {interaction.decisionFactors.sessionDurationMinutes != null && (
-                    <FactorPill label="Session" value={`${interaction.decisionFactors.sessionDurationMinutes}m`} />
+                    <FactorPill
+                      label="Session"
+                      value={`${interaction.decisionFactors.sessionDurationMinutes}m`}
+                    />
                   )}
                 </div>
-                {interaction.decisionFactors.accommodations && interaction.decisionFactors.accommodations.length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500">Accommodations applied: </span>
-                    <span className="text-xs text-purple-600">{interaction.decisionFactors.accommodations.join(', ')}</span>
-                  </div>
-                )}
+                {interaction.decisionFactors.accommodations &&
+                  interaction.decisionFactors.accommodations.length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-xs text-gray-500">Accommodations applied: </span>
+                      <span className="text-xs text-purple-600">
+                        {interaction.decisionFactors.accommodations.join(', ')}
+                      </span>
+                    </div>
+                  )}
               </div>
 
               {/* Safety Details */}
               {hasSafetyConcern && (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                  <h4 className="text-xs font-semibold text-amber-700 uppercase mb-1">⚠️ Safety Details</h4>
-                  <p className="text-sm text-amber-700">
-                    {getSafetyLevelDescription(safetyLevel)}
-                  </p>
+                  <h4 className="text-xs font-semibold text-amber-700 uppercase mb-1">
+                    ⚠️ Safety Details
+                  </h4>
+                  <p className="text-sm text-amber-700">{getSafetyLevelDescription(safetyLevel)}</p>
                   {interaction.safetyActions.contentFilters.length > 0 && (
                     <p className="mt-1 text-xs text-amber-600">
                       Filters: {interaction.safetyActions.contentFilters.join(', ')}
@@ -446,7 +522,9 @@ function InteractionCard({
               <div className="flex items-center gap-2 pt-2 border-t">
                 <button
                   type="button"
-                  onClick={() => onFlag(interaction.id)}
+                  onClick={() => {
+                    onFlag(interaction.id);
+                  }}
                   className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
                 >
                   🚩 Flag Concern
@@ -502,7 +580,12 @@ function SafetyBadge({ level }: Readonly<{ level: string }>) {
     HIGH: 'bg-red-100 text-red-700',
   };
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', colors[level] ?? 'bg-gray-100 text-gray-600')}>
+    <span
+      className={cn(
+        'rounded-full px-2 py-0.5 text-xs font-medium',
+        colors[level] ?? 'bg-gray-100 text-gray-600'
+      )}
+    >
       {level}
     </span>
   );

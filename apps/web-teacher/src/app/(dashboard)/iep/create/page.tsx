@@ -1,3 +1,4 @@
+/* cSpell:words ieps */
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,16 @@ export const dynamic = 'force-dynamic';
  * and use AI to generate personalized IEP goals.
  */
 
-import { ArrowLeft, Loader2, Sparkles, Plus, Trash2, Edit3, Check, AlertCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  AlertCircle,
+} from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -62,8 +72,20 @@ const GOAL_DOMAINS = [
 ];
 
 const GRADE_LEVELS = [
-  'Pre-K', 'Kindergarten', '1st', '2nd', '3rd', '4th', '5th',
-  '6th', '7th', '8th', '9th', '10th', '11th', '12th',
+  'Pre-K',
+  'Kindergarten',
+  '1st',
+  '2nd',
+  '3rd',
+  '4th',
+  '5th',
+  '6th',
+  '7th',
+  '8th',
+  '9th',
+  '10th',
+  '11th',
+  '12th',
 ];
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -92,7 +114,11 @@ export default function IEPCreatePage() {
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   const canGenerate =
-    selectedStudentId && disabilityCategory && presentLevel.trim().length >= 20 && goalDomain && gradeLevel;
+    selectedStudentId &&
+    disabilityCategory &&
+    presentLevel.trim().length >= 20 &&
+    goalDomain &&
+    gradeLevel;
 
   // ══════════════════════════════════════════════════════════════════════════
   // HANDLERS
@@ -118,8 +144,8 @@ export default function IEPCreatePage() {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error || 'Failed to generate goals');
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || 'Failed to generate goals');
       }
 
       const data = (await res.json()) as { goals?: GeneratedGoal[] };
@@ -142,9 +168,7 @@ export default function IEPCreatePage() {
   };
 
   const handleUpdateGoalText = (goalId: string, text: string) => {
-    setGeneratedGoals((prev) =>
-      prev.map((g) => (g.id === goalId ? { ...g, goalText: text } : g))
-    );
+    setGeneratedGoals((prev) => prev.map((g) => (g.id === goalId ? { ...g, goalText: text } : g)));
   };
 
   const handleRemoveGoal = (goalId: string) => {
@@ -168,7 +192,9 @@ export default function IEPCreatePage() {
       }
 
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
@@ -182,19 +208,11 @@ export default function IEPCreatePage() {
 
   return (
     <div className="space-y-6 p-6">
-      <Breadcrumb
-        items={[
-          { label: 'IEP Manager', href: '/iep' },
-          { label: 'AI Goal Creator' },
-        ]}
-      />
+      <Breadcrumb items={[{ label: 'IEP Manager', href: '/iep' }, { label: 'AI Goal Creator' }]} />
 
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link
-          href="/iep"
-          className="flex items-center gap-1 text-sm text-muted hover:text-text"
-        >
+        <Link href="/iep" className="flex items-center gap-1 text-sm text-muted hover:text-text">
           <ArrowLeft className="h-4 w-4" />
           Back to IEP Manager
         </Link>
@@ -221,7 +239,9 @@ export default function IEPCreatePage() {
               <label className="block text-sm font-medium text-text mb-1">Student</label>
               <select
                 value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedStudentId(e.target.value);
+                }}
                 disabled={studentsLoading}
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
@@ -241,7 +261,9 @@ export default function IEPCreatePage() {
               </label>
               <select
                 value={disabilityCategory}
-                onChange={(e) => setDisabilityCategory(e.target.value)}
+                onChange={(e) => {
+                  setDisabilityCategory(e.target.value);
+                }}
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Select category…</option>
@@ -258,7 +280,9 @@ export default function IEPCreatePage() {
               <label className="block text-sm font-medium text-text mb-1">Grade Level</label>
               <select
                 value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
+                onChange={(e) => {
+                  setGradeLevel(e.target.value);
+                }}
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Select grade…</option>
@@ -278,7 +302,9 @@ export default function IEPCreatePage() {
                   <button
                     key={d.value}
                     type="button"
-                    onClick={() => setGoalDomain(d.value)}
+                    onClick={() => {
+                      setGoalDomain(d.value);
+                    }}
                     className={cn(
                       'rounded-full px-3 py-1.5 text-xs font-medium border transition-colors',
                       goalDomain === d.value
@@ -299,7 +325,9 @@ export default function IEPCreatePage() {
               </label>
               <textarea
                 value={presentLevel}
-                onChange={(e) => setPresentLevel(e.target.value)}
+                onChange={(e) => {
+                  setPresentLevel(e.target.value);
+                }}
                 placeholder="Describe the student's current abilities, strengths, and areas of need in this domain…"
                 rows={5}
                 className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
@@ -380,11 +408,7 @@ export default function IEPCreatePage() {
                 <h2 className="text-lg font-semibold text-text">
                   Generated Goals ({generatedGoals.length})
                 </h2>
-                <Button
-                  onClick={() => void handleAddToIEP()}
-                  disabled={saving}
-                  variant="default"
-                >
+                <Button onClick={() => void handleAddToIEP()} disabled={saving} variant="default">
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -411,14 +435,18 @@ export default function IEPCreatePage() {
                       </span>
                       <div className="flex gap-1">
                         <button
-                          onClick={() => handleEditGoal(goal.id)}
+                          onClick={() => {
+                            handleEditGoal(goal.id);
+                          }}
                           className="rounded p-1 text-muted hover:bg-surface-muted hover:text-text"
                           title="Edit"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => handleRemoveGoal(goal.id)}
+                          onClick={() => {
+                            handleRemoveGoal(goal.id);
+                          }}
                           className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-600"
                           title="Remove"
                         >
@@ -430,7 +458,9 @@ export default function IEPCreatePage() {
                     {goal.editing ? (
                       <textarea
                         value={goal.goalText}
-                        onChange={(e) => handleUpdateGoalText(goal.id, e.target.value)}
+                        onChange={(e) => {
+                          handleUpdateGoalText(goal.id, e.target.value);
+                        }}
                         rows={3}
                         className="w-full rounded border border-border bg-surface-muted px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
                       />

@@ -36,7 +36,7 @@ enum BadgeCategory {
 
 /// Engagement profile for a learner
 @freezed
-class EngagementProfile with _$EngagementProfile {
+abstract class EngagementProfile with _$EngagementProfile {
   const factory EngagementProfile({
     required String id,
     required String tenantId,
@@ -69,7 +69,7 @@ class EngagementProfile with _$EngagementProfile {
 
 /// Badge definition
 @freezed
-class Badge with _$Badge {
+abstract class Badge with _$Badge {
   const factory Badge({
     required String code,
     required String name,
@@ -84,7 +84,7 @@ class Badge with _$Badge {
 
 /// Learner's earned badge
 @freezed
-class LearnerBadge with _$LearnerBadge {
+abstract class LearnerBadge with _$LearnerBadge {
   const factory LearnerBadge({
     required String id,
     required String badgeCode,
@@ -104,7 +104,7 @@ class LearnerBadge with _$LearnerBadge {
 
 /// Badge progress (for badges not yet earned)
 @freezed
-class BadgeProgress with _$BadgeProgress {
+abstract class BadgeProgress with _$BadgeProgress {
   const factory BadgeProgress({
     required String badgeCode,
     required String badgeName,
@@ -123,7 +123,7 @@ class BadgeProgress with _$BadgeProgress {
 
 /// Kudos message from caregiver/teacher
 @freezed
-class Kudos with _$Kudos {
+abstract class Kudos with _$Kudos {
   const factory Kudos({
     required String id,
     required String tenantId,
@@ -146,7 +146,7 @@ class Kudos with _$Kudos {
 
 /// Engagement event result (returned after completing an activity)
 @freezed
-class EngagementEventResult with _$EngagementEventResult {
+abstract class EngagementEventResult with _$EngagementEventResult {
   const factory EngagementEventResult({
     required int xpAwarded,
     required int newLevel,
@@ -165,7 +165,7 @@ class EngagementEventResult with _$EngagementEventResult {
 
 /// Badge awarded as part of an engagement event
 @freezed
-class BadgeAward with _$BadgeAward {
+abstract class BadgeAward with _$BadgeAward {
   const factory BadgeAward({
     required String code,
     required String name,
@@ -178,7 +178,7 @@ class BadgeAward with _$BadgeAward {
 
 /// Effective gamification settings for a learner
 @freezed
-class EffectiveSettings with _$EffectiveSettings {
+abstract class EffectiveSettings with _$EffectiveSettings {
   const factory EffectiveSettings({
     required bool xpEnabled,
     required bool streaksEnabled,
