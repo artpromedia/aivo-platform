@@ -31,7 +31,7 @@ if (!jwtSecret && process.env.NODE_ENV === 'production') {
 const JWT_SECRET = jwtSecret ?? 'dev-only-not-for-production';
 
 /**
- * Admin role guard - requires admin role for admin endpoints
+ * Admin role guard - requires ADMIN, SUPER_ADMIN, PLATFORM_ADMIN, or DISTRICT_ADMIN role
  * Can be used as a preHandler hook
  */
 export async function requireAdminRole(
@@ -50,7 +50,7 @@ export async function requireAdminRole(
       try {
         request.user = JSON.parse(testUserHeader);
         const user = request.user;
-        const adminRoles = ['admin', 'super_admin', 'platform_admin', 'district_admin'];
+        const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN', 'DISTRICT_ADMIN'];
         const userRoles = user?.roles || (user?.role ? [user.role] : []);
         if (!userRoles.some((role) => adminRoles.includes(role))) {
           return reply.code(403).send({ error: 'Admin access required' });
@@ -82,7 +82,7 @@ export async function requireAdminRole(
     };
 
     // Check for admin role
-    const adminRoles = ['admin', 'super_admin', 'platform_admin', 'district_admin'];
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN', 'DISTRICT_ADMIN'];
     const userRoles = request.user.roles || [request.user.role];
 
     if (!userRoles.some((role) => adminRoles.includes(role))) {

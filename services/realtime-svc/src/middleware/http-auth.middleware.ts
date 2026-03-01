@@ -133,7 +133,7 @@ export class HttpAuthMiddleware {
     const user = (request as AuthenticatedRequest).user;
     if (!user) return; // Already handled by requireAuth
 
-    const adminRoles = ['admin', 'platform_admin', 'super_admin', 'ADMIN', 'PLATFORM_ADMIN'];
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN'];
     if (!adminRoles.includes(user.role)) {
       return reply.status(403).send({
         error: 'Forbidden',

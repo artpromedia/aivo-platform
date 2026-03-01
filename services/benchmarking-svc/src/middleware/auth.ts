@@ -85,7 +85,7 @@ const authPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
 export const authMiddleware = fp(authPlugin as any) as any;
 
 /**
- * Admin role guard - requires admin, super_admin, or platform_admin role
+ * Admin role guard - requires ADMIN, SUPER_ADMIN, PLATFORM_ADMIN, or DISTRICT_ADMIN role
  */
 export function requireAdminRole(
   request: FastifyRequest,
@@ -99,7 +99,7 @@ export function requireAdminRole(
     return done(new Error('Unauthorized'));
   }
 
-  const adminRoles = ['admin', 'super_admin', 'platform_admin', 'district_admin'];
+  const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN', 'DISTRICT_ADMIN'];
   const userRoles = user.roles || [user.role];
 
   const hasAdminRole = userRoles.some((role) => adminRoles.includes(role));

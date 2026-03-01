@@ -2,7 +2,7 @@
  * Email Analytics Routes
  *
  * REST endpoints for querying OonruMail analytics data.
- * All routes are admin-only (require x-user-roles header containing 'admin').
+ * All routes are admin-only (require x-user-roles header with an admin role).
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
@@ -14,10 +14,12 @@ import { emailAnalyticsService } from '../channels/email/analytics.service.js';
 // HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN', 'DISTRICT_ADMIN'];
+
 function requireAdmin(request: FastifyRequest): void {
   const rolesHeader = request.headers['x-user-roles'] as string;
   const roles = rolesHeader ? rolesHeader.split(',').map((r) => r.trim()) : [];
-  if (!roles.includes('admin') && !roles.includes('district_admin') && !roles.includes('super_admin')) {
+  if (!roles.some((r) => ADMIN_ROLES.includes(r))) {
     const err = new Error('Forbidden');
     (err as Error & { statusCode: number }).statusCode = 403;
     throw err;

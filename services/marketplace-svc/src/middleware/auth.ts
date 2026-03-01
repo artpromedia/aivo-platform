@@ -132,7 +132,7 @@ export function hasVendorAccess(request: FastifyRequest, vendorId: string): bool
   if (user.vendorId === vendorId) return true;
 
   // Admin/platform roles have access to all vendors
-  const adminRoles = ['admin', 'super_admin', 'platform_admin'];
+  const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN'];
   const userRoles = user.roles || [user.role];
   if (userRoles.some((role) => adminRoles.includes(role))) return true;
 
@@ -140,7 +140,7 @@ export function hasVendorAccess(request: FastifyRequest, vendorId: string): bool
 }
 
 /**
- * Admin role guard - requires admin, super_admin, or platform_admin role
+ * Admin role guard - requires ADMIN, SUPER_ADMIN, or PLATFORM_ADMIN role
  */
 export function requireAdminRole(
   request: FastifyRequest,
@@ -154,7 +154,7 @@ export function requireAdminRole(
     return done(new Error('Unauthorized'));
   }
 
-  const adminRoles = ['admin', 'super_admin', 'platform_admin'];
+  const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'PLATFORM_ADMIN'];
   const userRoles = user.roles || [user.role];
 
   const hasAdminRole = userRoles.some((role) => adminRoles.includes(role));
