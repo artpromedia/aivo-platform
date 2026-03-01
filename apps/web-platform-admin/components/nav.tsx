@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState, useEffect } from 'react';
 
 import { LanguageSwitcher } from '@aivo/i18n';
+import type { Role } from '@aivo/ts-rbac';
 import { useAuth } from '../app/providers';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -14,11 +15,13 @@ import { useAuth } from '../app/providers';
 interface NavLink {
   href: string;
   label: string;
+  requiredRoles?: string[];
 }
 
 interface NavGroup {
   label: string;
   children: NavLink[];
+  requiredRoles?: string[];
 }
 
 type NavItem = NavLink | NavGroup;
@@ -29,18 +32,20 @@ function isGroup(item: NavItem): item is NavGroup {
 
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/tenants', label: 'Tenants' },
-  { href: '/billing', label: 'Billing' },
+  { href: '/tenants', label: 'Tenants', requiredRoles: ['PLATFORM_ADMIN'] },
+  { href: '/billing', label: 'Billing', requiredRoles: ['PLATFORM_ADMIN'] },
   {
     label: 'AI',
+    requiredRoles: ['PLATFORM_ADMIN'],
     children: [
       { href: '/ai/incidents', label: 'Incidents' },
       { href: '/ai/usage', label: 'Usage' },
     ],
   },
-  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/marketplace', label: 'Marketplace', requiredRoles: ['PLATFORM_ADMIN'] },
   {
     label: 'Governance',
+    requiredRoles: ['PLATFORM_ADMIN', 'SUPPORT'],
     children: [
       { href: '/compliance', label: 'Compliance' },
       { href: '/legal-holds', label: 'Legal Holds' },
@@ -48,7 +53,7 @@ const navItems: NavItem[] = [
       { href: '/audit', label: 'Audit Log' },
     ],
   },
-  { href: '/flags', label: 'Feature Flags' },
+  { href: '/flags', label: 'Feature Flags', requiredRoles: ['PLATFORM_ADMIN'] },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -123,9 +128,16 @@ function NavDropdown({ group, isActive }: { group: NavGroup; isActive: (href: st
 
 export function Nav() {
   const pathname = usePathname();
-  const { isAuthenticated, userName, logout } = useAuth();
+  const { isAuthenticated, userName, roles, logout } = useAuth();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Filter nav items based on user's roles
+  const visibleItems = navItems.filter((item) => {
+    const required = 'requiredRoles' in item ? item.requiredRoles : undefined;
+    if (!required || required.length === 0) return true;
+    return required.some((role) => roles.includes(role as Role));
+  });
 
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur">
@@ -150,7 +162,7 @@ export function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 text-sm font-medium md:flex" aria-label="Main navigation">
-          {navItems.map((item) =>
+          {visibleItems.map((item) =>
             isGroup(item) ? (
               <NavDropdown key={item.label} group={item} isActive={isActive} />
             ) : (
@@ -193,7 +205,7 @@ export function Nav() {
       {mobileOpen && (
         <nav className="border-t border-border bg-surface px-4 pb-4 md:hidden" aria-label="Mobile navigation">
           <ul className="space-y-1 pt-2">
-            {navItems.map((item) =>
+            {visibleItems.map((item) =>
               isGroup(item) ? (
                 <li key={item.label}>
                   <div className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
