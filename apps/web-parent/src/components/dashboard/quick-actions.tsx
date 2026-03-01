@@ -12,6 +12,7 @@ import {
   Award,
   Clock,
   Users,
+  UserPlus,
   Shield,
   CreditCard,
   HelpCircle,
@@ -39,6 +40,7 @@ interface QuickActionsProps {
   onDownloadReport?: () => void;
   onScheduleSession?: () => void;
   onContactTeacher?: () => void;
+  onAddChild?: () => void;
   customActions?: QuickAction[];
 }
 
@@ -64,6 +66,7 @@ export function QuickActions({
   onDownloadReport,
   onScheduleSession,
   onContactTeacher,
+  onAddChild,
   customActions = [],
 }: QuickActionsProps) {
   const router = useRouter();
@@ -77,6 +80,15 @@ export function QuickActions({
       href: '/messages',
       badge: unreadMessages > 0 ? String(unreadMessages) : undefined,
       badgeColor: 'red',
+    },
+    {
+      id: 'add-child',
+      icon: UserPlus,
+      label: 'Add Child',
+      description: 'Add another learner',
+      href: '/family/add-child',
+      onClick: onAddChild,
+      variant: 'success',
     },
     {
       id: 'schedule',

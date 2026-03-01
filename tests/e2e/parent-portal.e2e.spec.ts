@@ -140,6 +140,24 @@ test.describe('Parent Login and Dashboard', () => {
       await page.waitForTimeout(500);
     }
   });
+
+  test('1.7 Dashboard shows Add Child quick action and navigates to add-child page', async ({
+    page,
+  }) => {
+    await loginAsParent(page);
+
+    // Find the Add Child button in quick actions
+    const addChildButton = page.locator('text=Add Child').first();
+    await expect(addChildButton).toBeVisible();
+
+    await addChildButton.click();
+    await expect(page).toHaveURL(/\/family\/add-child/);
+
+    // Verify the add-child form page loads
+    await expect(
+      page.locator('text=/Add a Child|Add Another Child|Add New Learner/i').first()
+    ).toBeVisible();
+  });
 });
 
 // =============================================================================

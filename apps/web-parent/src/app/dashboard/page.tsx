@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Settings,
   Users,
+  UserPlus,
   CreditCard,
   Sparkles,
 } from 'lucide-react';
@@ -526,6 +527,23 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Empty-state CTA when parent has no children */}
+      {profile?.students?.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm border p-8 text-center mb-8">
+          <UserPlus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Add Your First Child</h2>
+          <p className="text-gray-600 mb-4">
+            Get started by adding your child&apos;s information to create their personalized learning path.
+          </p>
+          <button
+            onClick={() => { router.push('/family/add-child'); }}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Add Child
+          </button>
+        </div>
+      )}
+
       {/* Quick Stats */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -742,6 +760,9 @@ export default function DashboardPage() {
               }}
               onContactTeacher={() => {
                 router.push('/messages/new');
+              }}
+              onAddChild={() => {
+                router.push('/family/add-child');
               }}
             />
           )}
