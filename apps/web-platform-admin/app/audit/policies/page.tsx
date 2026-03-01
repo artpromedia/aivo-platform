@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { requirePlatformAdmin } from '../../../lib/auth';
+import { requirePlatformStaff } from '../../../lib/auth';
 import { PolicyAuditDashboard } from './policy-audit-dashboard';
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PolicyAuditPage() {
-  const auth = await requirePlatformAdmin();
+  const auth = await requirePlatformStaff();
   if (auth === 'forbidden') {
     redirect('/dashboard?error=forbidden');
   }

@@ -39,12 +39,35 @@ export async function requireAuth(): Promise<AuthSession> {
   return requireSession();
 }
 
+/**
+ * Require PLATFORM_ADMIN role — full access (create, modify, delete)
+ */
 export async function requirePlatformAdmin(): Promise<AuthSession | 'forbidden'> {
   const session = await requireAuth();
   if (!session.roles.includes('PLATFORM_ADMIN')) {
     return 'forbidden';
   }
   return session;
+}
+
+/**
+ * Require PLATFORM_ADMIN or SUPPORT role — read-only views
+ * Use this for audit logs, compliance, system health, tenant list (read-only)
+ */
+export async function requirePlatformStaff(): Promise<AuthSession | 'forbidden'> {
+  const session = await requireAuth();
+  const staffRoles = ['PLATFORM_ADMIN', 'SUPPORT'];
+  if (!session.roles.some((r) => staffRoles.includes(r))) {
+    return 'forbidden';
+  }
+  return session;
+}
+
+/**
+ * Check if current session has write access (PLATFORM_ADMIN only)
+ */
+export function hasWriteAccess(session: AuthSession): boolean {
+  return session.roles.includes('PLATFORM_ADMIN');
 }
 
 type CookieResponse = Pick<NextResponse, 'cookies'>;

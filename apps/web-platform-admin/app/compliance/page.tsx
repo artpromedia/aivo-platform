@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 
-import { requirePlatformAdmin } from '../../lib/auth';
+import { requirePlatformStaff } from '../../lib/auth';
 import { ComplianceDashboardClient } from './compliance-dashboard-client';
 
 export default async function CompliancePage() {
-  const auth = await requirePlatformAdmin();
+  const auth = await requirePlatformStaff();
   if (auth === 'forbidden') {
     redirect('/dashboard?error=forbidden');
   }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { requirePlatformAdmin } from '../../lib/auth';
+import { requirePlatformStaff } from '../../lib/auth';
 
 export const metadata: Metadata = {
   title: 'Audit Hub | Aivo Platform Admin',
@@ -37,7 +37,7 @@ const auditSections = [
 ];
 
 export default async function AuditHubPage() {
-  const auth = await requirePlatformAdmin();
+  const auth = await requirePlatformStaff();
   if (auth === 'forbidden') {
     redirect('/dashboard?error=forbidden');
   }

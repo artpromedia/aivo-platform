@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { requirePlatformStaff } from '../../lib/auth';
 
-export default async function Soc2Layout({ children }: { children: ReactNode }) {
+export default async function ComplianceLayout({ children }: { children: ReactNode }) {
   const auth = await requirePlatformStaff();
   if (auth === 'forbidden') {
     return (
