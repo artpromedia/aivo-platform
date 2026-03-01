@@ -40,6 +40,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Dev fallback: return mock profile with multiple children
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json({
+        id: 'parent_001',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        email: 'sarah@example.com',
+        phone: '+1-555-0100',
+        language: 'en',
+        students: [
+          { id: 'child_001', name: 'Emma Johnson', firstName: 'Emma', lastName: 'Johnson', grade: '3' },
+          { id: 'child_002', name: 'Liam Johnson', firstName: 'Liam', lastName: 'Johnson', grade: '1' },
+        ],
+        createdAt: '2024-01-15T00:00:00Z',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   } catch (error) {
     console.error('[Profile API] Error:', error);

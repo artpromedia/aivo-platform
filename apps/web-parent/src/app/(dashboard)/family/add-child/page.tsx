@@ -4,6 +4,10 @@ import { ArrowLeft, CheckCircle, Loader2, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { SeatPreview } from '@/components/billing/SeatPreview';
+import { useSubscription } from '@/hooks/use-billing';
+import type { SubscriptionItemSummary } from '@/lib/billing-types';
+
 const GRADE_OPTIONS = [
   'Pre-K', 'K', '1', '2', '3', '4', '5',
   '6', '7', '8', '9', '10', '11', '12',
@@ -40,6 +44,19 @@ export default function AddChildPage() {
 
   // Result state
   const [newLearnerId, setNewLearnerId] = useState<string | null>(null);
+
+  // Billing preview
+  const { data: subscription } = useSubscription();
+  const activeAddons: SubscriptionItemSummary[] = subscription?.plan
+    ? subscription.plan.modules
+        .filter((m: string) => m !== 'BASE')
+        .map((m: string) => ({
+          sku: m,
+          displayName: m.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          unitPriceCents: Math.round(subscription.plan!.pricePerSeatMonthly * 100),
+          active: true,
+        }))
+    : [];
 
   const validateForm = (): boolean => {
     setError(null);
@@ -296,13 +313,11 @@ export default function AddChildPage() {
             </div>
 
             {/* Billing Impact */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-blue-900">Billing Impact</p>
-              <p className="text-sm text-blue-700 mt-1">
-                Adding {firstName || 'a child'} will add per-learner pricing for any
-                active add-on modules. Base plan covers unlimited children.
-              </p>
-            </div>
+            <SeatPreview
+              activeAddons={activeAddons}
+              childName={firstName || 'this child'}
+              billingPeriod={subscription?.billingPeriod === 'YEARLY' ? 'yearly' : 'monthly'}
+            />
 
             {/* Submit */}
             <button

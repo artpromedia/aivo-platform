@@ -20,12 +20,23 @@ export async function GET(request: NextRequest) {
           addedAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
         },
       ],
-      pendingInvites: [],
+      pendingInvites: [
+        {
+          id: 'inv_1',
+          caregiverEmail: 'auntie@example.com',
+          caregiverName: 'Susan Smith',
+          relationship: 'aunt_uncle',
+          status: 'pending',
+          permissions: ['view_progress', 'view_grades'],
+          expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      ],
       studentId,
-      studentName: 'Test Student',
+      studentName: 'Emma Johnson',
       maxCaregivers: 3,
       currentCount: 1,
-      remainingSlots: 2,
+      remainingSlots: 1,
     });
   }
 

@@ -209,3 +209,11 @@ export interface UsageRecord {
   minutesActive: number;
   modulesAccessed: string[];
 }
+
+// Per-item summary for seat pricing preview
+export interface SubscriptionItemSummary {
+  sku: string;
+  displayName: string;
+  unitPriceCents: number;
+  active: boolean;
+}

@@ -22,7 +22,7 @@ export async function GET(
         studentId,
         maxCaregivers: 3,
         currentCount: 1,
-        remainingSlots: 2,
+        remainingSlots: 1,
         canAddMore: true,
       });
     }

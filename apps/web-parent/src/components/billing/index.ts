@@ -11,4 +11,5 @@ export { ManageSeats } from './ManageSeats';
 export { BillingDetails } from './BillingDetails';
 export { UpgradeOptions } from './UpgradeOptions';
 export { CancelSurveyModal } from './CancelSurveyModal';
+export { SeatPreview } from './SeatPreview';
 export type { RetentionOffer, CancelPreview, CancelSurveyModalProps } from './CancelSurveyModal';
