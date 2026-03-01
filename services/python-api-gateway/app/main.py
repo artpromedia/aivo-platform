@@ -117,11 +117,20 @@ async def health_check():
         for name, url in services.items():
             try:
                 response = await client.get(f"{url}/health")
-                health[name] = "healthy" if response.status_code == 200 else "unhealthy"
+                if response.status_code == 200:
+                    health[name] = {
+                        "status": "healthy",
+                        "models": response.json().get("models", []),
+                    }
+                else:
+                    health[name] = {"status": "unhealthy"}
             except Exception:
-                health[name] = "unavailable"
+                health[name] = {"status": "unavailable"}
 
-    all_healthy = all(v == "healthy" for v in health.values())
+    all_healthy = all(
+        (v == "healthy" if isinstance(v, str) else v.get("status") == "healthy")
+        for v in health.values()
+    )
 
     return {
         "status": "healthy" if all_healthy else "degraded",

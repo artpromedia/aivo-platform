@@ -2,8 +2,11 @@
 AI Provider Service - Multi-provider AI integration with failover.
 
 Supports:
-- OpenAI GPT-4 (primary)
-- Anthropic Claude (fallback)
+- OpenAI GPT-5.2 (primary)
+- Anthropic Claude Opus 4.6 (fallback)
+
+# TODO: Refactor to call ai-inference-svc via HTTP instead of maintaining
+# separate clients. This would centralize provider management and failover.
 
 Features:
 - Automatic provider failover
@@ -29,8 +32,8 @@ class AIProvider:
     AI service supporting multiple providers with automatic failover.
 
     Providers:
-    - OpenAI GPT-4 (primary)
-    - Anthropic Claude (fallback)
+    - OpenAI GPT-5.2 (primary)
+    - Anthropic Claude Opus 4.6 (fallback)
     """
 
     def __init__(self):
@@ -39,10 +42,10 @@ class AIProvider:
         self.claude_api_key = getattr(settings, "claude_api_key", None)
 
         self.openai_model = getattr(
-            settings, "openai_model", "gpt-4-turbo-preview"
+            settings, "openai_model", "gpt-5.2-pro"
         )
         self.claude_model = getattr(
-            settings, "claude_model", "claude-3-5-sonnet-20241022"
+            settings, "claude_model", "claude-opus-4-6-20260201"
         )
 
         # Initialize clients lazily

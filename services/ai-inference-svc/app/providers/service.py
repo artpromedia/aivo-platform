@@ -27,6 +27,7 @@ from .models import (
 from .router import CircuitBreaker, CircuitState, ProviderRouter
 from .openai_provider import OpenAIProvider, OPENAI_AVAILABLE
 from .anthropic_provider import AnthropicProvider, ANTHROPIC_AVAILABLE
+from .gemini_provider import GeminiProvider, GEMINI_AVAILABLE
 from .fallback_provider import FallbackProvider
 
 logger = structlog.get_logger(__name__)
@@ -145,6 +146,29 @@ class MultiProviderAIService:
                 logger.warning(
                     "anthropic_package_not_available",
                     message="Anthropic provider configured but package not installed",
+                )
+
+        # Initialize Gemini provider
+        if config.gemini and config.gemini.is_enabled:
+            if GEMINI_AVAILABLE:
+                try:
+                    provider = GeminiProvider(config.gemini)
+                    providers.append(provider)
+                    logger.info(
+                        "provider_initialized",
+                        provider_id=config.gemini.provider_id,
+                        provider_type="gemini",
+                    )
+                except Exception as e:
+                    logger.error(
+                        "provider_initialization_failed",
+                        provider_id=config.gemini.provider_id,
+                        error=str(e),
+                    )
+            else:
+                logger.warning(
+                    "gemini_package_not_available",
+                    message="Gemini provider configured but google-generativeai package not installed",
                 )
 
         # Initialize fallback provider (always available)
@@ -445,11 +469,13 @@ def create_service_from_env() -> MultiProviderAIService:
 
     openai_key = os.environ.get("OPENAI_API_KEY", "")
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    gemini_key = os.environ.get("GOOGLE_GEMINI_API_KEY", os.environ.get("GOOGLE_API_KEY", ""))
     primary_provider = os.environ.get("AI_PRIMARY_PROVIDER", "openai")
     enable_fallback = os.environ.get("AI_ENABLE_FALLBACK", "true").lower() == "true"
 
     openai_config = None
     anthropic_config = None
+    gemini_config = None
     fallback_config = None
 
     # Configure OpenAI
@@ -459,8 +485,9 @@ def create_service_from_env() -> MultiProviderAIService:
             provider_id="openai-primary",
             provider_type=ProviderType.OPENAI,
             api_key=openai_key,
-            default_model="gpt-4o",
-            available_models=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+            default_model="gpt-5.2-pro",
+            available_models=["gpt-5.2-pro", "gpt-5.2-instant", "gpt-5.3-codex", "gpt-5.2-thinking",
+                              "gpt-4o", "gpt-4o-mini"],  # Keep legacy for backward compat
             priority=openai_priority,
             max_retries=3,
             timeout_seconds=30,
@@ -473,13 +500,27 @@ def create_service_from_env() -> MultiProviderAIService:
             provider_id="anthropic-primary",
             provider_type=ProviderType.ANTHROPIC,
             api_key=anthropic_key,
-            default_model="claude-3-5-sonnet-20241022",
+            default_model="claude-opus-4-6-20260201",
             available_models=[
-                "claude-3-5-sonnet-20241022",
-                "claude-3-opus-20240229",
-                "claude-3-haiku-20240307",
+                "claude-opus-4-6-20260201",
+                "claude-sonnet-4-6-20260201",
+                "claude-3-5-sonnet-20241022",  # Legacy compat
             ],
             priority=anthropic_priority,
+            max_retries=3,
+            timeout_seconds=30,
+        )
+
+    # Configure Gemini
+    if gemini_key:
+        gemini_priority = 1 if primary_provider == "gemini" else 3
+        gemini_config = ProviderConfig(
+            provider_id="gemini-primary",
+            provider_type=ProviderType.GEMINI,
+            api_key=gemini_key,
+            default_model="gemini-3.1-pro",
+            available_models=["gemini-3.1-pro", "gemini-3.1-flash"],
+            priority=gemini_priority,
             max_retries=3,
             timeout_seconds=30,
         )
@@ -496,6 +537,7 @@ def create_service_from_env() -> MultiProviderAIService:
     config = MultiProviderConfig(
         openai=openai_config,
         anthropic=anthropic_config,
+        gemini=gemini_config,
         fallback=fallback_config,
     )
 

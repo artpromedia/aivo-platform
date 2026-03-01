@@ -1,8 +1,9 @@
 """
 Anthropic Provider Implementation.
 
-Provides integration with Anthropic's Claude API including Claude 3 Opus,
-Sonnet, and Haiku models with full support for streaming and tool use.
+Provides integration with Anthropic's Claude API including Claude Opus 4.6,
+Sonnet 4.6, and legacy Claude 3.5 models with full support for streaming
+and tool use. Opus 4.6 supports up to 1M token context.
 """
 
 import asyncio
@@ -43,8 +44,9 @@ class AnthropicProvider(BaseAIProvider):
     """
     Anthropic Claude API provider implementation.
 
-    Supports Claude 3 Opus, Sonnet, Haiku and other Anthropic models
+    Supports Claude Opus 4.6, Sonnet 4.6, and legacy Claude 3.5 models
     with streaming, tool use, and automatic retry handling.
+    Opus 4.6 supports up to 1M token context window.
     """
 
     # Map Anthropic stop reasons to our enum

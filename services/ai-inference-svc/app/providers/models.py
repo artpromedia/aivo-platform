@@ -31,6 +31,7 @@ class ProviderType(str, Enum):
 
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
+    GEMINI = "gemini"
     GOOGLE = "google"
     LOCAL = "local"
     FALLBACK = "fallback"
@@ -165,6 +166,7 @@ class MultiProviderConfig(BaseModel):
 
     openai: Optional[ProviderConfig] = None
     anthropic: Optional[ProviderConfig] = None
+    gemini: Optional[ProviderConfig] = None
     google: Optional[ProviderConfig] = None
     fallback: Optional[ProviderConfig] = None
     health_check_interval_seconds: int = Field(

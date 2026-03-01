@@ -1,7 +1,7 @@
 """
 OpenAI Provider Implementation.
 
-Provides integration with OpenAI's API including GPT-4, GPT-3.5,
+Provides integration with OpenAI's API including GPT-5.2/5.3, GPT-4o,
 and other OpenAI models with full support for streaming and tool use.
 """
 
@@ -43,7 +43,7 @@ class OpenAIProvider(BaseAIProvider):
     """
     OpenAI API provider implementation.
 
-    Supports GPT-4, GPT-4o, GPT-3.5-turbo and other OpenAI models
+    Supports GPT-5.2, GPT-5.3, GPT-4o, and other OpenAI models
     with streaming, tool use, and automatic retry handling.
     """
 
@@ -54,6 +54,9 @@ class OpenAIProvider(BaseAIProvider):
         "tool_calls": FinishReason.TOOL_CALLS,
         "content_filter": FinishReason.CONTENT_FILTER,
         "function_call": FinishReason.TOOL_CALLS,
+        # GPT-5.x new finish reasons
+        "max_completion_tokens": FinishReason.LENGTH,
+        "safety": FinishReason.CONTENT_FILTER,
     }
 
     def __init__(self, config: ProviderConfig):

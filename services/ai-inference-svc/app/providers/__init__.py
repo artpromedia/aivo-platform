@@ -68,6 +68,7 @@ from .base import BaseAIProvider
 # Provider implementations
 from .openai_provider import OpenAIProvider
 from .anthropic_provider import AnthropicProvider
+from .gemini_provider import GeminiProvider
 from .fallback_provider import FallbackProvider, MockProvider
 
 # Router
@@ -120,6 +121,7 @@ __all__ = [
     # Providers
     "OpenAIProvider",
     "AnthropicProvider",
+    "GeminiProvider",
     "FallbackProvider",
     "MockProvider",
     # Router
