@@ -12,10 +12,11 @@ import {
   Calendar,
   Trophy,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ErrorState, PageSkeleton } from '@/components/ui/loading-states';
 import { useDashboard } from '@/lib/hooks/use-learner-api';
@@ -33,6 +34,27 @@ export default function DashboardPage() {
   const [startingSubject, setStartingSubject] = useState<string | null>(null);
   const [showSubjectPicker, setShowSubjectPicker] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [generatingPath, setGeneratingPath] = useState(false);
+
+  // ── W1 fallback: if baseline is done but no learning path, request generation ──
+  useEffect(() => {
+    if (!data) return;
+    const hasActivity = data.continueLearning.length > 0;
+    const hasXp = (data.totalXp ?? 0) > 0;
+    // Learner completed baseline (has XP) but no continue-learning items means
+    // the adaptive path hasn't been generated yet.
+    if (!hasActivity && hasXp && !generatingPath) {
+      setGeneratingPath(true);
+      fetch('/api/session/generate-path', { method: 'POST' })
+        .then((res) => {
+          if (res.ok) void refetch();
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          setGeneratingPath(false);
+        });
+    }
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <PageSkeleton />;
   if (error || !data) {
@@ -53,6 +75,24 @@ export default function DashboardPage() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const isNewLearner = continueLearning.length === 0 && (totalXp ?? 0) === 0;
+
+  // Show a friendly generating-path state when baseline is done but path is being created
+  if (generatingPath) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center space-y-6">
+        <Loader2 className="w-10 h-10 mx-auto text-indigo-500 animate-spin" />
+        <h2 className="text-xl font-bold text-gray-900">
+          Creating your personalized learning path…
+        </h2>
+        <p className="text-gray-500">
+          Our AI is analyzing your baseline results to build a learning plan just for you. This only
+          takes a moment.
+        </p>
+      </div>
+    );
+  }
 
   async function startLearningSession(subject: string) {
     setStartingSubject(subject);
@@ -84,6 +124,63 @@ export default function DashboardPage() {
     }
   }
 
+  if (isNewLearner) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center space-y-8">
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome{firstName ? `, ${firstName}` : ''}! 🎉
+          </h1>
+          <p className="text-gray-500 text-lg">
+            You&apos;re all set! Pick a subject to start your first lesson.
+          </p>
+        </div>
+
+        {sessionError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {sessionError}
+            <button
+              onClick={() => {
+                setSessionError(null);
+              }}
+              className="ml-2 font-medium underline hover:text-red-900"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+          {SUBJECTS.map((s) => (
+            <button
+              key={s.code}
+              onClick={() => void startLearningSession(s.code)}
+              disabled={startingSubject !== null}
+              className="flex flex-col items-center gap-3 rounded-2xl border-2 border-gray-100 bg-white p-6 shadow-sm transition hover:border-indigo-300 hover:shadow-md disabled:opacity-60"
+            >
+              <span className="text-4xl">{s.icon}</span>
+              <span className="font-semibold text-gray-800">{s.label}</span>
+              {startingSubject === s.code && (
+                <span className="text-xs text-indigo-500">Starting…</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="pt-4">
+          <Link
+            href="/tutor"
+            className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+          >
+            <Brain className="w-4 h-4" />
+            Or chat with your AI Tutor
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Greeting */}
@@ -96,7 +193,9 @@ export default function DashboardPage() {
         </div>
         <div className="relative">
           <button
-            onClick={() => setShowSubjectPicker(!showSubjectPicker)}
+            onClick={() => {
+              setShowSubjectPicker(!showSubjectPicker);
+            }}
             disabled={startingSubject !== null}
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition disabled:opacity-60"
           >
@@ -123,7 +222,12 @@ export default function DashboardPage() {
       {sessionError && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {sessionError}
-          <button onClick={() => setSessionError(null)} className="ml-2 font-medium underline hover:text-red-900">
+          <button
+            onClick={() => {
+              setSessionError(null);
+            }}
+            className="ml-2 font-medium underline hover:text-red-900"
+          >
             Dismiss
           </button>
         </div>
@@ -199,8 +303,14 @@ export default function DashboardPage() {
                     <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                       <circle cx="18" cy="18" r="15" fill="none" stroke="#f1f5f9" strokeWidth="3" />
                       <circle
-                        cx="18" cy="18" r="15" fill="none" stroke="#6366f1" strokeWidth="3"
-                        strokeDasharray={`${pct * 0.942} 100`} strokeLinecap="round"
+                        cx="18"
+                        cy="18"
+                        r="15"
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="3"
+                        strokeDasharray={`${pct * 0.942} 100`}
+                        strokeLinecap="round"
                       />
                     </svg>
                     <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
@@ -209,7 +319,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{goal.title}</p>
-                    <p className="text-xs text-gray-400">{goal.current}/{goal.target}</p>
+                    <p className="text-xs text-gray-400">
+                      {goal.current}/{goal.target}
+                    </p>
                   </div>
                 </div>
               );
@@ -222,7 +334,10 @@ export default function DashboardPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Continue Learning</h2>
-          <Link href="/courses" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+          <Link
+            href="/courses"
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+          >
             View all <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -293,7 +408,10 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {upcoming.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition"
+                >
                   <span className="text-xl shrink-0">{item.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 text-sm truncate">{item.title}</p>
@@ -347,7 +465,10 @@ export default function DashboardPage() {
                 <Trophy className="w-5 h-5 text-amber-500" />
                 <h2 className="font-bold text-gray-900">Achievements</h2>
               </div>
-              <Link href="/achievements" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+              <Link
+                href="/achievements"
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+              >
                 View all
               </Link>
             </div>

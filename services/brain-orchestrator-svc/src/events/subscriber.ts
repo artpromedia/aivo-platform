@@ -1,10 +1,14 @@
-import { connect, NatsConnection, JSONCodec, Subscription } from 'nats';
-import { config } from '../config.js';
+import type { NatsConnection, Subscription } from 'nats';
+import { connect, JSONCodec } from 'nats';
+import { v4 as uuidv4 } from 'uuid';
+
 import { CognitiveLoadManager } from '../cognitive/cognitive-load-manager.js';
+import { config } from '../config.js';
 import { EventAggregator } from '../coordination/event-aggregator.js';
 import { MasteryTracker } from '../learning/mastery-tracker.js';
 import type { LearningEvent } from '../types/index.js';
-import { v4 as uuidv4 } from 'uuid';
+
+import { handleBaselineCompleted } from './baseline-completed.handler.js';
 
 interface IncomingEvent {
   type: string;
@@ -32,6 +36,7 @@ const SUBSCRIBED_SUBJECTS = [
   'aivo.focus.session_ended',
   'aivo.learner.skill_updated',
   'aivo.learner.profile_updated',
+  'aivo.baseline.completed',
 ];
 
 /**
@@ -98,8 +103,8 @@ async function handleEvent(event: IncomingEvent, subject: string): Promise<void>
   const learningEvent: LearningEvent = {
     id: uuidv4(),
     type: event.type,
-    learnerId: event.data.learnerId as string ?? '',
-    tenantId: event.data.tenantId as string ?? '',
+    learnerId: (event.data.learnerId as string) ?? '',
+    tenantId: (event.data.tenantId as string) ?? '',
     timestamp: new Date(event.timestamp),
     data: event.data,
     source: subject,
@@ -131,6 +136,10 @@ async function handleEvent(event: IncomingEvent, subject: string): Promise<void>
       await handleSkillUpdated(event.data);
       break;
 
+    case 'baseline.completed':
+      await handleBaselineCompletedEvent(event.data);
+      break;
+
     default:
       // Event is still processed by aggregator
       break;
@@ -142,7 +151,7 @@ async function handleEvent(event: IncomingEvent, subject: string): Promise<void>
  */
 async function handleLessonCompleted(data: Record<string, unknown>): Promise<void> {
   const learnerId = data.learnerId as string;
-  const skillIds = data.skillIds as string[] ?? [];
+  const skillIds = (data.skillIds as string[]) ?? [];
   const score = data.score as number | undefined;
 
   if (!learnerId || skillIds.length === 0) return;
@@ -154,7 +163,7 @@ async function handleLessonCompleted(data: Record<string, unknown>): Promise<voi
       skillId,
       outcome: score && score >= 70 ? 'success' : score && score >= 50 ? 'partial' : 'failure',
       score,
-      timeSpent: data.timeSpent as number ?? 0,
+      timeSpent: (data.timeSpent as number) ?? 0,
       attemptCount: 1,
       errorTypes: [],
     });
@@ -177,9 +186,9 @@ async function handleAssessmentEvent(data: Record<string, unknown>): Promise<voi
       skillId,
       outcome: score >= 70 ? 'success' : score >= 50 ? 'partial' : 'failure',
       score,
-      timeSpent: data.timeSpent as number ?? 0,
-      attemptCount: data.attemptNumber as number ?? 1,
-      errorTypes: data.errorTypes as string[] ?? [],
+      timeSpent: (data.timeSpent as number) ?? 0,
+      attemptCount: (data.attemptNumber as number) ?? 1,
+      errorTypes: (data.errorTypes as string[]) ?? [],
     });
   }
 }
@@ -189,7 +198,7 @@ async function handleAssessmentEvent(data: Record<string, unknown>): Promise<voi
  */
 async function handleHomeworkCompleted(data: Record<string, unknown>): Promise<void> {
   const learnerId = data.learnerId as string;
-  const skillIds = data.skillIds as string[] ?? [];
+  const skillIds = (data.skillIds as string[]) ?? [];
   const score = data.score as number | undefined;
 
   if (!learnerId || skillIds.length === 0) return;
@@ -200,7 +209,7 @@ async function handleHomeworkCompleted(data: Record<string, unknown>): Promise<v
       skillId,
       outcome: score && score >= 70 ? 'success' : score && score >= 50 ? 'partial' : 'failure',
       score,
-      timeSpent: data.timeSpent as number ?? 0,
+      timeSpent: (data.timeSpent as number) ?? 0,
       attemptCount: 1,
       errorTypes: [],
     });
@@ -221,7 +230,7 @@ async function handleAttentionChanged(data: Record<string, unknown>): Promise<vo
   await cognitiveManager.trackInteraction({
     id: uuidv4(),
     learnerId,
-    tenantId: data.tenantId as string ?? '',
+    tenantId: (data.tenantId as string) ?? '',
     sessionId: sessionId ?? uuidv4(),
     type: 'focus_change',
     timestamp: new Date(),
@@ -248,10 +257,41 @@ async function handleSkillUpdated(data: Record<string, unknown>): Promise<void> 
   const milestones = [25, 50, 75, 90, 100];
   for (const milestone of milestones) {
     if (previousLevel < milestone && newLevel >= milestone) {
-      console.log(`Mastery milestone reached: ${skillId} at ${milestone}% for learner ${learnerId}`);
+      console.log(
+        `Mastery milestone reached: ${skillId} at ${milestone}% for learner ${learnerId}`
+      );
       // This triggers the mastery milestone event through the aggregator
       break;
     }
+  }
+}
+
+/**
+ * Handle baseline completed event — generate adaptive learning path
+ */
+async function handleBaselineCompletedEvent(data: Record<string, unknown>): Promise<void> {
+  const learnerId = data.learnerId as string;
+  const tenantId = data.tenantId as string;
+
+  if (!learnerId || !tenantId) {
+    console.warn('[subscriber] baseline.completed missing learnerId or tenantId');
+    return;
+  }
+
+  try {
+    await handleBaselineCompleted({
+      learnerId,
+      tenantId,
+      assessmentId: (data.assessmentId as string) ?? '',
+      skillEstimates: (data.skillEstimates as any[]) ?? [],
+      completedAt: (data.completedAt as string) ?? new Date().toISOString(),
+      gradeLevel: data.gradeLevel as number | undefined,
+    });
+  } catch (error) {
+    console.error('[subscriber] Failed to handle baseline.completed', {
+      learnerId,
+      error: error instanceof Error ? error.message : error,
+    });
   }
 }
 

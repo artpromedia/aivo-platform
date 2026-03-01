@@ -1,6 +1,7 @@
-import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -51,6 +52,8 @@ export const config = {
     focus: process.env.FOCUS_SVC_URL || 'http://localhost:4018',
     virtualBrain: process.env.VIRTUAL_BRAIN_SVC_URL || 'http://localhost:4019',
     aiOrchestrator: process.env.AI_ORCHESTRATOR_URL || 'http://localhost:4005',
+    training: process.env.TRAINING_SVC_URL || 'http://localhost:4079',
+    analytics: process.env.ANALYTICS_SVC_URL || 'http://localhost:4030',
   },
 
   natsUrl: process.env.NATS_URL || 'nats://localhost:4222',
