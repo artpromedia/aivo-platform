@@ -105,9 +105,9 @@ describe('useStudentCaregivers', () => {
     const summary = {
       studentId: 'stu-1',
       studentName: 'Alice',
-      maxCaregivers: 5,
+      maxCaregivers: 3,
       currentCount: 2,
-      remainingSlots: 3,
+      remainingSlots: 1,
       caregivers: [],
       pendingInvites: [],
     };
@@ -118,7 +118,7 @@ describe('useStudentCaregivers', () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toMatchObject({ studentId: 'stu-1', remainingSlots: 3 });
+    expect(result.current.data).toMatchObject({ studentId: 'stu-1', remainingSlots: 1 });
   });
 
   it('is disabled when studentId is null', () => {
@@ -132,7 +132,7 @@ describe('useStudentCaregivers', () => {
 
 describe('useCaregiverLimit', () => {
   it('fetches limit info for a student', async () => {
-    const limit = { studentId: 'stu-1', maxCaregivers: 5, currentCount: 2, remainingSlots: 3, canAddMore: true };
+    const limit = { studentId: 'stu-1', maxCaregivers: 3, currentCount: 2, remainingSlots: 1, canAddMore: true };
     mockedApi.get.mockResolvedValueOnce(limit);
 
     const { result } = renderHook(() => useCaregiverLimit('stu-1'), {
@@ -141,6 +141,43 @@ describe('useCaregiverLimit', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.canAddMore).toBe(true);
+  });
+
+  it('allows up to 3 caregivers per child by default', async () => {
+    const limit = {
+      studentId: 'stu-1',
+      maxCaregivers: 3,
+      currentCount: 0,
+      remainingSlots: 3,
+      canAddMore: true,
+    };
+    mockedApi.get.mockResolvedValueOnce(limit);
+
+    const { result } = renderHook(() => useCaregiverLimit('stu-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.maxCaregivers).toBe(3);
+    expect(result.current.data?.canAddMore).toBe(true);
+  });
+
+  it('blocks invitations when limit reached', async () => {
+    const limit = {
+      studentId: 'stu-1',
+      maxCaregivers: 3,
+      currentCount: 3,
+      remainingSlots: 0,
+      canAddMore: false,
+    };
+    mockedApi.get.mockResolvedValueOnce(limit);
+
+    const { result } = renderHook(() => useCaregiverLimit('stu-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.canAddMore).toBe(false);
   });
 });
 

@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
       pendingInvites: [],
       studentId,
       studentName: 'Test Student',
-      maxCaregivers: 5,
+      maxCaregivers: 3,
       currentCount: 1,
-      remainingSlots: 4,
+      remainingSlots: 2,
     });
   }
 

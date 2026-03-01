@@ -120,9 +120,9 @@ function getMockStudentCaregivers(studentId: string) {
   return {
     studentId,
     studentName: 'Emma Johnson',
-    maxCaregivers: 2,
+    maxCaregivers: 3,
     currentCount: 1,
-    remainingSlots: 1,
+    remainingSlots: 2,
     caregivers: [
       {
         id: 'cg_1',

@@ -568,11 +568,11 @@ export class CaregiverService {
     });
 
     if (!limitRecord) {
-      // Create default limit record
+      // Create default limit record (3 for BASE plan)
       limitRecord = await this.prisma.caregiverLimit.create({
         data: {
           studentId,
-          maxCaregivers: DEFAULT_MAX_CAREGIVERS_PER_STUDENT,
+          maxCaregivers: DEFAULT_MAX_CAREGIVERS_PER_STUDENT, // Now 3
           currentCount: 0,
         },
       });

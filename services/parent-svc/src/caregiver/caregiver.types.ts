@@ -278,7 +278,14 @@ export const DEFAULT_CAREGIVER_NOTIFICATION_PREFERENCES: CaregiverNotificationPr
 // ============================================================================
 
 export const CAREGIVER_INVITE_EXPIRY_DAYS = 7;
-export const DEFAULT_MAX_CAREGIVERS_PER_STUDENT = 2;
+export const DEFAULT_MAX_CAREGIVERS_PER_STUDENT = 3;
+
+/** Per-plan caregiver limits (used by billing-svc when provisioning bundles) */
+export const PLAN_CAREGIVER_LIMITS: Record<string, number> = {
+  FREE: 1,
+  BASE: 3,
+  PREMIUM: 5,
+};
 export const CAREGIVER_RELATIONSHIP_LABELS: Record<CaregiverRelationship, string> = {
   [CaregiverRelationship.CAREGIVER]: 'Caregiver',
   [CaregiverRelationship.GRANDPARENT]: 'Grandparent',

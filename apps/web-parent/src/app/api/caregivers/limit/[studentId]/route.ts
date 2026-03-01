@@ -20,9 +20,9 @@ export async function GET(
     if (isDev) {
       return NextResponse.json({
         studentId,
-        maxCaregivers: 2,
+        maxCaregivers: 3,
         currentCount: 1,
-        remainingSlots: 1,
+        remainingSlots: 2,
         canAddMore: true,
       });
     }

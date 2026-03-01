@@ -572,7 +572,7 @@ model Assignment {
 // ============================================================================
 // Allows parents to delegate dashboard access to other adults (grandparents,
 // nannies, aunts/uncles, etc.) with similar viewing permissions.
-// Each license allows up to 2 additional caregivers per child.
+// Each license allows up to 3 additional caregivers per child (BASE plan).
 
 model Caregiver {
   id                      String                  @id @default(cuid())
@@ -666,7 +666,7 @@ model CaregiverInvite {
 model CaregiverLimit {
   id              String    @id @default(cuid())
   studentId       String    @unique
-  maxCaregivers   Int       @default(2) // Default limit of 2 caregivers per child
+  maxCaregivers   Int       @default(3) // Default limit of 3 caregivers per child
   currentCount    Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

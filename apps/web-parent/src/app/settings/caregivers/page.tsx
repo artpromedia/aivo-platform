@@ -2,7 +2,7 @@
  * Caregivers Settings Page
  *
  * Allows parents to manage delegated access for their children.
- * Parents can invite up to 2 additional caregivers per child.
+ * Parents can invite up to 3 additional caregivers per child.
  */
 
 'use client';
@@ -103,7 +103,7 @@ export default function CaregiversPage() {
             <div>
               <h3 className="font-medium text-blue-900">About Caregiver Access</h3>
               <p className="text-sm text-blue-700 mt-1">
-                You can invite up to 2 additional caregivers (grandparents, nannies, etc.) to view{' '}
+                You can invite up to 3 additional caregivers (grandparents, nannies, etc.) to view{' '}
                 {caregiverData?.studentName || "your child's"} learning progress. They will have a
                 similar dashboard experience with the permissions you grant.
               </p>

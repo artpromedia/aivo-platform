@@ -392,6 +392,11 @@ export class LicenseBundleService {
       await this.activateBundle(bundle.id);
     }
 
+    // TODO(PX1): When plan-based tiering is fully wired, set caregiver limit
+    // per plan via parent-svc:
+    //   const planLimit = PLAN_CAREGIVER_LIMITS[plan] ?? 3;
+    //   await parentSvcClient.setCaregiverLimit(params.learnerId, planLimit);
+
     return bundle;
   }
 
