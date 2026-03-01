@@ -1,0 +1,246 @@
+name: AI Integration Tests
+
+on:
+  schedule:
+    # Weekly: Monday at 6am UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      skip_cloud_providers:
+        description: 'Skip tests requiring real API keys'
+        type: boolean
+        default: false
+      verbose:
+        description: 'Enable verbose test output'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ai-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # TypeScript Provider Integration Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  ts-provider-integration:
+    name: TS Provider Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_GEMINI_API_KEY: ${{ secrets.GOOGLE_GEMINI_API_KEY }}
+      MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run AI provider integration tests
+        working-directory: services/ai-orchestrator
+        run: |
+          if [ "${{ inputs.skip_cloud_providers }}" = "true" ]; then
+            echo "⚠ Skipping cloud provider tests (skip_cloud_providers=true)"
+            unset OPENAI_API_KEY ANTHROPIC_API_KEY GOOGLE_GEMINI_API_KEY MISTRAL_API_KEY
+          fi
+          pnpm vitest run test/providers-2026.integration.test.ts \
+            --reporter=${{ inputs.verbose == 'true' && 'verbose' || 'default' }}
+        env:
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-integration-results
+          path: services/ai-orchestrator/test-results/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Python Provider Integration Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  py-provider-integration:
+    name: Python Provider Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_GEMINI_API_KEY: ${{ secrets.GOOGLE_GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        working-directory: services/ai-inference-svc
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Python integration tests
+        working-directory: services/ai-inference-svc
+        run: |
+          if [ "${{ inputs.skip_cloud_providers }}" = "true" ]; then
+            echo "⚠ Skipping cloud provider tests"
+            unset OPENAI_API_KEY ANTHROPIC_API_KEY GOOGLE_GEMINI_API_KEY
+          fi
+          pytest tests/providers/test_2026_integration.py \
+            -m integration \
+            -v \
+            --tb=short \
+            --junitxml=test-results/integration.xml
+        env:
+          PYTHONPATH: .
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: py-integration-results
+          path: services/ai-inference-svc/test-results/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # E2E Smoke Tests (requires running services)
+  # ─────────────────────────────────────────────────────────────────────────
+  e2e-smoke:
+    name: E2E AI Pipeline Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ts-provider-integration, py-provider-integration]
+    if: ${{ !inputs.skip_cloud_providers }}
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aivo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aivo_test
+      REDIS_URL: redis://localhost:6379
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GOOGLE_GEMINI_API_KEY: ${{ secrets.GOOGLE_GEMINI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        working-directory: services/ai-inference-svc
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start ai-inference-svc
+        working-directory: services/ai-inference-svc
+        run: |
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          echo "Waiting for ai-inference-svc..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/health && break || sleep 2
+          done
+        env:
+          AI_INFERENCE_PORT: 8000
+
+      - name: Start ai-orchestrator
+        working-directory: services/ai-orchestrator
+        run: |
+          pnpm start &
+          echo "Waiting for ai-orchestrator..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4010/health && break || sleep 2
+          done
+        env:
+          PORT: 4010
+          NODE_ENV: test
+
+      - name: Run E2E smoke tests
+        run: |
+          npx vitest run tests/e2e/ai-pipeline-smoke.test.ts \
+            --reporter=verbose
+        env:
+          AI_INFERENCE_URL: http://localhost:8000
+          AI_ORCHESTRATOR_URL: http://localhost:4010
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-results
+          path: test-results/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Summary
+  # ─────────────────────────────────────────────────────────────────────────
+  summary:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs: [ts-provider-integration, py-provider-integration, e2e-smoke]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "## AI Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| TS Provider Integration | ${{ needs.ts-provider-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Provider Integration | ${{ needs.py-provider-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Smoke Tests | ${{ needs.e2e-smoke.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any job failed
+        if: |
+          needs.ts-provider-integration.result == 'failure' ||
+          needs.py-provider-integration.result == 'failure' ||
+          needs.e2e-smoke.result == 'failure'
+        run: exit 1
