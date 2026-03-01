@@ -8,6 +8,7 @@ Supports automatic failover between:
 - Azure Speech Services
 - Deepgram
 - AssemblyAI
+- Mistral Voxtral (batch & realtime) with K-12 vocabulary context biasing
 """
 import logging
 import tempfile
@@ -91,6 +92,18 @@ class MultiProviderSTT:
                 self._manager.register_provider(
                     "assembly_ai",
                     self._transcribe_assembly_ai,
+                    priority=i,
+                )
+            elif provider == STTProvider.VOXTRAL_BATCH:
+                self._manager.register_provider(
+                    "voxtral_batch",
+                    self._transcribe_voxtral_batch,
+                    priority=i,
+                )
+            elif provider == STTProvider.VOXTRAL_REALTIME:
+                self._manager.register_provider(
+                    "voxtral_realtime",
+                    self._transcribe_voxtral_realtime,
                     priority=i,
                 )
         
@@ -507,6 +520,174 @@ class MultiProviderSTT:
             words=words,
             segments=[],
         )
+
+    # Education-domain vocabulary for Voxtral context biasing
+    EDUCATION_VOCABULARY: List[str] = [
+        # Core K-12 subjects
+        "algebra", "geometry", "calculus", "trigonometry", "arithmetic",
+        "photosynthesis", "mitosis", "meiosis", "ecosystem", "hypothesis",
+        "molecule", "chromosome", "nucleus", "electron", "neutron",
+        # Reading & writing
+        "consonant", "vowel", "syllable", "onomatopoeia", "alliteration",
+        "metaphor", "simile", "pronoun", "adjective", "adverb",
+        # Social studies
+        "democracy", "constitution", "amendment", "civilization", "colonialism",
+        # Common assessment terms
+        "rubric", "formative", "summative", "percentile", "assessment",
+        "curriculum", "IEP", "accommodations", "504 plan", "scaffolding",
+    ]
+
+    def _transcribe_voxtral_batch(
+        self,
+        audio: bytes,
+        language: Optional[str] = None,
+        word_timestamps: bool = True,
+    ) -> TranscriptionResult:
+        """
+        Transcribe using Mistral Voxtral batch API with education vocabulary
+        context biasing for improved K-12 transcription accuracy.
+        """
+        import httpx
+
+        # Save to temp file for upload
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            f.write(audio)
+            temp_path = f.name
+
+        try:
+            # Upload audio to Mistral files endpoint
+            with open(temp_path, "rb") as audio_file:
+                upload_response = httpx.post(
+                    "https://api.mistral.ai/v1/files",
+                    headers={"Authorization": f"Bearer {self.config.mistral_api_key}"},
+                    files={"file": ("audio.wav", audio_file, "audio/wav")},
+                    data={"purpose": "transcription"},
+                    timeout=120.0,
+                )
+            upload_response.raise_for_status()
+            file_id = upload_response.json()["id"]
+
+            # Build transcription request with education context
+            request_body: Dict[str, Any] = {
+                "model": "mistral-voxtral-latest",
+                "file_id": file_id,
+                "response_format": "verbose_json",
+            }
+            if language:
+                request_body["language"] = language
+
+            # Context biasing — inject education vocabulary hints
+            request_body["context"] = (
+                "This is an educational audio recording from a K-12 classroom. "
+                "Key vocabulary includes: " + ", ".join(self.EDUCATION_VOCABULARY[:20])
+            )
+
+            response = httpx.post(
+                "https://api.mistral.ai/v1/audio/transcriptions",
+                headers={
+                    "Authorization": f"Bearer {self.config.mistral_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=request_body,
+                timeout=120.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            # Parse Voxtral response
+            words = []
+            segments = []
+
+            for seg in data.get("segments", []):
+                segments.append({
+                    "start": seg.get("start", 0),
+                    "end": seg.get("end", 0),
+                    "text": seg.get("text", ""),
+                })
+
+            for w in data.get("words", []):
+                words.append({
+                    "word": w.get("word", ""),
+                    "start": w.get("start", 0),
+                    "end": w.get("end", 0),
+                })
+
+            return TranscriptionResult(
+                text=data.get("text", "").strip(),
+                confidence=data.get("confidence", 0.92),
+                language=data.get("language", language or "en"),
+                duration=data.get("duration", 0.0),
+                provider="voxtral_batch",
+                words=words,
+                segments=segments,
+            )
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    def _transcribe_voxtral_realtime(
+        self,
+        audio: bytes,
+        language: Optional[str] = None,
+        word_timestamps: bool = True,
+    ) -> TranscriptionResult:
+        """
+        Transcribe using Mistral Voxtral via direct file upload (realtime mode).
+
+        Uses multipart upload for lower-latency, smaller audio chunks.
+        """
+        import httpx
+
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+            f.write(audio)
+            temp_path = f.name
+
+        try:
+            with open(temp_path, "rb") as audio_file:
+                response = httpx.post(
+                    "https://api.mistral.ai/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {self.config.mistral_api_key}"},
+                    files={"file": ("audio.wav", audio_file, "audio/wav")},
+                    data={
+                        "model": "mistral-voxtral-latest",
+                        "response_format": "verbose_json",
+                        **({"language": language} if language else {}),
+                    },
+                    timeout=60.0,
+                )
+
+            response.raise_for_status()
+            data = response.json()
+
+            words = []
+            segments = []
+
+            for seg in data.get("segments", []):
+                segments.append({
+                    "start": seg.get("start", 0),
+                    "end": seg.get("end", 0),
+                    "text": seg.get("text", ""),
+                })
+
+            for w in data.get("words", []):
+                words.append({
+                    "word": w.get("word", ""),
+                    "start": w.get("start", 0),
+                    "end": w.get("end", 0),
+                })
+
+            return TranscriptionResult(
+                text=data.get("text", "").strip(),
+                confidence=data.get("confidence", 0.90),
+                language=data.get("language", language or "en"),
+                duration=data.get("duration", 0.0),
+                provider="voxtral_realtime",
+                words=words,
+                segments=segments,
+            )
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
 
 # Singleton instance

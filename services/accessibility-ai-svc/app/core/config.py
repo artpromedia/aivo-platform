@@ -17,6 +17,8 @@ class STTProvider(Enum):
     AZURE = "azure"                      # Azure Speech Services
     DEEPGRAM = "deepgram"                # Deepgram
     ASSEMBLY_AI = "assembly_ai"          # AssemblyAI
+    VOXTRAL_BATCH = "voxtral_batch"      # Mistral Voxtral (batch transcription)
+    VOXTRAL_REALTIME = "voxtral_realtime"  # Mistral Voxtral (realtime streaming)
 
 
 class TTSProvider(Enum):
@@ -74,10 +76,12 @@ class AccessibilityAIConfig:
     ])
     
     tts_providers: List[TTSProvider] = field(default_factory=lambda: [
-        TTSProvider.COQUI_LOCAL,
         TTSProvider.OPENAI_API,
         TTSProvider.GOOGLE_CLOUD,
         TTSProvider.AZURE,
+        TTSProvider.ELEVENLABS,
+        TTSProvider.AMAZON_POLLY,
+        TTSProvider.COQUI_LOCAL,
     ])
     
     vision_providers: List[VisionProvider] = field(default_factory=lambda: [
@@ -102,6 +106,7 @@ class AccessibilityAIConfig:
     deepgram_key: Optional[str] = field(default_factory=lambda: os.getenv("DEEPGRAM_API_KEY"))
     assembly_ai_key: Optional[str] = field(default_factory=lambda: os.getenv("ASSEMBLY_AI_API_KEY"))
     anthropic_key: Optional[str] = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY"))
+    mistral_api_key: Optional[str] = field(default_factory=lambda: os.getenv("MISTRAL_API_KEY"))
     aws_access_key: Optional[str] = field(default_factory=lambda: os.getenv("AWS_ACCESS_KEY_ID"))
     aws_secret_key: Optional[str] = field(default_factory=lambda: os.getenv("AWS_SECRET_ACCESS_KEY"))
     aws_region: Optional[str] = field(default_factory=lambda: os.getenv("AWS_REGION", "us-east-1"))
@@ -131,6 +136,8 @@ class AccessibilityAIConfig:
             elif provider == STTProvider.DEEPGRAM and self.deepgram_key:
                 available.append(provider)
             elif provider == STTProvider.ASSEMBLY_AI and self.assembly_ai_key:
+                available.append(provider)
+            elif provider in (STTProvider.VOXTRAL_BATCH, STTProvider.VOXTRAL_REALTIME) and self.mistral_api_key:
                 available.append(provider)
         return available
     

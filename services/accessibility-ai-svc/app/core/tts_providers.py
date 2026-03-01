@@ -231,52 +231,111 @@ class MultiProviderTTS:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
     
+    # OpenAI TTS voice map — expanded for K-12 education contexts
+    OPENAI_VOICE_MAP = {
+        "default": "alloy",
+        "male": "onyx",
+        "female": "nova",
+        "child_friendly": "shimmer",
+        "clara": "nova",
+        "james": "onyx",
+        "narrator": "fable",
+        "storyteller": "fable",
+        "tutor": "echo",
+        "reading_buddy": "shimmer",
+        "alloy": "alloy",
+        "echo": "echo",
+        "nova": "nova",
+        "shimmer": "shimmer",
+        "fable": "fable",
+        "onyx": "onyx",
+    }
+
+    # Style instructions for emotion/tone steering (gpt-4o-mini-tts)
+    OPENAI_STYLE_INSTRUCTIONS: Dict[str, str] = {
+        "encouraging": "Speak in a warm, encouraging tone suitable for a young student. "
+                       "Use positive reinforcement and gentle pacing.",
+        "calm": "Speak in a calm, soothing, and measured voice. Keep the pace slow "
+                "and steady, ideal for bedtime stories or relaxation.",
+        "excited": "Speak with enthusiasm and excitement, as if sharing an amazing "
+                   "discovery with a student. Slightly faster pacing.",
+        "professional": "Speak in a clear, professional tone suitable for formal "
+                        "educational content and assessments.",
+        "empathetic": "Speak with empathy and understanding, as if comforting a "
+                      "student who is struggling. Gentle and patient.",
+        "neutral": "Speak in a clear, neutral tone at a moderate pace.",
+        "storytelling": "Speak as an engaging storyteller, varying pace and emphasis "
+                        "to bring characters and events to life.",
+    }
+
     def _synthesize_openai_api(
         self,
         text: str,
         voice: str = "default",
         speed: float = 1.0,
         language: str = "en",
+        style: Optional[str] = None,
     ) -> SynthesisResult:
-        """Synthesize using OpenAI TTS API."""
+        """Synthesize using OpenAI TTS API (gpt-4o-mini-tts with emotion steering)."""
         import httpx
-        
-        # Map voice names to OpenAI voices
-        voice_map = {
-            "default": "alloy",
-            "male": "onyx",
-            "female": "nova",
-            "child_friendly": "shimmer",
-            "clara": "nova",
-            "james": "onyx",
+
+        openai_voice = self.OPENAI_VOICE_MAP.get(voice, "alloy")
+
+        # Build request payload — primary model: gpt-4o-mini-tts
+        payload: Dict[str, Any] = {
+            "model": "gpt-4o-mini-tts",
+            "input": text,
+            "voice": openai_voice,
+            "speed": speed,
+            "response_format": "wav",
         }
-        openai_voice = voice_map.get(voice, "alloy")
-        
-        response = httpx.post(
-            "https://api.openai.com/v1/audio/speech",
-            headers={"Authorization": f"Bearer {self.config.openai_api_key}"},
-            json={
-                "model": "tts-1",
+
+        # Apply style / emotion steering via instructions field
+        style_key = style or "encouraging"  # K-12 default
+        instructions = self.OPENAI_STYLE_INSTRUCTIONS.get(
+            style_key, self.OPENAI_STYLE_INSTRUCTIONS["neutral"]
+        )
+        payload["instructions"] = instructions
+
+        try:
+            response = httpx.post(
+                "https://api.openai.com/v1/audio/speech",
+                headers={"Authorization": f"Bearer {self.config.openai_api_key}"},
+                json=payload,
+                timeout=60.0,
+            )
+            response.raise_for_status()
+        except Exception as primary_err:
+            # Fallback to tts-1-hd if gpt-4o-mini-tts fails
+            logger.warning(
+                "gpt-4o-mini-tts failed (%s), falling back to tts-1-hd", primary_err
+            )
+            fallback_payload = {
+                "model": "tts-1-hd",
                 "input": text,
                 "voice": openai_voice,
                 "speed": speed,
                 "response_format": "wav",
-            },
-            timeout=60.0,
-        )
-        
-        response.raise_for_status()
+            }
+            response = httpx.post(
+                "https://api.openai.com/v1/audio/speech",
+                headers={"Authorization": f"Bearer {self.config.openai_api_key}"},
+                json=fallback_payload,
+                timeout=60.0,
+            )
+            response.raise_for_status()
+
         audio_bytes = response.content
-        
-        # Estimate duration (OpenAI TTS is ~150 words/min)
-        words = len(text.split())
-        duration = (words / 150) * 60 / speed
-        
+
+        # Estimate duration (OpenAI TTS ~150 words/min)
+        word_count = len(text.split())
+        duration = (word_count / 150) * 60 / speed
+
         return SynthesisResult(
             audio_bytes=audio_bytes,
             format="wav",
             duration=duration,
-            sample_rate=24000,  # OpenAI TTS uses 24kHz
+            sample_rate=24000,  # OpenAI TTS uses 24 kHz
             provider="openai_api",
             voice_id=openai_voice,
         )
