@@ -55,6 +55,7 @@ export const config = {
     training: process.env.TRAINING_SVC_URL || 'http://localhost:4079',
     analytics: process.env.ANALYTICS_SVC_URL || 'http://localhost:4030',
     rlTutoring: process.env.RL_TUTORING_SVC_URL || 'http://localhost:8000',
+    cognitiveLoad: process.env.COGNITIVE_LOAD_SVC_URL || 'http://localhost:8000',
   },
 
   natsUrl: process.env.NATS_URL || 'nats://localhost:4222',

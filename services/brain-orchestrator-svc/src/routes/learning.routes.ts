@@ -34,6 +34,12 @@ async function learningRoutes(app: FastifyInstance) {
     return env === 'true' || env === '1';
   };
 
+  // ── S12: Cognitive-load feature-flag helper ─────────────────────────
+  const cognitiveLoadEnabled = (): boolean => {
+    const env = process.env.FEATURE_COGNITIVE_LOAD ?? process.env.FEATURE_COGNITIVELOAD;
+    return env === 'true' || env === '1';
+  };
+
   /**
    * Suggest next tutoring action via RL Tutoring Service.
    * POST /api/v1/brain/learners/:learnerId/suggest-action
@@ -105,6 +111,10 @@ async function learningRoutes(app: FastifyInstance) {
   /**
    * Get next recommended activity for a learner
    * GET /api/v1/brain/learners/:learnerId/next-activity
+   *
+   * S12: When FEATURE_COGNITIVE_LOAD is enabled, calls cognitive-load-svc
+   * to estimate load before recommending the next activity.  If load is
+   * HIGH/OVERLOAD, inserts a break recommendation or requests adaptations.
    */
   app.get(
     '/learners/:learnerId/next-activity',
@@ -141,7 +151,72 @@ async function learningRoutes(app: FastifyInstance) {
         cognitiveState
       );
 
-      return { success: true, data: recommendation };
+      // ── S12: Cognitive-load gating ──────────────────────────────────
+      let cognitiveLoadCheck: any = null;
+      let adaptations: any = null;
+      let scaffolding: any = null;
+
+      if (cognitiveLoadEnabled()) {
+        try {
+          cognitiveLoadCheck = await fetchCognitiveLoadEstimate(learnerId, {
+            sessionElapsed: cognitiveState.sessionDuration ?? 0,
+            recentAccuracy: cognitiveState.recentAccuracy ?? 0.75,
+            contentComplexity: recommendation?.complexity ?? 0.5,
+          });
+
+          const loadLevel = cognitiveLoadCheck?.load_level ?? 'optimal';
+          const totalLoad = cognitiveLoadCheck?.total_load ?? 0.5;
+
+          // If overloaded → suggest break instead of new activity
+          if (loadLevel === 'overload' || totalLoad >= 0.9) {
+            return {
+              success: true,
+              data: {
+                ...recommendation,
+                cognitive_load: cognitiveLoadCheck,
+                action: 'break',
+                break_duration_seconds: 300,
+                message: 'Cognitive load is very high — take a break before continuing.',
+              },
+            };
+          }
+
+          // If high load → fetch adaptations & scaffolding
+          if (loadLevel === 'high' || totalLoad >= 0.75) {
+            adaptations = await fetchAdaptations(totalLoad, {
+              intrinsic: cognitiveLoadCheck.intrinsic_load ?? totalLoad * 0.5,
+              extraneous: cognitiveLoadCheck.extraneous_load ?? totalLoad * 0.3,
+              germane: cognitiveLoadCheck.germane_load ?? totalLoad * 0.2,
+            });
+
+            // Check if adaptations recommend scaffolding
+            const needsScaffolding = adaptations?.actions?.some(
+              (a: any) => a.action_type === 'add_scaffolding'
+            );
+            if (needsScaffolding) {
+              scaffolding = await fetchScaffolding(learnerId, {
+                contentId: recommendation?.id ?? '',
+                currentLoad: totalLoad,
+                domain: recommendation?.domain ?? 'general',
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('[next-activity] cognitive-load-svc check failed, continuing without', {
+            error: (err as Error).message,
+          });
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          ...recommendation,
+          ...(cognitiveLoadCheck ? { cognitive_load: cognitiveLoadCheck } : {}),
+          ...(adaptations ? { adaptations } : {}),
+          ...(scaffolding ? { scaffolding } : {}),
+        },
+      };
     }
   );
 
@@ -252,6 +327,15 @@ async function learningRoutes(app: FastifyInstance) {
       if (rlTutoringEnabled()) {
         void fireRlRewardSignal(learnerId, activity, input, masteryUpdates).catch((err) =>
           console.warn('[complete-activity] RL reward signal failed', {
+            error: (err as Error).message,
+          })
+        );
+      }
+
+      // ── S12: Fire-and-forget cognitive load signal ────────────────────
+      if (cognitiveLoadEnabled()) {
+        void fireCognitiveLoadSignal(learnerId, input).catch((err) =>
+          console.warn('[complete-activity] Cognitive load signal failed', {
             error: (err as Error).message,
           })
         );
@@ -839,6 +923,109 @@ async function fireRlRewardSignal(
     signal: AbortSignal.timeout(3_000),
   }).then((res) => {
     if (!res.ok) console.warn('[rl-reward] rl-tutoring-svc responded', res.status);
+  });
+}
+
+/**
+ * S12: Fetch cognitive load estimate from cognitive-load-svc.
+ *
+ * Quick-estimate endpoint that returns load breakdown + level + trend.
+ */
+async function fetchCognitiveLoadEstimate(
+  learnerId: string,
+  opts: { sessionElapsed: number; recentAccuracy: number; contentComplexity: number }
+): Promise<any> {
+  const clUrl = config.services.cognitiveLoad;
+  const res = await fetch(`${clUrl}/api/v1/load/estimate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learner_id: learnerId,
+      response_times: [],
+      error_rates: [1 - opts.recentAccuracy],
+      content_complexity: opts.contentComplexity,
+      session_duration: opts.sessionElapsed,
+      help_requests: 0,
+    }),
+    signal: AbortSignal.timeout(3_000),
+  });
+  if (!res.ok) throw new Error(`cognitive-load-svc responded ${res.status}`);
+  return res.json();
+}
+
+/**
+ * S12: Fetch adaptation recommendations from cognitive-load-svc.
+ */
+async function fetchAdaptations(
+  totalLoad: number,
+  loads: { intrinsic: number; extraneous: number; germane: number }
+): Promise<any> {
+  const clUrl = config.services.cognitiveLoad;
+  const res = await fetch(`${clUrl}/api/v1/adaptation/recommend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      intrinsic_load: loads.intrinsic,
+      extraneous_load: loads.extraneous,
+      germane_load: loads.germane,
+      total_load: totalLoad,
+    }),
+    signal: AbortSignal.timeout(3_000),
+  });
+  if (!res.ok) throw new Error(`cognitive-load-svc adaptation responded ${res.status}`);
+  return res.json();
+}
+
+/**
+ * S12: Fetch scaffolding from cognitive-load-svc when adaptation
+ * recommends ADD_SCAFFOLDING.
+ */
+async function fetchScaffolding(
+  learnerId: string,
+  opts: { contentId: string; currentLoad: number; domain: string }
+): Promise<any> {
+  const clUrl = config.services.cognitiveLoad;
+  const res = await fetch(`${clUrl}/api/v1/scaffolding/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learner_id: learnerId,
+      content_id: opts.contentId,
+      current_load: opts.currentLoad,
+      domain: opts.domain,
+      max_scaffolds: 3,
+    }),
+    signal: AbortSignal.timeout(3_000),
+  });
+  if (!res.ok) throw new Error(`cognitive-load-svc scaffolding responded ${res.status}`);
+  return res.json();
+}
+
+/**
+ * S12: Fire-and-forget cognitive load signal after activity completion.
+ *
+ * Sends interaction data to cognitive-load-svc so it can update
+ * its learner load history with real behavioral evidence.
+ */
+async function fireCognitiveLoadSignal(
+  learnerId: string,
+  input: { activityId: string; result: { score?: number; timeSpent?: number; success?: boolean } }
+): Promise<void> {
+  const clUrl = config.services.cognitiveLoad;
+  await fetch(`${clUrl}/api/v1/signal/interaction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learner_id: learnerId,
+      activity_id: input.activityId,
+      response_time: input.result.timeSpent ?? 0,
+      correct: input.result.success ?? false,
+      score: input.result.score ?? 0,
+      timestamp: new Date().toISOString(),
+    }),
+    signal: AbortSignal.timeout(3_000),
+  }).then((res) => {
+    if (!res.ok) console.warn('[cognitive-load-signal] cognitive-load-svc responded', res.status);
   });
 }
 

@@ -26,10 +26,12 @@ from app.models import (
     OverloadPredictor,
     ScaffoldingGenerator,
     LoadEstimator,
+    PacingOptimizer,
     UIElement as ModelUIElement,
     Domain as ModelDomain,
     ScaffoldType as ModelScaffoldType,
 )
+from app.services.adaptation_engine import AdaptationEngine
 from app.schemas.requests import (
     ContentAnalysisRequest,
     ContentComplexityResponse,
@@ -72,6 +74,8 @@ _working_memory: Optional[WorkingMemoryModel] = None
 _overload_predictor: Optional[OverloadPredictor] = None
 _scaffolding_generator: Optional[ScaffoldingGenerator] = None
 _load_estimator: Optional[LoadEstimator] = None
+_pacing_optimizer: Optional[PacingOptimizer] = None
+_adaptation_engine: Optional[AdaptationEngine] = None
 
 # Session storage
 _sessions: Dict[str, Dict[str, Any]] = {}
@@ -81,6 +85,7 @@ def init_components(settings: Settings) -> None:
     """Initialize all cognitive load components."""
     global _intrinsic_analyzer, _extraneous_detector, _working_memory
     global _overload_predictor, _scaffolding_generator, _load_estimator
+    global _pacing_optimizer, _adaptation_engine
 
     logger.info("Initializing cognitive load components...")
 
@@ -90,6 +95,8 @@ def init_components(settings: Settings) -> None:
     _overload_predictor = OverloadPredictor()
     _scaffolding_generator = ScaffoldingGenerator()
     _load_estimator = LoadEstimator()
+    _pacing_optimizer = PacingOptimizer()
+    _adaptation_engine = AdaptationEngine()
 
     logger.info("All cognitive load components initialized")
 
@@ -103,6 +110,8 @@ def get_components() -> Dict[str, Any]:
         "overload_predictor": _overload_predictor is not None,
         "scaffolding_generator": _scaffolding_generator is not None,
         "load_estimator": _load_estimator is not None,
+        "pacing_optimizer": _pacing_optimizer is not None,
+        "adaptation_engine": _adaptation_engine is not None,
     }
 
 
@@ -566,69 +575,37 @@ async def recommend_pacing(request: PacingRequest) -> PacingResponse:
     """
     Recommend optimal content pacing.
 
-    Considers:
-    - Current cognitive load
-    - Content complexity
-    - Learner fatigue
-    - Session time remaining
+    S12: Delegated to PacingOptimizer model for proper interleaving,
+    break evaluation and content-queue optimisation.
     """
+    if _pacing_optimizer is None:
+        raise HTTPException(status_code=503, detail="Pacing optimizer not initialized")
+
     start_time = time.time()
 
-    # Simple pacing logic (could be enhanced with a dedicated optimizer)
-    current_load = request.current_load
-    fatigue = request.fatigue_level
+    content_queue = [c.content_id for c in request.upcoming_content]
+    content_complexities = {c.content_id: c.complexity for c in request.upcoming_content}
 
-    # Determine pace
-    if current_load > 0.8 or fatigue > 0.7:
-        pace = "slow"
-        break_suggested = True
-        break_duration = 300  # 5 minutes
-    elif current_load > 0.6 or fatigue > 0.5:
-        pace = "normal"
-        break_suggested = fatigue > 0.5
-        break_duration = 180 if break_suggested else None
-    else:
-        pace = "fast" if request.learner_pace_preference == "fast" else "normal"
-        break_suggested = False
-        break_duration = None
-
-    # Order content by complexity (intersperse easy and hard)
-    content_items = sorted(request.upcoming_content, key=lambda x: x.complexity)
-
-    # Interleave: easy, hard, easy, hard...
-    easy = [c for c in content_items if c.complexity < 0.5]
-    hard = [c for c in content_items if c.complexity >= 0.5]
-
-    content_order = []
-    while easy or hard:
-        if easy:
-            content_order.append(easy.pop(0).content_id)
-        if hard:
-            content_order.append(hard.pop(0).content_id)
-
-    # Calculate time per item
-    time_per_item = {}
-    base_time_factor = 1.5 if pace == "slow" else (0.8 if pace == "fast" else 1.0)
-    for item in request.upcoming_content:
-        time_per_item[item.content_id] = int(item.estimated_duration_seconds * base_time_factor)
-
-    # Items to skip if overloaded
-    items_to_skip = []
-    if current_load > 0.85:
-        # Skip high complexity items
-        high_complexity = [c for c in request.upcoming_content if c.complexity > 0.8]
-        items_to_skip = [c.content_id for c in high_complexity[:2]]
+    recommendation = _pacing_optimizer.optimize(
+        current_load=request.current_load,
+        content_queue=content_queue,
+        content_complexities=content_complexities,
+        fatigue_level=request.fatigue_level,
+        session_time_elapsed=request.session_duration_remaining_seconds or 0,
+        learner_id=request.learner_id,
+        learner_preference=request.learner_pace_preference,
+    )
 
     processing_time = int((time.time() - start_time) * 1000)
 
     return PacingResponse(
-        recommended_pace=pace,
-        break_suggested=break_suggested,
-        break_duration_seconds=break_duration,
-        content_order=content_order,
-        time_per_item=time_per_item,
-        items_to_skip=items_to_skip,
-        rationale=f"Based on current load ({current_load:.2f}) and fatigue ({fatigue:.2f})",
+        recommended_pace=recommendation.pace,
+        break_suggested=recommendation.break_suggested,
+        break_duration_seconds=recommendation.break_duration_seconds,
+        content_order=recommendation.content_order,
+        time_per_item={k: int(v) for k, v in recommendation.time_per_item.items()},
+        items_to_skip=recommendation.items_to_skip,
+        rationale=recommendation.rationale,
         processing_time_ms=processing_time,
     )
 
@@ -643,81 +620,45 @@ async def recommend_adaptations(request: AdaptationRequest) -> AdaptationRespons
     """
     Generate adaptation recommendations based on cognitive load.
 
-    Recommends actions like:
-    - Reducing complexity
-    - Adding scaffolding
-    - Suggesting breaks
-    - Changing modality
+    S12: Delegated to AdaptationEngine for prioritised, template-
+    backed recommendations with urgency scoring and fallback plans.
     """
+    if _adaptation_engine is None:
+        raise HTTPException(status_code=503, detail="Adaptation engine not initialized")
+
     start_time = time.time()
-
     load = request.current_load
-    adaptations: List[AdaptationAction] = []
 
-    # Determine urgency
-    if load.total_load > 0.9:
-        urgency = "critical"
-    elif load.total_load > 0.8:
-        urgency = "high"
-    elif load.total_load > 0.7:
-        urgency = "medium"
-    else:
-        urgency = "low"
+    plan = _adaptation_engine.get_recommendations(
+        load_estimate={
+            "intrinsic_load": load.intrinsic_load,
+            "extraneous_load": load.extraneous_load,
+            "germane_load": load.germane_load,
+            "total_load": load.total_load,
+        },
+        current_context=request.current_context or {},
+        learner_id=request.learner_id,
+    )
 
-    # Generate adaptations based on load components
-    priority = 1
-
-    if load.total_load > 0.85:
-        adaptations.append(AdaptationAction(
-            action_type=AdaptationType.SUGGEST_BREAK,
-            priority=priority,
-            description="Suggest a short break to recover cognitive resources",
-            parameters={"duration_seconds": 180},
-            expected_effect="Reduce total load by 15-20%",
-        ))
-        priority += 1
-
-    if load.extraneous_load > 0.5:
-        adaptations.append(AdaptationAction(
-            action_type=AdaptationType.REDUCE_COMPLEXITY,
-            priority=priority,
-            description="Simplify the interface to reduce extraneous load",
-            parameters={"target_reduction": 0.2},
-            expected_effect="Reduce extraneous load",
-        ))
-        priority += 1
-
-    if load.intrinsic_load > 0.7:
-        adaptations.append(AdaptationAction(
-            action_type=AdaptationType.ADD_SCAFFOLDING,
-            priority=priority,
-            description="Provide scaffolding to support complex content",
-            parameters={"scaffold_type": "worked_example"},
-            expected_effect="Make intrinsic load more manageable",
-        ))
-        priority += 1
-
-    if load.total_load > 0.75:
-        adaptations.append(AdaptationAction(
-            action_type=AdaptationType.SLOW_PACE,
-            priority=priority,
-            description="Slow down content delivery pace",
-            parameters={"pace_factor": 0.7},
-            expected_effect="Allow more processing time",
-        ))
-        priority += 1
-
-    # Calculate expected load after adaptations
-    total_reduction = sum(0.1 for _ in adaptations)  # Simplified
-    expected_load_after = max(0.3, load.total_load - total_reduction)
+    # Map engine actions → API schema
+    adaptations = [
+        AdaptationAction(
+            action_type=AdaptationType(a.action_type.value),
+            priority=a.priority,
+            description=a.description,
+            parameters=a.parameters,
+            expected_effect=a.expected_effect,
+        )
+        for a in plan.adaptations
+    ]
 
     processing_time = int((time.time() - start_time) * 1000)
 
     return AdaptationResponse(
         adaptations=adaptations,
-        urgency=urgency,
-        expected_load_after=expected_load_after,
-        fallback_plan="If adaptations fail, end session and reschedule",
+        urgency=plan.urgency.value if hasattr(plan.urgency, "value") else str(plan.urgency),
+        expected_load_after=plan.expected_load_after,
+        fallback_plan=plan.fallback_plan,
         processing_time_ms=processing_time,
     )
 
@@ -873,3 +814,180 @@ async def end_session(session_id: str) -> Dict[str, Any]:
         "status": "ended",
         "samples_collected": len(session["load_samples"]),
     }
+
+
+# =============================================================================
+# S12: Real-time Interaction Signal Endpoint
+# =============================================================================
+
+
+@router.post("/signal/interaction")
+async def record_interaction_signal(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Accept a real-time behavioural signal from brain-orchestrator or
+    client apps.  Ingests response-time, correctness, score, and
+    hint-request data, feeds it into the LoadEstimator's learner
+    history so future /load/estimate calls are more accurate.
+
+    Body (JSON):
+        learner_id: str          — required
+        activity_id: str         — optional
+        response_time: float     — seconds
+        correct: bool
+        score: float             — 0-100
+        hint_requested: bool     — optional, default false
+        timestamp: str           — ISO 8601 (optional)
+    """
+    if _load_estimator is None:
+        raise HTTPException(status_code=503, detail="Load estimator not initialized")
+
+    learner_id = request.get("learner_id")
+    if not learner_id:
+        raise HTTPException(status_code=422, detail="learner_id is required")
+
+    response_time = float(request.get("response_time", 0))
+    correct = bool(request.get("correct", True))
+    score = float(request.get("score", 100 if correct else 0))
+
+    # Run a lightweight estimate so the learner history is updated
+    _load_estimator.estimate(
+        response_times=[response_time] if response_time > 0 else [],
+        error_rates=[0.0 if correct else 1.0],
+        help_requests=1 if request.get("hint_requested") else 0,
+        content_complexity=0.5,
+        learner_id=learner_id,
+    )
+
+    return {
+        "status": "accepted",
+        "learner_id": learner_id,
+        "activity_id": request.get("activity_id"),
+    }
+
+
+# =============================================================================
+# S12: Content Schedule Endpoint
+# =============================================================================
+
+
+@router.post("/content/schedule")
+async def schedule_content(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Schedule a list of content items for a session, inserting
+    strategic breaks and interleaving difficulty levels.
+
+    Body (JSON):
+        content_items: list[{content_id, complexity, estimated_duration_seconds, ...}]
+        available_time_seconds: int
+        target_load: float  (default 0.6)
+        include_breaks: bool (default true)
+    """
+    if _pacing_optimizer is None:
+        raise HTTPException(status_code=503, detail="Pacing optimizer not initialized")
+
+    from app.models.pacing_optimizer import ContentItem as PacingContentItem
+
+    raw_items = request.get("content_items", [])
+    if not raw_items:
+        raise HTTPException(status_code=422, detail="content_items is required")
+
+    content_items = [
+        PacingContentItem(
+            content_id=item["content_id"],
+            complexity=float(item.get("complexity", 0.5)),
+            estimated_duration_seconds=int(item.get("estimated_duration_seconds", 300)),
+            prerequisites=item.get("prerequisites", []),
+            content_type=item.get("content_type", "content"),
+        )
+        for item in raw_items
+    ]
+
+    schedule = _pacing_optimizer.schedule_content(
+        content_items=content_items,
+        available_time_seconds=int(request.get("available_time_seconds", 3600)),
+        target_load=float(request.get("target_load", 0.6)),
+        include_breaks=bool(request.get("include_breaks", True)),
+    )
+
+    return {
+        "schedule_id": schedule.schedule_id,
+        "content_items": schedule.content_items,
+        "total_duration_seconds": schedule.total_duration_seconds,
+        "break_points": schedule.break_points,
+        "estimated_load_profile": schedule.estimated_load_profile,
+        "optimization_score": schedule.optimization_score,
+    }
+
+
+# =============================================================================
+# S12: Content Chunking Endpoint
+# =============================================================================
+
+
+@router.post("/content/chunk")
+async def chunk_content(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Break a long piece of content into cognitively manageable chunks.
+
+    Body (JSON):
+        content: str             — the text to chunk
+        target_chunk_complexity: float  (default 0.5)
+        max_chunks: int          (default 10)
+    """
+    if _pacing_optimizer is None:
+        raise HTTPException(status_code=503, detail="Pacing optimizer not initialized")
+
+    content_text = request.get("content", "")
+    if not content_text:
+        raise HTTPException(status_code=422, detail="content is required")
+
+    chunks = _pacing_optimizer.chunk_content(
+        content=content_text,
+        target_chunk_complexity=float(request.get("target_chunk_complexity", 0.5)),
+        max_chunks=int(request.get("max_chunks", 10)),
+    )
+
+    return {
+        "chunks": chunks,
+        "chunk_count": len(chunks),
+    }
+
+
+# =============================================================================
+# S12: Scaffolding Fading Recommendation Endpoint
+# =============================================================================
+
+
+@router.post("/scaffolding/fade-check")
+async def scaffolding_fade_check(request: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Check whether a scaffold should be faded (reduced/removed) for
+    a learner based on usage count and recent accuracy.
+
+    Body (JSON):
+        learner_id: str
+        scaffold_type: str  (hint | worked_example | completion | ...)
+        recent_accuracy: float  (0-1)
+        uses_count: int
+    """
+    if _scaffolding_generator is None:
+        raise HTTPException(status_code=503, detail="Scaffolding generator not initialized")
+
+    learner_id = request.get("learner_id")
+    if not learner_id:
+        raise HTTPException(status_code=422, detail="learner_id is required")
+
+    scaffold_type_str = request.get("scaffold_type", "hint")
+    try:
+        scaffold_type = ModelScaffoldType(scaffold_type_str)
+    except ValueError:
+        scaffold_type = ModelScaffoldType.HINT
+
+    result = _scaffolding_generator.recommend_fading(
+        learner_id=learner_id,
+        scaffold_type=scaffold_type,
+        recent_accuracy=float(request.get("recent_accuracy", 0.5)),
+        uses_count=int(request.get("uses_count", 0)),
+    )
+
+    return result

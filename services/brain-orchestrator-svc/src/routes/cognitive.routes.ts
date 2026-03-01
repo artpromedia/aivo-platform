@@ -5,6 +5,7 @@ import { AttentionTracker } from '../cognitive/attention-tracker.js';
 import { BreakScheduler } from '../cognitive/break-scheduler.js';
 import { CognitiveLoadManager } from '../cognitive/cognitive-load-manager.js';
 import { FatigueDetector } from '../cognitive/fatigue-detector.js';
+import { config } from '../config.js';
 import { getContext } from '../middleware/auth.js';
 import { prisma } from '../prisma.js';
 import { LearnerInteractionSchema, SessionDataSchema } from '../validators/index.js';
@@ -313,6 +314,187 @@ async function cognitiveRoutes(app: FastifyInstance) {
       return { success: true, data: session };
     }
   );
+
+  // ── S12: Cognitive-load feature-flag helper ─────────────────────────
+  const cognitiveLoadEnabled = (): boolean => {
+    const env = process.env.FEATURE_COGNITIVE_LOAD ?? process.env.FEATURE_COGNITIVELOAD;
+    return env === 'true' || env === '1';
+  };
+
+  /**
+   * S12: Proxy scaffolding generation to cognitive-load-svc.
+   * POST /api/v1/brain/learners/:learnerId/scaffolding
+   */
+  app.post(
+    '/learners/:learnerId/scaffolding',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { learnerId } = request.params;
+      const body = request.body as any;
+
+      if (!cognitiveLoadEnabled()) {
+        return {
+          success: true,
+          data: { scaffolds: [], message: 'Cognitive load service disabled' },
+        };
+      }
+
+      try {
+        const clUrl = config.services.cognitiveLoad;
+        const res = await fetch(`${clUrl}/api/v1/scaffolding/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            learner_id: learnerId,
+            content_id: body.content_id ?? '',
+            current_content: body.current_content ?? '',
+            current_load: body.current_load ?? 0.5,
+            domain: body.domain ?? 'general',
+            max_scaffolds: body.max_scaffolds ?? 3,
+          }),
+          signal: AbortSignal.timeout(3_000),
+        });
+
+        if (!res.ok) throw new Error(`cognitive-load-svc responded ${res.status}`);
+        const data = await res.json();
+        return { success: true, data };
+      } catch (err) {
+        console.warn('[scaffolding] cognitive-load-svc unavailable', {
+          error: (err as Error).message,
+        });
+        reply.status(502);
+        return { success: false, error: 'Cognitive load service unavailable' };
+      }
+    }
+  );
+
+  /**
+   * S12: Check scaffold fading status for a learner.
+   * POST /api/v1/brain/learners/:learnerId/scaffolding/fade-check
+   */
+  app.post(
+    '/learners/:learnerId/scaffolding/fade-check',
+    async (request: FastifyRequest<{ Params: { learnerId: string } }>, reply: FastifyReply) => {
+      const { learnerId } = request.params;
+      const body = request.body as any;
+
+      if (!cognitiveLoadEnabled()) {
+        return {
+          success: true,
+          data: {
+            should_fade: false,
+            reason: 'Cognitive load service disabled',
+          },
+        };
+      }
+
+      try {
+        const clUrl = config.services.cognitiveLoad;
+        const res = await fetch(`${clUrl}/api/v1/scaffolding/fade-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            learner_id: learnerId,
+            scaffold_type: body.scaffold_type ?? 'hint',
+            recent_accuracy: body.recent_accuracy ?? 0.5,
+            uses_count: body.uses_count ?? 0,
+          }),
+          signal: AbortSignal.timeout(3_000),
+        });
+
+        if (!res.ok) throw new Error(`cognitive-load-svc responded ${res.status}`);
+        const data = await res.json();
+        return { success: true, data };
+      } catch (err) {
+        console.warn('[fade-check] cognitive-load-svc unavailable', {
+          error: (err as Error).message,
+        });
+        reply.status(502);
+        return { success: false, error: 'Cognitive load service unavailable' };
+      }
+    }
+  );
+
+  /**
+   * S12: Proxy pacing/scheduling to cognitive-load-svc.
+   * POST /api/v1/brain/content/schedule
+   */
+  app.post('/content/schedule', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as any;
+
+    if (!cognitiveLoadEnabled()) {
+      return {
+        success: true,
+        data: {
+          content_items: body.content_items ?? [],
+          message: 'Cognitive load service disabled — returning unoptimised schedule',
+        },
+      };
+    }
+
+    try {
+      const clUrl = config.services.cognitiveLoad;
+      const res = await fetch(`${clUrl}/api/v1/content/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_items: body.content_items ?? [],
+          available_time_seconds: body.available_time_seconds ?? 3600,
+          target_load: body.target_load ?? 0.6,
+          include_breaks: body.include_breaks ?? true,
+        }),
+        signal: AbortSignal.timeout(5_000),
+      });
+
+      if (!res.ok) throw new Error(`cognitive-load-svc responded ${res.status}`);
+      const data = await res.json();
+      return { success: true, data };
+    } catch (err) {
+      console.warn('[content-schedule] cognitive-load-svc unavailable', {
+        error: (err as Error).message,
+      });
+      reply.status(502);
+      return { success: false, error: 'Cognitive load service unavailable' };
+    }
+  });
+
+  /**
+   * S12: Proxy content chunking to cognitive-load-svc.
+   * POST /api/v1/brain/content/chunk
+   */
+  app.post('/content/chunk', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = request.body as any;
+
+    if (!cognitiveLoadEnabled()) {
+      return {
+        success: true,
+        data: { chunks: [body.content ?? ''], chunk_count: 1 },
+      };
+    }
+
+    try {
+      const clUrl = config.services.cognitiveLoad;
+      const res = await fetch(`${clUrl}/api/v1/content/chunk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: body.content ?? '',
+          target_chunk_complexity: body.target_chunk_complexity ?? 0.5,
+          max_chunks: body.max_chunks ?? 10,
+        }),
+        signal: AbortSignal.timeout(3_000),
+      });
+
+      if (!res.ok) throw new Error(`cognitive-load-svc responded ${res.status}`);
+      const data = await res.json();
+      return { success: true, data };
+    } catch (err) {
+      console.warn('[content-chunk] cognitive-load-svc unavailable', {
+        error: (err as Error).message,
+      });
+      reply.status(502);
+      return { success: false, error: 'Cognitive load service unavailable' };
+    }
+  });
 }
 
 export { cognitiveRoutes };

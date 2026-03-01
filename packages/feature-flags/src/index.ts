@@ -89,7 +89,7 @@ export const STUB_SERVICE_DEFAULTS: Record<StubService, StubServiceConfig> = {
     fallbackMessage: 'AI content analysis coming soon. Manual tagging is available.',
   },
   [StubService.COGNITIVE_LOAD]: {
-    enabled: false,
+    enabled: true,
     serviceUrl: 'http://cognitive-load-svc:8000',
     displayName: 'Cognitive Load Assessment',
     expectedDate: '2026-Q2',
