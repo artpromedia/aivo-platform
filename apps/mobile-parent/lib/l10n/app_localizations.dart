@@ -72,6 +72,20 @@ abstract class AppLocalizations {
   String get dataDeletionRequested;
   String get requestDeletion;
 
+  // Caregiver Management
+  String get caregiverTitle;
+  String caregiverInfo(int max, String childName);
+  String caregiverSlots(int count, int max);
+  String get inviteCaregiver;
+  String get activeCaregivers;
+  String get pendingInvites;
+  String get resendInvite;
+  String get cancelInvite;
+  String get revokeAccess;
+  String revokeConfirm(String name, String childName);
+  String inviteSent(String email);
+  String get accessRevoked;
+
   // Settings
   String get settingsTitle;
   String get profile;
@@ -166,6 +180,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get dataDeletionWarning => 'This will permanently delete all data. This action cannot be undone.';
   @override String get dataDeletionRequested => 'Deletion request submitted';
   @override String get requestDeletion => 'Request Deletion';
+
+  @override String get caregiverTitle => 'Caregiver Access';
+  @override String caregiverInfo(int max, String childName) => 'Invite up to $max additional caregivers to view $childName\'s learning progress.';
+  @override String caregiverSlots(int count, int max) => '$count of $max used';
+  @override String get inviteCaregiver => 'Invite Caregiver';
+  @override String get activeCaregivers => 'Active Caregivers';
+  @override String get pendingInvites => 'Pending Invites';
+  @override String get resendInvite => 'Resend';
+  @override String get cancelInvite => 'Cancel Invite';
+  @override String get revokeAccess => 'Revoke Access';
+  @override String revokeConfirm(String name, String childName) => 'Are you sure you want to revoke $name\'s access to $childName\'s data?';
+  @override String inviteSent(String email) => 'Invitation sent to $email';
+  @override String get accessRevoked => 'Access revoked successfully';
 
   @override String get settingsTitle => 'Settings';
   @override String get profile => 'Profile';
@@ -293,6 +320,19 @@ class AppLocalizationsEs extends AppLocalizations {
   @override String get dataDeletionRequested => 'Solicitud de eliminación enviada';
   @override String get requestDeletion => 'Solicitar Eliminación';
 
+  @override String get caregiverTitle => 'Acceso de Cuidadores';
+  @override String caregiverInfo(int max, String childName) => 'Invite hasta $max cuidadores adicionales para ver el progreso de $childName.';
+  @override String caregiverSlots(int count, int max) => '$count de $max usados';
+  @override String get inviteCaregiver => 'Invitar Cuidador';
+  @override String get activeCaregivers => 'Cuidadores Activos';
+  @override String get pendingInvites => 'Invitaciones Pendientes';
+  @override String get resendInvite => 'Reenviar';
+  @override String get cancelInvite => 'Cancelar Invitación';
+  @override String get revokeAccess => 'Revocar Acceso';
+  @override String revokeConfirm(String name, String childName) => '¿Estás seguro de que quieres revocar el acceso de $name a los datos de $childName?';
+  @override String inviteSent(String email) => 'Invitación enviada a $email';
+  @override String get accessRevoked => 'Acceso revocado exitosamente';
+
   @override String get settingsTitle => 'Ajustes';
   @override String get profile => 'Perfil';
   @override String get language => 'Idioma';
@@ -386,6 +426,19 @@ class AppLocalizationsFr extends AppLocalizations {
   @override String get dataDeletionWarning => 'Ceci supprimera toutes les données.';
   @override String get dataDeletionRequested => 'Demande de suppression envoyée';
   @override String get requestDeletion => 'Supprimer';
+
+  @override String get caregiverTitle => 'Accès Aidants';
+  @override String caregiverInfo(int max, String childName) => 'Invitez jusqu\'à $max aidants pour suivre les progrès de $childName.';
+  @override String caregiverSlots(int count, int max) => '$count sur $max utilisés';
+  @override String get inviteCaregiver => 'Inviter un Aidant';
+  @override String get activeCaregivers => 'Aidants Actifs';
+  @override String get pendingInvites => 'Invitations en Attente';
+  @override String get resendInvite => 'Renvoyer';
+  @override String get cancelInvite => 'Annuler l\'Invitation';
+  @override String get revokeAccess => 'Révoquer l\'Accès';
+  @override String revokeConfirm(String name, String childName) => 'Êtes-vous sûr de vouloir révoquer l\'accès de $name aux données de $childName ?';
+  @override String inviteSent(String email) => 'Invitation envoyée à $email';
+  @override String get accessRevoked => 'Accès révoqué avec succès';
 
   @override String get settingsTitle => 'Paramètres';
   @override String get profile => 'Profil';
@@ -481,6 +534,20 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get dataDeletionRequested => 'Permintaan penghapusan terkirim';
   @override String get requestDeletion => 'Minta Penghapusan';
 
+  // ── Caregiver ──
+  @override String get caregiverTitle => 'Akses Pengasuh';
+  @override String caregiverInfo(int max, String childName) => 'Anda dapat mengundang hingga $max pengasuh untuk $childName.';
+  @override String caregiverSlots(int count, int max) => '$count dari $max slot terpakai';
+  @override String get inviteCaregiver => 'Undang Pengasuh';
+  @override String get activeCaregivers => 'Pengasuh Aktif';
+  @override String get pendingInvites => 'Undangan Tertunda';
+  @override String get resendInvite => 'Kirim Ulang';
+  @override String get cancelInvite => 'Batalkan Undangan';
+  @override String get revokeAccess => 'Cabut Akses';
+  @override String revokeConfirm(String name, String childName) => 'Cabut akses $name ke profil $childName? Mereka tidak bisa lagi melihat atau mengelola akun $childName.';
+  @override String inviteSent(String email) => 'Undangan terkirim ke $email';
+  @override String get accessRevoked => 'Akses pengasuh dicabut';
+
   @override String get settingsTitle => 'Pengaturan';
   @override String get profile => 'Profil';
   @override String get language => 'Bahasa';
@@ -574,6 +641,20 @@ class AppLocalizationsVi extends AppLocalizations {
   @override String get dataDeletionWarning => 'Thao tác này sẽ xóa vĩnh viễn tất cả dữ liệu. Không thể hoàn tác.';
   @override String get dataDeletionRequested => 'Đã gửi yêu cầu xóa';
   @override String get requestDeletion => 'Yêu cầu xóa';
+
+  // ── Caregiver ──
+  @override String get caregiverTitle => 'Quyền truy cập người chăm sóc';
+  @override String caregiverInfo(int max, String childName) => 'Bạn có thể mời tối đa $max người chăm sóc cho $childName.';
+  @override String caregiverSlots(int count, int max) => 'Đã dùng $count / $max suất';
+  @override String get inviteCaregiver => 'Mời người chăm sóc';
+  @override String get activeCaregivers => 'Người chăm sóc đang hoạt động';
+  @override String get pendingInvites => 'Lời mời đang chờ';
+  @override String get resendInvite => 'Gửi lại';
+  @override String get cancelInvite => 'Hủy lời mời';
+  @override String get revokeAccess => 'Thu hồi quyền truy cập';
+  @override String revokeConfirm(String name, String childName) => 'Thu hồi quyền truy cập của $name vào hồ sơ $childName? Họ sẽ không thể xem hoặc quản lý tài khoản $childName nữa.';
+  @override String inviteSent(String email) => 'Đã gửi lời mời đến $email';
+  @override String get accessRevoked => 'Đã thu hồi quyền truy cập người chăm sóc';
 
   @override String get settingsTitle => 'Cài đặt';
   @override String get profile => 'Hồ sơ';
@@ -669,6 +750,20 @@ class AppLocalizationsRu extends AppLocalizations {
   @override String get dataDeletionRequested => 'Запрос на удаление отправлен';
   @override String get requestDeletion => 'Запросить удаление';
 
+  // ── Caregiver ──
+  @override String get caregiverTitle => 'Доступ опекуна';
+  @override String caregiverInfo(int max, String childName) => 'Вы можете пригласить до $max опекунов для $childName.';
+  @override String caregiverSlots(int count, int max) => 'Занято $count из $max мест';
+  @override String get inviteCaregiver => 'Пригласить опекуна';
+  @override String get activeCaregivers => 'Активные опекуны';
+  @override String get pendingInvites => 'Ожидающие приглашения';
+  @override String get resendInvite => 'Отправить повторно';
+  @override String get cancelInvite => 'Отменить приглашение';
+  @override String get revokeAccess => 'Отозвать доступ';
+  @override String revokeConfirm(String name, String childName) => 'Отозвать доступ $name к профилю $childName? Они больше не смогут просматривать или управлять аккаунтом $childName.';
+  @override String inviteSent(String email) => 'Приглашение отправлено на $email';
+  @override String get accessRevoked => 'Доступ опекуна отозван';
+
   @override String get settingsTitle => 'Настройки';
   @override String get profile => 'Профиль';
   @override String get language => 'Язык';
@@ -763,6 +858,20 @@ class AppLocalizationsTr extends AppLocalizations {
   @override String get dataDeletionRequested => 'Silme talebi gönderildi';
   @override String get requestDeletion => 'Silme Talep Et';
 
+  // ── Caregiver ──
+  @override String get caregiverTitle => 'Bakıcı Erişimi';
+  @override String caregiverInfo(int max, String childName) => '$childName için en fazla $max bakıcı davet edebilirsiniz.';
+  @override String caregiverSlots(int count, int max) => '$max slottan $count tanesi dolu';
+  @override String get inviteCaregiver => 'Bakıcı Davet Et';
+  @override String get activeCaregivers => 'Aktif Bakıcılar';
+  @override String get pendingInvites => 'Bekleyen Davetler';
+  @override String get resendInvite => 'Tekrar Gönder';
+  @override String get cancelInvite => 'Daveti İptal Et';
+  @override String get revokeAccess => 'Erişimi İptal Et';
+  @override String revokeConfirm(String name, String childName) => '$name adlı kişinin $childName profiline erişimini iptal et? Artık $childName hesabını görüntüleyemez veya yönetemez.';
+  @override String inviteSent(String email) => '$email adresine davet gönderildi';
+  @override String get accessRevoked => 'Bakıcı erişimi iptal edildi';
+
   @override String get settingsTitle => 'Ayarlar';
   @override String get profile => 'Profil';
   @override String get language => 'Dil';
@@ -856,6 +965,20 @@ class AppLocalizationsIt extends AppLocalizations {
   @override String get dataDeletionWarning => 'Tutti i dati verranno eliminati definitivamente. Questa azione non può essere annullata.';
   @override String get dataDeletionRequested => 'Richiesta di cancellazione inviata';
   @override String get requestDeletion => 'Richiedi cancellazione';
+
+  // ── Caregiver ──
+  @override String get caregiverTitle => 'Accesso caregiver';
+  @override String caregiverInfo(int max, String childName) => 'Puoi invitare fino a $max caregiver per $childName.';
+  @override String caregiverSlots(int count, int max) => '$count di $max posti utilizzati';
+  @override String get inviteCaregiver => 'Invita caregiver';
+  @override String get activeCaregivers => 'Caregiver attivi';
+  @override String get pendingInvites => 'Inviti in sospeso';
+  @override String get resendInvite => 'Reinvia';
+  @override String get cancelInvite => 'Annulla invito';
+  @override String get revokeAccess => 'Revoca accesso';
+  @override String revokeConfirm(String name, String childName) => 'Revocare l\'accesso di $name al profilo di $childName? Non potrà più visualizzare o gestire l\'account di $childName.';
+  @override String inviteSent(String email) => 'Invito inviato a $email';
+  @override String get accessRevoked => 'Accesso caregiver revocato';
 
   @override String get settingsTitle => 'Impostazioni';
   @override String get profile => 'Profilo';

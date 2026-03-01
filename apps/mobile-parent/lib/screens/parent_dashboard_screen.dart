@@ -95,10 +95,22 @@ class ParentDashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: Semantics(
                       button: true,
+                      label: 'Manage caregivers',
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.people),
+                        label: const Text('Caregivers'),
+                        onPressed: () => context.push('/caregivers'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Semantics(
+                      button: true,
                       label: 'Manage subscription settings',
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.settings),
-                        label: const Text('Subscription'),
+                        label: const Text('Manage'),
                         onPressed: () => context.push('/subscription'),
                       ),
                     ),

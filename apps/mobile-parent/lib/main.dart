@@ -31,6 +31,7 @@ import 'screens/payment_setup_screen.dart';
 import 'screens/progress_report_screen.dart';
 import 'screens/subscription_management_screen.dart';
 import 'screens/verify_email_screen.dart';
+import 'features/caregiver/presentation/caregiver_screen.dart';
 import 'screens/virtual_brain_screen.dart';
 import 'home_activities/home_activities_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -96,6 +97,17 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/subscription',
         builder: (context, state) => const SubscriptionManagementScreen(),
+      ),
+      // Caregiver management
+      GoRoute(
+        path: '/caregivers',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return CaregiverScreen(
+            studentId: extra['studentId']?.toString() ?? '',
+            studentName: extra['studentName']?.toString() ?? 'your child',
+          );
+        },
       ),
       GoRoute(
         path: '/module-selection',
