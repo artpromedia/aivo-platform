@@ -200,6 +200,7 @@ export class CircuitBreaker {
    * Record a successful operation
    */
   recordSuccess(): void {
+    this.checkTimeout();
     this.counter.recordSuccess();
     this.lastSuccess = new Date();
     this.consecutiveSuccesses++;

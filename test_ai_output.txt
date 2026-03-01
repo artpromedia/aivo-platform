@@ -1,0 +1,1695 @@
+﻿
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/ofema/aivo/services/ai-orchestrator[39m
+
+ [32mΓ£ô[39m test/error-paths.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32mΓ£ô[39m test/usageTracker.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [31mΓ¥»[39m test/emotionalState.test.ts [2m([22m[2m21 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[90m 20[2mms[22m[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects performance anxiety from consecutive errors[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ expected 2.625 to be greater than 3[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects time pressure anxiety[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'performance' to be 'time_pressure' // Object.is equality[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects new content anxiety[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ expected 1.75 to be greater than 3[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects avoidance behavior[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ expected 2.625 to be greater than 3[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects erratic behavior[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ expected 3.5 to be greater than 4[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mamplifies risk for known triggers[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected 0 to be greater than 0[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects explicit frustration signal[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ expected 3.5 to be greater than or equal to 7[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22manalyze[2m > [22mdetects break request as anxiety signal[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ expected 0 to be greater than 3[39m
+[31m   [31m├ù[31m OverwhelmDetector[2m > [22manalyze[2m > [22mdetects emotional overload[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected 4.95 to be greater than 5[39m
+[31m   [31m├ù[31m OverwhelmDetector[2m > [22manalyze[2m > [22mamplifies risk when multiple systems are overloaded[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'combined' to be 'multi_system' // Object.is equality[39m
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Logging[2m > [22m[2mlogs incident with all required fields
+[22m[39m{"event":"AIIncidentCreated","incidentId":"b7dba74c-0a19-43bf-84e5-a999394320a1","tenantId":"tenant-123","severity":"HIGH","category":"SELF_HARM","timestamp":"2026-03-01T11:35:23.601Z"}
+
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Logging[2m > [22m[2mlogs homework answer blocked incident
+[22m[39m{"event":"AIIncidentCreated","incidentId":"23b810ce-bae2-44c3-9514-11443c6cf0ab","tenantId":"tenant-123","severity":"LOW","category":"HOMEWORK_ANSWER_BLOCKED","timestamp":"2026-03-01T11:35:23.603Z"}
+
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Logging[2m > [22m[2mlogs PII detection incident
+[22m[39m{"event":"AIIncidentCreated","incidentId":"032122a8-3a47-4978-a132-02bc48c21b9e","tenantId":"tenant-123","severity":"MEDIUM","category":"PII_DETECTED","timestamp":"2026-03-01T11:35:23.604Z"}
+
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Logging[2m > [22m[2mlogs diagnosis attempt incident
+[22m[39m{"event":"AIIncidentCreated","incidentId":"8f3c6675-7329-4bf9-85db-40ec85538483","tenantId":"tenant-123","severity":"HIGH","category":"DIAGNOSIS_ATTEMPT","timestamp":"2026-03-01T11:35:23.604Z"}
+
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Logging[2m > [22m[2mstores metadata in JSON field
+[22m[39m{"event":"AIIncidentCreated","incidentId":"27906e00-05ab-4595-9606-e6da4580645b","tenantId":"tenant-123","severity":"HIGH","category":"SELF_HARM","timestamp":"2026-03-01T11:35:23.604Z"}
+
+[90mstdout[2m | test/incidentService.test.ts[2m > [22m[2mIncident Service: Tenant Isolation[2m > [22m[2malways includes tenant ID in log queries
+[22m[39m{"event":"AIIncidentCreated","incidentId":"bed7194f-8b3f-4536-a30d-01936813cc3c","tenantId":"tenant-123","severity":"HIGH","category":"SELF_HARM","timestamp":"2026-03-01T11:35:23.612Z"}
+
+ [32mΓ£ô[39m test/incidentService.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32mΓ£ô[39m test/postFilter.test.ts [2m([22m[2m35 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+corepack.cmd : [90mstderr[2m | test/socialStoryPersonalizer.test.ts[2m > 
+[22m[2mSocialStoryPersonalizerAgent[2m > [22m[2mpersonalizeStory[2m > 
+[22m[2mshould handle AI response with invalid JSON gracefully
+At line:1 char:1
++ & ".\.node\node-v22.22.0-win-x64\corepack.cmd" pnpm --filter @aivo/ai ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...JSON gracefully 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39m[SocialStoryPersonalizer] Failed to parse AI response: Error: No 
+JSON found in AI response
+    at SocialStoryPersonalizerAgent.parsePersonalizationResponse [90m(C:\Users
+\ofema\aivo\services\ai-orchestrator\[39msrc\agents\social-story-personalizer.
+ts:455:15[90m)[39m
+    at SocialStoryPersonalizerAgent.personalizeStory [90m(C:\Users\ofema\aivo\
+services\ai-orchestrator\[39msrc\agents\social-story-personalizer.ts:262:17[9
+0m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at [90mC:\Users\ofema\aivo\services\ai-orchestrator\[39mtest\socialStoryP
+ersonalizer.test.ts:203:22
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:5
+    at runTest (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest
++runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5)
+
+ [32mΓ£ô[39m test/socialStoryPersonalizer.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+[90mstderr[2m | test/explainability.test.ts[2m > 
+[22m[2mExplanationBuilder[2m > [22m[2mexplain (build and persist)[2m > 
+[22m[2mshould handle database errors gracefully
+[22m[39m[ExplanationBuilder] Write failed: Error: Database connection failed
+    at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39mtest\explainability.test.ts:406:33[90m)[39m
+    at Object.mockCall (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m
+/@vitest+spy@2.1.9/node_modules/[4m@vitest/spy[24m/dist/index.js:61:17)
+    at Object.spy [as query] (file:///C:/Users/ofema/aivo/node_modules/[4m.pnp
+m[24m/tinyspy@3.0.2/node_modules/[4mtinyspy[24m/dist/index.js:45:80)
+    at ExplanationBuilder.persistExplanation [90m(C:\Users\ofema\aivo\services
+\ai-orchestrator\[39msrc\explainability\builder.ts:652:23[90m)[39m
+    at ExplanationBuilder.explain [90m(C:\Users\ofema\aivo\services\ai-orchest
+rator\[39msrc\explainability\builder.ts:323:25[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at [90mC:\Users\ofema\aivo\services\ai-orchestrator\[39mtest\explainabili
+ty.test.ts:411:22
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:5
+    at runTest (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest
++runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:11)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+
+ [32mΓ£ô[39m test/explainability.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32mΓ£ô[39m test/ai-governance.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32mΓ£ô[39m test/orchestrator.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [31mΓ¥»[39m test/adminStats.test.ts [2m([22m[2m20 tests[22m[2m | [22m[31m14 failed[39m[2m)[22m[90m 107[2mms[22m[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mreturns stats with valid date range[90m 9[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mincludes all safety labels in distribution[90m 4[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mincludes SUCCESS and ERROR in status counts[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mreturns stats with valid date range[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mincludes all severity levels[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mincludes all categories[90m 6[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mreturns top tenants array with correct structure[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ expected false to be true // Object.is equality[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mreturns full compliance report[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22maiStats section has correct structure[90m 4[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mincidentStats section has correct structure[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mdsrStats section has correct structure[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mpolicyStatus section has correct structure[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mData aggregation (mock verification)[2m > [22mAI stats totals are consistent[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[31m   [31m├ù[31m Admin Stats Routes[2m > [22mData aggregation (mock verification)[2m > [22mIncident stats totals are consistent[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot convert undefined or null to object[39m
+[90mstdout[2m | test/multi-provider-gateway.test.ts[2m > [22m[2mCircuitBreakerRegistry[2m > [22m[2mshould track healthy providers
+[22m[39m[CircuitBreaker] provider1:model1: CLOSED -> OPEN
+
+[90mstdout[2m | test/multi-provider-gateway.test.ts[2m > [22m[2mPriorityRouter[2m > [22m[2mselectModel[2m > [22m[2mshould skip unhealthy models
+[22m[39m[CircuitBreaker] provider-1:model-1a: CLOSED -> OPEN
+
+ [31mΓ¥»[39m test/multi-provider-gateway.test.ts [2m([22m[2m43 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 2945[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m CircuitBreaker[2m > [22mstate transitions[2m > [22mshould transition to HALF_OPEN after timeout [33m1105[2mms[22m[39m
+[31m   [31m├ù[31m CircuitBreaker[2m > [22mstate transitions[2m > [22mshould transition to CLOSED after success threshold in HALF_OPEN[33m 1119[2mms[22m[31m[39m
+[31m     ΓåÆ expected 'HALF_OPEN' to be 'CLOSED' // Object.is equality[39m
+   [33m[2mΓ£ô[22m[39m FailoverHandler[2m > [22mexecuteWithFailover[2m > [22mshould throw FailoverExhaustedError when all models fail [33m391[2mms[22m[39m
+[31m   [31m├ù[31m FailoverHandler[2m > [22mclassifyError[2m > [22mshould classify rate limit errors as failover[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot find module '../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test.ts[39m
+[31m   [31m├ù[31m FailoverHandler[2m > [22mclassifyError[2m > [22mshould classify authentication errors as abort[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot find module '../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test.ts[39m
+[31m   [31m├ù[31m FailoverHandler[2m > [22mclassifyError[2m > [22mshould classify timeout errors as retry[90m 0[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot find module '../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test.ts[39m
+ [32mΓ£ô[39m test/providerRouter.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+[90mstderr[2m | test/logging-integration.test.ts[2m > 
+[22m[2mAiCallLogger[2m > [22m[2mlogAiCall[2m > [22m[2mreturns null on 
+database error (graceful degradation)
+[22m[39m[AiCallLogger] Failed to insert ai_call_logs row: Error: Database 
+connection failed
+    at [90mC:\Users\ofema\aivo\services\ai-orchestrator\[39mtest\logging-inte
+gration.test.ts:140:44
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest+runner@2
+.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/
+@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7)
+    at runTest (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vitest
++runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17)
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runSuite (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15)
+    at runFiles (file:///C:/Users/ofema/aivo/node_modules/[4m.pnpm[24m/@vites
+t+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5)
+
+[90mstdout[2m | test/logging-integration.test.ts[2m > [22m[2mIncidentRulesEngine (stateful)[2m > [22m[2mmaybeCreateOrUpdateIncidentFromCallLog[2m > [22m[2mcreates new incident when none exists
+[22m[39m{"event":"incident_triggered","rule":"SAFETY_HIGH","incidentId":"new-incident","tenantId":"tenant-test","severity":"HIGH","category":"SAFETY","isNew":true}
+
+[90mstdout[2m | test/logging-integration.test.ts[2m > [22m[2mIncidentRulesEngine (stateful)[2m > [22m[2mmaybeCreateOrUpdateIncidentFromCallLog[2m > [22m[2mupdates existing incident when one exists
+[22m[39m{"event":"incident_triggered","rule":"SAFETY_HIGH","incidentId":"existing-incident","tenantId":"tenant-test","severity":"HIGH","category":"SAFETY","isNew":false}
+
+ [32mΓ£ô[39m test/logging-integration.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+[90mstdout[2m | test/circuit-breaker.test.ts[2m > [22m[2mCircuitBreakerRegistry[2m > [22m[2mshould exclude unhealthy providers
+[22m[39m[CircuitBreaker] openai:gpt-4: CLOSED -> OPEN
+
+[90mstdout[2m | test/circuit-breaker.test.ts[2m > [22m[2mCircuitBreakerRegistry[2m > [22m[2mshould exclude unhealthy models
+[22m[39m[CircuitBreaker] openai:gpt-4: CLOSED -> OPEN
+
+[90mstdout[2m | test/circuit-breaker.test.ts[2m > [22m[2mCircuitBreakerRegistry[2m > [22m[2mshould resetAll breakers
+[22m[39m[CircuitBreaker] openai:gpt-4: CLOSED -> OPEN
+[CircuitBreaker] anthropic:claude-3: CLOSED -> OPEN
+[CircuitBreaker] openai:gpt-4: OPEN -> CLOSED
+[CircuitBreaker] anthropic:claude-3: OPEN -> CLOSED
+
+[90mstdout[2m | test/circuit-breaker.test.ts[2m > [22m[2mCircuitBreakerRegistry[2m > [22m[2mshould resetProvider breakers only
+[22m[39m[CircuitBreaker] openai:gpt-4: CLOSED -> OPEN
+[CircuitBreaker] anthropic:claude-3: CLOSED -> OPEN
+[CircuitBreaker] openai:gpt-4: OPEN -> CLOSED
+
+ [32mΓ£ô[39m test/circuit-breaker.test.ts [2m([22m[2m30 tests[22m[2m)[22m[33m 472[2mms[22m[39m
+ [32mΓ£ô[39m test/logging.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32mΓ£ô[39m test/preFilter.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [31mΓ¥»[39m test/cost-calculator.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [32mΓ£ô[39m test/agents.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32mΓ£ô[39m test/llm-providers.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 145[2mms[22m[39m
+ [32mΓ£ô[39m test/llm-orchestrator.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32mΓ£ô[39m test/content-safety.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+[90mstderr[2m | test/safety-filter.test.ts[2m > [22m[2mSafetyFilter[2m > 
+[22m[2mOutput Safety Checks[2m > [22m[2mshould block inappropriate 
+content in output
+[22m[39mLLM produced blocked content {
+  pattern: [32m'\\b(suicide|self-harm|kill\\s+(myself|yourself)|hurt\\s+(mysel
+f|yourself))\\b'[39m,
+  context: { sessionId: [32m'test-session'[39m }
+}
+
+[90mstderr[2m | test/safety-filter.test.ts[2m > [22m[2mSafetyFilter[2m > 
+[22m[2mOutput Safety Checks[2m > [22m[2mshould block hate speech in output
+[22m[39mLLM produced blocked content {
+  pattern: [32m'\\b(hate|kill)\\s+(all|every)\\s+\\w+'[39m,
+  context: { sessionId: [32m'test-session'[39m }
+}
+
+ [32mΓ£ô[39m test/safety-filter.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+[90mstderr[2m | test/agentConfigRegistry.test.ts[2m > 
+[22m[2mAgentConfigRegistry[2m > [22m[2mnormalizes rollout when total 
+exceeds 100 and preserves proportions
+[22m[39mRollout percentages exceed 100 (total=120). Normalizing.
+
+ [32mΓ£ô[39m test/agentConfigRegistry.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [31mΓ¥»[39m test/anxiety-detector.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 611[2mms[22m[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22mperformance anxiety[2m > [22mdetects performance anxiety from rapid incorrect answers[90m 5[2mms[22m[31m[39m
+[31m     ΓåÆ detector.detect is not a function[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22mtime pressure anxiety[2m > [22mdetects time-pressure anxiety near deadlines[33m 593[2mms[22m[31m[39m
+[31m     ΓåÆ detector.detect is not a function[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22mnew content anxiety[2m > [22mdetects anxiety from unfamiliar content area[90m 4[2mms[22m[31m[39m
+[31m     ΓåÆ detector.detect is not a function[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22mrisk scoring[2m > [22mreturns a risk score between 0 and 1[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ detector.detect is not a function[39m
+[31m   [31m├ù[31m AnxietyDetector[2m > [22mno anxiety[2m > [22mreturns not-detected for normal patterns[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ detector.detect is not a function[39m
+ [31mΓ¥»[39m test/rate-limit.middleware.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 45[2mms[22m[39m
+[31m   [31m├ù[31m Rate Limit Middleware[2m > [22mexports a Fastify plugin or middleware[90m 27[2mms[22m[31m[39m
+[31m     ΓåÆ expected undefined to be defined[39m
+ [32mΓ£ô[39m test/generation-services.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 39[2mms[22m[39m
+ [32mΓ£ô[39m test/emotional-state.extended.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 63[2mms[22m[39m
+ [32mΓ£ô[39m test/safetyAgent.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ô[39m test/safety.middleware.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 67[2mms[22m[39m
+ [32mΓ£ô[39m test/providers.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 6195[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mAnthropicProvider[2m > [22mimplements LLM provider interface [33m1467[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mAnthropicProvider[2m > [22mhas model tier configuration [33m636[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mOpenAIProvider[2m > [22mimplements LLM provider interface [33m814[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mOpenAIProvider[2m > [22msupports GPT model configuration [33m1238[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mOllamaProvider[2m > [22mimplements LLM provider interface [33m633[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m LLM Providers[2m > [22mLLM Adapter[2m > [22mexports adapter for unified interface [33m1371[2mms[22m[39m
+ [32mΓ£ô[39m test/telemetry.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+{"level":30,"time":1772364943670,"pid":57216,"hostname":"ofem-aivo","msg":"[safety-middleware] AI Content Safety Guardrails active"}
+[90mstdout[2m | test/internal.api.test.ts
+[22m[39m[2026-03-01T11:35:43.659Z] [LLMOrchestrator] Development mode: Using Ollama as primary LLM provider (no cloud API keys configured) 
+[2026-03-01T11:35:43.660Z] [OllamaProvider] Ollama provider initialized { baseUrl: [32m'http://localhost:11434'[39m, defaultModel: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.660Z] [LLMOrchestrator] LLM Orchestrator initialized {
+  providers: [ [32m'ollama'[39m ],
+  primaryProvider: [32m'ollama'[39m,
+  fallbackOrder: [ [32m'ollama'[39m ]
+}
+
+{"level":30,"time":1772364943671,"pid":57216,"hostname":"ofem-aivo","msg":"[ai-rate-limit] AI Rate Limiting active"}
+{"level":30,"time":1772364943745,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","req":{"method":"POST","url":"/internal/ai/echo","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mecho returns structured response
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstdout[2m | test/internal.api.test.ts[2m > [22m[2minternal AI routes[2m > [22m[2mecho returns structured response
+[22m[39m[2026-03-01T11:35:43.775Z] [LLMOrchestrator] Development mode: Using Ollama as primary LLM provider (no cloud API keys configured) 
+[2026-03-01T11:35:43.775Z] [OllamaProvider] Ollama provider initialized { baseUrl: [32m'http://localhost:11434'[39m, defaultModel: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.775Z] [LLMOrchestrator] LLM Orchestrator initialized {
+  providers: [ [32m'ollama'[39m ],
+  primaryProvider: [32m'ollama'[39m,
+  fallbackOrder: [ [32m'ollama'[39m ]
+}
+
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mecho returns structured response
+[22m[39m[PolicyEnforcer] Policy enforcement failed (continuing): error: 
+password authentication failed for user "aivo"
+    at C:\Users\ofema\aivo\node_modules\[4m.pnpm[24m\pg-pool@3.11.0_pg@8.18.0
+\node_modules\[4mpg-pool[24m\index.js:45:11
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at PolicyRepository.getActiveGlobalPolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\repository.ts:72:22)
+    at PolicyEngine.getEffectivePolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\engine.ts:134:23)
+    at PolicyEnforcer.checkCallAllowed [90m(C:\Users\ofema\aivo\services\ai-or
+chestrator\[39msrc\policy\PolicyEnforcer.ts:63:20[90m)[39m
+    at PolicyEnforcer.enforcePolicy [90m(C:\Users\ofema\aivo\services\ai-orche
+strator\[39msrc\policy\PolicyEnforcer.ts:125:20[90m)[39m
+    at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[39
+msrc\pipeline\AiCallPipeline.ts:65:7[90m)[39m
+    at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\routes\internal.ts:149:20[90m)[39m {
+  length: [33m100[39m,
+  severity: [32m'FATAL'[39m,
+  code: [32m'28P01'[39m,
+  detail: [90mundefined[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [90mundefined[39m,
+  table: [90mundefined[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [90mundefined[39m,
+  file: [32m'auth.c'[39m,
+  line: [32m'329'[39m,
+  routine: [32m'auth_failed'[39m
+}
+
+{"level":50,"time":1772364943787,"pid":57216,"hostname":"ofem-aivo","err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:149:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:149:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"correlationId":"79ec6e48-9271-4600-a3b1-c3b443073cb4","msg":"request failed"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mecho returns structured response
+[22m[39m[2026-03-01T11:35:43.784Z] [OllamaProvider] Ollama completion failed 
+{ error: [32m'TypeError: fetch failed'[39m, model: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.784Z] [LLMOrchestrator] LLM provider ollama failed {
+  error: TypeError: fetch failed
+  [90m    at node:internal/deps/undici/undici:14902:13[39m
+  [90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+      at OllamaProvider.complete [90m(C:\Users\ofema\aivo\services\ai-orchestr
+ator\[39msrc\providers\ollama.provider.ts:106:24[90m)[39m
+      at CircuitBreaker.execute [90m(C:\Users\ofema\aivo\services\ai-orchestra
+tor\[39msrc\utils\circuit-breaker.ts:88:22[90m)[39m
+      at LLMOrchestrator.complete [90m(C:\Users\ofema\aivo\services\ai-orchest
+rator\[39msrc\providers\llm-orchestrator.ts:163:24[90m)[39m
+      at Module.generateCompletion [90m(C:\Users\ofema\aivo\services\ai-orches
+trator\[39msrc\providers\llm-adapter.ts:130:20[90m)[39m
+      at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\pipeline\AiCallPipeline.ts:105:25[90m)[39m
+      at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\
+[39msrc\routes\internal.ts:149:20[90m)[39m {
+    [cause]: AggregateError: 
+    [90m    at internalConnectMultiple (node:net:1134:18)[39m
+    [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+      code: [32m'ECONNREFUSED'[39m,
+      [errors]: [36m[Array][39m
+    }
+  }
+}
+
+{"level":50,"time":1772364943787,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","req":{"method":"POST","url":"/internal/ai/echo","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"res":{"statusCode":500},"err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:149:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:149:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"msg":"All LLM providers failed"}
+{"level":30,"time":1772364943789,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","res":{"statusCode":500},"responseTime":43.74670001864433,"msg":"request completed"}
+{"level":30,"time":1772364943794,"pid":57216,"hostname":"ofem-aivo","reqId":"req-2","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mtest-agent echoes agentType in metadata
+[22m[39m[PolicyEnforcer] Policy enforcement failed (continuing): error: 
+password authentication failed for user "aivo"
+    at C:\Users\ofema\aivo\node_modules\[4m.pnpm[24m\pg-pool@3.11.0_pg@8.18.0
+\node_modules\[4mpg-pool[24m\index.js:45:11
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at PolicyRepository.getActiveGlobalPolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\repository.ts:72:22)
+    at PolicyEngine.getEffectivePolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\engine.ts:134:23)
+    at PolicyEnforcer.checkCallAllowed [90m(C:\Users\ofema\aivo\services\ai-or
+chestrator\[39msrc\policy\PolicyEnforcer.ts:63:20[90m)[39m
+    at PolicyEnforcer.enforcePolicy [90m(C:\Users\ofema\aivo\services\ai-orche
+strator\[39msrc\policy\PolicyEnforcer.ts:125:20[90m)[39m
+    at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[39
+msrc\pipeline\AiCallPipeline.ts:65:7[90m)[39m
+    at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\routes\internal.ts:284:20[90m)[39m {
+  length: [33m100[39m,
+  severity: [32m'FATAL'[39m,
+  code: [32m'28P01'[39m,
+  detail: [90mundefined[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [90mundefined[39m,
+  table: [90mundefined[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [90mundefined[39m,
+  file: [32m'auth.c'[39m,
+  line: [32m'329'[39m,
+  routine: [32m'auth_failed'[39m
+}
+
+{"level":50,"time":1772364943806,"pid":57216,"hostname":"ofem-aivo","err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"correlationId":"6c767aa6-3124-4406-b89d-2c26326eb968","msg":"request failed"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mtest-agent echoes agentType in metadata
+[22m[39m[2026-03-01T11:35:43.806Z] [OllamaProvider] Ollama completion failed 
+{ error: [32m'TypeError: fetch failed'[39m, model: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.806Z] [LLMOrchestrator] LLM provider ollama failed {
+  error: TypeError: fetch failed
+  [90m    at node:internal/deps/undici/undici:14902:13[39m
+  [90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+      at OllamaProvider.complete [90m(C:\Users\ofema\aivo\services\ai-orchestr
+ator\[39msrc\providers\ollama.provider.ts:106:24[90m)[39m
+      at CircuitBreaker.execute [90m(C:\Users\ofema\aivo\services\ai-orchestra
+tor\[39msrc\utils\circuit-breaker.ts:88:22[90m)[39m
+      at LLMOrchestrator.complete [90m(C:\Users\ofema\aivo\services\ai-orchest
+rator\[39msrc\providers\llm-orchestrator.ts:163:24[90m)[39m
+      at Module.generateCompletion [90m(C:\Users\ofema\aivo\services\ai-orches
+trator\[39msrc\providers\llm-adapter.ts:130:20[90m)[39m
+      at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\pipeline\AiCallPipeline.ts:105:25[90m)[39m
+      at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\
+[39msrc\routes\internal.ts:284:20[90m)[39m {
+    [cause]: AggregateError: 
+    [90m    at internalConnectMultiple (node:net:1134:18)[39m
+    [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+      code: [32m'ECONNREFUSED'[39m,
+      [errors]: [36m[Array][39m
+    }
+  }
+}
+
+{"level":50,"time":1772364943806,"pid":57216,"hostname":"ofem-aivo","reqId":"req-2","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"res":{"statusCode":500},"err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"msg":"All LLM providers failed"}
+{"level":30,"time":1772364943807,"pid":57216,"hostname":"ofem-aivo","reqId":"req-2","res":{"statusCode":500},"responseTime":12.529100000858307,"msg":"request completed"}
+{"level":30,"time":1772364943808,"pid":57216,"hostname":"ofem-aivo","reqId":"req-3","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mtest-agent flags unsafe content
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mtest-agent flags unsafe content
+[22m[39m[PolicyEnforcer] Policy enforcement failed (continuing): error: 
+password authentication failed for user "aivo"
+    at C:\Users\ofema\aivo\node_modules\[4m.pnpm[24m\pg-pool@3.11.0_pg@8.18.0
+\node_modules\[4mpg-pool[24m\index.js:45:11
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at PolicyRepository.getActiveGlobalPolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\repository.ts:72:22)
+    at PolicyEngine.getEffectivePolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\engine.ts:134:23)
+    at PolicyEnforcer.checkCallAllowed [90m(C:\Users\ofema\aivo\services\ai-or
+chestrator\[39msrc\policy\PolicyEnforcer.ts:63:20[90m)[39m
+    at PolicyEnforcer.enforcePolicy [90m(C:\Users\ofema\aivo\services\ai-orche
+strator\[39msrc\policy\PolicyEnforcer.ts:125:20[90m)[39m
+    at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[39
+msrc\pipeline\AiCallPipeline.ts:65:7[90m)[39m
+    at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\routes\internal.ts:284:20[90m)[39m {
+  length: [33m100[39m,
+  severity: [32m'FATAL'[39m,
+  code: [32m'28P01'[39m,
+  detail: [90mundefined[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [90mundefined[39m,
+  table: [90mundefined[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [90mundefined[39m,
+  file: [32m'auth.c'[39m,
+  line: [32m'329'[39m,
+  routine: [32m'auth_failed'[39m
+}
+
+{"level":50,"time":1772364943819,"pid":57216,"hostname":"ofem-aivo","err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"correlationId":"44758864-08d2-411b-ba62-31c9eeaafcf6","msg":"request failed"}
+{"level":30,"time":1772364943826,"pid":57216,"hostname":"ofem-aivo","msg":"[safety-middleware] AI Content Safety Guardrails active"}
+[90mstdout[2m | test/internal.api.test.ts[2m > [22m[2minternal AI routes[2m > [22m[2mtest-agent flags unsafe content
+[22m[39m[2026-03-01T11:35:43.819Z] [LLMOrchestrator] Ollama circuit breaker: CLOSED -> OPEN 
+
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mtest-agent flags unsafe content
+[22m[39m[2026-03-01T11:35:43.819Z] [OllamaProvider] Ollama completion failed 
+{ error: [32m'TypeError: fetch failed'[39m, model: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.819Z] [LLMOrchestrator] LLM provider ollama failed {
+  error: TypeError: fetch failed
+  [90m    at node:internal/deps/undici/undici:14902:13[39m
+  [90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+      at OllamaProvider.complete [90m(C:\Users\ofema\aivo\services\ai-orchestr
+ator\[39msrc\providers\ollama.provider.ts:106:24[90m)[39m
+      at CircuitBreaker.execute [90m(C:\Users\ofema\aivo\services\ai-orchestra
+tor\[39msrc\utils\circuit-breaker.ts:88:22[90m)[39m
+      at LLMOrchestrator.complete [90m(C:\Users\ofema\aivo\services\ai-orchest
+rator\[39msrc\providers\llm-orchestrator.ts:163:24[90m)[39m
+      at Module.generateCompletion [90m(C:\Users\ofema\aivo\services\ai-orches
+trator\[39msrc\providers\llm-adapter.ts:130:20[90m)[39m
+      at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\pipeline\AiCallPipeline.ts:105:25[90m)[39m
+      at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\
+[39msrc\routes\internal.ts:284:20[90m)[39m {
+    [cause]: AggregateError: 
+    [90m    at internalConnectMultiple (node:net:1134:18)[39m
+    [90m    at afterConnectMultiple (node:net:1715:7)[39m {
+      code: [32m'ECONNREFUSED'[39m,
+      [errors]: [36m[Array][39m
+    }
+  }
+}
+
+{"level":50,"time":1772364943819,"pid":57216,"hostname":"ofem-aivo","reqId":"req-3","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"res":{"statusCode":500},"err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[{"type":"TypeError","message":"fetch failed: ","stack":"TypeError: fetch failed\n    at node:internal/deps/undici/undici:14902:13\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at OllamaProvider.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\ollama.provider.ts:106:24)\n    at CircuitBreaker.execute (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\utils\\circuit-breaker.ts:88:22)\n    at LLMOrchestrator.complete (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-orchestrator.ts:163:24)\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:130:20)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)\ncaused by: AggregateError: \n    at internalConnectMultiple (node:net:1134:18)\n    at afterConnectMultiple (node:net:1715:7)"}],"errors":[{}],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"msg":"All LLM providers failed"}
+{"level":30,"time":1772364943820,"pid":57216,"hostname":"ofem-aivo","reqId":"req-3","res":{"statusCode":500},"responseTime":11.549100011587143,"msg":"request completed"}
+{"level":30,"time":1772364943820,"pid":57216,"hostname":"ofem-aivo","reqId":"req-4","req":{"method":"GET","url":"/internal/ai/configs","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1772364943821,"pid":57216,"hostname":"ofem-aivo","reqId":"req-4","res":{"statusCode":200},"responseTime":0.3711000084877014,"msg":"request completed"}
+{"level":30,"time":1772364943822,"pid":57216,"hostname":"ofem-aivo","reqId":"req-5","req":{"method":"GET","url":"/internal/ai/metrics/summary?tenantId=tenant-123","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1772364943822,"pid":57216,"hostname":"ofem-aivo","reqId":"req-5","res":{"statusCode":200},"responseTime":0.4672999978065491,"msg":"request completed"}
+[90mstdout[2m | test/internal.api.test.ts[2m > [22m[2minternal AI routes[2m > [22m[2mrollout percentages influence selected config deterministically
+[22m[39m[2026-03-01T11:35:43.824Z] [LLMOrchestrator] Development mode: Using Ollama as primary LLM provider (no cloud API keys configured) 
+[2026-03-01T11:35:43.824Z] [OllamaProvider] Ollama provider initialized { baseUrl: [32m'http://localhost:11434'[39m, defaultModel: [32m'qwen2:1.5b'[39m }
+[2026-03-01T11:35:43.824Z] [LLMOrchestrator] LLM Orchestrator initialized {
+  providers: [ [32m'ollama'[39m ],
+  primaryProvider: [32m'ollama'[39m,
+  fallbackOrder: [ [32m'ollama'[39m ]
+}
+
+{"level":30,"time":1772364943826,"pid":57216,"hostname":"ofem-aivo","msg":"[ai-rate-limit] AI Rate Limiting active"}
+{"level":30,"time":1772364943866,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mrollout percentages influence selected config 
+deterministically
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+{"level":50,"time":1772364943875,"pid":57216,"hostname":"ofem-aivo","err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[],"errors":[],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"correlationId":"ad25981d-8562-487c-9894-f382e5b12372","msg":"request failed"}
+[90mstderr[2m | test/internal.api.test.ts[2m > [22m[2minternal AI 
+routes[2m > [22m[2mrollout percentages influence selected config 
+deterministically
+[22m[39m[PolicyEnforcer] Policy enforcement failed (continuing): error: 
+password authentication failed for user "aivo"
+    at C:\Users\ofema\aivo\node_modules\[4m.pnpm[24m\pg-pool@3.11.0_pg@8.18.0
+\node_modules\[4mpg-pool[24m\index.js:45:11
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at PolicyRepository.getActiveGlobalPolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\repository.ts:72:22)
+    at PolicyEngine.getEffectivePolicy 
+(C:\Users\ofema\aivo\libs\ts-policy-engine\src\engine.ts:134:23)
+    at PolicyEnforcer.checkCallAllowed [90m(C:\Users\ofema\aivo\services\ai-or
+chestrator\[39msrc\policy\PolicyEnforcer.ts:63:20[90m)[39m
+    at PolicyEnforcer.enforcePolicy [90m(C:\Users\ofema\aivo\services\ai-orche
+strator\[39msrc\policy\PolicyEnforcer.ts:125:20[90m)[39m
+    at Module.runAiCall [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[39
+msrc\pipeline\AiCallPipeline.ts:65:7[90m)[39m
+    at Object.<anonymous> [90m(C:\Users\ofema\aivo\services\ai-orchestrator\[
+39msrc\routes\internal.ts:284:20[90m)[39m {
+  length: [33m100[39m,
+  severity: [32m'FATAL'[39m,
+  code: [32m'28P01'[39m,
+  detail: [90mundefined[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [90mundefined[39m,
+  table: [90mundefined[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [90mundefined[39m,
+  file: [32m'auth.c'[39m,
+  line: [32m'329'[39m,
+  routine: [32m'auth_failed'[39m
+}
+[2026-03-01T11:35:43.874Z] [LLMOrchestrator] Circuit breaker open for ollama, 
+skipping 
+
+{"level":50,"time":1772364943876,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","req":{"method":"POST","url":"/internal/ai/test-agent","hostname":"localhost:80","remoteAddress":"127.0.0.1"},"res":{"statusCode":500},"err":{"type":"LLMProviderError","message":"All LLM providers failed","stack":"LLMProviderError: All LLM providers failed\n    at Module.generateCompletion (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\providers\\llm-adapter.ts:165:13)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at Module.runAiCall (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\pipeline\\AiCallPipeline.ts:105:25)\n    at Object.<anonymous> (C:\\Users\\ofema\\aivo\\services\\ai-orchestrator\\src\\routes\\internal.ts:284:20)","aggregateErrors":[],"errors":[],"attemptedProviders":["ollama"],"name":"LLMProviderError"},"msg":"All LLM providers failed"}
+{"level":30,"time":1772364943876,"pid":57216,"hostname":"ofem-aivo","reqId":"req-1","res":{"statusCode":500},"responseTime":10.047499984502792,"msg":"request completed"}
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+[90mstderr[2m | test/internal.api.test.ts
+[22m[39m[ioredis] Unhandled error event: AggregateError: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+
+ [31mΓ¥»[39m test/internal.api.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 20230[2mms[22m[39m
+[31m   [31m├ù[31m internal AI routes[2m > [22mecho returns structured response[90m 56[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m internal AI routes[2m > [22mtest-agent echoes agentType in metadata[90m 14[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m internal AI routes[2m > [22mtest-agent flags unsafe content[90m 13[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m internal AI routes[2m > [22mrollout percentages influence selected config deterministically[90m 54[2mms[22m[31m[39m
+[31m     ΓåÆ expected 500 to be 200 // Object.is equality[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1m[7m Failed Suites 2 
+[27m[22mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/cost-calculator.test.ts[2m [ 
+test/cost-calculator.test.ts ][22m
+[31m[1mError[22m: [vitest] There was an error when mocking a module. If you 
+are using "vi.mock" factory, make sure there are no top level variables 
+inside, since this call is hoisted to top of the file. Read more: 
+https://vitest.dev/api/vi.html#vi-mock[39m
+[36m [2mΓ¥»[22m src/routing/cost-calculator.ts:[2m1:1[22m[39m
+    [90m  1| [39m[90m/**
+    [90m   | [39m[31m^[39m
+    [90m  2| [39m * Cost Calculator
+    [90m  3| [39m *
+
+[31m[1mCaused by: ReferenceError[22m: Cannot access 
+'mockGetProviderRegistry' before initialization[39m
+[36m [2mΓ¥»[22m test/cost-calculator.test.ts:[2m7:24[22m[39m
+[90m [2mΓ¥»[22m src/routing/cost-calculator.ts:[2m1:1[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+1/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/internal.api.test.ts[2m [ 
+test/internal.api.test.ts ][22m
+[31m[1mError[22m: Hook timed out in 20000ms.
+If this is a long-running hook, pass a timeout value as the last argument or 
+configure it globally with "hookTimeout".[39m
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+2/40]ΓÄ»[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1m[7m Failed Tests 38 
+[27m[22mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mreturns stats 
+with valid date range
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m66:35[22m[39m
+    [90m 64| [39m      })[33m;[39m
+    [90m 65| [39m
+    [90m 66| [39m      [34mexpect[39m(response[33m.[39mstatusCode)[33m.
+[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m 67| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m 68| [39m      
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+3/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mincludes all 
+safety labels in distribution
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m90:39[22m[39m
+    [90m 88| [39m
+    [90m 89| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m 90| [39m      [34mexpect[39m(body[33m.[39msafetyDistribution)[3
+3m.[39m[34mtoHaveProperty[39m([32m'SAFE'[39m)[33m;[39m
+    [90m   | [39m                                      [31m^[39m
+    [90m 91| [39m      [34mexpect[39m(body[33m.[39msafetyDistribution)[3
+3m.[39m[34mtoHaveProperty[39m([32m'LOW'[39m)[33m;[39m
+    [90m 92| [39m      [34mexpect[39m(body[33m.[39msafetyDistribution)[3
+3m.[39m[34mtoHaveProperty[39m([32m'MEDIUM'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+4/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/call-logs/stats[2m > [22mincludes 
+SUCCESS and ERROR in status counts
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m103:34[22m[39m
+    [90m101| [39m
+    [90m102| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m103| [39m      [34mexpect[39m(body[33m.[39mcallsByStatus)[33m.[
+39m[34mtoHaveProperty[39m([32m'SUCCESS'[39m)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m104| [39m      [34mexpect[39m(body[33m.[39mcallsByStatus)[33m.[
+39m[34mtoHaveProperty[39m([32m'ERROR'[39m)[33m;[39m
+    [90m105| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+5/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mreturns stats 
+with valid date range
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m128:35[22m[39m
+    [90m126| [39m      })[33m;[39m
+    [90m127| [39m
+    [90m128| [39m      [34mexpect[39m(response[33m.[39mstatusCode)[33m.
+[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m129| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m130| [39m      
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+6/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mincludes all 
+severity levels
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m147:45[22m[39m
+    [90m145| [39m
+    [90m146| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m147| [39m      [34mexpect[39m(body[33m.[39mincidentCountsBySeveri
+ty)[33m.[39m[34mtoHaveProperty[39m([32m'INFO'[39m)[33m;[39m
+    [90m   | [39m                                            [31m^[39m
+    [90m148| [39m      [34mexpect[39m(body[33m.[39mincidentCountsBySeveri
+ty)[33m.[39m[34mtoHaveProperty[39m([32m'LOW'[39m)[33m;[39m
+    [90m149| [39m      [34mexpect[39m(body[33m.[39mincidentCountsBySeveri
+ty)[33m.[39m[34mtoHaveProperty[39m([32m'MEDIUM'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+7/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mincludes all 
+categories
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m161:45[22m[39m
+    [90m159| [39m
+    [90m160| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m161| [39m      [34mexpect[39m(body[33m.[39mincidentCountsByCatego
+ry)[33m.[39m[34mtoHaveProperty[39m([32m'SAFETY'[39m)[33m;[39m
+    [90m   | [39m                                            [31m^[39m
+    [90m162| [39m      [34mexpect[39m(body[33m.[39mincidentCountsByCatego
+ry)[33m.[39m[34mtoHaveProperty[39m([32m'PRIVACY'[39m)[33m;[39m
+    [90m163| [39m      [34mexpect[39m(body[33m.[39mincidentCountsByCatego
+ry)[33m.[39m[34mtoHaveProperty[39m([32m'COMPLIANCE[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+8/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/ai/incidents/stats[2m > [22mreturns top 
+tenants array with correct structure
+[31m[1mAssertionError[22m: expected false to be true // Object.is 
+equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m175:61[22m[39m
+    [90m173| [39m
+    [90m174| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m175| [39m      [34mexpect[39m([33mArray[39m[33m.[39m[34misArra
+y[39m(body[33m.[39mtopTenantsByIncidentCount))[33m.[39m[34mtoBe[39m([35
+mtrue[39m)[33m;[39m
+    [90m   | [39m                                                            
+[31m^[39m
+    [90m176| [39m      
+    [90m177| [39m      [35mif[39m 
+(body[33m.[39mtopTenantsByIncidentCount[33m.[39mlength [33m>[39m 
+[34m0[39m) {
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[
+9/40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mreturns full 
+compliance report
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m241:35[22m[39m
+    [90m239| [39m      })[33m;[39m
+    [90m240| [39m
+    [90m241| [39m      [34mexpect[39m(response[33m.[39mstatusCode)[33m.
+[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m242| [39m      [35mconst[39m body [33m=[39m 
+[33mJSON[39m[33m.[39m[34mparse[39m(response[33m.[39mbody)[33m;[39m
+    [90m243| [39m      
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22maiStats 
+section has correct structure
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m262:23[22m[39m
+    [90m260| [39m      [35mconst[39m aiStats [33m=[39m 
+body[33m.[39maiStats[33m;[39m
+    [90m261| [39m      
+    [90m262| [39m      [34mexpect[39m(aiStats)[33m.[39m[34mtoHavePropert
+y[39m([32m'totalCalls'[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m263| [39m      [34mexpect[39m(aiStats)[33m.[39m[34mtoHavePropert
+y[39m([32m'safetyDistribution'[39m)[33m;[39m
+    [90m264| [39m      [34mexpect[39m(aiStats)[33m.[39m[34mtoHavePropert
+y[39m([32m'avgLatencyMs'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mincidentStats 
+section has correct structure
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m276:29[22m[39m
+    [90m274| [39m      [35mconst[39m incidentStats [33m=[39m 
+body[33m.[39mincidentStats[33m;[39m
+    [90m275| [39m      
+    [90m276| [39m      [34mexpect[39m(incidentStats)[33m.[39m[34mtoHaveP
+roperty[39m([32m'totalIncidents'[39m)[33m;[39m
+    [90m   | [39m                            [31m^[39m
+    [90m277| [39m      [34mexpect[39m(incidentStats)[33m.[39m[34mtoHaveP
+roperty[39m([32m'incidentCountsBySeverity'[39m)[33m;[39m
+    [90m278| [39m      [34mexpect[39m(incidentStats)[33m.[39m[34mtoHaveP
+roperty[39m([32m'topTenantsByIncidentCount'[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mdsrStats 
+section has correct structure
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m290:24[22m[39m
+    [90m288| [39m      [35mconst[39m dsrStats [33m=[39m 
+body[33m.[39mdsrStats[33m;[39m
+    [90m289| [39m      
+    [90m290| [39m      [34mexpect[39m(dsrStats)[33m.[39m[34mtoHaveProper
+ty[39m([32m'totalRequests'[39m)[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m291| [39m      [34mexpect[39m(dsrStats)[33m.[39m[34mtoHaveProper
+ty[39m([32m'countsByType'[39m)[33m;[39m
+    [90m292| [39m      [34mexpect[39m(dsrStats)[33m.[39m[34mtoHaveProper
+ty[39m([32m'countsByStatus'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mGET /admin/compliance/report[2m > [22mpolicyStatus 
+section has correct structure
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m305:28[22m[39m
+    [90m303| [39m      [35mconst[39m policyStatus [33m=[39m 
+body[33m.[39mpolicyStatus[33m;[39m
+    [90m304| [39m      
+    [90m305| [39m      [34mexpect[39m(policyStatus)[33m.[39m[34mtoHavePr
+operty[39m([32m'globalPolicy'[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m306| [39m      [34mexpect[39m(policyStatus)[33m.[39m[34mtoHavePr
+operty[39m([32m'tenantOverrideCount'[39m)[33m;[39m
+    [90m307| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mData aggregation (mock verification)[2m > [22mAI 
+stats totals are consistent
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m324:32[22m[39m
+    [90m322| [39m      
+    [90m323| [39m      [90m// Sum of safety distribution should equal total 
+calls[39m
+    [90m324| [39m      [35mconst[39m safetySum [33m=[39m 
+[33mObject[39m[33m.[39m[34mvalues[39m(body[33m.[39msafetyDistribution 
+[35mas[39m [33mRecor[39mΓÇª
+    [90m   | [39m                               [31m^[39m
+    [90m325| [39m        (a[33m:[39m number[33m,[39m b[33m:[39m 
+number) [33m=>[39m a [33m+[39m b[33m,[39m
+    [90m326| [39m        [34m0[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/adminStats.test.ts[2m > [22mAdmin 
+Stats Routes[2m > [22mData aggregation (mock verification)[2m > 
+[22mIncident stats totals are consistent
+[31m[1mTypeError[22m: Cannot convert undefined or null to object[39m
+[36m [2mΓ¥»[22m test/adminStats.test.ts:[2m344:34[22m[39m
+    [90m342| [39m      
+    [90m343| [39m      [90m// Sum of severity counts should equal total 
+incidents[39m
+    [90m344| [39m      [35mconst[39m severitySum [33m=[39m [33mObject[3
+9m[33m.[39m[34mvalues[39m(body[33m.[39mincidentCountsBySeverity ΓÇª
+    [90m   | [39m                                 [31m^[39m
+    [90m345| [39m        (a[33m:[39m number[33m,[39m b[33m:[39m 
+number) [33m=>[39m a [33m+[39m b[33m,[39m
+    [90m346| [39m        [34m0[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/anxiety-detector.test.ts[2m > 
+[22mAnxietyDetector[2m > [22mperformance anxiety[2m > [22mdetects 
+performance anxiety from rapid incorrect answers
+[31m[1mTypeError[22m: detector.detect is not a function[39m
+[36m [2mΓ¥»[22m test/anxiety-detector.test.ts:[2m20:31[22m[39m
+    [90m 18| [39m    [34mit[39m([32m'detects performance anxiety from 
+rapid incorrect answers'[39m[33m,[39m () ΓÇª
+    [90m 19| [39m      [35mconst[39m detector [33m=[39m [35mnew[39m 
+[33mAnxietyDetector[39m()[33m;[39m
+    [90m 20| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34mdetect[39m({
+    [90m   | [39m                              [31m^[39m
+    [90m 21| [39m        recentAnswers[33m:[39m [
+    [90m 22| [39m          { correct[33m:[39m [35mfalse[39m[33m,[39m 
+timeMs[33m:[39m [34m2000[39m }[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/anxiety-detector.test.ts[2m > 
+[22mAnxietyDetector[2m > [22mtime pressure anxiety[2m > [22mdetects 
+time-pressure anxiety near deadlines
+[31m[1mTypeError[22m: detector.detect is not a function[39m
+[36m [2mΓ¥»[22m test/anxiety-detector.test.ts:[2m39:31[22m[39m
+    [90m 37| [39m    [34mit[39m([32m'detects time-pressure anxiety near 
+deadlines'[39m[33m,[39m () [33m=>[39m {
+    [90m 38| [39m      [35mconst[39m detector [33m=[39m [35mnew[39m 
+[33mAnxietyDetector[39m()[33m;[39m
+    [90m 39| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34mdetect[39m({
+    [90m   | [39m                              [31m^[39m
+    [90m 40| [39m        recentAnswers[33m:[39m [{ correct[33m:[39m 
+[35mtrue[39m[33m,[39m timeMs[33m:[39m [34m500[39m }][33m,[39m
+    [90m 41| [39m        sessionDuration[33m:[39m [34m60[39m[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/anxiety-detector.test.ts[2m > 
+[22mAnxietyDetector[2m > [22mnew content anxiety[2m > [22mdetects anxiety 
+from unfamiliar content area
+[31m[1mTypeError[22m: detector.detect is not a function[39m
+[36m [2mΓ¥»[22m test/anxiety-detector.test.ts:[2m56:31[22m[39m
+    [90m 54| [39m    [34mit[39m([32m'detects anxiety from unfamiliar 
+content area'[39m[33m,[39m () [33m=>[39m {
+    [90m 55| [39m      [35mconst[39m detector [33m=[39m [35mnew[39m 
+[33mAnxietyDetector[39m()[33m;[39m
+    [90m 56| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34mdetect[39m({
+    [90m   | [39m                              [31m^[39m
+    [90m 57| [39m        recentAnswers[33m:[39m [][33m,[39m
+    [90m 58| [39m        sessionDuration[33m:[39m [34m10[39m[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/anxiety-detector.test.ts[2m > 
+[22mAnxietyDetector[2m > [22mrisk scoring[2m > [22mreturns a risk score 
+between 0 and 1
+[31m[1mTypeError[22m: detector.detect is not a function[39m
+[36m [2mΓ¥»[22m test/anxiety-detector.test.ts:[2m71:31[22m[39m
+    [90m 69| [39m    [34mit[39m([32m'returns a risk score between 0 and 
+1'[39m[33m,[39m () [33m=>[39m {
+    [90m 70| [39m      [35mconst[39m detector [33m=[39m [35mnew[39m 
+[33mAnxietyDetector[39m()[33m;[39m
+    [90m 71| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34mdetect[39m({
+    [90m   | [39m                              [31m^[39m
+    [90m 72| [39m        recentAnswers[33m:[39m [{ correct[33m:[39m 
+[35mfalse[39m[33m,[39m timeMs[33m:[39m [34m3000[39m }][33m,[39m
+    [90m 73| [39m        sessionDuration[33m:[39m [34m120[39m[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/anxiety-detector.test.ts[2m > 
+[22mAnxietyDetector[2m > [22mno anxiety[2m > [22mreturns not-detected for 
+normal patterns
+[31m[1mTypeError[22m: detector.detect is not a function[39m
+[36m [2mΓ¥»[22m test/anxiety-detector.test.ts:[2m87:31[22m[39m
+    [90m 85| [39m    [34mit[39m([32m'returns not-detected for normal 
+patterns'[39m[33m,[39m () [33m=>[39m {
+    [90m 86| [39m      [35mconst[39m detector [33m=[39m [35mnew[39m 
+[33mAnxietyDetector[39m()[33m;[39m
+    [90m 87| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34mdetect[39m({
+    [90m   | [39m                              [31m^[39m
+    [90m 88| [39m        recentAnswers[33m:[39m [
+    [90m 89| [39m          { correct[33m:[39m [35mtrue[39m[33m,[39m 
+timeMs[33m:[39m [34m5000[39m }[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects performance anxiety 
+from consecutive errors
+[31m[1mAssertionError[22m: expected 2.625 to be greater than 3[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m113:32[22m[39m
+    [90m111| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m112| [39m
+    [90m113| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m114| [39m      [34mexpect[39m(result[33m.[39manxietyType)[33m.[
+39m[34mtoBe[39m([32m'performance'[39m)[33m;[39m
+    [90m115| [39m      
+[34mexpect[39m(result[33m.[39mindicators[33m.[39m[34msome[39m((i) 
+[33m=>[39m i[33m.[39msignal [33m===[39m [32m'consecutiveEr[39mΓÇª
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects time pressure 
+anxiety
+[31m[1mAssertionError[22m: expected 'performance' to be 'time_pressure' // 
+Object.is equality[39m
+
+Expected: [32m"[7mtime_pressur[27me"[39m
+Received: [31m"[7mperformanc[27me"[39m
+
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m132:34[22m[39m
+    [90m130| [39m
+    [90m131| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m4[39m)[33m;[39m
+    [90m132| [39m      [34mexpect[39m(result[33m.[39manxietyType)[33m.[
+39m[34mtoBe[39m([32m'time_pressure'[39m)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m133| [39m      [34mexpect[39m(result[33m.[39mtriggers)[33m.[39m
+[34mtoContain[39m([32m'timed_activity'[39m)[33m;[39m
+    [90m134| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects new content anxiety
+[31m[1mAssertionError[22m: expected 1.75 to be greater than 3[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m149:32[22m[39m
+    [90m147| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m148| [39m
+    [90m149| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m150| [39m      [34mexpect[39m(result[33m.[39manxietyType)[33m.[
+39m[34mtoBe[39m([32m'new_content'[39m)[33m;[39m
+    [90m151| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects avoidance behavior
+[31m[1mAssertionError[22m: expected 2.625 to be greater than 3[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m163:32[22m[39m
+    [90m161| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m162| [39m
+    [90m163| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m164| [39m      [34mexpect[39m(result[33m.[39manxietyType)[33m.[
+39m[34mtoBe[39m([32m'avoidance'[39m)[33m;[39m
+    [90m165| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects erratic behavior
+[31m[1mAssertionError[22m: expected 3.5 to be greater than 4[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m177:32[22m[39m
+    [90m175| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m176| [39m
+    [90m177| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m4[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m178| [39m      [34mexpect[39m(result[33m.[39manxietyType)[33m.[
+39m[34mtoBe[39m([32m'erratic'[39m)[33m;[39m
+    [90m179| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mamplifies risk for known 
+triggers
+[31m[1mAssertionError[22m: expected 0 to be greater than 0[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m192:44[22m[39m
+    [90m190| [39m      [35mconst[39m resultWithPatterns [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+paΓÇª
+    [90m191| [39m
+    [90m192| [39m      [34mexpect[39m(resultWithPatterns[33m.[39mriskLeve
+l)[33m.[39m[34mtoBeGreaterThan[39m(resultWithoΓÇª
+    [90m   | [39m                                           [31m^[39m
+    [90m193| [39m    })[33m;[39m
+    [90m194| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects explicit 
+frustration signal
+[31m[1mAssertionError[22m: expected 3.5 to be greater than or equal to 
+7[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m203:32[22m[39m
+    [90m201| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m202| [39m
+    [90m203| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThanOrEqual[39m([34m7[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m204| [39m      
+[34mexpect[39m(result[33m.[39mindicators[33m.[39m[34msome[39m((i) 
+[33m=>[39m i[33m.[39msignal [33m===[39m [32m'explicitFrust[39mΓÇª
+    [90m205| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[28/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mAnxietyDetector[2m > [22manalyze[2m > [22mdetects break request as 
+anxiety signal
+[31m[1mAssertionError[22m: expected 0 to be greater than 3[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m215:32[22m[39m
+    [90m213| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[][33m,[39m [34mcreateThre[39mΓÇª
+    [90m214| [39m
+    [90m215| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m216| [39m      
+[34mexpect[39m(result[33m.[39mindicators[33m.[39m[34msome[39m((i) 
+[33m=>[39m i[33m.[39msignal [33m===[39m [32m'requestedBrea[39mΓÇª
+    [90m217| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[29/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mOverwhelmDetector[2m > [22manalyze[2m > [22mdetects emotional overload
+[31m[1mAssertionError[22m: expected 4.95 to be greater than 5[39m
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m289:32[22m[39m
+    [90m287| [39m      [35mconst[39m result [33m=[39m 
+detector[33m.[39m[34manalyze[39m(signals[33m,[39m context[33m,[39m 
+[34mcreateThreshol[39mΓÇª
+    [90m288| [39m
+    [90m289| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m5[39m)[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m290| [39m      [34mexpect[39m(result[33m.[39mloadBreakdown[33m.
+[39memotional)[33m.[39m[34mtoBeGreaterThan[39m([34m5[39m)[33m;[39m
+    [90m291| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[30/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/emotionalState.test.ts[2m > 
+[22mOverwhelmDetector[2m > [22manalyze[2m > [22mamplifies risk when 
+multiple systems are overloaded
+[31m[1mAssertionError[22m: expected 'combined' to be 'multi_system' // 
+Object.is equality[39m
+
+Expected: [32m"multi_system"[39m
+Received: [31m"combined"[39m
+
+[36m [2mΓ¥»[22m test/emotionalState.test.ts:[2m335:36[22m[39m
+    [90m333| [39m      [90m// Multi-system overload should push risk very 
+high[39m
+    [90m334| [39m      [34mexpect[39m(result[33m.[39mriskLevel)[33m.[39
+m[34mtoBeGreaterThan[39m([34m7[39m)[33m;[39m
+    [90m335| [39m      [34mexpect[39m(result[33m.[39moverwhelmType)[33m.
+[39m[34mtoBe[39m([32m'multi_system'[39m)[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m336| [39m    })[33m;[39m
+    [90m337| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[31/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/internal.api.test.ts[2m > 
+[22minternal AI routes[2m > [22mecho returns structured response
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/internal.api.test.ts:[2m51:28[22m[39m
+    [90m 49| [39m    })[33m;[39m
+    [90m 50| [39m
+    [90m 51| [39m    [34mexpect[39m(res[33m.[39mstatusCode)[33m.[39m[3
+4mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 52| [39m    [35mconst[39m body [33m=[39m 
+res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m 53| [39m    [34mexpect[39m(body[33m.[39mresponse[33m.[39mconte
+nt)[33m.[39m[34mtoContain[39m([32m'hello-world'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[32/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/internal.api.test.ts[2m > 
+[22minternal AI routes[2m > [22mtest-agent echoes agentType in metadata
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/internal.api.test.ts:[2m68:28[22m[39m
+    [90m 66| [39m    })[33m;[39m
+    [90m 67| [39m
+    [90m 68| [39m    [34mexpect[39m(res[33m.[39mstatusCode)[33m.[39m[3
+4mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 69| [39m    [35mconst[39m body [33m=[39m 
+res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m 70| [39m    [34mexpect[39m(body[33m.[39mresponse[33m.[39mmetad
+ata[33m.[39magentType)[33m.[39m[34mtoBe[39m([32m'BASELINE'[39m)[33m;[
+39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[33/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/internal.api.test.ts[2m > 
+[22minternal AI routes[2m > [22mtest-agent flags unsafe content
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/internal.api.test.ts:[2m92:28[22m[39m
+    [90m 90| [39m    })[33m;[39m
+    [90m 91| [39m
+    [90m 92| [39m    [34mexpect[39m(res[33m.[39mstatusCode)[33m.[39m[3
+4mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 93| [39m    [35mconst[39m body [33m=[39m 
+res[33m.[39m[34mjson[39m()[33m;[39m
+    [90m 94| [39m    [34mexpect[39m(body[33m.[39mresponse[33m.[39msafet
+yStatus)[33m.[39mnot[33m.[39m[34mtoBe[39m([32m'OK'[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[34/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/internal.api.test.ts[2m > 
+[22minternal AI routes[2m > [22mrollout percentages influence selected 
+config deterministically
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2mΓ¥»[22m test/internal.api.test.ts:[2m191:30[22m[39m
+    [90m189| [39m      payload[33m:[39m { tenantId[33m:[39m 
+rolloutKey[33m,[39m agentType[33m:[39m [32m'BASELINE'[39m[33m,[39m 
+payload[33m:[39mΓÇª
+    [90m190| [39m    })[33m;[39m
+    [90m191| [39m    [34mexpect[39m(first[33m.[39mstatusCode)[33m.[39m
+[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m192| [39m    [35mconst[39m firstBody [33m=[39m 
+first[33m.[39m[34mjson[39m()[33m;[39m
+    [90m193| [39m    [34mexpect[39m(firstBody[33m.[39mresponse[33m.[39m
+metadata[33m.[39mconfigVersion)[33m.[39m[34mtoBe[39m([32m'v1'[39m)[33m
+;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[35/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/multi-provider-gateway.test.ts[2m > 
+[22mCircuitBreaker[2m > [22mstate transitions[2m > [22mshould transition 
+to CLOSED after success threshold in HALF_OPEN
+[31m[1mAssertionError[22m: expected 'HALF_OPEN' to be 'CLOSED' // Object.is 
+equality[39m
+
+Expected: [32m"CLOSED"[39m
+Received: [31m"HALF_OPEN"[39m
+
+[36m [2mΓ¥»[22m test/multi-provider-gateway.test.ts:[2m299:34[22m[39m
+    [90m297| [39m      breaker[33m.[39m[34mrecordSuccess[39m()[33m;[39m
+    [90m298| [39m
+    [90m299| [39m      [34mexpect[39m(breaker[33m.[39m[34mgetState[39m(
+))[33m.[39m[34mtoBe[39m([32m'CLOSED'[39m)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m300| [39m    })[33m;[39m
+    [90m301| [39m  })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[36/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/multi-provider-gateway.test.ts[2m > 
+[22mFailoverHandler[2m > [22mclassifyError[2m > [22mshould classify rate 
+limit errors as failover
+[31m[1mError[22m: Cannot find module 
+'../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test
+.ts[39m
+[36m [2mΓ¥»[22m test/multi-provider-gateway.test.ts:[2m622:34[22m[39m
+    [90m620| [39m  [34mdescribe[39m([32m'classifyError'[39m[33m,[39m 
+() [33m=>[39m {
+    [90m621| [39m    [34mit[39m([32m'should classify rate limit errors as 
+failover'[39m[33m,[39m () [33m=>[39m {
+    [90m622| [39m      [35mconst[39m { [33mRateLimitError[39m } 
+[33m=[39m [34mrequire[39m([32m'../src/providers/adapters/ba[39mΓÇª
+    [90m   | [39m                                 [31m^[39m
+    [90m623| [39m      
+[34mexpect[39m(handler[33m.[39m[34mclassifyError[39m([35mnew[39m 
+[33mRateLimitError[39m([32m'rate limit'[39m)))[33m.[39mΓÇª
+    [90m624| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[37/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/multi-provider-gateway.test.ts[2m > 
+[22mFailoverHandler[2m > [22mclassifyError[2m > [22mshould classify 
+authentication errors as abort
+[31m[1mError[22m: Cannot find module 
+'../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test
+.ts[39m
+[36m [2mΓ¥»[22m test/multi-provider-gateway.test.ts:[2m627:39[22m[39m
+    [90m625| [39m
+    [90m626| [39m    [34mit[39m([32m'should classify authentication 
+errors as abort'[39m[33m,[39m () [33m=>[39m {
+    [90m627| [39m      [35mconst[39m { [33mAuthenticationError[39m } 
+[33m=[39m [34mrequire[39m([32m'../src/providers/adapte[39mΓÇª
+    [90m   | [39m                                      [31m^[39m
+    [90m628| [39m      
+[34mexpect[39m(handler[33m.[39m[34mclassifyError[39m([35mnew[39m 
+[33mAuthenticationError[39m([32m'auth error[39mΓÇª
+    [90m629| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[38/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/multi-provider-gateway.test.ts[2m > 
+[22mFailoverHandler[2m > [22mclassifyError[2m > [22mshould classify 
+timeout errors as retry
+[31m[1mError[22m: Cannot find module 
+'../src/providers/adapters/base.adapter.js'
+Require stack:
+- C:\Users\ofema\aivo\services\ai-orchestrator\test\multi-provider-gateway.test
+.ts[39m
+[36m [2mΓ¥»[22m test/multi-provider-gateway.test.ts:[2m632:32[22m[39m
+    [90m630| [39m
+    [90m631| [39m    [34mit[39m([32m'should classify timeout errors as 
+retry'[39m[33m,[39m () [33m=>[39m {
+    [90m632| [39m      [35mconst[39m { [33mTimeoutError[39m } 
+[33m=[39m [34mrequire[39m([32m'../src/providers/adapters/base[39mΓÇª
+    [90m   | [39m                               [31m^[39m
+    [90m633| [39m      
+[34mexpect[39m(handler[33m.[39m[34mclassifyError[39m([35mnew[39m 
+[33mTimeoutError[39m([32m'timeout'[39m[33m,[39m [34m1000[39m)))ΓÇª
+    [90m634| [39m    })[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39/
+40]ΓÄ»[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m test/rate-limit.middleware.test.ts[2m > 
+[22mRate Limit Middleware[2m > [22mexports a Fastify plugin or middleware
+[31m[1mAssertionError[22m: expected undefined to be defined[39m
+[36m [2mΓ¥»[22m test/rate-limit.middleware.test.ts:[2m26:29[22m[39m
+    [90m 24| [39m
+    [90m 25| [39m  [34mit[39m([32m'exports a Fastify plugin or 
+middleware'[39m[33m,[39m () [33m=>[39m {
+    [90m 26| [39m    
+[34mexpect[39m(rateLimitPlugin)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m   | [39m                            [31m^[39m
+    [90m 27| [39m  })[33m;[39m
+    [90m 28| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[40/
+40]ΓÄ»[22m[39m
+
+[2m Test Files [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m25 passed[39m[22m[90m (32)[39m
+[2m      Tests [22m [1m[31m38 failed[39m[22m[2m | [22m[1m[32m435 passed[39m[22m[90m (473)[39m
+[2m   Start at [22m 05:35:17
+[2m   Duration [22m 46.90s[2m (transform 24.75s, setup 0ms, collect 45.53s, tests 31.19s, environment 6ms, prepare 21.74s)[22m
+
+undefined
+C:\Users\ofema\aivo\services\ai-orchestrator:
+ΓÇëERR_PNPM_RECURSIVE_EXEC_FIRST_FAILΓÇë Command failed with exit code 1: vitest run

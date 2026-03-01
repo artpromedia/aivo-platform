@@ -15,6 +15,12 @@ import type {
   StateIndicator,
 } from './emotional-state.types.js';
 
+import {
+  createDefaultBehavioralSignals,
+  createDefaultContextualFactors,
+  DEFAULT_OVERWHELM_THRESHOLDS,
+} from './emotional-state.types.js';
+
 export class AnxietyDetector {
   /**
    * Analyze behavioral signals for anxiety indicators.
@@ -245,6 +251,20 @@ export class AnxietyDetector {
       });
     }
 
+    // ─── Break Request ────────────────────────────────────────────────────
+    if (signals.requestedBreak) {
+      totalRisk += 2;
+      signalCount++;
+      indicators.push({
+        type: 'anxiety',
+        signal: 'requestedBreak',
+        value: true,
+        normalRange: { min: 0, max: 0 },
+        contribution: 0.6,
+        description: 'Learner requested a break - may indicate overwhelm or anxiety',
+      });
+    }
+
     // ─── Pattern Matching ─────────────────────────────────────────────────
     // Check for matches with learned patterns
     if (learnerPatterns && learnerPatterns.length > 0) {
@@ -284,6 +304,75 @@ export class AnxietyDetector {
       anxietyType,
       indicators,
       triggers,
+    };
+  }
+
+  /**
+   * Simplified detection API.
+   * Translates high-level answer/session data into the full analyze() pipeline.
+   */
+  detect(input: {
+    recentAnswers: Array<{ correct: boolean; timeMs: number }>;
+    sessionDuration: number;
+    contentDifficulty: string;
+    timeRemaining?: number;
+    isNewTopic?: boolean;
+    priorExposure?: number;
+  }): { detected: boolean; anxietyType: string; riskScore: number } {
+    const answers = input.recentAnswers;
+    const times = answers.map((a) => a.timeMs);
+    const avgTime = times.length > 0 ? times.reduce((s, t) => s + t, 0) / times.length : 5000;
+    const lastTime = times.length > 0 ? times[times.length - 1] : avgTime;
+
+    // Count consecutive incorrect answers from the end
+    let consecutiveErrors = 0;
+    for (let i = answers.length - 1; i >= 0; i--) {
+      if (!answers[i].correct) consecutiveErrors++;
+      else break;
+    }
+
+    // Compute coefficient of variation for time variance
+    let timeVariance = 0;
+    if (times.length > 1) {
+      const mean = avgTime;
+      const variance = times.reduce((s, t) => s + (t - mean) ** 2, 0) / times.length;
+      timeVariance = Math.sqrt(variance) / mean;
+    }
+
+    const signals: BehavioralSignals = {
+      ...createDefaultBehavioralSignals(),
+      responseTimeMs: lastTime,
+      averageResponseTimeMs: Math.max(avgTime, 1),
+      responseTimeVariance: timeVariance,
+      consecutiveErrors,
+      interactionCount: answers.length,
+    };
+
+    const difficultyPerf =
+      input.contentDifficulty === 'easy' ? 80 : input.contentDifficulty === 'hard' ? 30 : 50;
+
+    const context: ContextualFactors = {
+      ...createDefaultContextualFactors(),
+      isAssessment: consecutiveErrors >= 3,
+      hasTimeLimit: input.timeRemaining !== undefined,
+      timeRemainingSeconds: input.timeRemaining,
+      isNewContent: input.isNewTopic ?? false,
+      previousPerformanceOnTopic:
+        input.priorExposure !== undefined ? input.priorExposure * 20 : difficultyPerf,
+    };
+
+    const thresholds = {
+      ...DEFAULT_OVERWHELM_THRESHOLDS,
+      learnerId: 'detect-convenience',
+      tenantId: 'detect-convenience',
+    } as OverwhelmThresholds;
+
+    const result = this.analyze(signals, context, null, thresholds);
+
+    return {
+      detected: result.riskLevel > 2,
+      anxietyType: result.anxietyType,
+      riskScore: Math.min(1, result.riskLevel / 10),
     };
   }
 

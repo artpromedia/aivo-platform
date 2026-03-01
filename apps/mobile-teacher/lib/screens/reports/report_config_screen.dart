@@ -246,7 +246,7 @@ class _ReportConfigScreenState extends ConsumerState<ReportConfigScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: AivoBrand.success, size: 20),
+                const Icon(Icons.check_circle, color: AivoBrand.success, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

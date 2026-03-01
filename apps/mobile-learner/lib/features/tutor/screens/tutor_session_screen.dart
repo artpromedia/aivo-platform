@@ -46,7 +46,7 @@ class _TutorSessionScreenState extends ConsumerState<TutorSessionScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _realtimeConnected = false;
   String _sessionLocale = 'en';
-  bool _voiceAvailableForLocale = true;
+  final bool _voiceAvailableForLocale = true;
 
   @override
   void dispose() {

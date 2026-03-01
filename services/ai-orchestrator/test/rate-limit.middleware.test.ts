@@ -19,7 +19,7 @@ describe('Rate Limit Middleware', () => {
     vi.clearAllMocks();
     vi.resetModules();
     const mod = await import('../src/middleware/rate-limit.middleware');
-    rateLimitPlugin = mod.rateLimitMiddleware || mod.rateLimitPlugin || mod.default;
+    rateLimitPlugin = mod.aiRateLimitMiddleware || mod.rateLimitMiddleware || mod.rateLimitPlugin || mod.default;
   });
 
   it('exports a Fastify plugin or middleware', () => {

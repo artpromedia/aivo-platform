@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_common/theme/theme.dart';
 
 import '../gamification/models.dart';
 import '../gamification/providers.dart';

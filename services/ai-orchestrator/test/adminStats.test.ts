@@ -8,7 +8,7 @@ import { registerAdminStatsRoutes } from '../src/routes/adminStats.js';
 
 // Mock Pool
 const mockPool = {
-  query: vi.fn(),
+  query: vi.fn().mockResolvedValue({ rows: [], rowCount: 0 }),
   connect: vi.fn(),
   end: vi.fn(),
 };
@@ -22,6 +22,7 @@ describe('Admin Stats Routes', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
+    mockPool.query.mockResolvedValue({ rows: [], rowCount: 0 });
     app = Fastify({ logger: false });
     await app.register(registerAdminStatsRoutes, { pool: mockPool as any });
   });

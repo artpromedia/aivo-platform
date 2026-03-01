@@ -47,6 +47,12 @@ import {
   resetCostCalculator,
 } from '../src/routing/cost-calculator.js';
 
+import {
+  RateLimitError,
+  AuthenticationError,
+  TimeoutError,
+} from '../src/providers/adapters/base.adapter.js';
+
 // ============================================================================
 // Test Fixtures
 // ============================================================================
@@ -619,17 +625,14 @@ describe('FailoverHandler', () => {
 
   describe('classifyError', () => {
     it('should classify rate limit errors as failover', () => {
-      const { RateLimitError } = require('../src/providers/adapters/base.adapter.js');
       expect(handler.classifyError(new RateLimitError('rate limit'))).toBe('failover');
     });
 
     it('should classify authentication errors as abort', () => {
-      const { AuthenticationError } = require('../src/providers/adapters/base.adapter.js');
       expect(handler.classifyError(new AuthenticationError('auth error'))).toBe('abort');
     });
 
     it('should classify timeout errors as retry', () => {
-      const { TimeoutError } = require('../src/providers/adapters/base.adapter.js');
       expect(handler.classifyError(new TimeoutError('timeout', 1000))).toBe('retry');
     });
   });

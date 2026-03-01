@@ -222,7 +222,7 @@ class _ClassAnalyticsScreenState extends ConsumerState<ClassAnalyticsScreen> {
               child: MetricCard(
                 title: 'Completion Rate',
                 value:
-                    '${(analytics.completionMetrics?.assignmentCompletionRate ?? 0).toStringAsFixed(0)}%',
+                    '${(analytics.completionMetrics.assignmentCompletionRate ?? 0).toStringAsFixed(0)}%',
                 icon: Icons.check_circle,
                 color: AivoBrand.success,
                 compact: true,
@@ -383,7 +383,7 @@ class _ClassAnalyticsScreenState extends ConsumerState<ClassAnalyticsScreen> {
         ),
         title: Text(student.studentName),
         subtitle: Text(
-          'Grade: ${student.letterGrade} • Completion: ${(student.completionMetrics?.assignmentCompletionRate ?? 0).toStringAsFixed(0)}%',
+          'Grade: ${student.letterGrade} • Completion: ${(student.completionMetrics.assignmentCompletionRate ?? 0).toStringAsFixed(0)}%',
           style: theme.textTheme.bodySmall,
         ),
         trailing: Container(
