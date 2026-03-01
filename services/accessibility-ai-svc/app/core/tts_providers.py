@@ -2,8 +2,10 @@
 Multi-provider Text-to-Speech service.
 
 Supports automatic failover between:
-- Coqui TTS (local)
-- OpenAI TTS API
+- Dia 1.6B (open-source, GPU, emotional dialogue)
+- Kokoro 82M (open-source, CPU/edge, real-time)
+- Coqui TTS (local, legacy)
+- OpenAI gpt-4o-mini-tts (cloud, steerable emotion)
 - Google Cloud Text-to-Speech
 - Azure Speech Services
 - ElevenLabs
@@ -56,7 +58,19 @@ class MultiProviderTTS:
         available = self.config.get_available_tts_providers()
         
         for i, provider in enumerate(available):
-            if provider == TTSProvider.COQUI_LOCAL:
+            if provider == TTSProvider.DIA_LOCAL:
+                self._manager.register_provider(
+                    "dia_local",
+                    self._synthesize_dia,
+                    priority=i,
+                )
+            elif provider == TTSProvider.KOKORO_LOCAL:
+                self._manager.register_provider(
+                    "kokoro_local",
+                    self._synthesize_kokoro,
+                    priority=i,
+                )
+            elif provider == TTSProvider.COQUI_LOCAL:
                 self._manager.register_provider(
                     "coqui_local",
                     self._synthesize_coqui_local,
@@ -565,6 +579,93 @@ class MultiProviderTTS:
             provider="amazon_polly",
             voice_id=polly_voice,
         )
+
+    # ==================== Open-Source Provider Wrappers ====================
+
+    def _synthesize_dia(
+        self,
+        text: str,
+        voice: str = "default",
+        speed: float = 1.0,
+        language: str = "en",
+    ) -> SynthesisResult:
+        """Synthesize using Dia 1.6B (GPU, open-source)."""
+        from ..core.dia_tts_provider import DiaTTSProvider
+
+        provider = DiaTTSProvider()
+        return provider.synthesize(
+            text=text, voice=voice, speed=speed, language=language,
+        )
+
+    def _synthesize_kokoro(
+        self,
+        text: str,
+        voice: str = "default",
+        speed: float = 1.0,
+        language: str = "en",
+    ) -> SynthesisResult:
+        """Synthesize using Kokoro 82M (CPU, real-time)."""
+        from ..core.kokoro_tts_provider import KokoroTTSProvider
+
+        provider = KokoroTTSProvider()
+        return provider.synthesize(
+            text=text, voice=voice, speed=speed, language=language,
+        )
+
+
+# ---------------------------------------------------------------------------
+# TTS Strategy Selector — use-case-aware provider routing for K-12
+# ---------------------------------------------------------------------------
+
+class TTSStrategySelector:
+    """
+    Select optimal TTS provider based on context.
+
+    Strategy for K-12:
+    - Tutoring sessions       → Dia (emotional, free)
+    - Mobile / Chromebook     → Kokoro (CPU, offline)
+    - IEP read-aloud          → OpenAI gpt-4o-mini-tts (highest-quality steerable)
+    - Accessibility / reader  → Azure (SSML, accessibility features)
+    - Parent communications   → ElevenLabs (premium professional)
+    - Offline / no network    → Kokoro or Coqui
+    """
+
+    def select_provider(
+        self,
+        use_case: str,
+        has_gpu: bool = False,
+        has_network: bool = True,
+        budget_remaining: float = float("inf"),
+    ) -> str:
+        """Return the recommended provider name string."""
+        # Offline scenarios: must use a local provider
+        if not has_network:
+            return "dia_local" if has_gpu else "kokoro_local"
+
+        # Use-case routing
+        if use_case == "tutoring" and has_gpu:
+            return "dia_local"  # free, emotional, on-premises
+
+        if use_case == "iep_read_aloud":
+            return "openai_api"  # steerable emotion for IEP
+
+        if use_case == "accessibility":
+            return "azure"  # best SSML and accessibility features
+
+        if use_case == "parent_communication":
+            return "elevenlabs"  # premium professional quality
+
+        if use_case == "mobile" or not has_gpu:
+            return "kokoro_local"  # CPU-friendly for mobile
+
+        if use_case == "storytelling" and has_gpu:
+            return "dia_local"  # multi-speaker dialogue
+
+        # Budget-conscious default
+        if budget_remaining <= 0:
+            return "dia_local" if has_gpu else "kokoro_local"
+
+        return "dia_local" if has_gpu else "openai_api"
 
 
 # Singleton instance

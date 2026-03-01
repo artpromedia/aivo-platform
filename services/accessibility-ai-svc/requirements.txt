@@ -55,3 +55,8 @@ openai>=1.0.0
 
 # AssemblyAI (Speech-to-Text)
 # assemblyai>=0.20.0
+
+# Open-source TTS (optional — install for local GPU/CPU inference)
+# dia-tts>=1.0.0           # Nari Labs Dia 1.6B – GPU, emotional dialogue
+# kokoro>=1.0.0             # Hexgrad Kokoro 82M – CPU real-time
+# soundfile>=0.12.0         # WAV I/O for local TTS providers

@@ -23,11 +23,15 @@ class STTProvider(Enum):
 
 class TTSProvider(Enum):
     """Text-to-Speech providers."""
-    COQUI_LOCAL = "coqui_local"          # Coqui TTS (local)
-    OPENAI_API = "openai_api"            # OpenAI TTS API
-    GOOGLE_CLOUD = "google_cloud"        # Google Cloud Text-to-Speech
-    AZURE = "azure"                      # Azure Speech Services
-    ELEVENLABS = "elevenlabs"            # ElevenLabs
+    # Open-source / local (no API cost, privacy-preserving)
+    DIA_LOCAL = "dia_local"              # Dia 1.6B (GPU required)
+    KOKORO_LOCAL = "kokoro_local"        # Kokoro 82M (CPU OK)
+    COQUI_LOCAL = "coqui_local"          # Coqui TTS (legacy)
+    # Cloud APIs (paid, higher quality)
+    OPENAI_API = "openai_api"            # OpenAI gpt-4o-mini-tts
+    GOOGLE_CLOUD = "google_cloud"        # Google Cloud TTS
+    AZURE = "azure"                      # Azure Neural Voices
+    ELEVENLABS = "elevenlabs"            # ElevenLabs premium
     AMAZON_POLLY = "amazon_polly"        # Amazon Polly
 
 
@@ -77,8 +81,10 @@ class AccessibilityAIConfig:
     
     tts_providers: List[TTSProvider] = field(default_factory=lambda: [
         TTSProvider.OPENAI_API,
+        TTSProvider.DIA_LOCAL,
         TTSProvider.GOOGLE_CLOUD,
         TTSProvider.AZURE,
+        TTSProvider.KOKORO_LOCAL,
         TTSProvider.ELEVENLABS,
         TTSProvider.AMAZON_POLLY,
         TTSProvider.COQUI_LOCAL,
@@ -145,7 +151,12 @@ class AccessibilityAIConfig:
         """Get TTS providers that have required credentials."""
         available = []
         for provider in self.tts_providers:
-            if provider == TTSProvider.COQUI_LOCAL:
+            if provider in (
+                TTSProvider.COQUI_LOCAL,
+                TTSProvider.DIA_LOCAL,
+                TTSProvider.KOKORO_LOCAL,
+            ):
+                # Local / open-source — always available (no API key)
                 available.append(provider)
             elif provider == TTSProvider.OPENAI_API and self.openai_api_key:
                 available.append(provider)
