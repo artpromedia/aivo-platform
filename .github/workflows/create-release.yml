@@ -157,7 +157,11 @@ jobs:
           echo ""
 
           for svc in "${ALL[@]}"; do
-            IMAGE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${SOURCE_TAG}"
+            if [[ "$svc" == "backup-agent" ]]; then
+              IMAGE="${{ env.IMAGE_PREFIX }}/aivo-platform/${svc}:${SOURCE_TAG}"
+            else
+              IMAGE="${{ env.IMAGE_PREFIX }}/aivo-${svc}:${SOURCE_TAG}"
+            fi
             echo -n "  ${svc}... "
 
             if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
@@ -253,8 +257,14 @@ jobs:
       - name: Re-tag image
         run: |
           set -euo pipefail
-          SOURCE="${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.validate.outputs.source_tag }}"
-          TARGET="${{ env.IMAGE_PREFIX }}/aivo-${{ matrix.service }}:${{ needs.validate.outputs.version }}"
+          SERVICE="${{ matrix.service }}"
+          if [[ "$SERVICE" == "backup-agent" ]]; then
+            SOURCE="${{ env.IMAGE_PREFIX }}/aivo-platform/${SERVICE}:${{ needs.validate.outputs.source_tag }}"
+            TARGET="${{ env.IMAGE_PREFIX }}/aivo-platform/${SERVICE}:${{ needs.validate.outputs.version }}"
+          else
+            SOURCE="${{ env.IMAGE_PREFIX }}/aivo-${SERVICE}:${{ needs.validate.outputs.source_tag }}"
+            TARGET="${{ env.IMAGE_PREFIX }}/aivo-${SERVICE}:${{ needs.validate.outputs.version }}"
+          fi
 
           echo "Re-tagging:"
           echo "  Source: ${SOURCE}"
