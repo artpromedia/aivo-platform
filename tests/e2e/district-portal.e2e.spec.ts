@@ -225,39 +225,112 @@ test.describe('School Management', () => {
     }
   });
 
-  test('2.6 Admin can view school administrators', async () => {
+  test('2.6 Admin can view school administrators tab', async () => {
     await page.goto(`${BASE_URL}/schools`);
     await waitForPageReady(page);
 
     const schoolCard = page.locator('.school-card').first();
     await schoolCard.click();
+    await waitForPageReady(page);
 
-    const adminsTab = page.locator('button:has-text("Administrators"), [data-testid="admins-tab"]');
-    if (await adminsTab.isVisible()) {
-      await adminsTab.click();
-    }
+    // Switch to Administrators tab
+    const adminsTab = page.locator('[data-testid="admins-tab"]');
+    await expect(adminsTab).toBeVisible();
+    await adminsTab.click();
 
-    const adminsList = page.locator('[data-testid="school-admins"], .admins-list');
-    await expect(adminsList.or(page.locator('text=/admin|principal/i').first())).toBeVisible();
+    // The admins container should be visible
+    const adminsList = page.locator('[data-testid="school-admins"]');
+    await expect(adminsList).toBeVisible();
+
+    // Assign button should be present
+    const assignBtn = page.locator('[data-testid="assign-admin"]');
+    await expect(assignBtn).toBeVisible();
+    await expect(assignBtn).toHaveText('Assign');
   });
 
-  test('2.7 Admin can assign school administrator', async () => {
+  test('2.7 Admin can search and assign school administrator', async () => {
     await page.goto(`${BASE_URL}/schools`);
     await waitForPageReady(page);
 
     const schoolCard = page.locator('.school-card').first();
     await schoolCard.click();
+    await waitForPageReady(page);
 
-    const assignBtn = page.locator('button:has-text("Assign"), [data-testid="assign-admin"]');
-    if (await assignBtn.isVisible()) {
-      await assignBtn.click();
+    // Switch to Administrators tab
+    await page.locator('[data-testid="admins-tab"]').click();
 
-      const userSearch = page.locator(
-        '[data-testid="user-search"], input[placeholder*="search" i]'
-      );
-      if (await userSearch.isVisible()) {
-        await userSearch.fill('admin');
-      }
+    // Click Assign to open search
+    const assignBtn = page.locator('[data-testid="assign-admin"]');
+    await assignBtn.click();
+    await expect(assignBtn).toHaveText('Cancel');
+
+    // Search input should appear
+    const userSearch = page.locator('[data-testid="user-search"]');
+    await expect(userSearch).toBeVisible();
+
+    // Type a query (at least 2 chars to trigger search)
+    await userSearch.fill('admin');
+
+    // Wait for search results or "no results" message
+    const searchResults = page.locator('[data-testid="search-results"]');
+    const noResults = page.locator('text=No matching users found.');
+    await expect(searchResults.or(noResults)).toBeVisible({ timeout: 5000 });
+
+    // If results appeared, click the first one to assign
+    if (await searchResults.isVisible()) {
+      const firstResult = searchResults.locator('button').first();
+      await expect(firstResult).toBeVisible();
+      // Verify result shows user info (name and badge)
+      await expect(firstResult.locator('.font-medium')).toBeVisible();
+      await firstResult.click();
+
+      // After assignment, admin should appear in the list
+      const adminsList = page.locator('[data-testid="school-admins"]');
+      await expect(adminsList.locator('[data-testid^="admin-row-"]').first()).toBeVisible({
+        timeout: 5000,
+      });
+    }
+  });
+
+  test('2.7b Admin can remove school administrator', async () => {
+    await page.goto(`${BASE_URL}/schools`);
+    await waitForPageReady(page);
+
+    const schoolCard = page.locator('.school-card').first();
+    await schoolCard.click();
+    await waitForPageReady(page);
+
+    // Switch to Administrators tab
+    await page.locator('[data-testid="admins-tab"]').click();
+
+    // Check if any admin rows exist
+    const adminRows = page.locator('[data-testid^="admin-row-"]');
+    const count = await adminRows.count();
+
+    if (count > 0) {
+      // Click Remove on the first admin
+      const removeBtn = page.locator('[data-testid^="remove-admin-"]').first();
+      await removeBtn.click();
+
+      // Confirmation dialog should appear
+      const dialog = page.locator('[data-testid="remove-confirm-dialog"]');
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('text=Remove Administrator')).toBeVisible();
+
+      // Cancel first — verify dialog closes
+      const cancelBtn = page.locator('[data-testid="remove-cancel"]');
+      await cancelBtn.click();
+      await expect(dialog).not.toBeVisible();
+
+      // Click Remove again and confirm this time
+      await removeBtn.click();
+      await expect(dialog).toBeVisible();
+
+      const confirmBtn = page.locator('[data-testid="remove-confirm"]');
+      await confirmBtn.click();
+
+      // Dialog should close after removal
+      await expect(dialog).not.toBeVisible({ timeout: 5000 });
     }
   });
 

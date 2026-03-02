@@ -2,7 +2,7 @@
 
 import { Badge, Button, Card, Heading, useGradeTheme } from '@aivo/ui-web';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ============================================================================
 // Types
@@ -23,6 +23,23 @@ interface SchoolDetail {
   createdAt: string;
   updatedAt: string;
   classrooms: Classroom[];
+}
+
+interface UserResult {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+interface SchoolAdmin {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  assignedAt: string;
 }
 
 // ============================================================================
@@ -58,6 +75,20 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
   // Assign admin dialog
   const [showAssign, setShowAssign] = useState(false);
   const [adminSearch, setAdminSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<UserResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Current admins
+  const [admins, setAdmins] = useState<SchoolAdmin[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [adminsError, setAdminsError] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null); // userId being assigned
+
+  // Remove confirmation
+  const [removeTarget, setRemoveTarget] = useState<SchoolAdmin | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   // Resolve params (Next.js 15: params is a Promise)
   useEffect(() => {
@@ -86,6 +117,116 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
   useEffect(() => {
     void loadSchool();
   }, [loadSchool]);
+
+  // Load current admins
+  const loadAdmins = useCallback(async () => {
+    if (!schoolId) return;
+    try {
+      setAdminsLoading(true);
+      setAdminsError(null);
+      const res = await fetch(`/api/schools/${schoolId}/admins?tenantId=${TENANT_ID}`);
+      if (!res.ok) throw new Error(`Failed to load admins (${res.status})`);
+      const data = (await res.json()) as { admins?: SchoolAdmin[] };
+      setAdmins(data.admins ?? []);
+    } catch (err: unknown) {
+      setAdminsError(err instanceof Error ? err.message : 'Failed to load admins');
+    } finally {
+      setAdminsLoading(false);
+    }
+  }, [schoolId]);
+
+  useEffect(() => {
+    if (activeTab === 'administrators') {
+      void loadAdmins();
+    }
+  }, [activeTab, loadAdmins]);
+
+  // Debounced user search
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!adminSearch || adminSearch.length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+    searchTimer.current = setTimeout(() => {
+      void (async () => {
+        try {
+          setSearchLoading(true);
+          setSearchError(null);
+          const params = new URLSearchParams({
+            tenantId: TENANT_ID,
+            search: adminSearch,
+            role: 'ADMIN,TEACHER',
+            limit: '10',
+          });
+          const res = await fetch(`/api/users?${params}`);
+          if (!res.ok) throw new Error('Search failed');
+          const data = (await res.json()) as { users?: UserResult[] };
+          // Filter out users already assigned
+          const assignedIds = new Set(admins.map((a) => a.userId));
+          setSearchResults((data.users ?? []).filter((u) => !assignedIds.has(u.id)));
+        } catch (err: unknown) {
+          setSearchError(err instanceof Error ? err.message : 'Search failed');
+        } finally {
+          setSearchLoading(false);
+        }
+      })();
+    }, 300);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [adminSearch, admins]);
+
+  // Assign user as admin
+  async function handleAssign(user: UserResult) {
+    if (!schoolId) return;
+    setAssigning(user.id);
+    try {
+      const res = await fetch(`/api/schools/${schoolId}/admins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId: TENANT_ID,
+          userId: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        }),
+      });
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errData.error ?? 'Failed to assign admin');
+      }
+      setAdminSearch('');
+      setSearchResults([]);
+      setShowAssign(false);
+      await loadAdmins();
+    } catch (err: unknown) {
+      setSearchError(err instanceof Error ? err.message : 'Assignment failed');
+    } finally {
+      setAssigning(null);
+    }
+  }
+
+  // Remove admin
+  async function handleRemove() {
+    if (!schoolId || !removeTarget) return;
+    setRemoving(true);
+    try {
+      const res = await fetch(
+        `/api/schools/${schoolId}/admins/${removeTarget.userId}?tenantId=${TENANT_ID}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error('Failed to remove admin');
+      setRemoveTarget(null);
+      await loadAdmins();
+    } catch (err: unknown) {
+      setAdminsError(err instanceof Error ? err.message : 'Remove failed');
+    } finally {
+      setRemoving(false);
+    }
+  }
 
   // Handle save (PATCH)
   async function handleSave(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -324,9 +465,12 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
                 data-testid="assign-admin"
                 onClick={() => {
                   setShowAssign(!showAssign);
+                  setAdminSearch('');
+                  setSearchResults([]);
+                  setSearchError(null);
                 }}
               >
-                Assign
+                {showAssign ? 'Cancel' : 'Assign'}
               </Button>
             </div>
 
@@ -338,7 +482,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
                 </label>
                 <input
                   type="text"
-                  placeholder="Search users..."
+                  placeholder="Search by name or email..."
                   data-testid="user-search"
                   value={adminSearch}
                   onChange={(e) => {
@@ -346,19 +490,145 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
                   }}
                   className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
-                <p className="mt-2 text-xs text-muted">Administrator assignment coming soon.</p>
+
+                {/* Search loading */}
+                {searchLoading && (
+                  <p className="mt-2 text-xs text-muted" data-testid="search-loading">
+                    Searching...
+                  </p>
+                )}
+
+                {/* Search error */}
+                {searchError && (
+                  <p className="mt-2 text-xs text-red-600" data-testid="search-error">
+                    {searchError}
+                  </p>
+                )}
+
+                {/* Search results */}
+                {searchResults.length > 0 && (
+                  <ul className="mt-2 max-h-48 divide-y divide-border overflow-y-auto rounded-lg border border-border bg-surface" data-testid="search-results">
+                    {searchResults.map((user) => (
+                      <li key={user.id}>
+                        <button
+                          type="button"
+                          data-testid={`assign-user-${user.id}`}
+                          disabled={assigning === user.id}
+                          onClick={() => void handleAssign(user)}
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-surface-muted disabled:opacity-50"
+                        >
+                          <div>
+                            <span className="font-medium text-text">
+                              {user.firstName} {user.lastName}
+                            </span>
+                            <span className="ml-2 text-muted">{user.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge tone="neutral">{user.role}</Badge>
+                            {assigning === user.id ? (
+                              <span className="text-xs text-muted">Assigning...</span>
+                            ) : (
+                              <span className="text-xs text-primary">+ Assign</span>
+                            )}
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* No results */}
+                {adminSearch.length >= 2 && !searchLoading && searchResults.length === 0 && !searchError && (
+                  <p className="mt-2 text-xs text-muted">No matching users found.</p>
+                )}
               </div>
             )}
 
-            {/* Admins list placeholder */}
-            <div className="admins-list" data-testid="school-admins">
-              <p className="text-sm text-muted">
-                No administrators assigned yet. Click &quot;Assign&quot; to add a principal or
-                admin.
-              </p>
+            {/* Admins loading */}
+            {adminsLoading && (
+              <p className="text-sm text-muted" data-testid="admins-loading">Loading administrators...</p>
+            )}
+
+            {/* Admins error */}
+            {adminsError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" data-testid="admins-error">
+                {adminsError}
+              </div>
+            )}
+
+            {/* Admins list */}
+            <div data-testid="school-admins">
+              {!adminsLoading && admins.length === 0 && (
+                <p className="text-sm text-muted">
+                  No administrators assigned yet. Click &quot;Assign&quot; to add a principal or
+                  admin.
+                </p>
+              )}
+              {admins.length > 0 && (
+                <div className="divide-y divide-border rounded-lg border border-border">
+                  {admins.map((admin) => (
+                    <div
+                      key={admin.userId}
+                      className="flex items-center justify-between px-4 py-3"
+                      data-testid={`admin-row-${admin.userId}`}
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-text">
+                          {admin.firstName} {admin.lastName}
+                        </p>
+                        <p className="text-xs text-muted">{admin.email}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge tone="neutral">{admin.role}</Badge>
+                        <Button
+                          variant="ghost"
+                          data-testid={`remove-admin-${admin.userId}`}
+                          onClick={() => { setRemoveTarget(admin); }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Remove confirmation dialog */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="remove-confirm-dialog">
+          <div className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-text">Remove Administrator</h3>
+            <p className="mt-2 text-sm text-muted">
+              Are you sure you want to remove{' '}
+              <strong>{removeTarget.firstName} {removeTarget.lastName}</strong> as a school
+              administrator?
+            </p>
+            <div className="mt-4 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                data-testid="remove-cancel"
+                onClick={() => { setRemoveTarget(null); }}
+                disabled={removing}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                data-testid="remove-confirm"
+                onClick={() => void handleRemove()}
+                disabled={removing}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {removing ? 'Removing...' : 'Remove'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
