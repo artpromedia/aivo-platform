@@ -125,7 +125,7 @@ jobs:
             auth-svc api-gateway tenant-svc sis-sync-svc iep-svc
             parent-svc profile-svc messaging-svc audit-svc
             notify-svc reports-svc realtime-svc compliance-svc
-            gamification-svc
+            gamification-svc tutor-svc
           )
 
           # Python AI/ML services
@@ -146,7 +146,12 @@ jobs:
             web-dev-portal
           )
 
-          ALL=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}" "${WEB_APPS[@]}")
+          # Standalone services
+          OTHER_SERVICES=(
+            backup-agent
+          )
+
+          ALL=("${TS_SERVICES[@]}" "${PY_SERVICES[@]}" "${WEB_APPS[@]}" "${OTHER_SERVICES[@]}")
 
           echo "═══ Verifying ${#ALL[@]} images for tag: ${SOURCE_TAG} ═══"
           echo ""
@@ -203,6 +208,7 @@ jobs:
           - realtime-svc
           - compliance-svc
           - gamification-svc
+          - tutor-svc
           # Python AI/ML services
           - ai-inference-svc
           - training-svc
@@ -234,6 +240,8 @@ jobs:
           - web-author
           - web-creator
           - web-dev-portal
+          # Standalone services
+          - backup-agent
     steps:
       - name: Install crane
         uses: imjasonh/setup-crane@v0.4
@@ -293,8 +301,8 @@ jobs:
             echo ""
             echo "## Docker Images"
             echo ""
-            echo "All **43** images tagged as \`${VERSION}\` in \`ghcr.io/artpromedia\`:"
-            echo "- 14 TypeScript backend services (Phase 1)"
+            echo "All **45** images tagged as \`${VERSION}\` in \`ghcr.io/artpromedia\`:"
+            echo "- 15 TypeScript backend services (Phase 1)"
             echo "- 20 Python AI/ML services"
             echo "- 9 Next.js web applications"
             echo ""
