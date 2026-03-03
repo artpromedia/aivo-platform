@@ -133,8 +133,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: collect-evidence
-    # Only run on first Monday of the month
-    if: github.event.schedule && (github.run_number % 4 == 0 || github.event_name == 'workflow_dispatch')
+    # Only run on scheduled trigger or manual dispatch
+    if: github.event.schedule || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
 
