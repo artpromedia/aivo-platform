@@ -337,7 +337,7 @@ class _OptionsPreview extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (opt.isCorrect)
-                    Icon(
+                    const Icon(
                       Icons.check,
                       size: 12,
                       color: AivoBrand.success,

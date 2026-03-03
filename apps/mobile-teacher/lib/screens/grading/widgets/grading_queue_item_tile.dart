@@ -111,7 +111,7 @@ class GradingQueueItemTile extends StatelessWidget {
                         color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -119,7 +119,7 @@ class GradingQueueItemTile extends StatelessWidget {
                             size: 12,
                             color: Colors.red,
                           ),
-                          const SizedBox(width: 2),
+                          SizedBox(width: 2),
                           Text(
                             'Overdue',
                             style: TextStyle(
@@ -147,7 +147,7 @@ class GradingQueueItemTile extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.auto_awesome,
                             size: 12,
                             color: Colors.purple,
@@ -155,7 +155,7 @@ class GradingQueueItemTile extends StatelessWidget {
                           const SizedBox(width: 2),
                           Text(
                             'AI: ${item.aiSuggestedScore?.toStringAsFixed(1)}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Colors.purple,

@@ -111,7 +111,7 @@ class _ProfessionalDevelopmentScreenState
   List<PDCourse> _inProgressCourses = [];
   List<PDCourse> _recommendedCourses = [];
   double _totalPDHours = 0;
-  double _requiredPDHours = 30;
+  final double _requiredPDHours = 30;
 
   @override
   void initState() {
@@ -134,7 +134,7 @@ class _ProfessionalDevelopmentScreenState
 
   List<PDCourse> _getMockCourses() {
     return [
-      PDCourse(
+      const PDCourse(
         id: 'pd1',
         title: 'Differentiated Instruction Strategies',
         description: 'Learn effective strategies for differentiating instruction to meet diverse learner needs.',
@@ -152,7 +152,7 @@ class _ProfessionalDevelopmentScreenState
         rating: 4.8,
         enrolledCount: 1250,
       ),
-      PDCourse(
+      const PDCourse(
         id: 'pd2',
         title: 'Technology Tools for the Classroom',
         description: 'Explore essential technology tools to enhance teaching and learning.',
@@ -169,7 +169,7 @@ class _ProfessionalDevelopmentScreenState
         rating: 4.6,
         enrolledCount: 890,
       ),
-      PDCourse(
+      const PDCourse(
         id: 'pd3',
         title: 'Building SEL in Your Classroom',
         description: 'Integrate social-emotional learning throughout your daily instruction.',
@@ -188,7 +188,7 @@ class _ProfessionalDevelopmentScreenState
         rating: 4.9,
         enrolledCount: 2100,
       ),
-      PDCourse(
+      const PDCourse(
         id: 'pd4',
         title: 'Data-Driven Instruction',
         description: 'Use assessment data to inform and improve instructional decisions.',
@@ -205,7 +205,7 @@ class _ProfessionalDevelopmentScreenState
         rating: 4.5,
         enrolledCount: 750,
       ),
-      PDCourse(
+      const PDCourse(
         id: 'pd5',
         title: 'Supporting Students with IEPs',
         description: 'Best practices for implementing IEP accommodations and modifications.',
@@ -224,7 +224,7 @@ class _ProfessionalDevelopmentScreenState
         rating: 4.7,
         enrolledCount: 1500,
       ),
-      PDCourse(
+      const PDCourse(
         id: 'pd6',
         title: 'Positive Classroom Management',
         description: 'Create a positive learning environment through proactive management strategies.',
@@ -602,7 +602,7 @@ class _ProfessionalDevelopmentScreenState
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.verified, color: AivoBrand.success),
+            const Icon(Icons.verified, color: AivoBrand.success),
             const SizedBox(width: 8),
             Expanded(child: Text(cert.name)),
           ],
@@ -834,7 +834,7 @@ class _CourseCard extends StatelessWidget {
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.star, size: 16, color: Colors.amber),
+                  const Icon(Icons.star, size: 16, color: Colors.amber),
                   const SizedBox(width: 4),
                   Text(
                     course.rating.toStringAsFixed(1),
@@ -1286,7 +1286,7 @@ class _CourseDetailScreen extends StatelessWidget {
                       ),
                       title: Text(module),
                       trailing: isCurrent
-                          ? Icon(Icons.play_circle, color: AivoBrand.success)
+                          ? const Icon(Icons.play_circle, color: AivoBrand.success)
                           : null,
                     );
                   }),

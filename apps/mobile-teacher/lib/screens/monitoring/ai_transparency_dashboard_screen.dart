@@ -672,15 +672,15 @@ class _SentimentChip extends StatelessWidget {
   _SentimentConfig _getSentimentConfig(String sentiment) {
     switch (sentiment.toLowerCase()) {
       case 'positive':
-        return _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
+        return const _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
       case 'neutral':
-        return _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
+        return const _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
       case 'negative':
-        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
+        return const _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
       case 'frustrated':
-        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
+        return const _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
       default:
-        return _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
+        return const _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }

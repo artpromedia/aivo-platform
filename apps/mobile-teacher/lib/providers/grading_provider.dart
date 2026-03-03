@@ -484,7 +484,7 @@ class RubricBuilderState {
 /// Notifier for rubric builder.
 class RubricBuilderNotifier extends StateNotifier<RubricBuilderState> {
   RubricBuilderNotifier(this._repository)
-      : super(RubricBuilderState(
+      : super(const RubricBuilderState(
           rubric: Rubric(
             id: '',
             name: '',
@@ -667,10 +667,10 @@ class RubricBuilderNotifier extends StateNotifier<RubricBuilderState> {
 
   List<PerformanceLevel> _defaultLevels() {
     return [
-      PerformanceLevel(id: 'level_4', label: 'Excellent', points: 4, description: 'Exceeds expectations', order: 0),
-      PerformanceLevel(id: 'level_3', label: 'Good', points: 3, description: 'Meets expectations', order: 1),
-      PerformanceLevel(id: 'level_2', label: 'Fair', points: 2, description: 'Approaching expectations', order: 2),
-      PerformanceLevel(id: 'level_1', label: 'Needs Work', points: 1, description: 'Below expectations', order: 3),
+      const PerformanceLevel(id: 'level_4', label: 'Excellent', points: 4, description: 'Exceeds expectations', order: 0),
+      const PerformanceLevel(id: 'level_3', label: 'Good', points: 3, description: 'Meets expectations', order: 1),
+      const PerformanceLevel(id: 'level_2', label: 'Fair', points: 2, description: 'Approaching expectations', order: 2),
+      const PerformanceLevel(id: 'level_1', label: 'Needs Work', points: 1, description: 'Below expectations', order: 3),
     ];
   }
 }

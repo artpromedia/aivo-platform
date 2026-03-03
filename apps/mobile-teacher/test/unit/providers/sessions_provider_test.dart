@@ -163,7 +163,7 @@ void main() {
           title: 'New Test Session',
           classId: 'class-math-5',
         );
-        final dto = CreateSessionDto(
+        const dto = CreateSessionDto(
           classId: 'class-math-5',
           title: 'New Test Session',
           sessionType: SessionType.individual,

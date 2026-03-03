@@ -63,7 +63,7 @@ class SyncService {
   void startBackgroundSync() {
     _syncTimer?.cancel();
     _syncTimer = Timer.periodic(
-      Duration(minutes: EnvConfig.syncIntervalMinutes),
+      const Duration(minutes: EnvConfig.syncIntervalMinutes),
       (_) => syncPendingOperations(),
     );
   }
@@ -133,7 +133,7 @@ class SyncService {
       type: SyncOperationType.delete,
       entityType: entityType,
       entityId: entityId,
-      data: {},
+      data: const {},
       createdAt: DateTime.now(),
     );
     await queueOperation(operation);

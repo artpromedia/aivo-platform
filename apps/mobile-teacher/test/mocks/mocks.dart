@@ -67,7 +67,7 @@ class TestDataFactory {
       gradeLevel: gradeLevel,
       hasIep: hasIep,
       status: status,
-      accommodations: [],
+      accommodations: const [],
       createdAt: DateTime.now(),
     );
   }
@@ -168,7 +168,7 @@ class TestDataFactory {
       id: id,
       studentId: 'student-1',
       studentName: studentName,
-      participantIds: ['parent-1'],
+      participantIds: const ['parent-1'],
       participantNames: participantNames,
       unreadCount: unreadCount,
       lastMessage: 'Last message',
@@ -205,7 +205,7 @@ class TestDataFactory {
       type: type,
       entityType: entityType,
       entityId: entityId,
-      data: {'test': 'data'},
+      data: const {'test': 'data'},
       status: status,
       createdAt: DateTime.now(),
     );

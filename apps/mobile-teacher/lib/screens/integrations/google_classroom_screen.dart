@@ -854,10 +854,10 @@ class _CourseCard extends StatelessWidget {
             ),
             PopupMenuItem(
               onTap: onUnlink,
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.link_off, size: 20, color: AivoBrand.error),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text('Unlink', style: TextStyle(color: AivoBrand.error)),
                 ],
               ),

@@ -96,7 +96,7 @@ class PerformanceLevelTile extends StatelessWidget {
                         color: Colors.purple.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
@@ -104,7 +104,7 @@ class PerformanceLevelTile extends StatelessWidget {
                             size: 12,
                             color: Colors.purple,
                           ),
-                          const SizedBox(width: 2),
+                          SizedBox(width: 2),
                           Text(
                             'AI',
                             style: TextStyle(

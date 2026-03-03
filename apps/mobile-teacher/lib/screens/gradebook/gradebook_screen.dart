@@ -86,7 +86,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
+          const Icon(Icons.error_outline, size: 48, color: AivoBrand.error),
           const SizedBox(height: 16),
           Text('Error loading gradebook', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -240,7 +240,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               const SizedBox(width: 8),
               Text(
                 '${grade?.assignmentsMissing} missing',
-                style: TextStyle(color: AivoBrand.error),
+                style: const TextStyle(color: AivoBrand.error),
               ),
             ],
           ],

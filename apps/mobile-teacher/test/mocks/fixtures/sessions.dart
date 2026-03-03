@@ -16,16 +16,16 @@ class TestSessions {
     sessionType: SessionType.wholeClass,
     title: 'Multiplication Facts Practice',
     description: 'Practice multiplication facts 1-12',
-    studentIds: ['student-alex', 'student-emma', 'student-jordan'],
+    studentIds: const ['student-alex', 'student-emma', 'student-jordan'],
     subject: 'math',
     scheduledAt: DateTime.now().subtract(const Duration(hours: 1)),
     startedAt: DateTime.now().subtract(const Duration(minutes: 45)),
     durationMinutes: 60,
-    objectives: [
+    objectives: const [
       'Master multiplication facts 1-12',
       'Complete 20 practice problems',
     ],
-    activities: [
+    activities: const [
       SessionActivity(
         id: 'activity-1',
         name: 'Warm-up Quiz',
@@ -54,16 +54,16 @@ class TestSessions {
     sessionType: SessionType.smallGroup,
     title: 'Reading Comprehension',
     description: 'Guided reading with comprehension questions',
-    studentIds: ['student-alex', 'student-sofia'],
+    studentIds: const ['student-alex', 'student-sofia'],
     subject: 'reading',
     scheduledAt: DateTime.now().subtract(const Duration(minutes: 30)),
     startedAt: DateTime.now().subtract(const Duration(minutes: 25)),
     durationMinutes: 45,
-    objectives: [
+    objectives: const [
       'Read passage with 90% accuracy',
       'Answer comprehension questions',
     ],
-    activities: [
+    activities: const [
       SessionActivity(
         id: 'activity-3',
         name: 'Passage Reading',
@@ -85,15 +85,15 @@ class TestSessions {
     sessionType: SessionType.wholeClass,
     title: 'Division Introduction',
     description: 'Introduction to division concepts',
-    studentIds: ['student-alex', 'student-emma', 'student-jordan', 'student-marcus'],
+    studentIds: const ['student-alex', 'student-emma', 'student-jordan', 'student-marcus'],
     subject: 'math',
     scheduledAt: DateTime.now().add(const Duration(days: 1)),
     durationMinutes: 60,
-    objectives: [
+    objectives: const [
       'Understand division as inverse of multiplication',
       'Solve simple division problems',
     ],
-    activities: [],
+    activities: const [],
     createdAt: DateTime.now().subtract(const Duration(hours: 5)),
     updatedAt: DateTime.now().subtract(const Duration(hours: 5)),
   );
@@ -107,15 +107,15 @@ class TestSessions {
     sessionType: SessionType.wholeClass,
     title: 'Addition Review',
     description: 'Review of addition concepts',
-    studentIds: ['student-alex', 'student-emma'],
+    studentIds: const ['student-alex', 'student-emma'],
     subject: 'math',
     scheduledAt: DateTime.now().subtract(const Duration(days: 2)),
     startedAt: DateTime.now().subtract(const Duration(days: 2)),
     endedAt: DateTime.now().subtract(const Duration(days: 2)).add(const Duration(hours: 1)),
     durationMinutes: 60,
-    objectives: ['Review addition facts'],
+    objectives: const ['Review addition facts'],
     notes: 'Students performed well. Alex needed extra time.',
-    activities: [
+    activities: const [
       SessionActivity(
         id: 'activity-4',
         name: 'Practice',
@@ -137,12 +137,12 @@ class TestSessions {
     sessionType: SessionType.intervention,
     title: 'Math Intervention - Alex',
     description: 'One-on-one support for multiplication',
-    studentIds: ['student-alex'],
+    studentIds: const ['student-alex'],
     subject: 'math',
     scheduledAt: DateTime.now().add(const Duration(hours: 2)),
     durationMinutes: 30,
-    objectives: ['Address gaps in multiplication facts'],
-    activities: [],
+    objectives: const ['Address gaps in multiplication facts'],
+    activities: const [],
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
     updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
   );
@@ -191,8 +191,8 @@ class TestSessions {
       scheduledAt: scheduledAt ?? DateTime.now(),
       startedAt: startedAt,
       durationMinutes: durationMinutes,
-      objectives: [],
-      activities: [],
+      objectives: const [],
+      activities: const [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

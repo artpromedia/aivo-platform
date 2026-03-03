@@ -141,7 +141,7 @@ class _InviteBottomSheetState extends ConsumerState<InviteBottomSheet> {
               Semantics(
                 label: 'Relationship to child',
                 child: DropdownButtonFormField<CaregiverRelationship>(
-                  value: _relationship,
+                  initialValue: _relationship,
                   decoration: const InputDecoration(
                     labelText: 'Relationship',
                     prefixIcon: Icon(Icons.family_restroom),

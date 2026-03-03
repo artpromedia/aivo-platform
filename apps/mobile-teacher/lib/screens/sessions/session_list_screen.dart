@@ -97,7 +97,7 @@ class _SessionList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_busy, size: 64, color: AivoBrand.gray),
+            const Icon(Icons.event_busy, size: 64, color: AivoBrand.gray),
             const SizedBox(height: 16),
             Text(emptyMessage, style: Theme.of(context).textTheme.bodyLarge),
           ],
@@ -165,11 +165,11 @@ class SessionCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.schedule, size: 16, color: AivoBrand.gray),
+                  const Icon(Icons.schedule, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(time, style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(width: 16),
-                  Icon(Icons.people, size: 16, color: AivoBrand.gray),
+                  const Icon(Icons.people, size: 16, color: AivoBrand.gray),
                   const SizedBox(width: 4),
                   Text(
                     '${session.studentIds.length} students',

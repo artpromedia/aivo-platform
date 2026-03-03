@@ -14,11 +14,11 @@ class TestClasses {
     gradeLevel: 5,
     subject: 'math',
     teacherId: 'teacher-1',
-    studentIds: ['student-alex', 'student-emma', 'student-jordan', 'student-marcus'],
+    studentIds: const ['student-alex', 'student-emma', 'student-jordan', 'student-marcus'],
     studentCount: 4,
     period: '5th',
     room: 'Room 205',
-    schedule: ClassSchedule(
+    schedule: const ClassSchedule(
       daysOfWeek: [1, 2, 3, 4, 5], // Monday-Friday
       startTime: '10:00',
       endTime: '11:00',
@@ -35,11 +35,11 @@ class TestClasses {
     gradeLevel: 5,
     subject: 'reading',
     teacherId: 'teacher-1',
-    studentIds: ['student-alex', 'student-emma', 'student-marcus', 'student-sofia'],
+    studentIds: const ['student-alex', 'student-emma', 'student-marcus', 'student-sofia'],
     studentCount: 4,
     period: '3rd',
     room: 'Room 205',
-    schedule: ClassSchedule(
+    schedule: const ClassSchedule(
       daysOfWeek: [1, 2, 3, 4, 5],
       startTime: '09:00',
       endTime: '10:00',
@@ -56,11 +56,11 @@ class TestClasses {
     gradeLevel: 5,
     subject: 'science',
     teacherId: 'teacher-1',
-    studentIds: ['student-emma', 'student-jordan'],
+    studentIds: const ['student-emma', 'student-jordan'],
     studentCount: 2,
     period: '6th',
     room: 'Science Lab',
-    schedule: ClassSchedule(
+    schedule: const ClassSchedule(
       daysOfWeek: [2, 4], // Tuesday, Thursday
       startTime: '13:00',
       endTime: '14:00',
@@ -77,7 +77,7 @@ class TestClasses {
     gradeLevel: 5,
     subject: 'math',
     teacherId: 'teacher-1',
-    studentIds: [],
+    studentIds: const [],
     studentCount: 0,
     schedule: null,
     schoolYear: '2023-2024',

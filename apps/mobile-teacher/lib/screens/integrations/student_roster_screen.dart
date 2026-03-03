@@ -497,11 +497,11 @@ class _MapStudentDialogState extends ConsumerState<_MapStudentDialog> {
             // Search field
             TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Search students...',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
               ),
               onChanged: (value) {
                 setState(() => _searchQuery = value);
@@ -571,7 +571,7 @@ class _MapStudentDialogState extends ConsumerState<_MapStudentDialog> {
                 error: (e, _) => Center(
                   child: Text(
                     'Error loading students: $e',
-                    style: TextStyle(color: AivoBrand.error),
+                    style: const TextStyle(color: AivoBrand.error),
                   ),
                 ),
               ),

@@ -2,7 +2,7 @@
  * Notification Service
  *
  * Handles sending notifications to parents via multiple channels:
- * - Email
+ * - Email (delegated to notify-svc via HTTP API / OonruMail)
  * - Push notifications (web, iOS, Android)
  * - SMS (optional)
  */
@@ -30,6 +30,56 @@ interface SendEmailOptions {
   template: string;
   language: string;
   data: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Template name mapping: parent-svc name → notify-svc templateName
+// notify-svc registers Handlebars templates as "<category>/<name>" based on
+// the filesystem layout under templates/.  parent-svc historically used
+// short, flat names.  This map bridges the two.
+// ---------------------------------------------------------------------------
+const TEMPLATE_NAME_MAP: Record<string, string> = {
+  'verify-email': 'transactional/email-verification',
+  'welcome': 'welcome',
+  'password-reset': 'transactional/password-reset',
+  'parent-invite': 'parent-invite',
+  'caregiver-verify-email': 'caregiver/caregiver-verify-email',
+  'caregiver-welcome': 'caregiver/caregiver-welcome',
+  'caregiver-learner-linked': 'caregiver/caregiver-learner-linked',
+  'caregiver-verification-pending': 'caregiver/caregiver-verification-pending',
+  'caregiver-invite': 'caregiver-invite',
+  'caregiver-verification': 'caregiver-verification',
+  'caregiver-access-revoked': 'caregiver-access-revoked',
+  'data-export-confirmation': 'data-export-confirmation',
+  'correction-request-confirmation': 'correction-request-confirmation',
+};
+
+// ---------------------------------------------------------------------------
+// Context field mapping: translate parent-svc field names to the names
+// expected by notify-svc Handlebars / OonruMail templates.
+// ---------------------------------------------------------------------------
+function mapEmailContext(
+  template: string,
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const mapped: Record<string, unknown> = { ...data };
+
+  // firstName → userName (most templates use userName)
+  if ('firstName' in mapped && !('userName' in mapped)) {
+    mapped.userName = mapped.firstName;
+  }
+
+  // verifyUrl → verificationUrl (email-verification template)
+  if ('verifyUrl' in mapped && !('verificationUrl' in mapped)) {
+    mapped.verificationUrl = mapped.verifyUrl;
+  }
+
+  // dashboardUrl → activationUrl (welcome template)
+  if ('dashboardUrl' in mapped && !('activationUrl' in mapped)) {
+    mapped.activationUrl = mapped.dashboardUrl;
+  }
+
+  return mapped;
 }
 
 export class NotificationService {
@@ -92,32 +142,93 @@ export class NotificationService {
   }
 
   /**
-   * Send an email using a template
+   * Send an email using a template — delegates to notify-svc via HTTP API.
+   *
+   * notify-svc handles template rendering (Handlebars) and delivery through
+   * the configured provider (OonruMail transactional API, SendGrid, SES).
+   *
+   * Falls back to the local SMTP-based email service if notify-svc is
+   * unreachable so that development / offline scenarios still work.
    */
   async sendEmail(options: SendEmailOptions): Promise<void> {
     const { to, template, language, data } = options;
 
-    try {
-      const subject = this.i18n.t(`email.${template}.subject`, language, data);
-      const html = await this.renderEmailTemplate(template, language, data);
+    // Resolve template name for notify-svc
+    const templateName = TEMPLATE_NAME_MAP[template] ?? template;
+    // Map context fields to what the Handlebars templates expect
+    const context = mapEmailContext(template, data);
 
-      await this.email.send({
-        to,
-        subject,
-        html,
-        tags: [template],
+    try {
+      const notifySvcUrl = config.notifySvcUrl;
+
+      const response = await fetch(`${notifySvcUrl}/api/v1/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-service-name': 'parent-svc',
+        },
+        body: JSON.stringify({
+          templateName,
+          to,
+          context,
+          locale: language || 'en',
+          category: 'transactional',
+          tags: [template],
+        }),
+        signal: AbortSignal.timeout(15_000), // 15 s timeout
       });
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        throw new Error(
+          `notify-svc responded ${response.status}: ${errBody}`,
+        );
+      }
+
+      const result = await response.json() as { data?: { success?: boolean; messageId?: string } };
+      logger.info(
+        {
+          to,
+          template: templateName,
+          messageId: result?.data?.messageId,
+          provider: 'notify-svc',
+        },
+        'Email sent via notify-svc',
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(
+      logger.warn(
         {
           to,
           template,
           error: message,
         },
-        'Failed to send template email'
+        'notify-svc email delivery failed, falling back to local SMTP',
       );
-      throw error;
+
+      // ── Fallback: render locally and send via SMTP ─────────────────────
+      try {
+        const subject = this.i18n.t(`email.${template}.subject`, language, data);
+        const html = await this.renderEmailTemplate(template, language, data);
+
+        await this.email.send({
+          to,
+          subject,
+          html,
+          tags: [template],
+        });
+      } catch (fallbackErr) {
+        const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : 'Unknown error';
+        logger.error(
+          {
+            to,
+            template,
+            error: fallbackMsg,
+          },
+          'Failed to send template email (both notify-svc and SMTP fallback failed)',
+        );
+        throw fallbackErr;
+      }
     }
   }
 

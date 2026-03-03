@@ -338,7 +338,7 @@ class _TeacherLoginScreenState extends ConsumerState<TeacherLoginScreen> {
 
         // Language selector
         DropdownButtonFormField<SupportedLocale>(
-          value: _selectedLocale,
+          initialValue: _selectedLocale,
           decoration: InputDecoration(
             labelText: 'Preferred Language',
             prefixIcon: const Icon(Icons.language),

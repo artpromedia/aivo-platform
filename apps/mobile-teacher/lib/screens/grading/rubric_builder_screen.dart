@@ -648,7 +648,7 @@ class _RubricPreview extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Text(
-                                  '${level.points.toStringAsFixed(0)}',
+                                  level.points.toStringAsFixed(0),
                                   style: theme.textTheme.labelLarge?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),

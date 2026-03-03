@@ -33,7 +33,7 @@ void main() {
     });
 
     test('toJson produces valid JSON', () {
-      final assignment = Assignment(
+      const assignment = Assignment(
         id: 'a1',
         classId: 'c1',
         title: 'Quiz 1',
@@ -52,14 +52,14 @@ void main() {
     });
 
     test('isPublished returns correct value', () {
-      final draft = Assignment(
+      const draft = Assignment(
         id: 'a1',
         classId: 'c1',
         title: 'Draft',
         status: AssignmentStatus.draft,
         assignmentType: AssignmentType.homework,
       );
-      final published = Assignment(
+      const published = Assignment(
         id: 'a2',
         classId: 'c1',
         title: 'Published',
@@ -90,7 +90,7 @@ void main() {
         assignmentType: AssignmentType.homework,
         dueAt: DateTime.now().add(const Duration(days: 1)),
       );
-      final noDue = Assignment(
+      const noDue = Assignment(
         id: 'a3',
         classId: 'c1',
         title: 'No Due Date',
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('completionRate calculates correctly', () {
-      final assignment = Assignment(
+      const assignment = Assignment(
         id: 'a1',
         classId: 'c1',
         title: 'Test',
@@ -118,7 +118,7 @@ void main() {
     });
 
     test('copyWith creates modified copy', () {
-      final original = Assignment(
+      const original = Assignment(
         id: 'a1',
         classId: 'c1',
         title: 'Original',
@@ -162,7 +162,7 @@ void main() {
     });
 
     test('finalPoints applies late penalty', () {
-      final submission = Submission(
+      const submission = Submission(
         id: 's1',
         assignmentId: 'a1',
         studentId: 'st1',
@@ -176,7 +176,7 @@ void main() {
     });
 
     test('finalPoints returns null when excused', () {
-      final submission = Submission(
+      const submission = Submission(
         id: 's1',
         assignmentId: 'a1',
         studentId: 'st1',

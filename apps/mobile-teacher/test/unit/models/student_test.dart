@@ -11,7 +11,7 @@ void main() {
   group('Student', () {
     group('constructor', () {
       test('should create student with required fields', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -34,15 +34,15 @@ void main() {
           firstName: 'John',
           lastName: 'Doe',
           email: 'john.doe@test.edu',
-          classIds: ['class-1', 'class-2'],
+          classIds: const ['class-1', 'class-2'],
           avatarUrl: 'https://example.com/avatar.jpg',
           gradeLevel: 5,
           dateOfBirth: DateTime(2014, 5, 15),
           status: StudentStatus.active,
           hasIep: true,
           has504: false,
-          parentEmails: ['parent@test.com'],
-          accommodations: ['extended_time', 'text_to_speech'],
+          parentEmails: const ['parent@test.com'],
+          accommodations: const ['extended_time', 'text_to_speech'],
           lastActiveAt: DateTime.now(),
           createdAt: DateTime(2024, 1, 1),
           updatedAt: DateTime.now(),
@@ -56,7 +56,7 @@ void main() {
 
     group('fullName', () {
       test('should combine first and last name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -68,7 +68,7 @@ void main() {
       });
 
       test('should handle empty first name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: '',
           lastName: 'Doe',
@@ -80,7 +80,7 @@ void main() {
       });
 
       test('should handle empty last name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: '',
@@ -94,7 +94,7 @@ void main() {
 
     group('initials', () {
       test('should return first letters of first and last name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -106,7 +106,7 @@ void main() {
       });
 
       test('should handle lowercase names', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'john',
           lastName: 'doe',
@@ -118,7 +118,7 @@ void main() {
       });
 
       test('should handle empty first name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: '',
           lastName: 'Doe',
@@ -130,7 +130,7 @@ void main() {
       });
 
       test('should handle empty last name', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: '',
@@ -238,7 +238,7 @@ void main() {
 
     group('toJson', () {
       test('should serialize all fields', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -262,7 +262,7 @@ void main() {
       });
 
       test('should serialize null dates as null', () {
-        final student = Student(
+        const student = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -279,7 +279,7 @@ void main() {
       });
 
       test('should round-trip through JSON', () {
-        final original = Student(
+        const original = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -310,7 +310,7 @@ void main() {
 
     group('copyWith', () {
       test('should copy with updated fields', () {
-        final original = Student(
+        const original = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -331,7 +331,7 @@ void main() {
       });
 
       test('should preserve original values when not specified', () {
-        final original = Student(
+        const original = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -353,7 +353,7 @@ void main() {
 
     group('equality', () {
       test('should be equal for same fields', () {
-        final student1 = Student(
+        const student1 = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -361,7 +361,7 @@ void main() {
           classIds: ['class-1'],
         );
 
-        final student2 = Student(
+        const student2 = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -373,7 +373,7 @@ void main() {
       });
 
       test('should not be equal for different ids', () {
-        final student1 = Student(
+        const student1 = Student(
           id: 'student-1',
           firstName: 'John',
           lastName: 'Doe',
@@ -381,7 +381,7 @@ void main() {
           classIds: [],
         );
 
-        final student2 = Student(
+        const student2 = Student(
           id: 'student-2',
           firstName: 'John',
           lastName: 'Doe',

@@ -143,7 +143,7 @@ class _ComposeMessageScreenState extends ConsumerState<ComposeMessageScreen> {
     // For now, using a placeholder conversation ID
     await ref.read(messagesProvider.notifier).sendMessage(
       SendMessageDto(
-        conversationId: 'conv_${_selectedRecipient}',
+        conversationId: 'conv_$_selectedRecipient',
         content: _messageController.text,
       ),
     );

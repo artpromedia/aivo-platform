@@ -559,7 +559,7 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Icon(Icons.timer_outlined, size: 14),
+                                    const Icon(Icons.timer_outlined, size: 14),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${item.durationMinutes} min',
@@ -609,7 +609,7 @@ class _ContentLibraryScreenState extends ConsumerState<ContentLibraryScreen> {
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Row(
                                 children: [
-                                  Icon(Icons.check_circle,
+                                  const Icon(Icons.check_circle,
                                       size: 16, color: AivoBrand.success),
                                   const SizedBox(width: 8),
                                   Text(s),
@@ -823,7 +823,7 @@ class _ContentCard extends StatelessWidget {
                     ),
                   ),
                   if (item.isFavorite)
-                    Icon(Icons.star, color: Colors.amber, size: 20),
+                    const Icon(Icons.star, color: Colors.amber, size: 20),
                 ],
               ),
               const SizedBox(height: 8),
@@ -848,7 +848,7 @@ class _ContentCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.star, size: 14, color: Colors.amber),
+                  const Icon(Icons.star, size: 14, color: Colors.amber),
                   const SizedBox(width: 4),
                   Text(
                     item.rating.toStringAsFixed(1),

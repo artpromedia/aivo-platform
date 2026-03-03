@@ -86,7 +86,7 @@ void main() {
       // Act
       await container.read(studentsProvider.notifier).updateStudent(
         student.id,
-        UpdateStudentDto(firstName: 'Updated'),
+        const UpdateStudentDto(firstName: 'Updated'),
       );
       final state = container.read(studentsProvider);
 

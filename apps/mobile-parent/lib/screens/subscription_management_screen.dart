@@ -346,7 +346,7 @@ class _SubscriptionManagementScreenState
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: selectedReason,
+                  initialValue: selectedReason,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Select a reason',

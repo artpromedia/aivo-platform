@@ -108,7 +108,7 @@ class StudentEngagementTile extends StatelessWidget {
                     ),
                     if (student.isAtRisk) ...[
                       const SizedBox(width: 4),
-                      Icon(
+                      const Icon(
                         Icons.warning_amber,
                         size: 14,
                         color: AivoBrand.warning,
@@ -181,7 +181,7 @@ class StudentEngagementTile extends StatelessWidget {
                               color: AivoBrand.warning.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
@@ -189,7 +189,7 @@ class StudentEngagementTile extends StatelessWidget {
                                   size: 12,
                                   color: AivoBrand.warning,
                                 ),
-                                const SizedBox(width: 2),
+                                SizedBox(width: 2),
                                 Text(
                                   'At Risk',
                                   style: TextStyle(

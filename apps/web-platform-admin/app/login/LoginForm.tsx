@@ -9,11 +9,33 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  const handleResendVerification = async () => {
+    setResendStatus('sending');
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        setResendStatus('error');
+        return;
+      }
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setEmailNotVerified(false);
+    setResendStatus('idle');
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -21,7 +43,12 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { error?: string; code?: string; canResend?: boolean };
+        if (data.code === 'EMAIL_NOT_VERIFIED') {
+          setEmailNotVerified(true);
+          setLoading(false);
+          return;
+        }
         setError(data.error ?? 'Login failed');
         setLoading(false);
         return;
@@ -71,6 +98,26 @@ export function LoginForm() {
         />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {emailNotVerified && (
+        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="font-medium">Email not verified</p>
+          <p className="mt-1">Please check your inbox and verify your email before signing in.</p>
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resendStatus === 'sending' || resendStatus === 'sent'}
+            className="mt-2 text-sm font-medium text-amber-900 underline hover:no-underline disabled:opacity-60"
+          >
+            {resendStatus === 'sending'
+              ? 'Sending...'
+              : resendStatus === 'sent'
+                ? 'Verification email sent!'
+                : resendStatus === 'error'
+                  ? 'Failed to send — try again'
+                  : 'Resend verification email'}
+          </button>
+        </div>
+      )}
       <button
         type="submit"
         disabled={loading}

@@ -995,7 +995,7 @@ final syncProgressProvider = Provider<DetailedSyncStatus?>((ref) {
   if (!syncState.isSyncing) return null;
   
   // Return a basic status while syncing
-  return DetailedSyncStatus(
+  return const DetailedSyncStatus(
     courseId: '',
     phase: SyncPhase.processingChanges,
     progress: 0.5,

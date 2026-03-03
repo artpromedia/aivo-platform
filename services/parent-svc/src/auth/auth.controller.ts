@@ -20,9 +20,11 @@ export async function authRoutes(app: FastifyInstance) {
       return await authService.login(email, password);
     } catch (error: any) {
       if (error.message === 'EMAIL_NOT_VERIFIED') {
+        const { email } = request.body as { email: string };
         return reply.status(403).send({
           error: 'EMAIL_NOT_VERIFIED',
           message: 'Please verify your email before logging in.',
+          email: email?.toLowerCase(),
           canResend: true,
         });
       }
@@ -70,6 +72,19 @@ export async function authRoutes(app: FastifyInstance) {
     const { token } = request.query as { token: string };
     await authService.verifyEmail(token);
     return { success: true, message: 'Email verified successfully' };
+  });
+
+  /**
+   * Resend verification email
+   */
+  app.post('/resend-verification', async (request: FastifyRequest) => {
+    const body = request.body as { userId?: string; email?: string };
+    const email = body.email || body.userId; // mobile app may send userId which is actually email
+    if (!email) {
+      return { success: false, message: 'Email is required' };
+    }
+    await authService.resendVerificationEmail(email);
+    return { success: true, message: 'Verification email sent' };
   });
 
   /**

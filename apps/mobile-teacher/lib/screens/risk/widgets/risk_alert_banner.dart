@@ -184,7 +184,7 @@ class AtRiskAlerts extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.notifications_active,
                 size: 20,
                 color: RiskLevelColors.critical,

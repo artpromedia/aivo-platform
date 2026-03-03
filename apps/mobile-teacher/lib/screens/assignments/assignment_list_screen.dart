@@ -160,7 +160,7 @@ class _AssignmentListScreenState extends ConsumerState<AssignmentListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_outlined, size: 64, color: AivoBrand.gray),
+          const Icon(Icons.assignment_outlined, size: 64, color: AivoBrand.gray),
           const SizedBox(height: 16),
           Text(
             _hasActiveFilters ? 'No assignments match filters' : 'No assignments yet',

@@ -608,8 +608,8 @@ class _GradeSubmissionScreenState extends ConsumerState<GradeSubmissionScreen> {
       if (ungradedSubmissions.isEmpty) {
         // No more submissions to grade
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('All submissions have been graded!'),
+          const SnackBar(
+            content: Text('All submissions have been graded!'),
             backgroundColor: AivoBrand.success,
           ),
         );

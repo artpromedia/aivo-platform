@@ -51,6 +51,13 @@ class AuthController extends StateNotifier<AuthState> {
       }
 
       state = AuthState.authenticated(userId: decoded.userId, tenantId: decoded.tenantId, roles: decoded.roles);
+    } on EmailNotVerifiedException catch (err) {
+      // Server confirmed the account exists but email is unverified.
+      // Transition to emailUnverified so the UI can show the verify screen.
+      state = AuthState.emailUnverified(
+        userId: err.email, // store email in userId field for resend
+        tenantId: '',
+      );
     } on AuthException catch (err) {
       state = AuthState.error(err.message);
     } catch (e) {

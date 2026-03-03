@@ -178,7 +178,7 @@ class InterventionActionCard extends StatelessWidget {
                             color: AivoBrand.error.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -186,7 +186,7 @@ class InterventionActionCard extends StatelessWidget {
                                 size: 14,
                                 color: AivoBrand.error,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 'Overdue',
                                 style: TextStyle(
@@ -293,7 +293,7 @@ class InterventionActionCard extends StatelessWidget {
                 ),
               ),
               if (intervention.isOverdue)
-                Icon(Icons.warning_amber, color: AivoBrand.error, size: 20)
+                const Icon(Icons.warning_amber, color: AivoBrand.error, size: 20)
               else
                 Icon(
                   Icons.chevron_right,
@@ -622,7 +622,7 @@ class InterventionSuggestionCard extends StatelessWidget {
                           ),
                           child: Text(
                             factor,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               color: RiskLevelColors.atRisk,
                               fontWeight: FontWeight.w500,

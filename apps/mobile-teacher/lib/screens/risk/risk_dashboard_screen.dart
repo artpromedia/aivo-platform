@@ -211,7 +211,7 @@ class _RiskDashboardScreenState extends ConsumerState<RiskDashboardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 64,
               color: AivoBrand.error,

@@ -219,7 +219,7 @@ class TeacherCollaborationService {
 
   List<ActionPlanTask> _mockSchoolTasks(String learnerId) {
     return [
-      ActionPlanTask(
+      const ActionPlanTask(
         id: 'task-3',
         actionPlanId: 'plan-1',
         title: 'Classroom Entry Routine',
@@ -229,7 +229,7 @@ class TeacherCollaborationService {
         isActive: true,
         completionCount: 20,
       ),
-      ActionPlanTask(
+      const ActionPlanTask(
         id: 'task-4',
         actionPlanId: 'plan-2',
         title: 'Pencil Grip Practice',
@@ -422,7 +422,7 @@ class TeacherCollaborationService {
         durationMinutes: 60,
         videoLink: 'https://zoom.us/j/123456789',
         participants: [
-          MeetingParticipant(
+          const MeetingParticipant(
             id: 'mp-1',
             userId: 'user-1',
             displayName: 'Sarah Johnson',

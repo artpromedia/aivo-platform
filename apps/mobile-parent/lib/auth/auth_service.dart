@@ -47,9 +47,17 @@ class AuthService {
         requiresVerification: data['requiresVerification'] == true,
       );
     } on DioException catch (err) {
-      final message = err.response?.data is Map && (err.response!.data as Map)['error'] != null
-          ? (err.response!.data as Map)['error'].toString()
-          : 'Login failed';
+      final data = err.response?.data;
+      final errorCode = data is Map ? data['error']?.toString() : null;
+
+      // Handle email-not-verified: return tokens-like result so the
+      // controller can enter the emailUnverified state instead of error.
+      if (err.response?.statusCode == 403 && errorCode == 'EMAIL_NOT_VERIFIED') {
+        final email = data is Map ? data['email']?.toString() : null;
+        throw EmailNotVerifiedException(email: email ?? '');
+      }
+
+      final message = errorCode ?? 'Login failed';
       throw AuthException(message);
     } catch (e) {
       debugPrint('[AuthService] Login error: $e');
@@ -98,6 +106,14 @@ class AuthTokens {
   final String accessToken;
   final String refreshToken;
   final bool requiresVerification;
+}
+
+/// Thrown when user attempts login but email is not yet verified.
+class EmailNotVerifiedException implements Exception {
+  EmailNotVerifiedException({required this.email});
+  final String email;
+  @override
+  String toString() => 'EmailNotVerifiedException(email: $email)';
 }
 
 class AuthException implements Exception {

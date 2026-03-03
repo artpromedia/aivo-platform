@@ -190,7 +190,7 @@ void main() {
       });
       // Should parse the 8-digit hex directly
       expect(branding.colorPrimary, isNotNull);
-    });;
+    });
 
     test('fromJson handles missing # prefix', () {
       final branding = AivoBranding.fromJson({

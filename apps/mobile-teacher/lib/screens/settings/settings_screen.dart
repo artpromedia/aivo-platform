@@ -24,7 +24,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           // Account section
-          _SectionHeader(title: 'Account'),
+          const _SectionHeader(title: 'Account'),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Profile'),
@@ -39,7 +39,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // Sync section
-          _SectionHeader(title: 'Sync & Data'),
+          const _SectionHeader(title: 'Sync & Data'),
           ListTile(
             leading: Icon(
               isOnline ? Icons.cloud_done : Icons.cloud_off,
@@ -72,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           // App section
-          _SectionHeader(title: 'App'),
+          const _SectionHeader(title: 'App'),
           ListTile(
             leading: const Icon(Icons.color_lens),
             title: const Text('Appearance'),
@@ -98,10 +98,10 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: OutlinedButton.icon(
               onPressed: () => _confirmLogout(context),
-              icon: Icon(Icons.logout, color: AivoBrand.error),
-              label: Text('Sign Out', style: TextStyle(color: AivoBrand.error)),
+              icon: const Icon(Icons.logout, color: AivoBrand.error),
+              label: const Text('Sign Out', style: TextStyle(color: AivoBrand.error)),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AivoBrand.error),
+                side: const BorderSide(color: AivoBrand.error),
               ),
             ),
           ),

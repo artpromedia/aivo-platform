@@ -74,7 +74,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
+            const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(
               'Failed to load interventions',
@@ -331,7 +331,7 @@ class _InterventionScreenState extends ConsumerState<InterventionScreen> {
         ),
         children: excluded.map((e) {
           return ListTile(
-            leading: Icon(Icons.remove_circle_outline, color: AivoBrand.gray),
+            leading: const Icon(Icons.remove_circle_outline, color: AivoBrand.gray),
             title: Text(e.name),
             subtitle: Text(
               e.reason,
@@ -751,7 +751,7 @@ class _ApproveInterventionDialogState
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: AivoBrand.warning),
+                const Icon(Icons.info_outline, size: 16, color: AivoBrand.warning),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

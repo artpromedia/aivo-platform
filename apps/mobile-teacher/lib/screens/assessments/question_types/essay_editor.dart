@@ -183,25 +183,25 @@ class EssayEditor extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _RubricRow(
+                  const _RubricRow(
                     label: 'Excellent',
                     points: '100%',
                     description: 'Comprehensive, well-organized, insightful',
                   ),
                   const SizedBox(height: 8),
-                  _RubricRow(
+                  const _RubricRow(
                     label: 'Good',
                     points: '80%',
                     description: 'Solid understanding, minor gaps',
                   ),
                   const SizedBox(height: 8),
-                  _RubricRow(
+                  const _RubricRow(
                     label: 'Satisfactory',
                     points: '60%',
                     description: 'Basic understanding, some issues',
                   ),
                   const SizedBox(height: 8),
-                  _RubricRow(
+                  const _RubricRow(
                     label: 'Needs Work',
                     points: '40%',
                     description: 'Limited understanding, major gaps',

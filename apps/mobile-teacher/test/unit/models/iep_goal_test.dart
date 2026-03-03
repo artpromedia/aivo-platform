@@ -238,8 +238,8 @@ void main() {
           startDate: DateTime(2024, 9, 1),
           targetDate: DateTime(2025, 1, 15),
           status: GoalStatus.inProgress,
-          progressHistory: [],
-          accommodations: ['extended_time'],
+          progressHistory: const [],
+          accommodations: const ['extended_time'],
           createdAt: DateTime(2024, 8, 15),
           updatedAt: DateTime(2024, 11, 1),
         );

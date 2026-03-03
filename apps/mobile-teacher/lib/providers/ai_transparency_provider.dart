@@ -78,14 +78,14 @@ class AITransparencyNotifier extends StateNotifier<AITransparencyState> {
         totalConversations: 127,
         totalMessages: 1842,
         averageSessionDuration: const Duration(minutes: 8, seconds: 30),
-        byInteractionType: {
+        byInteractionType: const {
           AIInteractionType.tutoring: 45,
           AIInteractionType.homework: 38,
           AIInteractionType.writing: 22,
           AIInteractionType.focusBreak: 15,
           AIInteractionType.socialEmotional: 7,
         },
-        bySubject: {
+        bySubject: const {
           'Math': 52,
           'Reading': 35,
           'Science': 22,

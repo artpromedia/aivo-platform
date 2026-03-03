@@ -48,7 +48,7 @@ void main() {
     when(() => mockConnectivity.isOnline)
         .thenAnswer((_) async => true);
     when(() => mockSyncService.statusStream)
-        .thenAnswer((_) => Stream.value(SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0)));
+        .thenAnswer((_) => Stream.value(const SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0)));
     when(() => mockSyncService.getPendingOperations())
         .thenAnswer((_) async => []);
     when(() => mockSyncService.getConflicts())

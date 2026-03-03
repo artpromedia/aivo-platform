@@ -1,13 +1,12 @@
-/**
- * Live Classroom Monitoring Screen (Flutter)
- *
- * Mobile-friendly classroom monitoring with:
- * - Real-time student status cards
- * - Push notifications for urgent alerts
- * - Quick intervention actions
- * - Pull-to-refresh
- * - Optimized for mobile viewing
- */
+/// Live Classroom Monitoring Screen (Flutter)
+///
+/// Mobile-friendly classroom monitoring with:
+/// - Real-time student status cards
+/// - Push notifications for urgent alerts
+/// - Quick intervention actions
+/// - Pull-to-refresh
+/// - Optimized for mobile viewing
+library;
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -137,10 +136,10 @@ class LiveClassroomScreen extends ConsumerStatefulWidget {
   final String classroomName;
 
   const LiveClassroomScreen({
-    Key? key,
+    super.key,
     required this.classroomId,
     required this.classroomName,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<LiveClassroomScreen> createState() => _LiveClassroomScreenState();
@@ -446,7 +445,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
+            const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(_errorMessage!),
             const SizedBox(height: 16),
@@ -471,11 +470,11 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.warning, color: AivoBrand.error),
+                    const Icon(Icons.warning, color: AivoBrand.error),
                     const SizedBox(width: 8),
                     Text(
                       '${urgentAlerts.length} Student${urgentAlerts.length > 1 ? 's' : ''} Need Attention',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AivoBrand.error,
                       ),
@@ -630,7 +629,7 @@ class _LiveClassroomScreenState extends ConsumerState<LiveClassroomScreen> {
               if (student.currentActivity != null)
                 Text(
                   student.currentActivity!,
-                  style: TextStyle(fontSize: 14, color: AivoBrand.gray),
+                  style: const TextStyle(fontSize: 14, color: AivoBrand.gray),
                 ),
               const SizedBox(height: 8),
 

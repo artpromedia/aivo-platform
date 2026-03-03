@@ -66,7 +66,7 @@ services:
         aivo_assessment,aivo_engagement,aivo_analytics,
         aivo_personalization,aivo_baseline,aivo_retention,
         aivo_marketplace,aivo_notification,aivo_billing,
-        aivo_profile,aivo_research,aivo_collaboration,
+        aivo_profile,aivo_parent,aivo_research,aivo_collaboration,
         aivo_consent,aivo_focus,aivo_goal,aivo_homework,
         aivo_learner_model,aivo_messaging,aivo_reports,
         aivo_experimentation,aivo_teacher_planning,aivo_community
@@ -240,6 +240,10 @@ services:
       SSO_STATE_ENCRYPTION_KEY: ${SSO_STATE_ENCRYPTION_KEY:-wNUjg+xgBo+DKIyV2zsh+k1OzdFDFUTz0/OxhRpWxqQ=}
       JWT_EXPIRES_IN: 24h
       REFRESH_TOKEN_EXPIRES_IN: 7d
+      NOTIFY_SERVICE_URL: http://notify-svc:3000
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-aivo-learning-7eee8}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
     volumes:
       - ../config/secrets:/app/secrets:ro
     depends_on:
@@ -282,6 +286,35 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_profile
     depends_on:
       postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+
+  parent-svc:
+    <<: *node-service
+    build:
+      context: ..
+      dockerfile: services/parent-svc/Dockerfile
+    ports:
+      - "3004:3000"
+    environment:
+      <<: *common-env
+      SERVICE_NAME: parent-svc
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_parent
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      CORS_ORIGINS: ${PARENT_CORS_ORIGINS:-http://localhost:3000}
+      APP_URL: ${PARENT_APP_URL:-http://localhost:3000}
+      NOTIFY_SVC_URL: http://notify-svc:3000
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notify-svc:
         condition: service_healthy
     healthcheck:
       <<: *healthcheck-defaults
@@ -761,7 +794,19 @@ services:
       <<: *common-env
       SERVICE_NAME: notify-svc
       DATABASE_URL: postgresql://${POSTGRES_USER:-aivo}:${POSTGRES_PASSWORD:-aivo_dev_password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/aivo_notification
+      # Email delivery configuration
+      EMAIL_ENABLED: "true"
+      EMAIL_PRIMARY_PROVIDER: ${EMAIL_PRIMARY_PROVIDER:-oonrumail}
+      EMAIL_FALLBACK_PROVIDER: ${EMAIL_FALLBACK_PROVIDER:-sendgrid}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@aivolearning.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-AIVO Learning}
+      # OonruMail provider
+      OONRUMAIL_ENABLED: "true"
+      OONRUMAIL_API_KEY: ${OONRUMAIL_API_KEY:-}
+      OONRUMAIL_WEBHOOK_SECRET: ${OONRUMAIL_WEBHOOK_SECRET:-}
+      # SendGrid provider (fallback)
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      # Push notifications
       FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
     depends_on:
       postgres:

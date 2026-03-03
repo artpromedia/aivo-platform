@@ -95,7 +95,7 @@ class FakeSyncService implements SyncService {
       type: SyncOperationType.delete,
       entityType: entityType,
       entityId: entityId,
-      data: {},
+      data: const {},
       createdAt: DateTime.now(),
     );
     await queueOperation(operation);

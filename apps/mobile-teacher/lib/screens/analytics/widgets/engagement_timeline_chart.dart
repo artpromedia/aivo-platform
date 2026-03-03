@@ -110,7 +110,7 @@ class EngagementTimelineChart extends StatelessWidget {
       case TimelineGranularity.weekly:
         return 'W${_weekOfYear(date)}';
       case TimelineGranularity.monthly:
-        return '${_monthName(date.month)}';
+        return _monthName(date.month);
     }
   }
 
@@ -161,9 +161,9 @@ class _TimelineChartPainter extends CustomPainter {
     if (timeline.isEmpty) return;
 
     final paddingLeft = showLabels ? 32.0 : 8.0;
-    final paddingRight = 8.0;
-    final paddingTop = 16.0;
-    final paddingBottom = 8.0;
+    const paddingRight = 8.0;
+    const paddingTop = 16.0;
+    const paddingBottom = 8.0;
 
     final chartWidth = size.width - paddingLeft - paddingRight;
     final chartHeight = size.height - paddingTop - paddingBottom;
@@ -365,7 +365,7 @@ class _SparklinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
 
-    final padding = 2.0;
+    const padding = 2.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
 

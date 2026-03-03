@@ -77,7 +77,7 @@ class _EngagementHeatmapScreenState extends ConsumerState<EngagementHeatmapScree
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                Icon(Icons.warning, color: Colors.orange),
+                                const Icon(Icons.warning, color: Colors.orange),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Needs Attention (${needsAttention.length})',
@@ -153,8 +153,8 @@ class _EngagementHeatmapScreenState extends ConsumerState<EngagementHeatmapScree
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Send Nudge to ${student.studentName}'),
-        content: TextField(
-          decoration: const InputDecoration(
+        content: const TextField(
+          decoration: InputDecoration(
             labelText: 'Message (optional)',
             hintText: 'e.g., Stay focused! You got this!',
           ),

@@ -350,19 +350,19 @@ class _ConversationCard extends StatelessWidget {
   _InteractionConfig _getInteractionConfig(AIInteractionType type) {
     switch (type) {
       case AIInteractionType.tutoring:
-        return _InteractionConfig('Tutoring', Icons.school, Colors.blue);
+        return const _InteractionConfig('Tutoring', Icons.school, Colors.blue);
       case AIInteractionType.homework:
-        return _InteractionConfig('Homework Help', Icons.assignment, AivoBrand.success);
+        return const _InteractionConfig('Homework Help', Icons.assignment, AivoBrand.success);
       case AIInteractionType.writing:
-        return _InteractionConfig('Writing', Icons.edit_note, Colors.purple);
+        return const _InteractionConfig('Writing', Icons.edit_note, Colors.purple);
       case AIInteractionType.focusBreak:
-        return _InteractionConfig('Focus Break', Icons.self_improvement, Colors.teal);
+        return const _InteractionConfig('Focus Break', Icons.self_improvement, Colors.teal);
       case AIInteractionType.assessment:
-        return _InteractionConfig('Assessment', Icons.quiz, AivoBrand.warning);
+        return const _InteractionConfig('Assessment', Icons.quiz, AivoBrand.warning);
       case AIInteractionType.socialEmotional:
-        return _InteractionConfig('SEL', Icons.favorite, Colors.pink);
+        return const _InteractionConfig('SEL', Icons.favorite, Colors.pink);
       case AIInteractionType.other:
-        return _InteractionConfig('Other', Icons.chat, AivoBrand.gray);
+        return const _InteractionConfig('Other', Icons.chat, AivoBrand.gray);
     }
   }
 
@@ -463,15 +463,15 @@ class _SentimentIndicator extends StatelessWidget {
   _SentimentConfig _getSentimentConfig(String sentiment) {
     switch (sentiment.toLowerCase()) {
       case 'positive':
-        return _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
+        return const _SentimentConfig('Positive', Icons.sentiment_satisfied, AivoBrand.success);
       case 'neutral':
-        return _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
+        return const _SentimentConfig('Neutral', Icons.sentiment_neutral, AivoBrand.gray);
       case 'negative':
-        return _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
+        return const _SentimentConfig('Negative', Icons.sentiment_dissatisfied, AivoBrand.warning);
       case 'frustrated':
-        return _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
+        return const _SentimentConfig('Frustrated', Icons.sentiment_very_dissatisfied, AivoBrand.error);
       default:
-        return _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
+        return const _SentimentConfig('Unknown', Icons.help_outline, AivoBrand.gray);
     }
   }
 }

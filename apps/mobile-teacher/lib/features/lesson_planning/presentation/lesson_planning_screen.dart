@@ -82,28 +82,28 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
         ],
         standards: ['3.NF.A.1', '3.NF.A.2'],
         activities: [
-          LessonActivity(
+          const LessonActivity(
             id: 'act1',
             title: 'Fraction Introduction',
             description: 'Visual introduction using fraction circles',
             duration: 10,
             type: 'introduction',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act2',
             title: 'Guided Practice',
             description: 'Work through fraction problems together',
             duration: 15,
             type: 'practice',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act3',
             title: 'Independent Work',
             description: 'Students complete fraction worksheet',
             duration: 15,
             type: 'independent',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act4',
             title: 'Exit Ticket',
             description: 'Quick assessment of understanding',
@@ -132,28 +132,28 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
         ],
         standards: ['L.4.1'],
         activities: [
-          LessonActivity(
+          const LessonActivity(
             id: 'act1',
             title: 'Warm-up Game',
             description: 'Parts of speech sorting game',
             duration: 10,
             type: 'warmup',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act2',
             title: 'Mini-Lesson',
             description: 'Review each part of speech with examples',
             duration: 15,
             type: 'instruction',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act3',
             title: 'Partner Activity',
             description: 'Sentence building with word cards',
             duration: 20,
             type: 'practice',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'act4',
             title: 'Share Out',
             description: 'Partners share best sentences',
@@ -184,35 +184,35 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
         objectives: [],
         standards: [],
         activities: [
-          LessonActivity(
+          const LessonActivity(
             id: 'e1',
             title: 'Engage',
             description: 'Hook activity to capture interest',
             duration: 10,
             type: 'engage',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'e2',
             title: 'Explore',
             description: 'Hands-on exploration activity',
             duration: 15,
             type: 'explore',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'e3',
             title: 'Explain',
             description: 'Direct instruction and discussion',
             duration: 15,
             type: 'explain',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'e4',
             title: 'Elaborate',
             description: 'Extension activity',
             duration: 15,
             type: 'elaborate',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'e5',
             title: 'Evaluate',
             description: 'Assessment of understanding',
@@ -234,28 +234,28 @@ class _LessonPlanningScreenState extends ConsumerState<LessonPlanningScreen>
         objectives: [],
         standards: [],
         activities: [
-          LessonActivity(
+          const LessonActivity(
             id: 'w1',
             title: 'Mini-Lesson',
             description: 'Focused instruction on one skill',
             duration: 10,
             type: 'instruction',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'w2',
             title: 'Independent Practice',
             description: 'Students work independently',
             duration: 35,
             type: 'independent',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'w3',
             title: 'Conferring',
             description: 'Teacher meets with individuals/groups',
             duration: 35,
             type: 'conferring',
           ),
-          LessonActivity(
+          const LessonActivity(
             id: 'w4',
             title: 'Share',
             description: 'Students share learning',

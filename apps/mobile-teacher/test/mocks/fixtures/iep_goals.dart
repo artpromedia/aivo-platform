@@ -47,7 +47,7 @@ class TestIepGoals {
         recordedBy: 'teacher-1',
       ),
     ],
-    accommodations: ['extended_time', 'use_calculator_for_complex_problems'],
+    accommodations: const ['extended_time', 'use_calculator_for_complex_problems'],
     createdAt: DateTime(2024, 8, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 5)),
   );
@@ -84,7 +84,7 @@ class TestIepGoals {
         recordedBy: 'teacher-1',
       ),
     ],
-    accommodations: ['text_to_speech', 'graphic_organizers'],
+    accommodations: const ['text_to_speech', 'graphic_organizers'],
     createdAt: DateTime(2024, 8, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 10)),
   );
@@ -121,7 +121,7 @@ class TestIepGoals {
         recordedBy: 'teacher-1',
       ),
     ],
-    accommodations: ['speech_to_text', 'writing_templates'],
+    accommodations: const ['speech_to_text', 'writing_templates'],
     createdAt: DateTime(2024, 8, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 7)),
   );
@@ -158,7 +158,7 @@ class TestIepGoals {
         recordedBy: 'teacher-1',
       ),
     ],
-    accommodations: ['frequent_breaks', 'preferential_seating', 'fidget_tools'],
+    accommodations: const ['frequent_breaks', 'preferential_seating', 'fidget_tools'],
     createdAt: DateTime(2024, 8, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 3)),
   );
@@ -177,8 +177,8 @@ class TestIepGoals {
     startDate: DateTime(2024, 4, 1),
     targetDate: DateTime(2024, 6, 1),
     status: GoalStatus.achieved,
-    progressHistory: [],
-    accommodations: [],
+    progressHistory: const [],
+    accommodations: const [],
     createdAt: DateTime(2024, 3, 15),
     updatedAt: DateTime(2024, 5, 28),
   );
@@ -197,8 +197,8 @@ class TestIepGoals {
     startDate: DateTime(2024, 9, 1),
     targetDate: DateTime(2024, 12, 1),
     status: GoalStatus.atRisk,
-    progressHistory: [],
-    accommodations: ['audio_support'],
+    progressHistory: const [],
+    accommodations: const ['audio_support'],
     createdAt: DateTime(2024, 8, 15),
     updatedAt: DateTime.now().subtract(const Duration(days: 14)),
   );
@@ -249,8 +249,8 @@ class TestIepGoals {
       startDate: DateTime.now().subtract(const Duration(days: 30)),
       targetDate: DateTime.now().add(const Duration(days: 60)),
       status: status,
-      progressHistory: [],
-      accommodations: [],
+      progressHistory: const [],
+      accommodations: const [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

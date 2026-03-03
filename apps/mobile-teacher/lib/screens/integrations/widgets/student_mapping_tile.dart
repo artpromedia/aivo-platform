@@ -103,7 +103,7 @@ class StudentMappingTile extends StatelessWidget {
             )
           : student.isMapped
               ? IconButton(
-                  icon: Icon(Icons.link_off, color: AivoBrand.error),
+                  icon: const Icon(Icons.link_off, color: AivoBrand.error),
                   onPressed: onUnmap,
                   tooltip: 'Unlink student',
                 )
@@ -286,7 +286,7 @@ class StudentMappingSummary extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.people, size: 20, color: AivoBrand.primary),
+                const Icon(Icons.people, size: 20, color: AivoBrand.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Student Mappings',

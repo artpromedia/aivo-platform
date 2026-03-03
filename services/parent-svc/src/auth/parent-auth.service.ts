@@ -370,6 +370,69 @@ export class ParentAuthService {
   }
 
   /**
+   * Resend verification email for a parent who has not yet verified.
+   */
+  async resendVerificationEmail(email: string): Promise<void> {
+    const parent = await this.prisma.parent.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!parent) {
+      // Don't reveal whether email exists
+      return;
+    }
+
+    if (parent.emailVerified) {
+      return; // Already verified, nothing to do
+    }
+
+    const language = parent.language || 'en';
+
+    // Try Firebase path first
+    if (this.firebase?.isConfigured()) {
+      try {
+        const continueUrl = `${config.appUrl}/verify-email-callback`;
+        const link = await this.firebase.generateEmailVerificationLink(
+          parent.email,
+          continueUrl
+        );
+
+        if (link) {
+          await this.notification.sendEmail({
+            to: parent.email,
+            template: 'verify-email',
+            language,
+            data: {
+              firstName: parent.givenName,
+              verifyUrl: link,
+            },
+          });
+          logger.info({ parentId: parent.id }, 'Verification email resent via Firebase');
+          return;
+        }
+      } catch (err) {
+        logger.warn(
+          { error: err instanceof Error ? err.message : err },
+          'Firebase resend failed, falling back to custom token'
+        );
+      }
+    }
+
+    // Fallback: custom token path
+    const verificationToken = await this.createEmailVerificationToken(parent.id);
+    await this.notification.sendEmail({
+      to: parent.email,
+      template: 'verify-email',
+      language,
+      data: {
+        firstName: parent.givenName,
+        verifyUrl: `${config.appUrl}/verify-email?token=${verificationToken}`,
+      },
+    });
+    logger.info({ parentId: parent.id }, 'Verification email resent via custom token');
+  }
+
+  /**
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<void> {

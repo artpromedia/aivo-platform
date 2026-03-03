@@ -116,12 +116,12 @@ class _ClassroomAnalyticsScreenState
         ),
       ],
       studentPerformance: [
-        StudentPerformance(id: 'student1', name: 'Alice Johnson', averageScore: 95.0, completionRate: 1.0, engagementScore: 0.95),
-        StudentPerformance(id: 'student2', name: 'Bob Smith', averageScore: 88.0, completionRate: 0.95, engagementScore: 0.88),
-        StudentPerformance(id: 'student3', name: 'Carol Davis', averageScore: 85.0, completionRate: 0.92, engagementScore: 0.82),
-        StudentPerformance(id: 'student4', name: 'David Brown', averageScore: 78.0, completionRate: 0.85, engagementScore: 0.75),
-        StudentPerformance(id: 'student5', name: 'Emma Wilson', averageScore: 72.0, completionRate: 0.78, engagementScore: 0.70),
-        StudentPerformance(id: 'student6', name: 'Frank Miller', averageScore: 65.0, completionRate: 0.70, engagementScore: 0.60),
+        const StudentPerformance(id: 'student1', name: 'Alice Johnson', averageScore: 95.0, completionRate: 1.0, engagementScore: 0.95),
+        const StudentPerformance(id: 'student2', name: 'Bob Smith', averageScore: 88.0, completionRate: 0.95, engagementScore: 0.88),
+        const StudentPerformance(id: 'student3', name: 'Carol Davis', averageScore: 85.0, completionRate: 0.92, engagementScore: 0.82),
+        const StudentPerformance(id: 'student4', name: 'David Brown', averageScore: 78.0, completionRate: 0.85, engagementScore: 0.75),
+        const StudentPerformance(id: 'student5', name: 'Emma Wilson', averageScore: 72.0, completionRate: 0.78, engagementScore: 0.70),
+        const StudentPerformance(id: 'student6', name: 'Frank Miller', averageScore: 65.0, completionRate: 0.70, engagementScore: 0.60),
       ],
       weeklyTrends: [65, 70, 72, 78, 82, 85, 82],
     );
@@ -417,7 +417,7 @@ class _ClassroomAnalyticsScreenState
                   backgroundColor: _getScoreColor(assignment.averageScore)
                       .withValues(alpha: 0.2),
                   child: Text(
-                    '${assignment.averageScore.toStringAsFixed(0)}',
+                    assignment.averageScore.toStringAsFixed(0),
                     style: TextStyle(
                       color: _getScoreColor(assignment.averageScore),
                       fontWeight: FontWeight.bold,
@@ -612,7 +612,7 @@ class _ClassroomAnalyticsScreenState
                         backgroundColor: _getScoreColor(assignment.averageScore)
                             .withValues(alpha: 0.2),
                         child: Text(
-                          '${assignment.averageScore.toStringAsFixed(0)}',
+                          assignment.averageScore.toStringAsFixed(0),
                           style: TextStyle(
                             color: _getScoreColor(assignment.averageScore),
                             fontWeight: FontWeight.bold,
@@ -679,7 +679,7 @@ class _ClassroomAnalyticsScreenState
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: AivoBrand.gray)),
+          Text(label, style: const TextStyle(color: AivoBrand.gray)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),

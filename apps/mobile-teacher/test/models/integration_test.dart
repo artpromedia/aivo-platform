@@ -20,15 +20,15 @@ void main() {
     });
 
     test('isConnected returns false for other statuses', () {
-      final disconnected = IntegrationConnection(
+      const disconnected = IntegrationConnection(
         type: IntegrationType.canvas,
         status: IntegrationStatus.disconnected,
       );
-      final connecting = IntegrationConnection(
+      const connecting = IntegrationConnection(
         type: IntegrationType.clever,
         status: IntegrationStatus.connecting,
       );
-      final error = IntegrationConnection(
+      const error = IntegrationConnection(
         type: IntegrationType.googleClassroom,
         status: IntegrationStatus.error,
         error: 'Auth failed',
@@ -101,7 +101,7 @@ void main() {
     });
 
     test('copyWith creates modified copy', () {
-      final original = CourseMapping(
+      const original = CourseMapping(
         id: 'm1',
         aivoClassId: 'c1',
         externalCourseId: 'gc1',
@@ -207,7 +207,7 @@ void main() {
     });
 
     test('toJson produces valid JSON', () {
-      final entry = PendingGradePassback(
+      const entry = PendingGradePassback(
         studentId: 'st1',
         assignmentId: 'a1',
         grade: 88.5,

@@ -232,7 +232,7 @@ void main() {
       });
 
       test('createIntervention creates and returns intervention', () async {
-        final newIntervention = BehaviorIntervention(
+        const newIntervention = BehaviorIntervention(
           studentId: 'student123',
           teacherId: 'teacher123',
           targetBehavior: 'Off-task behavior',
@@ -506,7 +506,7 @@ void main() {
     });
 
     test('toJson creates JSON from intervention', () {
-      final intervention = BehaviorIntervention(
+      const intervention = BehaviorIntervention(
         id: '1',
         studentId: 'student123',
         teacherId: 'teacher123',

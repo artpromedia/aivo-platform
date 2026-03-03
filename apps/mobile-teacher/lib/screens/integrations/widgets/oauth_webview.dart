@@ -112,7 +112,7 @@ class _OAuthWebViewState extends State<OAuthWebView> {
                   style: theme.textTheme.titleMedium,
                 ),
               ] else if (_error != null) ...[
-                Icon(
+                const Icon(
                   Icons.error_outline,
                   size: 64,
                   color: AivoBrand.error,

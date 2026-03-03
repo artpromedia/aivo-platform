@@ -142,8 +142,8 @@ class _LiveSessionView extends StatelessWidget {
         actions: [
           TextButton.icon(
             onPressed: onEndSession,
-            icon: Icon(Icons.stop, color: AivoBrand.error),
-            label: Text('End', style: TextStyle(color: AivoBrand.error)),
+            icon: const Icon(Icons.stop, color: AivoBrand.error),
+            label: const Text('End', style: TextStyle(color: AivoBrand.error)),
           ),
         ],
       ),
@@ -156,7 +156,7 @@ class _LiveSessionView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.timer, color: AivoBrand.success),
+                const Icon(Icons.timer, color: AivoBrand.success),
                 const SizedBox(width: 8),
                 _SessionTimer(startTime: session.startedAt),
                 const SizedBox(width: 24),

@@ -148,7 +148,7 @@ class _ShortAnswerEditorState extends State<ShortAnswerEditor> {
                         controller: _controllers[index],
                         decoration: InputDecoration(
                           hintText:
-                              index == 0 ? 'Primary answer' : 'Alternative ${index}',
+                              index == 0 ? 'Primary answer' : 'Alternative $index',
                           border: const OutlineInputBorder(),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,

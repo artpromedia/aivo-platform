@@ -223,7 +223,7 @@ class _StudentRiskDetailScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
+            const Icon(Icons.error_outline, size: 64, color: AivoBrand.error),
             const SizedBox(height: 16),
             Text(
               'Failed to load risk data',
@@ -371,7 +371,7 @@ class _StudentRiskDetailScreenState
                 child: Column(
                   children: prediction.protectiveFactors.map((factor) {
                     return ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         Icons.shield,
                         color: AivoBrand.success,
                       ),
@@ -379,7 +379,7 @@ class _StudentRiskDetailScreenState
                       subtitle: Text(factor.description),
                       trailing: Text(
                         '+${(factor.contribution * 100).round()}%',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AivoBrand.success,
                           fontWeight: FontWeight.w600,
                         ),
@@ -429,7 +429,7 @@ class _StudentRiskDetailScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.check_circle,
               size: 64,
               color: AivoBrand.success,

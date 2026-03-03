@@ -284,10 +284,20 @@ export class FirebaseService {
     }
 
     try {
-      const settings = continueUrl ? { url: continueUrl } : undefined;
+      const settings = continueUrl
+        ? {
+            url: continueUrl,
+            handleCodeInApp: true,
+            iOS: { bundleId: 'com.aivo.parent' },
+            android: {
+              packageName: 'com.aivo.parent',
+              installApp: true,
+            },
+          }
+        : undefined;
       return await admin
         .auth()
-        .generateEmailVerificationLink(email, settings);
+        .generateEmailVerificationLink(email, settings as any);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to generate verification link: ${msg}`);

@@ -38,8 +38,7 @@ function LoginContent() {
   const handleResendVerification = async () => {
     setResendStatus('sending');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
-      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+      const res = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),

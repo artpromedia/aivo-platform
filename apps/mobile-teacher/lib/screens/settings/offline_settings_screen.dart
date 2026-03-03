@@ -152,15 +152,15 @@ class OfflineSettingsScreen extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Card(
+          const Card(
             child: Column(
               children: [
                 _CacheInfoTile(icon: Icons.people, title: 'Students'),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _CacheInfoTile(icon: Icons.play_circle, title: 'Sessions'),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _CacheInfoTile(icon: Icons.assignment, title: 'IEP Goals'),
-                const Divider(height: 1),
+                Divider(height: 1),
                 _CacheInfoTile(icon: Icons.message, title: 'Messages'),
               ],
             ),

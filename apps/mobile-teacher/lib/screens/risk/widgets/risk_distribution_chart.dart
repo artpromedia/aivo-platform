@@ -338,9 +338,9 @@ class _RiskHistoryPainter extends CustomPainter {
     final path = Path();
     final fillPath = Path();
 
-    final maxScore = 1.0;
-    final minScore = 0.0;
-    final scoreRange = maxScore - minScore;
+    const maxScore = 1.0;
+    const minScore = 0.0;
+    const scoreRange = maxScore - minScore;
 
     final stepX = size.width / (history.length - 1).clamp(1, double.infinity);
 

@@ -207,9 +207,9 @@ void main() {
     testGoldens('should match large font golden', (tester) async {
       // Arrange
       await tester.pumpWidgetBuilder(
-        MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
-          child: const DashboardScreen(),
+        const MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(1.5)),
+          child: DashboardScreen(),
         ),
         wrapper: (child) => testableWidgetWithProviders(
           child: child,
@@ -226,9 +226,9 @@ void main() {
     testGoldens('should match extra large font golden', (tester) async {
       // Arrange
       await tester.pumpWidgetBuilder(
-        MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
-          child: const DashboardScreen(),
+        const MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: DashboardScreen(),
         ),
         wrapper: (child) => testableWidgetWithProviders(
           child: child,
@@ -245,9 +245,9 @@ void main() {
     testGoldens('should match high contrast golden', (tester) async {
       // Arrange
       await tester.pumpWidgetBuilder(
-        MediaQuery(
-          data: const MediaQueryData(highContrast: true),
-          child: const DashboardScreen(),
+        const MediaQuery(
+          data: MediaQueryData(highContrast: true),
+          child: DashboardScreen(),
         ),
         wrapper: (child) => testableWidgetWithProviders(
           child: child,
@@ -264,9 +264,9 @@ void main() {
     testGoldens('should match reduced motion golden', (tester) async {
       // Arrange
       await tester.pumpWidgetBuilder(
-        MediaQuery(
-          data: const MediaQueryData(disableAnimations: true),
-          child: const DashboardScreen(),
+        const MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: DashboardScreen(),
         ),
         wrapper: (child) => testableWidgetWithProviders(
           child: child,

@@ -143,6 +143,22 @@ export const TEMPLATE_MAP: Readonly<Record<string, TemplateMapping>> = {
     }),
   },
 
+  // Alias used by parent-svc when calling notify-svc HTTP API
+  'verify-email': {
+    oonruMailTemplateConfigKey: 'emailVerification',
+    transformContext: (ctx) => ({
+      user_name: str(ctx, 'userName', ctx.recipientName ?? 'User'),
+      verification_url: str(ctx, 'verificationUrl', ctx.appUrl),
+      verification_code: str(ctx, 'verificationCode', ''),
+      code_expiry_minutes: num(ctx, 'codeExpiryMinutes', 30),
+      brand_color: str(ctx, 'brandColor', '#6366f1'),
+      app_name: ctx.appName,
+      app_url: ctx.appUrl,
+      support_email: ctx.supportEmail,
+      current_year: ctx.currentYear,
+    }),
+  },
+
   'transactional/password-reset': {
     oonruMailTemplateConfigKey: 'passwordReset',
     transformContext: (ctx) => ({

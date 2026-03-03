@@ -254,8 +254,8 @@ class _GradingQueueScreenState extends ConsumerState<GradingQueueScreen>
           children: [
             Text('Skip "${item.studentName}\'s" submission for now?'),
             const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
+            const TextField(
+              decoration: InputDecoration(
                 labelText: 'Reason (optional)',
                 border: OutlineInputBorder(),
               ),

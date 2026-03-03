@@ -194,7 +194,7 @@ class StudentListTile extends StatelessWidget {
         ],
       ),
       trailing: student.needsAttention
-          ? Icon(Icons.warning_amber, color: AivoBrand.warning)
+          ? const Icon(Icons.warning_amber, color: AivoBrand.warning)
           : const Icon(Icons.chevron_right),
     );
   }

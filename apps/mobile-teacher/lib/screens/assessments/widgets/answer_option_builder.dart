@@ -236,7 +236,7 @@ class _AnswerOptionBuilderState extends State<AnswerOptionBuilder> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber, size: 20, color: AivoBrand.warning),
+                    const Icon(Icons.warning_amber, size: 20, color: AivoBrand.warning),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

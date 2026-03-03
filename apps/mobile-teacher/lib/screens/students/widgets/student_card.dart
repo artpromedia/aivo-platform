@@ -68,7 +68,7 @@ class StudentCard extends StatelessWidget {
                     ),
                   ),
                   if (student.needsAttention)
-                    Icon(
+                    const Icon(
                       Icons.warning_amber,
                       color: AivoBrand.warning,
                       size: 20,
@@ -82,12 +82,12 @@ class StudentCard extends StatelessWidget {
                 runSpacing: 4,
                 children: [
                   if (student.hasIep)
-                    _Badge(
+                    const _Badge(
                       label: 'IEP',
                       color: Colors.blue,
                     ),
                   if (student.has504)
-                    _Badge(
+                    const _Badge(
                       label: '504',
                       color: Colors.purple,
                     ),

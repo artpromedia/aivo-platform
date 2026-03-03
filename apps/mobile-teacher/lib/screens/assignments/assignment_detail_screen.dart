@@ -109,7 +109,7 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'delete',
                 child: ListTile(
                   leading: Icon(Icons.delete, color: AivoBrand.error),
@@ -123,9 +123,9 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(
+            const Tab(
               text: 'Details',
-              icon: const Icon(Icons.info_outline),
+              icon: Icon(Icons.info_outline),
             ),
             Tab(
               text: 'Submissions (${submissionsState.submissions.length})',
@@ -173,7 +173,7 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
                         Text('Points', style: Theme.of(context).textTheme.labelMedium),
                         const SizedBox(height: 4),
                         Text(
-                          '${assignment.pointsPossible.toStringAsFixed(0)}',
+                          assignment.pointsPossible.toStringAsFixed(0),
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                       ],
@@ -205,10 +205,10 @@ class _AssignmentDetailScreenState extends ConsumerState<AssignmentDetailScreen>
               title: const Text('Due Date'),
               subtitle: Text(DateFormat.yMMMMEEEEd().add_jm().format(assignment.dueAt!)),
               trailing: assignment.isPastDue
-                  ? Chip(
-                      label: const Text('Past Due'),
+                  ? const Chip(
+                      label: Text('Past Due'),
                       backgroundColor: AivoBrand.error,
-                      labelStyle: const TextStyle(color: Colors.white),
+                      labelStyle: TextStyle(color: Colors.white),
                     )
                   : null,
             ),
@@ -634,7 +634,7 @@ class SubmissionListTile extends StatelessWidget {
                 color: AivoBrand.warning.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text('Late', style: TextStyle(fontSize: 12, color: AivoBrand.warning)),
+              child: const Text('Late', style: TextStyle(fontSize: 12, color: AivoBrand.warning)),
             ),
           ],
         ],
@@ -648,13 +648,13 @@ class SubmissionListTile extends StatelessWidget {
       return const Chip(label: Text('EX'));
     }
     if (submission.status == SubmissionStatus.missing) {
-      return Text('Missing', style: TextStyle(color: AivoBrand.error));
+      return const Text('Missing', style: TextStyle(color: AivoBrand.error));
     }
     if (submission.status == SubmissionStatus.notSubmitted) {
-      return Text('-', style: TextStyle(color: AivoBrand.gray));
+      return const Text('-', style: TextStyle(color: AivoBrand.gray));
     }
     if (!submission.isGraded) {
-      return Text('Ungraded', style: TextStyle(color: AivoBrand.warning));
+      return const Text('Ungraded', style: TextStyle(color: AivoBrand.warning));
     }
 
     final grade = submission.pointsEarned ?? 0;

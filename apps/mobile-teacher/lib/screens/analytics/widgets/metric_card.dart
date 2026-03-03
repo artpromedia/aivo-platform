@@ -257,7 +257,7 @@ class MetricCard extends StatelessWidget {
               ),
             ),
             if (isTargetMet)
-              Icon(
+              const Icon(
                 Icons.check_circle,
                 size: 16,
                 color: Colors.green,

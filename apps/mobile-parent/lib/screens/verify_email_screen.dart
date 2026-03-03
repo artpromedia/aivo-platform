@@ -28,8 +28,9 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
 
   Future<void> _resendVerification() async {
     final authState = ref.read(authControllerProvider);
-    final userId = authState.userId;
-    if (userId == null) return;
+    // userId holds the email address when in emailUnverified state
+    final email = authState.userId;
+    if (email == null || email.isEmpty) return;
 
     setState(() {
       _isResending = true;
@@ -39,7 +40,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
     try {
       final dio = Dio(BaseOptions(baseUrl: EnvironmentConfig.authBaseUrl));
       await dio.post('/auth/resend-verification', data: {
-        'userId': userId,
+        'email': email,
       });
 
       if (!mounted) return;

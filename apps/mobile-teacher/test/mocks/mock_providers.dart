@@ -84,10 +84,10 @@ void _setupConnectivityMocks() {
 
 void _setupSyncMocks() {
   when(() => mockSyncService.status).thenReturn(
-    SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0),
+    const SyncStatusInfo(state: common.SyncState.idle, pendingOperations: 0),
   );
   when(() => mockSyncService.statusStream).thenAnswer(
-    (_) => Stream.value(SyncStatusInfo(state: common.SyncState.idle)),
+    (_) => Stream.value(const SyncStatusInfo(state: common.SyncState.idle)),
   );
   when(() => mockSyncService.syncPendingOperations())
       .thenAnswer((_) async => const SyncResult(success: true));

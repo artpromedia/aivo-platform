@@ -4,7 +4,7 @@ import 'package:mobile_teacher/models/grade.dart';
 void main() {
   group('GradeScale', () {
     test('standard scale has correct entries', () {
-      final scale = GradeScale.standard;
+      const scale = GradeScale.standard;
 
       expect(scale.id, 'standard');
       expect(scale.entries.length, 13);
@@ -13,7 +13,7 @@ void main() {
     });
 
     test('getLetterGrade returns correct grade', () {
-      final scale = GradeScale.standard;
+      const scale = GradeScale.standard;
 
       expect(scale.getLetterGrade(100), 'A+');
       expect(scale.getLetterGrade(95), 'A');
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('getGpaValue returns correct GPA', () {
-      final scale = GradeScale.standard;
+      const scale = GradeScale.standard;
 
       expect(scale.getGpaValue(95), 4.0);
       expect(scale.getGpaValue(91), 3.7);
@@ -82,7 +82,7 @@ void main() {
     });
 
     test('hasGrade returns true when excused', () {
-      final entry = GradeEntry(
+      const entry = GradeEntry(
         id: 'g1',
         studentId: 'st1',
         assignmentId: 'a1',
@@ -93,7 +93,7 @@ void main() {
     });
 
     test('hasGrade returns false when no points and not excused', () {
-      final entry = GradeEntry(
+      const entry = GradeEntry(
         id: 'g1',
         studentId: 'st1',
         assignmentId: 'a1',
@@ -104,7 +104,7 @@ void main() {
     });
 
     test('copyWith creates modified copy', () {
-      final original = GradeEntry(
+      const original = GradeEntry(
         id: 'g1',
         studentId: 'st1',
         assignmentId: 'a1',
@@ -195,7 +195,7 @@ void main() {
     });
 
     test('getGrade returns null for non-existent grade', () {
-      final gradebook = Gradebook(
+      const gradebook = Gradebook(
         classId: 'c1',
         className: 'Test',
         gradeScale: GradeScale.standard,
@@ -211,9 +211,9 @@ void main() {
 
   group('GradeTrend', () {
     test('isImproving returns correct value', () {
-      final improving = GradeTrend(direction: 'up', changePercent: 5.0);
-      final declining = GradeTrend(direction: 'down', changePercent: -5.0);
-      final stable = GradeTrend(direction: 'stable');
+      const improving = GradeTrend(direction: 'up', changePercent: 5.0);
+      const declining = GradeTrend(direction: 'down', changePercent: -5.0);
+      const stable = GradeTrend(direction: 'stable');
 
       expect(improving.isImproving, true);
       expect(improving.isDeclining, false);
@@ -224,7 +224,7 @@ void main() {
 
   group('BulkGradeDto', () {
     test('toJson produces valid JSON', () {
-      final dto = BulkGradeDto(
+      const dto = BulkGradeDto(
         grades: [
           BulkGradeEntry(
             studentId: 'st1',

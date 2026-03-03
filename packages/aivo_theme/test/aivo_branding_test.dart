@@ -135,17 +135,17 @@ void main() {
     });
 
     test('toThemeData() with baseTheme merges correctly', () {
-      final branding = AivoBranding(
+      const branding = AivoBranding(
         displayName: 'Custom',
-        colorPrimary: const Color(0xFFFF0000),
-        colorSecondary: const Color(0xFF00FF00),
-        colorAccent: const Color(0xFF0000FF),
-        colorBackground: const Color(0xFFF0F0F0),
-        colorSurface: const Color(0xFFFFFFFF),
-        colorText: const Color(0xFF000000),
-        colorTextOnPrimary: const Color(0xFFFFFFFF),
-        colorMuted: const Color(0xFF888888),
-        colorBorder: const Color(0xFFCCCCCC),
+        colorPrimary: Color(0xFFFF0000),
+        colorSecondary: Color(0xFF00FF00),
+        colorAccent: Color(0xFF0000FF),
+        colorBackground: Color(0xFFF0F0F0),
+        colorSurface: Color(0xFFFFFFFF),
+        colorText: Color(0xFF000000),
+        colorTextOnPrimary: Color(0xFFFFFFFF),
+        colorMuted: Color(0xFF888888),
+        colorBorder: Color(0xFFCCCCCC),
         fontFamily: 'Roboto',
         borderRadius: '8px',
       );

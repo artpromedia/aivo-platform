@@ -98,7 +98,7 @@ class MockApiClient extends Mock implements AivoApiClient {
     }
 
     if (_shouldFail) {
-      throw ApiException(
+      throw const ApiException(
         statusCode: 500,
         message: 'Simulated API failure',
       );

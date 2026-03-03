@@ -659,7 +659,7 @@ final riskAlertStreamProvider = StreamProvider.autoDispose<RiskAlert>((ref) asyn
   // TODO: Implement WebSocket/Firebase connection for real-time alerts
   // For now, return an empty stream
   // In production, this would subscribe to backend push notifications
-  yield* Stream<RiskAlert>.empty();
+  yield* const Stream<RiskAlert>.empty();
 });
 
 /// Filtered predictive indicators based on current filter options

@@ -355,30 +355,30 @@ class _AssessmentPreviewScreenState
   }
 
   Widget _buildTrueFalsePreview(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
         Expanded(
           child: Card(
             child: ListTile(
-              leading: const Radio(
+              leading: Radio(
                 value: true,
                 groupValue: null,
                 onChanged: null,
               ),
-              title: const Text('True'),
+              title: Text('True'),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Card(
             child: ListTile(
-              leading: const Radio(
+              leading: Radio(
                 value: false,
                 groupValue: null,
                 onChanged: null,
               ),
-              title: const Text('False'),
+              title: Text('False'),
             ),
           ),
         ),
@@ -387,9 +387,9 @@ class _AssessmentPreviewScreenState
   }
 
   Widget _buildShortAnswerPreview(BuildContext context) {
-    return TextField(
+    return const TextField(
       enabled: false,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         hintText: 'Type your answer here...',
         border: OutlineInputBorder(),
       ),
@@ -397,10 +397,10 @@ class _AssessmentPreviewScreenState
   }
 
   Widget _buildEssayPreview(BuildContext context) {
-    return TextField(
+    return const TextField(
       enabled: false,
       maxLines: 8,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         hintText: 'Type your essay response here...',
         border: OutlineInputBorder(),
         alignLabelWithHint: true,
@@ -509,10 +509,10 @@ class _AssessmentPreviewScreenState
   }
 
   Widget _buildNumericPreview(BuildContext context) {
-    return TextField(
+    return const TextField(
       enabled: false,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         hintText: 'Enter a number...',
         border: OutlineInputBorder(),
       ),

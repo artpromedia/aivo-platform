@@ -144,7 +144,7 @@ class CriterionScorer extends StatelessWidget {
               color: Colors.purple.withValues(alpha: 0.05),
               child: Row(
                 children: [
-                  Icon(Icons.auto_awesome, size: 16, color: Colors.purple),
+                  const Icon(Icons.auto_awesome, size: 16, color: Colors.purple),
                   const SizedBox(width: 8),
                   Text(
                     'AI suggests: ${aiSuggestion!.score.toStringAsFixed(1)} points',
@@ -395,7 +395,7 @@ class CriterionScoresSummary extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
+                SizedBox(
                   width: 80,
                   height: 80,
                   child: Stack(

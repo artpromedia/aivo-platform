@@ -1007,7 +1007,7 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
   // Sample questions from the question bank
   // In real implementation, this would come from a provider
   final List<_BankQuestion> _bankQuestions = [
-    _BankQuestion(
+    const _BankQuestion(
       id: 'bank_1',
       text: 'What is the capital of France?',
       type: QuestionType.multipleChoice,
@@ -1016,7 +1016,7 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
       tags: ['geography', 'europe'],
       timesUsed: 12,
     ),
-    _BankQuestion(
+    const _BankQuestion(
       id: 'bank_2',
       text: 'Solve for x: 2x + 5 = 13',
       type: QuestionType.shortAnswer,
@@ -1025,7 +1025,7 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
       tags: ['math', 'algebra'],
       timesUsed: 8,
     ),
-    _BankQuestion(
+    const _BankQuestion(
       id: 'bank_3',
       text: 'The mitochondria is the powerhouse of the cell.',
       type: QuestionType.trueFalse,
@@ -1034,7 +1034,7 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
       tags: ['biology', 'cells'],
       timesUsed: 25,
     ),
-    _BankQuestion(
+    const _BankQuestion(
       id: 'bank_4',
       text: 'Explain the process of photosynthesis and its importance to life on Earth.',
       type: QuestionType.essay,
@@ -1043,7 +1043,7 @@ class _QuestionBankSheetState extends State<_QuestionBankSheet> {
       tags: ['biology', 'ecology'],
       timesUsed: 5,
     ),
-    _BankQuestion(
+    const _BankQuestion(
       id: 'bank_5',
       text: 'Match the following countries with their capitals:',
       type: QuestionType.matching,
@@ -1293,10 +1293,10 @@ class _BankQuestion {
       difficulty: difficulty,
       options: type == QuestionType.multipleChoice
           ? [
-              QuestionOption(id: '1', text: 'Option A', isCorrect: true),
-              QuestionOption(id: '2', text: 'Option B', isCorrect: false),
-              QuestionOption(id: '3', text: 'Option C', isCorrect: false),
-              QuestionOption(id: '4', text: 'Option D', isCorrect: false),
+              const QuestionOption(id: '1', text: 'Option A', isCorrect: true),
+              const QuestionOption(id: '2', text: 'Option B', isCorrect: false),
+              const QuestionOption(id: '3', text: 'Option C', isCorrect: false),
+              const QuestionOption(id: '4', text: 'Option D', isCorrect: false),
             ]
           : [],
       correctAnswer: type == QuestionType.trueFalse ? 'true' : null,

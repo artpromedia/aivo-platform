@@ -66,7 +66,7 @@ class AtRiskAlertCard extends ConsumerWidget {
                   color: AivoBrand.success.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.check_circle,
                   color: AivoBrand.success,
                 ),

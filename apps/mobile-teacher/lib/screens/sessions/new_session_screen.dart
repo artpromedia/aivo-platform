@@ -30,7 +30,7 @@ class _NewSessionScreenState extends ConsumerState<NewSessionScreen> {
   String? _subject;
   DateTime? _scheduledAt;
   int _durationMinutes = 30;
-  List<String> _objectives = [];
+  final List<String> _objectives = [];
 
   @override
   void initState() {

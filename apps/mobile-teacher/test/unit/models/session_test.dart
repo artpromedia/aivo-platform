@@ -11,7 +11,7 @@ void main() {
   group('Session', () {
     group('constructor', () {
       test('should create session with required fields', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -39,9 +39,9 @@ void main() {
           startedAt: now,
           endedAt: null,
           durationMinutes: 45,
-          studentIds: ['student-1', 'student-2'],
+          studentIds: const ['student-1', 'student-2'],
           notes: 'Good progress',
-          objectives: ['Master 5x tables', 'Review 6x tables'],
+          objectives: const ['Master 5x tables', 'Review 6x tables'],
           createdAt: now,
           updatedAt: now,
         );
@@ -56,7 +56,7 @@ void main() {
 
     group('status predicates', () {
       test('isActive should return true for active sessions', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -70,7 +70,7 @@ void main() {
       });
 
       test('isScheduled should return true for scheduled sessions', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -83,7 +83,7 @@ void main() {
       });
 
       test('isCompleted should return true for completed sessions', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -96,7 +96,7 @@ void main() {
       });
 
       test('paused status should be accessible', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -108,7 +108,7 @@ void main() {
       });
 
       test('cancelled status should be accessible', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -152,7 +152,7 @@ void main() {
       });
 
       test('should return null if not started', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -177,9 +177,9 @@ void main() {
           sessionType: SessionType.smallGroup,
           scheduledAt: now,
           startedAt: now,
-          studentIds: ['student-1', 'student-2'],
+          studentIds: const ['student-1', 'student-2'],
           notes: 'Going well',
-          objectives: ['Master multiplication'],
+          objectives: const ['Master multiplication'],
           createdAt: now,
           updatedAt: now,
         );
@@ -243,13 +243,13 @@ void main() {
 
     group('activities', () {
       test('should create session with activities', () {
-        final session = Session(
+        const session = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
           status: SessionStatus.active,
           sessionType: SessionType.wholeClass,
-          activities: const [
+          activities: [
             SessionActivity(
               id: 'activity-1',
               name: 'Warm-up',
@@ -276,7 +276,7 @@ void main() {
 
     group('copyWith', () {
       test('should create copy with updated status', () {
-        final original = Session(
+        const original = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',
@@ -292,7 +292,7 @@ void main() {
       });
 
       test('should create copy with updated notes', () {
-        final original = Session(
+        const original = Session(
           id: 'session-1',
           classId: 'class-1',
           teacherId: 'teacher-1',

@@ -5,6 +5,7 @@
 /// - Quick grade entry
 /// - Student grade details
 /// - Filter and search functionality
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_common/theme/theme.dart';
@@ -18,9 +19,9 @@ class GradebookScreen extends ConsumerStatefulWidget {
   final String classroomId;
 
   const GradebookScreen({
-    Key? key,
+    super.key,
     required this.classroomId,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<GradebookScreen> createState() => _GradebookScreenState();
@@ -246,7 +247,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                         if (student.missingCount > 0)
                           Text(
                             '${student.missingCount} missing',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AivoBrand.error,
                               fontSize: 12,
                             ),
@@ -261,7 +262,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${student.overallGrade.toStringAsFixed(1)}%',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AivoBrand.gray,
                         ),
@@ -337,7 +338,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               if (grade?.feedback != null)
                 Text(
                   grade!.feedback!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AivoBrand.gray,
                   ),
@@ -360,7 +361,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
               ),
             ),
             if (grade?.status == GradeStatus.late)
-              Text(
+              const Text(
                 'Late',
                 style: TextStyle(
                   color: AivoBrand.warning,
@@ -368,7 +369,7 @@ class _GradebookScreenState extends ConsumerState<GradebookScreen> {
                 ),
               ),
             if (grade?.status == GradeStatus.missing)
-              Text(
+              const Text(
                 'Missing',
                 style: TextStyle(
                   color: AivoBrand.error,
@@ -596,11 +597,11 @@ class QuickGradeEntry extends StatefulWidget {
   final Future<void> Function(double?, String?) onSave;
 
   const QuickGradeEntry({
-    Key? key,
+    super.key,
     required this.student,
     required this.assignment,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   State<QuickGradeEntry> createState() => _QuickGradeEntryState();
@@ -723,11 +724,11 @@ class QuickGradeDialog extends StatefulWidget {
   final Future<void> Function(String studentId, String assignmentId, double score) onSave;
 
   const QuickGradeDialog({
-    Key? key,
+    super.key,
     required this.students,
     required this.assignments,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   State<QuickGradeDialog> createState() => _QuickGradeDialogState();
@@ -815,9 +816,9 @@ class StudentGradeDetailScreen extends StatelessWidget {
   final Student student;
 
   const StudentGradeDetailScreen({
-    Key? key,
+    super.key,
     required this.student,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -897,7 +898,7 @@ class StudentGradeDetailScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             color: AivoBrand.gray,
           ),

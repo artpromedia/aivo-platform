@@ -308,7 +308,7 @@ class _GradePassbackScreenState extends ConsumerState<GradePassbackScreen> {
                   icon: const Icon(Icons.refresh),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AivoBrand.error,
-                    side: BorderSide(color: AivoBrand.error),
+                    side: const BorderSide(color: AivoBrand.error),
                   ),
                   label: Text('Retry ${state.failedCount} Failed'),
                 ),

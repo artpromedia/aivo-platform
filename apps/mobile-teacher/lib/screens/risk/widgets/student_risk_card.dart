@@ -702,7 +702,7 @@ class _ProtectiveFactorRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             Icons.shield,
             size: 16,
             color: AivoBrand.success,

@@ -48,8 +48,11 @@ const TEMPLATE_NAME_MAP: Record<string, keyof typeof config.email.oonrumail.temp
   welcome: 'welcome',
   'email-verification': 'emailVerification',
   'email_verification': 'emailVerification',
+  'verify-email': 'emailVerification', // alias used by parent-svc
+  'transactional/email-verification': 'emailVerification', // fully-qualified HBS key
   'password-reset': 'passwordReset',
   'password_reset': 'passwordReset',
+  'transactional/password-reset': 'passwordReset', // fully-qualified HBS key
   'payment-receipt': 'paymentReceipt',
   'payment_receipt': 'paymentReceipt',
   'lesson-reminder': 'lessonReminder',

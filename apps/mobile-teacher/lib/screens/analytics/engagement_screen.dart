@@ -118,7 +118,7 @@ class _EngagementScreenState extends ConsumerState<EngagementScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 64,
               color: AivoBrand.error,
@@ -395,7 +395,7 @@ class _EngagementScreenState extends ConsumerState<EngagementScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, color: AivoBrand.warning, size: 20),
+              const Icon(Icons.warning_amber, color: AivoBrand.warning, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Students at Risk',
@@ -431,7 +431,7 @@ class _EngagementScreenState extends ConsumerState<EngagementScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.star, color: Colors.amber, size: 20),
+              const Icon(Icons.star, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Top Engaged',
@@ -654,7 +654,7 @@ class _EngagementScreenState extends ConsumerState<EngagementScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Failed to load content data'),
+            const Text('Failed to load content data'),
             const SizedBox(height: 8),
             FilledButton(
               onPressed: () => ref.refresh(contentEngagementProvider(widget.classId)),

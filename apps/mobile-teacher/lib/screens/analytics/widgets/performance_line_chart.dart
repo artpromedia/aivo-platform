@@ -291,7 +291,7 @@ class _PerformanceLineChartState extends State<PerformanceLineChart> {
             final dataPoint = widget.data[spot.spotIndex];
             final text = widget.tooltipFormatter != null
                 ? widget.tooltipFormatter!(dataPoint)
-                : '${dataPoint.value.toStringAsFixed(1)}';
+                : dataPoint.value.toStringAsFixed(1);
 
             return LineTooltipItem(
               text,

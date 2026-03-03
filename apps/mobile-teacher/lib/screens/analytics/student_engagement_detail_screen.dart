@@ -83,7 +83,7 @@ class _StudentEngagementDetailScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               size: 64,
               color: AivoBrand.error,
@@ -229,7 +229,7 @@ class _StudentEngagementDetailScreenState
                                   color: AivoBrand.warning.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -237,7 +237,7 @@ class _StudentEngagementDetailScreenState
                                       size: 14,
                                       color: AivoBrand.warning,
                                     ),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text(
                                       'At Risk',
                                       style: TextStyle(
@@ -559,7 +559,7 @@ class _StudentEngagementDetailScreenState
         children: [
           Row(
             children: [
-              Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
+              const Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Recommendations',
@@ -631,7 +631,7 @@ class _StudentEngagementDetailScreenState
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, color: AivoBrand.warning, size: 20),
+              const Icon(Icons.warning_amber, color: AivoBrand.warning, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Risk Factors',

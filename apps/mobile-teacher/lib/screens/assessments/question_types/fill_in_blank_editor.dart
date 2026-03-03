@@ -77,7 +77,7 @@ class _FillInBlankEditorState extends State<FillInBlankEditor> {
       _slots.add(FillBlankSlot(
         id: newSlotId,
         position: _slots.length,
-        correctAnswers: [],
+        correctAnswers: const [],
       ));
     });
 

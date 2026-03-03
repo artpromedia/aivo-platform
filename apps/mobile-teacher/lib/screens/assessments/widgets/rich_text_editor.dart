@@ -83,9 +83,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
     } else {
       // Insert at cursor
       final cursorPos = selection.baseOffset;
-      final newText = text.substring(0, cursorPos) +
-          '$prefix$suffix' +
-          text.substring(cursorPos);
+      final newText = '${text.substring(0, cursorPos)}$prefix$suffix${text.substring(cursorPos)}';
       _controller.text = newText;
       _controller.selection = TextSelection.collapsed(
         offset: cursorPos + prefix.length,

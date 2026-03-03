@@ -292,7 +292,7 @@ class _ChallengesTab extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.emoji_events, size: 64, color: Colors.grey),
+            const Icon(Icons.emoji_events, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text('No challenges yet', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -439,12 +439,12 @@ class _LeaderboardTab extends ConsumerWidget {
                 subtitle: Row(
                   children: [
                     if (entry.level != null) ...[
-                      Icon(Icons.trending_up, size: 14),
+                      const Icon(Icons.trending_up, size: 14),
                       Text(' Lv.${entry.level}'),
                       const SizedBox(width: 8),
                     ],
                     if (entry.streak != null && entry.streak! > 0) ...[
-                      Icon(Icons.local_fire_department, size: 14, color: Colors.orange),
+                      const Icon(Icons.local_fire_department, size: 14, color: Colors.orange),
                       Text(' ${entry.streak}d'),
                     ],
                   ],

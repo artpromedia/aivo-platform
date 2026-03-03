@@ -26,9 +26,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   final _scrollController = ScrollController();
   final _imagePicker = ImagePicker();
 
-  List<XFile> _pendingAttachments = [];
+  final List<XFile> _pendingAttachments = [];
   // ignore: unused_field - reserved for future file upload status UI
-  bool _isUploadingAttachment = false;
+  final bool _isUploadingAttachment = false;
 
   @override
   void dispose() {

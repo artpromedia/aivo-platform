@@ -746,7 +746,7 @@ class _QuestionStatsCard extends StatelessWidget {
                 const SizedBox(width: 24),
                 _MiniStat(
                   label: 'Avg Score',
-                  value: '${stats.averageScore.toStringAsFixed(1)}',
+                  value: stats.averageScore.toStringAsFixed(1),
                   color: Colors.orange,
                 ),
               ],
