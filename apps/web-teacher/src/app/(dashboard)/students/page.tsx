@@ -9,9 +9,76 @@ import * as React from 'react';
 
 import { PageHeader } from '@/components/layout/breadcrumb';
 import { useStudents } from '@/hooks';
+import type { AssessmentChainStatus } from '@/lib/types/student';
+import { studentsApi } from '@/lib/api';
+
+/* ─── Assessment status helpers ───────────────────────────────────────── */
+
+interface StatusDisplay {
+  label: string;
+  icon: string;
+  className: string;
+}
+
+function getAssessmentDisplay(status: AssessmentChainStatus | null): StatusDisplay {
+  if (!status || status.baselineStatus === 'NONE') {
+    return { label: 'Setup needed', icon: '🔴', className: 'text-red-600' };
+  }
+  if (status.parentAssessmentStatus === 'PENDING') {
+    return { label: 'Awaiting parent', icon: '🟡', className: 'text-yellow-600' };
+  }
+  if (status.parentAssessmentStatus === 'IN_PROGRESS') {
+    return { label: 'Parent in progress', icon: '🟡', className: 'text-yellow-600' };
+  }
+  if (
+    status.parentAssessmentStatus === 'COMPLETED' &&
+    status.baselineStatus === 'NOT_STARTED'
+  ) {
+    return { label: 'Ready for baseline', icon: '🔵', className: 'text-blue-600' };
+  }
+  if (status.baselineStatus === 'IN_PROGRESS') {
+    return { label: 'Baseline in progress', icon: '🔵', className: 'text-blue-600' };
+  }
+  if (status.baselineStatus === 'COMPLETED') {
+    return { label: 'Learning active', icon: '✅', className: 'text-green-600' };
+  }
+  return { label: 'Setup needed', icon: '🔴', className: 'text-red-600' };
+}
+
+/* ─── Component ───────────────────────────────────────────────────────── */
 
 export default function StudentsPage() {
   const { students, loading, error } = useStudents();
+  const [statusMap, setStatusMap] = React.useState<Record<string, AssessmentChainStatus>>({});
+
+  // Fetch assessment status for each student after student list loads
+  React.useEffect(() => {
+    if (!students.length) return;
+    let cancelled = false;
+
+    const fetchStatuses = async () => {
+      const entries = await Promise.allSettled(
+        students.map(async (s) => {
+          const status = await studentsApi.getAssessmentStatus(s.id);
+          return [s.id, status] as const;
+        }),
+      );
+
+      if (cancelled) return;
+
+      const map: Record<string, AssessmentChainStatus> = {};
+      for (const entry of entries) {
+        if (entry.status === 'fulfilled') {
+          const [id, status] = entry.value;
+          map[id] = status;
+        }
+      }
+      setStatusMap(map);
+    };
+
+    void fetchStatuses();
+    return () => { cancelled = true; };
+  }, [students]);
 
   if (loading) {
     return (
@@ -83,6 +150,9 @@ export default function StudentsPage() {
                 Status
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Assessment
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                 Missing
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">
@@ -91,54 +161,64 @@ export default function StudentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {students.map((student) => (
-              <tr key={student.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <Link href={`/students/${student.id}`} className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
-                      {student.firstName?.[0] ?? '?'}
-                      {student.lastName?.[0] ?? ''}
-                    </div>
-                    <span className="font-medium text-gray-900 hover:text-primary-600">
-                      {student.name ?? `${student.firstName ?? ''} ${student.lastName ?? ''}`}
+            {students.map((student) => {
+              const assessmentStatus = statusMap[student.id] ?? null;
+              const display = getAssessmentDisplay(assessmentStatus);
+
+              return (
+                <tr key={student.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <Link href={`/students/${student.id}`} className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-medium text-primary-700">
+                        {student.firstName?.[0] ?? '?'}
+                        {student.lastName?.[0] ?? ''}
+                      </div>
+                      <span className="font-medium text-gray-900 hover:text-primary-600">
+                        {student.name ?? `${student.firstName ?? ''} ${student.lastName ?? ''}`}
+                      </span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{student.gradeLevel ?? '-'}</td>
+                  <td className="px-4 py-3">
+                    <span className={getGradeClass(student.averageScore ?? 0)}>
+                      {student.averageScore != null ? `${student.averageScore}%` : '-'}
                     </span>
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-500">{student.gradeLevel ?? '-'}</td>
-                <td className="px-4 py-3">
-                  <span className={getGradeClass(student.averageScore ?? 0)}>
-                    {student.averageScore != null ? `${student.averageScore}%` : '-'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {student.hasIep && (
-                    <span className="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700">
-                      IEP
+                  </td>
+                  <td className="px-4 py-3">
+                    {student.hasIep && (
+                      <span className="rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700">
+                        IEP
+                      </span>
+                    )}
+                    {student.has504 && (
+                      <span className="ml-1 rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                        504
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-medium ${display.className}`}>
+                      {display.icon} {display.label}
                     </span>
-                  )}
-                  {student.has504 && (
-                    <span className="ml-1 rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
-                      504
-                    </span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {(student.missingAssignments ?? 0) > 0 ? (
-                    <span className="text-sm text-red-600">{student.missingAssignments}</span>
-                  ) : (
-                    <span className="text-sm text-green-600">✓</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/students/${student.id}`}
-                    className="text-sm text-primary-600 hover:underline"
-                  >
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-4 py-3">
+                    {(student.missingAssignments ?? 0) > 0 ? (
+                      <span className="text-sm text-red-600">{student.missingAssignments}</span>
+                    ) : (
+                      <span className="text-sm text-green-600">✓</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/students/${student.id}`}
+                      className="text-sm text-primary-600 hover:underline"
+                    >
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
