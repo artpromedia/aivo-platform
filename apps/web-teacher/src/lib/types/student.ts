@@ -350,6 +350,24 @@ export interface StudentAlert {
 }
 
 // DTOs
+export interface CreateStudentDto {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  gradeLevel?: string;
+  classId?: string;
+  hasIep?: boolean;
+  notes?: string;
+  parentEmail?: string;
+  parentName?: string;
+}
+
+/** Assessment chain status returned by the BFF */
+export interface AssessmentChainStatus {
+  baselineStatus: 'NONE' | 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  parentAssessmentStatus: 'NONE' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
 export interface AddStudentNoteDto {
   content: string;
   type: StudentNote['type'];

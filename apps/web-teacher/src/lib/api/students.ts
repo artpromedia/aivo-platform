@@ -12,6 +12,8 @@ import type {
   AddStudentNoteDto,
   Accommodation,
   UpdateAccommodationDto,
+  CreateStudentDto,
+  AssessmentChainStatus,
 } from '../types/student';
 
 import { api } from './client';
@@ -22,6 +24,11 @@ export const studentsApi = {
    */
   list: (params?: { classId?: string; search?: string; hasIep?: boolean }) =>
     api.get<Student[]>('/api/teacher/students', params),
+
+  /**
+   * Create / enroll a new student
+   */
+  create: (data: CreateStudentDto) => api.post<Student>('/api/teacher/students', data),
 
   /**
    * Get a single student by ID
@@ -112,4 +119,10 @@ export const studentsApi = {
    */
   getActivity: (id: string, params?: { limit?: number }) =>
     api.get<StudentDetail['recentActivity']>(`/api/teacher/students/${id}/activity`, params),
+
+  /**
+   * Get assessment chain status for a student (baseline + parent assessment)
+   */
+  getAssessmentStatus: (id: string) =>
+    api.get<AssessmentChainStatus>(`/api/teacher/students/${id}/assessment-status`),
 };
