@@ -23,6 +23,8 @@ interface EnrollForm {
   classId: string;
   hasIep: boolean;
   notes: string;
+  parentEmail: string;
+  parentName: string;
 }
 
 const INITIAL: EnrollForm = {
@@ -33,6 +35,8 @@ const INITIAL: EnrollForm = {
   classId: '',
   hasIep: false,
   notes: '',
+  parentEmail: '',
+  parentName: '',
 };
 
 const GRADE_OPTIONS = [
@@ -52,7 +56,7 @@ export default function NewStudentPage() {
   const set = (field: keyof EnrollForm, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.firstName.trim() || !form.lastName.trim()) {
       setError('First and last name are required.');
@@ -61,8 +65,7 @@ export default function NewStudentPage() {
     setLoading(true);
     setError(null);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (studentsApi as any).create?.({
+      await studentsApi.create({
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email || undefined,
@@ -70,6 +73,8 @@ export default function NewStudentPage() {
         classId: form.classId || undefined,
         hasIep: form.hasIep,
         notes: form.notes || undefined,
+        parentEmail: form.parentEmail || undefined,
+        parentName: form.parentName || undefined,
       });
       router.push('/students');
     } catch (err) {
@@ -176,6 +181,41 @@ export default function NewStudentPage() {
             <label htmlFor="hasIep" className="text-sm font-medium text-gray-700">
               Student has an IEP
             </label>
+          </div>
+
+          {/* Parent/Guardian Contact — triggers assessment chain */}
+          <div className="col-span-2 mt-2 border-t pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+              Parent/Guardian (for learning assessment)
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Parent/Guardian Email
+            </label>
+            <input
+              type="email"
+              value={form.parentEmail}
+              onChange={(e) => set('parentEmail', e.target.value)}
+              placeholder="parent@email.com"
+              className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              An assessment will be emailed to the parent. The child&apos;s baseline
+              assessment unlocks after the parent completes theirs.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Parent/Guardian Name
+            </label>
+            <input
+              type="text"
+              value={form.parentName}
+              onChange={(e) => set('parentName', e.target.value)}
+              placeholder="Jane Smith"
+              className="mt-1 block w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         </div>
 
