@@ -88,7 +88,8 @@ jobs:
             SHA=$(git rev-parse HEAD)
           fi
 
-          SHA_SHORT=$(echo "$SHA" | cut -c1-7)
+          # Use git rev-parse --short to match ci-unified.yml tagging
+          SHA_SHORT=$(git rev-parse --short "$SHA")
           SOURCE_TAG="main-${SHA_SHORT}"
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
