@@ -5,25 +5,20 @@
 
 import { randomBytes, createHash } from 'node:crypto';
 
+import type { Role } from '@aivo/ts-rbac';
 import bcrypt from 'bcryptjs';
 import type { Redis } from 'ioredis';
 
-import type { Role } from '@aivo/ts-rbac';
-
-import type { User, Session, UserRole, Prisma } from '../prisma.js';
 import type { PrismaClient } from '../../generated/prisma-client/index.js';
-import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
 import { config } from '../config.js';
-import { getFirebaseAuth } from '../lib/firebase.js';
-import { notifyClient } from '../lib/notify-client.js';
 import { COMMON_PASSWORDS } from '../data/common-passwords.js';
+import { getFirebaseAuth } from '../lib/firebase.js';
+import { signAccessToken, signRefreshToken, verifyToken } from '../lib/jwt.js';
+import { notifyClient } from '../lib/notify-client.js';
+import type { User, Session, UserRole, Prisma } from '../prisma.js';
 
 // PRD: Roles that require MFA to be enabled before login is allowed
-const MFA_REQUIRED_ROLES = new Set([
-  'DISTRICT_ADMIN',
-  'SCHOOL_ADMIN',
-  'PLATFORM_ADMIN',
-]);
+const MFA_REQUIRED_ROLES = new Set(['DISTRICT_ADMIN', 'SCHOOL_ADMIN', 'PLATFORM_ADMIN']);
 
 // ============================================================================
 // Types
@@ -220,12 +215,8 @@ export class AuthService {
     if (firebaseUid && firebase?.isConfigured()) {
       // Firebase path — generate verification link via Admin SDK
       try {
-        const continueUrl =
-          `${config.webAppUrl}/auth/verify-email-callback`;
-        const link = await firebase.generateEmailVerificationLink(
-          email,
-          continueUrl
-        );
+        const continueUrl = `${config.webAppUrl}/auth/verify-email-callback`;
+        const link = await firebase.generateEmailVerificationLink(email, continueUrl);
 
         if (link) {
           await notifyClient.sendEmailVerificationEmail({
@@ -240,12 +231,24 @@ export class AuthService {
           '[auth-svc] Firebase verification link failed:',
           err instanceof Error ? err.message : err
         );
-        // Fallback to custom token
-        await this.createEmailVerificationToken(user.id, email);
+        // Fallback to custom token — still send the email
+        const token = await this.createEmailVerificationToken(user.id, email);
+        await notifyClient.sendEmailVerificationEmail({
+          email,
+          verificationToken: token,
+          userName: input.firstName,
+          locale,
+        });
       }
     } else {
-      // Custom token path (no Firebase)
-      await this.createEmailVerificationToken(user.id, email);
+      // Custom token path (no Firebase) — create token AND send email
+      const token = await this.createEmailVerificationToken(user.id, email);
+      await notifyClient.sendEmailVerificationEmail({
+        email,
+        verificationToken: token,
+        userName: input.firstName,
+        locale,
+      });
     }
 
     // Create session and tokens
@@ -294,7 +297,9 @@ export class AuthService {
     // Check for account lockout
     const isLocked = await this.isAccountLocked(email, user.tenantId);
     if (isLocked) {
-      throw new Error('Account temporarily locked due to too many failed attempts. Please try again later.');
+      throw new Error(
+        'Account temporarily locked due to too many failed attempts. Please try again later.'
+      );
     }
 
     // Verify password
@@ -342,7 +347,7 @@ export class AuthService {
       if (!mfaConfig) {
         throw new Error(
           'Multi-factor authentication is required for administrator accounts. ' +
-          'Please set up MFA before logging in.'
+            'Please set up MFA before logging in.'
         );
       }
     }
@@ -564,10 +569,7 @@ export class AuthService {
   /**
    * Resend the email verification link/token.
    */
-  async resendEmailVerification(
-    userId: string,
-    locale?: string
-  ): Promise<void> {
+  async resendEmailVerification(userId: string, locale?: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -584,12 +586,8 @@ export class AuthService {
 
     if (user.firebaseUid && firebase?.isConfigured()) {
       // Firebase path
-      const continueUrl =
-        `${config.webAppUrl}/auth/verify-email-callback`;
-      const link = await firebase.generateEmailVerificationLink(
-        user.email,
-        continueUrl
-      );
+      const continueUrl = `${config.webAppUrl}/auth/verify-email-callback`;
+      const link = await firebase.generateEmailVerificationLink(user.email, continueUrl);
 
       if (link) {
         await notifyClient.sendEmailVerificationEmail({
@@ -603,10 +601,7 @@ export class AuthService {
     }
 
     // Custom token fallback
-    const token = await this.createEmailVerificationToken(
-      user.id,
-      user.email
-    );
+    const token = await this.createEmailVerificationToken(user.id, user.email);
 
     await notifyClient.sendEmailVerificationEmail({
       email: user.email,
@@ -624,9 +619,7 @@ export class AuthService {
     tenantId?: string,
     deviceInfo?: DeviceInfo
   ): Promise<void> {
-    const whereClause = tenantId
-      ? { email, tenantId }
-      : { email };
+    const whereClause = tenantId ? { email, tenantId } : { email };
 
     const user = await this.prisma.user.findFirst({
       where: whereClause,
@@ -666,11 +659,13 @@ export class AuthService {
       email: user.email,
       resetToken: token,
       expiryMinutes: 60,
-      requestInfo: deviceInfo ? {
-        ipAddress: deviceInfo.ip,
-        userAgent: deviceInfo.userAgent,
-        timestamp: new Date().toISOString(),
-      } : undefined,
+      requestInfo: deviceInfo
+        ? {
+            ipAddress: deviceInfo.ip,
+            userAgent: deviceInfo.userAgent,
+            timestamp: new Date().toISOString(),
+          }
+        : undefined,
     });
 
     if (!emailResult.success) {
@@ -848,7 +843,7 @@ export class AuthService {
     return sessions.map((s: Session) => this.toSessionInfo(s));
   }
 
-  async revokeSession(sessionId: string, reason: string = 'manual_revoke'): Promise<void> {
+  async revokeSession(sessionId: string, reason = 'manual_revoke'): Promise<void> {
     await this.prisma.session.update({
       where: { id: sessionId },
       data: {
@@ -907,11 +902,7 @@ export class AuthService {
     return session;
   }
 
-  private async generateTokens(
-    user: User,
-    roles: string[],
-    sessionId: string
-  ): Promise<TokenPair> {
+  private async generateTokens(user: User, roles: string[], sessionId: string): Promise<TokenPair> {
     const payload = {
       sub: user.id,
       tenant_id: user.tenantId,
@@ -945,18 +936,20 @@ export class AuthService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 3600;
-      case 'd': return value * 86400;
-      default: return 900;
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 3600;
+      case 'd':
+        return value * 86400;
+      default:
+        return 900;
     }
   }
 
-  private toSafeUser(
-    user: User & { roles?: UserRole[] },
-    roles: string[]
-  ): SafeUser {
+  private toSafeUser(user: User & { roles?: UserRole[] }, roles: string[]): SafeUser {
     return {
       id: user.id,
       email: user.email,
@@ -1037,14 +1030,16 @@ export class AuthService {
     }
 
     // Clean up old attempts from database (async, non-blocking)
-    this.prisma.failedLoginAttempt.deleteMany({
-      where: {
-        email,
-        tenantId,
-      },
-    }).catch(() => {
-      // Ignore cleanup errors
-    });
+    this.prisma.failedLoginAttempt
+      .deleteMany({
+        where: {
+          email,
+          tenantId,
+        },
+      })
+      .catch(() => {
+        // Ignore cleanup errors
+      });
   }
 }
 

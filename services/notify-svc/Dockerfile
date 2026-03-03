@@ -48,6 +48,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/services/notify-svc/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/services/notify-svc/prisma ./prisma
 COPY --from=builder --chown=nodejs:nodejs /deploy/package.json ./
 
+# Copy non-TS assets (Handlebars templates & locale files) that tsc doesn't emit
+COPY --from=builder --chown=nodejs:nodejs /app/services/notify-svc/src/channels/email/templates ./dist/src/channels/email/templates
+COPY --from=builder --chown=nodejs:nodejs /app/services/notify-svc/src/channels/email/locales  ./dist/src/channels/email/locales
+
 # Set environment variables
 ENV NODE_ENV=production \
     PORT=3000

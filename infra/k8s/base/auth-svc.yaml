@@ -118,6 +118,8 @@ spec:
                   key: nats-url
             - name: NOTIFY_SERVICE_URL
               value: "http://notify-svc:3000"
+            - name: WEB_APP_URL
+              value: "https://parent.aivolearning.com"
 
           resources:
             requests:
