@@ -28,8 +28,9 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -71,16 +72,13 @@ function LoginForm() {
   };
 
   const handleGoogleSSO = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const callbackUrl = `${window.location.origin}/api/auth/callback`;
-    window.location.href = `${apiUrl}/auth/sso/google?callback=${encodeURIComponent(callbackUrl)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+    window.location.href = '/api/auth/google';
   };
 
   const handleResendVerification = async () => {
     setResendStatus('sending');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
-      const res = await fetch(`${apiUrl}/auth/resend-verification`, {
+      const res = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -90,6 +88,18 @@ function LoginForm() {
         return;
       }
       setResendStatus('sent');
+      // 60-second cooldown
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setResendStatus('idle');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
       setResendStatus('error');
     }
@@ -111,8 +121,16 @@ function LoginForm() {
         <div className="rounded-2xl bg-white p-8 shadow-xl ring-1 ring-gray-100">
           {/* Info / redirect message */}
           {message && (
-            <div className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
-              {message}
+            <div
+              className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+                message === 'verify-email'
+                  ? 'bg-green-50 text-green-700'
+                  : 'bg-blue-50 text-blue-700'
+              }`}
+            >
+              {message === 'verify-email'
+                ? 'Account created! Please check your email for a verification link before signing in.'
+                : message}
             </div>
           )}
 
@@ -142,7 +160,7 @@ function LoginForm() {
                     {resendStatus === 'sending'
                       ? 'Sending...'
                       : resendStatus === 'sent'
-                        ? 'Verification email sent ✓'
+                        ? `Verification email sent ✓${resendCooldown > 0 ? ` (${resendCooldown}s)` : ''}`
                         : resendStatus === 'error'
                           ? 'Failed to send — try again'
                           : 'Resend verification email'}
@@ -323,7 +341,13 @@ function LoginForm() {
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-gray-500">
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-medium text-primary-600 hover:text-primary-700">
+            Sign up
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-xs text-gray-500">
           Need help?{' '}
           <Link href="/help" className="font-medium text-primary-600 hover:text-primary-700">
             Contact your school administrator
