@@ -123,7 +123,7 @@ spec:
                   name: shared-secrets
                   key: nats-url
             - name: NOTIFY_SERVICE_URL
-              value: "http://notify-svc.aivo.svc.cluster.local:3000"
+              value: "http://notify-svc:3000"
             # Firebase Admin SDK (for email verification links)
             - name: FIREBASE_PROJECT_ID
               valueFrom:

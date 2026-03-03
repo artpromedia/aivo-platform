@@ -146,7 +146,7 @@ spec:
                   key: firebase-private-key
             # Notify service URL
             - name: NOTIFY_SERVICE_URL
-              value: "http://notify-svc.aivo.svc.cluster.local:3000"
+              value: "http://notify-svc:3000"
 
             # JWT Secret (required in production)
             - name: JWT_SECRET
