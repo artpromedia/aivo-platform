@@ -66,9 +66,12 @@ export default function ClassesPage() {
         title="My Classes"
         description="Manage your classes and view student progress"
         actions={
-          <button className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50">
+          <Link
+            href="/classes/new"
+            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
             + Add Class
-          </button>
+          </Link>
         }
       />
 
