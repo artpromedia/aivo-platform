@@ -10,6 +10,7 @@ import * as React from 'react';
 
 import { Header } from '@/components/layout/header';
 import { Sidebar } from '@/components/layout/sidebar';
+import { TeacherOnboardingWizard } from '@/components/onboarding/TeacherOnboardingWizard';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
@@ -63,6 +64,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <main className="p-6">{children}</main>
       </div>
+
+      {/* Onboarding wizard — shown to first-time teachers */}
+      <TeacherOnboardingWizard />
     </div>
   );
 }
