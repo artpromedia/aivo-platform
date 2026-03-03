@@ -1,15 +1,18 @@
 'use client';
 
 import { Button } from '@aivo/ui-web';
+import { useState } from 'react';
 
 import type { SeatUsage } from '../../../lib/billing-api';
 import { getSeatUsageLevel, getSeatUsagePercentage } from '../../../lib/billing-api';
+import { SeatRequestModal } from './seat-request-modal';
 
 interface SeatWarningBannerProps {
   seatUsage: SeatUsage;
 }
 
 export function SeatWarningBanner({ seatUsage }: SeatWarningBannerProps) {
+  const [modalOpen, setModalOpen] = useState(false);
   const percentage = getSeatUsagePercentage(seatUsage);
   const level = getSeatUsageLevel(seatUsage);
 
@@ -17,13 +20,6 @@ export function SeatWarningBanner({ seatUsage }: SeatWarningBannerProps) {
   if (level === 'normal') {
     return null;
   }
-
-  const handleRequestSeats = () => {
-    window.open(
-      `mailto:sales@aivolearning.com?subject=Seat%20Capacity%20Request&body=Hi%2C%0A%0AWe%20are%20currently%20using%20${seatUsage.usedSeats}%20of%20${seatUsage.totalSeats}%20seats%20(${percentage}%25%20capacity).%0A%0AWe%20would%20like%20to%20request%20additional%20seats%20for%20our%20district.%0A%0APlease%20contact%20me%20to%20discuss%20options.`,
-      '_blank'
-    );
-  };
 
   const isCritical = level === 'critical';
 
@@ -65,7 +61,7 @@ export function SeatWarningBanner({ seatUsage }: SeatWarningBannerProps) {
           <div className="mt-3">
             <Button
               variant={isCritical ? 'primary' : 'secondary'}
-              onClick={handleRequestSeats}
+              onClick={() => setModalOpen(true)}
               className={isCritical ? 'bg-error text-white hover:bg-error/90' : ''}
             >
               Request more seats
@@ -73,6 +69,12 @@ export function SeatWarningBanner({ seatUsage }: SeatWarningBannerProps) {
           </div>
         </div>
       </div>
+
+      <SeatRequestModal
+        seatUsage={seatUsage}
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   );
 }

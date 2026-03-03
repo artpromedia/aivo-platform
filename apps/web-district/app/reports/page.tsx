@@ -12,7 +12,7 @@ import {
   fetchIEPDashboard,
 } from '../../lib/api/district.api';
 import { resolveTenant } from '../../lib/tenant';
-import { ComplianceReports } from '../dashboard/components/compliance-reports';
+import { ReportsClient } from './reports-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,8 +117,8 @@ export default async function ReportsPage() {
         </Link>
       </div>
 
-      {/* Compliance Reports Component — full generate/view/filter UI */}
-      <ComplianceReports />
+      {/* Compliance Reports — interactive client component with handlers */}
+      <ReportsClient tenantId={tenantId} />
     </section>
   );
 }

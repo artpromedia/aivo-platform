@@ -69,24 +69,67 @@ export async function PATCH(
   try {
     const { schoolId } = await params;
     const body = (await request.json()) as Record<string, unknown>;
-    const { tenantId, name, address, external_id } = body;
+    const { tenantId, ...fields } = body;
 
     if (!tenantId) {
       return NextResponse.json({ error: 'tenantId is required' }, { status: 400 });
     }
 
-    // tenant-svc doesn't have a PATCH endpoint yet — respond with 501
-    // This allows the UI to show the Edit button and form, ready for backend support
-    void schoolId;
-    void name;
-    void address;
-    void external_id;
-
-    return NextResponse.json(
-      { error: 'School update is not yet supported by the backend' },
-      { status: 501 }
+    const response = await fetch(
+      `${TENANT_SVC_URL}/tenants/${tenantId as string}/schools/${schoolId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      }
     );
+
+    if (!response.ok) {
+      const error = await response.text();
+      return NextResponse.json(
+        { error: error || 'Failed to update school' },
+        { status: response.status }
+      );
+    }
+
+    const data: unknown = await response.json();
+    return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: 'Failed to update school' }, { status: 500 });
+  }
+}
+
+// DELETE /api/schools/:schoolId — delete a school
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ schoolId: string }> }
+) {
+  try {
+    const { schoolId } = await params;
+    const tenantId = new URL(request.url).searchParams.get('tenantId');
+
+    if (!tenantId) {
+      return NextResponse.json({ error: 'tenantId is required' }, { status: 400 });
+    }
+
+    const response = await fetch(
+      `${TENANT_SVC_URL}/tenants/${tenantId}/schools/${schoolId}`,
+      {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      return NextResponse.json(
+        { error: error || 'Failed to delete school' },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: 'Failed to delete school' }, { status: 500 });
   }
 }

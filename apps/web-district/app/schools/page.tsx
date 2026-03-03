@@ -4,6 +4,8 @@ import { Badge, Button, Card, GradeThemeToggle, Heading, useGradeTheme } from '@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useAuth } from '../providers';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -22,10 +24,7 @@ interface School {
 // Helpers
 // ============================================================================
 
-const TENANT_ID =
-  typeof window !== 'undefined'
-    ? (/aivo_tenant_id=([^;]+)/.exec(document.cookie)?.[1] ?? 'default')
-    : 'default';
+
 
 function downloadCsv(schools: School[]) {
   const header = 'Name,Address,External ID,Created';
@@ -49,6 +48,8 @@ function downloadCsv(schools: School[]) {
 
 export default function SchoolsPage() {
   const { themeId, themeLabels } = useGradeTheme();
+  const { tenantId: authTenantId } = useAuth();
+  const tenantId = authTenantId ?? '';
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export default function SchoolsPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/schools?tenantId=${TENANT_ID}`);
+      const res = await fetch(`/api/schools?tenantId=${tenantId}`);
       if (!res.ok) throw new Error(`Failed to load schools (${res.status})`);
       const data = (await res.json()) as { items: School[] };
       setSchools(data.items ?? []);

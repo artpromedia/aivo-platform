@@ -5,14 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useAuth } from '../../providers';
+
 // ============================================================================
 // Helpers
 // ============================================================================
-
-const TENANT_ID =
-  typeof window !== 'undefined'
-    ? (/aivo_tenant_id=([^;]+)/.exec(document.cookie)?.[1] ?? 'default')
-    : 'default';
 
 // ============================================================================
 // Component
@@ -21,6 +18,8 @@ const TENANT_ID =
 export default function CreateSchoolPage() {
   const router = useRouter();
   const { themeId } = useGradeTheme();
+  const { tenantId: authTenantId } = useAuth();
+  const tenantId = authTenantId ?? '';
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +48,7 @@ export default function CreateSchoolPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenantId: TENANT_ID,
+          tenantId,
           name,
           address: address || undefined,
           external_id: code || undefined,

@@ -61,11 +61,11 @@ const integrations: IntegrationCard[] = [
     status: 'coming-soon',
   },
   {
-    href: '#',
+    href: '/integrations/google-classroom',
     icon: '📊',
     title: 'Google Classroom',
     description: 'Sync classes and assignments with Google Classroom.',
-    status: 'coming-soon',
+    status: 'available',
   },
 ];
 

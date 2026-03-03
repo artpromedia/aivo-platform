@@ -10,6 +10,8 @@ import * as React from 'react';
 
 import { useConfirm } from '@aivo/ui-web';
 
+import { useAuth } from '../providers';
+
 import { CsvImportModal } from './components/csv-import-modal';
 import { UserFilters } from './components/user-filters';
 import { UserFormModal } from './components/user-form-modal';
@@ -33,10 +35,6 @@ export interface User {
 // API HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const TENANT_ID = typeof window !== 'undefined'
-  ? (document.cookie.match(/aivo_tenant_id=([^;]+)/)?.[1] ?? 'default')
-  : 'default';
-
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
@@ -49,8 +47,8 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-async function fetchUsers(filters?: { role?: string; status?: string; search?: string }): Promise<User[]> {
-  const params = new URLSearchParams({ tenantId: TENANT_ID });
+async function fetchUsers(tenantId: string, filters?: { role?: string; status?: string; search?: string }): Promise<User[]> {
+  const params = new URLSearchParams({ tenantId });
   if (filters?.role && filters.role !== 'all') params.set('role', filters.role);
   if (filters?.status && filters.status !== 'all') params.set('status', filters.status);
   if (filters?.search) params.set('search', filters.search);
@@ -58,10 +56,10 @@ async function fetchUsers(filters?: { role?: string; status?: string; search?: s
   return Array.isArray(data) ? data : (data.users ?? []);
 }
 
-async function createUser(data: Partial<User>): Promise<User> {
+async function createUser(tenantId: string, data: Partial<User>): Promise<User> {
   return apiFetch<User>('/api/users', {
     method: 'POST',
-    body: JSON.stringify({ ...data, tenantId: TENANT_ID }),
+    body: JSON.stringify({ ...data, tenantId }),
   });
 }
 
@@ -82,6 +80,8 @@ async function deleteUser(userId: string): Promise<void> {
 
 export default function UserManagementPage() {
   const confirm = useConfirm();
+  const { tenantId: authTenantId } = useAuth();
+  const tenantId = authTenantId ?? '';
   const [users, setUsers] = React.useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -98,7 +98,7 @@ export default function UserManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchUsers(filters);
+      const data = await fetchUsers(tenantId, filters);
       setUsers(data);
       applyClientFilter(data, filters ?? activeFilters);
     } catch (err) {
@@ -138,7 +138,7 @@ export default function UserManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      await createUser(data);
+      await createUser(tenantId, data);
       await loadUsers(activeFilters);
       setShowCreateModal(false);
     } catch (err) {
@@ -199,7 +199,7 @@ export default function UserManagementPage() {
     setLoading(true);
     setError(null);
     try {
-      await Promise.all(importedUsers.map((u) => createUser(u)));
+      await Promise.all(importedUsers.map((u) => createUser(tenantId, u)));
       await loadUsers(activeFilters);
       setShowCsvModal(false);
     } catch (err) {

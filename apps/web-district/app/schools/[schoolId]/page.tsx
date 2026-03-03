@@ -3,6 +3,9 @@
 import { Badge, Button, Card, Heading, useGradeTheme } from '@aivo/ui-web';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { useAuth } from '../../providers';
 
 // ============================================================================
 // Types
@@ -46,16 +49,14 @@ interface SchoolAdmin {
 // Helpers
 // ============================================================================
 
-const TENANT_ID =
-  typeof window !== 'undefined'
-    ? (/aivo_tenant_id=([^;]+)/.exec(document.cookie)?.[1] ?? 'default')
-    : 'default';
-
 // ============================================================================
 // Component
 // ============================================================================
 
 export default function SchoolDetailPage({ params }: { params: Promise<{ schoolId: string }> }) {
+  const router = useRouter();
+  const { tenantId: authTenantId } = useAuth();
+  const tenantId = authTenantId ?? '';
   const { themeId } = useGradeTheme();
 
   const [schoolId, setSchoolId] = useState<string | null>(null);
@@ -90,6 +91,10 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
   const [removeTarget, setRemoveTarget] = useState<SchoolAdmin | null>(null);
   const [removing, setRemoving] = useState(false);
 
+  // Delete school
+  const [showDeleteSchool, setShowDeleteSchool] = useState(false);
+  const [deletingSchool, setDeletingSchool] = useState(false);
+
   // Resolve params (Next.js 15: params is a Promise)
   useEffect(() => {
     void params.then((p) => {
@@ -102,7 +107,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/schools/${schoolId}?tenantId=${TENANT_ID}`);
+      const res = await fetch(`/api/schools/${schoolId}?tenantId=${tenantId}`);
       if (!res.ok) throw new Error(`Failed to load school (${res.status})`);
       const data = (await res.json()) as SchoolDetail;
       setSchool(data);
@@ -124,7 +129,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
     try {
       setAdminsLoading(true);
       setAdminsError(null);
-      const res = await fetch(`/api/schools/${schoolId}/admins?tenantId=${TENANT_ID}`);
+      const res = await fetch(`/api/schools/${schoolId}/admins?tenantId=${tenantId}`);
       if (!res.ok) throw new Error(`Failed to load admins (${res.status})`);
       const data = (await res.json()) as { admins?: SchoolAdmin[] };
       setAdmins(data.admins ?? []);
@@ -155,7 +160,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
           setSearchLoading(true);
           setSearchError(null);
           const params = new URLSearchParams({
-            tenantId: TENANT_ID,
+            tenantId: tenantId,
             search: adminSearch,
             role: 'ADMIN,TEACHER',
             limit: '10',
@@ -187,7 +192,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenantId: TENANT_ID,
+          tenantId,
           userId: user.id,
           email: user.email,
           firstName: user.firstName,
@@ -215,7 +220,7 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
     setRemoving(true);
     try {
       const res = await fetch(
-        `/api/schools/${schoolId}/admins/${removeTarget.userId}?tenantId=${TENANT_ID}`,
+        `/api/schools/${schoolId}/admins/${removeTarget.userId}?tenantId=${tenantId}`,
         { method: 'DELETE' }
       );
       if (!res.ok) throw new Error('Failed to remove admin');
@@ -239,18 +244,13 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
       const res = await fetch(`/api/schools/${school.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId: TENANT_ID, name: editName }),
+        body: JSON.stringify({ tenantId, name: editName }),
       });
 
-      if (res.status === 501) {
-        // Backend doesn't support PATCH yet — show friendly message
-        setSaveMsg('School updated successfully.');
-        setSchool({ ...school, name: editName });
-        setEditing(false);
-        return;
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? 'Failed to update school');
       }
-
-      if (!res.ok) throw new Error('Failed to update school');
 
       setSaveMsg('School updated successfully.');
       setEditing(false);
@@ -259,6 +259,28 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
       setSaveMsg(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Delete school
+  async function handleDeleteSchool() {
+    if (!school) return;
+    setDeletingSchool(true);
+    try {
+      const res = await fetch(
+        `/api/schools/${school.id}?tenantId=${tenantId}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? 'Failed to delete school');
+      }
+      router.push('/schools');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete school');
+      setShowDeleteSchool(false);
+    } finally {
+      setDeletingSchool(false);
     }
   }
 
@@ -321,6 +343,14 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
               Edit
             </Button>
           )}
+          <Button
+            variant="ghost"
+            data-testid="delete-school"
+            onClick={() => { setShowDeleteSchool(true); }}
+            className="text-red-600 hover:text-red-700"
+          >
+            Delete
+          </Button>
         </div>
       </div>
 
@@ -596,6 +626,38 @@ export default function SchoolDetailPage({ params }: { params: Promise<{ schoolI
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Delete school confirmation dialog */}
+      {showDeleteSchool && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" data-testid="delete-school-dialog">
+          <div className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-text">Delete School</h3>
+            <p className="mt-2 text-sm text-muted">
+              This will remove all classrooms and user assignments for{' '}
+              <strong>{school.name}</strong>. This action cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                data-testid="delete-school-cancel"
+                onClick={() => { setShowDeleteSchool(false); }}
+                disabled={deletingSchool}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                data-testid="delete-school-confirm"
+                onClick={() => void handleDeleteSchool()}
+                disabled={deletingSchool}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deletingSchool ? 'Deleting...' : 'Delete School'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Remove confirmation dialog */}

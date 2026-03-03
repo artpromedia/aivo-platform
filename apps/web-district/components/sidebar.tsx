@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState, useCallback } from 'react';
 
 import { useAuth } from '../app/providers';
+import { NotificationCenter } from './notification-center';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,6 +76,9 @@ const navGroups: NavGroup[] = [
         href: '/integrations',
         children: [
           { icon: <></>, label: 'SIS Sync', href: '/integrations/sis' },
+          { icon: <></>, label: 'Google Classroom', href: '/integrations/google-classroom' },
+          { icon: <></>, label: 'Canvas LMS', href: '/integrations/canvas' },
+          { icon: <></>, label: 'Ed-Fi Reporting', href: '/integrations/edfi' },
           { icon: <></>, label: 'API Keys', href: '/integrations/api-keys' },
           { icon: <></>, label: 'Webhooks', href: '/integrations/webhooks' },
         ],
@@ -87,6 +91,9 @@ const navGroups: NavGroup[] = [
           { icon: <></>, label: 'SSO', href: '/settings/sso' },
           { icon: <></>, label: 'Branding', href: '/settings/branding' },
           { icon: <></>, label: 'Privacy', href: '/settings/privacy' },
+          { icon: <></>, label: 'Notifications', href: '/settings/notifications' },
+          { icon: <></>, label: 'Data Retention', href: '/settings/data-retention' },
+          { icon: <></>, label: 'API Keys', href: '/settings/api-keys' },
         ],
       },
     ],
@@ -130,12 +137,14 @@ export function Sidebar() {
             <span className="text-base font-bold text-text">Aivo District</span>
           </Link>
         )}
-        <button
-          onClick={() => {
-            setCollapsed((c) => !c);
-          }}
-          className={`rounded-lg p-1.5 text-muted hover:bg-surface-muted ${collapsed ? 'mx-auto' : ''}`}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        <div className={`flex items-center gap-1 ${collapsed ? 'mx-auto flex-col' : ''}`}>
+          <NotificationCenter collapsed={collapsed} />
+          <button
+            onClick={() => {
+              setCollapsed((c) => !c);
+            }}
+            className={`rounded-lg p-1.5 text-muted hover:bg-surface-muted ${collapsed ? '' : ''}`}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             {collapsed ? (
@@ -152,7 +161,8 @@ export function Sidebar() {
               />
             )}
           </svg>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Scrollable nav */}

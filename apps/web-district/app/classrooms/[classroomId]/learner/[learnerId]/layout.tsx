@@ -47,7 +47,7 @@ async function fetchLearner(learnerId: string): Promise<LearnerDto | null> {
       console.warn('[LearnerProfile] API unavailable, using mock data');
       return {
         id: learnerId,
-        tenant_id: 'tenant-1',
+        tenant_id: 'mock-tenant',
         name: 'Jordan Rivers',
         grade: 4,
       };

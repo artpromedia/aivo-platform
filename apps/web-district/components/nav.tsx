@@ -9,6 +9,7 @@ import { useAuth } from '../app/providers';
 
 import { AccessibilityControls } from './accessibility-controls';
 import { EducatorModeToggle } from './educator-mode-toggle';
+import { NotificationCenter } from './notification-center';
 import { Sidebar } from './sidebar';
 
 // Links for mobile drawer — mirrors the sidebar groups flattened
@@ -28,6 +29,7 @@ const mobileLinks = [
   { href: '/devices', label: 'Devices' },
   { href: '/billing', label: 'Billing' },
   { href: '/integrations', label: 'Integrations' },
+  { href: '/integrations/canvas', label: 'Canvas LMS' },
   { href: '/settings', label: 'Settings' },
 ];
 
@@ -54,6 +56,7 @@ export function Nav() {
           </Link>
 
           <div className="flex items-center gap-2">
+            <NotificationCenter />
             <LanguageSwitcher variant="compact" />
             <AccessibilityControls />
             <button

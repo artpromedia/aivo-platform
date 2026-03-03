@@ -12,6 +12,7 @@ import {
   type TenantOverviewResponse,
   type TenantSchoolsResponse,
 } from '../../lib/tenant-analytics';
+import { useAuth } from '../providers';
 
 // Helper to safely format date string
 function formatDateString(date: Date): string {
@@ -19,8 +20,8 @@ function formatDateString(date: Date): string {
 }
 
 export default function DistrictAnalyticsPage() {
-  // In production, get tenantId from auth context
-  const tenantId = 'tenant-1';
+  const { tenantId: authTenantId } = useAuth();
+  const tenantId = authTenantId ?? '';
 
   const [overview, setOverview] = useState<TenantOverviewResponse | null>(null);
   const [schools, setSchools] = useState<TenantSchoolsResponse | null>(null);

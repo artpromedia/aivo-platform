@@ -16,7 +16,7 @@ import type { ComplianceAlert } from '../../lib/api/district.api';
 import { resolveTenant } from '../../lib/tenant';
 import { CompliancePanel } from '../dashboard/components/compliance-panel';
 import type { IEPComplianceStats, ComplianceItem, AtRiskIEP } from '../dashboard/components/compliance-panel';
-import { ComplianceReports } from '../dashboard/components/compliance-reports';
+import { ReportsClient } from '../reports/reports-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -220,8 +220,8 @@ export default async function CompliancePage() {
         </div>
       )}
 
-      {/* Compliance Reports Component */}
-      <ComplianceReports />
+      {/* Compliance Reports — interactive client component with handlers */}
+      <ReportsClient tenantId={tenantId} />
     </section>
   );
 }

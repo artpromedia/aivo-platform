@@ -39,7 +39,7 @@ export interface ComplianceReport {
   findings: number;
   criticalFindings: number;
   schools: number;
-  downloadUrl?: string;
+  downloadUrl?: string | undefined;
 }
 
 export interface ScheduledReport {

@@ -44,7 +44,8 @@ export function ContractOverview({ contract, daysUntilEnd, renewalStatus }: Cont
     );
   }
 
-  const isExpiringSoon = daysUntilEnd <= 90;
+  const isExpiringSoon = daysUntilEnd <= 60;
+  const isUrgent = daysUntilEnd <= 14;
   const statusTone = contract.status === 'ACTIVE' ? 'success' : 'neutral';
 
   return (
@@ -89,10 +90,13 @@ export function ContractOverview({ contract, daysUntilEnd, renewalStatus }: Cont
         <div>
           <div className="text-sm font-medium text-muted">Days Remaining</div>
           <div
-            className={`mt-1 text-lg font-semibold ${isExpiringSoon ? 'text-warning' : 'text-text'}`}
+            className={`mt-1 text-lg font-semibold ${isUrgent ? 'text-error' : isExpiringSoon ? 'text-warning' : 'text-text'}`}
           >
             {daysUntilEnd}
-            {isExpiringSoon && (
+            {isUrgent && (
+              <span className="ml-2 text-sm font-normal text-error">Action required</span>
+            )}
+            {!isUrgent && isExpiringSoon && (
               <span className="ml-2 text-sm font-normal text-warning">Renewing soon</span>
             )}
           </div>
@@ -101,12 +105,12 @@ export function ContractOverview({ contract, daysUntilEnd, renewalStatus }: Cont
 
       {/* Renewal Banner */}
       {isExpiringSoon && (
-        <div className="border-t border-border bg-warning/5 px-6 py-4">
+        <div className={`border-t px-6 py-4 ${isUrgent ? 'border-error/40 bg-error/5' : 'border-border bg-warning/5'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-warning/20">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${isUrgent ? 'bg-error/20' : 'bg-warning/20'}`}>
                 <svg
-                  className="h-5 w-5 text-warning"
+                  className={`h-5 w-5 ${isUrgent ? 'text-error' : 'text-warning'}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -120,11 +124,15 @@ export function ContractOverview({ contract, daysUntilEnd, renewalStatus }: Cont
                 </svg>
               </div>
               <div>
-                <div className="font-medium text-text">Contract Renewal</div>
+                <div className={`font-medium ${isUrgent ? 'text-error' : 'text-text'}`}>
+                  {isUrgent ? 'Urgent: Contract Expiring' : 'Contract Renewal'}
+                </div>
                 <div className="text-sm text-muted">
                   {renewalStatus === 'IN_PROGRESS'
                     ? 'A renewal quote has been prepared for you.'
-                    : 'Your contract is approaching its end date.'}
+                    : isUrgent
+                      ? `Your contract expires in ${daysUntilEnd} day${daysUntilEnd === 1 ? '' : 's'}. Renew now to avoid service interruption.`
+                      : 'Your contract is approaching its end date.'}
                 </div>
               </div>
             </div>

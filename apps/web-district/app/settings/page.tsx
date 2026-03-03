@@ -41,6 +41,24 @@ const settingsCards: SettingsCard[] = [
     title: 'Privacy & Access History',
     description: 'View when support staff have accessed your account.',
   },
+  {
+    href: '/settings/notifications',
+    icon: '🔔',
+    title: 'Notification Preferences',
+    description: 'Configure email digests, alert thresholds, and notification recipients.',
+  },
+  {
+    href: '/settings/data-retention',
+    icon: '🗄️',
+    title: 'Data Retention',
+    description: 'Manage data retention policies for compliance with FERPA and state regulations.',
+  },
+  {
+    href: '/settings/api-keys',
+    icon: '🔑',
+    title: 'API Key Management',
+    description: 'Generate, view, and revoke API keys for programmatic access.',
+  },
 ];
 
 export default async function SettingsPage() {
@@ -60,7 +78,7 @@ export default async function SettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">District Settings</h1>
           <p className="text-sm text-gray-500">
-            Manage authentication, branding, and privacy settings
+            Manage authentication, branding, privacy, notifications, data retention, and API settings
           </p>
         </div>
         <Link

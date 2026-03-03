@@ -7,6 +7,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import type { User } from '../page';
 
 interface UserTableProps {
@@ -121,7 +122,9 @@ function UserRow({ user, onEdit, onDelete, onStatusChange }: UserRowProps) {
           </div>
           <div>
             <p className="font-medium text-gray-900">
-              {user.firstName} {user.lastName}
+              <Link href={`/users/${user.id}`} className="hover:text-blue-600 hover:underline">
+                {user.firstName} {user.lastName}
+              </Link>
             </p>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
