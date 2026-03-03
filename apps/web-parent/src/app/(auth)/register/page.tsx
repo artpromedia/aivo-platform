@@ -27,6 +27,7 @@ function RegisterContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -37,7 +38,7 @@ function RegisterContent() {
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -88,16 +89,8 @@ function RegisterContent() {
         throw new Error(data.message ?? 'Registration failed');
       }
 
-      const data = (await response.json()) as { accessToken?: string };
-
-      // Store tokens if provided
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken);
-      }
-
-      // Redirect to onboarding or dashboard
-      const redirectTo = returnUrl || '/onboarding';
-      router.push(redirectTo);
+      // Account created — show "check your email" screen
+      setRegisteredEmail(formData.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -111,6 +104,81 @@ function RegisterContent() {
     window.location.href = `${apiUrl}/auth/sso/${provider}?callback=${encodeURIComponent(callbackUrl)}&source=${source}`;
   };
 
+  // ── Verification email sent screen ──
+  if (registeredEmail) {
+    return (
+      <div className="rounded-2xl bg-white p-8 shadow-xl text-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-violet-100">
+          <svg className="h-8 w-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Check your email</h1>
+        <p className="mt-3 text-gray-600">
+          We&apos;ve sent a verification link to
+        </p>
+        <p className="mt-1 font-semibold text-violet-700">{registeredEmail}</p>
+        <p className="mt-4 text-sm text-gray-500">
+          Click the link in the email to verify your account and get started.
+          The link will expire in 24 hours.
+        </p>
+
+        <div className="mt-8 space-y-3">
+          <button
+            type="button"
+            onClick={() => {
+              window.open(`https://mail.google.com`, '_blank');
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            Open Gmail
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              window.open(`https://outlook.live.com`, '_blank');
+            }}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            Open Outlook
+          </button>
+        </div>
+
+        <p className="mt-6 text-sm text-gray-500">
+          Didn&apos;t receive the email?{' '}
+          <button
+            type="button"
+            onClick={() => {
+              fetch('/api/auth/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: registeredEmail }),
+              }).catch(() => {/* ignore */});
+              setError(null);
+              setError('Verification email resent!');
+            }}
+            className="font-medium text-violet-600 hover:underline"
+          >
+            Resend verification email
+          </button>
+        </p>
+
+        {error && (
+          <div className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+            {error}
+          </div>
+        )}
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Already verified?{' '}
+          <Link href="/login" className="font-medium text-violet-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="rounded-2xl bg-white p-8 shadow-xl">
       {/* Header */}

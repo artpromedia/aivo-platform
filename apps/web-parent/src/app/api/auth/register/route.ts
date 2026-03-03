@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
 
     const res = NextResponse.json({
       user: data.user ?? null,
-      message: 'Account created successfully',
+      message: 'Account created successfully. Please check your email to verify your account.',
+      emailVerificationRequired: true,
     });
 
     // Set httpOnly cookies if tokens were returned
