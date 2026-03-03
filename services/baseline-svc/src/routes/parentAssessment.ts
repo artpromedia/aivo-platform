@@ -352,6 +352,13 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // ── Notify the enrolling teacher that parent completed assessment ──
+      if (assessment.enrolledByRole === 'teacher') {
+        void notifyTeacherOfCompletion(assessment.baselineProfileId).catch((err: unknown) => {
+          fastify.log.error({ err }, 'Failed to notify teacher of parent assessment completion');
+        });
+      }
+
       return reply.send({
         message: 'Parent assessment completed successfully',
         assessment: updated,
@@ -582,6 +589,71 @@ export async function parentAssessmentRoutes(fastify: FastifyInstance) {
       });
     }
   );
+}
+
+/**
+ * Notify the enrolling teacher that the parent completed their assessment.
+ * The child can now take their baseline. Fire-and-forget — failures are logged but
+ * don't block the parent's completion response.
+ */
+async function notifyTeacherOfCompletion(baselineProfileId: string): Promise<void> {
+  const notifySvcUrl = process.env.NOTIFY_SVC_URL || 'http://localhost:4012';
+
+  // Load the profile so we know the learner + tenant
+  const profile = await prisma.baselineProfile.findUnique({
+    where: { id: baselineProfileId },
+  });
+  if (!profile) return;
+
+  // Look up the teacher who has this learner in a classroom
+  const teacherRows = await prisma.$queryRaw<{ teacherId: string }[]>`
+    SELECT DISTINCT csc."teacherId"
+    FROM "ClassroomLearner" cl
+    JOIN "ClassroomSessionCode" csc
+      ON csc."classroomId" = cl."classroomId" AND csc."isActive" = true
+    WHERE cl."learnerId" = ${profile.learnerId}::uuid
+    LIMIT 1
+  `;
+
+  const teacherUserId = teacherRows[0]?.teacherId;
+  if (!teacherUserId) {
+    console.warn(
+      `[notifyTeacherOfCompletion] No teacher found for learner ${profile.learnerId}`,
+    );
+    return;
+  }
+
+  // Look up learner name for a readable notification message
+  const learnerRows = await prisma.$queryRaw<{ first_name: string; last_name: string }[]>`
+    SELECT first_name, last_name FROM learners
+    WHERE id = ${profile.learnerId}::uuid
+    LIMIT 1
+  `;
+  const childName =
+    learnerRows[0]
+      ? `${learnerRows[0].first_name} ${learnerRows[0].last_name}`.trim()
+      : 'A student';
+
+  try {
+    await fetch(`${notifySvcUrl}/api/v1/notifications/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipientId: teacherUserId,
+        type: 'PARENT_ASSESSMENT_COMPLETED',
+        title: `Parent completed assessment for ${childName}`,
+        body: `${childName} can now take their baseline assessment.`,
+        channel: ['in-app', 'email'],
+        metadata: {
+          learnerId: profile.learnerId,
+          baselineProfileId: profile.id,
+          tenantId: profile.tenantId,
+        },
+      }),
+    });
+  } catch (error) {
+    console.error('[notifyTeacherOfCompletion] Failed to send notification:', error);
+  }
 }
 
 /**
