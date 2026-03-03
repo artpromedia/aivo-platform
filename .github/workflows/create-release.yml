@@ -88,7 +88,7 @@ jobs:
             SHA=$(git rev-parse HEAD)
           fi
 
-          SHA_SHORT=$(echo "$SHA" | cut -c1-8)
+          SHA_SHORT=$(echo "$SHA" | cut -c1-7)
           SOURCE_TAG="main-${SHA_SHORT}"
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
