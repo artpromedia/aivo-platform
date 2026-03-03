@@ -124,6 +124,25 @@ spec:
                   key: nats-url
             - name: NOTIFY_SERVICE_URL
               value: "http://notify-svc.aivo.svc.cluster.local:3000"
+            # Firebase Admin SDK (for email verification links)
+            - name: FIREBASE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth-svc-secrets
+                  key: firebase-project-id
+                  optional: true
+            - name: FIREBASE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: auth-svc-secrets
+                  key: firebase-client-email
+                  optional: true
+            - name: FIREBASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-svc-secrets
+                  key: firebase-private-key
+                  optional: true
 
           resources:
             requests:

@@ -33,3 +33,19 @@ spec:
       remoteRef:
         key: secret/aivo/nats
         property: url
+    - secretKey: OONRUMAIL_API_KEY
+      remoteRef:
+        key: secret/aivo/email
+        property: oonrumail_api_key
+    - secretKey: EMAIL_PRIMARY_PROVIDER
+      remoteRef:
+        key: secret/aivo/email
+        property: primary_provider
+    - secretKey: EMAIL_ENABLED
+      remoteRef:
+        key: secret/aivo/email
+        property: enabled
+    - secretKey: OONRUMAIL_ENABLED
+      remoteRef:
+        key: secret/aivo/email
+        property: oonrumail_enabled

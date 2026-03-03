@@ -79,7 +79,18 @@ vault kv put secret/aivo/email \
   smtp_port="${SMTP_PORT:-587}" \
   smtp_user="${SMTP_USER}" \
   smtp_password="${SMTP_PASSWORD}" \
-  from_address="noreply@aivolearning.com"
+  from_address="noreply@aivolearning.com" \
+  primary_provider="oonrumail" \
+  enabled="true" \
+  oonrumail_enabled="true" \
+  oonrumail_api_key="${OONRUMAIL_API_KEY}"
+
+# ─── Firebase Admin SDK ───────────────────────────────────────────────
+echo "Seeding Firebase Admin SDK credentials..."
+vault kv put secret/aivo/firebase \
+  project_id="${FIREBASE_PROJECT_ID}" \
+  client_email="${FIREBASE_CLIENT_EMAIL}" \
+  private_key="${FIREBASE_PRIVATE_KEY}"
 
 # ─── S3 / Object Storage ──────────────────────────────────────────────────
 echo "Seeding S3 credentials..."

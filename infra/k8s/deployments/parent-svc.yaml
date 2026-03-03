@@ -128,7 +128,25 @@ spec:
                   name: shared-secrets
                   key: nats-url
 
-            # Add service-specific secrets here
+            # Firebase Admin SDK (for email verification links)
+            - name: FIREBASE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: parent-svc-secrets
+                  key: firebase-project-id
+            - name: FIREBASE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: parent-svc-secrets
+                  key: firebase-client-email
+            - name: FIREBASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: parent-svc-secrets
+                  key: firebase-private-key
+            # Notify service URL
+            - name: NOTIFY_SERVICE_URL
+              value: "http://notify-svc.aivo.svc.cluster.local:3000"
 
             # JWT Secret (required in production)
             - name: JWT_SECRET

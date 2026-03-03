@@ -33,3 +33,15 @@ spec:
       remoteRef:
         key: secret/aivo/nats
         property: url
+    - secretKey: FIREBASE_PROJECT_ID
+      remoteRef:
+        key: secret/aivo/firebase
+        property: project_id
+    - secretKey: FIREBASE_CLIENT_EMAIL
+      remoteRef:
+        key: secret/aivo/firebase
+        property: client_email
+    - secretKey: FIREBASE_PRIVATE_KEY
+      remoteRef:
+        key: secret/aivo/firebase
+        property: private_key
