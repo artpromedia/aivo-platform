@@ -410,6 +410,7 @@ jobs:
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_ANALYTICS_ID=${{ secrets.NEXT_PUBLIC_ANALYTICS_ID || '' }}"
               ;;
             web-parent)
+              ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_API_URL="
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_APP_URL=https://parent.aivolearning.com"
               ARGS="${ARGS}"$'\n'"NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '' }}"
               ;;

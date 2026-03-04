@@ -1,5 +1,12 @@
+import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+
+function getAuthHeader(request: NextRequest, cookieToken?: string): string {
+  const headerToken = request.headers.get('Authorization')?.replace('Bearer ', '');
+  const token = headerToken || cookieToken || '';
+  return token ? `Bearer ${token}` : '';
+}
 
 /**
  * GET /api/billing/subscription
@@ -9,11 +16,14 @@ import { NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
       method: 'GET',
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        Authorization: getAuthHeader(request, cookieToken),
         'Content-Type': 'application/json',
       },
     });
@@ -38,12 +48,15 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
 
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
       method: 'PUT',
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        Authorization: getAuthHeader(request, cookieToken),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -68,11 +81,14 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
     const response = await fetch(`${billingServiceUrl}/api/subscription/cancel`, {
       method: 'POST',
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        Authorization: getAuthHeader(request, cookieToken),
         'Content-Type': 'application/json',
       },
     });

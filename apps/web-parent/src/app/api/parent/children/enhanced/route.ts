@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token =
-      cookieStore.get('auth-token')?.value ||
+      cookieStore.get('aivo_access_token')?.value ||
       request.headers.get('Authorization')?.replace('Bearer ', '');
 
     if (!token) {

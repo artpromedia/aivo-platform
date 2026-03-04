@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token =
-      cookieStore.get('auth-token')?.value ||
+      cookieStore.get('aivo_access_token')?.value ||
       request.headers.get('Authorization')?.replace('Bearer ', '');
 
     // Try to call parent-svc
@@ -50,8 +50,20 @@ export async function GET(request: NextRequest) {
         phone: '+1-555-0100',
         language: 'en',
         students: [
-          { id: 'child_001', name: 'Emma Johnson', firstName: 'Emma', lastName: 'Johnson', grade: '3' },
-          { id: 'child_002', name: 'Liam Johnson', firstName: 'Liam', lastName: 'Johnson', grade: '1' },
+          {
+            id: 'child_001',
+            name: 'Emma Johnson',
+            firstName: 'Emma',
+            lastName: 'Johnson',
+            grade: '3',
+          },
+          {
+            id: 'child_002',
+            name: 'Liam Johnson',
+            firstName: 'Liam',
+            lastName: 'Johnson',
+            grade: '1',
+          },
         ],
         createdAt: '2024-01-15T00:00:00Z',
         updatedAt: new Date().toISOString(),
@@ -72,7 +84,7 @@ export async function PUT(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token =
-      cookieStore.get('auth-token')?.value ||
+      cookieStore.get('aivo_access_token')?.value ||
       request.headers.get('Authorization')?.replace('Bearer ', '');
     const body: unknown = await request.json();
 
