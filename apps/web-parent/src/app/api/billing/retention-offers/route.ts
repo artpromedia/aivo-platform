@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/api/retention-offers`, {
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/retention-offers`, {
       method: 'GET',
       headers: {
         Authorization: request.headers.get('Authorization') || '',
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
     console.error('[billing/retention-offers GET] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -66,9 +67,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
     const body: unknown = await request.json();
-    const response = await fetch(`${billingServiceUrl}/api/retention-offers/accept`, {
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/retention-offers/accept`, {
       method: 'POST',
       headers: {
         Authorization: request.headers.get('Authorization') || '',
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
     console.error('[billing/retention-offers POST] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

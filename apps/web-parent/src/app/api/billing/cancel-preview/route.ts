@@ -22,8 +22,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/api/cancel-preview`, {
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/cancel-preview`, {
       method: 'GET',
       headers: {
         Authorization: request.headers.get('Authorization') || '',
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     console.error('[billing/cancel-preview GET] Error:', error);
     return NextResponse.json(
       { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

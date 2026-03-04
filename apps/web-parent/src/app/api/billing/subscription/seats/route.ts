@@ -1,5 +1,10 @@
+import { verifyToken } from '@aivo/auth-web';
+import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+
+const BILLING_URL =
+  process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
 
 /**
  * POST /api/billing/subscription/seats
@@ -9,6 +14,19 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '') || cookieToken || '';
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const session = await verifyToken(token);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { changes } = body;
 
@@ -19,12 +37,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/api/subscription/seats`, {
+    const response = await fetch(`${BILLING_URL}/api/v1/billing/subscription/seats`, {
       method: 'POST',
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'x-tenant-id': session.tenantId,
+        'x-user-id': session.userId,
       },
       body: JSON.stringify({ changes }),
     });

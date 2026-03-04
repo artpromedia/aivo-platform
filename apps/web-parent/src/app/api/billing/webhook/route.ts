@@ -1,4 +1,4 @@
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 /**
@@ -27,8 +27,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Production: Forward to billing microservice for processing
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/api/webhooks/stripe`, {
+    const billingServiceUrl =
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
+    const response = await fetch(`${billingServiceUrl}/billing/webhooks/stripe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',
@@ -52,4 +53,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

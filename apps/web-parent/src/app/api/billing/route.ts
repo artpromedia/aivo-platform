@@ -1,7 +1,12 @@
+import { verifyToken } from '@aivo/auth-web';
+import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+
+const BILLING_URL =
+  process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
 
 /**
  * GET /api/billing
@@ -13,12 +18,26 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/api/billing`, {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '') || cookieToken || '';
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const session = await verifyToken(token);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const response = await fetch(`${BILLING_URL}/api/v1/billing`, {
       method: 'GET',
       headers: {
-        'Authorization': request.headers.get('Authorization') || '',
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        'x-tenant-id': session.tenantId,
+        'x-user-id': session.userId,
       },
     });
 

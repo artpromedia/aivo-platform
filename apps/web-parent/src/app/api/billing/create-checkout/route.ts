@@ -1,5 +1,10 @@
+import { verifyToken } from '@aivo/auth-web';
+import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+
+const BILLING_URL =
+  process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
 
 /**
  * POST /api/billing/create-checkout
@@ -54,14 +59,26 @@ export async function POST(request: NextRequest) {
     const skus: string[] = selectedSkus ?? (planId ? planId.split(',').map((s) => s.trim()) : []);
 
     // Production: Call billing microservice
-    const billingServiceUrl = process.env.BILLING_SERVICE_URL || 'http://billing-svc:4000';
-    const response = await fetch(`${billingServiceUrl}/billing/checkout-session`, {
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('aivo_access_token')?.value;
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '') || cookieToken || '';
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const session = await verifyToken(token);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const response = await fetch(`${BILLING_URL}/api/v1/billing/checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: request.headers.get('Authorization') || '',
-        'x-tenant-id': request.headers.get('x-tenant-id') || '',
-        'x-user-id': request.headers.get('x-user-id') || '',
+        Authorization: `Bearer ${token}`,
+        'x-tenant-id': session.tenantId,
+        'x-user-id': session.userId,
       },
       body: JSON.stringify({
         selectedSkus: skus,
