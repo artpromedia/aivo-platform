@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@aivo/auth-web/client';
 
 import {
   useMessaging,
@@ -66,10 +66,10 @@ export default function MessagesPage() {
     playSound: true,
   });
 
-  // Get user ID and auth token from session
-  const { data: session } = useSession();
-  const userId = (session?.user as { id?: string })?.id || '';
-  const authToken = (session as { accessToken?: string })?.accessToken || '';
+  // Get user ID from session (auth token handled by BFF cookies)
+  const { session } = useSession();
+  const userId = session?.userId || '';
+  const authToken = '';
 
   // Use the combined messaging hook with WebSocket
   const messaging = useMessaging({

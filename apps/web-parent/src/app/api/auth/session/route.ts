@@ -19,14 +19,14 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      user: {
-        id: session.userId,
-        email: session.email,
-        name: session.name,
-        roles: session.roles,
+      session: {
+        userId: session.userId,
         tenantId: session.tenantId,
+        roles: session.roles,
+        name: session.name ?? null,
+        email: session.email ?? null,
+        learnerId: session.learnerId ?? null,
       },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
   } catch (error) {
     console.error('[Session API] Error:', error);
