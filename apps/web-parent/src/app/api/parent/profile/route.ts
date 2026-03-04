@@ -14,6 +14,26 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://parent-svc:3000';
+const AUTH_SVC_URL = process.env.AUTH_SVC_URL || 'http://auth-svc:3000';
+
+/**
+ * Fetch full user details from auth-svc using the access token.
+ * Returns the user object or null on failure.
+ */
+async function fetchAuthUser(
+  token: string,
+): Promise<{ email?: string; phone?: string; roles?: string[] } | null> {
+  try {
+    const res = await fetch(`${AUTH_SVC_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { user?: Record<string, unknown> };
+    return (data.user as { email?: string; phone?: string; roles?: string[] }) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Get parent profile
@@ -43,17 +63,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback: return basic profile from auth session
+    // Fallback: return basic profile from auth session + auth-svc /me
     // This handles the case where parent-svc doesn't have a matching
     // parent record (e.g., user registered via auth-svc only)
     const session = await getServerSession();
     if (session) {
+      // Enrich with auth-svc user details (email, phone) since the JWT
+      // doesn't include them
+      const authUser = token ? await fetchAuthUser(token) : null;
+
       return NextResponse.json({
         id: session.userId,
         firstName: session.name?.split(' ')[0] ?? null,
         lastName: session.name?.split(' ').slice(1).join(' ') ?? null,
-        email: session.email ?? null,
-        phone: null,
+        email: session.email ?? authUser?.email ?? null,
+        phone: authUser?.phone ?? null,
         language: 'en',
         students: [],
         createdAt: new Date().toISOString(),
