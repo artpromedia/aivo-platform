@@ -21,6 +21,7 @@ data:
   # ── Server-side service URLs (required for login & API rewrites) ──
   AUTH_SVC_URL: "http://auth-svc:3000"
   PARENT_SVC_URL: "http://parent-svc:3000"
+  BILLING_SVC_URL: "http://billing-svc:3000"
   GAMIFICATION_SVC_URL: "http://gamification-svc:3000"
   NEXT_PUBLIC_API_URL: "http://api-gateway:3000"
 

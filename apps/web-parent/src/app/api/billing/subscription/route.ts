@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
     const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
       method: 'GET',
       headers: {
@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest) {
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
 
     const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
     const response = await fetch(`${billingServiceUrl}/api/subscription`, {
       method: 'PUT',
       headers: {
@@ -84,7 +84,7 @@ export async function DELETE(request: NextRequest) {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
     const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:4000';
+      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
     const response = await fetch(`${billingServiceUrl}/api/subscription/cancel`, {
       method: 'POST',
       headers: {
