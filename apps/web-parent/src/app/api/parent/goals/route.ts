@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(
-      `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/parent/goals?studentId=${studentId}`,
+      `${process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000'}/api/v1/parent/goals?studentId=${studentId}`,
       {
         headers: {
           Authorization: request.headers.get('Authorization') || '',
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const response = await fetch(
-      `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/parent/goals`,
+      `${process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000'}/api/v1/parent/goals`,
       {
         method: 'POST',
         headers: {

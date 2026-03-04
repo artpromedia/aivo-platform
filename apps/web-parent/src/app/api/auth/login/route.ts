@@ -10,7 +10,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const AUTH_SVC_URL =
-  process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+  process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://auth-svc:3000';
 
 export async function POST(request: NextRequest) {
   try {

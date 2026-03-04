@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   // In production, proxy to parent-svc
   try {
     const response = await fetch(
-      `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/caregivers?studentId=${studentId}`,
+      `${process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000'}/api/v1/caregivers?studentId=${studentId}`,
       {
         headers: {
           Authorization: request.headers.get('Authorization') || '',
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const response = await fetch(
-      `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/caregivers`,
+      `${process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000'}/api/v1/caregivers`,
       {
         method: 'POST',
         headers: {

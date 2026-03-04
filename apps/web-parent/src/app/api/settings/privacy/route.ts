@@ -1,7 +1,7 @@
 import { getServerSession } from '@aivo/auth-web';
 import { NextResponse } from 'next/server';
 
-const AUTH_SVC_URL = process.env.AUTH_SVC_URL ?? 'http://localhost:3010';
+const AUTH_SVC_URL = process.env.AUTH_SVC_URL ?? 'http://parent-svc:3000';
 
 /**
  * GET /api/settings/privacy — Fetch the user's impersonation history
@@ -25,14 +25,14 @@ export async function GET(request: Request) {
           Authorization: `Bearer ${session.accessToken}`,
           'Content-Type': 'application/json',
         },
-      },
+      }
     );
 
     if (!res.ok) {
       const text = await res.text();
       return NextResponse.json(
         { error: text || 'Failed to fetch impersonation history' },
-        { status: res.status },
+        { status: res.status }
       );
     }
 
@@ -40,9 +40,6 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('[privacy API] Error fetching impersonation history:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

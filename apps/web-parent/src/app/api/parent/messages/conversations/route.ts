@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
+const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://parent-svc:3000';
 
 export async function GET(request: NextRequest) {
   try {

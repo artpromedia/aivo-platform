@@ -9,7 +9,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const AUTH_SVC_URL =
-  process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+  process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://auth-svc:3000';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       const data = (await upstream.json().catch(() => ({}))) as { message?: string };
       return NextResponse.json(
         { error: data.message ?? 'Failed to resend verification email' },
-        { status: upstream.status },
+        { status: upstream.status }
       );
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     console.error('[Resend Verification] Error:', error);
     return NextResponse.json(
       { error: 'Unable to connect to authentication service' },
-      { status: 503 },
+      { status: 503 }
     );
   }
 }

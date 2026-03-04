@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // Parent service URL (has access to the profiles database)
-const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
+const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://parent-svc:3000';
 
 /**
  * Onboarding API - Register Learner

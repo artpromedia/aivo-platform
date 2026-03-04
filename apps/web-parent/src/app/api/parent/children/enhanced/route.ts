@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://localhost:3010';
+const PARENT_SVC_URL = process.env.PARENT_SVC_URL || 'http://parent-svc:3000';
 
 /**
  * Fetch a student summary from parent-svc.

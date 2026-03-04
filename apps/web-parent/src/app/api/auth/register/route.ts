@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Always proxy to auth service
     const authServiceUrl =
-      process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+      process.env.AUTH_SVC_URL ?? process.env.AUTH_SERVICE_URL ?? 'http://auth-svc:3000';
     const upstream = await fetch(`${authServiceUrl}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

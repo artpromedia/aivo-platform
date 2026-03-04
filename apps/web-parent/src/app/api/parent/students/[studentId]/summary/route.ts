@@ -1,8 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const PARENT_SERVICE_URL = process.env.PARENT_SERVICE_URL || 'http://localhost:3010';
-const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://localhost:3006';
+const PARENT_SERVICE_URL = process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000';
+const GAMIFICATION_SVC_URL = process.env.GAMIFICATION_SVC_URL || 'http://gamification-svc:3000';
 
 // Category mapping from gamification-svc categories to frontend categories
 const CATEGORY_MAP: Record<string, string> = {

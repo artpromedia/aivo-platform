@@ -11,7 +11,7 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `${process.env.PARENT_SERVICE_URL || 'http://localhost:3010'}/api/v1/parent/students/${studentId}/activity-timeline?limit=${limit}`,
+      `${process.env.PARENT_SERVICE_URL || 'http://parent-svc:3000'}/api/v1/parent/students/${studentId}/activity-timeline?limit=${limit}`,
       {
         headers: {
           Authorization: request.headers.get('Authorization') || '',
