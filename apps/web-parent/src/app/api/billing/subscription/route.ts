@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
     const billingServiceUrl =
       process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/subscription`, {
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/subscription`, {
       method: 'GET',
       headers: {
         Authorization: getAuthHeader(request, cookieToken),
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
 
     const billingServiceUrl =
       process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/subscription`, {
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/subscription`, {
       method: 'PUT',
       headers: {
         Authorization: getAuthHeader(request, cookieToken),
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest) {
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
     const billingServiceUrl =
       process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/subscription/cancel`, {
+    const response = await fetch(`${billingServiceUrl}/api/v1/billing/cancel`, {
       method: 'POST',
       headers: {
         Authorization: getAuthHeader(request, cookieToken),
