@@ -12,6 +12,7 @@ const configSchema = z.object({
   redisUrl: z.string().optional(),
   corsOrigins: z.string().transform((val) => val.split(',')),
   jwtSecret: z.string(),
+  jwtPublicKey: z.string().optional(),
   appUrl: z.string().default('http://localhost:3000'),
 
   // Token expiry settings (in seconds)
@@ -76,6 +77,7 @@ function loadConfig() {
     redisUrl: process.env.REDIS_URL,
     corsOrigins: process.env.CORS_ORIGINS || 'http://localhost:3000',
     jwtSecret: process.env.JWT_SECRET,
+    jwtPublicKey: process.env.JWT_PUBLIC_KEY || process.env.AUTH_PUBLIC_KEY,
     appUrl: process.env.APP_URL,
     smtpHost: process.env.SMTP_HOST,
     smtpPort: process.env.SMTP_PORT,

@@ -24,6 +24,8 @@ export interface TokenPayload {
   tenant_id: string;
   roles: Role[];
   jti?: string;
+  email?: string;
+  name?: string;
 }
 
 export async function signAccessToken(payload: TokenPayload) {

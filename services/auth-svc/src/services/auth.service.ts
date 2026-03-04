@@ -903,11 +903,17 @@ export class AuthService {
   }
 
   private async generateTokens(user: User, roles: string[], sessionId: string): Promise<TokenPair> {
+    // Build display name from available fields
+    const displayName =
+      [user.firstName, user.lastName].filter(Boolean).join(' ') || undefined;
+
     const payload = {
       sub: user.id,
       tenant_id: user.tenantId,
       roles: roles as Role[],
       jti: sessionId,
+      email: user.email ?? undefined,
+      name: displayName,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
