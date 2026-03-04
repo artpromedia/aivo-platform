@@ -3,20 +3,20 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 
+import { registerScopeRoutes } from './graphql/resolvers.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { cookiePlugin } from './plugins/cookie.plugin.js';
 import { csrfPlugin } from './plugins/csrf.plugin.js';
-import { registerAuthRoutes } from './routes/auth.js';
+import { registerEnhancedAuthRoutes } from './routes/auth.enhanced.js';
 import { registerDemoRoutes } from './routes/demo.js';
 import { registerFirebaseVerifyRoutes } from './routes/firebase-verify.js';
 import { healthRoutes } from './routes/health.js';
 import { registerMfaRoutes } from './routes/mfa.js';
 import { registerScimAdminRoutes } from './routes/scim-admin.routes.js';
 import { registerSsoRoutes } from './routes/sso.js';
-import { registerScopeRoutes } from './graphql/resolvers.js';
 import { registerScimRoutes } from './scim/routes.js';
-import { securityHeadersPlugin } from './security/security-headers.plugin.js';
 import { initKeyRotationSchedule } from './security/jwt-rotation.service.js';
+import { securityHeadersPlugin } from './security/security-headers.plugin.js';
 
 export function createApp() {
   const app = Fastify({ logger: true });
@@ -64,7 +64,7 @@ export function createApp() {
 
   void app.register(authMiddleware as any);
 
-  void app.register(registerAuthRoutes as any, { prefix: '/auth' });
+  void app.register(registerEnhancedAuthRoutes as any, { prefix: '/auth' });
 
   void app.register(registerFirebaseVerifyRoutes as any, { prefix: '/auth' });
 
