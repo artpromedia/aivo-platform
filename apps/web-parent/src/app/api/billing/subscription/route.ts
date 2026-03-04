@@ -1,11 +1,47 @@
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { verifyToken } from '@aivo/auth-web';
 
-function getAuthHeader(request: NextRequest, cookieToken?: string): string {
-  const headerToken = request.headers.get('Authorization')?.replace('Bearer ', '');
-  const token = headerToken || cookieToken || '';
-  return token ? `Bearer ${token}` : '';
+function getToken(request: NextRequest, cookieToken?: string): string {
+  return request.headers.get('Authorization')?.replace('Bearer ', '') || cookieToken || '';
+}
+
+const BILLING_URL =
+  process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
+
+/**
+ * Build headers for billing-svc: Authorization + x-tenant-id + x-user-id.
+ * billing-svc relies on upstream gateway to inject identity headers.
+ */
+async function billingHeaders(
+  request: NextRequest,
+  cookieToken?: string
+): Promise<{ headers: Record<string, string>; error?: NextResponse }> {
+  const token = getToken(request, cookieToken);
+  if (!token) {
+    return {
+      headers: {},
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const session = await verifyToken(token);
+  if (!session) {
+    return {
+      headers: {},
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'x-tenant-id': session.tenantId,
+      'x-user-id': session.userId,
+    },
+  };
 }
 
 /**
@@ -18,14 +54,12 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
-    const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/v1/billing/subscription`, {
+    const { headers, error } = await billingHeaders(request, cookieToken);
+    if (error) return error;
+
+    const response = await fetch(`${BILLING_URL}/api/v1/billing/subscription`, {
       method: 'GET',
-      headers: {
-        Authorization: getAuthHeader(request, cookieToken),
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     const data = await response.json();
@@ -51,14 +85,12 @@ export async function PUT(request: NextRequest) {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
 
-    const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/v1/billing/subscription`, {
+    const { headers, error } = await billingHeaders(request, cookieToken);
+    if (error) return error;
+
+    const response = await fetch(`${BILLING_URL}/api/v1/billing/subscription`, {
       method: 'PUT',
-      headers: {
-        Authorization: getAuthHeader(request, cookieToken),
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -83,14 +115,13 @@ export async function DELETE(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get('aivo_access_token')?.value;
-    const billingServiceUrl =
-      process.env.BILLING_SERVICE_URL || process.env.BILLING_SVC_URL || 'http://billing-svc:3000';
-    const response = await fetch(`${billingServiceUrl}/api/v1/billing/cancel`, {
+
+    const { headers, error } = await billingHeaders(request, cookieToken);
+    if (error) return error;
+
+    const response = await fetch(`${BILLING_URL}/api/v1/billing/cancel`, {
       method: 'POST',
-      headers: {
-        Authorization: getAuthHeader(request, cookieToken),
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     const data = await response.json();
