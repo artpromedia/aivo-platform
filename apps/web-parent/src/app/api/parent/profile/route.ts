@@ -1,9 +1,12 @@
 /**
  * Parent Profile API Route
  *
- * Handles parent profile operations, proxying to parent-svc or returning mock data in development.
+ * Handles parent profile operations, proxying to parent-svc.
+ * Falls back to session-based profile when parent-svc doesn't have
+ * a matching parent record (auth-svc and parent-svc use separate databases).
  */
 
+import { getServerSession } from '@aivo/auth-web';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -40,32 +43,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Dev fallback: return mock profile with multiple children
-    if (process.env.NODE_ENV === 'development') {
+    // Fallback: return basic profile from auth session
+    // This handles the case where parent-svc doesn't have a matching
+    // parent record (e.g., user registered via auth-svc only)
+    const session = await getServerSession();
+    if (session) {
       return NextResponse.json({
-        id: 'parent_001',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        email: 'sarah@example.com',
-        phone: '+1-555-0100',
+        id: session.userId,
+        firstName: session.name?.split(' ')[0] ?? null,
+        lastName: session.name?.split(' ').slice(1).join(' ') ?? null,
+        email: session.email ?? null,
+        phone: null,
         language: 'en',
-        students: [
-          {
-            id: 'child_001',
-            name: 'Emma Johnson',
-            firstName: 'Emma',
-            lastName: 'Johnson',
-            grade: '3',
-          },
-          {
-            id: 'child_002',
-            name: 'Liam Johnson',
-            firstName: 'Liam',
-            lastName: 'Johnson',
-            grade: '1',
-          },
-        ],
-        createdAt: '2024-01-15T00:00:00Z',
+        students: [],
+        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
     }
