@@ -162,19 +162,11 @@ export class ParentAuthService {
     if (this.firebase?.isConfigured()) {
       // Firebase path — generate verification link via Admin SDK
       try {
-        const fbUser = await this.firebase.createAuthUser(
-          parent.email,
-          password
-        );
+        const fbUser = await this.firebase.createAuthUser(parent.email, password);
 
         if (fbUser) {
-          const continueUrl =
-            `${config.appUrl}/verify-email-callback`;
-          const link =
-            await this.firebase.generateEmailVerificationLink(
-              parent.email,
-              continueUrl
-            );
+          const continueUrl = `${config.appUrl}/auth/verify-email-callback?email=${encodeURIComponent(parent.email)}`;
+          const link = await this.firebase.generateEmailVerificationLink(parent.email, continueUrl);
 
           if (link) {
             await this.notification.sendEmail({
@@ -188,8 +180,7 @@ export class ParentAuthService {
             });
           } else {
             // Fallback to custom token
-            const verificationToken =
-              await this.createEmailVerificationToken(parent.id);
+            const verificationToken = await this.createEmailVerificationToken(parent.id);
             await this.notification.sendEmail({
               to: parent.email,
               template: 'verify-email',
@@ -206,8 +197,7 @@ export class ParentAuthService {
           { error: err instanceof Error ? err.message : err },
           'Firebase verification failed, using custom token'
         );
-        const verificationToken =
-          await this.createEmailVerificationToken(parent.id);
+        const verificationToken = await this.createEmailVerificationToken(parent.id);
         await this.notification.sendEmail({
           to: parent.email,
           template: 'verify-email',
@@ -220,8 +210,7 @@ export class ParentAuthService {
       }
     } else {
       // Custom token path (no Firebase)
-      const verificationToken =
-        await this.createEmailVerificationToken(parent.id);
+      const verificationToken = await this.createEmailVerificationToken(parent.id);
       await this.notification.sendEmail({
         to: parent.email,
         template: 'verify-email',
@@ -356,9 +345,7 @@ export class ParentAuthService {
     // Look up Firebase user and check status
     const fbUser = await this.firebase.getUserByEmail(parent.email);
     if (!fbUser || !fbUser.emailVerified) {
-      throw new BadRequestException(
-        'Email has not been verified in Firebase'
-      );
+      throw new BadRequestException('Email has not been verified in Firebase');
     }
 
     await this.prisma.parent.update({
@@ -391,11 +378,8 @@ export class ParentAuthService {
     // Try Firebase path first
     if (this.firebase?.isConfigured()) {
       try {
-        const continueUrl = `${config.appUrl}/verify-email-callback`;
-        const link = await this.firebase.generateEmailVerificationLink(
-          parent.email,
-          continueUrl
-        );
+        const continueUrl = `${config.appUrl}/auth/verify-email-callback?email=${encodeURIComponent(parent.email)}`;
+        const link = await this.firebase.generateEmailVerificationLink(parent.email, continueUrl);
 
         if (link) {
           await this.notification.sendEmail({

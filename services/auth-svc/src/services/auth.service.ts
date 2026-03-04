@@ -215,7 +215,7 @@ export class AuthService {
     if (firebaseUid && firebase?.isConfigured()) {
       // Firebase path — generate verification link via Admin SDK
       try {
-        const continueUrl = `${config.webAppUrl}/auth/verify-email-callback`;
+        const continueUrl = `${config.webAppUrl}/auth/verify-email-callback?email=${encodeURIComponent(email)}`;
         const link = await firebase.generateEmailVerificationLink(email, continueUrl);
 
         if (link) {
@@ -586,7 +586,7 @@ export class AuthService {
 
     if (user.firebaseUid && firebase?.isConfigured()) {
       // Firebase path
-      const continueUrl = `${config.webAppUrl}/auth/verify-email-callback`;
+      const continueUrl = `${config.webAppUrl}/auth/verify-email-callback?email=${encodeURIComponent(user.email)}`;
       const link = await firebase.generateEmailVerificationLink(user.email, continueUrl);
 
       if (link) {
