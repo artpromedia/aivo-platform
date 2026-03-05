@@ -1,0 +1,56 @@
+# Build outputs
+dist/
+build/
+.turbo/
+.next/
+coverage/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Generated files
+pnpm-lock.yaml
+*.lock
+*.generated.*
+
+# CI scratch/artifact JSON files
+ci_*.json
+e2e_jobs.json
+integration_jobs.json
+security_jobs.json
+packages.json
+parent_deploy.json
+run_status.json
+eslint_schema.json
+routes_manifest_current.json
+
+# CI log/output files
+ci_*.txt
+build_*.txt
+integration_log.txt
+
+# Docker build outputs
+docker-compose.*.yml
+
+# Flutter/Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/
+**/ios/
+**/macos/
+**/windows/
+**/linux/
+**/web/
+
+# SQL
+*.sql
+
+# Keys
+.keys/
+
+# Environment files
+.env*
+!.env.example
+config/environments/
