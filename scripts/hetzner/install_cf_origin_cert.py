@@ -1,63 +1,49 @@
 #!/usr/bin/env python3
-"""Install Cloudflare Origin Certificate as K8s TLS secret."""
+"""Install Cloudflare Origin Certificate as K8s TLS secret.
 
+Usage:
+  # Set environment variables:
+  #   CF_ORIGIN_CERT   - PEM-encoded Cloudflare origin certificate
+  #   CF_ORIGIN_KEY    - PEM-encoded private key for the origin certificate
+  # Or point to files:
+  #   CF_ORIGIN_CERT_FILE=/path/to/cf-origin.crt
+  #   CF_ORIGIN_KEY_FILE=/path/to/cf-origin.key
+  pip install paramiko python-dotenv
+  python scripts/hetzner/install_cf_origin_cert.py
+"""
+
+import os
+import sys
 import paramiko
 
-APP1 = "95.216.245.40"
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-CERT = """-----BEGIN CERTIFICATE-----
-MIIEFTCCAv2gAwIBAgIUS2jYnm8LpJCgQyAAWdijuuOIuXkwDQYJKoZIhvcNAQEL
-BQAwgagxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQH
-Ew1TYW4gRnJhbmNpc2NvMRkwFwYDVQQKExBDbG91ZGZsYXJlLCBJbmMuMRswGQYD
-VQQLExJ3d3cuY2xvdWRmbGFyZS5jb20xNDAyBgNVBAMTK01hbmFnZWQgQ0EgNTZm
-MzRkNGMzMmQ3ZGVlZWI5MTdjNWUyN2UwMDgzYWMwHhcNMjYwMjA5MDIyMjAwWhcN
-MzYwMjA3MDIyMjAwWjAiMQswCQYDVQQGEwJVUzETMBEGA1UEAxMKQ2xvdWRmbGFy
-ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALY2WDsmETWRbSnrohZO
-9avFsxbFCbeCi/dw2/qZnIYIRCwv+naKpvyCjYQ+sLzjfDmWlLo0C5jVYhNliz8T
-LotkIR/WuZ3yHnURrkHE4maDgjPX67A+DIJz6kElNjAhiB5yvbUtulDDp5W8ImZE
-s11ghrD96rJ/8Rdn632/8qnVH8glG5XgnA708s8IAJektD5PnpWOSLFYx31+6FDp
-8tU1g2sN7U4Enw3G61ij5RWH3u+8p1bJ8HDWxb4M5VIUhVaQTpVVQtQ5WQmuJlmm
-1EgeE6q5gE5rU3dSCsLOl32p0JZEUyGq/mfz7ayA7McSgiSSecZ6M8PgrDi+ccb7
-ZnMCAwEAAaOBuzCBuDATBgNVHSUEDDAKBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAA
-MB0GA1UdDgQWBBRRVqz61IZcIxIGaVhJVXpSMlJqfzAfBgNVHSMEGDAWgBTVFy4M
-94KBce9oVJz6FhaYITiFSDBTBgNVHR8ETDBKMEigRqBEhkJodHRwOi8vY3JsLmNs
-b3VkZmxhcmUuY29tLzYwNjBhY2Q5LTQ2NTItNGVlNS04MzMyLWFiODZmYWM4NmRm
-MS5jcmwwDQYJKoZIhvcNAQELBQADggEBAD16KfNWzYLbVTBPSHJjIBsemzXbNK8q
-79KywKCt04UqYmN8qkJUt9B8JERKKMGq/L53c4Qs2g38lBCFy0rXfNGiU19hxyT0
-SGrROShicUmYKDAvzjykzd6FZwsZcT4dng0pGWQNmheP31CapgzskfBZlJQtQ3qf
-OaL9giuNPg8qAtZ5PlVfM0GvEWbVE+eoBhast7ovZxWs1Nd1wKra2jR9YSUm5wKN
-ZrZfv09UzyeBcyMV3lV3XSfCJNlb4bCcBXzQCvQ/KUXh+etiBu9vSGghyhFzF/3M
-K0qN2MhfPoK5gNieO8KFew/KbLetd3tO1wjYkXn2gxiaVSBixlqd3PQ=
------END CERTIFICATE-----"""
+APP1 = os.environ.get("HETZNER_APP1_HOST", "95.216.245.40")
 
-KEY = """-----BEGIN PRIVATE KEY-----
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC2Nlg7JhE1kW0p
-66IWTvWrxbMWxQm3gov3cNv6mZyGCEQsL/p2iqb8go2EPrC843w5lpS6NAuY1WIT
-ZYs/Ey6LZCEf1rmd8h51Ea5BxOJmg4Iz1+uwPgyCc+pBJTYwIYgecr21LbpQw6eV
-vCJmRLNdYIaw/eqyf/EXZ+t9v/Kp1R/IJRuV4JwO9PLPCACXpLQ+T56VjkixWMd9
-fuhQ6fLVNYNrDe1OBJ8NxutYo+UVh97vvKdWyfBw1sW+DOVSFIVWkE6VVULUOVkJ
-riZZptRIHhOquYBOa1N3UgrCzpd9qdCWRFMhqv5n8+2sgOzHEoIkknnGejPD4Kw4
-vnHG+2ZzAgMBAAECggEAOsc7HRGBmaso8M3vQo0EGP40cFLteIInTpHclHF7GY2P
-GEX94MGHbotaxV9HuhcUGqulnI9vckTbV3B5Q8aXTCXnvZKR3A6fnpougU7WzcT8
-embbw8WwWWC1H4C2gz4937yZz9lJcgY7iEThP+ZHiga6TFwMmrpE9ozyXWVPDVOE
-c/l0ndwPpKRjrK6NmuzAjqhq+3PGAjYkWyLmvZASORCbRL74SCTf2m1VgsIbqPLg
-4wJN4d1HPvAKa2wDjidacfJu6syaNAZzaO08CzjTzlE+oJShCUQ6yyxG9xystMkn
-0utIg5Rfy7aanWoVwdDGDPr/1rGjOd9ZU6F/Z6o4MQKBgQDgcXsfqt8kAZQGoydZ
-pD3xNhA+z7OSBTRdwMdiLbAmWB2XyZxFZhI+Wfu6F9kheGhG09PhLIu6cLarMiLr
-jsGS9NZ33UG767+2skO5tdQ0VF1V5FeNLy03jHXZdl5qpsWuxpmOj7JI8L57uuTV
-znZbO0JpWiRUrt5lI/pnHwtWKwKBgQDP1NGGhAiCqdpZd8mFKRCfm6Dq+Cinm9qE
-GHDVBfK1W8Vkc6HQUB6+643fTyh76ifLSKNjzNfQf7Eq0M9V8rVTmkb5CJurnZJt
-r6vyjLtsXYahS9jIGXOCgF8Hzs9Uy0rPeuOzLt8Uz+2GVd19Qi3KZnj4m7BKpEP6
-yA5qbOwU2QKBgH2vjt9g9KxZJefBnduZGgbl25sQ/OIcgAKwXfcg1q/iUFAb2qMS
-Uc0Q3uKLUFBp+RsQrGpAY874J5Me9Gcs/kGpUiC1ioYNssJAeaSZqkfTpqDeyhiJ
-/qxIwAYTPzRCSBljpcIrvg8SodjwBA2nHKhiOwJ8NDQn6OqCh0sQG20ZAoGBAMUH
-utfvBm5xfrrBEIC4bLUUAtugBlLYM7J1xUp/SBjdduaDpU1rF6rif+7MCdJoK+/R
-3my3/4X/+MNhkJ6n6XXn1g80NPje+roYCEh7WRgkFoWF9W/GiTaYYv9w9igqTrMi
-iwoNjpoZgdKQRtoASo8O1PLEDr7EulnfHaORvcMJAoGBAL4AGe2iYxBC+hxf1eJ0
-RRNc57RR+XJATK2cCCnsrr0ZUTR2JGYjGokAF9HijL+bybUh7WKEdeE7R7FF4wKD
-rdrfwnfQwqyFS+q1xp6A5VSAYV1+1+C4LZskO3bmkfFos9vrsknU7YgGx1uwu6vf
-HWMGEoKDn8X318MKNqH5uyaL
------END PRIVATE KEY-----"""
+# Load cert/key from env vars or files
+_cert_file = os.environ.get("CF_ORIGIN_CERT_FILE")
+_key_file = os.environ.get("CF_ORIGIN_KEY_FILE")
+
+if _cert_file and os.path.isfile(_cert_file):
+    with open(_cert_file) as f:
+        CERT = f.read()
+else:
+    CERT = os.environ.get("CF_ORIGIN_CERT", "")
+
+if _key_file and os.path.isfile(_key_file):
+    with open(_key_file) as f:
+        KEY = f.read()
+else:
+    KEY = os.environ.get("CF_ORIGIN_KEY", "")
+
+if not CERT or not KEY:
+    print("ERROR: Missing CF_ORIGIN_CERT/CF_ORIGIN_KEY environment variables")
+    print("  Set them directly or point CF_ORIGIN_CERT_FILE/CF_ORIGIN_KEY_FILE to PEM files.")
+    sys.exit(1)
 
 def run_ssh(host, cmd):
     ssh = paramiko.SSHClient()

@@ -30,29 +30,38 @@ import os
 SERVERS = {
     "db1": {
         "hostname": "aivo-db1",
-        "public_ip": "95.217.76.42",
+        "public_ip": os.environ.get("HETZNER_DB1_IP", "95.217.76.42"),
         "private_ip": "10.0.0.1",
         "username": "root",
-        "password": "Ebmx9V_r?a38NM",
+        "password": os.environ.get("HETZNER_DB1_PASSWORD", ""),
         "role": "database",
     },
     "app1": {
         "hostname": "aivo-app1",
-        "public_ip": "95.216.245.40",
+        "public_ip": os.environ.get("HETZNER_APP1_IP", "95.216.245.40"),
         "private_ip": "10.0.0.2",
         "username": "root",
-        "password": "2R2ht?gALF7%L%",
+        "password": os.environ.get("HETZNER_APP1_PASSWORD", ""),
         "role": "app-primary",
     },
     "app2": {
         "hostname": "aivo-app2",
-        "public_ip": "95.217.195.144",
+        "public_ip": os.environ.get("HETZNER_APP2_IP", "95.217.195.144"),
         "private_ip": "10.0.0.3",
         "username": "root",
-        "password": "j?A6M9rKcMHRGT",
+        "password": os.environ.get("HETZNER_APP2_PASSWORD", ""),
         "role": "app-secondary",
     },
 }
+
+# Validate server passwords are provided
+_missing_passwords = [
+    name for name, cfg in SERVERS.items() if not cfg["password"]
+]
+if _missing_passwords:
+    print(f"WARNING: Missing passwords for servers: {', '.join(_missing_passwords)}")
+    print("  Set HETZNER_DB1_PASSWORD, HETZNER_APP1_PASSWORD, HETZNER_APP2_PASSWORD env vars.")
+    print("  (Or use SSH key authentication instead.)")
 
 # ─── Generated Credentials (saved to credentials file) ─────────────────────
 

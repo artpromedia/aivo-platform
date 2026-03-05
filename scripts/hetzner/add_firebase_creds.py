@@ -1,43 +1,52 @@
 #!/usr/bin/env python3
-"""Add Firebase credentials to parent-svc-secrets in K8s."""
+"""Add Firebase credentials to parent-svc-secrets in K8s.
+
+Usage:
+  # Set env vars or point to service-account JSON:
+  #   FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/service-account.json
+  # Or set individually:
+  #   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+  pip install paramiko python-dotenv
+  python scripts/hetzner/add_firebase_creds.py
+"""
 
 import paramiko
 import json
-import base64
+import os
+import sys
 
-FIREBASE_PROJECT_ID = "aivo-learning-7eee8"
-FIREBASE_CLIENT_EMAIL = "firebase-adminsdk-fbsvc@aivo-learning-7eee8.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY = """-----BEGIN PRIVATE KEY-----
-MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDAnlwT1xg8FlGz
-UV9uC2JGP+N9ZnyikT3/MJdZjXggK0V8pbWYALzG9FmLwyhAL84H+m+rCSyCcKFR
-x4QQdu+bojffcrnlVxaauIFSPvwXxbOM4njKLxtrXc8mEu8W0IVOj6BnDowYdIpS
-wva3MDypZJLwP7fkfEoeJPuGrS7iMmZdGalPG7R1BDZEAQPZkDpND2yMXIjoTypS
-I+FUP7gv95JOpeFV7YI9n8+5suD2peAKwr2vXsgT0Dv6Rsc5PMCn9upSeH6yt7Fl
-JSrVhOq4OKyGt1fLqaqXgm8u/jeuMtLdTEr0PGukPwQ5EgKLzKaFwBNizROwTH9f
-4is7PA7zAgMBAAECggEAFNXMXfUJUQ6U/dGSggPHOJQWlmzslGUjkKP/6xbrZIdp
-t8bw8qU5xkeOHBkbFH5XSfOj+ps+bkmimYb8WQ+UcYBFjO0LAKy/7DKDApN/j066
-UkX5DN21mJKIIrUvmYcqtEnC7wLa0pZgk/001LHqDeSsJEKwMI3lMoeLkZDQHnVn
-GWDw/LhgFynmmKS92cfvoxnYMSoY6GY7ORGhIZKSGpSRFr1i/+KW6scRlVo/X0fw
-WOBG6vgYd4sIrtXJlhasT/mQ7bGlV/Iti79rLdy08nEFJSls0NV/FRDadGHhUyKC
-7dDaH74wkuo3CdusniNkLFuLoFlF395A82CuCVgQ0QKBgQDn49tl0bcPN8Am9/Of
-06umWFUB+vDjT8aWWRnPf5rlVBTxPGwMlZ7r9ek3+5NOH+8LTrjpkiqN40AxprXi
-LuqDHp5LB/2mcexnWsp6rKhaTTQ7djr9zVPX50K79IVhKCa7durd8YSBLhXYNSlw
-bLBIW+z4lHm+skAmdIts/PdUmwKBgQDUpTn9Oj9P7DGv8OSHpaAOzwJzIFeslWw+
-VvkEdjiSGqkKwsL+tDAmycpMCT407X1jyC+JiId8ioASDyb/jRxPbL/oJ/jNlB9X
-Qp5UPmN8jQlLrn4V8tcbpq5wDREZE/l0hY2qYUkA62zP2qR7YKd/SZPWKQsQMYDs
-ocFeJcfYiQKBgDdoByUV7cJyFLR67DgVEF9nnbAicGovxohn87XTjIQdCf/16u86
-1MUWdcoNj03MbYZrId2VMhvC37S9W5oWkawQpcvRtfaOI+kyFU0ocfVZmxBWGJRJ
-+i2NMTHNpAzp1g9Ww5mSOpHPHCMT2LnnDlvLsxxWBZzd5FwL3sCE1OffAoGASpQc
-T3TDSbuT/Znl/LEY/riZqlj4ht3tFbwZH/h6hLt2+AAwtXXqwV/aZGqFd7inVyna
-N4k7w3Er06meytfpyu1gLQL/3tIJX+hMcU1kRQWN8g4jyHzf9qGx4jii+4Gm5rgE
-ZHI0UW9APXH4aBERDbJ3eA/zAl3qUpO0ptlnSskCgYA4YTFF3tV3Q+OMth1JfkLL
-FTrNck1VTe8Y7mVNTyG7T8PTH8bNsT4ydd4F5aiqfitY/aSxtZuFkThI5yPH0+h6
-EdAPfEY4cioqLUORtVlokPz2n/PC0Owq7A8/KNtxONWxjqpYVnuD3pmZIiHygUbE
-w9tdOtsF5vGnGXS52EKjPQ==
------END PRIVATE KEY-----
-"""
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-APP1 = "95.216.245.40"
+# ── Load Firebase credentials from env or service-account JSON ─────────────
+_sa_json_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+if _sa_json_path and os.path.isfile(_sa_json_path):
+    with open(_sa_json_path) as f:
+        _sa = json.load(f)
+    FIREBASE_PROJECT_ID = _sa["project_id"]
+    FIREBASE_CLIENT_EMAIL = _sa["client_email"]
+    FIREBASE_PRIVATE_KEY = _sa["private_key"]
+else:
+    FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
+    FIREBASE_CLIENT_EMAIL = os.environ.get("FIREBASE_CLIENT_EMAIL", "")
+    FIREBASE_PRIVATE_KEY = os.environ.get("FIREBASE_PRIVATE_KEY", "")
+
+_missing = []
+if not FIREBASE_PROJECT_ID:
+    _missing.append("FIREBASE_PROJECT_ID")
+if not FIREBASE_CLIENT_EMAIL:
+    _missing.append("FIREBASE_CLIENT_EMAIL")
+if not FIREBASE_PRIVATE_KEY:
+    _missing.append("FIREBASE_PRIVATE_KEY")
+if _missing:
+    print(f"ERROR: Missing required environment variables: {', '.join(_missing)}")
+    print("Set them directly or point FIREBASE_SERVICE_ACCOUNT_JSON to your service-account JSON file.")
+    sys.exit(1)
+
+APP1 = os.environ.get("HETZNER_APP1_HOST", "95.216.245.40")
 
 def run_ssh(host, cmd):
     ssh = paramiko.SSHClient()

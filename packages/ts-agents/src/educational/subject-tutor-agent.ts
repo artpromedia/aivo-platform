@@ -12,7 +12,7 @@
  * - Conversation history management
  */
 
-import type { AgentConfig, AgentContext, AgentOutput, Message, Tool } from '../core/index.js';
+import type { AgentConfig } from '../core/index.js';
 
 export type SubjectType = 'MATH' | 'ELA' | 'SCIENCE' | 'HISTORY' | 'CODING';
 
@@ -68,7 +68,7 @@ Use game and puzzle analogies. Start with pseudocode before real code.`,
  */
 export function createSubjectTutorConfig(
   tutorConfig: SubjectTutorConfig,
-  studentProfile?: StudentProfile,
+  studentProfile?: StudentProfile
 ): AgentConfig {
   const basePrompt = tutorConfig.systemPrompt || SUBJECT_SYSTEM_PROMPTS[tutorConfig.subject];
 
@@ -86,7 +86,9 @@ export function createSubjectTutorConfig(
     }
 
     if (studentProfile.readingLevel) {
-      adaptations.push(`Student's reading level: ${studentProfile.readingLevel}. Adjust vocabulary accordingly.`);
+      adaptations.push(
+        `Student's reading level: ${studentProfile.readingLevel}. Adjust vocabulary accordingly.`
+      );
     }
 
     if (studentProfile.adaptations?.length) {
@@ -94,7 +96,9 @@ export function createSubjectTutorConfig(
     }
 
     if (studentProfile.neurodiversityFlags?.length) {
-      adaptations.push(`Neurodiversity considerations: ${studentProfile.neurodiversityFlags.join(', ')}`);
+      adaptations.push(
+        `Neurodiversity considerations: ${studentProfile.neurodiversityFlags.join(', ')}`
+      );
     }
 
     if (adaptations.length > 0) {
@@ -106,11 +110,14 @@ export function createSubjectTutorConfig(
     name: `${tutorConfig.personaName}-${tutorConfig.subject.toLowerCase()}-tutor`,
     description: `${tutorConfig.personaName} - ${tutorConfig.subject} subject tutor`,
     systemPrompt: adaptedPrompt,
-    model: 'claude-sonnet-4-6',
-    temperature: 0.75,
-    maxTokens: 500,
+    model: {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6',
+      temperature: 0.75,
+      maxTokens: 500,
+    },
     tools: [],
-  };
+  } as Partial<AgentConfig> as AgentConfig;
 }
 
 /**
@@ -119,12 +126,12 @@ export function createSubjectTutorConfig(
 export function detectResponseEmotion(content: string): string {
   const lower = content.toLowerCase();
 
-  const emotionPatterns: Array<[string, string[]]> = [
+  const emotionPatterns: [string, string[]][] = [
     ['HAPPY', ['great job', 'awesome', 'wonderful', 'excellent', 'well done', 'amazing']],
-    ['THINKING', ['let me think', 'consider', 'interesting', 'hmm', 'let\'s explore']],
-    ['ENCOURAGING', ['you can do it', 'keep trying', 'don\'t give up', 'almost there', 'believe']],
+    ['THINKING', ['let me think', 'consider', 'interesting', 'hmm', "let's explore"]],
+    ['ENCOURAGING', ['you can do it', 'keep trying', "don't give up", 'almost there', 'believe']],
     ['EXCITED', ['wow', 'incredible', 'so cool', 'exciting', 'brilliant']],
-    ['EMPATHETIC', ['understand', 'it\'s hard', 'that\'s okay', 'take your time', 'no worries']],
+    ['EMPATHETIC', ['understand', "it's hard", "that's okay", 'take your time', 'no worries']],
   ];
 
   for (const [emotion, keywords] of emotionPatterns) {
@@ -141,7 +148,7 @@ export function detectResponseEmotion(content: string): string {
 /**
  * Extract topics discussed from a conversation
  */
-export function extractTopics(messages: Array<{ role: string; content: string }>): string[] {
+export function extractTopics(messages: { role: string; content: string }[]): string[] {
   const topics = new Set<string>();
 
   for (const msg of messages) {
@@ -156,7 +163,7 @@ export function extractTopics(messages: Array<{ role: string; content: string }>
     for (const pattern of topicPatterns) {
       let match;
       while ((match = pattern.exec(lower)) !== null) {
-        if (match[1].length > 2) {
+        if (match[1] && match[1].length > 2) {
           topics.add(match[1]);
         }
       }

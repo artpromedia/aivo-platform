@@ -8,53 +8,65 @@ Targets:
   - notify-svc-secrets  → OonruMail API key + email config
 
 Usage:
-  pip install paramiko
+  # Set required environment variables (or use a .env file):
+  #   FIREBASE_PROJECT_ID
+  #   FIREBASE_CLIENT_EMAIL
+  #   FIREBASE_PRIVATE_KEY          (PEM-encoded private key)
+  #   OONRUMAIL_API_KEY
+  #
+  # Or pass a Firebase service-account JSON file:
+  #   FIREBASE_SERVICE_ACCOUNT_JSON=/path/to/service-account.json
+  #
+  pip install paramiko python-dotenv
   python scripts/hetzner/push_secrets_to_k8s.py
 """
 import paramiko
 import json
+import os
 import sys
 import time
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load from .env if present
+except ImportError:
+    pass  # python-dotenv is optional
+
 # ── Production server ──────────────────────────────────────────────────────
-APP1 = "95.216.245.40"
-NAMESPACE = "aivo-prod"
+APP1 = os.environ.get("HETZNER_APP1_HOST", "95.216.245.40")
+NAMESPACE = os.environ.get("K8S_NAMESPACE", "aivo-prod")
 
 # ── Firebase Admin SDK credentials ─────────────────────────────────────────
-FIREBASE_PROJECT_ID = "aivo-learning-7eee8"
-FIREBASE_CLIENT_EMAIL = "firebase-adminsdk-fbsvc@aivo-learning-7eee8.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY = """-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQD3sYqrRGV4byZp
-y+zmjIrZjuZ27B3V6fpy2qCKEJSwDH96wh/OT8EFDPR/RoNvS5Jctg/wTwQiSbR9
-h/p8nH3I7zAQDk/Fs+nhi3Q0kK5MDl4tsWgNYVTEteHUZq72KAWi5RMykxIl4xVb
-oEmmuhB+aMEnpvEI0wCVKsdtVsY2oQnEfr8Z/UCTPiwFocl4Utl27vt99y8aSYi+
-+zOpKbY/p/iJQ4igIFqFlNjb16EW4WiDoV7nYHPleLKAGnt1kLLZA7x2eaSeG32z
-CbIHWWJr5lSXfZzEVxi6Dl+nVMflkcQwCpjbIgvVfOVZquzCfYfACVxIdb+EDDUh
-PWab6pZDAgMBAAECggEALOH/iixRJMMjV01sBpTV/jk+OrNrbp1A1DoYmBwMDWCe
-Yvy1LbnW9JbV4RBCddLgWStmdPmkeqAXdB3FPnpO8q+g6m/ldaI10bhm3LWQ19hM
-qYP5ol8OMLzyiH3420MCTnOrCGGNCs98yccgQXV60qUhxxEhoSM2+lCvpXjxXulx
-LKjaQt3Tmzn0rgFV/tFofOfb3GTFAXGDdmdJ1j2CJs0K3R9ZSNt2KqYPVVtzG1q2
-Kx2bS7jjElxXLfZpHFPQYQPzlqE9t4f2EnIrO5UeAUWVQGMNIqWt3KGawedTz3HD
-6KTRk5FIE1x0aea/Z0nk3+b9L+V52HjBdhNolJ29ZQKBgQD7/4oXyA32/sKlFW9I
-lwi8/CQLAX6KgdSrRuqhgF2YIYnKPVrpHm2UcMqcXZpwmrMN05B0VLzXtgOR8KU5
-7h3Z7srQGbRGs38u4eVGV4G9muy+YTNJYQWSCLE8XUmP2H5KPSVuYt51uOwHEOEZ
-vGXlJ9JkNNoG+sTeIXaCYnI/1wKBgQD7oICSKDsX2M5Z382HzqqVPDHNuFqP9f3q
-am9wJE5YgkR5KQ6mz1zj5GPBOKWffHnba0WU+USaJJV7vWpjwadz5Ew/NEIe1bfP
-94TwLnXnDXOAdjNFIm+ZEwHFXYIJVMtnW5029uoUJDUKVtGI/w7u8WukQTVlODjj
-J8+hJj6/dQKBgBN6u2f/NOUk6FLuhz2rPyesrfST1v5J7vCWeMinLZT28rnJaF+g
-1IOm/GJ98dRGgRTOh9oWOsrJ7Ri462zA9VnFVbQkaIUWlvw+xgRb+1F2ylolFVvU
-viN9vIWYCHmwGIMQmvYfembLNqONMHlW0OGX5HGOjFQBynoJSCnoBkDdAoGBAJqJ
-1qztHG3m78Tu2NIBsW56S7Qm9yfXUpz3xX1ALwXY66jl+GOmk0w7ZrCy07WBw21p
-EpEODn4E3fHjQUYHF4rruZBPzhQV+hA12mWQg0TmU/ufnJlnLtb6f2nxpf2JIGtY
-LtQlDVpVamXxMDtNOqSxjQSSL/L8dqO8PZ6hWIRJAoGAYlGilly0K1Xya7bWEv8N
-bZJIXeJt6lnvxDVfapcskNi4Ccc/n8/jRVk0JL3Z8Y5MoZZ3Wri1GAYu+sF+fwn7
-xriwKL1pLQJKLI6uURLt07hgXPEhWp7SocTzS/Z8cjIaFRPHzhOi/mOO76eeKg2b
-UZOPdSWOKlhlmnZp5VmNDow=
------END PRIVATE KEY-----
-"""
+# Read from env vars directly, or from a service-account JSON file
+_sa_json_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+if _sa_json_path and os.path.isfile(_sa_json_path):
+    with open(_sa_json_path) as f:
+        _sa = json.load(f)
+    FIREBASE_PROJECT_ID = _sa["project_id"]
+    FIREBASE_CLIENT_EMAIL = _sa["client_email"]
+    FIREBASE_PRIVATE_KEY = _sa["private_key"]
+else:
+    FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID", "")
+    FIREBASE_CLIENT_EMAIL = os.environ.get("FIREBASE_CLIENT_EMAIL", "")
+    FIREBASE_PRIVATE_KEY = os.environ.get("FIREBASE_PRIVATE_KEY", "")
 
 # ── OonruMail credentials ──────────────────────────────────────────────────
-OONRUMAIL_API_KEY = "em_pp4uwR1Z9tOjrdILu9DSWE54uSPBp6vbwwjrQg5f3qc"
+OONRUMAIL_API_KEY = os.environ.get("OONRUMAIL_API_KEY", "")
+
+# ── Validate that required secrets are present ──────────────────────────────
+_missing = []
+if not FIREBASE_PROJECT_ID:
+    _missing.append("FIREBASE_PROJECT_ID")
+if not FIREBASE_CLIENT_EMAIL:
+    _missing.append("FIREBASE_CLIENT_EMAIL")
+if not FIREBASE_PRIVATE_KEY:
+    _missing.append("FIREBASE_PRIVATE_KEY")
+if not OONRUMAIL_API_KEY:
+    _missing.append("OONRUMAIL_API_KEY")
+if _missing:
+    print(f"ERROR: Missing required environment variables: {', '.join(_missing)}")
+    print("Set them directly or point FIREBASE_SERVICE_ACCOUNT_JSON to your service-account JSON file.")
+    sys.exit(1)
 
 
 def ssh_connect(host):

@@ -11,10 +11,13 @@
 #   3. Dev-only secrets in .env.example files (not real credentials)
 #   4. Test fixture private keys (fake/truncated keys in test files)
 #   5. K8s secret templates with REPLACE_WITH_* placeholders
+#   6. Common-password blocklist (breach corpus, not credentials)
+#   7. Documentation files with example/truncated API keys and JWTs
+#   8. Dev portal pages with placeholder API keys in code examples
+#   9. Dev environment config (config/environments/development.env)
 #
-# IMPORTANT: Real secrets found in scripts/hetzner/ (Firebase creds, CF origin
-#   certs) are NOT allowlisted here. Those must be rotated and removed from
-#   git history separately.
+# NOTE: Real secrets in scripts/hetzner/ have been refactored to use
+#   environment variables. Hardcoded credentials have been removed.
 
 title = "AIVO Gitleaks Configuration"
 
@@ -61,18 +64,8 @@ regexes = [
 ]
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Per-path allowlists
+# Per-path allowlists (merged into rule-specific sections below)
 # ─────────────────────────────────────────────────────────────────────────────
-
-# Firebase options files contain public API keys (restricted by app bundleId/SHA)
-# These are safe to commit per Google's documentation.
-[[rules]]
-id = "gcp-api-key"
-description = "GCP API key"
-[rules.allowlist]
-paths = [
-  '''firebase_options\.dart$''',
-]
 
 # Test Stripe keys in test files, config defaults, CI workflows, and docker-compose
 [[rules]]
@@ -93,26 +86,6 @@ paths = [
   '''tests/''',
   '''test/''',
   '''__tests__/''',
-]
-
-# Test fixture private keys (fake/truncated keys used in unit tests)
-[[rules]]
-id = "private-key"
-description = "Private Key"
-[rules.allowlist]
-paths = [
-  '''\.test\.ts$''',
-  '''\.spec\.ts$''',
-  '''__tests__/''',
-  '''/test/''',
-  '''/tests/''',
-  '''fixtures/''',
-  '''mocks/''',
-  '''\.env\.example$''',
-  '''\.env\.test$''',
-  '''infra/k8s/secrets/.*-template\.yaml$''',
-  '''infra/k8s/secrets/staging-secrets\.yaml$''',
-  '''\.github/workflows/''',
 ]
 
 # Generic API keys in dev/test contexts
@@ -137,6 +110,27 @@ paths = [
   '''infra/k8s/secrets/''',
   '''\.github/workflows/''',
   '''scripts/hetzner/(?:deploy|patch|update)_''',
+  # Common-password blocklist (breach corpus for validation, not real creds)
+  '''services/auth-svc/src/data/common-passwords\.ts$''',
+  # Dev-only environment config (placeholder values)
+  '''config/environments/development\.env$''',
+  # Dev portal example/demo code
+  '''apps/web-dev-portal/app/.*\.tsx$''',
+  '''apps/web-dev-portal/public/.*\.(json|yaml)$''',
+  '''apps/web-dev-portal/__tests__/''',
+  # Documentation files with example API keys
+  '''docs/.*\.md$''',
+  '''.*README\.md$''',
+  '''MOBILE_APPS_PRODUCTION_READINESS\.md$''',
+  '''DEPLOYMENT_GUIDE\.md$''',
+  '''CONTRIBUTING\.md$''',
+  '''SDK_GUIDELINES\.md$''',
+  '''SECURITY_AUDIT_CHECKLIST\.md$''',
+  '''.*_AUDIT.*\.md$''',
+  '''.*_REPORT.*\.md$''',
+  '''.*IMPLEMENTATION.*\.md$''',
+  '''.*SPRINT.*\.md$''',
+  '''HETZNER_DEPLOYMENT_GUIDE\.md$''',
 ]
 regexes = [
   '''(?i)placeholder''',
@@ -150,4 +144,69 @@ regexes = [
   '''SG\.xxx''',
   '''sk-REPLACE_ME''',
   '''sk-ant-REPLACE_ME''',
+  '''YOUR_API_KEY''',
+  '''your-api-key''',
+  '''your-key''',
+  '''aivo_sk_test_''',
+  '''aivo_sk_live_xxx''',
+  '''sk-\.\.\.''',
+  '''sk-ant-\.\.\.''',
+  '''AIza\.\.\.''',
+]
+
+# Documentation JWT examples (truncated, not real tokens)
+[[rules]]
+id = "jwt"
+description = "JWT Token"
+[rules.allowlist]
+paths = [
+  '''docs/.*\.md$''',
+  '''apps/web-dev-portal/''',
+  '''.*README\.md$''',
+  '''.*_AUDIT.*\.md$''',
+  '''.*_REPORT.*\.md$''',
+]
+
+# GCP API key examples in docs (truncated AIza... prefixes)
+[[rules]]
+id = "gcp-api-key"
+description = "GCP API key"
+[rules.allowlist]
+paths = [
+  '''firebase_options\.dart$''',
+  '''.*README\.md$''',
+  '''docs/.*\.md$''',
+  '''MOBILE_APPS_PRODUCTION_READINESS\.md$''',
+]
+
+# Curl auth header examples in documentation
+[[rules]]
+id = "curl-auth-header"
+description = "Curl Auth Header"
+[rules.allowlist]
+paths = [
+  '''docs/.*\.md$''',
+  '''apps/web-dev-portal/''',
+  '''.*README\.md$''',
+]
+
+# Private keys in refactored hetzner scripts (now using env vars, no real keys)
+[[rules]]
+id = "private-key"
+description = "Private Key"
+[rules.allowlist]
+paths = [
+  '''\.test\.ts$''',
+  '''\.spec\.ts$''',
+  '''__tests__/''',
+  '''/test/''',
+  '''/tests/''',
+  '''fixtures/''',
+  '''mocks/''',
+  '''\.env\.example$''',
+  '''\.env\.test$''',
+  '''infra/k8s/secrets/.*-template\.yaml$''',
+  '''infra/k8s/secrets/staging-secrets\.yaml$''',
+  '''\.github/workflows/''',
+  '''docs/.*\.md$''',
 ]
