@@ -4,15 +4,10 @@
  * Creates a fully-configured metrics registry with all standard Aivo metrics.
  */
 
-import {
-  Registry,
-  Counter,
-  Histogram,
-  Gauge,
-  collectDefaultMetrics,
-} from 'prom-client';
+import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom-client';
 
 import { METRIC_NAMES, METRIC_LABELS, HISTOGRAM_BUCKETS } from '../constants.js';
+
 import type {
   MetricsRegistry,
   HttpMetrics,
@@ -64,7 +59,12 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const httpRequestDuration = new Histogram({
     name: `${prefix}${METRIC_NAMES.HTTP_REQUEST_DURATION}`,
     help: 'Duration of HTTP requests in seconds',
-    labelNames: [METRIC_LABELS.METHOD, METRIC_LABELS.ROUTE, METRIC_LABELS.STATUS_CODE, METRIC_LABELS.STATUS_CLASS],
+    labelNames: [
+      METRIC_LABELS.METHOD,
+      METRIC_LABELS.ROUTE,
+      METRIC_LABELS.STATUS_CODE,
+      METRIC_LABELS.STATUS_CLASS,
+    ],
     buckets: HISTOGRAM_BUCKETS.HTTP_DURATION,
     registers: [registry],
   });
@@ -72,7 +72,12 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const httpRequestsTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.HTTP_REQUESTS_TOTAL}`,
     help: 'Total number of HTTP requests',
-    labelNames: [METRIC_LABELS.METHOD, METRIC_LABELS.ROUTE, METRIC_LABELS.STATUS_CODE, METRIC_LABELS.STATUS_CLASS],
+    labelNames: [
+      METRIC_LABELS.METHOD,
+      METRIC_LABELS.ROUTE,
+      METRIC_LABELS.STATUS_CODE,
+      METRIC_LABELS.STATUS_CLASS,
+    ],
     registers: [registry],
   });
 
@@ -114,7 +119,12 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const aiRequestDuration = new Histogram({
     name: `${prefix}${METRIC_NAMES.AI_REQUEST_DURATION}`,
     help: 'Duration of AI provider requests in seconds',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.PROVIDER, METRIC_LABELS.MODEL, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.PROVIDER,
+      METRIC_LABELS.MODEL,
+      METRIC_LABELS.TENANT_ID,
+    ],
     buckets: HISTOGRAM_BUCKETS.AI_DURATION,
     registers: [registry],
   });
@@ -122,21 +132,37 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const aiRequestsTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.AI_REQUESTS_TOTAL}`,
     help: 'Total number of AI requests',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.PROVIDER, METRIC_LABELS.MODEL, METRIC_LABELS.STATUS_CODE],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.PROVIDER,
+      METRIC_LABELS.MODEL,
+      METRIC_LABELS.STATUS_CODE,
+    ],
     registers: [registry],
   });
 
   const aiTokensTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.AI_TOKENS_TOTAL}`,
     help: 'Total number of AI tokens used',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.PROVIDER, METRIC_LABELS.MODEL, METRIC_LABELS.TOKEN_TYPE, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.PROVIDER,
+      METRIC_LABELS.MODEL,
+      METRIC_LABELS.TOKEN_TYPE,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 
   const aiCostTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.AI_COST_USD_TOTAL}`,
     help: 'Total AI cost in USD',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.PROVIDER, METRIC_LABELS.MODEL, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.PROVIDER,
+      METRIC_LABELS.MODEL,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 
@@ -150,14 +176,23 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const aiSafetyBlocksTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.AI_SAFETY_BLOCKS_TOTAL}`,
     help: 'Total number of AI safety blocks',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.SAFETY_STATUS, METRIC_LABELS.SAFETY_REASON],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.SAFETY_STATUS,
+      METRIC_LABELS.SAFETY_REASON,
+    ],
     registers: [registry],
   });
 
   const aiErrorsTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.AI_ERRORS_TOTAL}`,
     help: 'Total number of AI errors',
-    labelNames: [METRIC_LABELS.AGENT_TYPE, METRIC_LABELS.PROVIDER, METRIC_LABELS.MODEL, 'error_type'],
+    labelNames: [
+      METRIC_LABELS.AGENT_TYPE,
+      METRIC_LABELS.PROVIDER,
+      METRIC_LABELS.MODEL,
+      'error_type',
+    ],
     registers: [registry],
   });
 
@@ -178,28 +213,47 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const sessionsStartedTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.SESSIONS_STARTED_TOTAL}`,
     help: 'Total number of sessions started',
-    labelNames: [METRIC_LABELS.SESSION_TYPE, METRIC_LABELS.SUBJECT, METRIC_LABELS.GRADE, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.SESSION_TYPE,
+      METRIC_LABELS.SUBJECT,
+      METRIC_LABELS.GRADE,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 
   const sessionsCompletedTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.SESSIONS_COMPLETED_TOTAL}`,
     help: 'Total number of sessions completed',
-    labelNames: [METRIC_LABELS.SESSION_TYPE, METRIC_LABELS.SUBJECT, METRIC_LABELS.GRADE, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.SESSION_TYPE,
+      METRIC_LABELS.SUBJECT,
+      METRIC_LABELS.GRADE,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 
   const sessionsAbandonedTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.SESSIONS_ABANDONED_TOTAL}`,
     help: 'Total number of sessions abandoned',
-    labelNames: [METRIC_LABELS.SESSION_TYPE, METRIC_LABELS.SUBJECT, METRIC_LABELS.GRADE, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.SESSION_TYPE,
+      METRIC_LABELS.SUBJECT,
+      METRIC_LABELS.GRADE,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 
   const sessionDuration = new Histogram({
     name: `${prefix}${METRIC_NAMES.SESSION_DURATION_SECONDS}`,
     help: 'Duration of sessions in seconds',
-    labelNames: [METRIC_LABELS.SESSION_TYPE, METRIC_LABELS.COMPLETION_STATUS, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.SESSION_TYPE,
+      METRIC_LABELS.COMPLETION_STATUS,
+      METRIC_LABELS.TENANT_ID,
+    ],
     buckets: HISTOGRAM_BUCKETS.SESSION_DURATION,
     registers: [registry],
   });
@@ -240,7 +294,11 @@ export function createMetricsRegistry(config: MetricsConfig): MetricsRegistry {
   const focusEffectivenessTotal = new Counter({
     name: `${prefix}${METRIC_NAMES.FOCUS_INTERVENTION_EFFECTIVENESS}`,
     help: 'Focus intervention effectiveness counts',
-    labelNames: [METRIC_LABELS.INTERVENTION_TYPE, METRIC_LABELS.EFFECTIVENESS, METRIC_LABELS.TENANT_ID],
+    labelNames: [
+      METRIC_LABELS.INTERVENTION_TYPE,
+      METRIC_LABELS.EFFECTIVENESS,
+      METRIC_LABELS.TENANT_ID,
+    ],
     registers: [registry],
   });
 

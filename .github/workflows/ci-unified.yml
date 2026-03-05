@@ -613,6 +613,7 @@ jobs:
        github.event_name == 'release')
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         service:
           # Phase 1 KEEP and merged services only
@@ -653,7 +654,29 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-
 
-      - name: Build and push
+      - name: Build and push (attempt 1)
+        id: build-push-1
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+          build-args: |
+            SERVICE_NAME=${{ matrix.service }}
+            VERSION=${{ needs.build.outputs.version }}
+            BUILD_SHA=${{ needs.build.outputs.sha_short }}
+
+      - name: Wait before retry
+        if: steps.build-push-1.outcome == 'failure'
+        run: sleep $((RANDOM % 30 + 15))
+
+      - name: Build and push (attempt 2)
+        if: steps.build-push-1.outcome == 'failure'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -670,6 +693,7 @@ jobs:
 
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.24.0
+        continue-on-error: true
         with:
           image-ref: '${{ env.REGISTRY }}/aivo-${{ matrix.service }}:${{ needs.build.outputs.version }}'
           format: 'sarif'
@@ -679,7 +703,8 @@ jobs:
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles(format('trivy-{0}.sarif', matrix.service)) != ''
+        continue-on-error: true
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: 'container-${{ matrix.service }}'

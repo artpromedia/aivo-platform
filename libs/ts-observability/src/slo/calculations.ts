@@ -5,7 +5,7 @@
  * and SLO compliance.
  */
 
-import type { SloDefinition, SloObjectives } from './definitions.js';
+import type { SloDefinition } from './definitions.js';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ERROR BUDGET CALCULATIONS
@@ -48,12 +48,10 @@ export function calculateRemainingBudget(
   elapsedDays: number
 ): number {
   const totalBudget = calculateErrorBudget(slo.objectives.target);
-  const expectedBurnRate = elapsedDays / slo.objectives.windowDays;
-  const expectedBudgetUsed = totalBudget * expectedBurnRate;
   const actualBudgetUsed = currentErrorRate * (elapsedDays / slo.objectives.windowDays);
 
   // Return remaining as percentage of total budget
-  const remaining = (totalBudget - actualBudgetUsed) / totalBudget * 100;
+  const remaining = ((totalBudget - actualBudgetUsed) / totalBudget) * 100;
   return remaining;
 }
 
