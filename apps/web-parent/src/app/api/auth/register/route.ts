@@ -32,11 +32,13 @@ export async function POST(request: NextRequest) {
       refreshToken?: string;
       user?: Record<string, unknown>;
       message?: string;
+      error?: string;
+      details?: unknown[];
     };
 
     if (!upstream.ok) {
       return NextResponse.json(
-        { message: data.message ?? 'Registration failed' },
+        { message: data.error ?? data.message ?? 'Registration failed' },
         { status: upstream.status }
       );
     }
