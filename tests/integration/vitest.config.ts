@@ -12,7 +12,10 @@ import path from 'node:path';
 
 export default defineConfig({
   test: {
-    // Test file patterns
+    // Root for test file discovery — scoped to integration tests
+    root: path.resolve(__dirname),
+
+    // Test file patterns (relative to root above)
     include: ['**/*.integration.test.ts', '**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
 
@@ -33,11 +36,8 @@ export default defineConfig({
 
     // Single fork to share database connections and avoid race conditions
     pool: 'forks',
-    // @ts-expect-error - poolOptions exists in newer Vitest versions
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
+    forks: {
+      singleFork: true,
     },
 
     // Setup files
@@ -62,14 +62,7 @@ export default defineConfig({
     },
 
     // Reporter configuration
-    reporters: [
-      'verbose',
-      'html',
-      ['junit', { outputFile: './reports/integration-results.xml' }],
-    ],
-    outputFile: {
-      html: './reports/integration-report.html',
-    },
+    reporters: ['verbose', ['junit', { outputFile: './reports/integration-results.xml' }]],
 
     // Environment variables
     env: {

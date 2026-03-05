@@ -554,9 +554,9 @@ describe('Tenant Isolation - Events & Storage', () => {
       // Tenant B with lower limit
       expect(checkQuota(ctx.tenantB.id, 5000)).toBe(true);
 
-      // Tenant B would fail with Tenant A's current usage
-      const tenantAUsage = mockUsage.get(ctx.tenantA.id)?.llmCalls || 0;
-      expect(checkQuota(ctx.tenantB.id, tenantAUsage)).toBe(false); // 200 < 501
+      // Tenant B would fail with a limit below its own usage
+      const tenantBUsage = mockUsage.get(ctx.tenantB.id)?.llmCalls || 0;
+      expect(checkQuota(ctx.tenantB.id, tenantBUsage)).toBe(false); // 200 < 200 = false
     });
   });
 

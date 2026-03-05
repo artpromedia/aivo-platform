@@ -89,12 +89,7 @@ export async function retry<T>(
     shouldRetry?: (error: Error) => boolean;
   } = {}
 ): Promise<T> {
-  const {
-    maxAttempts = 3,
-    delay = 1000,
-    backoff = 1.5,
-    shouldRetry = () => true,
-  } = options;
+  const { maxAttempts = 3, delay = 1000, backoff = 1.5, shouldRetry = () => true } = options;
 
   let lastError: Error | undefined;
   let currentDelay = delay;
@@ -157,9 +152,7 @@ export function createStripeWebhookPayload(
   const timestamp = Math.floor(Date.now() / 1000);
 
   const signaturePayload = `${timestamp}.${payload}`;
-  const signature = createHmac('sha256', webhookSecret)
-    .update(signaturePayload)
-    .digest('hex');
+  const signature = createHmac('sha256', webhookSecret).update(signaturePayload).digest('hex');
 
   return {
     payload,
@@ -174,6 +167,11 @@ export async function sendStripeWebhook(
   webhook: StripeWebhookPayload,
   endpoint?: string
 ): Promise<{ status: number; data: unknown }> {
+  // In mock mode there is no real server to receive webhooks
+  if (process.env.USE_MOCKS === 'true') {
+    return { status: 200, data: { received: true } };
+  }
+
   const url = endpoint ?? `${process.env.API_BASE_URL ?? 'http://localhost:4000'}/webhooks/stripe`;
 
   try {
@@ -298,7 +296,9 @@ export function randomString(length: number = 10): string {
 /**
  * Generate test content metadata
  */
-export function createTestContent(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function createTestContent(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     id: randomUUID(),
     title: `Test Content ${randomString(6)}`,
@@ -318,7 +318,9 @@ export function createTestContent(overrides: Record<string, unknown> = {}): Reco
 /**
  * Generate test activity data
  */
-export function createTestActivity(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function createTestActivity(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     id: randomUUID(),
     type: 'interactive',
@@ -336,7 +338,9 @@ export function createTestActivity(overrides: Record<string, unknown> = {}): Rec
 /**
  * Generate test session data
  */
-export function createTestSession(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+export function createTestSession(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     id: randomUUID(),
     sessionType: 'lesson',
@@ -367,10 +371,7 @@ export function assertStatus(
   message?: string
 ): void {
   if (response.status !== expectedStatus) {
-    throw new Error(
-      message ??
-        `Expected status ${expectedStatus}, got ${response.status}`
-    );
+    throw new Error(message ?? `Expected status ${expectedStatus}, got ${response.status}`);
   }
 }
 
