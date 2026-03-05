@@ -27,8 +27,15 @@ const resources = {
   hi: { parent: hiParent },
 };
 
+// Only use LanguageDetector in the browser — during SSR the APIs it
+// relies on (localStorage, navigator) don't exist, which causes the
+// detected language to differ between server and client and triggers
+// React hydration error #418.
+if (typeof globalThis.window !== 'undefined') {
+  i18n.use(LanguageDetector);
+}
+
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,

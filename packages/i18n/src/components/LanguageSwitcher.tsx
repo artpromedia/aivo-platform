@@ -61,12 +61,12 @@ export function LanguageSwitcher({
   showFlags = true,
   'aria-label': ariaLabel,
 }: LanguageSwitcherProps) {
-  const [currentLocale, setCurrentLocale] = useState<UILocale>(() => {
-    if (localeProp && isUILocale(localeProp)) return localeProp;
-    const cookie = getCookie(LOCALE_COOKIE);
-    if (cookie && isUILocale(cookie)) return cookie;
-    return 'en';
-  });
+  // SSR-safe: always start with the prop or 'en'. Reading document.cookie
+  // in the initializer would differ between server (undefined) and client
+  // (actual value) causing React hydration error #418.
+  const [currentLocale, setCurrentLocale] = useState<UILocale>(
+    localeProp && isUILocale(localeProp) ? localeProp : 'en',
+  );
 
   const [isOpen, setIsOpen] = useState(false);
   const [, startTransition] = useTransition();
@@ -78,6 +78,16 @@ export function LanguageSwitcher({
       setCurrentLocale(localeProp);
     }
   }, [localeProp, currentLocale]);
+
+  // Sync from cookie after hydration (client-only)
+  useEffect(() => {
+    if (localeProp && isUILocale(localeProp)) return; // prop takes precedence
+    const cookie = getCookie(LOCALE_COOKIE);
+    if (cookie && isUILocale(cookie) && cookie !== currentLocale) {
+      setCurrentLocale(cookie);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close on outside click
   useEffect(() => {

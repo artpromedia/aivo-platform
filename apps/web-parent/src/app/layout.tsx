@@ -21,7 +21,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   return (
     <html lang={locale} dir={getDirection(locale)} suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${plusJakartaSans.variable} font-sans`}>
+      <body className={`${dmSans.variable} ${plusJakartaSans.variable} font-sans`} suppressHydrationWarning>
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
