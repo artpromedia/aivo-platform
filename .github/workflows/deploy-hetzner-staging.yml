@@ -113,7 +113,7 @@ jobs:
         run: pnpm run lint
 
       - name: Build shared libraries
-        run: pnpm --filter @aivo/ts-types --filter @aivo/billing-common build
+        run: npx turbo run build --filter='./packages/*' --filter='./libs/*'
 
       - name: TypeCheck
         run: pnpm -r --if-present run typecheck || true
@@ -149,6 +149,7 @@ jobs:
       contents: read
       packages: write
       security-events: write
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -248,6 +249,7 @@ jobs:
       contents: read
       packages: write
       security-events: write
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -346,6 +348,7 @@ jobs:
       contents: read
       packages: write
       security-events: write
+      actions: read
     strategy:
       fail-fast: false
       matrix:
