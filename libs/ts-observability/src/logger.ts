@@ -110,7 +110,7 @@ export function createLogger(config: LoggerConfig): AivoLogger {
     serviceName,
     environment = 'development',
     level = environment === 'production' ? 'info' : 'debug',
-    prettyPrint = environment !== 'production',
+    prettyPrint = environment === 'development',
   } = config;
 
   // Base logger options

@@ -226,6 +226,17 @@ patches:
         path: /spec/template/spec/containers/0/resources/limits/memory
         value: "1Gi"
 
+  # Limit HPA scaling in staging (prevent cascading scale-up of crashing pods)
+  - target:
+      kind: HorizontalPodAutoscaler
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+
   # Pin staging pods to Server 3
   - target:
       kind: Deployment

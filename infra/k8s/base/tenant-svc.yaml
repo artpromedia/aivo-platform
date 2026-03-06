@@ -132,7 +132,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: shared-secrets
-                  key: JWT_PUBLIC_KEY
+                  key: jwt-public-key
 
           resources:
             requests:
